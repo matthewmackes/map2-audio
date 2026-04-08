@@ -8615,6 +8615,7 @@ a {
   position: relative;
   min-height: 100vh;
   isolation: isolate;
+  background: #000;
 }
 
 .platform-brand-frame__content {
@@ -8629,9 +8630,7 @@ a {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--interactive) 14%, transparent), transparent 28%),
-    radial-gradient(circle at bottom left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 30%);
+  background: #000;
 }
 
 .platform-brand-frame:has(.app-shell--themed-workspace) .platform-brand-backdrop {
@@ -8649,23 +8648,20 @@ a {
 
 .platform-brand-backdrop__mark {
   position: absolute;
-  opacity: 0.075;
-  filter: saturate(1.05);
+  color: #fff;
+  opacity: 0.16;
+  filter: none;
 }
 
 .platform-brand-backdrop__mark--primary {
-  top: 84px;
-  right: clamp(-72px, -2vw, -28px);
-  width: clamp(240px, 24vw, 420px);
-  transform: rotate(-8deg);
+  top: 50%;
+  left: 50%;
+  width: min(62vw, 46rem);
+  transform: translate(-50%, -50%);
 }
 
 .platform-brand-backdrop__mark--secondary {
-  bottom: 64px;
-  left: clamp(-56px, -1vw, -20px);
-  width: clamp(180px, 18vw, 280px);
-  opacity: 0.045;
-  transform: rotate(10deg);
+  display: none;
 }
 
 .topbar,

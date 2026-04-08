@@ -509,7 +509,7 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
               }
             />
           ) : null}
-          {!!validateDesign.data?.validation.warnings?.length ? (
+          {validateDesign.data?.validation.warnings?.length ? (
             <InlineNotification
               kind="warning"
               lowContrast

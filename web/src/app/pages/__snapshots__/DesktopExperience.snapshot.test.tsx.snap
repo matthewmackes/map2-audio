@@ -1347,7 +1347,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 class="start-menu-panel__grid"
               >
                 <a
-                  class="start-menu-card start-menu-card--tile"
+                  class="start-menu-card start-menu-card--tile start-menu-card--featured"
                   href="/platforms/overview"
                   style="--item-color: var(--cds-support-warning);"
                   title="Cluster-wide health, activity, and deployment readiness in one board. • Beta"
@@ -1460,7 +1460,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 </a>
                 <a
                   aria-current="page"
-                  class="start-menu-card start-menu-card--tile is-active"
+                  class="start-menu-card start-menu-card--tile start-menu-card--featured is-active"
                   href="/artifacts"
                   style="--item-color: #be95ff;"
                   title="Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library. • Beta"

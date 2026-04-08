@@ -57,15 +57,7 @@ function maturityTagLabel(maturity: NavigationMaturityState): string {
 }
 
 function sortLabsItems(items: LabsMenuItem[]): LabsMenuItem[] {
-  return [...items].sort((left, right) => {
-    if (left.to === '/labs/push-surface') {
-      return -1
-    }
-    if (right.to === '/labs/push-surface') {
-      return 1
-    }
-    return left.label.localeCompare(right.label)
-  })
+  return [...items].sort((left, right) => left.label.localeCompare(right.label))
 }
 
 export function LabsPage() {
@@ -108,18 +100,12 @@ export function LabsPage() {
   }, [deferredSearch, labsItems])
 
   const blockedCount = labsItems.filter((item) => isBlockedOrLabItem(item)).length
-  const pushSurfaceItem = labsItems.find((item) => item.to === '/labs/push-surface') ?? null
 
   return (
     <div className="labs-landing">
       <PageHeader
         title="Labs"
         subtitle="Browse Labs as a uniform catalog of feature cards, each representing a different MAP2 page, service, or hardware workflow."
-        actions={pushSurfaceItem ? (
-          <Button size="sm" renderIcon={ArrowRight} onClick={() => navigate(pushSurfaceItem.to)}>
-            Open Push Surface
-          </Button>
-        ) : null}
       />
 
       <Tile className="labs-landing__directory-card">
@@ -187,7 +173,6 @@ export function LabsPage() {
 
                   <div className="labs-landing__tag-row">
                     <Tag type={maturityTagType(item.maturity)}>{maturityTagLabel(item.maturity)}</Tag>
-                    {item.to === '/labs/push-surface' ? <Tag type="blue">Featured route</Tag> : null}
                     {isCurrentRoute ? <Tag type="cool-gray">Current route</Tag> : null}
                     {hardwareLocation ? <Tag type="green">On {hardwareLocation.hostname}</Tag> : null}
                   </div>

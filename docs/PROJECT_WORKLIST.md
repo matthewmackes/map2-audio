@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T816. Closed the stale orphan-service audit, inventory, and worklist debt after the current non-blocked implementation queue emptied.
+Last updated: 2026-04-08 - Added Backend Audit Remediation epic (T817-T846): 30 tasks covering all Critical/High/Medium findings from the dual-pass backend architecture audit (docs/BACKEND_AUDIT_V2.md).
 
 ## Performance Brain
 
@@ -1584,7 +1584,7 @@ Last updated: 2026-04-05 00:39 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T746
-Status: [✓] Done
+Status: [��] Done
 Title: Live MIDI map edit on active snapshot does not update MIDI engine
 Description:
 - Goal / acceptance criteria: When `replace_midi_map()` is called on the currently-live snapshot, the MIDI engine must be updated immediately so CC mappings take effect without requiring snapshot reactivation.
@@ -18827,3 +18827,518 @@ Last updated: 2026-04-07 22:50 EDT - Codex
   - `pytest -q tests/test_repo_doc_consistency.py` -> PASS
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_repo_doc_consistency.py` -> PASS
   - `git diff --check` -> PASS
+
+## Backend Audit Remediation
+
+ID: T817
+Status: [ ] Todo
+Title: Fix Raft consensus correctness bugs (majority, persistence, off-by-one, term staleness)
+Description:
+- Goal / acceptance criteria: The Raft implementation must correctly elect leaders with any single node down in a 3-node cluster, persist term/vote/log to SQLite before responding to RPCs, apply all committed log entries starting from index 0, and step down when a higher term is discovered in RPC responses.
+- Why it matters: Four independent correctness bugs make distributed cluster operations unsafe. Elections require all nodes (not majority), crashes lose vote history, the first log entry is never applied, and stale leaders never step down.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Fixed majority calculation including self-vote, SQLite-backed persistent state, corrected `_apply_log_entries` index, term comparison on all RPC responses, `asyncio.Event` replacing busy-wait in `replicate_command`, tests proving 3-node election with 1 node down.
+Subtasks:
+  - ID: T817-subA
+    Status: [ ] Todo
+    Title: Fix majority calculation to include self-vote
+    Description:
+    - Goal / acceptance criteria: `_start_election` counts the local node's self-vote in the majority tally. A 3-node cluster elects a leader with 2 votes (self + 1 remote), not 3.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Code fix, unit test proving election succeeds with 1 of 2 remotes voting yes.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08 - Claude
+  - ID: T817-subB
+    Status: [ ] Todo
+    Title: Add SQLite-backed persistent state for term, voted_for, and log
+    Description:
+    - Goal / acceptance criteria: `current_term`, `voted_for`, and `log` are written to a SQLite table before any RPC response is sent. On restart, state is restored from disk.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Persistence layer, recovery-on-init, test proving crash-restart preserves vote.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08 - Claude
+  - ID: T817-subC
+    Status: [ ] Todo
+    Title: Fix off-by-one in `_apply_log_entries` and prevent double-apply on DB failure
+    Description:
+    - Goal / acceptance criteria: `last_applied` is incremented after the entry is applied, not before. DB side-effect failure does not cause double-apply.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Code fix, test proving entry at index 0 is applied.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08 - Claude
+  - ID: T817-subD
+    Status: [ ] Todo
+    Title: Process response terms on all RPCs and re-check term after election gather
+    Description:
+    - Goal / acceptance criteria: `_request_vote` and `_send_append_entries` inspect the `term` field in RPC responses. `_start_election` verifies `current_term == captured_term` before declaring victory.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Code fix, test proving stale leader steps down.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08 - Claude
+  - ID: T817-subE
+    Status: [ ] Todo
+    Title: Track and cancel orphaned heartbeat tasks; replace busy-wait with asyncio.Event
+    Description:
+    - Goal / acceptance criteria: All tasks from `_send_heartbeats` tracked and cancelled in `stop()`. `replicate_command` uses `asyncio.Event` instead of polling.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Code fix, test proving clean shutdown.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-08 - Claude
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T818
+Status: [ ] Todo
+Title: Fix MIDI ring buffer overwrite mode and document threading contract
+Description:
+- Goal / acceptance criteria: In overwrite mode, the oldest message is correctly discarded and the newest retained. The buffer either has a `threading.Lock` or documents an explicit SPSC contract. `drain()` uses a sentinel for empty slots instead of dropping `None`.
+- Why it matters: Current overwrite logic corrupts head/tail. Hub uses buffer with multiple producers despite SPSC docs.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Fixed overwrite arithmetic, threading contract, sentinel-based empty detection, round-trip tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T819
+Status: [ ] Todo
+Title: Fix shutdown ordering — stop services before closing database pool
+Description:
+- Goal / acceptance criteria: `orchestrator.stop_all()` completes before the database pool is closed. Services that persist state during shutdown succeed.
+- Why it matters: DB pool closes before services stop. Any service writing state during teardown fails, risking data loss.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Swapped shutdown order in `main.py`.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T820
+Status: [ ] Todo
+Title: Fix TTP client stale response queue on reconnect
+Description:
+- Goal / acceptance criteria: `_do_connect` drains `_response_queue` before new connection. Reconnect task stored and cancellable in `disconnect()`.
+- Why it matters: Stale responses matched to wrong commands after Tesira reconnect, causing silent protocol corruption.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Queue drain, cancellable reconnect task, test proving stale responses discarded.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T821
+Status: [ ] Todo
+Title: Fix ServiceOrchestrator `_emit_event` calling non-existent WebSocket method
+Description:
+- Goal / acceptance criteria: `_emit_event` calls `broadcast_json(event, topic="service_status")` instead of non-existent `broadcast_to_topic`.
+- Why it matters: All service lifecycle events silently dropped via swallowed `AttributeError`.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Fixed method call, test proving lifecycle events reach WS subscribers.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T822
+Status: [ ] Todo
+Title: Fix `_stop_juce_engine` to call `service.shutdown()` for C++ cleanup
+Description:
+- Goal / acceptance criteria: Orchestrator calls both `stop_audio()` and `await asyncio.to_thread(service.shutdown)`. C++ engine, thread pool, and device handles released on shutdown.
+- Why it matters: Only `stop_audio()` called currently. JUCE engine object leaked with open device handles.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Added `shutdown()` call, validated device release.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T823
+Status: [ ] Todo
+Title: Make config `save()` and deployment `save()` atomic (write-temp-then-rename)
+Description:
+- Goal / acceptance criteria: Both write to temp file then `os.replace()`. Process kill during write cannot truncate config.
+- Why it matters: Direct `open('w')` write. Kill mid-write = empty file, silently resetting all config.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Atomic write pattern in both files.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T824
+Status: [ ] Todo
+Title: Fix automation engine dual-lock race, LFO mutation, and RANDOM waveform bug
+Description:
+- Goal / acceptance criteria: Single `asyncio.Lock` for all lane access. LFO state guarded. RANDOM waveform uses separate phase/amplitude fields. `save_to_database` uses UPSERT.
+- Why it matters: Two locks with no mutual exclusion on same data. Unguarded LFO mutation. RANDOM conflates phase and amplitude. DELETE-all save pattern risks data loss.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Single lock, guarded LFO, split RANDOM fields, UPSERT save, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T825
+Status: [ ] Todo
+Title: Extract `MidiSysexBridgeBase` from MPX1 and IntelFX services
+Description:
+- Goal / acceptance criteria: Shared base class (~600 LOC) with common logic. MPX1 and IntelFX become ~150 LOC subclasses with device-specific constants and decode methods only.
+- Why it matters: 4,000+ LOC of copy-pasted code. Every bug fix must be applied twice.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Base class, two subclasses, all existing tests passing.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T826
+Status: [ ] Todo
+Title: Apply `asyncio.to_thread` consistently across all JUCE engine C++ calls
+Description:
+- Goal / acceptance criteria: Every `async def` method calling `self._engine.*` uses `asyncio.to_thread`. No blocking C++ calls on event loop. Covers `set_bypass`, `get_current_snapshot`, `load_snapshot`, `enable_midi`, `get_midi_devices`, `reorder_chain`, `shutdown`, `stop_audio`.
+- Why it matters: 9+ methods block the event loop with C++ calls, stalling all async work.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Audited and wrapped all methods.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T827
+Status: [ ] Todo
+Title: Fix WebSocket manager lock discipline and compression protocol
+Description:
+- Goal / acceptance criteria: `disconnect()` async with lock. Unified lock type. `send_personal_message` has timeout. Binary frame compression replaces gzip+base64+JSON.
+- Why it matters: `disconnect()` races with `broadcast()`. Three-layer compression overhead.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Unified lock, timeout, binary frames, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T828
+Status: [ ] Todo
+Title: Fix RT parameter bridge: concurrent sends, cache locking, overflow handling
+Description:
+- Goal / acceptance criteria: Broadcast via `asyncio.gather()`. `_param_cache` locked. Atomic overflow. `get_value` returns error for uncached params.
+- Why it matters: Sequential sends block behind slowest subscriber. Unlocked cache. Overflow loses both messages.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Concurrent broadcast, locked cache, safe overflow, None guard, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T829
+Status: [ ] Todo
+Title: Add missing ORM `UniqueConstraint` for PluginPreset and PresetRating
+Description:
+- Goal / acceptance criteria: Constraints declared in `__table_args__`. Duplicates rejected at DB level.
+- Why it matters: Constraints documented in comments but not in code. Duplicates freely inserted.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Constraints added, existing data deduplicated, test for rejection.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T830
+Status: [ ] Todo
+Title: Fix PerformanceBrain `update_slot` bounds check and library scan caching
+Description:
+- Goal / acceptance criteria: `update_slot` validates `slot_id` range. `_build_library_state` cached with TTL. `get_library` read-only.
+- Why it matters: Out-of-range `slot_id` crashes. Every GET does filesystem scan + disk write under lock.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Bounds validation, cached library, read-only GET, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T831
+Status: [ ] Todo
+Title: Fix health monitor alert deduplication and unbounded growth
+Description:
+- Goal / acceptance criteria: Deduplicate by `(rule, service)`. Bounded `active_alerts`. `_alert_history` as `deque`. `update_service_metrics` locked.
+- Why it matters: 120 duplicate alerts/hour/service. Unbounded memory. Unlocked mutations.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Dedup logic, bounded history, locked metrics, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T832
+Status: [ ] Todo
+Title: Fix MIDI hub lifecycle race and silent subscriber error swallowing
+Description:
+- Goal / acceptance criteria: `_running = True` before thread start. Subscriber exceptions logged at WARNING. Guarded singleton.
+- Why it matters: First hotplug scan skips ports. Subscriber errors invisible.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Reordered flag, logged exceptions, guarded singleton.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T833
+Status: [ ] Todo
+Title: Fix MIDI router delayed dispatch eviction order and WebSocket emission
+Description:
+- Goal / acceptance criteria: Evict least urgent event on overflow. WS broadcasts use `call_soon_threadsafe`.
+- Why it matters: Currently evicts most urgent event. `asyncio.run()` blocks MIDI thread.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Correct eviction, threadsafe emission, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T834
+Status: [ ] Todo
+Title: Fix ConfigManager singleton, None validation, observer iteration, sensitive fields, list coercion
+Description:
+- Goal / acceptance criteria: Locked singleton. `None` handled. Snapshot iteration. Masked sensitive defaults. Element type coercion.
+- Why it matters: Five config bugs: TOCTOU, TypeError, RuntimeError, password exposure, wrong types.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: All five fixes with tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T835
+Status: [ ] Todo
+Title: Fix database retry flag scope and async `time.sleep` blocking
+Description:
+- Goal / acceptance criteria: `_sqlite_lock_retry_active` is instance-level. No `time.sleep()` in async paths.
+- Why it matters: Class-level flag leaks across sessions. 200ms event loop blocks.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Instance flag, async-safe retry.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T836
+Status: [ ] Todo
+Title: Fix graceful degradation dual-lock race and wire recovery path
+Description:
+- Goal / acceptance criteria: Single lock. Locked status mutations. `should_attempt_recovery` wired. Health loop exception guard.
+- Why it matters: Two locks, no mutual exclusion. UNAVAILABLE never recovers. Unhandled exception kills loop.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Single lock, wired recovery, guarded loop, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T837
+Status: [ ] Todo
+Title: Fix event bus subscriber lock, sync callback isolation, and history trimming
+Description:
+- Goal / acceptance criteria: Locked subscriber access. Sync callbacks via `run_in_executor`. `deque(maxlen=N)` history.
+- Why it matters: Concurrent mutation crash. Sync callbacks block loop. O(n) trim.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Locked access, executor dispatch, deque history.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T838
+Status: [ ] Todo
+Title: Fix circuit breaker `reset()` lock and windowed failure counting
+Description:
+- Goal / acceptance criteria: `reset()` acquires lock. Sliding time window for failure counting.
+- Why it matters: `reset()` races with `call()`. Absolute counter masked by intermittent successes.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Locked reset, windowed counter, tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T839
+Status: [ ] Todo
+Title: Fix cluster registry N+1 queries, TOCTOU upsert, timestamp format, and metrics PK
+Description:
+- Goal / acceptance criteria: Single-query summary. `INSERT OR REPLACE`. Consistent timestamps. Sub-second PK.
+- Why it matters: 5 redundant queries. TOCTOU race. Format mismatch. Dropped sub-second writes.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Single query, upsert, consistent formats, sub-second PK.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T840
+Status: [ ] Todo
+Title: Fix PipeWire service: subprocess cleanup, cache lock, return checks, uptime, O(n) streams
+Description:
+- Goal / acceptance criteria: Kill subprocess on timeout. Lock graph snapshot. Check quantum/rate returns. Correct uptime. O(n) direction detection.
+- Why it matters: Zombie processes. Duplicate subprocess fan-out. Silent failures. Misleading uptime. O(n^2) hot path.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Subprocess cleanup, locked cache, checked returns, correct uptime, O(n) detection.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T841
+Status: [ ] Todo
+Title: Fix CORS misconfiguration — `allow_credentials=True` with wildcard origin
+Description:
+- Goal / acceptance criteria: CORS origins from config. `allow_credentials=False` with wildcard. Safe defaults.
+- Why it matters: Browsers reject credentialed wildcard origins, breaking WebSocket auth.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Config-driven CORS, correct credentials flag.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T842
+Status: [ ] Todo
+Title: Fix cluster proxy client lifecycle, Host header, and metric accuracy
+Description:
+- Goal / acceptance criteria: Locked client creation. Shutdown cleanup. Stripped Host header. Correct metric.
+- Why it matters: Leaked connections. Wrong Host. Mislabeled metric.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Locked creation, cleanup, correct header, accurate metric.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T843
+Status: [ ] Todo
+Title: Fix Push surface unbounded MIDI queue and GCP session persistence
+Description:
+- Goal / acceptance criteria: Bounded `_input_queue` with overflow. GCP sessions persist to disk for crash recovery.
+- Why it matters: Unbounded queue under MIDI flood. Lost GCP sessions = no backup before hardware push.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Bounded queue, session persistence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T844
+Status: [ ] Todo
+Title: Fix snapshot list pagination and traffic capture streaming handling
+Description:
+- Goal / acceptance criteria: `list_snapshots` with `limit`/`offset`. Traffic capture skips streaming bodies and preserves `response.background`.
+- Why it matters: Eager load causes memory pressure. Body capture breaks streaming and drops background tasks.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Paginated query, streaming bypass, background preservation.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T845
+Status: [ ] Todo
+Title: Migrate all `datetime.utcnow()` and bare `datetime.now()` to `datetime.now(timezone.utc)`
+Description:
+- Goal / acceptance criteria: All 20+ occurrences replaced. Timezone-aware UTC throughout. No deprecation warnings on 3.12+.
+- Why it matters: `datetime.utcnow()` deprecated 3.12, removed 3.14. Naive datetimes cause cross-node comparison bugs.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Global replacement, consistent timestamps.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T846
+Status: [ ] Todo
+Title: Unify singleton factories across all backend modules
+Description:
+- Goal / acceptance criteria: All singleton factories use consistent thread-safe pattern. No bare `if _instance is None` patterns.
+- Why it matters: 6+ factories vulnerable to double-initialization with leaked resources.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Consistent pattern across all modules.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T847
+Status: [>] In Progress
+Title: Audit and aggressively simplify the React GUI for release readiness
+Description:
+- Goal / acceptance criteria: Perform a full `web/` React GUI audit, identify dead code, obsolete ideas, stale routes/components/assets/tests/helpers, and broader simplification opportunities, then remove or consolidate them aggressively where safe. Deliver a written findings report, land the cleanup, and finish with build/lint/typecheck/test validation plus worklist notes.
+- Why it matters: The release GUI needs a smaller, clearer, more defensible codebase with less historical baggage, fewer duplicate patterns, and less unused surface area that can regress during release hardening.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Audit findings, updated canonical worklist state, React code cleanup/removals, and release validation evidence.
+Subtasks:
+  - ID: T847-subA
+    Status: [✓] Done
+    Title: Audit the React GUI for dead code, stale ideas, and duplicate surface area
+    Description:
+    - Goal / acceptance criteria: Inspect routes, page/component trees, shared helpers, tests, and assets under `web/` to produce a concrete list of removal and simplification candidates with enough evidence to execute cleanup safely.
+    - Why it matters: The frontend is too large to prune safely without first separating active release surfaces from leftover implementation history.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Candidate list, impact assessment, and prioritized cleanup targets.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-08 20:51 EDT - Codex
+    - Completion notes:
+      - Audited router reachability, lazy imports, route prefetches, loader wrappers, tracked public/debug artifacts, and page/component reference surfaces to separate live release UI from historical leftovers.
+      - Confirmed high-confidence dead surfaces including `web/src/TestApp.tsx`, orphaned pages no longer reachable from `App.tsx`, thin loader-card wrappers never referenced by the shipped UI, and tracked debug artifacts such as `web/routing-wrapper.txt`, `web/nohup.out`, and `web/public/ws-test.html`.
+      - Found one additional cleanup candidate blocked for this slice: `web/src/app/pages/LabsPage.tsx` appears orphaned, but the file already had unrelated local modifications in the dirty worktree, so it was left for a deliberate follow-up instead of being deleted blindly.
+  - ID: T847-subB
+    Status: [✓] Done
+    Title: Remove stale React GUI code, obsolete assets, and redundant abstractions
+    Description:
+    - Goal / acceptance criteria: Delete or consolidate the highest-confidence dead code and stale GUI artifacts found in T847-subA without preserving historical scaffolding that no longer serves the release product.
+    - Why it matters: The main release value comes from materially shrinking and simplifying the shipped frontend, not just documenting the problems.
+    - Dependencies: T847-subA
+    - Estimated effort: High
+    - Required outputs: Code removals, simplifications, and updated references/tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-08 20:51 EDT - Codex
+    - Completion notes:
+      - Deleted dead frontend surfaces: `web/src/TestApp.tsx`, `web/src/app/pages/AVBNetworkDashboard.tsx`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/LV2PluginsPage.tsx`, `web/src/app/pages/LibraryPage.tsx`, `web/src/app/pages/MIDIPage.tsx`, `web/src/app/pages/PlatformShellPage.tsx`, `web/src/app/pages/PlatformWorkspaceCatalogPage.tsx`, and their now-orphaned tests/CSS companions.
+      - Deleted unused loader wrappers and cards: `web/src/app/components/loaders/CabinetIRLoaderCard.tsx`, `web/src/app/components/loaders/NAMLoaderCard.tsx`, `web/src/app/components/loaders/ReverbIRLoaderCard.tsx`, `web/src/app/components/loaders/CabinetIRManagerDialog.tsx`, and `web/src/app/components/loaders/ReverbIRManagerDialog.tsx`.
+      - Simplified the live import surface so Cabinet/Reverb IR cards and asset-selector tests import directly from `web/src/app/components/loaders/IRManagerDialog.tsx`, and removed the stale platform workspace catalog prefetch/mocking path from `web/src/app/routePrefetch.ts` and `web/src/app/App.platformRoute.test.tsx`.
+      - Removed tracked debug leftovers that should not ship with the release surface: `web/routing-wrapper.txt`, `web/nohup.out`, and `web/public/ws-test.html`.
+      - Fixed straightforward lint-blocking leftovers in live code while auditing: redundant boolean casts in Maschine/Midi Hub/Tesira surfaces and the dormant legacy-layout gate in `web/src/app/pages/ThemePage.tsx`.
+  - ID: T847-subC
+    Status: [✓] Done
+    Title: Validate the cleaned React GUI and capture release-audit evidence
+    Description:
+    - Goal / acceptance criteria: Run the relevant frontend validation commands after cleanup, fix any fallout required for a passing release baseline, and record the evidence and residual risks in the worklist.
+    - Why it matters: Aggressive cleanup only helps the release if the surviving frontend is still buildable, typed, lintable, and testable.
+    - Dependencies: T847-subB
+    - Estimated effort: Medium
+    - Required outputs: Validation command results, residual-risk notes, and worklist completion state.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-08 20:51 EDT - Codex
+    - Completion notes:
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run lint` -> PASS with warnings only (`35 warnings`, `0 errors`)
+      - `npm --prefix web run build` -> PASS
+      - `CI=1 npm test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx src/app/pages/ThemePage.test.tsx` (run from `web/`) -> PASS (`3 suites, 36 tests`)
+      - Residual risks: lint still reports 35 warnings across pre-existing test style debt, a few empty blocks, `SnapshotEditorPage` / `ClusterContext` fast-refresh warnings, and a stale constant-truthiness warning in `web/src/app/pages/AudioArtifactsPage.tsx`. The dormant `ThemePage` legacy layout remains hidden behind `showLegacyThemeLayout = false` and should be deleted in a follow-up slice rather than left indefinitely.
+Assigned to: Codex
+Last updated: 2026-04-08 20:51 EDT - Codex
+- Completion notes:
+  - Landed the first aggressive frontend-release cleanup slice with high-confidence dead page, loader, and debug-artifact removals while preserving unrelated local edits already present in the worktree.
+  - The workstream remains open because the audit found additional follow-up cleanup worth doing, especially deleting the dormant `ThemePage` legacy branch for real, resolving the remaining lint warnings, and revisiting `LabsPage` after its unrelated local modifications are sorted out.

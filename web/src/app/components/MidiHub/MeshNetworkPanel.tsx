@@ -87,7 +87,7 @@ export function MeshNetworkPanel() {
       (((meshStatus.peers as Array<Record<string, unknown>> | undefined) ?? [])).map((peer) => ({
         id: String(peer.peer_id ?? 'peer'),
         peer: `${String(peer.peer_id ?? 'peer')} · ${String(peer.base_url ?? '')}`,
-        status: Boolean(peer.active) ? 'Online' : 'Disabled',
+        status: peer.active ? 'Online' : 'Disabled',
         metrics: `Forwards ${Number(peer.forward_count ?? 0)} · Last sync ${peer.last_sync_at ?? 'never'}`,
       })),
     [meshStatus.peers],

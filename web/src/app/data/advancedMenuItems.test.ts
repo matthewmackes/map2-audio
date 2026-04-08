@@ -140,12 +140,9 @@ describe('navigation catalog', () => {
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
       '/physical-surfaces',
-      '/labs/push-surface',
       '/mpx1',
       '/intelfx',
-      '/ground-control-pro',
       '/tesira',
-      '/maschine',
       '/edirol-ua1000',
       '/hotone-jogg',
     ])

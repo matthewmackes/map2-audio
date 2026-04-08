@@ -66,14 +66,6 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
   },
 }))
 
-jest.mock('./pages/PlatformWorkspaceCatalogPage', () => ({
-  PlatformWorkspaceCatalogPage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="platform-workspace-catalog-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
 jest.mock('./pages/PerformanceBrainPage', () => ({
   PerformanceBrainPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')

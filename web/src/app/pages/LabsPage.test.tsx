@@ -8,9 +8,7 @@ import { LabsPage } from './LabsPage'
 
 jest.mock('../hooks/useDeviceLocation', () => ({
   useHardwareMenuLocations: () => ({
-    locationsByRoute: {
-      '/labs/push-surface': { hostname: 'MAP2-A' },
-    },
+    locationsByRoute: {},
   }),
 }))
 
@@ -40,23 +38,23 @@ function renderPage() {
 }
 
 describe('LabsPage', () => {
-  it('renders the Labs feature-card catalog with Push Surface in the list', () => {
+  it('renders the Labs feature-card catalog without duplicate dedicated physical-surface launchers', () => {
     renderPage()
 
     expect(screen.getByText('Browse Labs as a uniform catalog of feature cards, each representing a different MAP2 page, service, or hardware workflow.')).toBeTruthy()
     expect(screen.getByText('Every Labs route now lives in one consistent card grid.')).toBeTruthy()
     expect(screen.getByRole('list', { name: 'Labs feature cards' })).toBeTruthy()
-    expect(screen.getAllByText('Push Surface').length).toBeGreaterThan(0)
-    expect(screen.getByText('Featured route')).toBeTruthy()
-    expect(screen.getByText('On MAP2-A')).toBeTruthy()
+    expect(screen.queryByText('Push Surface')).toBeNull()
+    expect(screen.queryByText('Ground Control Pro')).toBeNull()
+    expect(screen.queryByText('Maschine MK1')).toBeNull()
   })
 
   it('filters the Labs feature-card catalog using the search field', () => {
     renderPage()
 
-    fireEvent.change(screen.getByLabelText('Search Labs entries'), { target: { value: 'push surface' } })
+    fireEvent.change(screen.getByLabelText('Search Labs entries'), { target: { value: 'tesira' } })
 
-    expect(screen.getAllByText('Push Surface').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Ground Control Pro')).toBeNull()
+    expect(screen.getAllByText('Tesira AVB').length).toBeGreaterThan(0)
+    expect(screen.queryByText('IntelFX Rack')).toBeNull()
   })
 })

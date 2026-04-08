@@ -34,8 +34,7 @@
     "src/vite-env.d.ts",
     "src/app/**/*",
     "src/map2/**/*",
-    "src/ErrorBoundary.tsx",
-    "src/TestApp.tsx"
+    "src/ErrorBoundary.tsx"
   ],
   "exclude": [
     "src/map2/index.ts",

@@ -37,10 +37,9 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     bestFor: 'System setup and monitoring',
   },
   '/labs': {
-    summary: 'Standalone Labs landing page for experimental, advanced, and hardware-sensitive MAP2 workflows, including the dedicated Push Surface editor.',
+    summary: 'Standalone Labs landing page for experimental, advanced, and hardware-sensitive MAP2 workflows.',
     capabilities: [
       'Carbon-based standalone catalog of all Labs destinations',
-      'Top-level access to the dedicated Push Surface page',
       'Grouped view of experimental, advanced, and blocked workflows',
       'Searchable route list with maturity, capability, and hardware context',
       'Separation from the Platforms integrated workspace group',

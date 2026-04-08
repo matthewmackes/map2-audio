@@ -1849,6 +1849,23 @@ async def get_host_machine_info():
     try:
         import platform
         import socket
+
+        def _read_os_version() -> str:
+            """Return a human-readable host OS version."""
+            try:
+                with open("/etc/os-release", "r", encoding="utf-8") as handle:
+                    for raw_line in handle:
+                        line = raw_line.strip()
+                        if not line.startswith("PRETTY_NAME="):
+                            continue
+                        pretty_name = line.split("=", 1)[1].strip().strip('"')
+                        if pretty_name:
+                            return pretty_name
+            except OSError:
+                pass
+
+            fallback = platform.platform()
+            return fallback or "Unknown OS"
         
         async def _read_dmi(field: str) -> str:
             """Read DMI info from sysfs (no root needed) with dmidecode fallback."""
@@ -1955,6 +1972,7 @@ async def get_host_machine_info():
         # Hostname and kernel version
         hostname = socket.gethostname()
         kernel_version = platform.release()
+        os_version = _read_os_version()
         
         return {
             "manufacturer": manufacturer,
@@ -1973,6 +1991,7 @@ async def get_host_machine_info():
             "firmware_version": firmware_version.strip(),
             "hostname": hostname,
             "kernel_version": kernel_version,
+            "os_version": os_version,
         }
         
     except Exception as e:

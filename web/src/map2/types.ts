@@ -2933,6 +2933,7 @@ export interface HostMachineInfo {
   total_memory_mb: number;
   kernel_version: string;
   hostname: string;
+  os_version?: string;
 }
 
 export interface DiskInfo {

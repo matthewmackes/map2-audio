@@ -79,11 +79,8 @@ jest.mock('../../../loaders/NAMManagerDialog', () => ({
   NAMManagerDialog: ({ open }: { open: boolean }) => (open ? <div>NAM manager open</div> : null),
 }))
 
-jest.mock('../../../loaders/CabinetIRManagerDialog', () => ({
+jest.mock('../../../loaders/IRManagerDialog', () => ({
   CabinetIRManagerDialog: ({ open }: { open: boolean }) => (open ? <div>Cabinet IR manager open</div> : null),
-}))
-
-jest.mock('../../../loaders/ReverbIRManagerDialog', () => ({
   ReverbIRManagerDialog: ({ open }: { open: boolean }) => (open ? <div>Reverb IR manager open</div> : null),
 }))
 

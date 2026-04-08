@@ -4,36 +4,26 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
-import { HOME_DESKTOP_SESSION_STORAGE_KEY } from '../pages/homeDesktopSession'
 
-const mockUpdateSettings = jest.fn()
 const mockRestartBackend = jest.fn()
 const mockReloadHomeDesktopShell = jest.fn()
 const mockReturnHomeDesktopToBoot = jest.fn()
-const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {}
-const mockSpecialSettings = {
-  enabled: true,
-  hiddenPlugins: [],
-  menuLocation: 'hidden' as const,
-  pinnedRoutes: [] as string[],
-  landingTiles: [] as Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
-}
 
-jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
-
-jest.mock('../hooks/useSpecialSettings', () => ({
-  useSpecialSettings: () => ({
-    settings: mockSpecialSettings,
-    isLoading: false,
-    error: null,
-    updateSettings: mockUpdateSettings,
-    reload: jest.fn(),
+jest.mock('../hooks/useHostMachine', () => ({
+  useHostMachineInfo: () => ({
+    data: {
+      hostname: 'map2-host',
+      kernel_version: '6.9.0-rt',
+      os_version: 'Fedora Linux 42',
+    },
   }),
 }))
 
-jest.mock('../hooks/useDeviceLocation', () => ({
-  useHardwareMenuLocations: () => ({
-    locationsByRoute: mockHardwareLocationNotes,
+jest.mock('../hooks/useHomePlatformStatus', () => ({
+  useHomePlatformStatus: () => ({
+    avb: { label: 'AVB: operational', state: 'ok' },
+    avdecc: { label: 'AVDECC: 2 entities', state: 'ok' },
+    nodes: { label: 'Nodes: 1 active', state: 'ok' },
   }),
 }))
 
@@ -58,26 +48,8 @@ jest.mock('../../map2/hooks/useWebSocket', () => ({
   useWebSocketConnection: () => mockUseWebSocketConnection(),
 }))
 
-jest.mock('../../map2/mpx1Api', () => ({
-  mpx1Api: {
-    getMidiPorts: jest.fn(),
-    disconnectMidi: jest.fn(),
-  },
-  useMPX1State: () => ({
-    state: { connected: false, current_program: 0 },
-    programs: [],
-    shadow: {},
-    setProgram: jest.fn(),
-    refresh: jest.fn(),
-  }),
-}))
-
-jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
-  MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
-}))
-
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
-  NodeNavBar: () => <div data-testid="node-nav-bar" />,
+  NodeNavBar: () => <div data-testid="node-nav-bar">Nodes</div>,
 }))
 
 jest.mock('../components/PageTransition', () => ({
@@ -111,7 +83,7 @@ function LocationProbe() {
   return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
-describe('AppShell desktop taskbar shell', () => {
+describe('AppShell floating launcher shell', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
@@ -123,12 +95,10 @@ describe('AppShell desktop taskbar shell', () => {
       status: 'connected',
       client: null,
     })
-    mockUpdateSettings.mockReset()
     mockRestartBackend.mockReset()
     mockRestartBackend.mockResolvedValue({ status: 'restarting', message: 'Backend service is restarting...' })
     mockReloadHomeDesktopShell.mockReset()
     mockReturnHomeDesktopToBoot.mockReset()
-    mockSpecialSettings.pinnedRoutes = []
     window.localStorage.clear()
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -152,9 +122,6 @@ describe('AppShell desktop taskbar shell', () => {
         dispatchEvent: jest.fn(),
       }),
     })
-    for (const key of Object.keys(mockHardwareLocationNotes)) {
-      delete mockHardwareLocationNotes[key]
-    }
   })
 
   afterEach(() => {
@@ -162,7 +129,7 @@ describe('AppShell desktop taskbar shell', () => {
     jest.useRealTimers()
   })
 
-  it('renders the bottom taskbar shell on the landing route without a titlebar', () => {
+  it('renders the floating launcher on the landing route without a titlebar', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -170,14 +137,13 @@ describe('AppShell desktop taskbar shell', () => {
       ['/'],
     )
 
-    expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
-    expect(screen.getByLabelText('Open desktop menu')).toBeTruthy()
+    expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar')).toBeNull()
-    expect(container.querySelector('.window-taskbar')).toBeTruthy()
+    expect(container.querySelector('.shell-launcher')).toBeTruthy()
     expect(container.querySelector('.app-window')).toBeNull()
   })
 
-  it('renders non-landing routes inside OS/2-style window chrome', () => {
+  it('renders non-landing routes inside window chrome with the floating launcher', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -185,21 +151,10 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    expect(screen.getByLabelText('Primary navigation shell')).toBeTruthy()
-    expect(screen.getByLabelText('Open desktop menu')).toBeTruthy()
-    expect(screen.queryByLabelText(/Quick launch/i)).toBeNull()
+    expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
-    expect(container.querySelector('.window-titlebar')).toBeTruthy()
-    expect(container.querySelector('.window-titlebar__eyebrow')).toHaveTextContent('Program object')
     expect(container.querySelector('.window-titlebar__title')).toHaveTextContent('IntelFX Rack')
-    expect(container.querySelector('.window-titlebar__meta')).toHaveTextContent('intelfx')
-    expect(container.querySelector('.app-window')).toBeTruthy()
-    expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
-    expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
-    expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
-    expect(container.querySelector('.window-taskbar__status--clock')?.contains(screen.getByTestId('taskbar-clock'))).toBe(true)
+    expect(container.querySelector('.shell-launcher__button-icon')).toBeTruthy()
   })
 
   it('closes the current app window back to the desktop route', async () => {
@@ -221,7 +176,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(container.querySelector('.app-window')).toBeNull()
   })
 
-  it('starts Perform in true fullscreen and restores the taskbar on Escape', async () => {
+  it('starts Perform in true fullscreen and restores the launcher on Escape', async () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>perform content</div>
@@ -229,126 +184,40 @@ describe('AppShell desktop taskbar shell', () => {
       ['/perform'],
     )
 
-    expect(container.querySelector('.window-taskbar')).toBeNull()
+    expect(container.querySelector('.shell-launcher')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
 
     fireEvent.keyDown(window, { key: 'Escape' })
 
-    await waitFor(() => expect(container.querySelector('.window-taskbar')).toBeTruthy())
+    await waitFor(() => expect(container.querySelector('.shell-launcher')).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
   })
 
-  it('tracks running apps in the taskbar and reopens them from indicators', () => {
-    window.localStorage.setItem(
-      HOME_DESKTOP_SESSION_STORAGE_KEY,
-      JSON.stringify({
-        version: 2,
-        bootCompletedAt: '2026-04-06T17:00:00.000Z',
-        runningRoutes: ['/artifacts', '/intelfx'],
-        currentRoute: '/intelfx',
-      }),
-    )
-
+  it('shows the merged floating menu with header, system summary, and launcher tiles', () => {
     renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    expect(screen.getByRole('button', { name: 'Taskbar open Audio Artifacts' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Taskbar open Audio Artifacts' }))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
-    expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' }))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/intelfx')
-    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
-  })
-
-  it('closes the focused app when its taskbar indicator is clicked', async () => {
-    renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' }))
-
-    await act(async () => {
-      jest.advanceTimersByTime(200)
-    })
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Taskbar open IntelFX Rack' })).not.toBeInTheDocument())
-  })
-
-  it('restores previously running apps from desktop session storage', () => {
-    window.localStorage.setItem(
-      HOME_DESKTOP_SESSION_STORAGE_KEY,
-      JSON.stringify({
-        version: 2,
-        bootCompletedAt: '2026-04-06T17:00:00.000Z',
-        runningRoutes: ['/intelfx'],
-        currentRoute: '/artifacts',
-      }),
-    )
-
-    renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/artifacts'],
-    )
-
-    expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()
-  })
-
-  it('shows every catalog launcher inside the Start menu by default', () => {
-    const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
       ['/intelfx'],
     )
 
-    expect(container.querySelectorAll('.start-menu-card').length).toBe(0)
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
-    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
-
-    for (const label of ['Desktop', 'System Setup', 'Display Settings', 'Refresh Desktop', 'Power']) {
-      expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
-    }
-
-    const labels = Array.from(container.querySelectorAll('.start-menu-card__label--tile')).map((node) => node.textContent)
-    expect(labels).toEqual([
-      'Overview',
-      'Audio Artifacts',
-      'Stage Mode',
-      'Tesira AVB',
-      'Edirol UA-1000',
-      'HoTone JoGG',
-      'Ground Control Pro',
-      'IntelFX Rack',
-      'LCD Console',
-      'Maschine MK1',
-      'MPX1 Rack',
-      'Physical Surfaces',
-      'Push Surface',
-      'Home',
-    ])
-    expect(container.querySelectorAll('.start-menu-card--tile')).toHaveLength(14)
+    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
+    expect(screen.getByText('Platform 0000000000000001')).toBeInTheDocument()
+    expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
+    expect(screen.getByText('map2-host')).toBeInTheDocument()
+    expect(screen.getByTestId('node-nav-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('shell-latency-pressure-readout')).toBeInTheDocument()
+    expect(screen.getByTestId('taskbar-clock')).toBeInTheDocument()
+    expect(screen.getByText('AVB: operational')).toBeInTheDocument()
+    expect(screen.getByText('AVDECC: 2 entities')).toBeInTheDocument()
+    expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link').length).toBeGreaterThan(6)
   })
 
-  it('closes the Start menu when a static shortcut is used', () => {
+  it('routes launcher tiles as direct links', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -356,32 +225,13 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Display Settings' }))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/theme')
-    expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull()
-  })
-
-  it('routes catalog-backed Start Menu launchers as direct links', () => {
-    renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.getByRole('link', { name: /MPX1 Rack/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /HoTone JoGG/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Home/i })).toBeInTheDocument()
-
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
     fireEvent.click(screen.getByRole('link', { name: /Home/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
   })
 
-  it('opens the Power submenu and runs refresh and logout actions', () => {
+  it('opens the power menu and runs refresh and logout actions', () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -389,7 +239,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
 
     const powerMenu = screen.getByRole('menu', { name: 'Power actions' })
@@ -400,13 +250,13 @@ describe('AppShell desktop taskbar shell', () => {
     fireEvent.click(within(powerMenu).getByRole('button', { name: 'Refresh Desktop' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
   })
 
-  it('confirms backend restart from the Power submenu and shows restart progress', async () => {
+  it('confirms backend restart from the power menu and shows restart progress', async () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -414,7 +264,7 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power' }))
     fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
 
@@ -433,22 +283,7 @@ describe('AppShell desktop taskbar shell', () => {
     expect(screen.getAllByText('Restarting service').length).toBeGreaterThan(0)
   })
 
-  it('exposes routed launchers like Overview and MPX1 as direct Start Menu links', () => {
-    renderInRouter(
-      <AppShell>
-        <LocationProbe />
-      </AppShell>,
-      ['/intelfx'],
-    )
-
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.getByRole('link', { name: /MPX1 Rack/i })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('link', { name: /Overview/i }))
-
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
-  })
-
-  it('renders the reconnect banner above the taskbar when websocket state degrades', () => {
+  it('renders the reconnect banner above the floating launcher when websocket state degrades', () => {
     mockUseWebSocketConnection.mockReturnValue({
       status: 'reconnecting',
       client: null,
@@ -462,6 +297,6 @@ describe('AppShell desktop taskbar shell', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent('Connection lost - reconnecting...')
-    expect(container.querySelector('.window-taskbar')?.previousElementSibling).toHaveClass('mobile-connection-banner')
+    expect(container.querySelector('.shell-launcher')?.previousElementSibling).toHaveClass('mobile-connection-banner')
   })
 })

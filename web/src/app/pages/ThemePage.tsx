@@ -1646,10 +1646,12 @@ export function ThemePage() {
       </section>
     </>
   )
+  const showLegacyThemeLayout = false
+
   return (
     <section className="theme-page">
       {desktopThemeDialog}
-      {false ? <div className="theme-page__legacy-layout" aria-hidden="true">
+      {showLegacyThemeLayout ? <div className="theme-page__legacy-layout" aria-hidden="true">
       <header className="theme-page__hero">
         <div className="theme-page__hero-copy">
           <div className="theme-page__eyebrow">Platform appearance</div>

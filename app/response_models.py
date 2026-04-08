@@ -361,6 +361,7 @@ class HostMachineInfo(BaseModel):
     firmware_version: Optional[str] = None
     hostname: Optional[str] = None
     kernel_version: Optional[str] = None
+    os_version: Optional[str] = None
 
 
 class DiskHealthData(BaseModel):

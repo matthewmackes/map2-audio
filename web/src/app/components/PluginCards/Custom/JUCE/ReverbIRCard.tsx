@@ -11,7 +11,7 @@ import { ConvolutionCategoryLayout } from '../../Layouts/ConvolutionCategoryLayo
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
-import { ReverbIRManagerDialog } from '../../../loaders/ReverbIRManagerDialog'
+import { ReverbIRManagerDialog } from '../../../loaders/IRManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { irApi } from '../../../../../map2/api'

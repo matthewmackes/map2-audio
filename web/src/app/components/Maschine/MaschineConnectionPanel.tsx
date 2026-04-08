@@ -10,7 +10,7 @@ function daemonTagType(status: MaschineDaemonStatus | null): 'green' | 'red' | '
 
 function hidTagType(status: MaschineDaemonStatus | null): 'green' | 'red' | 'warm-gray' {
   if (!status) return 'warm-gray'
-  return Boolean(status.transport?.connected) ? 'green' : status.hid_device && Object.keys(status.hid_device).length > 0 ? 'warm-gray' : 'red'
+  return status.transport?.connected ? 'green' : status.hid_device && Object.keys(status.hid_device).length > 0 ? 'warm-gray' : 'red'
 }
 
 function alsaTagType(status: MaschineDaemonStatus | null): 'green' | 'red' | 'warm-gray' {

@@ -1,25 +1,28 @@
-import type { ComponentType, CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Button, ComposedModal, Layer, ModalBody, ModalFooter, ModalHeader, ProgressBar } from '@carbon/react'
 
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { PageTransition } from '../components/PageTransition'
-import { Map2BrandMark } from '../components/branding/map2Branding'
+import {
+  MAP2_PLATFORM_NAME,
+  MAP2_PLATFORM_VERSION,
+  Map2BrandMark,
+} from '../components/branding/map2Branding'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
+import { useHostMachineInfo } from '../hooks/useHostMachine'
+import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import {
   allPinnableNavigationItems,
   allRouteNavigationItems,
-  type NavigationMaturityState,
-  type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import {
   getLauncherCatalogMaturityLabel,
   launcherCatalogDisplayItems,
   type LauncherCatalogItem,
 } from '../data/launcherCatalog'
-import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
 import { systemApi } from '../../map2/clients/platform'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
@@ -30,30 +33,15 @@ import {
   updateHomeDesktopSession,
 } from '../pages/homeDesktopSession'
 import { prefetchAppRoute } from '../routePrefetch'
-import { buildPlatformWorkspacePath } from '../platform/routes'
-import map2Logo from '../../assets/MAP2-LOGO.png'
 import './AppShell.css'
 
-interface TopNavItem {
-  to: string
-  label: string
-  shortLabel?: string
-  icon: ComponentType<Record<string, unknown>>
-  description: string
-  color: string
-  maturity: NavigationMaturityState
-  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
-}
-
 type RestartProgressStage = 'idle' | 'stopping' | 'restarting' | 'reconnecting' | 'ready' | 'error'
-type TaskbarIndicatorItem = TopNavItem & { route: string; pinned: boolean; active: boolean; running: boolean }
 type StartMenuTileItem = Pick<
   LauncherCatalogItem,
-  'route' | 'label' | 'shortLabel' | 'icon' | 'description' | 'color' | 'category' | 'maturity'
->
+  'route' | 'label' | 'shortLabel' | 'icon' | 'description' | 'color' | 'maturity'
+> & { featured?: boolean }
 
 const APP_WINDOW_CLOSE_DURATION_MS = 180
-
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
 }
@@ -67,46 +55,13 @@ function formatShellRouteHint(pathname: string): string {
   return segments.join(' / ')
 }
 
-function toTopNavItem(item: {
-  to: string
-  label: string
-  shortLabel?: string
-  icon: ComponentType<Record<string, unknown>>
-  description: string
-  color: string
-  maturity: NavigationMaturityState
-  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
-}): TopNavItem {
-  return {
-    to: item.to,
-    label: item.label,
-    shortLabel: item.shortLabel,
-    icon: item.icon,
-    description: item.description,
-    color: item.color,
-    maturity: item.maturity,
-    kind: item.kind,
-  }
-}
-
-function findShellRouteItem(route: string): TopNavItem | null {
-  const candidate = [...allRouteNavigationItems, ...allPinnableNavigationItems]
-    .filter((item, index, items) => items.findIndex((other) => other.to === item.to) === index)
-    .filter((item) => isRouteMatch(route, item.to))
-    .sort((left, right) => right.to.length - left.to.length)[0]
-
-  return candidate ? toTopNavItem(candidate) : null
-}
-
-function findTaskbarItem(route: string): TopNavItem | null {
-  return findShellRouteItem(route)
-}
-
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const { status: websocketStatus } = useWebSocketConnection()
+  const platformStatus = useHomePlatformStatus()
+  const { data: hostInfo } = useHostMachineInfo()
   const [navOpen, setNavOpen] = useState(false)
   const [powerMenuOpen, setPowerMenuOpen] = useState(false)
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false)
@@ -122,6 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [runningRoutes, setRunningRoutes] = useState<string[]>(() => (
     readHomeDesktopSession()?.runningRoutes.filter((route) => route !== '/') ?? []
   ))
+
   const startMenuTileItems = useMemo<StartMenuTileItem[]>(
     () => launcherCatalogDisplayItems.map((item) => ({
       route: item.route,
@@ -130,13 +86,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       icon: item.icon,
       description: item.description,
       color: item.color,
-      category: item.category,
       maturity: item.maturity,
+      featured: item.route === '/platforms/overview' || item.route === '/artifacts',
     })),
     [],
   )
-  const startMenuTileColumns = startMenuTileItems.length > 12 ? 4 : 3
-  const startMenuTileRows = Math.max(1, Math.ceil(startMenuTileItems.length / startMenuTileColumns))
   const currentShellItem = useMemo(() => {
     const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
       .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
@@ -145,40 +99,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     return candidates[0] ?? null
   }, [location.pathname])
+
   const ShellWindowIcon = currentShellItem?.icon ?? Map2BrandMark
   const shellWorkspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
   const shellAccentColor = currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)'
   const shellRouteHint = formatShellRouteHint(location.pathname)
   const isDesktopRoute = location.pathname === '/'
-  const taskbarIndicators = useMemo<TaskbarIndicatorItem[]>(() => {
-    const routes = new Set<string>(runningRoutes.filter((route) => route !== '/'))
-    if (!isDesktopRoute) {
-      routes.add(location.pathname)
-    }
-
-    return Array.from(routes)
-      .map((route) => {
-        const item = findTaskbarItem(route)
-        if (!item || item.kind !== 'link') {
-          return null
-        }
-
-        return {
-          ...item,
-          route,
-          pinned: false,
-          active: isRouteMatch(location.pathname, route),
-          running: runningRoutes.includes(route) || isRouteMatch(location.pathname, route),
-        }
-      })
-      .filter((item): item is TaskbarIndicatorItem => Boolean(item))
-      .sort((left, right) => {
-        if (left.active && !right.active) return -1
-        if (!left.active && right.active) return 1
-        return left.label.localeCompare(right.label)
-      })
-  }, [isDesktopRoute, location.pathname, runningRoutes])
-
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
   const isPlatformWorkspaceRoute = location.pathname.startsWith('/platforms')
   const isIntegratedWorkspaceRoute =
@@ -204,9 +130,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     }
 
-    if (navOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeShellMenus()
+      }
+    }
+
+    if (!navOpen) {
+      return undefined
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [navOpen])
 
@@ -269,13 +207,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     setPowerMenuOpen(false)
   }
 
-  const handleStartMenuStaticAction = (to: string | null) => {
-    closeShellMenus()
-    if (to) {
-      navigate(to)
-    }
-  }
-
   const handleRefreshPage = () => {
     closeShellMenus()
     reloadHomeDesktopShell()
@@ -305,27 +236,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== routeToClose))
       navigate('/')
     }, APP_WINDOW_CLOSE_DURATION_MS)
-  }
-
-  const handleTaskbarIndicatorClick = (route: string) => {
-    closeShellMenus()
-
-    if (isRouteMatch(location.pathname, route) && route !== '/') {
-      setClosingAppRoute(route)
-      setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== route))
-      if (closeWindowTimerRef.current !== null) {
-        window.clearTimeout(closeWindowTimerRef.current)
-      }
-
-      closeWindowTimerRef.current = window.setTimeout(() => {
-        closeWindowTimerRef.current = null
-        setRunningRoutes((current) => current.filter((runningRoute) => runningRoute !== route))
-        navigate('/')
-      }, APP_WINDOW_CLOSE_DURATION_MS)
-      return
-    }
-
-    navigate(route)
   }
 
   const handleConfirmRestartBackend = async () => {
@@ -434,14 +344,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? null
     : restartProgressSteps[restartProgressIndex] ?? restartProgressSteps[0]
 
-  const startMenuStaticItems = [
-    { key: 'desktop', label: 'Desktop', to: '/' },
-    { key: 'platforms', label: 'System Setup', to: buildPlatformWorkspacePath('overview') },
-    { key: 'settings', label: 'Display Settings', to: buildPlatformWorkspacePath('theme') },
-    { key: 'refresh', label: 'Refresh Desktop', to: null },
-    { key: 'power', label: 'Power', to: null },
-  ] as const
-
   const renderStartMenuItem = (item: StartMenuTileItem) => {
     const Icon = item.icon
 
@@ -450,17 +352,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         key={`start-link-${item.route}`}
         to={item.route}
         end={item.route === '/'}
-        className={({ isActive }) => `start-menu-card start-menu-card--tile${isActive ? ' is-active' : ''}`}
+        className={({ isActive }) => `start-menu-card start-menu-card--tile${item.featured ? ' start-menu-card--featured' : ''}${isActive ? ' is-active' : ''}`}
         style={{ '--item-color': item.color } as CSSProperties}
         title={`${item.description} • ${getLauncherCatalogMaturityLabel(item.maturity)}`}
         onClick={closeShellMenus}
         onMouseEnter={() => prefetchAppRoute(item.route)}
         onFocus={() => prefetchAppRoute(item.route)}
       >
-        <span className="start-menu-card__kicker start-menu-card__kicker--tile">{item.category}</span>
         <span className="start-menu-card__icon-frame" aria-hidden="true">
           <span className="start-menu-card__icon start-menu-card__icon--tile">
-            <Icon size={20} aria-hidden />
+            <Icon size={28} aria-hidden />
           </span>
         </span>
         <span className="start-menu-card__body">
@@ -472,6 +373,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </NavLink>
     )
   }
+
+  const launcherSummaryItems = [
+    `Platform ${MAP2_PLATFORM_VERSION}`,
+    hostInfo?.os_version ?? hostInfo?.kernel_version ?? 'OS version unavailable',
+    hostInfo?.hostname ?? 'Host unavailable',
+  ]
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${showTaskbarShell ? ' app-shell--windowed' : ''}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}${location.pathname === '/' ? ' app-shell--landing' : ''}`}>
@@ -525,166 +432,106 @@ export function AppShell({ children }: { children: ReactNode }) {
       ) : null}
 
       {showTaskbarShell ? (
-        <div
-          className="window-taskbar"
-          aria-label="Primary navigation shell"
-          data-running-route-count={runningRoutes.length}
-          style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
-        >
-          <div className="window-taskbar__left">
-            <div className="window-taskbar__start-root" ref={navMenuRef}>
-              <button
-                type="button"
-                className={`window-taskbar__start-btn${navOpen ? ' is-active' : ''}`}
-                onClick={handleMenuToggle}
-                aria-label={navOpen ? 'Close desktop menu' : 'Open desktop menu'}
-                aria-haspopup="menu"
-                aria-expanded={navOpen}
-                aria-controls="start-menu-panel"
+        <div className="shell-launcher" ref={navMenuRef} style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}>
+          <div className="shell-launcher__button-wrap">
+            <button
+              type="button"
+              className={`shell-launcher__button${navOpen ? ' is-active' : ''}`}
+              onClick={handleMenuToggle}
+              aria-label={navOpen ? 'Close platform menu' : 'Open platform menu'}
+              aria-haspopup="menu"
+              aria-expanded={navOpen}
+              aria-controls="shell-launcher-panel"
+            >
+              <Map2BrandMark className="shell-launcher__button-icon" />
+            </button>
+
+            {navOpen ? (
+              <Layer
+                id="shell-launcher-panel"
+                className="shell-launcher__panel"
+                role="menu"
+                aria-label="Platform menu"
               >
-                <span className="window-taskbar__start-mark" aria-hidden="true">
-                  <Map2BrandMark className="window-taskbar__start-mark-icon" />
-                </span>
-                <span>Desktop</span>
-              </button>
-
-              {navOpen && (
-                <Layer id="start-menu-panel" className="start-menu-panel" role="menu" aria-label="Desktop menu">
-                  <div className="start-menu-panel__header">
-                    <div className="start-menu-panel__header-copy">
-                      <div className="start-menu-panel__brand-wrap">
-                        <img src={map2Logo} alt="MAP2 logo" className="start-menu-panel__brand" />
-                      </div>
-                      <strong>Desktop Menu</strong>
-                      <span>{isDesktopRoute ? 'Windows 10-style launcher layout with all available program objects.' : `Current object: ${shellWorkspaceLabel}.`}</span>
-                    </div>
-                    <div className="start-menu-panel__header-meta" aria-hidden="true">
-                      <span>{`${startMenuTileItems.length} apps`}</span>
-                      <span>{isDesktopRoute ? 'start menu' : shellRouteHint}</span>
-                    </div>
+                <div className="shell-launcher__header">
+                  <div className="shell-launcher__header-mark" aria-hidden="true">
+                    <Map2BrandMark className="shell-launcher__header-icon" />
                   </div>
-                  <div className="start-menu-panel__shell">
-                    <div className="start-menu-panel__static-column" role="group" aria-label="Desktop menu shortcuts">
-                      <div className="start-menu-panel__column-header">
-                        <p className="start-menu-panel__eyebrow">System</p>
-                        <strong>Quick actions</strong>
-                      </div>
-                      {startMenuStaticItems.map((item) => (
-                        item.key === 'power' ? (
-                          <div key={item.key} className="start-menu-panel__static-item-root">
-                            <button
-                              type="button"
-                              className={`start-menu-panel__static-item${powerMenuOpen ? ' is-active' : ''}`}
-                              onClick={() => {
-                                setPowerMenuOpen((current) => !current)
-                              }}
-                              aria-haspopup="menu"
-                              aria-expanded={powerMenuOpen}
-                              aria-controls="start-menu-power-menu"
-                            >
-                              {item.label}
-                            </button>
-                            {powerMenuOpen ? (
-                              <div id="start-menu-power-menu" className="start-menu-power-menu" role="menu" aria-label="Power actions">
-                                <button
-                                  type="button"
-                                  className="start-menu-power-menu__item"
-                                  onClick={() => {
-                                    setPowerMenuOpen(false)
-                                    setRestartConfirmOpen(true)
-                                  }}
-                                >
-                                  Restart Backend
-                                </button>
-                                <button
-                                  type="button"
-                                  className="start-menu-power-menu__item"
-                                  onClick={handleRefreshPage}
-                                >
-                                  Refresh Desktop
-                                </button>
-                                <button
-                                  type="button"
-                                  className="start-menu-power-menu__item"
-                                  onClick={handleLogOut}
-                                >
-                                  Log Out
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <button
-                            key={item.key}
-                            type="button"
-                            className="start-menu-panel__static-item"
-                            onClick={() => handleStartMenuStaticAction(item.to)}
-                          >
-                            {item.label}
-                          </button>
-                        )
-                      ))}
-                    </div>
-                    <div
-                      className="start-menu-panel__tiles-column"
-                      style={{
-                        '--start-menu-tile-columns': String(startMenuTileColumns),
-                        '--start-menu-tile-rows': String(startMenuTileRows),
-                      } as CSSProperties}
+                  <div className="shell-launcher__header-copy">
+                    <strong>{MAP2_PLATFORM_NAME}</strong>
+                    {launcherSummaryItems.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="shell-launcher__system-summary" aria-label="System summary">
+                  <div className="shell-launcher__summary-row">
+                    <NodeNavBar />
+                  </div>
+                  <div className="shell-launcher__summary-row shell-launcher__summary-row--metrics">
+                    <LatencyPressureShellReadout />
+                    <TaskbarClock />
+                  </div>
+                  <div className="shell-launcher__summary-status-list" aria-label="Platform status">
+                    <span>{platformStatus.avb.label}</span>
+                    <span>{platformStatus.avdecc.label}</span>
+                    <span>{platformStatus.nodes.label}</span>
+                  </div>
+                </div>
+
+                <div className="shell-launcher__body">
+                  <div className="shell-launcher__tile-grid">
+                    {startMenuTileItems.map((item) => renderStartMenuItem(item))}
+                  </div>
+                </div>
+
+                <div className="shell-launcher__footer">
+                  <div className="shell-launcher__power-root">
+                    <button
+                      type="button"
+                      className={`shell-launcher__power-button${powerMenuOpen ? ' is-active' : ''}`}
+                      onClick={() => {
+                        setPowerMenuOpen((current) => !current)
+                      }}
+                      aria-haspopup="menu"
+                      aria-expanded={powerMenuOpen}
+                      aria-controls="shell-launcher-power-menu"
                     >
-                      <div className="start-menu-panel__column-header">
-                        <p className="start-menu-panel__eyebrow">Programs</p>
-                        <strong>All launchers</strong>
+                      Power
+                    </button>
+                    {powerMenuOpen ? (
+                      <div id="shell-launcher-power-menu" className="start-menu-power-menu" role="menu" aria-label="Power actions">
+                        <button
+                          type="button"
+                          className="start-menu-power-menu__item"
+                          onClick={() => {
+                            setPowerMenuOpen(false)
+                            setRestartConfirmOpen(true)
+                          }}
+                        >
+                          Restart Backend
+                        </button>
+                        <button
+                          type="button"
+                          className="start-menu-power-menu__item"
+                          onClick={handleRefreshPage}
+                        >
+                          Refresh Desktop
+                        </button>
+                        <button
+                          type="button"
+                          className="start-menu-power-menu__item"
+                          onClick={handleLogOut}
+                        >
+                          Log Out
+                        </button>
                       </div>
-                      <div className="start-menu-panel__grid">
-                        {startMenuTileItems.map((item) => renderStartMenuItem(item))}
-                      </div>
-                    </div>
+                    ) : null}
                   </div>
-                </Layer>
-              )}
-            </div>
-
-            <div className="window-taskbar__indicators" aria-label="Running applications">
-              {taskbarIndicators.map((item) => {
-                const Icon = item.icon
-                const label = item.pinned
-                  ? `${item.label} pinned taskbar app`
-                  : item.active
-                    ? `Taskbar close ${item.label}`
-                    : `Taskbar open ${item.label}`
-
-                return (
-                  <button
-                    key={item.route}
-                    type="button"
-                    className={`window-taskbar__indicator${item.running ? ' is-running' : ''}${item.active ? ' is-active' : ''}${item.pinned ? ' is-pinned' : ''}`}
-                    aria-label={label}
-                    title={item.active ? `${item.label} • click to close` : item.label}
-                    onClick={() => handleTaskbarIndicatorClick(item.route)}
-                    onMouseEnter={() => prefetchAppRoute(item.route)}
-                    onFocus={() => prefetchAppRoute(item.route)}
-                  >
-                    <span className="window-taskbar__indicator-icon" aria-hidden="true">
-                      <Icon size={16} />
-                    </span>
-                    <span className="window-taskbar__indicator-text">{item.shortLabel ?? item.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="window-taskbar__right">
-            <div className="window-taskbar__status window-taskbar__status--nodes">
-              <NodeNavBar />
-            </div>
-            <div className="window-taskbar__status window-taskbar__status--latency">
-              <LatencyPressureShellReadout />
-            </div>
-            <div className="window-taskbar__status window-taskbar__status--clock">
-              <TaskbarClock />
-            </div>
+                </div>
+              </Layer>
+            ) : null}
           </div>
         </div>
       ) : null}
