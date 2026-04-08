@@ -2005,6 +2005,12 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-04-07] - State Authority Downstream Contract
+- **Section**: Gotchas & Learned Fixes (#85), Update Log
+- **Change**: Documented the final `T778` downstream contract: `snapshots.document` is the canonical persisted snapshot payload, the `snapshot_*` relational rows are compatibility projections only, `SnapshotService.to_legacy_snapshot_data()` is a compatibility adapter rather than an extension point, and future Brain restore work must keep using merged desired+committed authority projections.
+- **Reason**: The qualification and cutover work is not actually complete if later assistants can still extend the old compatibility shape or reintroduce file-first Brain restore behavior by mistake.
+- **Impact**: Future snapshot, MIDI recall, activation, and Performance Brain work should extend the dedicated State Authority services and authority-sync pipeline instead of rebuilding features on top of the compatibility tables or the legacy flow-snapshot payload.
+
 ### [2026-04-07] - PipeWire Runtime Assumption Hardening
 - **Section**: Gotchas & Learned Fixes (#84), Update Log
 - **Change**: Documented the `T793-subE` slice: the PipeWire service now derives its CLI session env from the active user, reports mutator command success truthfully, tracks observed daemon uptime correctly, and avoids repeated full-dump scans while building stream direction/pid data.

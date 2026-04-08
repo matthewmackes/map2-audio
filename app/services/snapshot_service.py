@@ -3389,6 +3389,7 @@ class SnapshotService:
         return [self._serialize_deployment(item) for item in deployments]
 
     def to_legacy_snapshot_data(self, detail: dict[str, Any]) -> dict[str, Any]:
+        """Compatibility adapter for legacy runtime/MIDI bridges, not new authority work."""
         chains = detail.get("chains", [])
         chain_map = {
             str(chain["id"]): {

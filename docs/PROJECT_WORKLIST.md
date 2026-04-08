@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, T778-subA/T778-subB/T778-subC, and T798-T808. T797-subE is blocked on current-host USB claim constraints; T778-subD remains open.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797-subA/T797-subB/T797-subC/T797-subD, and T798-T808. T797-subE remains blocked on current-host USB claim constraints.
 
 ## Performance Brain
 
@@ -1181,7 +1181,7 @@ Last updated: 2026-04-06 22:11 EDT - Codex
   - `git diff --check` -> PASS
 
 ID: T778
-Status: [>] In Progress
+Status: [✓] Done
 Title: Qualify and cut over the MAP2 State Authority with the locked phase-verification matrix
 Description:
 - Goal / acceptance criteria: Execute the verification matrix from the design doc across phases 1-6, document the fresh-start database cutover and dropped legacy tables, prove graph-doc round trips and runtime behavior end to end, and reconcile downstream open work so future Brain/snapshot tasks consume the new authority rather than rebuilding old snapshot-service assumptions.
@@ -1251,7 +1251,7 @@ Subtasks:
       - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/run_t778_state_authority_qualification.py tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
       - `git diff --check` -> PASS
   - ID: T778-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Reconcile downstream Brain and snapshot authority consumers onto the cutover contract
     Description:
     - Goal / acceptance criteria: Audit the remaining Brain/snapshot consumers that still assume the older snapshot-service authority model, update their dependency notes or implementation contracts, and leave future open work pointed at the State Authority path only.
@@ -1260,9 +1260,27 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Updated downstream dependency notes, any required follow-on tasks, and final authority-consumer reconciliation evidence.
     Assigned to: Codex
-    Last updated: 2026-04-07 19:27 EDT - Codex
+    Last updated: 2026-04-07 20:52 EDT - Codex
+    - Completion notes:
+      - Added `docs/STATE_AUTHORITY_DOWNSTREAM_CONTRACT.md` to pin the final downstream rules: `snapshots.document` is the canonical persisted snapshot payload, the `snapshot_*` relational rows are compatibility projections only, and future Brain/snapshot work must extend the dedicated State Authority services instead of the legacy flow-snapshot shape.
+      - Updated `.github/copilot-instructions.md` and `.gemini/instructions.md` so future assistants inherit the same downstream contract, including the rule that `SnapshotService.to_legacy_snapshot_data()` is a compatibility adapter only and that scoped Brain restore must continue to use merged desired+committed authority projections.
+      - Added an explicit compatibility-only docstring to `SnapshotService.to_legacy_snapshot_data()` so the remaining runtime/MIDI bridge boundary is visible in code review instead of being an unstated convention.
+    - Validation:
+      - `pytest -q tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS (`14 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py scripts/run_t778_state_authority_cutover_audit.py tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
+      - `git diff --check` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-07 20:32 EDT - Codex
+Last updated: 2026-04-07 20:52 EDT - Codex
+- Completion notes:
+  - `T778-subA` through `T778-subD` are now all closed: the executable qualification matrix exists, the current-host matrix run passed, the fresh-start cutover/table-posture proof is recorded, and downstream Brain/snapshot contract guidance now points future work at the State Authority path only.
+  - Added repo-tracked cutover/current-host/downstream contract docs plus the fresh-start audit runner so T778 can be re-verified without reconstructing the migration story from scattered code comments.
+  - Full deletion of the compatibility projection tables is intentionally documented as a future cleanup blocker, not as an unresolved ambiguity in the current State Authority qualification gate.
+- Validation:
+  - `python3 scripts/run_t778_state_authority_qualification.py --output-dir /tmp/t778-state-authority-qualification-20260407-1952` -> PASS (`overall_status=PASS`, `6/6` phases passing)
+  - `python3 scripts/run_t778_state_authority_cutover_audit.py --output-dir /tmp/t778-state-authority-cutover-20260407-2028` -> PASS (`retirement_status=blocked`; core authority tables present; compatibility projection tables classified; `snapshot_session_notes` absent)
+  - `pytest -q tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS (`14 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py scripts/run_t778_state_authority_cutover_audit.py tests/test_state_authority_snapshot_workflows.py tests/test_t778_state_authority_cutover_audit.py tests/test_t778_state_authority_qualification_runner.py` -> PASS
+  - `git diff --check` -> PASS
 
 ID: T760
 Status: [✓] Done
