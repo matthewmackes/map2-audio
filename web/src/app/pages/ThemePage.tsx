@@ -1455,12 +1455,12 @@ export function ThemePage() {
                 <PaintBrush size={20} aria-hidden />
                 <div>
                   <strong>Wallpaper source</strong>
-                  <p>Choose the default landing image, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
+                  <p>Choose the platform hero wallpaper, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
                 </div>
               </div>
               <div className="theme-page__option-list" role="radiogroup" aria-label="Desktop wallpaper source">
                 {([
-                  ['default-image', 'Landing image', 'Use the default MAP2 desktop background image.'],
+                  ['default-image', 'Platform hero', 'Use the platform hero icon over a black desktop background.'],
                   ['solid-theme', 'Theme solid color', 'Use the active Carbon theme background color as the desktop wallpaper.'],
                   ['uploaded-image', 'Uploaded image', 'Use a custom image stored locally in this browser.'],
                 ] as const).map(([id, label, description]) => {

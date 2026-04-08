@@ -81,7 +81,7 @@
   position: relative;
   min-height: calc(100vh - var(--window-taskbar-height, 2.1rem));
   overflow: hidden;
-  background: var(--cds-background, #f4f4f4);
+  background: #000;
 }
 
 .hp2-desktop__wallpaper {
@@ -97,6 +97,21 @@
   display: block;
 }
 
+.hp2-desktop__hero-wallpaper {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.hp2-desktop__hero-mark {
+  width: min(58vw, 42rem);
+  height: auto;
+  color: #fff;
+  opacity: 0.18;
+}
+
 .hp2-desktop--uploaded-image .hp2-desktop__wallpaper {
   opacity: 0.2;
   filter: grayscale(0.6) contrast(0.92) saturate(0.6);
@@ -106,9 +121,9 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-01, #ffffff) 82%, transparent) 0%, color-mix(in srgb, var(--cds-background, #f4f4f4) 96%, transparent) 100%),
-    linear-gradient(90deg, color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 30%, transparent) 1px, transparent 1px),
-    linear-gradient(0deg, color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 24%, transparent) 1px, transparent 1px);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.26) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: auto, 34px 34px, 34px 34px;
   pointer-events: none;
 }

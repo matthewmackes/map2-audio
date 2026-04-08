@@ -3,10 +3,10 @@ import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressBar } from '@carbon/react'
 import {
+  Map2BrandMark,
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
-import landingBg from '../../assets/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import './HomePage.css'
@@ -103,14 +103,19 @@ export function HomePage() {
         data-wallpaper-mode={wallpaper.mode}
         onContextMenu={openWallpaperMenu}
       >
-        {wallpaper.mode !== 'solid-theme' ? (
+        {wallpaper.mode === 'uploaded-image' ? (
           <img
-            src={wallpaper.mode === 'uploaded-image' ? wallpaper.imageDataUrl : landingBg}
+            src={wallpaper.imageDataUrl}
             alt=""
             className="hp2-desktop__wallpaper"
             data-testid="home-desktop-wallpaper-image"
             aria-hidden="true"
           />
+        ) : null}
+        {wallpaper.mode === 'default-image' ? (
+          <div className="hp2-desktop__hero-wallpaper" aria-hidden="true">
+            <Map2BrandMark className="hp2-desktop__hero-mark" />
+          </div>
         ) : null}
         <div className="hp2-desktop__underlay" aria-hidden="true" />
         {contextMenu ? (
