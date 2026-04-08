@@ -140,8 +140,27 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert created["snapshot"]["is_locked"] is True
         assert created["snapshot"]["tags"] == ["delay"]
 
+        second = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="RouteSnapshotTwo",
+                description="Second route snapshot",
+                tags=["chorus"],
+                snapshot_data={"chains": [], "channels": [], "routing": {}, "midi_map": []},
+            )
+        )
+        third = await routes.create_snapshot(
+            routes.SnapshotCreateRequest(
+                name="RouteSnapshotThree",
+                description="Third route snapshot",
+                tags=["reverb"],
+                snapshot_data={"chains": [], "channels": [], "routing": {}, "midi_map": []},
+            )
+        )
+
         listed = await routes.list_snapshots()
-        assert listed["count"] == 1
+        assert listed["count"] == 3
+        assert listed["limit"] == 100
+        assert listed["offset"] == 0
         assert listed["snapshots"][0]["name"] == "RouteSnapshot"
         assert listed["snapshots"][0]["is_locked"] is True
         assert listed["snapshots"][0]["tags"] == ["delay"]
@@ -158,6 +177,12 @@ def test_unified_snapshot_routes_and_cluster_routes(tmp_path, monkeypatch):
         assert filtered["count"] == 1
         assert filtered["snapshots"][0]["id"] == snapshot_id
         assert filtered["available_tags"] == ["delay"]
+
+        paged = await routes.list_snapshots(limit=2, offset=1)
+        assert paged["count"] == 2
+        assert paged["limit"] == 2
+        assert paged["offset"] == 1
+        assert [item["id"] for item in paged["snapshots"]] == [second["snapshot_id"], third["snapshot_id"]]
 
         fetched = await routes.get_snapshot(snapshot_id)
         assert fetched["is_locked"] is True

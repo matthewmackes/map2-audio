@@ -4,6 +4,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import threading
 import time
 import uuid
 from dataclasses import asdict
@@ -23,6 +24,8 @@ from .parser import parse_container_to_model
 from .serializer import compile_model
 from .sysex_container import GroundControlSysexContainer
 from .validator import validate_model, validate_sysex_bytes
+
+_ground_control_pro_service_lock = threading.Lock()
 
 
 class GroundControlProService:
@@ -500,5 +503,7 @@ _ground_control_pro_service: Optional[GroundControlProService] = None
 def get_ground_control_pro_service() -> GroundControlProService:
     global _ground_control_pro_service
     if _ground_control_pro_service is None:
-        _ground_control_pro_service = GroundControlProService()
+        with _ground_control_pro_service_lock:
+            if _ground_control_pro_service is None:
+                _ground_control_pro_service = GroundControlProService()
     return _ground_control_pro_service

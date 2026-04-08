@@ -389,12 +389,17 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             await service.update_snapshot(imported["id"], is_favorite=True, display_order=5)
 
             listed = await service.list_snapshots()
+            paged = await service.list_snapshots(limit=2, offset=1)
             assert len(listed) == 4
             assert [item["name"] for item in listed] == [
                 "UnifiedSnapshotV2",
                 "ImportedPlaceholderSnapshot",
                 "UnifiedSnapshot",
                 "UnifiedSnapshotcopy",
+            ]
+            assert [item["name"] for item in paged] == [
+                "ImportedPlaceholderSnapshot",
+                "UnifiedSnapshot",
             ]
             assert listed[0]["is_favorite"] is True
             assert listed[1]["is_favorite"] is True

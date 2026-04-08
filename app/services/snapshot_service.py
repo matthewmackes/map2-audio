@@ -453,17 +453,17 @@ class SnapshotService:
         include_shared_only: bool = False,
         tags: Optional[Iterable[str]] = None,
         document_type: str = "snapshot",
+        limit: Optional[int] = None,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
-        stmt = (
-            select(Snapshot)
-            .options(selectinload(Snapshot.channels), selectinload(Snapshot.chains))
+        index_stmt = (
+            select(Snapshot.id, Snapshot.tags, Snapshot.document)
             .order_by(Snapshot.is_favorite.desc(), Snapshot.display_order.asc(), Snapshot.created_at.asc())
         )
         if include_shared_only:
-            stmt = stmt.where(Snapshot.community_shared.is_(True))
+            index_stmt = index_stmt.where(Snapshot.community_shared.is_(True))
 
-        result = await self.session.execute(stmt)
-        snapshots = result.scalars().all()
+        index_rows = (await self.session.execute(index_stmt)).all()
         live_snapshot_id: int | None = None
         live_activated_at: str | None = None
         try:
@@ -488,35 +488,41 @@ class SnapshotService:
             logger.debug("Snapshot list runtime-state lookup skipped: %s", exc)
 
         normalized_document_type = str(document_type or "snapshot").strip().lower()
-        filtered_snapshots = [
-            snapshot
-            for snapshot in snapshots
-            if normalized_document_type == "all"
-            or (
-                normalized_document_type == "template"
-                and self._snapshot_document_type(snapshot) == "template"
-            )
-            or (
-                normalized_document_type != "template"
-                and self._snapshot_document_type(snapshot) != "template"
-            )
-        ]
+        tag_set = {str(tag).strip().lower() for tag in (tags or []) if str(tag).strip()}
+        filtered_snapshot_ids: list[int] = []
+        for snapshot_id, snapshot_tags, snapshot_document in index_rows:
+            snapshot_type = self._snapshot_document_type_from_document(snapshot_document)
+            if normalized_document_type == "template" and snapshot_type != "template":
+                continue
+            if normalized_document_type not in {"all", "template"} and snapshot_type == "template":
+                continue
+            normalized_tags = {str(tag).strip().lower() for tag in (snapshot_tags or []) if str(tag).strip()}
+            if tag_set and not tag_set.issubset(normalized_tags):
+                continue
+            filtered_snapshot_ids.append(int(snapshot_id))
 
-        summaries = [
+        bounded_offset = max(0, int(offset or 0))
+        paged_snapshot_ids = filtered_snapshot_ids[bounded_offset:]
+        if limit is not None:
+            paged_snapshot_ids = paged_snapshot_ids[: max(0, int(limit))]
+        if not paged_snapshot_ids:
+            return []
+
+        snapshot_stmt = (
+            select(Snapshot)
+            .options(selectinload(Snapshot.channels), selectinload(Snapshot.chains))
+            .where(Snapshot.id.in_(paged_snapshot_ids))
+        )
+        snapshots = (await self.session.execute(snapshot_stmt)).scalars().all()
+        snapshots_by_id = {int(snapshot.id): snapshot for snapshot in snapshots}
+        ordered_snapshots = [snapshots_by_id[snapshot_id] for snapshot_id in paged_snapshot_ids if snapshot_id in snapshots_by_id]
+        return [
             self._serialize_snapshot_summary(
                 snapshot,
                 live_snapshot_id=live_snapshot_id,
                 live_activated_at=live_activated_at,
             )
-            for snapshot in filtered_snapshots
-        ]
-        tag_set = {str(tag).strip().lower() for tag in (tags or []) if str(tag).strip()}
-        if not tag_set:
-            return summaries
-        return [
-            summary
-            for summary in summaries
-            if tag_set.issubset({tag.lower() for tag in summary.get("tags", [])})
+            for snapshot in ordered_snapshots
         ]
 
     async def list_templates(
@@ -524,12 +530,40 @@ class SnapshotService:
         *,
         include_shared_only: bool = False,
         tags: Optional[Iterable[str]] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         return await self.list_snapshots(
             include_shared_only=include_shared_only,
             tags=tags,
             document_type="template",
+            limit=limit,
+            offset=offset,
         )
+
+    async def list_snapshot_tags(
+        self,
+        *,
+        include_shared_only: bool = False,
+        document_type: str = "snapshot",
+    ) -> list[str]:
+        stmt = select(Snapshot.tags, Snapshot.document)
+        if include_shared_only:
+            stmt = stmt.where(Snapshot.community_shared.is_(True))
+        rows = (await self.session.execute(stmt)).all()
+        normalized_document_type = str(document_type or "snapshot").strip().lower()
+        available_tags: set[str] = set()
+        for snapshot_tags, snapshot_document in rows:
+            snapshot_type = self._snapshot_document_type_from_document(snapshot_document)
+            if normalized_document_type == "template" and snapshot_type != "template":
+                continue
+            if normalized_document_type not in {"all", "template"} and snapshot_type == "template":
+                continue
+            for tag in snapshot_tags or []:
+                normalized_tag = str(tag).strip()
+                if normalized_tag:
+                    available_tags.add(normalized_tag)
+        return sorted(available_tags)
 
     @staticmethod
     def _extract_preload_state(runtime_metrics: Any) -> dict[str, Any]:
@@ -3503,6 +3537,11 @@ class SnapshotService:
     @staticmethod
     def _snapshot_document_type(snapshot: Snapshot) -> str:
         document = snapshot.document if isinstance(snapshot.document, dict) else {}
+        return SnapshotService._snapshot_document_type_from_document(document)
+
+    @staticmethod
+    def _snapshot_document_type_from_document(document: Any) -> str:
+        document = document if isinstance(document, dict) else {}
         meta = document.get("meta") if isinstance(document.get("meta"), dict) else {}
         document_type = str(meta.get("type") or "snapshot").strip().lower()
         return "template" if document_type == "template" else "snapshot"

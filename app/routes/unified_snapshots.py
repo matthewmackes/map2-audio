@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["snapshots"])
 
 
+def _normalize_pagination_value(value: Any, default: int) -> int:
+    return value if isinstance(value, int) else default
+
+
 class SnapshotPluginInput(BaseModel):
     uri: str
     name: Optional[str] = None
@@ -356,25 +360,25 @@ async def _proxy_runtime_read(node_id: str, path: str, *, params: Optional[dict[
 
 
 @router.get("/api/snapshots")
-async def list_snapshots(tags: Optional[str] = Query(default=None)) -> dict[str, Any]:
+async def list_snapshots(
+    tags: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
     try:
+        limit = _normalize_pagination_value(limit, 100)
+        offset = _normalize_pagination_value(offset, 0)
         tags_value = _normalize_optional_query_string(tags)
         tag_list = [item.strip() for item in str(tags_value or "").split(",") if item.strip()]
         async with get_session() as session:
             service = SnapshotService(session)
-            all_snapshots = await service.list_snapshots()
-            snapshots = all_snapshots if not tag_list else await service.list_snapshots(tags=tag_list)
-            available_tags = sorted(
-                {
-                    str(tag).strip()
-                    for snapshot in all_snapshots
-                    for tag in snapshot.get("tags", [])
-                    if str(tag).strip()
-                }
-            )
+            snapshots = await service.list_snapshots(tags=tag_list, limit=limit, offset=offset)
+            available_tags = await service.list_snapshot_tags()
             return {
                 "snapshots": snapshots,
                 "count": len(snapshots),
+                "limit": limit,
+                "offset": offset,
                 "available_tags": available_tags,
             }
     except Exception as exc:
@@ -399,16 +403,24 @@ async def get_live_snapshot() -> dict[str, Any]:
 
 
 @router.get("/api/templates")
-async def list_templates(tags: Optional[str] = Query(default=None)) -> dict[str, Any]:
+async def list_templates(
+    tags: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
     try:
+        limit = _normalize_pagination_value(limit, 100)
+        offset = _normalize_pagination_value(offset, 0)
         tags_value = _normalize_optional_query_string(tags)
         tag_list = [item.strip() for item in str(tags_value or "").split(",") if item.strip()]
         async with get_session() as session:
             service = SnapshotService(session)
-            templates = await service.list_templates(tags=tag_list)
+            templates = await service.list_templates(tags=tag_list, limit=limit, offset=offset)
             return {
                 "templates": templates,
                 "count": len(templates),
+                "limit": limit,
+                "offset": offset,
             }
     except Exception as exc:
         logger.error("Error listing templates: %s", exc)

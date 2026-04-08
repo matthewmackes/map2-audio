@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 
 from app.services.midi_hub.hub import MidiHub
+from app.services.midi_hub.ports import MidiMessage
 from app.services.push_surface import manager as push_surface_manager_module
-from app.services.push_surface.manager import PushSurfaceManager
+from app.services.push_surface.manager import PushSurfaceManager, _PUSH_SURFACE_INPUT_QUEUE_MAX
 from app.services.push_surface.map2_bridge import MockMap2SurfaceBridge
 from app.services.push_surface.simulator import PushSurfaceSimulator
 
@@ -159,3 +160,24 @@ async def test_scan_devices_keeps_discovery_state_out_of_persisted_config(monkey
     assert save_calls == 0
 
     hub.stop()
+
+
+def test_manager_bounds_input_queue_and_drops_oldest_messages():
+    hub = MidiHub(auto_discover_alsa=False, poll_interval_s=0.001, hotplug_interval_s=0.25)
+    bridge = MockMap2SurfaceBridge()
+    manager = PushSurfaceManager(hub=hub, bridge=bridge)
+
+    for index in range(_PUSH_SURFACE_INPUT_QUEUE_MAX + 7):
+        manager._enqueue_midi_message(
+            MidiMessage(
+                data=bytes([index % 256]),
+                timestamp_ns=index,
+                source_port="push-input",
+            )
+        )
+
+    assert manager._input_queue.qsize() == _PUSH_SURFACE_INPUT_QUEUE_MAX
+    assert manager.dropped_midi_messages == 7
+
+    first_buffered = manager._input_queue.get_nowait()
+    assert first_buffered.timestamp_ns == 7

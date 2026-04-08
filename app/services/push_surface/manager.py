@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import re
+import threading
 from time import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -26,6 +27,9 @@ from app.services.push_surface.page_controller import PushPageController, Surfac
 from app.services.push_surface.welcome_runtime import build_render_frame_from_welcome_step
 
 logger = logging.getLogger(__name__)
+
+_PUSH_SURFACE_INPUT_QUEUE_MAX = 1024
+_push_surface_manager_lock = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -69,7 +73,7 @@ class PushSurfaceManager:
 
         self._running = False
         self._loop: asyncio.AbstractEventLoop | None = None
-        self._input_queue: asyncio.Queue[MidiMessage] = asyncio.Queue()
+        self._input_queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=_PUSH_SURFACE_INPUT_QUEUE_MAX)
         self._midi_task: asyncio.Task[None] | None = None
         self._hotplug_task: asyncio.Task[None] | None = None
         self._bridge_task: asyncio.Task[None] | None = None
@@ -82,6 +86,7 @@ class PushSurfaceManager:
         self._subscriber_id = "push_surface_manager"
         self.reconnect_count = 0
         self.unknown_messages = 0
+        self.dropped_midi_messages = 0
         self._last_capability_dump: dict[str, Any] | None = None
         self._last_diagnostics_export: str | None = None
         self._discovery_state: dict[str, Any] = self._empty_discovery_state()
@@ -676,9 +681,34 @@ class PushSurfaceManager:
             return
 
         def _enqueue() -> None:
-            self._input_queue.put_nowait(message)
+            self._enqueue_midi_message(message)
 
         self._loop.call_soon_threadsafe(_enqueue)
+
+    def _enqueue_midi_message(self, message: MidiMessage) -> None:
+        try:
+            self._input_queue.put_nowait(message)
+            return
+        except asyncio.QueueFull:
+            pass
+
+        dropped_existing = False
+        try:
+            self._input_queue.get_nowait()
+            dropped_existing = True
+        except asyncio.QueueEmpty:
+            pass
+
+        try:
+            self._input_queue.put_nowait(message)
+        except asyncio.QueueFull:
+            self.dropped_midi_messages += 1
+            logger.debug("Push surface MIDI queue remained full; dropping newest message")
+            return
+
+        self.dropped_midi_messages += 1
+        if dropped_existing:
+            logger.debug("Push surface MIDI queue full; dropped oldest pending message")
 
     def _resolve_device(self, ports: list[MidiPortInfo]) -> DiscoveredPushDevice | None:
         inputs = [port for port in ports if port.direction in {"input", "duplex"}]
@@ -775,6 +805,7 @@ class PushSurfaceManager:
             "dropped_renders": self.renderer.metrics.dropped_renders if self.renderer is not None else 0,
             "reconnect_count": self.reconnect_count,
             "unknown_messages": self.unknown_messages,
+            "dropped_midi_messages": self.dropped_midi_messages,
             "protocol_errors": self.renderer.metrics.protocol_errors if self.renderer is not None else 0,
             "bridge": bridge_health,
             "last_capability_dump": self._last_capability_dump,
@@ -791,5 +822,7 @@ def get_push_surface_manager() -> PushSurfaceManager:
 
     global _push_surface_manager
     if _push_surface_manager is None:
-        _push_surface_manager = PushSurfaceManager()
+        with _push_surface_manager_lock:
+            if _push_surface_manager is None:
+                _push_surface_manager = PushSurfaceManager()
     return _push_surface_manager

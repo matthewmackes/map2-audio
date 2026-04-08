@@ -2,6 +2,8 @@ import json
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.background import BackgroundTask
+from starlette.responses import StreamingResponse
 
 import app.routes.dev_proxy as dev_proxy_route
 import app.services.api_observatory as observatory_service_module
@@ -171,6 +173,48 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
     assert stats.status_code == 200
     stats_payload = stats.json()
     assert stats_payload["total_requests"] >= 1
+
+
+def test_traffic_capture_skips_streaming_body_and_preserves_background(monkeypatch):
+    monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache", None)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache_at", 0.0)
+    monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_run_cache", {})
+
+    background_events: list[str] = []
+
+    async def _stream():
+        yield b"chunk-1"
+        yield b"chunk-2"
+
+    def _background() -> None:
+        background_events.append("completed")
+
+    app = FastAPI()
+    app.add_middleware(TrafficCaptureMiddleware, enabled=True)
+
+    @app.get("/api/stream-error")
+    async def _stream_error():
+        return StreamingResponse(
+            _stream(),
+            status_code=500,
+            media_type="text/plain",
+            background=BackgroundTask(_background),
+        )
+
+    app.include_router(api_observatory.router)
+
+    client = TestClient(app)
+    response = client.get("/api/stream-error")
+
+    assert response.status_code == 500
+    assert response.text == "chunk-1chunk-2"
+    assert background_events == ["completed"]
+
+    traffic = client.get("/api/observatory/traffic")
+    stream_event = next(event for event in traffic.json()["events"] if event["path"] == "/api/stream-error")
+    assert stream_event["meta"]["streaming_response"] is True
+    assert stream_event["meta"]["res_body"] is None
 
 
 def test_websocket_events_are_captured_with_run_id(monkeypatch):

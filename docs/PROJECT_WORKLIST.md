@@ -19391,7 +19391,7 @@ Last updated: 2026-04-09 00:20 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/cluster_proxy.py app/main.py tests/test_cluster_proxy_middleware.py tests/test_backend_audit_network_lifecycle.py tests/test_backend_audit_middleware.py` -> PASS
 
 ID: T843
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix Push surface unbounded MIDI queue and GCP session persistence
 Description:
 - Goal / acceptance criteria: Bounded `_input_queue` with overflow. GCP sessions persist to disk for crash recovery.
@@ -19400,11 +19400,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Bounded queue, session persistence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 01:19 EDT - Codex
+- Completion notes:
+  - Bounded `PushSurfaceManager._input_queue` to 1024 events in `app/services/push_surface/manager.py` and switched overflow handling to drop the oldest pending MIDI message before accepting the newest one, preventing unbounded growth during controller floods.
+  - Added `dropped_midi_messages` health reporting so queue pressure is visible in the Push surface health payload instead of silently degrading input behavior.
+  - Verified that Ground Control Pro restart-safe session persistence was already present in `app/services/ground_control_pro/service.py` and preserved it with focused restart/session tests while also hardening the singleton getter with a thread-safe lock to avoid duplicate service construction during concurrent access.
+- Validation:
+  - `pytest -q tests/push_surface/test_manager.py tests/test_ground_control_pro_restart.py tests/test_ground_control_pro_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/manager.py app/services/ground_control_pro/service.py tests/push_surface/test_manager.py` -> PASS
 
 ID: T844
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix snapshot list pagination and traffic capture streaming handling
 Description:
 - Goal / acceptance criteria: `list_snapshots` with `limit`/`offset`. Traffic capture skips streaming bodies and preserves `response.background`.
@@ -19413,8 +19420,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Paginated query, streaming bypass, background preservation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 01:19 EDT - Codex
+- Completion notes:
+  - Added `limit` / `offset` pagination to `app/routes/unified_snapshots.py` and `app/services/snapshot_service.py`, with the service now building a lightweight ordered snapshot index first and only loading full relationship graphs for the requested page instead of eagerly hydrating every snapshot row.
+  - Added `list_snapshot_tags()` so snapshot list routes can return available tags without materializing full snapshot/channel/chain payloads for the whole table.
+  - Updated `app/middleware/traffic_capture.py` to treat streaming responses as pass-through for body capture while preserving `response.background`, avoiding the old behavior that consumed stream iterators and dropped post-response background tasks.
+- Validation:
+  - `pytest -q tests/test_api_observatory.py::test_traffic_capture_middleware_and_routes tests/test_api_observatory.py::test_traffic_capture_skips_streaming_body_and_preserves_background tests/test_snapshot_routes.py::test_unified_snapshot_routes_and_cluster_routes tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/traffic_capture.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_api_observatory.py tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
 
 ID: T845
 Status: [ ] Todo
@@ -19427,10 +19441,10 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-09 01:19 EDT - Codex
 
 ID: T846
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Unify singleton factories across all backend modules
 Description:
 - Goal / acceptance criteria: All singleton factories use consistent thread-safe pattern. No bare `if _instance is None` patterns.
@@ -19439,8 +19453,11 @@ Description:
 - Estimated effort: Low
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 01:19 EDT - Codex
+- Progress notes:
+  - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
+  - Broader backend singleton sweep is still pending; bare factory patterns remain in other modules and need a dedicated follow-up pass before this task can close.
 
 ID: T847
 Status: [>] In Progress
@@ -19462,8 +19479,11 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Candidate list, impact assessment, and prioritized cleanup targets.
     Subtasks: None
-    Assigned to: Codex
-    Last updated: 2026-04-08 20:51 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-09 01:19 EDT - Codex
+- Progress notes:
+  - Removed the orphaned Labs surface (`web/src/app/pages/LabsPage.tsx`, its CSS, and its test) after confirming it was no longer referenced by the live route tree or prefetch surface.
+  - Route-level frontend smoke coverage still passes after the deletion (`src/app/App.platformRoute.test.tsx`, `src/app/pages/ThemePage.test.tsx`).
     - Completion notes:
       - Audited router reachability, lazy imports, route prefetches, loader wrappers, tracked public/debug artifacts, and page/component reference surfaces to separate live release UI from historical leftovers.
       - Confirmed high-confidence dead surfaces including `web/src/TestApp.tsx`, orphaned pages no longer reachable from `App.tsx`, thin loader-card wrappers never referenced by the shipped UI, and tracked debug artifacts such as `web/routing-wrapper.txt`, `web/nohup.out`, and `web/public/ws-test.html`.

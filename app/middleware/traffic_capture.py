@@ -10,6 +10,7 @@ from typing import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import StreamingResponse
 from starlette.types import ASGIApp
 
 from app.services.api_observatory import get_api_observatory_service
@@ -216,13 +217,15 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
 
         duration_ms = (time.perf_counter() - started) * 1000.0
         response_size = int(response.headers.get("content-length") or 0)
+        response_type_name = type(response).__name__
+        is_streaming_response = isinstance(response, StreamingResponse) or response_type_name == "_StreamingResponse"
 
         # Mirroring every successful body back through middleware is expensive under load.
         # Keep the hot path cheap unless an operator explicitly enabled recording or the
         # response is already an error we need to inspect.
         res_body_snippet: str | None = None
         capture_response_body = observatory_recording or response.status_code >= 400
-        if capture_response_body:
+        if capture_response_body and not is_streaming_response:
             with contextlib.suppress(Exception):
                 body_chunks: list[bytes] = []
                 async for chunk in response.body_iterator:  # type: ignore[attr-defined]
@@ -238,6 +241,7 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     status_code=response.status_code,
                     headers=dict(response.headers),
                     media_type=response.media_type,
+                    background=response.background,
                 )
 
         dependency_snapshot = (
@@ -266,6 +270,7 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     "query": dict(request.query_params),
                     "req_body": req_body_snippet,
                     "res_body": res_body_snippet,
+                    "streaming_response": is_streaming_response,
                     "dependency_snapshot": dependency_snapshot,
                 },
             }
