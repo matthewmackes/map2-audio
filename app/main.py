@@ -725,6 +725,8 @@ async def lifespan(app):
         await safe_stop_service(logger, "Parameter routing", disconnect_parameter_routing)
         await safe_stop_service(logger, "Real-time parameter bridge", rt_parameter_bridge.stop)
         await safe_stop_service(logger, "Metrics daemon", stop_metrics_daemon)
+        from app.middleware.cluster_proxy import close_all_cluster_proxy_clients
+        await safe_stop_service(logger, "Cluster proxy clients", close_all_cluster_proxy_clients)
         await safe_stop_service(logger, "Orchestrator services", orchestrator.stop_all)
         await safe_stop_service(logger, "Database checkpoint", checkpoint_database)
         pool_manager = get_pool_manager()

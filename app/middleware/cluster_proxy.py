@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+import weakref
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import httpx
@@ -34,6 +35,7 @@ PROXY_EXCLUDE_PREFIXES: Tuple[str, ...] = (
     "/api/websocket",
     "/ws",
 )
+_ACTIVE_CLUSTER_PROXIES: "weakref.WeakSet[ClusterProxyMiddleware]" = weakref.WeakSet()
 
 
 def _strip_node_param(params: Iterable[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -69,6 +71,8 @@ class ClusterProxyMiddleware:
         self.local_node_id: str = get_enhanced_node_identity().get_node_id()
         self.clients: Dict[str, _NodeClient] = {}
         self.metrics: Dict[str, Dict[str, float]] = {}
+        self._client_lock = asyncio.Lock()
+        _ACTIVE_CLUSTER_PROXIES.add(self)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if not self.enabled or scope["type"] != "http":
@@ -126,7 +130,7 @@ class ClusterProxyMiddleware:
             return Response(content=f"Node {node_id} not found or offline", status_code=404)
 
         client = await self._get_client(node)
-        headers = dict(request.headers)
+        headers = self._build_forward_headers(request)
         headers["X-MAP2-Proxy-Origin"] = self.local_node_id
         headers["X-Request-ID"] = (
             getattr(request.state, "request_id", None)
@@ -164,7 +168,7 @@ class ClusterProxyMiddleware:
             )
             self.clients[self.local_node_id] = client
 
-        headers = dict(request.headers)
+        headers = self._build_forward_headers(request)
         headers["X-MAP2-Proxy-Origin"] = self.local_node_id
         headers["X-Request-ID"] = (
             getattr(request.state, "request_id", None)
@@ -234,12 +238,19 @@ class ClusterProxyMiddleware:
         return next((n for n in self.discovery.get_discovered_nodes(online_only=True) if n.node_id == node_id), None)
 
     async def _get_client(self, node: MDNSNode) -> _NodeClient:
-        if node.node_id in self.clients:
-            return self.clients[node.node_id]
-        base_url = f"http://{(node.addresses[0] if node.addresses else '127.0.0.1')}:{node.port}"
-        client = _NodeClient(node.node_id, base_url, self.timeout_s, self.max_conn)
-        self.clients[node.node_id] = client
-        return client
+        existing = self.clients.get(node.node_id)
+        if existing is not None:
+            return existing
+
+        async with self._client_lock:
+            existing = self.clients.get(node.node_id)
+            if existing is not None:
+                return existing
+
+            base_url = f"http://{(node.addresses[0] if node.addresses else '127.0.0.1')}:{node.port}"
+            client = _NodeClient(node.node_id, base_url, self.timeout_s, self.max_conn)
+            self.clients[node.node_id] = client
+            return client
 
     async def aclose(self) -> None:
         clients = list(self.clients.values())
@@ -248,14 +259,27 @@ class ClusterProxyMiddleware:
             await asyncio.gather(*(client.aclose() for client in clients), return_exceptions=True)
 
     def _record_metric(self, node_id: str, success: bool, latency_ms: float):
-        metrics = self.metrics.setdefault(node_id, {"count": 0, "errors": 0, "p50_ms": latency_ms})
-        metrics["count"] += 1
+        metrics = self.metrics.setdefault(node_id, {"request_count": 0, "errors": 0, "p50_ms": latency_ms})
+        metrics["request_count"] += 1
         if not success:
             metrics["errors"] += 1
         metrics["p50_ms"] = (metrics["p50_ms"] + latency_ms) / 2.0
+
+    @staticmethod
+    def _build_forward_headers(request: Request) -> Dict[str, str]:
+        headers = dict(request.headers)
+        headers.pop("host", None)
+        return headers
 
     @staticmethod
     def _json_dump(payload: object) -> str:
         import json
 
         return json.dumps(payload, default=str)
+
+
+async def close_all_cluster_proxy_clients() -> None:
+    proxies = list(_ACTIVE_CLUSTER_PROXIES)
+    if not proxies:
+        return
+    await asyncio.gather(*(proxy.aclose() for proxy in proxies), return_exceptions=True)

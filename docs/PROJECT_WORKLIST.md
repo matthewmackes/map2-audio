@@ -19371,7 +19371,7 @@ Last updated: 2026-04-09 00:03 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/routes/www.py tests/test_backend_audit_middleware.py` -> PASS
 
 ID: T842
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix cluster proxy client lifecycle, Host header, and metric accuracy
 Description:
 - Goal / acceptance criteria: Locked client creation. Shutdown cleanup. Stripped Host header. Correct metric.
@@ -19380,8 +19380,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Locked creation, cleanup, correct header, accurate metric.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 00:20 EDT - Codex
+- Completion notes:
+  - Added locked double-checked client creation in `app/middleware/cluster_proxy.py`, so concurrent requests targeting the same remote node now reuse one `_NodeClient` instead of racing duplicate `httpx.AsyncClient` construction.
+  - Added explicit cluster-proxy lifecycle cleanup via `close_all_cluster_proxy_clients()` and wired it into `app/main.py` shutdown, which closes cached remote clients instead of leaving them alive until process exit.
+  - Stripped the forwarded `Host` header from proxied requests and renamed the middleware metric counter to `request_count`, matching what the metric actually records.
+- Validation:
+  - `pytest -q tests/test_cluster_proxy_middleware.py tests/test_backend_audit_network_lifecycle.py tests/test_backend_audit_middleware.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/cluster_proxy.py app/main.py tests/test_cluster_proxy_middleware.py tests/test_backend_audit_network_lifecycle.py tests/test_backend_audit_middleware.py` -> PASS
 
 ID: T843
 Status: [ ] Todo

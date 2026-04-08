@@ -5,7 +5,8 @@ import httpx
 from starlette.requests import Request
 from starlette.responses import Response
 
-from app.middleware.cluster_proxy import ClusterProxyMiddleware
+import app.middleware.cluster_proxy as cluster_proxy_module
+from app.middleware.cluster_proxy import ClusterProxyMiddleware, close_all_cluster_proxy_clients
 
 
 class _FakeNode:
@@ -159,7 +160,7 @@ def test_proxy_single_strips_node_id_and_adds_proxy_headers(monkeypatch):
     request = _make_request(
         "/api/audio/status",
         query_string=b"node_id=remote-node&detail=full",
-        headers=[(b"x-extra", b"1")],
+        headers=[(b"host", b"map2.local"), (b"x-extra", b"1")],
     )
     response = asyncio.run(
         middleware._proxy_single(
@@ -177,6 +178,7 @@ def test_proxy_single_strips_node_id_and_adds_proxy_headers(monkeypatch):
     assert recorded["body"] == b'{"payload":true}'
     assert recorded["headers"]["X-MAP2-Proxy-Origin"] == "local-node"
     assert recorded["headers"]["x-extra"] == "1"
+    assert "host" not in recorded["headers"]
     assert response.headers["X-MAP2-Proxy-Source"] == "remote-node"
     assert response.body.decode("utf-8") == '{"ok":true}'
 
@@ -195,6 +197,68 @@ def test_get_client_reuses_cached_client():
         await client_a.aclose()
 
     asyncio.run(_run())
+
+
+def test_get_client_serializes_concurrent_creation(monkeypatch):
+    created: list[object] = []
+
+    class _FakeClient:
+        def __init__(self, node_id: str, base_url: str, timeout_s: float, max_connections: int) -> None:
+            created.append((node_id, base_url, timeout_s, max_connections))
+            self.node_id = node_id
+            self.base_url = base_url
+
+        async def aclose(self):
+            return None
+
+    monkeypatch.setattr(cluster_proxy_module, "_NodeClient", _FakeClient)
+
+    async def _run():
+        middleware = ClusterProxyMiddleware(lambda scope, receive, send: None)
+        node = _FakeNode("remote-node", host="10.2.3.4", port=8181)
+
+        client_a, client_b = await asyncio.gather(
+            middleware._get_client(node),
+            middleware._get_client(node),
+        )
+
+        assert client_a is client_b
+        assert len(created) == 1
+        await middleware.aclose()
+
+    asyncio.run(_run())
+
+
+def test_record_metric_tracks_request_count():
+    middleware = ClusterProxyMiddleware(lambda scope, receive, send: None)
+
+    middleware._record_metric("node-a", success=True, latency_ms=12.0)
+    middleware._record_metric("node-a", success=False, latency_ms=18.0)
+
+    assert middleware.metrics["node-a"]["request_count"] == 2
+    assert middleware.metrics["node-a"]["errors"] == 1
+    assert middleware.metrics["node-a"]["p50_ms"] == 15.0
+
+
+def test_close_all_cluster_proxy_clients_closes_registered_instances():
+    class _Client:
+        def __init__(self):
+            self.closed = False
+
+        async def aclose(self):
+            self.closed = True
+
+    middleware_a = ClusterProxyMiddleware(lambda scope, receive, send: None)
+    middleware_b = ClusterProxyMiddleware(lambda scope, receive, send: None)
+    client_a = _Client()
+    client_b = _Client()
+    middleware_a.clients = {"a": client_a}  # type: ignore[assignment]
+    middleware_b.clients = {"b": client_b}  # type: ignore[assignment]
+
+    asyncio.run(close_all_cluster_proxy_clients())
+
+    assert client_a.closed is True
+    assert client_b.closed is True
 
 
 def test_fanout_marks_failed_nodes_as_502_and_uses_multi_status(monkeypatch):
