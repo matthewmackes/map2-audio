@@ -18,7 +18,7 @@ import logging
 import psutil
 import asyncio
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import deque
 from dataclasses import dataclass, field
 import json
@@ -105,7 +105,7 @@ class MetricsCollector:
         self.latency_history: deque = deque(maxlen=max_history)
         self.audio_samples_processed = 0
         self.buffer_underruns = 0
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(timezone.utc)
         self.is_collecting = False
         
         # Plugin tracking
@@ -187,7 +187,7 @@ class MetricsCollector:
             process_cpu = process.cpu_percent(interval=0.001)
 
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "cpu_percent": cpu_percent,
                 "memory_percent": memory_percent,
                 "memory_mb": memory_used_mb,
@@ -197,7 +197,7 @@ class MetricsCollector:
                 "process_cpu_percent": process_cpu,
                 "process_memory_mb": process_memory,
                 "audio_samples": self.audio_samples_processed,
-                "uptime_seconds": (datetime.utcnow() - self.start_time).total_seconds(),
+                "uptime_seconds": (datetime.now(timezone.utc) - self.start_time).total_seconds(),
                 "audio_xruns": 0,  # Updated from JACK when available
                 "audio_latency_ms": 0.0,  # Updated from JACK when available
             }
@@ -346,7 +346,7 @@ class MetricsCollector:
             latency_ms: Latency in milliseconds
         """
         self.latency_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "value": latency_ms
         })
         
@@ -395,7 +395,7 @@ class MetricsCollector:
             stats.call_count += 1
             stats.avg_latency_ms = stats.total_cpu_ms / stats.call_count
             stats.max_latency_ms = max(stats.max_latency_ms, duration_ms)
-            stats.last_call_time = datetime.utcnow()
+            stats.last_call_time = datetime.now(timezone.utc)
     
     def get_plugin_stats(self, plugin_id: Optional[str] = None) -> Dict[str, Any]:
         """Get plugin performance statistics.
@@ -449,7 +449,7 @@ class MetricsCollector:
         Returns:
             Historical snapshots with statistics
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         cutoff = now - timedelta(seconds=duration_seconds)
         cutoff_str = cutoff.isoformat()
         
@@ -559,7 +559,7 @@ class MetricsCollector:
                 "disk_percent": disk.percent,
                 "process_cpu_percent": process.cpu_percent(interval=None),
                 "audio_samples": self.audio_samples_processed,
-                "uptime_seconds": (datetime.utcnow() - self.start_time).total_seconds(),
+                "uptime_seconds": (datetime.now(timezone.utc) - self.start_time).total_seconds(),
                 "audio_xruns": 0,  # Placeholder - actual xrun count from JACK
                 "audio_latency_ms": 0.0,  # Placeholder - actual latency from JACK
                 **self.get_output_safety_settings(),
@@ -605,7 +605,7 @@ class MetricsCollector:
                 }
 
             return {
-                "uptime_seconds": (datetime.utcnow() - self.start_time).total_seconds(),
+                "uptime_seconds": (datetime.now(timezone.utc) - self.start_time).total_seconds(),
                 "cpu": calculate_stats(self.cpu_history),
                 "memory": calculate_stats(self.memory_history),
                 "latency": calculate_stats(self.latency_history),
@@ -677,7 +677,7 @@ class MetricsCollector:
         """
         try:
             data = {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "current": self.get_current_metrics(),
                 "summary": self.get_summary(),
                 "cpu_history": list(self.cpu_history),

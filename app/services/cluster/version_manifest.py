@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import subprocess
+import threading
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.integration_helpers import HybridNodeClient
@@ -298,13 +299,16 @@ class VersionManifest:
 
 
 _manifest_manager: Optional[VersionManifest] = None
+_manifest_manager_lock = threading.Lock()
 
 
 def get_version_manifest() -> VersionManifest:
     """Get or create singleton."""
     global _manifest_manager
     if _manifest_manager is None:
-        _manifest_manager = VersionManifest()
+        with _manifest_manager_lock:
+            if _manifest_manager is None:
+                _manifest_manager = VersionManifest()
     return _manifest_manager
 
 

@@ -393,6 +393,7 @@ class AdvancedPluginManager:
 
 
 _plugin_manager: Optional[AdvancedPluginManager] = None
+_plugin_manager_lock = threading.Lock()
 
 
 def get_advanced_plugin_manager() -> AdvancedPluginManager:
@@ -400,13 +401,15 @@ def get_advanced_plugin_manager() -> AdvancedPluginManager:
 
     global _plugin_manager
     if _plugin_manager is None:
-        _plugin_manager = AdvancedPluginManager(
-            [
-                os.path.expanduser("~/.lv2"),
-                "/usr/lib/lv2",
-                "/usr/local/lib/lv2",
-                "/usr/lib64/lv2",
-                "/usr/lib/x86_64-linux-gnu/lv2",
-            ]
-        )
+        with _plugin_manager_lock:
+            if _plugin_manager is None:
+                _plugin_manager = AdvancedPluginManager(
+                    [
+                        os.path.expanduser("~/.lv2"),
+                        "/usr/lib/lv2",
+                        "/usr/local/lib/lv2",
+                        "/usr/lib64/lv2",
+                        "/usr/lib/x86_64-linux-gnu/lv2",
+                    ]
+                )
     return _plugin_manager

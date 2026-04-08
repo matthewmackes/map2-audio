@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 import re
+import threading
 from statistics import mean
 from typing import Any, Deque, Dict, Iterable, List, Optional
 from uuid import uuid4
@@ -281,7 +282,7 @@ class ApiObservatoryService:
         session_id = str(uuid4())
         session = TrafficSession(
             session_id=session_id,
-            name=name or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            name=name or f"Session {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             started_at=_utc_now_iso(),
             stopped_at=None,
             events=[],
@@ -453,10 +454,13 @@ class ApiObservatoryService:
 
 
 _api_observatory_service: Optional[ApiObservatoryService] = None
+_api_observatory_service_lock = threading.Lock()
 
 
 def get_api_observatory_service() -> ApiObservatoryService:
     global _api_observatory_service
     if _api_observatory_service is None:
-        _api_observatory_service = ApiObservatoryService()
+        with _api_observatory_service_lock:
+            if _api_observatory_service is None:
+                _api_observatory_service = ApiObservatoryService()
     return _api_observatory_service

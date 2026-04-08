@@ -214,6 +214,14 @@ class MetricsDaemon:
 
 # Global instance
 _daemon: Optional[MetricsDaemon] = None
+_daemon_lock: asyncio.Lock | None = None
+
+
+def _get_daemon_lock() -> asyncio.Lock:
+    global _daemon_lock
+    if _daemon_lock is None:
+        _daemon_lock = asyncio.Lock()
+    return _daemon_lock
 
 
 async def start_metrics_daemon(
@@ -223,9 +231,10 @@ async def start_metrics_daemon(
     """Start global metrics daemon"""
     global _daemon
     
-    if _daemon is None:
-        _daemon = MetricsDaemon(metrics_file, update_interval)
-        await _daemon.start()
+    async with _get_daemon_lock():
+        if _daemon is None:
+            _daemon = MetricsDaemon(metrics_file, update_interval)
+            await _daemon.start()
     
     return _daemon
 
@@ -234,9 +243,10 @@ async def stop_metrics_daemon() -> None:
     """Stop global metrics daemon"""
     global _daemon
     
-    if _daemon is not None:
-        await _daemon.stop()
-        _daemon = None
+    async with _get_daemon_lock():
+        if _daemon is not None:
+            await _daemon.stop()
+            _daemon = None
 
 
 def get_metrics_daemon() -> Optional[MetricsDaemon]:

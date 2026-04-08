@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import threading
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -166,10 +167,13 @@ class TesiraFirmwareService:
 # ──────────────────────────────────────────────────────────────────────────────
 
 _firmware_service: Optional[TesiraFirmwareService] = None
+_firmware_service_lock = threading.Lock()
 
 
 def get_firmware_service() -> TesiraFirmwareService:
     global _firmware_service
     if _firmware_service is None:
-        _firmware_service = TesiraFirmwareService()
+        with _firmware_service_lock:
+            if _firmware_service is None:
+                _firmware_service = TesiraFirmwareService()
     return _firmware_service

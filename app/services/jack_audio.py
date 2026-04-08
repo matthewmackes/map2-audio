@@ -4,8 +4,9 @@ Provides connection to JACK audio server for professional audio routing.
 """
 
 import logging
-from typing import Dict, List, Any, Optional
 import asyncio
+import threading
+from typing import Dict, List, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +216,7 @@ class JACKAudioClient:
 
 # Global JACK client instance
 _jack_client: Optional[JACKAudioClient] = None
+_jack_client_lock = threading.Lock()
 
 
 async def get_jack_client() -> JACKAudioClient:
@@ -225,5 +227,7 @@ async def get_jack_client() -> JACKAudioClient:
     """
     global _jack_client
     if _jack_client is None:
-        _jack_client = JACKAudioClient()
+        with _jack_client_lock:
+            if _jack_client is None:
+                _jack_client = JACKAudioClient()
     return _jack_client

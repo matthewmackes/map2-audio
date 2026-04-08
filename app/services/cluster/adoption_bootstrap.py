@@ -396,6 +396,7 @@ class AdoptionBootstrapService:
 
 
 _bootstrap_service: Optional[AdoptionBootstrapService] = None
+_bootstrap_service_lock = threading.Lock()
 
 
 def set_adoption_bootstrap_service(service: Optional[AdoptionBootstrapService]) -> None:
@@ -406,5 +407,7 @@ def set_adoption_bootstrap_service(service: Optional[AdoptionBootstrapService]) 
 def get_adoption_bootstrap_service() -> AdoptionBootstrapService:
     global _bootstrap_service
     if _bootstrap_service is None:
-        _bootstrap_service = AdoptionBootstrapService()
+        with _bootstrap_service_lock:
+            if _bootstrap_service is None:
+                _bootstrap_service = AdoptionBootstrapService()
     return _bootstrap_service

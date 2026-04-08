@@ -6,7 +6,7 @@ This is the snapshot-granularity replacement for the old flow orchestrator.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -255,8 +255,8 @@ class SnapshotDeploymentService:
         deployment.standby_node_ids = standby_ids
         deployment.deployment_status = "active"
         deployment.error_message = None
-        deployment.last_failover_time = datetime.utcnow()
-        deployment.updated_at = datetime.utcnow()
+        deployment.last_failover_time = datetime.now(timezone.utc)
+        deployment.updated_at = datetime.now(timezone.utc)
 
         await self.snapshot_service.add_deployment_history(
             deployment.id,
@@ -303,8 +303,8 @@ class SnapshotDeploymentService:
         deployment.redundancy_enabled = bool(standby_ids)
         deployment.deployment_status = "active"
         deployment.error_message = None
-        deployment.last_failover_time = datetime.utcnow()
-        deployment.updated_at = datetime.utcnow()
+        deployment.last_failover_time = datetime.now(timezone.utc)
+        deployment.updated_at = datetime.now(timezone.utc)
 
         await self.snapshot_service.add_deployment_history(
             deployment.id,

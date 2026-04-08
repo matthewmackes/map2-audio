@@ -13,14 +13,19 @@ Implements HTTP connection pooling with:
 import asyncio
 import logging
 import time
+import threading
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import weakref
 
 logger = logging.getLogger(__name__)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ConnectionState(Enum):
@@ -45,7 +50,7 @@ class PoolMetrics:
     total_reuses: int = 0
     avg_response_time_ms: float = 0.0
     last_request_time: Optional[datetime] = None
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=_utc_now)
     
     @property
     def connection_reuse_rate(self) -> float:
@@ -64,7 +69,7 @@ class PoolMetrics:
     @property
     def uptime_seconds(self) -> float:
         """Pool uptime in seconds."""
-        return (datetime.now() - self.created_at).total_seconds()
+        return (_utc_now() - self.created_at).total_seconds()
 
 
 @dataclass
@@ -73,7 +78,7 @@ class PoolConnection:
     host: str
     client: httpx.AsyncClient
     state: ConnectionState = ConnectionState.AVAILABLE
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=_utc_now)
     last_used_at: Optional[datetime] = None
     request_count: int = 0
     error_count: int = 0
@@ -83,18 +88,18 @@ class PoolConnection:
     @property
     def age_seconds(self) -> float:
         """Connection age in seconds."""
-        return (datetime.now() - self.created_at).total_seconds()
+        return (_utc_now() - self.created_at).total_seconds()
     
     @property
     def idle_seconds(self) -> float:
         """Time since last use in seconds."""
         if self.last_used_at is None:
             return self.age_seconds
-        return (datetime.now() - self.last_used_at).total_seconds()
+        return (_utc_now() - self.last_used_at).total_seconds()
     
     def mark_used(self) -> None:
         """Mark connection as just used."""
-        self.last_used_at = datetime.now()
+        self.last_used_at = _utc_now()
         self.request_count += 1
     
     def record_error(self, error: str) -> None:
@@ -202,7 +207,7 @@ class ConnectionPool:
                     conn.state = ConnectionState.AVAILABLE
             
             self._metrics.total_requests += 1
-            self._metrics.last_request_time = datetime.now()
+            self._metrics.last_request_time = _utc_now()
     
     async def _create_connection(self) -> PoolConnection:
         """Create a new HTTP connection."""
@@ -263,7 +268,7 @@ class ConnectionPool:
         """Perform health checks on all connections."""
         async with self._lock:
             # Recycle old connections
-            now = datetime.now()
+            now = _utc_now()
             to_close = []
             
             for conn in self.connections:
@@ -445,11 +450,14 @@ class ConnectionPoolManager:
 
 # Global pool manager instance
 _pool_manager: Optional[ConnectionPoolManager] = None
+_pool_manager_lock = threading.Lock()
 
 
 def get_pool_manager() -> ConnectionPoolManager:
     """Get global connection pool manager (singleton)."""
     global _pool_manager
     if _pool_manager is None:
-        _pool_manager = ConnectionPoolManager()
+        with _pool_manager_lock:
+            if _pool_manager is None:
+                _pool_manager = ConnectionPoolManager()
     return _pool_manager

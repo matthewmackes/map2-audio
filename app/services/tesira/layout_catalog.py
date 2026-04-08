@@ -8,6 +8,7 @@ an external deployment controller (SageVue).
 from __future__ import annotations
 
 from datetime import datetime
+import threading
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
@@ -143,10 +144,13 @@ class TesiraLayoutCatalogService:
 
 
 _layout_catalog_service: Optional[TesiraLayoutCatalogService] = None
+_layout_catalog_service_lock = threading.Lock()
 
 
 def get_layout_catalog_service() -> TesiraLayoutCatalogService:
     global _layout_catalog_service
     if _layout_catalog_service is None:
-        _layout_catalog_service = TesiraLayoutCatalogService()
+        with _layout_catalog_service_lock:
+            if _layout_catalog_service is None:
+                _layout_catalog_service = TesiraLayoutCatalogService()
     return _layout_catalog_service

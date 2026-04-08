@@ -13,6 +13,7 @@ import io
 import logging
 import os
 import shutil
+import threading
 import zipfile
 from dataclasses import dataclass
 from enum import Enum
@@ -408,11 +409,14 @@ class UnifiedUploadService:
 
 # Singleton instance
 _upload_service: Optional[UnifiedUploadService] = None
+_upload_service_lock = threading.Lock()
 
 
 def get_upload_service() -> UnifiedUploadService:
     """Get the unified upload service singleton."""
     global _upload_service
     if _upload_service is None:
-        _upload_service = UnifiedUploadService()
+        with _upload_service_lock:
+            if _upload_service is None:
+                _upload_service = UnifiedUploadService()
     return _upload_service

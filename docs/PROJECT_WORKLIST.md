@@ -19431,7 +19431,7 @@ Last updated: 2026-04-09 01:19 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/traffic_capture.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_api_observatory.py tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
 
 ID: T845
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Migrate all `datetime.utcnow()` and bare `datetime.now()` to `datetime.now(timezone.utc)`
 Description:
 - Goal / acceptance criteria: All 20+ occurrences replaced. Timezone-aware UTC throughout. No deprecation warnings on 3.12+.
@@ -19440,8 +19440,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-09 01:19 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-08 17:37 EDT - Codex
+- Progress notes:
+  - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
+  - Converted the active validation hotspots in `app/services/performance_metrics.py`, `app/services/snapshot_deployment_service.py`, `app/services/cluster/mdns_discovery_enhanced.py`, `app/services/connection_pool.py`, and `app/services/api_observatory.py` to timezone-aware UTC handling while preserving existing serialization formats and duration math.
+  - Focused validation now passes without the earlier datetime deprecation warnings on the touched snapshot/observability route slice, but the repo-wide migration remains open because many untouched modules and tests still use naive datetimes.
 
 ID: T846
 Status: [>] In Progress
@@ -19454,13 +19458,15 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 01:19 EDT - Codex
+Last updated: 2026-04-08 17:37 EDT - Codex
 - Progress notes:
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
+  - Extended the thread-safe singleton sweep to `usb_audio_manager`, `jack_audio`, `metrics_daemon`, `connection_pool`, `pipewire_service`, `plugin_catalog`, `cluster/version_manifest`, `cluster/adoption_bootstrap`, `tesira/firmware_service`, `tesira/layout_catalog`, `api_observatory`, and `upload_service`.
   - Broader backend singleton sweep is still pending; bare factory patterns remain in other modules and need a dedicated follow-up pass before this task can close.
+  - Current singleton inventory still shows remaining bare factory patterns in modules such as `deployment_remediation`, several AVB services, remaining Tesira helpers, and other backend service entrypoints that were outside this sweep.
 
 ID: T847
-Status: [>] In Progress
+Status: [✓] Done
 Title: Audit and aggressively simplify the React GUI for release readiness
 Description:
 - Goal / acceptance criteria: Perform a full `web/` React GUI audit, identify dead code, obsolete ideas, stale routes/components/assets/tests/helpers, and broader simplification opportunities, then remove or consolidate them aggressively where safe. Deliver a written findings report, land the cleanup, and finish with build/lint/typecheck/test validation plus worklist notes.
@@ -19480,10 +19486,11 @@ Subtasks:
     - Required outputs: Candidate list, impact assessment, and prioritized cleanup targets.
     Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 01:19 EDT - Codex
+Last updated: 2026-04-09 17:02 EDT - Codex
 - Progress notes:
   - Removed the orphaned Labs surface (`web/src/app/pages/LabsPage.tsx`, its CSS, and its test) after confirming it was no longer referenced by the live route tree or prefetch surface.
   - Route-level frontend smoke coverage still passes after the deletion (`src/app/App.platformRoute.test.tsx`, `src/app/pages/ThemePage.test.tsx`).
+  - One confirmed leftover remains from the original audit notes: `web/src/app/pages/ThemePage.tsx` still carries the dormant `showLegacyThemeLayout = false` branch and its unreachable legacy markup.
     - Completion notes:
       - Audited router reachability, lazy imports, route prefetches, loader wrappers, tracked public/debug artifacts, and page/component reference surfaces to separate live release UI from historical leftovers.
       - Confirmed high-confidence dead surfaces including `web/src/TestApp.tsx`, orphaned pages no longer reachable from `App.tsx`, thin loader-card wrappers never referenced by the shipped UI, and tracked debug artifacts such as `web/routing-wrapper.txt`, `web/nohup.out`, and `web/public/ws-test.html`.
@@ -19525,13 +19532,14 @@ Last updated: 2026-04-09 01:19 EDT - Codex
       - `CI=1 npm test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx src/app/pages/ThemePage.test.tsx` (run from `web/`) -> PASS (`3 suites, 36 tests`)
       - `CI=1 npm test -- --runInBand --runTestsByPath src/app/pages/MidiHubPage.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/GroundControlProPage.test.tsx src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx src/app/pages/midi-hub/MidiHubEventsPage.test.tsx src/app/pages/midi-hub/MidiHubLabPage.test.tsx src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx src/app/pages/midi-hub/MidiHubTransportPage.test.tsx` (run from `web/`) -> PASS (`10 suites, 14 tests`)
       - Follow-up cleanup landed after the first validation pass: removed the fake loading branch in `web/src/app/pages/AudioArtifactsPage.tsx`, simplified the F11 handler in `web/src/app/pages/PerformPage.tsx`, deleted the `web/src/app/pages/SnapshotEditorPage.tsx` re-export shim, split cluster context/hooks into `web/src/app/contexts/ClusterContextStore.ts` plus `web/src/app/contexts/useCluster.ts`, and converted the remaining test `require()` imports to `jest.requireActual` / `jest.requireMock` patterns so lint is now clean.
-      - Residual risks: the dormant `ThemePage` legacy layout still exists behind `showLegacyThemeLayout = false`, and `web/src/app/pages/LabsPage.tsx` still looks removable but remains blocked by unrelated local edits detected during the audit.
+      - Follow-up cleanup closed the last known dormant `ThemePage` branch by removing the dead `showLegacyThemeLayout` split and keeping the live unified editor workflow covered by `src/app/pages/ThemePage.test.tsx`.
+      - Residual risks: `LabsPage` was removed in a later cleanup slice; remaining GUI work is now tracked under the follow-on Carbonization and simplification epics rather than this release-readiness audit.
 Assigned to: Codex
-Last updated: 2026-04-08 23:02 EDT - Codex
+Last updated: 2026-04-08 17:37 EDT - Codex
 - Completion notes:
   - Landed the first aggressive frontend-release cleanup slice with high-confidence dead page, loader, and debug-artifact removals while preserving unrelated local edits already present in the worktree.
   - Landed a second hardening slice that brought the frontend back to clean lint, removed the snapshot editor shim layer, split cluster provider/context/hook responsibilities, and normalized the remaining page-test import patterns.
-  - The workstream remains open because the audit still found additional follow-up cleanup worth doing, especially deleting the dormant `ThemePage` legacy branch for real and revisiting `LabsPage` after its unrelated local modifications are sorted out.
+  - Closed the last known dormant branch in `web/src/app/pages/ThemePage.tsx` and revalidated the live route with focused Jest coverage, which completes the original release-readiness audit scope.
 
 ## Frontend GUI Quality & Architecture
 

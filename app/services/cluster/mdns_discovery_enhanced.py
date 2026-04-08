@@ -18,7 +18,7 @@ import json
 import logging
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import socket
 import asyncio
 
@@ -73,7 +73,7 @@ class MDNSNode:
 
     def is_online(self, timeout_seconds: int = 60) -> bool:
         """Check if node is still online based on last_seen timestamp"""
-        age = datetime.utcnow() - self.last_seen
+        age = datetime.now(timezone.utc) - self.last_seen
         return age < timedelta(seconds=timeout_seconds)
 
     def to_dict(self) -> Dict:
@@ -177,7 +177,7 @@ class EnhancedMDNSDiscovery:
                 health_score=float(txt_records.get("health", "50.0")),
                 is_manager=txt_records.get("manager", "false").lower() == "true",
                 capabilities=capabilities,
-                last_seen=datetime.utcnow(),
+                last_seen=datetime.now(timezone.utc),
                 txt_records=txt_records,
             )
 

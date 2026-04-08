@@ -16,6 +16,7 @@ import logging
 import subprocess
 import os
 import re
+import threading
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -619,11 +620,14 @@ pcm.hotone_dmix {{
 
 # Global instance
 _usb_manager: Optional[USBAudioManager] = None
+_usb_manager_lock = threading.Lock()
 
 
 def get_usb_manager() -> USBAudioManager:
     """Get global USB audio manager instance."""
     global _usb_manager
     if _usb_manager is None:
-        _usb_manager = USBAudioManager()
+        with _usb_manager_lock:
+            if _usb_manager is None:
+                _usb_manager = USBAudioManager()
     return _usb_manager

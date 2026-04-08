@@ -18,9 +18,10 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -846,7 +847,7 @@ class PipeWireService:
         if not daemon.running:
             return PipeWireMetrics(
                 daemon=daemon,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 alerts=[{"type": "pipewire_daemon_down", "severity": "error",
                          "message": "PipeWire daemon is not running"}],
             )
@@ -896,7 +897,7 @@ class PipeWireService:
             driver_latency_ms=latency["driver_latency_ms"],
             total_latency_ms=latency["total_latency_ms"],
             alerts=alerts,
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
         self._cached_snapshot = metrics
@@ -1004,11 +1005,14 @@ class PipeWireService:
 # ============================================================================
 
 _pipewire_service: Optional[PipeWireService] = None
+_pipewire_service_lock = threading.Lock()
 
 
 def get_pipewire_service() -> PipeWireService:
     """Get or create the global PipeWire service instance."""
     global _pipewire_service
     if _pipewire_service is None:
-        _pipewire_service = PipeWireService()
+        with _pipewire_service_lock:
+            if _pipewire_service is None:
+                _pipewire_service = PipeWireService()
     return _pipewire_service
