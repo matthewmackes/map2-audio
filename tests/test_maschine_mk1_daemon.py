@@ -202,6 +202,47 @@ def test_load_runtime_transport_overrides_reloads_only_when_config_file_changes(
     assert fake_manager.reload_count == 1
 
 
+def test_resolve_transport_policy_prefers_env_aliases_over_runtime_values(monkeypatch) -> None:
+    monkeypatch.setattr(
+        maschine_mk1_daemon_module,
+        "_load_runtime_transport_overrides",
+        lambda: ("hidapi", True),
+    )
+    monkeypatch.setenv("MAP2_MASCHINE_TRANSPORT", "bulk")
+    monkeypatch.setenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH", "off")
+
+    assert maschine_mk1_daemon_module._resolve_transport_policy(
+        default_preference="auto",
+        default_allow_kernel_detach=False,
+    ) == ("pyusb-bulk", False)
+
+
+def test_resolve_transport_policy_falls_back_to_runtime_then_defaults(monkeypatch) -> None:
+    monkeypatch.delenv("MAP2_MASCHINE_TRANSPORT", raising=False)
+    monkeypatch.delenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH", raising=False)
+    monkeypatch.setattr(
+        maschine_mk1_daemon_module,
+        "_load_runtime_transport_overrides",
+        lambda: ("hidapi", True),
+    )
+
+    assert maschine_mk1_daemon_module._resolve_transport_policy(
+        default_preference="auto",
+        default_allow_kernel_detach=False,
+    ) == ("hidapi", True)
+
+    monkeypatch.setattr(
+        maschine_mk1_daemon_module,
+        "_load_runtime_transport_overrides",
+        lambda: (None, None),
+    )
+
+    assert maschine_mk1_daemon_module._resolve_transport_policy(
+        default_preference="pyusb-bulk",
+        default_allow_kernel_detach=True,
+    ) == ("pyusb-bulk", True)
+
+
 def test_refresh_transport_controller_applies_changed_runtime_overrides_when_disconnected(monkeypatch) -> None:
     created: list[SimpleNamespace] = []
 

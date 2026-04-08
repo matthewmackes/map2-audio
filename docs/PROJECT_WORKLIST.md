@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T811. Added T812 for Maschine transport-policy resolution dedup discovered during the T811 cycle review.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T812. Added T813 for deferred Maschine transport-policy visibility discovered during the T812 cycle review.
 
 ## Performance Brain
 
@@ -18725,7 +18725,7 @@ Last updated: 2026-04-07 21:42 EDT - Codex
   - `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 6s python3 app/services/maschine/maschine_mk1_daemon.py --backend-url http://127.0.0.1:8080 --log-level INFO > /tmp/maschine-t811.log 2>&1` + `rg -n "Loaded config from|Configuration reloaded" /tmp/maschine-t811.log` -> PASS (no matches)
 
 ID: T812
-Status: [ ] Todo
+Status: [✓] Done
 Title: Deduplicate Maschine transport-policy resolution across startup and reconnect paths
 Description:
 - Goal / acceptance criteria: Move the duplicated transport-preference and `allow_kernel_detach` resolution logic out of `DaemonConfig.from_env()` and `_refresh_transport_controller_from_runtime()` into one shared helper that preserves the current precedence rules, alias normalization, and reconnect-only application policy, then cover that contract with focused tests.
@@ -18735,4 +18735,25 @@ Description:
 - Required outputs: shared resolution helper, daemon call-site cleanup, focused regression coverage, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-07 21:42 EDT - Codex
+Last updated: 2026-04-07 22:10 EDT - Codex
+- Completion notes:
+  - Extracted shared transport-policy resolution helpers in `app/services/maschine/maschine_mk1_daemon.py` so startup and reconnect now use the same normalization and precedence contract for `MAP2_MASCHINE_TRANSPORT`, `MAP2_MASCHINE_ALLOW_KERNEL_DETACH`, runtime config values, and in-memory defaults.
+  - Removed the duplicated env/runtime parsing logic from `DaemonConfig.from_env()` and `_refresh_transport_controller_from_runtime()`, which lowers the risk that a future transport alias or precedence change lands in only one path.
+  - Added focused daemon tests covering env-alias precedence over runtime config plus runtime/default fallbacks, while keeping the reconnect-path transport refresh regression in place.
+- Validation:
+  - `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py` -> PASS (`28 passed`, 1 existing deprecation warning)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T813
+Status: [ ] Todo
+Title: Surface deferred Maschine transport-policy changes while the daemon is already connected
+Description:
+- Goal / acceptance criteria: When the desired Maschine transport policy differs from the current live controller but the daemon is already connected, emit bounded operator-facing logging that the change has been accepted and deferred until the next reconnect, without reintroducing loop spam, and add focused tests for the defer/apply behavior.
+- Why it matters: T812 made startup and reconnect resolution deterministic, but connected sessions still provide no explicit evidence that a saved policy update was noticed and staged for the next reconnect.
+- Dependencies: T812
+- Estimated effort: Low
+- Required outputs: daemon defer-state tracking/logging, focused regression coverage, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 22:10 EDT - Codex

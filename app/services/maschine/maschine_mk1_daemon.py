@@ -149,15 +149,26 @@ def _runtime_config_signature(runtime_config: Any) -> tuple[bool, int | None, in
     return True, int(stat_result.st_mtime_ns), int(stat_result.st_size)
 
 
-def _read_runtime_transport_overrides(runtime_config: Any) -> tuple[str | None, bool | None]:
-    preference = str(runtime_config.get("maschine.transport_preference", "") or "").strip().lower()
+def _normalize_transport_preference(value: Any) -> str | None:
+    preference = str(value or "").strip().lower()
     if preference in {"pyusb", "usb", "bulk"}:
         preference = "pyusb-bulk"
     if preference not in {"auto", "hidapi", "pyusb-bulk"}:
-        preference = ""
+        return None
+    return preference
+
+
+def _parse_optional_bool_env(value: str | None) -> bool | None:
+    if value is None:
+        return None
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _read_runtime_transport_overrides(runtime_config: Any) -> tuple[str | None, bool | None]:
+    preference = _normalize_transport_preference(runtime_config.get("maschine.transport_preference", ""))
     allow_kernel_detach = runtime_config.get("maschine.allow_kernel_detach", None)
     allow_value = None if allow_kernel_detach is None else bool(allow_kernel_detach)
-    return preference or None, allow_value
+    return preference, allow_value
 
 
 def _load_runtime_transport_overrides() -> tuple[str | None, bool | None]:
@@ -180,6 +191,28 @@ def _load_runtime_transport_overrides() -> tuple[str | None, bool | None]:
         return _read_runtime_transport_overrides(runtime_config)
     except Exception:
         return None, None
+
+
+def _resolve_transport_policy(
+    *,
+    default_preference: str = "auto",
+    default_allow_kernel_detach: bool = False,
+) -> tuple[str, bool]:
+    runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
+    resolved_preference = (
+        _normalize_transport_preference(os.getenv("MAP2_MASCHINE_TRANSPORT"))
+        or runtime_preference
+        or _normalize_transport_preference(default_preference)
+        or "auto"
+    )
+    resolved_allow_kernel_detach = _parse_optional_bool_env(os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH"))
+    if resolved_allow_kernel_detach is None:
+        resolved_allow_kernel_detach = (
+            bool(runtime_allow_kernel_detach)
+            if runtime_allow_kernel_detach is not None
+            else bool(default_allow_kernel_detach)
+        )
+    return resolved_preference, bool(resolved_allow_kernel_detach)
 
 
 def _build_ws_url(base_url: str, path: str) -> str:
@@ -206,17 +239,7 @@ class DaemonConfig:
 
     @classmethod
     def from_env(cls) -> "DaemonConfig":
-        runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
-        env_transport_preference = str(os.getenv("MAP2_MASCHINE_TRANSPORT", "")).strip().lower()
-        if env_transport_preference in {"pyusb", "usb", "bulk"}:
-            env_transport_preference = "pyusb-bulk"
-        resolved_transport_preference = env_transport_preference or runtime_preference or "auto"
-        env_allow_kernel_detach = os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH")
-        resolved_allow_kernel_detach = (
-            str(env_allow_kernel_detach).strip().lower() in {"1", "true", "yes", "on"}
-            if env_allow_kernel_detach is not None
-            else bool(runtime_allow_kernel_detach)
-        )
+        resolved_transport_preference, resolved_allow_kernel_detach = _resolve_transport_policy()
         return cls(
             backend_url=_normalize_backend_url(os.getenv("MAP2_BACKEND_URL", DEFAULT_BACKEND_URL)),
             transport_preference=resolved_transport_preference,
@@ -1165,21 +1188,9 @@ class MaschineMK1Daemon:
         self._request_render()
 
     def _refresh_transport_controller_from_runtime(self) -> None:
-        runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
-        env_transport_preference = str(os.getenv("MAP2_MASCHINE_TRANSPORT", "")).strip().lower()
-        if env_transport_preference in {"pyusb", "usb", "bulk"}:
-            env_transport_preference = "pyusb-bulk"
-        desired_preference = env_transport_preference or runtime_preference or self.config.transport_preference or "auto"
-
-        env_allow_kernel_detach = os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH")
-        desired_allow_kernel_detach = (
-            str(env_allow_kernel_detach).strip().lower() in {"1", "true", "yes", "on"}
-            if env_allow_kernel_detach is not None
-            else (
-                runtime_allow_kernel_detach
-                if runtime_allow_kernel_detach is not None
-                else self.config.allow_kernel_detach
-            )
+        desired_preference, desired_allow_kernel_detach = _resolve_transport_policy(
+            default_preference=self.config.transport_preference or "auto",
+            default_allow_kernel_detach=self.config.allow_kernel_detach,
         )
 
         if (
