@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1029** Python | **1107** TypeScript | **136** C++/H | **140** Docs | **1577** total commits | **3** stars | **0** forks | **0** open issues
+**1029** Python | **1107** TypeScript | **136** C++/H | **140** Docs | **1580** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bfe7f4b9`](https://github.com/matthewmackes/map2-audio/commit/bfe7f4b96ed55632856f27e1f8b218a25ec1abf2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-08 |
+| [`7e5d82ad`](https://github.com/matthewmackes/map2-audio/commit/7e5d82ad6a76a1cca04de37f7c457541171b5062) | Fix cluster registry summary and timestamp consistency | Map2 Audio | 2026-04-08 |
+| [`9081d299`](https://github.com/matthewmackes/map2-audio/commit/9081d299b6140368bcaadb4b7d1dfd9100d7452f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`a20790ec`](https://github.com/matthewmackes/map2-audio/commit/a20790ec49a7023c3ae004d867fbbc9365fc70e9) | Land backend hardening batch and GUI audit cleanup | Map2 Audio | 2026-04-08 |
 | [`0838c2f4`](https://github.com/matthewmackes/map2-audio/commit/0838c2f44562c280214b1d92a477d4b1201c13b1) | Refine launcher shell layout and styling | Map2 Audio | 2026-04-08 |
 | [`192b6249`](https://github.com/matthewmackes/map2-audio/commit/192b624934dc8bbf99d858ec49ea982e6997954a) | Scale snapshot launcher to header slot | Map2 Audio | 2026-04-08 |
 | [`e94a1946`](https://github.com/matthewmackes/map2-audio/commit/e94a1946011184bd6e162a70eebd7bc6af639976) | Remove launcher menu scrolling | Map2 Audio | 2026-04-08 |
 | [`28eb1f5d`](https://github.com/matthewmackes/map2-audio/commit/28eb1f5dc7f9d323bc4a6a39dedbd2f2db72e16a) | Adjust launcher grid and snapshot header action | Map2 Audio | 2026-04-08 |
-| [`653f5395`](https://github.com/matthewmackes/map2-audio/commit/653f539574fabd75981490bdc74687c29d10f27b) | Fix desktop wallpaper theme path | Map2 Audio | 2026-04-08 |
-| [`3316e319`](https://github.com/matthewmackes/map2-audio/commit/3316e3190da5252e3fd2217a031c7249d7894212) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`edf9b9ab`](https://github.com/matthewmackes/map2-audio/commit/edf9b9ab693e993ee5f0eb00c6873dcfaf8fd85b) | Refactor platform shell and sync current web changes | Map2 Audio | 2026-04-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
