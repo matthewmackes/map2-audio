@@ -195,7 +195,8 @@ describe('AppShell desktop taskbar shell', () => {
     expect(container.querySelector('.window-titlebar__meta')).toHaveTextContent('intelfx')
     expect(container.querySelector('.app-window')).toBeTruthy()
     expect(container.querySelector('.window-taskbar__start-mark-icon')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
     expect(container.querySelector('.window-taskbar__status--nodes')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--latency')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
     expect(container.querySelector('.window-taskbar__status--clock')?.contains(screen.getByTestId('taskbar-clock'))).toBe(true)
@@ -238,6 +239,16 @@ describe('AppShell desktop taskbar shell', () => {
   })
 
   it('tracks running apps in the taskbar and reopens them from indicators', () => {
+    window.localStorage.setItem(
+      HOME_DESKTOP_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        bootCompletedAt: '2026-04-06T17:00:00.000Z',
+        runningRoutes: ['/artifacts', '/intelfx'],
+        currentRoute: '/intelfx',
+      }),
+    )
+
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -245,10 +256,11 @@ describe('AppShell desktop taskbar shell', () => {
       ['/intelfx'],
     )
 
-    expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Taskbar open Audio Artifacts' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Taskbar close IntelFX Rack' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Taskbar open Audio Artifacts' }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
     expect(screen.getByRole('button', { name: 'Taskbar open IntelFX Rack' })).toBeInTheDocument()

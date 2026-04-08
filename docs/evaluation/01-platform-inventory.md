@@ -210,7 +210,7 @@ Largest individual route modules by decorator count:
 
 ### 5.4 Full service-file inventory
 
-#### `root` (111)
+#### `root` (109)
 
 - `app/services/__init__.py`
 - `app/services/advanced_services.py`
@@ -229,7 +229,6 @@ Largest individual route modules by decorator count:
 - `app/services/config_hot_reload.py`
 - `app/services/config_validator.py`
 - `app/services/connection_pool.py`
-- `app/services/connection_pool_integration.py`
 - `app/services/database.py`
 - `app/services/db_pool_manager.py`
 - `app/services/default_effects_loader.py`
@@ -307,7 +306,6 @@ Largest individual route modules by decorator count:
 - `app/services/request_queue.py`
 - `app/services/request_queue_integration.py`
 - `app/services/resilience_logging.py`
-- `app/services/resilience_middleware.py`
 - `app/services/rt_hardening.py`
 - `app/services/rt_monitor.py`
 - `app/services/runtime_profiles.py`

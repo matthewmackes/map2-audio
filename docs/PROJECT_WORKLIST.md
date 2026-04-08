@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T813. No new non-blocked follow-up tasks remain in the current Maschine daemon slice.
+Last updated: 2026-04-07 - Completed T778, T793-subD, T794, T795, T797, T798-T816. Closed the stale orphan-service audit, inventory, and worklist debt after the current non-blocked implementation queue emptied.
 
 ## Performance Brain
 
@@ -15192,7 +15192,7 @@ Last updated: 2026-03-28 12:21 EDT - Codex
   - No code change beyond the `master` branch-trigger fix in `T461` was required for this item; the workflow step itself is valid once the workflow actually runs on `master`.
 
 ID: T466
-Status: [✗] Blocked
+Status: [~] Cancelled
 Title: Delete 4 orphaned Python services never imported anywhere
 Description:
 - Goal / acceptance criteria: Remove `app/services/port80_proxy.py`, `app/services/secrets_manager.py`, `app/services/connection_pool_integration.py`, `app/services/resilience_middleware.py` after verifying no dynamic imports or standalone execution.
@@ -15204,10 +15204,10 @@ Description:
 - Validation: `grep -rn 'port80_proxy\|secrets_manager\|connection_pool_integration\|resilience_middleware' app/` returns zero results after deletion; `pytest tests/` still passes.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-28 12:21 EDT - Codex
-- Blocked notes:
-  - The audit bucket is not accurate enough to execute as written: `tests/test_resilience_middleware.py` still directly exercises `app/services/resilience_middleware.py`, and `app/services/secrets_manager.py` still exposes module-level helpers plus a real encryption/storage implementation.
-  - A narrower follow-up should split the truly orphaned candidates (`port80_proxy.py`, `connection_pool_integration.py`) from the files that still have live utility/test value instead of deleting all four blindly.
+Last updated: 2026-04-07 22:49 EDT - Codex
+- Cancellation notes:
+  - This broad delete-all-four task was superseded by the file-by-file follow-up slice `T483` through `T487`, which recorded the correct outcomes: retain `port80_proxy.py` and `secrets_manager.py` as standalone utilities, delete `connection_pool_integration.py` and `resilience_middleware.py`, and refresh the supporting audit/runtime docs.
+  - Keeping `T466` as `[✗] Blocked` after those follow-ups landed was polluting the active outstanding queue with a stale audit bucket. It now remains only as historical evidence of the original over-broad finding.
 
 ### Follow-up Slice: Service Classification and Current-Tree Bloat Cleanup
 
@@ -18764,4 +18764,66 @@ Last updated: 2026-04-07 22:22 EDT - Codex
 - Validation:
   - `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py` -> PASS (`29 passed`, 1 existing deprecation warning)
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T814
+Status: [✓] Done
+Title: Remove deleted orphan-service entries from the platform inventory and add a doc guard
+Description:
+- Goal / acceptance criteria: Update `docs/evaluation/01-platform-inventory.md` so it no longer lists deleted orphan-service files (`connection_pool_integration.py`, `resilience_middleware.py`) as current-tree inventory, keep the retained standalone utility entries accurate, and add a focused regression guard that fails if those deleted service paths reappear in the inventory doc.
+- Why it matters: The canonical worklist already records those deletions as complete, but the evaluation inventory still presents them as live current-tree services, which makes the repo baseline docs untrustworthy.
+- Dependencies: T483; T484; T485; T486
+- Estimated effort: Low
+- Required outputs: corrected inventory doc, focused regression test, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 22:42 EDT - Codex
+- Completion notes:
+  - Removed the deleted `app/services/connection_pool_integration.py` and `app/services/resilience_middleware.py` entries from `docs/evaluation/01-platform-inventory.md` while retaining the still-supported standalone utility entries for `port80_proxy.py` and `secrets_manager.py`.
+  - Added `tests/test_repo_doc_consistency.py` to lock in that inventory contract so the deleted orphan-service files cannot quietly reappear in the current-tree inventory without failing CI/local validation.
+- Validation:
+  - `pytest -q tests/test_repo_doc_consistency.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_repo_doc_consistency.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T815
+Status: [✓] Done
+Title: Refresh stale platform-audit claims after the orphan-service and AVB-routing follow-ups
+Description:
+- Goal / acceptance criteria: Update `docs/PLATFORM_AUDIT_2026-03-28.md` so it no longer claims `test:avb-routing` is missing and so its orphan-service findings/actions read as resolved historical evidence rather than live pending cleanup, then extend the focused regression guard to cover those stale claims.
+- Why it matters: `T465`, `T483`-`T487`, and the later cleanup slices resolved the referenced issues, but the audit document still advertises them as current blockers.
+- Dependencies: T465; T483; T484; T485; T486; T487; T814
+- Estimated effort: Low
+- Required outputs: corrected audit doc, extended regression coverage, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 22:47 EDT - Codex
+- Completion notes:
+  - Updated `docs/PLATFORM_AUDIT_2026-03-28.md` so the AVB-routing CI finding now records the real root-package script contract and the orphan-service bucket reads as resolved historical evidence instead of a live cleanup queue.
+  - Refreshed the dead-code matrix and missing-test section in the same audit so `port80_proxy.py` / `secrets_manager.py` are clearly retained, while `connection_pool_integration.py` / `resilience_middleware.py` are clearly recorded as deleted follow-up work.
+  - Extended `tests/test_repo_doc_consistency.py` to guard those resolved audit claims alongside the inventory cleanup landed in `T814`.
+- Validation:
+  - `pytest -q tests/test_repo_doc_consistency.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_repo_doc_consistency.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T816
+Status: [✓] Done
+Title: Retire the superseded T466 orphan-service blocker from the active worklist queue
+Description:
+- Goal / acceptance criteria: Reclassify `T466` so it no longer appears as a live blocked task once its split follow-up tasks (`T483`-`T487`) are complete, preserve the historical notes, and add focused validation that the canonical worklist no longer leaves this superseded audit bucket in the active queue.
+- Why it matters: The current active-task scan still surfaces `T466` as blocked even though the file-by-file cleanup and documentation corrections already landed, which pollutes the real outstanding queue and wastes later review cycles.
+- Dependencies: T483; T484; T485; T486; T487; T814; T815
+- Estimated effort: Low
+- Required outputs: corrected worklist status/history, focused validation, and updated last-updated notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-07 22:50 EDT - Codex
+- Completion notes:
+  - Reclassified `T466` from `[✗] Blocked` to `[~] Cancelled` because the broad delete-all-four objective was superseded by the completed file-by-file follow-up tasks `T483` through `T487`.
+  - Preserved the historical context inside `T466` while removing it from the live blocked queue, so future outstanding-task scans no longer treat that stale audit bucket as active work.
+  - Extended `tests/test_repo_doc_consistency.py` with a focused worklist assertion that fails if `T466` ever returns to the blocked queue instead of remaining cancelled historical evidence.
+- Validation:
+  - `pytest -q tests/test_repo_doc_consistency.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_repo_doc_consistency.py` -> PASS
   - `git diff --check` -> PASS

@@ -84,22 +84,22 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 - **Confidence:** Confirmed
 - **Action:** Change "in progress" to "Phase 11+ roadmap — not started"
 
-### H2: CI references non-existent test script
+### H2: AVB-routing CI script audit note was stale and is now resolved
 - **Category:** Infrastructure
 - **Location:** `.github/workflows/ci-cd.yml:123` — `npm run test:avb-routing`
-- **Evidence:** No `test:avb-routing` script in `web/package.json`
-- **Confidence:** Confirmed
-- **Action:** Add the script or remove the CI step
+- **Evidence:** `test:avb-routing` exists in the repository root `package.json`, which is where the CI workflow invokes it. `web/package.json` intentionally does not duplicate that root-level script.
+- **Confidence:** Confirmed stale audit note
+- **Action:** No code change is required for this specific finding; future audit passes should verify the root manifest before flagging the CI step as broken again.
 
-### H3: Standalone-service and orphan-service audit bucket needs splitting
+### H3: Standalone-service and orphan-service audit bucket was over-broad and is now resolved
 - **Category:** Dead code
 - **Location:**
   - `app/services/port80_proxy.py` — standalone TCP proxy launched by `systemd/map2-port80-proxy.service`
   - `app/services/secrets_manager.py` — standalone encrypted secret-store utility with CLI/module helpers
   - `app/services/connection_pool_integration.py` — never imported and not referenced by runtime/service units
   - `app/services/resilience_middleware.py` — utility module only kept alive by its own dedicated tests
-- **Confidence:** Mixed — only part of the bucket is truly dead
-- **Action:** Delete `connection_pool_integration.py`, decide the secrets/proxy utility ownership explicitly, and remove `resilience_middleware.py` if it remains test-only
+- **Confidence:** Resolved via split follow-up tasks `T483`-`T487`
+- **Action:** Completed follow-up split: retained `port80_proxy.py` and `secrets_manager.py` as supported standalone utilities, deleted `connection_pool_integration.py` and `resilience_middleware.py`, and preserved this section as historical audit context rather than a live cleanup queue.
 
 ### H4: Legacy map2/ dashboard components never used by app/
 - **Category:** Dead code
@@ -197,10 +197,10 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 |------|------|----------|----------|------------|--------|
 | PluginHost.h/cpp | C++ files | juce-engine/Source/ | Not in CMake, superseded by JucePluginHost | Confirmed | Delete now |
 | PluginGraph.h/cpp | C++ files | juce-engine/Source/ | Not in CMake, superseded by JuceAudioGraph | Confirmed | Delete now |
-| port80_proxy.py | Python standalone utility | app/services/ | Not imported, but launched by `map2-port80-proxy.service` | Confirmed live standalone | Retain and test |
-| secrets_manager.py | Python standalone utility | app/services/ | Not route-wired, but exposes real encrypted storage + CLI helpers | Confirmed standalone utility | Retain or delete explicitly, not by import scan alone |
-| connection_pool_integration.py | Python service | app/services/ | Never imported and no runtime owner | Confirmed dead | Delete now |
-| resilience_middleware.py | Python utility | app/services/ | No production imports; only dedicated self-tests | Likely dead | Delete if no retained owner emerges |
+| port80_proxy.py | Python standalone utility | app/services/ | Not imported, but launched by `map2-port80-proxy.service` | Confirmed live standalone | Retained and tested in T484 |
+| secrets_manager.py | Python standalone utility | app/services/ | Not route-wired, but exposes real encrypted storage + CLI helpers | Confirmed standalone utility | Retained as an explicit standalone utility in T485 |
+| connection_pool_integration.py | Python service | app/services/ | Never imported and no runtime owner | Confirmed dead | Deleted in T483 |
+| resilience_middleware.py | Python utility | app/services/ | No production imports; only dedicated self-tests | Confirmed dead | Deleted in T486 |
 | MAP2Dashboard.tsx | React component | web/src/map2/components/ | Only self-referenced, not used by app/ | Highly likely | Verify build, then delete |
 | WorkFlow.tsx | React component | web/src/map2/components/ | Only used by MAP2Dashboard | Highly likely | Delete with MAP2Dashboard |
 | HistoryPanel.tsx | React component | web/src/map2/components/ | Only used by WorkFlow | Highly likely | Delete with chain |
@@ -287,7 +287,6 @@ The MAP2 Audio Platform is architecturally sound and remarkably well-connected a
 
 ## What integration tests are MISSING
 - End-to-end CI integration (CI/CD pipeline is broken — doesn't trigger on master)
-- `npm run test:avb-routing` referenced in CI but doesn't exist in package.json
 - JUCE engine tests skip entirely if engine not compiled (no mock fallback)
 
 ---

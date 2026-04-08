@@ -240,13 +240,15 @@ describe('Desktop experience integration', () => {
       jest.advanceTimersByTime(4000)
     })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Audio Artifacts pinned taskbar app' }))
+    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(await screen.findByRole('link', { name: /Audio Artifacts/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
     expect(screen.getByTestId('artifacts-page')).toBeInTheDocument()
     expect(screen.getByText('Program object')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close Artifacts' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Audio Artifacts pinned taskbar app' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Taskbar close Audio Artifacts' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Artifacts' }))
     expect(container.querySelector('.app-window')).toHaveClass('is-closing')

@@ -53,7 +53,6 @@ type StartMenuTileItem = Pick<
 >
 
 const APP_WINDOW_CLOSE_DURATION_MS = 180
-const PERMANENT_TASKBAR_ROUTE = '/artifacts'
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
@@ -152,7 +151,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const shellRouteHint = formatShellRouteHint(location.pathname)
   const isDesktopRoute = location.pathname === '/'
   const taskbarIndicators = useMemo<TaskbarIndicatorItem[]>(() => {
-    const routes = new Set<string>([PERMANENT_TASKBAR_ROUTE, ...runningRoutes.filter((route) => route !== '/')])
+    const routes = new Set<string>(runningRoutes.filter((route) => route !== '/'))
     if (!isDesktopRoute) {
       routes.add(location.pathname)
     }
@@ -167,15 +166,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         return {
           ...item,
           route,
-          pinned: route === PERMANENT_TASKBAR_ROUTE,
+          pinned: false,
           active: isRouteMatch(location.pathname, route),
           running: runningRoutes.includes(route) || isRouteMatch(location.pathname, route),
         }
       })
       .filter((item): item is TaskbarIndicatorItem => Boolean(item))
       .sort((left, right) => {
-        if (left.route === PERMANENT_TASKBAR_ROUTE) return -1
-        if (right.route === PERMANENT_TASKBAR_ROUTE) return 1
         if (left.active && !right.active) return -1
         if (!left.active && right.active) return 1
         return left.label.localeCompare(right.label)
