@@ -20473,7 +20473,7 @@ Last updated: 2026-04-09 13:42 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T894
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused regression coverage for Push Drum Phase A1
 Description:
 - Goal / acceptance criteria: Simulator scenarios covering instance banking, guarded selection, confirmation accept/reject/timeout, pad triggering, transport, and unbound-state behavior.
@@ -20482,8 +20482,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: `tests/push_surface/test_drum_phase_a1.py`, simulator-backed tests, passing suite.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 13:49 EDT - Codex
+- Completion notes:
+  - Added `tests/push_surface/test_drum_phase_a1.py` as a dedicated simulator-backed regression suite for the Push drum phase-A1 tranche instead of relying only on narrower per-feature tests.
+  - Covered live auto-bind/banked selection, guarded remote and replace-live confirmations, accept/reject/timeout resolution, unbound-state behavior, pad note-on/note-off dispatch, and typed transport play/stop/record command routing in one focused sweep.
+  - Kept the lower-level runtime and route suites in the validation matrix so the new scenario tests supplement, rather than replace, the existing feature-specific coverage.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_phase_a1.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/push_surface/test_drum_phase_a1.py` -> PASS
 
 ID: T895
 Status: [ ] Todo
