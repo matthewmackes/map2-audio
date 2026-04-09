@@ -19431,7 +19431,7 @@ Last updated: 2026-04-09 01:19 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/traffic_capture.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_api_observatory.py tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
 
 ID: T845
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Migrate all `datetime.utcnow()` and bare `datetime.now()` to `datetime.now(timezone.utc)`
 Description:
 - Goal / acceptance criteria: All 20+ occurrences replaced. Timezone-aware UTC throughout. No deprecation warnings on 3.12+.
@@ -19441,16 +19441,17 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:13 EDT - Codex
+Last updated: 2026-04-08 20:52 EDT - Codex
 - Progress notes:
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
   - Converted the active validation hotspots in `app/services/performance_metrics.py`, `app/services/snapshot_deployment_service.py`, `app/services/cluster/mdns_discovery_enhanced.py`, `app/services/connection_pool.py`, and `app/services/api_observatory.py` to timezone-aware UTC handling while preserving existing serialization formats and duration math.
   - Focused validation now passes without the earlier datetime deprecation warnings on the touched snapshot/observability route slice, but the repo-wide migration remains open because many untouched modules and tests still use naive datetimes.
   - Extended the sweep across additional API/service modules in this slice: `app/routes/graceful_degradation.py`, `app/routes/performance.py`, `app/routes/audio_path.py`, `app/services/cluster/hybrid_update_manager.py`, `app/services/cluster/clone_reset.py`, `app/services/circuit_breaker.py`, `app/services/tesira/tesira_design_compiler.py`, and `app/services/tesira/tesira_deploy_orchestrator.py`.
   - Focused backend validation for the touched service slice now passes with no remaining `datetime.utcnow()` / naive `datetime.now()` matches in those edited files, but broad repo coverage is still incomplete in deployment, LCD, system, package, and other cluster modules.
+  - Current remaining matches are concentrated in compatibility-sensitive paths such as persisted LCD/session/request data, certificate validity windows, local wall-clock display routes, and broad test fixtures. Finishing the migration safely now requires an explicit naive-to-aware compatibility policy for stored timestamps and fixture expectations rather than another blind mechanical pass.
 
 ID: T846
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Unify singleton factories across all backend modules
 Description:
 - Goal / acceptance criteria: All singleton factories use consistent thread-safe pattern. No bare `if _instance is None` patterns.
@@ -19460,7 +19461,7 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:13 EDT - Codex
+Last updated: 2026-04-08 20:52 EDT - Codex
 - Progress notes:
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
   - Extended the thread-safe singleton sweep to `usb_audio_manager`, `jack_audio`, `metrics_daemon`, `connection_pool`, `pipewire_service`, `plugin_catalog`, `cluster/version_manifest`, `cluster/adoption_bootstrap`, `tesira/firmware_service`, `tesira/layout_catalog`, `api_observatory`, and `upload_service`.
@@ -19468,6 +19469,7 @@ Last updated: 2026-04-08 20:13 EDT - Codex
   - Current singleton inventory still shows remaining bare factory patterns in modules such as `deployment_remediation`, several AVB services, remaining Tesira helpers, and other backend service entrypoints that were outside this sweep.
   - Added lock-guarded singleton construction in this slice for `intelfx_service`, `mpx1_service`, `node_health_service`, `circuit_breaker`, `openapi_schema_sync`, `tesira.discovery`, `tesira.sagevue_client`, `tesira.tesira_design_compiler`, and `tesira.tesira_deploy_orchestrator`.
   - The remaining singleton inventory is now concentrated in other backend service entrypoints such as deployment/remediation, additional AVB services, and other untouched orchestration helpers rather than the core audio, observability, and Tesira slices already swept.
+  - The remaining factory surface is not limited to process-wide singletons; it includes keyed/parameterized constructors such as DSP, node-lifecycle, updater, and client factories where forcing the same singleton pattern would be incorrect without deciding lifecycle, cache-key, and teardown ownership first.
 
 ID: T847
 Status: [✓] Done
@@ -19548,7 +19550,7 @@ Last updated: 2026-04-08 17:37 EDT - Codex
 ## Frontend GUI Quality & Architecture
 
 ID: T848
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Split monolithic `index.css` into co-located CSS modules
 Description:
 - Goal / acceptance criteria: Break the 10,400+ line `web/src/index.css` into co-located CSS files alongside the components they style. Navigation styles (~1,200 lines) move next to `web/src/app/components/navigation/`, signal-chain styles next to `HorizontalSignalChain/`, plugin-card styles next to `PluginCards/`, and so on. The root `index.css` retains only global resets, CSS custom-property definitions, and body/root styling. Build output and visual appearance must remain identical.
@@ -19558,7 +19560,7 @@ Description:
 - Required outputs: Co-located CSS files per component family, trimmed `index.css`, build/lint/typecheck validation, and visual regression evidence (before/after screenshots or build-hash comparison).
 Subtasks:
   - ID: T848-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Extract navigation shell styles from `index.css`
     Description:
     - Goal / acceptance criteria: Move all `.topbar-pro`, `.nav-tab-*`, `.nav-mobile-*`, `.nav-hamburger-*`, `.nav-active-*`, `.nav-maturity-*`, `.advanced-menu-*`, and related responsive media queries into a new `web/src/app/components/navigation/NavigationShell.css` (or equivalent co-located file). Import from the consuming component. Verify no visual changes.
@@ -19567,8 +19569,11 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: New CSS file, updated imports, build validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08
+    Assigned to: Codex
+    Last updated: 2026-04-08 20:52 EDT - Codex
+    - Completion notes:
+      - Moved the remaining shell/navigation ownership block out of `web/src/index.css` into `web/src/app/layout/AppShell.css`, covering `.topbar-pro`, `.nav-tab-*`, `.nav-mobile-*`, `.nav-active-*`, `.nav-maturity-*`, `.advanced-menu-*`, and their responsive variants.
+      - Kept the shell behavior green with focused AppShell route tests and production builds after the extraction.
   - ID: T848-subB
     Status: [ ] Todo
     Title: Extract signal-chain, plugin-card, and routing-panel styles
@@ -19594,15 +19599,15 @@ Subtasks:
     Assigned to: Unassigned
     Last updated: 2026-04-08
 Assigned to: Codex
-Last updated: 2026-04-08 18:44 EDT - Codex
+Last updated: 2026-04-08 20:52 EDT - Codex
 - Progress notes:
   - Starting with shell-owned global leakage: `web/src/index.css` still contains `app-shell`, `topbar-pro`, branded workspace-frame, and `app-content` blocks that belong with `web/src/app/layout/AppShell.tsx` rather than the global stylesheet.
   - Existing page/component CSS co-location is already established across much of `web/src/app`, so the immediate slice is to migrate these remaining shell-scoped blocks into `web/src/app/layout/AppShell.css` and shrink the global root without changing route behavior.
   - Moved the shell/frame/container ownership blocks (`.app-shell*`, `.platform-brand-frame*`, `.platform-brand-backdrop*`, `.app-content*`) out of `web/src/index.css` and into `web/src/app/layout/AppShell.css`, reducing the monolithic root stylesheet while keeping the shell behavior covered by focused AppShell tests and a production build.
-  - The broader decomposition remains open because `web/src/index.css` still carries additional shell-adjacent topbar/nav styling and many other page/component blocks that need follow-up extraction before the file can approach the target residual size.
+  - Closed the shell-owned navigation extraction too, cutting `web/src/index.css` from 10,236 lines to 9,192 lines, but the task acceptance criteria remain blocked because the residual global stylesheet is still far above the under-500-line target and the remaining selectors now belong to many route/component families that need separate ownership passes rather than more shell-side moves.
 
 ID: T849
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Unify design tokens — eliminate dual `:root` / Carbon token layer
 Description:
 - Goal / acceptance criteria: Audit all CSS custom properties defined in `web/src/index.css` `:root` and identify those that duplicate Carbon tokens written by the theme system (`themes.ts`). Remove the raw `:root` defaults for any property already aliased to a `--cds-*` token. Ensure all component CSS references use the unified token (either the Carbon alias or the custom alias, not both interchangeably). Hard-coded hex values (`#60a5fa`, `#cbd5e1`, `#0f62fe`, etc.) scattered through `index.css` must be replaced with the appropriate token reference.
@@ -19611,11 +19616,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated `index.css` `:root` block, updated component CSS references, theme switching validation across all four Carbon themes (white, g10, g90, g100), and build validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 20:52 EDT - Codex
+- Progress notes:
+  - Aligned the early global `:root` defaults with the Carbon-aligned token layer later in `web/src/index.css` so the baseline dark theme no longer drifts on core surface, text, border, radius, and shadow values before Carbon theme tokens apply.
+  - Full completion is blocked because `web/src/index.css` and route/component CSS still contain a large mixed layer of hard-coded hex values and dual custom-vs-Carbon aliases. Finishing the task now requires a broader route-by-route token contract sweep that overlaps the follow-on Carbonization tranche rather than another shell-local edit.
 
 ID: T850
-Status: [>] In Progress
+Status: [✓] Done
 Title: Decompose `AppShell` into focused hooks and sub-components
 Description:
 - Goal / acceptance criteria: Extract the following concerns from `web/src/app/layout/AppShell.tsx` into dedicated hooks and components: (1) `useRestartBackend()` hook encapsulating restart state machine, health polling, websocket status tracking, and progress steps (~80 lines); (2) `useRunningRoutes()` hook encapsulating route tracking, session persistence, and window close animation (~40 lines); (3) `ShellLauncherPanel` component for the start-menu flyout rendering (~120 lines); (4) `RestartOverlay` component for the restart progress UI (~50 lines). The resulting `AppShell` should be a thin composition root under 150 lines.
@@ -19625,12 +19633,15 @@ Description:
 - Required outputs: Extracted hooks/components, updated AppShell, existing test suite still passing, build validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 18:44 EDT - Codex
+Last updated: 2026-04-08 20:52 EDT - Codex
 - Progress notes:
   - `web/src/app/layout/AppShell.tsx` still carries the restart workflow, running-route persistence, launcher rendering, and close-window animation in one component, matching the decomposition work identified in the task definition.
   - Current slice will extract the restart state machine and launcher panel first so `AppShell` can become a thinner composition root before the later shared-navigation consolidation work.
   - Extracted `web/src/app/layout/useRestartBackend.ts`, `web/src/app/layout/useRunningRoutes.ts`, `web/src/app/layout/ShellLauncherPanel.tsx`, and `web/src/app/layout/RestartOverlay.tsx`, and rewired `web/src/app/layout/AppShell.tsx` to compose them instead of owning the whole launcher/restart implementation inline.
-  - Focused Jest validation (`src/app/layout/AppShell.test.tsx`, `src/app/App.platformRoute.test.tsx`) and `npm --prefix web run build` now pass with the extracted structure, but the composition root is still larger than the final task target and the separate running-routes hook is not yet shared with the later navigation unification work.
+  - Added `web/src/app/layout/AppWindow.tsx`, `web/src/app/layout/ShellPowerModal.tsx`, `web/src/app/layout/useAppShellState.ts`, `web/src/app/layout/useAppShellPresentation.ts`, and `web/src/app/layout/useShellLauncherActions.ts`, bringing `web/src/app/layout/AppShell.tsx` down to 147 lines while keeping the shell as a composition root.
+- Completion notes:
+  - `AppShell.tsx` now delegates window chrome, power modal, shell state, route-derived presentation data, and launcher actions into focused helpers/components instead of owning those concerns inline.
+  - The composition root is now under the task target at 147 lines, and the focused AppShell route tests plus production build pass on the extracted structure.
 
 ID: T851
 Status: [ ] Todo
