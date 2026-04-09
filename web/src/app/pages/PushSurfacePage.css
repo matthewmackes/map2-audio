@@ -220,6 +220,46 @@
   letter-spacing: 0.04em;
 }
 
+.push-surface-page .labs-page__surface-confirmation {
+  position: absolute;
+  left: 24.6%;
+  top: 29.8%;
+  width: 47%;
+  display: grid;
+  gap: 0.24rem;
+  justify-items: center;
+  padding: 0.55rem 0.8rem 0.7rem;
+  border: 1px solid rgba(241, 194, 27, 0.55);
+  background: linear-gradient(180deg, rgba(255, 247, 212, 0.96), rgba(255, 243, 194, 0.92));
+  color: #332400;
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.24);
+}
+
+.push-surface-page .labs-page__surface-confirmation-eyebrow {
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.push-surface-page .labs-page__surface-confirmation strong {
+  font-size: clamp(0.6rem, 0.92vw, 0.84rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.push-surface-page .labs-page__surface-confirmation > span:last-of-type,
+.push-surface-page .labs-page__surface-confirmation > span:nth-of-type(2) {
+  font-size: clamp(0.48rem, 0.72vw, 0.68rem);
+  letter-spacing: 0.04em;
+}
+
+.push-surface-page .labs-page__surface-confirmation-actions {
+  display: flex;
+  gap: var(--cds-spacing-03);
+  margin-top: 0.12rem;
+}
+
 .push-surface-page .labs-page__hotspot {
   position: absolute;
   border: 1px solid rgba(15, 98, 254, 0.16);

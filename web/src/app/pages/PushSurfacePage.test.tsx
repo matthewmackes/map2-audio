@@ -13,8 +13,11 @@ jest.mock('../../map2/clients/pushSurface', () => ({
     getLabsEditorState: jest.fn(),
     saveLabsEditorState: jest.fn(),
     getState: jest.fn(),
+    dispatchDrumSessionCommand: jest.fn(),
   },
 }))
+
+const mockUsePushConfirmation = jest.fn()
 
 jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => ({
@@ -41,7 +44,7 @@ jest.mock('../hooks/useNodePageContext', () => ({
   }),
 }))
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => ({
     isClusterMode: true,
   }),
@@ -59,6 +62,10 @@ jest.mock('../hooks/useLatencyPressure', () => ({
   }),
 }))
 
+jest.mock('../hooks/usePushConfirmation', () => ({
+  usePushConfirmation: () => mockUsePushConfirmation(),
+}))
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -70,6 +77,7 @@ const { pushSurfaceApi } = jest.requireMock('../../map2/clients/pushSurface') as
     getLabsEditorState: jest.Mock
     saveLabsEditorState: jest.Mock
     getState: jest.Mock
+    dispatchDrumSessionCommand: jest.Mock
   }
 }
 
@@ -233,6 +241,16 @@ describe('PushSurfacePage', () => {
       active_device: null,
       manager_running: true,
     })
+    pushSurfaceApi.dispatchDrumSessionCommand.mockResolvedValue({ status: 'ok' })
+    mockUsePushConfirmation.mockReturnValue({
+      data: {
+        status: 'ok',
+        pending_confirmation: null,
+        pending_count: 0,
+      },
+      isFetching: false,
+      error: null,
+    })
   })
 
   it('renders the Push labs editor, quick assignments, and seeded welcome examples', async () => {
@@ -323,5 +341,100 @@ describe('PushSurfacePage', () => {
     })
 
     await waitFor(() => expect(screen.getByText('Tap Tempo CC')).toBeTruthy())
+  })
+
+  it('renders the simulator confirmation overlay and dispatches the shared command contract', async () => {
+    mockUsePushConfirmation.mockReturnValue({
+      data: {
+        status: 'ok',
+        pending_confirmation: {
+          action_id: 'push-confirm-1',
+          action_type: 'instance_switch',
+          reason: 'remote_instance',
+          device_fingerprint: 'push2-001',
+          device_identity: 'push2-001',
+          target_instance_id: 'inst-remote',
+          target_display_name: 'Remote / Drum Snapshot',
+          target_node_id: 'node-b',
+          target_node_label: 'Node B',
+          created_at: 1000,
+          expires_at: 1015,
+          timeout_ms: 15000,
+          accept_command: 'accept_pending_confirmation',
+          reject_command: 'reject_pending_confirmation',
+        },
+        pending_count: 1,
+      },
+      isFetching: false,
+      error: null,
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('Confirm instance switch')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Accept' }))
+
+    await waitFor(() => {
+      expect(pushSurfaceApi.dispatchDrumSessionCommand).toHaveBeenCalledWith(
+        'push2-001',
+        'accept_pending_confirmation',
+        { action_id: 'push-confirm-1' },
+        'node-a',
+      )
+    })
+  })
+
+  it('shows a Carbon modal fallback when no hardware is connected', async () => {
+    pushSurfaceApi.getLabsEditorState.mockResolvedValueOnce({
+      status: 'ok',
+      editor_state: {
+        schema_version: 1,
+        assignments: [],
+        welcome_routines: welcomeRoutines,
+        selected_welcome_routine_id: 'map2-blue-cross',
+      },
+      quick_assignments: [],
+      selected_welcome_routine: welcomeRoutines[0],
+      active_device: null,
+      manager_running: true,
+    })
+    mockUsePushConfirmation.mockReturnValue({
+      data: {
+        status: 'ok',
+        pending_confirmation: {
+          action_id: 'push-confirm-2',
+          action_type: 'instance_switch',
+          reason: 'replace_live_instance',
+          device_fingerprint: 'push-stage-left',
+          device_identity: 'push-stage-left',
+          target_instance_id: 'inst-next',
+          target_display_name: 'Node C / Arena Drums',
+          target_node_id: 'node-c',
+          target_node_label: 'Node C',
+          created_at: 2000,
+          expires_at: 2015,
+          timeout_ms: 15000,
+          accept_command: 'accept_pending_confirmation',
+          reject_command: 'reject_pending_confirmation',
+        },
+        pending_count: 1,
+      },
+      isFetching: false,
+      error: null,
+    })
+
+    renderPage()
+
+    expect(await screen.findByText(/No Push hardware is connected/i)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Accept on page' }))
+
+    await waitFor(() => {
+      expect(pushSurfaceApi.dispatchDrumSessionCommand).toHaveBeenCalledWith(
+        'push-stage-left',
+        'accept_pending_confirmation',
+        { action_id: 'push-confirm-2' },
+        'node-a',
+      )
+    })
   })
 })

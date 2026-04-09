@@ -20431,7 +20431,7 @@ Last updated: 2026-04-09 13:01 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T892
-Status: [ ] Todo
+Status: [✓] Done
 Title: Mirror Push confirmation flows on Push Surface page with LCD simulator and Carbon modal fallback
 Description:
 - Goal / acceptance criteria: Push Surface page PNG render mirrors what hardware would display during confirmation flows. When no hardware is connected, Carbon modals provide the same guarded actions. Both paths use the same backend contract.
@@ -20440,8 +20440,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: PNG render confirmation overlay, Carbon modal fallback, shared backend contract, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 13:16 EDT - Codex
+- Completion notes:
+  - Extended `web/src/map2/clients/pushSurface.ts` so the Push Surface page can drive the shared backend confirmation contract through `dispatchDrumSessionCommand`.
+  - Wired `web/src/app/pages/PushSurfacePage.tsx` to `usePushConfirmation`, added simulator-side confirmation overlay actions that dispatch accept/reject using the pending action id, and surfaced the same guarded flow through a Carbon modal when no hardware is connected.
+  - Styled the simulator confirmation state in `web/src/app/pages/PushSurfacePage.css` so the PNG render visibly mirrors the confirmation path instead of hiding it behind shell-only chrome.
+  - Added focused coverage in `web/src/app/pages/PushSurfacePage.test.tsx` for both the simulator action path and the no-hardware Carbon modal fallback while keeping the shell/hook tests green.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/pages/PushSurfacePage.test.tsx src/app/layout/AppShell.test.tsx src/app/hooks/usePushConfirmation.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T893
 Status: [ ] Todo

@@ -14,6 +14,7 @@ import {
   Checkbox,
   InlineLoading,
   InlineNotification,
+  Modal,
   Popover,
   PopoverContent,
   Select,
@@ -33,6 +34,7 @@ import {
   type PushSurfaceActiveDevice,
   type PushSurfaceAssignment,
   type PushSurfaceLabsEditorState,
+  type PushSurfacePendingConfirmation,
   type PushSurfaceWelcomeLight,
   type PushSurfaceWelcomeRoutine,
   type PushSurfaceWelcomeStep,
@@ -41,6 +43,7 @@ import { PageHeader } from '../components/PageHeader'
 import { useCluster } from '../contexts/useCluster'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { useNodePageContext } from '../hooks/useNodePageContext'
+import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { type NodeSummary } from '../types/node'
 import {
   NODE_PAGE_KEYS,
@@ -324,8 +327,19 @@ function RoutineExamples({ routines }: { routines: PushSurfaceWelcomeRoutine[] }
           </article>
         ))}
       </div>
+
     </div>
   )
+}
+
+function labelForPendingAction(pendingConfirmation: PushSurfacePendingConfirmation | null): string {
+  if (!pendingConfirmation) {
+    return 'Pending action'
+  }
+  if (pendingConfirmation.action_type === 'instance_switch') {
+    return 'Confirm instance switch'
+  }
+  return pendingConfirmation.action_type.replace(/_/g, ' ')
 }
 
 function SurfaceSkeleton() {
@@ -500,6 +514,7 @@ export function PushSurfacePage() {
     staleTime: 1_500,
     refetchInterval: 4_000,
   })
+  const pendingConfirmationQuery = usePushConfirmation(viewedNodeId, { refetchInterval: 4_000 })
 
   const [editorState, setEditorState] = useState<PushSurfaceLabsEditorState | null>(null)
   const [isDirty, setIsDirty] = useState(false)
@@ -534,6 +549,24 @@ export function PushSurfacePage() {
       setEditorState(response.editor_state)
       setIsDirty(false)
       setControlDraftDirty(false)
+    },
+  })
+  const activePendingConfirmation = pendingConfirmationQuery.data?.pending_confirmation ?? null
+  const confirmationMutation = useMutation({
+    mutationFn: async (command: string) => {
+      if (!activePendingConfirmation) {
+        return null
+      }
+      return pushSurfaceApi.dispatchDrumSessionCommand(
+        activePendingConfirmation.device_fingerprint,
+        command,
+        { action_id: activePendingConfirmation.action_id },
+        viewedNodeId,
+      )
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['push-surface', 'pending-confirmation', viewedNodeId ?? 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['push-surface', 'runtime-state', viewedNodeId ?? 'local'] })
     },
   })
 
@@ -860,10 +893,14 @@ export function PushSurfacePage() {
 
   const errorMessage = (editorQuery.error instanceof Error && editorQuery.error.message)
     || (runtimeQuery.error instanceof Error && runtimeQuery.error.message)
+    || (pendingConfirmationQuery.error instanceof Error && pendingConfirmationQuery.error.message)
     || (saveMutation.error instanceof Error && saveMutation.error.message)
+    || (confirmationMutation.error instanceof Error && confirmationMutation.error.message)
     || null
   const isInitialLoading = !effectiveEditorState && (editorQuery.isLoading || runtimeQuery.isLoading)
-  const isRefreshing = editorQuery.isFetching || runtimeQuery.isFetching
+  const isRefreshing = editorQuery.isFetching || runtimeQuery.isFetching || pendingConfirmationQuery.isFetching
+  const pendingActionLabel = labelForPendingAction(activePendingConfirmation)
+  const showFallbackConfirmationModal = Boolean(activePendingConfirmation && editorQuery.data && !activeDevice)
 
   return (
     <div className="push-surface-page">
@@ -920,6 +957,9 @@ export function PushSurfacePage() {
             <Tag type={runtimeSnapshot?.running ? 'green' : 'cool-gray'}>
               {runtimeSnapshot?.running ? 'Runtime active' : 'Runtime idle'}
             </Tag>
+            {activePendingConfirmation ? (
+              <Tag type="warm-gray">Push confirmation pending</Tag>
+            ) : null}
           </div>
         </div>
       </Tile>
@@ -1196,6 +1236,40 @@ export function PushSurfacePage() {
                         </span>
                       ))}
                     </div>
+
+                    {activePendingConfirmation ? (
+                      <div className="labs-page__surface-confirmation" role="status" aria-live="polite">
+                        <span className="labs-page__surface-confirmation-eyebrow">Push confirmation</span>
+                        <strong>{pendingActionLabel}</strong>
+                        <span>{activePendingConfirmation.target_display_name}</span>
+                        <span>{activePendingConfirmation.device_identity}</span>
+                        <div className="labs-page__surface-confirmation-actions">
+                          <Button
+                            size="sm"
+                            kind="secondary"
+                            disabled={confirmationMutation.isPending}
+                            onClick={() => {
+                              void confirmationMutation.mutateAsync(
+                                activePendingConfirmation.reject_command,
+                              )
+                            }}
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={confirmationMutation.isPending}
+                            onClick={() => {
+                              void confirmationMutation.mutateAsync(
+                                activePendingConfirmation.accept_command,
+                              )
+                            }}
+                          >
+                            Accept
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     {PUSH_HOTSPOTS.map((hotspot) => {
                   const lightState = lightMatchesHotspot(
@@ -1529,6 +1603,37 @@ export function PushSurfacePage() {
           </Tile>
         </div>
       </div>
+
+      {showFallbackConfirmationModal ? (
+        <Modal
+          open
+          modalHeading={pendingActionLabel}
+          primaryButtonText="Accept on page"
+          secondaryButtonText="Reject"
+          onRequestClose={() => {
+            void confirmationMutation.mutateAsync(
+              activePendingConfirmation?.reject_command ?? 'reject_pending_confirmation',
+            )
+          }}
+          onSecondarySubmit={() => {
+            void confirmationMutation.mutateAsync(
+              activePendingConfirmation?.reject_command ?? 'reject_pending_confirmation',
+            )
+          }}
+          onRequestSubmit={() => {
+            void confirmationMutation.mutateAsync(
+              activePendingConfirmation?.accept_command ?? 'accept_pending_confirmation',
+            )
+          }}
+        >
+          <p>
+            No Push hardware is connected, so the guarded action is mirrored here using the same backend
+            confirmation contract as the hardware flow.
+          </p>
+          <p>{activePendingConfirmation?.target_display_name ?? 'Pending target'}</p>
+          <p>{activePendingConfirmation?.device_identity ?? 'Push device'}</p>
+        </Modal>
+      ) : null}
     </div>
   )
 }

@@ -117,6 +117,13 @@ export interface PushSurfacePendingConfirmationResponse {
   pending_count: number
 }
 
+export interface PushSurfaceDrumSessionCommandResponse {
+  status?: string
+  session?: Record<string, unknown>
+  available_instances?: Array<Record<string, unknown>>
+  selected_projection?: Record<string, unknown> | null
+}
+
 export interface PushSurfaceRuntimeSnapshot {
   running: boolean
   active_page: string
@@ -166,6 +173,24 @@ export const pushSurfaceApi = {
     fetchJson<PushSurfacePendingConfirmationResponse>(
       appendNodeQuery(`${PUSH_SURFACE_API_BASE}/pending-confirmation`, nodeId),
       { cache: 'no-store' },
+    ),
+
+  dispatchDrumSessionCommand: (
+    deviceFingerprint: string,
+    command: string,
+    payload: Record<string, unknown> = {},
+    nodeId?: string | null,
+  ) =>
+    fetchJson<PushSurfaceDrumSessionCommandResponse>(
+      appendNodeQuery(`${PUSH_SURFACE_API_BASE}/drum-session/command`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          device_fingerprint: deviceFingerprint,
+          command,
+          payload,
+        }),
+      },
     ),
 }
 
