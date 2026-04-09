@@ -20367,7 +20367,7 @@ Last updated: 2026-04-09 12:18 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T889
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement guarded auto-live selection for Push drum instance switching
 Description:
 - Goal / acceptance criteria: When the operator selects a drum-machine instance from Push, that selection triggers live activation automatically. Confirmation is required when the chosen instance is remote, already audible, or would replace another live drum-machine.
@@ -20376,8 +20376,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Guarded selection logic, confirmation-required detection, route/command wiring, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 12:31 EDT - Codex
+- Completion notes:
+  - Extended `app/services/push_surface/drum_runtime.py` so selecting a drum instance now routes through an activation helper instead of only mutating session state, which makes Push-side instance selection an actual live-switch path.
+  - Added guard detection for remote targets, already-audible targets, and selections that would replace another live drum-machine, converting those cases into pending confirmations instead of immediate activation.
+  - Confirmation acceptance now activates the pending target before committing the session selection, so the session state reflects successful live cutover instead of optimistic bookkeeping.
+  - Expanded `tests/push_surface/test_drum_runtime.py` with focused coverage for remote-target confirmation, replace-live confirmation, and confirmed activation flow while keeping the published Push routes green.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T890
 Status: [ ] Todo

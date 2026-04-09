@@ -44,6 +44,14 @@ def _fake_projection(self) -> dict[str, object]:
     return {"instance": self.descriptor.to_dict(), "pad_count": 16}
 
 
+def _activation_recorder(calls: list[str]):
+    async def _activate(self, descriptor: DrumMachineInstanceDescriptor) -> bool:
+        calls.append(descriptor.instance_id)
+        return True
+
+    return _activate
+
+
 @pytest.mark.asyncio
 async def test_runtime_auto_binds_to_live_instance_when_present(monkeypatch: pytest.MonkeyPatch) -> None:
     service = PushDrumSessionService()
@@ -91,13 +99,16 @@ async def test_runtime_clears_stale_selection_and_stays_unbound_when_nothing_is_
 async def test_select_instance_supports_bank_index_and_bank_delta(monkeypatch: pytest.MonkeyPatch) -> None:
     service = PushDrumSessionService()
     registry = _FakeRegistry([
-        _instance("inst-a", is_live=True),
-        _instance("inst-b", is_live=False, node_id="node-b"),
-        _instance("inst-c", is_live=False, node_id="node-c"),
+        _instance("inst-a", is_live=False, node_id="node-local"),
+        _instance("inst-b", is_live=False, node_id="node-local"),
+        _instance("inst-c", is_live=False, node_id="node-local"),
     ])
+    calls: list[str] = []
 
     monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
     monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
 
     first = await service.dispatch_command("fp-3", "select_instance", {"bank_index": 2})
     second = await service.dispatch_command("fp-3", "select_instance", {"bank_delta": -1})
@@ -106,3 +117,70 @@ async def test_select_instance_supports_bank_index_and_bank_delta(monkeypatch: p
     assert first["session"]["bank_index"] == 2
     assert second["session"]["selected_instance_id"] == "inst-b"
     assert second["session"]["bank_index"] == 1
+    assert calls == ["inst-c", "inst-b"]
+
+
+@pytest.mark.asyncio
+async def test_select_instance_requires_confirmation_for_remote_target(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([
+        _instance("inst-local", is_live=True, node_id="node-local"),
+        _instance("inst-remote", is_live=False, node_id="node-remote"),
+    ])
+    calls: list[str] = []
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+
+    state = await service.dispatch_command("fp-4", "select_instance", {"instance_id": "inst-remote"})
+
+    assert state["session"]["selected_instance_id"] == "inst-local"
+    assert state["session"]["pending_confirmation"]["reason"] == "remote_instance"
+    assert state["session"]["pending_confirmation"]["target_instance_id"] == "inst-remote"
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_select_instance_requires_confirmation_when_replacing_live_instance(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([
+        _instance("inst-live", is_live=True, node_id="node-local"),
+        _instance("inst-next", is_live=False, node_id="node-local"),
+    ])
+    calls: list[str] = []
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+
+    state = await service.dispatch_command("fp-5", "select_instance", {"instance_id": "inst-next"})
+
+    assert state["session"]["pending_confirmation"]["reason"] == "replace_live_instance"
+    assert state["session"]["pending_confirmation"]["target_instance_id"] == "inst-next"
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_confirm_instance_switch_activates_target_and_clears_pending_confirmation(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([
+        _instance("inst-live", is_live=True, node_id="node-local"),
+        _instance("inst-next", is_live=False, node_id="node-local"),
+    ])
+    calls: list[str] = []
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+
+    pending = await service.dispatch_command("fp-6", "select_instance", {"instance_id": "inst-next"})
+    confirmed = await service.dispatch_command("fp-6", "confirm_instance_switch", {})
+
+    assert pending["session"]["pending_confirmation"]["target_instance_id"] == "inst-next"
+    assert confirmed["session"]["selected_instance_id"] == "inst-next"
+    assert confirmed["session"]["pending_confirmation"] is None
+    assert calls == ["inst-next"]

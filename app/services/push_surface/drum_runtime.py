@@ -5,7 +5,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
-from app.services.push_surface.drum_registry import DrumMachineInstanceDescriptor, get_drum_instance_registry
+import aiohttp
+
+from app.services.push_surface.drum_registry import (
+    DrumMachineInstanceDescriptor,
+    _local_node_id,
+    get_drum_instance_registry,
+)
 
 
 PushDrumCommandName = Literal[
@@ -176,6 +182,46 @@ class PushDrumSessionService:
             session.bank_index = self._clamp_bank_index(session.bank_index, len(instances))
         return instances[session.bank_index]
 
+    async def _activate_instance(self, descriptor: DrumMachineInstanceDescriptor) -> bool:
+        snapshot_id = descriptor.snapshot_id
+        if snapshot_id is None:
+            return False
+        if descriptor.node_id == _local_node_id():
+            from app.database import get_session
+            from app.services.snapshot_service import SnapshotService
+
+            async with get_session() as session:
+                await SnapshotService(session).activate_snapshot(int(snapshot_id), triggered_by="push_surface")
+            return True
+
+        from app.services.cluster.node_visibility import get_visible_remote_nodes
+
+        _summary, visible_nodes = get_visible_remote_nodes()
+        remote_node = visible_nodes.get(descriptor.node_id)
+        api_url = str(getattr(remote_node, "api_url", "") or "").rstrip("/")
+        if not api_url:
+            return False
+        try:
+            async with aiohttp.ClientSession() as client:
+                async with client.post(f"{api_url}/api/snapshots/{int(snapshot_id)}/activate", timeout=5) as response:
+                    return response.status == 200
+        except Exception:
+            return False
+
+    @staticmethod
+    def _guard_reason(
+        session: PushDrumSessionState,
+        instance: DrumMachineInstanceDescriptor,
+        instances: list[DrumMachineInstanceDescriptor],
+    ) -> str | None:
+        if instance.node_id != _local_node_id():
+            return "remote_instance"
+        if instance.is_audible:
+            return "target_already_audible"
+        if any(item.is_live and item.instance_id != instance.instance_id for item in instances):
+            return "replace_live_instance"
+        return None
+
     async def get_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
         session = self._get_session(device_fingerprint)
         instances = await get_drum_instance_registry().list_instances()
@@ -194,13 +240,16 @@ class PushDrumSessionService:
         instance = await get_drum_instance_registry().get_instance(instance_id)
         if instance is None:
             raise ValueError(f"unknown drum instance: {instance_id}")
-        needs_confirmation = bool(require_confirmation) or (instance.is_live and session.selected_instance_id not in {None, instance_id})
-        if needs_confirmation:
-            session.pending_confirmation = PushDrumPendingConfirmation(reason="guarded_live_switch", target_instance_id=instance_id)
+        instances = await get_drum_instance_registry().list_instances()
+        guard_reason = self._guard_reason(session, instance, instances)
+        if bool(require_confirmation) or guard_reason is not None:
+            session.pending_confirmation = PushDrumPendingConfirmation(reason=guard_reason or "guarded_live_switch", target_instance_id=instance_id)
             session.last_command = "select_instance"
             return await self.get_surface_state(device_fingerprint)
+        activated = await self._activate_instance(instance)
+        if not activated:
+            raise RuntimeError(f"failed to activate drum instance: {instance_id}")
         session.selected_instance_id = instance_id
-        instances = await get_drum_instance_registry().list_instances()
         session.bank_index = next(
             (index for index, item in enumerate(instances) if item.instance_id == instance_id),
             session.bank_index,
@@ -212,6 +261,9 @@ class PushDrumSessionService:
     async def confirm_instance_switch(self, device_fingerprint: str) -> dict[str, Any]:
         session = self._get_session(device_fingerprint)
         if session.pending_confirmation is not None:
+            descriptor = await get_drum_instance_registry().get_instance(session.pending_confirmation.target_instance_id)
+            if descriptor is None or not await self._activate_instance(descriptor):
+                raise RuntimeError(f"failed to activate drum instance: {session.pending_confirmation.target_instance_id}")
             session.selected_instance_id = session.pending_confirmation.target_instance_id
         session.pending_confirmation = None
         session.last_command = "confirm_instance_switch"
