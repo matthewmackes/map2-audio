@@ -325,6 +325,58 @@ async def test_breadcrumbs_show_group_context_and_route_back_to_group_root(
 
 
 @pytest.mark.asyncio
+async def test_nav_groups_persist_collapsed_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    state_dir = tmp_path / ".config" / "map2"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_file = state_dir / "tui_state.json"
+    state_file.write_text(
+        '{"onboarding_completed": true, "theme_name": "carbon-dark", "last_route": "dashboard", "environment": "local", "workspace": "map2-audio"}'
+    )
+
+    app = MAP2ConsoleApp()
+    app._poll_manager = _build_fake_poll_manager(app)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._toggle_nav_group("Audio")
+        await pilot.pause()
+        assert "Audio" in app.session_state.nav_collapsed_groups
+        assert app.query_one("#nav-group-items-Audio").display is False
+
+    payload = state_file.read_text()
+    assert '"nav_collapsed_groups": [\n    "Audio"\n  ]' in payload
+
+
+@pytest.mark.asyncio
+async def test_nav_arrow_keys_move_focus_within_visible_nav_items(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    state_dir = tmp_path / ".config" / "map2"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    (state_dir / "tui_state.json").write_text(
+        '{"onboarding_completed": true, "theme_name": "carbon-dark", "last_route": "dashboard", "environment": "local", "workspace": "map2-audio"}'
+    )
+
+    app = MAP2ConsoleApp()
+    app._poll_manager = _build_fake_poll_manager(app)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.query_one("#nav-group-Audio").focus()
+        await pilot.press("right")
+        await pilot.pause()
+        assert app.focused is app.query_one("#nav-audio")
+
+        await pilot.press("down")
+        await pilot.pause()
+        assert app.focused is app.query_one("#nav-chains")
+
+        await pilot.press("left")
+        await pilot.pause()
+        assert app.focused is app.query_one("#nav-group-Audio")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("route_key", "expected_title", "widget_id"),
     [

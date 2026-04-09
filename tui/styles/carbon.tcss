@@ -74,9 +74,22 @@ Screen {
 }
 
 .nav-group {
-    margin: 1 0 1 0;
+    width: 100%;
+    margin: 1 0 0 0;
+    padding: 0 1;
+    content-align: left middle;
+    background: transparent;
+    border: none;
     color: $carbon-text-secondary;
     text-style: bold;
+}
+
+.nav-group.-collapsed {
+    color: $foreground;
+}
+
+.nav-group-items {
+    height: auto;
 }
 
 .nav-button {
@@ -86,11 +99,11 @@ Screen {
 }
 
 .nav-button.-active {
-    border-left: heavy $carbon-primary-action;
-    background: $carbon-panel;
+    background: $carbon-selected;
     text-style: bold;
 }
 
+.nav-group:focus,
 .nav-button:focus {
     border: round $carbon-focus;
 }

@@ -16,6 +16,11 @@ class SessionState:
     last_route: str = "dashboard"
     environment: str = "local"
     workspace: str = "map2-audio"
+    nav_collapsed_groups: list[str] = None  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        if self.nav_collapsed_groups is None:
+            self.nav_collapsed_groups = []
 
 
 class SessionStateStore:

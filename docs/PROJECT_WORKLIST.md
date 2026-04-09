@@ -20207,7 +20207,7 @@ Last updated: 2026-04-09 10:44 EDT - Codex
   - `npm --prefix tui run build` -> BLOCKED by a pre-existing cross-package type error in `/home/mm/map2-audio/web/src/map2/clients/snapshots.ts` (`number | null` assigned to `number | undefined`), not by the TUI status-indicator changes.
 
 ID: T882
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement Carbon left-panel navigation with collapsible groups and arrow-key focus
 Description:
 - Goal / acceptance criteria: (1) Make nav groups in the Textual TUI collapsible/expandable sections instead of static labels. (2) Change the active-state indicator from a left border to a `$carbon-selected` background fill matching Carbon's side-nav spec. (3) Add arrow-key navigation within the nav pane so Tab moves focus out of the panel instead of cycling through all nav buttons. (4) Persist collapsed/expanded group state in session state.
@@ -20216,8 +20216,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated nav-pane compose/TCSS, arrow-key focus management, session-state persistence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 11:13 EDT - Codex
+- Completion notes:
+  - Reworked the Textual nav pane in `tui/app.py` so each nav group is now a collapsible toggle with a dedicated item container instead of a static label block.
+  - Added persisted collapsed-group state in `tui/session_state.py`, wired it through the app bootstrap, and refreshed the nav pane from stored state on mount.
+  - Added arrow-key focus handling in `tui/app.py` so `Up`/`Down` move across visible nav targets, `Right` expands or enters a group, `Left` returns to the group toggle or collapses the group, and `Tab` exits the nav pane.
+  - Updated `tui/styles/carbon.tcss` to switch the active nav treatment from a left border to a Carbon selected-background fill and to style the new group toggles/items.
+- Validation:
+  - `pytest -q tui/tests/test_unified_console_app.py` -> PASS
+  - `npm --prefix tui run build` -> PASS
 
 ID: T883
 Status: [ ] Todo

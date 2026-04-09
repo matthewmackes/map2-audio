@@ -16,6 +16,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual import on
+from textual.events import Key
 from textual.widgets import Button, ContentSwitcher, Footer, Label, Static
 
 from .api import MAP2APIClient
@@ -103,6 +104,7 @@ class MAP2ConsoleApp(App[None]):
         register_carbon_themes(self)
         self.theme = self.session_state.theme_name if self.session_state.theme_name in {"carbon-dark", "carbon-light"} else DEFAULT_THEME_NAME
         self._nav_groups = self._build_nav_groups()
+        self._collapsed_nav_groups = set(self.session_state.nav_collapsed_groups)
 
     def _load_session_state(self, *, environment: str | None, workspace: str | None) -> SessionState:
         state = self._session_store.load()
@@ -221,9 +223,10 @@ class MAP2ConsoleApp(App[None]):
         with Horizontal(id="shell-body"):
             with VerticalScroll(id="nav-pane"):
                 for group, routes in self._nav_groups:
-                    yield Label(group, classes="nav-group")
-                    for route in routes:
-                        yield Button(route.label, id=f"nav-{route.key}", classes="nav-button")
+                    yield Button("", id=f"nav-group-{group}", classes="nav-group")
+                    with Vertical(id=f"nav-group-items-{group}", classes="nav-group-items"):
+                        for route in routes:
+                            yield Button(route.label, id=f"nav-{route.key}", classes="nav-button")
 
             with VerticalScroll(id="workspace-panel"):
                 with Horizontal(id="workspace-breadcrumbs"):
@@ -242,7 +245,9 @@ class MAP2ConsoleApp(App[None]):
 
     async def on_mount(self) -> None:
         self.app_resume_signal.subscribe(self, self._on_app_resumed)
+        self.refresh_nav_groups()
         self.refresh_header()
+        self.refresh_breadcrumbs()
         self.refresh_context_panel()
         target = "onboarding" if not self.session_state.onboarding_completed else (self._initial_route or "dashboard")
         await self._open_route_internal(target, remember_history=True)
@@ -369,6 +374,19 @@ class MAP2ConsoleApp(App[None]):
                 continue
             button = self.query_one(f"#nav-{route.key}", Button)
             button.set_class(route.key == self._active_route_key, "-active")
+
+    def refresh_nav_groups(self) -> None:
+        for group, routes in self._nav_groups:
+            toggle = self.query_one(f"#nav-group-{group}", Button)
+            items = self.query_one(f"#nav-group-items-{group}", Vertical)
+            collapsed = group in self._collapsed_nav_groups
+            marker = "▸" if collapsed else "▾"
+            toggle.label = f"{marker} {group}"
+            items.display = not collapsed
+            toggle.set_class(collapsed, "-collapsed")
+            for route in routes:
+                button = self.query_one(f"#nav-{route.key}", Button)
+                button.display = not collapsed
 
     def refresh_breadcrumbs(self) -> None:
         root = self.query_one("#breadcrumb-root", Button)
@@ -612,6 +630,37 @@ class MAP2ConsoleApp(App[None]):
             self._route_history = ["dashboard"]
         self._open_route_back(target)
 
+    def _toggle_nav_group(self, group: str) -> None:
+        if group in self._collapsed_nav_groups:
+            self._collapsed_nav_groups.remove(group)
+        else:
+            self._collapsed_nav_groups.add(group)
+        self.session_state.nav_collapsed_groups = sorted(self._collapsed_nav_groups)
+        self.persist_session_state()
+        self.refresh_nav_groups()
+
+    def _visible_nav_focus_order(self) -> list[Button]:
+        order: list[Button] = []
+        for group, routes in self._nav_groups:
+            order.append(self.query_one(f"#nav-group-{group}", Button))
+            if group in self._collapsed_nav_groups:
+                continue
+            for route in routes:
+                order.append(self.query_one(f"#nav-{route.key}", Button))
+        return order
+
+    def _move_nav_focus(self, step: int) -> None:
+        order = self._visible_nav_focus_order()
+        if not order:
+            return
+        focused = self.focused
+        try:
+            current_index = order.index(focused) if focused in order else -1
+        except ValueError:
+            current_index = -1
+        next_index = 0 if current_index == -1 else max(0, min(len(order) - 1, current_index + step))
+        order[next_index].focus()
+
     @on(Button.Pressed, "#breadcrumb-root")
     def _on_breadcrumb_root_pressed(self) -> None:
         route = self._route_map.get(self._active_route_key)
@@ -621,6 +670,51 @@ class MAP2ConsoleApp(App[None]):
         if group_root is None or group_root.key == route.key:
             return
         self.open_route(group_root.key)
+
+    @on(Button.Pressed)
+    def _on_nav_group_pressed(self, event: Button.Pressed) -> None:
+        button_id = event.button.id or ""
+        if not button_id.startswith("nav-group-"):
+            return
+        self._toggle_nav_group(button_id.removeprefix("nav-group-"))
+
+    @on(Key)
+    def _on_nav_key(self, event: Key) -> None:
+        focused = self.focused
+        focused_id = getattr(focused, "id", "") or ""
+        if not (focused_id.startswith("nav-group-") or focused_id.startswith("nav-")):
+            return
+
+        if event.key == "down":
+            self._move_nav_focus(1)
+            event.stop()
+        elif event.key == "up":
+            self._move_nav_focus(-1)
+            event.stop()
+        elif event.key == "right" and focused_id.startswith("nav-group-"):
+            group = focused_id.removeprefix("nav-group-")
+            if group in self._collapsed_nav_groups:
+                self._toggle_nav_group(group)
+            else:
+                routes = next((routes for current_group, routes in self._nav_groups if current_group == group), [])
+                if routes:
+                    self.query_one(f"#nav-{routes[0].key}", Button).focus()
+            event.stop()
+        elif event.key == "left":
+            if focused_id.startswith("nav-group-"):
+                group = focused_id.removeprefix("nav-group-")
+                if group not in self._collapsed_nav_groups:
+                    self._toggle_nav_group(group)
+                    event.stop()
+            elif focused_id.startswith("nav-"):
+                route = focused_id.removeprefix("nav-")
+                current = self._route_map.get(route)
+                if current is not None:
+                    self.query_one(f"#nav-group-{current.group}", Button).focus()
+                    event.stop()
+        elif event.key == "tab":
+            self.action_focus_next()
+            event.stop()
 
     @work(exclusive=True, thread=False)
     async def _open_route_back(self, route_key: str) -> None:
