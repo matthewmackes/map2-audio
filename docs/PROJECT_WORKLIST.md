@@ -19966,7 +19966,7 @@ Last updated: 2026-04-09 06:18 EDT - Codex
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
 
 ID: T871
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom loading patterns with Carbon `Loading` / `InlineLoading` / skeleton states
 Description:
 - Goal / acceptance criteria: (1) Replace the generic `PageLoader` with Carbon `Loading` component. (2) Add Carbon `SkeletonText`, `SkeletonPlaceholder`, and `DataTableSkeleton` for page-level skeleton loading on the 5 heaviest pages. (3) Replace the custom `.skeleton` CSS class and `@keyframes shimmer` with Carbon's skeleton components. (4) Use Carbon `InlineLoading` for in-context loading states (button actions, form submissions).
@@ -19975,11 +19975,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Carbon loading components, removed custom skeleton CSS, visual consistency.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:31 EDT - Codex
+- Progress notes:
+  - The app already uses Carbon `Loading`, `InlineLoading`, and `SkeletonText` in some newer surfaces, but `web/src/index.css` still contains multiple legacy `.skeleton` / `@keyframes shimmer` implementations and many route-local loading states still render ad hoc text, MUI spinners, or custom placeholders.
+  - Full completion is blocked because the remaining loading surface spans broad mixed UI systems and route-local ownership; replacing it cleanly now requires a page-by-page contract sweep rather than a bounded shared-primitive change.
 
 ID: T872
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom empty-state patterns with Carbon empty-state guidance
 Description:
 - Goal / acceptance criteria: Audit the codebase for empty-state rendering (empty lists, no-results search, first-use states). Replace custom implementations (`.h-empty-state`, `.chain-panel-empty`, italic placeholder text) with Carbon's empty-state pattern: illustration (optional for FLAT style), heading, description, and primary action. Use Carbon `Tile` as the container with `--cds-layer-01` background.
@@ -19988,11 +19991,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: Consistent empty-state component, Carbon-aligned rendering.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:31 EDT - Codex
+- Progress notes:
+  - The codebase still mixes legacy global empty-state classes in `web/src/index.css`, ad hoc italic placeholders, route-local helper components such as `TableEmptyState`, and specialized empty-state variants like `ArtifactEmptyState` and `MidiHubEmptyState`.
+  - This task is blocked because the remaining empty-state patterns are not yet normalized under one reusable primitive; completing it safely now would require a broad route-by-route redesign pass instead of a low-risk shared replacement.
 
 ID: T873
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Add Carbon focus management — visible focus indicators, focus trapping, focus return
 Description:
 - Goal / acceptance criteria: (1) Ensure all interactive elements have a visible `2px solid var(--cds-focus)` outline on `:focus-visible` — audit and fix the ~20 custom button/link/card classes that override or suppress focus outlines. (2) Add focus trapping to all overlay/flyout components (start-menu panel, power menu, advanced menu, context menu) using Carbon's built-in trap or `@carbon/react`'s `FocusScope`. (3) Return focus to the trigger element when overlays close. (4) Ensure focus order follows visual order in the navigation bar.
@@ -20001,11 +20007,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Visible focus indicators on all interactives, focus-trap implementation, automated focus-order testing.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:31 EDT - Codex
+- Progress notes:
+  - There are still many `outline: none` sites in `web/src/index.css`, shell CSS, route-local components, and inline style blocks, while overlay behavior remains mixed across Carbon modals, MUI dialogs, custom panels, and bespoke escape-key handlers.
+  - This task depends on blocked `T855`, and completion is blocked until navigation and overlay ownership are stabilized; otherwise focus-trap and focus-return behavior would be patched inconsistently across overlapping systems.
 
 ID: T874
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Remove `border-radius` values that conflict with FLAT design intent
 Description:
 - Goal / acceptance criteria: The theme system defines `border-radius-sm: 0px`, `border-radius-md: 0px`, `border-radius-lg: 4px` which is correct for the FLAT/Monochrome design. However, `index.css` contains 30+ occurrences of `border-radius: 10px`, `12px`, `14px`, `16px`, `18px`, and `999px` (pill shapes) that override the theme intent. Audit all border-radius values: (1) Replace `999px` pill shapes with `0` for true FLAT or retain only on Carbon `Tag` where Carbon itself uses pill shapes. (2) Replace `10px–18px` rounded corners with `0` or the `--border-radius-lg: 4px` token. (3) Ensure Carbon component border-radius is not overridden.
@@ -20014,11 +20023,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: Consistent border-radius treatment, FLAT design validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:31 EDT - Codex
+- Progress notes:
+  - Conflicting rounded-corner values remain widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, `SnapshotEditorPage.css`, Host Machine, NodeNav, Push Surface, MPX1, and other route/component-local styles.
+  - This task depends on blocked `T856`, and a clean FLAT-radius sweep is blocked until the underlying primitive migration settles; otherwise the repo would keep mixing Carbon shapes with route-specific exceptions and legacy pill treatments.
 
 ID: T875
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Remove `box-shadow` and `backdrop-filter` remnants for true FLAT monochrome
 Description:
 - Goal / acceptance criteria: The theme system sets `shadow-strong: none` and `shadow-soft: none`, and the FLAT design intent is zero elevation shadows. However, `index.css` and `AppShell.css` still contain `box-shadow` declarations in 40+ places (including `inset` shadows for the Windows-style beveled button effect, `drop-shadow` filters on signal arrows, and overlay shadows). Audit all shadow declarations: (1) Remove `box-shadow` from buttons, cards, panels, and menus. (2) Remove `backdrop-filter: blur()` from overlay backgrounds. (3) Retain only `box-shadow` used for Carbon's focus ring system or explicit `inset` borders used as visual indicators (not elevation). The result should be a truly flat, monochrome, zero-elevation UI.
@@ -20027,8 +20039,11 @@ Description:
 - Estimated effort: Low
 - Required outputs: Zero non-functional shadows, FLAT visual validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:31 EDT - Codex
+- Progress notes:
+  - Non-flat shadow and blur treatments are still spread through `web/src/index.css`, `web/src/app/layout/AppShell.css`, Snapshot Editor, Platform, Host Machine, Home, NodeGraph, MPX1, Push Surface, and several other workspace-specific files.
+  - This task depends on blocked `T856`, and completion is blocked because the remaining shadows are not just cosmetic leftovers: they are bound up with unresolved legacy shell chrome, route-specific visual systems, and custom widget affordances that still need broader Carbon migration decisions.
 
 ## TUI Carbon Compliance
 
