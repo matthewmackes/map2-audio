@@ -172,7 +172,6 @@ export function App({
     apiBase,
     currentScreenId: screen.id,
     currentScreen: screen.title,
-    connectionLabel: 'Live backend',
     terminalColumns: terminal.columns,
   })
   const environment = process.env.MAP2_ENVIRONMENT ?? 'local'

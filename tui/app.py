@@ -26,6 +26,7 @@ from .node_console.collectors import collect_snapshot
 from .poll_manager import PollManager, SubscriptionUpdated
 from .screens.unified_console import UnifiedRoute, build_unified_routes
 from .session_state import SessionState, SessionStateStore
+from .status_indicators import render_status_text, status_tone
 from .theme.carbon import DEFAULT_THEME_NAME, register_carbon_themes
 from .versioning import get_product_name, get_version
 
@@ -268,14 +269,14 @@ class MAP2ConsoleApp(App[None]):
         workspace = self.query_one("#shell-workspace", Static)
         title.update(get_product_name())
         subtitle.update(f"{get_version()}  ·  User {self._user}")
-        connection.update(f"● {self._connection_status}")
+        connection.update(render_status_text(self._connection_status))
         jobs.update(f"Jobs {self._pending_jobs()}")
         environment.update(f"Env {self.session_state.environment}")
         workspace.update(f"Workspace {self.session_state.workspace}")
-        status = self._connection_status.lower()
-        connection.set_class("connected" in status, "-success")
-        connection.set_class("degraded" in status, "-warning")
-        connection.set_class("offline" in status, "-error")
+        tone = status_tone(self._connection_status)
+        connection.set_class(tone == "ok", "-success")
+        connection.set_class(tone == "warn", "-warning")
+        connection.set_class(tone == "error", "-error")
 
     def refresh_context_panel(self) -> None:
         panel = self.query_one("#secondary-panel", VerticalScroll)

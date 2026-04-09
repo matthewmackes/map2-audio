@@ -20186,7 +20186,7 @@ Last updated: 2026-04-09 06:52 EDT - Codex
   - Updated `tui/styles/carbon.tcss` to style per-field error rows and invalid input states in the Carbon dialog theme.
 
 ID: T881
-Status: [ ] Todo
+Status: [✓] Done
 Title: Use Carbon status indicators (colored dot + label) for connection and service states
 Description:
 - Goal / acceptance criteria: (1) Replace the plain-text `_connection_status` string in the Textual header with a colored dot (green/yellow/red) plus label using `$carbon-success` / `$carbon-warning` / `$carbon-error`. (2) Apply the same pattern to service state rows in the Dashboard services table. (3) In the Ink TUI, integrate the existing `StatusDot` component into the StatusBar for connection state display.
@@ -20195,8 +20195,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: StatusDot integration in both TUIs, updated header and service table rendering.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 10:44 EDT - Codex
+- Completion notes:
+  - Added `tui/status_indicators.py` as the shared Textual status-indicator formatter, then switched `tui/app.py` to render the shell connection chip as a dot-plus-label status indicator instead of a plain text string.
+  - Updated `tui/screens/unified_console.py` so both the dashboard services table and the platform services table render Carbon-style status cells with a colored dot plus label rather than raw state text.
+  - Updated the Ink footer path in `tui/src/shell/StatusBar.tsx`, `tui/src/shell/AppShell.tsx`, and `tui/src/hooks/useStatusBar.ts` so the existing `StatusDot` now owns connection-state rendering in the status bar instead of duplicating that text inside the left footer segment.
+- Validation:
+  - `pytest -q tui/tests/test_unified_console_app.py` -> PASS
+  - `npm --prefix tui run test:unit -- --runTestsByPath src/hooks/useStatusBar.test.ts src/shell/StatusBar.test.tsx` -> PASS
+  - `npm --prefix tui run build` -> BLOCKED by a pre-existing cross-package type error in `/home/mm/map2-audio/web/src/map2/clients/snapshots.ts` (`number | null` assigned to `number | undefined`), not by the TUI status-indicator changes.
 
 ID: T882
 Status: [ ] Todo

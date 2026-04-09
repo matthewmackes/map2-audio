@@ -9,7 +9,6 @@ interface StatusBarOptions {
   apiBase: string
   currentScreenId?: string
   currentScreen: string
-  connectionLabel?: string
   terminalColumns: number
 }
 
@@ -30,10 +29,9 @@ export function buildStatusBarState(status?: StatusBarOptions): StatusBarState {
   const terminalColumns = status?.terminalColumns ?? 80
   const currentScreen = status?.currentScreen ?? 'Home'
   const currentScreenId = status?.currentScreenId ?? 'home'
-  const connectionLabel = status?.connectionLabel ?? 'Idle'
   const apiBase = status?.apiBase ?? 'http://localhost:8080/api'
 
-  const leftSegments = [currentScreen, connectionLabel]
+  const leftSegments = [currentScreen]
   if (terminalColumns >= 110) {
     leftSegments.push(apiBase)
   } else if (terminalColumns >= 92) {

@@ -18,6 +18,7 @@ from ..session_state import SessionState
 from ..versioning import get_product_name, get_version
 from ..workflows import WorkflowDefinition, WorkflowRunSpec, get_workflow_definitions
 from ..node_console.models import NodeSnapshot
+from ..status_indicators import render_status_text
 
 
 def _as_dict(payload: object) -> dict[str, Any]:
@@ -180,7 +181,7 @@ class DashboardScreen(BaseScreen):
         services = self.query_one("#dashboard-services", DataTable)
         _reset_table(services)
         for service in payload.services:
-            services.add_row(service.name, service.state.value)
+            services.add_row(service.name, render_status_text(service.state.value))
 
         events = self.query_one("#dashboard-events", Static)
         if payload.collector_errors:
@@ -680,7 +681,10 @@ class PlatformScreen(BaseScreen):
             table = self.query_one("#platform-services", DataTable)
             _reset_table(table)
             for service in items:
-                table.add_row(_value(service.get("name", service.get("service"))), _value(service.get("state", service.get("status"))))
+                table.add_row(
+                    _value(service.get("name", service.get("service"))),
+                    render_status_text(service.get("state", service.get("status"))),
+                )
         elif subscription == "system.health":
             data = _as_dict(payload)
             summary = self.query_one("#platform-summary", Static)

@@ -12,6 +12,7 @@ from tui.commands.providers import RouteCommandProvider
 from tui.modals import ConfirmDialog, FormDialog, InputDialog, MessageDialog, NumberInputDialog, SelectDialog
 from tui.node_console.models import NodeSnapshot
 from tui.poll_manager import PollManager
+from tui.status_indicators import render_status_text, status_tone
 
 HEX_COLOR_PATTERN = re.compile(r"(?<![A-Za-z0-9_])#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?(?![A-Za-z0-9_-])")
 
@@ -237,6 +238,13 @@ def test_active_modals_do_not_embed_per_class_css() -> None:
         assert "CSS" not in modal.__dict__
 
 
+def test_status_indicator_helpers_render_colored_dot_labels() -> None:
+    assert status_tone("running") == "ok"
+    assert status_tone("degraded") == "warn"
+    assert status_tone("offline") == "error"
+    assert render_status_text("starting").plain == "● Starting"
+
+
 @pytest.mark.asyncio
 async def test_first_run_opens_onboarding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -263,7 +271,9 @@ async def test_returning_user_lands_on_dashboard(tmp_path: Path, monkeypatch: py
     async with app.run_test() as pilot:
         await pilot.pause()
         assert app._active_route_key == "dashboard"
-        assert "Connected" in str(app.query_one("#shell-connection").content)
+        shell_connection = str(app.query_one("#shell-connection").content)
+        assert "●" in shell_connection
+        assert "Connected" in shell_connection
 
 
 @pytest.mark.asyncio

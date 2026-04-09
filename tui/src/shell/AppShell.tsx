@@ -42,7 +42,13 @@ export function AppShell({
       <Box flexDirection="column" marginTop={1} marginBottom={1}>
         {children}
       </Box>
-      <StatusBar left={statusLeft} right={statusRight} columns={terminalColumns} />
+      <StatusBar
+        left={statusLeft}
+        right={statusRight}
+        columns={terminalColumns}
+        statusLabel={statusLabel}
+        statusTone={statusTone}
+      />
     </Box>
   )
 }
