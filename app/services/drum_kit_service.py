@@ -179,6 +179,33 @@ class DrumKitService(Singleton):
             "engine_status": status_payload,
         }
 
+    def ensure_editable_active_kit(self) -> Dict[str, Any]:
+        active_kit = self.get_active_kit()
+        if not active_kit:
+            raise RuntimeError("No active drum kit is loaded")
+        if active_kit["source"] == "user":
+            return active_kit
+
+        editable_kit_id = f"{active_kit['kit_id']}_editable"
+        try:
+            self.get_kit(editable_kit_id)
+        except FileNotFoundError:
+            name = f"{active_kit['name']} Editable"
+            description = active_kit.get("description") or f"Editable copy of {active_kit['name']}"
+            author = active_kit.get("author") or "MAP2"
+            self.create_user_kit(
+                active_kit["kit_id"],
+                editable_kit_id,
+                name=name,
+                description=description,
+                author=author,
+            )
+        self.load_kit(editable_kit_id)
+        active_user_kit = self.get_active_kit()
+        if not active_user_kit:
+            raise RuntimeError("Failed to activate editable drum kit")
+        return active_user_kit
+
     def create_user_kit(
         self,
         template_kit_id: str,

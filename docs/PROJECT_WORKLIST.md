@@ -20493,7 +20493,7 @@ Last updated: 2026-04-09 13:49 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/push_surface/test_drum_phase_a1.py` -> PASS
 
 ID: T895
-Status: [ ] Todo
+Status: [✓] Done
 Title: Pad browse/load from MAP2 drum kit/pad/sample library via Push
 Description:
 - Goal / acceptance criteria: Push-side browsing targets MAP2's drum kit/pad/sample library only. Category navigation, pad preview, and load-to-pad actions all work through the Push drum command plane.
@@ -20502,8 +20502,16 @@ Description:
 - Estimated effort: High
 - Required outputs: Library browser adapter, Push command integration, load-to-pad flow, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 13:59 EDT - Codex
+- Completion notes:
+  - Added `app/services/push_surface/drum_browser.py` as a Push-facing adapter over the existing MAP2 drum kit library, exposing category-filtered kit browsing, per-kit pad-source browsing, preview metadata, whole-kit loads, and pad-level source import into the active kit.
+  - Reused the kit/edit workflow safely by adding `DrumKitService.ensure_editable_active_kit()` in `app/services/drum_kit_service.py` and switching `app/services/drum_sample_editor.py` to the shared helper, so Push pad imports and sample editing now follow the same editable-kit path.
+  - Wired `browse_pad_source` and `load_pad_source` through `app/services/push_surface/drum_runtime.py` so the typed Push command plane now returns browser state and executes actual load-to-pad behavior instead of no-op acknowledgements.
+  - Added focused coverage in `tests/push_surface/test_drum_browser.py` and extended `tests/push_surface/test_drum_runtime.py` to verify browser delegation, kit browsing, and cross-kit pad import into an editable active kit.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_browser.py tests/push_surface/test_drum_runtime.py tests/test_drum_kit_service.py tests/test_drum_sample_editor.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_browser.py app/services/push_surface/drum_runtime.py app/services/drum_kit_service.py app/services/drum_sample_editor.py tests/push_surface/test_drum_browser.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T896
 Status: [ ] Todo

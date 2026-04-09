@@ -244,32 +244,7 @@ class DrumSampleEditorService(Singleton):
         return self.get_waveform(pad)
 
     def _ensure_editable_active_kit(self) -> Dict[str, Any]:
-        kit_service = get_drum_kit_service()
-        active_kit = kit_service.get_active_kit()
-        if not active_kit:
-            raise RuntimeError("No active drum kit is loaded")
-        if active_kit["source"] == "user":
-            return active_kit
-
-        editable_kit_id = f"{active_kit['kit_id']}_editable"
-        try:
-            kit_service.get_kit(editable_kit_id)
-        except FileNotFoundError:
-            name = f"{active_kit['name']} Editable"
-            description = active_kit.get("description") or f"Editable copy of {active_kit['name']}"
-            author = active_kit.get("author") or "MAP2"
-            kit_service.create_user_kit(
-                active_kit["kit_id"],
-                editable_kit_id,
-                name=name,
-                description=description,
-                author=author,
-            )
-        kit_service.load_kit(editable_kit_id)
-        active_user_kit = kit_service.get_active_kit()
-        if not active_user_kit:
-            raise RuntimeError("Failed to activate editable drum kit")
-        return active_user_kit
+        return get_drum_kit_service().ensure_editable_active_kit()
 
     def _extract_primary_sample_path(self, sfz_file: Path) -> str:
         for line in sfz_file.read_text().splitlines():

@@ -118,6 +118,20 @@ class _FakeTransportService:
         return {"ok": True, "action": action, "owner": "midi_recorder"}
 
 
+class _FakeBrowserService:
+    def __init__(self) -> None:
+        self.browse_calls: list[dict[str, object]] = []
+        self.load_calls: list[dict[str, object]] = []
+
+    def browse(self, payload: dict[str, object]) -> dict[str, object]:
+        self.browse_calls.append(dict(payload))
+        return {"scope": "kits", "items": [{"id": "kit-a"}], "preview": {"id": "kit-a"}}
+
+    def load(self, payload: dict[str, object]) -> dict[str, object]:
+        self.load_calls.append(dict(payload))
+        return {"mode": "pad", "kit_id": "kit-a", "target_pad": int(payload["pad"])}
+
+
 @pytest.mark.asyncio
 async def test_runtime_auto_binds_to_live_instance_when_present(monkeypatch: pytest.MonkeyPatch) -> None:
     service = PushDrumSessionService()
@@ -374,3 +388,20 @@ async def test_transport_commands_delegate_to_drum_and_transport_services(monkey
     assert stop["transport"]["is_playing"] is False
     assert fake_transport_service.actions == ["record"]
     assert record["transport_owner_result"]["action"] == "record"
+
+
+@pytest.mark.asyncio
+async def test_browse_and_load_pad_source_delegate_to_push_drum_browser(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_browser = _FakeBrowserService()
+    facade = DrumMachineRuntimeFacade(_instance("inst-live", is_live=True, node_id="node-local"))
+
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "get_push_drum_browser_service", lambda: fake_browser)
+
+    browse = await facade.apply_command("browse_pad_source", {"category": "electronic"})
+    load = await facade.apply_command("load_pad_source", {"kit_id": "kit-a", "source_pad": 2, "pad": 7})
+
+    assert fake_browser.browse_calls == [{"category": "electronic"}]
+    assert fake_browser.load_calls == [{"kit_id": "kit-a", "source_pad": 2, "pad": 7}]
+    assert browse["browser"]["preview"]["id"] == "kit-a"
+    assert load["load_result"]["target_pad"] == 7

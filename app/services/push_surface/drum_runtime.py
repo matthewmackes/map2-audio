@@ -11,6 +11,7 @@ from uuid import uuid4
 import aiohttp
 
 from app.services.juce_engine_service import get_audio_engine
+from app.services.push_surface.drum_browser import get_push_drum_browser_service
 from app.services.push_surface.drum_registry import (
     DrumMachineInstanceDescriptor,
     _local_node_id,
@@ -217,6 +218,20 @@ class DrumMachineRuntimeFacade:
             return await self._dispatch_pad_trigger(payload, note_on=True)
         if command == "stop_pad":
             return await self._dispatch_pad_trigger(payload, note_on=False)
+        if command == "browse_pad_source":
+            return {
+                "status": "accepted",
+                "command": command,
+                "browser": get_push_drum_browser_service().browse(payload),
+                **self.get_projection(),
+            }
+        if command == "load_pad_source":
+            return {
+                "status": "accepted",
+                "command": command,
+                "load_result": get_push_drum_browser_service().load(payload),
+                **self.get_projection(),
+            }
         if command in {
             "set_repeat",
             "set_quantize",
@@ -224,8 +239,6 @@ class DrumMachineRuntimeFacade:
             "set_64_pad_bank",
             "set_pad_velocity_mode",
             "set_loop_selector",
-            "browse_pad_source",
-            "load_pad_source",
             "set_step_automation",
             "clear_step",
             "set_step",
