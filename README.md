@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1592** total commits | **3** stars | **0** forks | **0** open issues
+**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1594** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`857274c2`](https://github.com/matthewmackes/map2-audio/commit/857274c2e2c5b5c59c4b53c486773f8054f14203) | Record blocked frontend dependency tranche | Map2 Audio | 2026-04-08 |
+| [`12f78cdb`](https://github.com/matthewmackes/map2-audio/commit/12f78cdbad1f42e54abefeab7f20d54805177203) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`a15e0b67`](https://github.com/matthewmackes/map2-audio/commit/a15e0b6756af1c9e78ca5f705c675e97563eedb5) | Extract shell navigation CSS and finish AppShell split | Map2 Audio | 2026-04-08 |
 | [`566f1238`](https://github.com/matthewmackes/map2-audio/commit/566f12383c175773076028864c39568835ad9944) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`e6812e95`](https://github.com/matthewmackes/map2-audio/commit/e6812e951ad81e363640c5b77caf9b84e07af97d) | Extend UTC migration and singleton hardening | Map2 Audio | 2026-04-08 |
 | [`fbbeefe4`](https://github.com/matthewmackes/map2-audio/commit/fbbeefe4c93d4d02f474691d91ff840ada6bf312) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 | [`9518e2e5`](https://github.com/matthewmackes/map2-audio/commit/9518e2e57312e5d6acfc0381760046257db485c5) | Extract AppShell helpers and trim global shell CSS | Map2 Audio | 2026-04-08 |
 | [`0655e841`](https://github.com/matthewmackes/map2-audio/commit/0655e841af1b528000fecec4908e36320da8c89e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
-| [`e40bdca9`](https://github.com/matthewmackes/map2-audio/commit/e40bdca9fa1bb18d65d6b28ddab47c604abaeb1e) | Harden singleton factories and trim theme legacy branch | Map2 Audio | 2026-04-08 |
-| [`c73f81a8`](https://github.com/matthewmackes/map2-audio/commit/c73f81a837115150ed70682faaf2c47e2cde66da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
