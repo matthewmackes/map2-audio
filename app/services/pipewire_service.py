@@ -13,6 +13,7 @@ Wraps PipeWire CLI tools (pw-dump, pw-metadata, wpctl) to provide:
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
@@ -151,11 +152,13 @@ class PipeWireService:
     def __init__(self):
         self._start_time = time.monotonic()
         self._daemon_running_since: Optional[float] = None
+        self._daemon_cookie: Optional[str] = None
         self._last_xrun_count = 0
         self._broadcast_task: Optional[asyncio.Task] = None
         self._cached_snapshot: Optional[PipeWireMetrics] = None
         self._cache_time: float = 0.0
         self._cache_ttl: float = 1.0  # seconds
+        self._snapshot_lock = asyncio.Lock()
 
     # ---------------------------------------------------------------
     # Subprocess helpers
@@ -163,6 +166,7 @@ class PipeWireService:
 
     async def _run_cmd_result(self, cmd: List[str], timeout: float = 5.0) -> tuple[str, str, int]:
         """Run a subprocess command and return stdout, stderr, and return code."""
+        proc: asyncio.subprocess.Process | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -183,6 +187,11 @@ class PipeWireService:
                     logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr_text}")
             return stdout_text, stderr_text, int(proc.returncode)
         except asyncio.TimeoutError:
+            if proc is not None:
+                with contextlib.suppress(ProcessLookupError):
+                    proc.kill()
+                with contextlib.suppress(Exception):
+                    await proc.communicate()
             logger.warning(f"Command {cmd[0]} timed out after {timeout}s")
             return "", f"timed out after {timeout}s", 124
         except FileNotFoundError:
@@ -222,6 +231,7 @@ class PipeWireService:
         output = await self._run_cmd(["wpctl", "status"])
         if not output:
             self._daemon_running_since = None
+            self._daemon_cookie = None
             return info
 
         # First line: PipeWire 'pipewire-0' [1.4.9, mm@MAP2-TESTBED, cookie:3716221001]
@@ -237,11 +247,15 @@ class PipeWireService:
             info.version = m.group(2)
             info.hostname = m.group(4)
             info.cookie = m.group(5)
-            if self._daemon_running_since is None:
+            if self._daemon_cookie != info.cookie:
+                self._daemon_cookie = info.cookie
+                self._daemon_running_since = now
+            elif self._daemon_running_since is None:
                 self._daemon_running_since = now
             info.uptime_seconds = now - self._daemon_running_since
         else:
             self._daemon_running_since = None
+            self._daemon_cookie = None
 
         return info
 
@@ -843,66 +857,71 @@ class PipeWireService:
         if self._cached_snapshot and (now - self._cache_time) < self._cache_ttl:
             return self._cached_snapshot
 
-        daemon = await self.check_daemon()
-        if not daemon.running:
-            return PipeWireMetrics(
-                daemon=daemon,
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                alerts=[{"type": "pipewire_daemon_down", "severity": "error",
-                         "message": "PipeWire daemon is not running"}],
+        async with self._snapshot_lock:
+            now = time.monotonic()
+            if self._cached_snapshot and (now - self._cache_time) < self._cache_ttl:
+                return self._cached_snapshot
+
+            daemon = await self.check_daemon()
+            if not daemon.running:
+                return PipeWireMetrics(
+                    daemon=daemon,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    alerts=[{"type": "pipewire_daemon_down", "severity": "error",
+                             "message": "PipeWire daemon is not running"}],
+                )
+
+            # Fetch pw-dump ONCE — shared by nodes, streams, links, xruns
+            dump = None
+            if HAS_PW_DUMP:
+                dump = await self._run_cmd_json(["pw-dump"])
+                if not isinstance(dump, list):
+                    dump = None
+
+            # Gather data concurrently (pass shared dump where needed)
+            settings_task = self.get_settings()
+            nodes_task = self.get_nodes(dump=dump)
+            devices_task = self.get_devices()
+            streams_task = self.get_streams(dump=dump)
+            links_task = self._get_links_from_dump(dump)
+            clients_task = self.get_clients()
+            xruns_task = self._get_xruns_from_dump(dump)
+
+            settings, nodes, devices, streams, links, clients, xruns = await asyncio.gather(
+                settings_task, nodes_task, devices_task, streams_task,
+                links_task, clients_task, xruns_task,
             )
 
-        # Fetch pw-dump ONCE — shared by nodes, streams, links, xruns
-        dump = None
-        if HAS_PW_DUMP:
-            dump = await self._run_cmd_json(["pw-dump"])
-            if not isinstance(dump, list):
-                dump = None
+            latency = self._compute_latency(settings)
 
-        # Gather data concurrently (pass shared dump where needed)
-        settings_task = self.get_settings()
-        nodes_task = self.get_nodes(dump=dump)
-        devices_task = self.get_devices()
-        streams_task = self.get_streams(dump=dump)
-        links_task = self._get_links_from_dump(dump)
-        clients_task = self.get_clients()
-        xruns_task = self._get_xruns_from_dump(dump)
+            # Find default sink/source
+            default_sink = next((n for n in nodes if n.media_class == "Audio/Sink" and n.is_default), None)
+            default_source = next((n for n in nodes if n.media_class == "Audio/Source" and n.is_default), None)
 
-        settings, nodes, devices, streams, links, clients, xruns = await asyncio.gather(
-            settings_task, nodes_task, devices_task, streams_task,
-            links_task, clients_task, xruns_task,
-        )
+            # Check for alerts (include links to avoid false "no streams" alarm)
+            alerts = self._check_alerts(daemon, devices, streams, links, xruns, latency["total_latency_ms"])
 
-        latency = self._compute_latency(settings)
+            metrics = PipeWireMetrics(
+                daemon=daemon,
+                settings=settings,
+                default_sink=default_sink,
+                default_source=default_source,
+                devices=devices,
+                nodes=nodes,
+                streams=streams,
+                links=links,
+                client_count=len(clients),
+                xruns=xruns,
+                graph_latency_ms=latency["graph_latency_ms"],
+                driver_latency_ms=latency["driver_latency_ms"],
+                total_latency_ms=latency["total_latency_ms"],
+                alerts=alerts,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
-        # Find default sink/source
-        default_sink = next((n for n in nodes if n.media_class == "Audio/Sink" and n.is_default), None)
-        default_source = next((n for n in nodes if n.media_class == "Audio/Source" and n.is_default), None)
-
-        # Check for alerts (include links to avoid false "no streams" alarm)
-        alerts = self._check_alerts(daemon, devices, streams, links, xruns, latency["total_latency_ms"])
-
-        metrics = PipeWireMetrics(
-            daemon=daemon,
-            settings=settings,
-            default_sink=default_sink,
-            default_source=default_source,
-            devices=devices,
-            nodes=nodes,
-            streams=streams,
-            links=links,
-            client_count=len(clients),
-            xruns=xruns,
-            graph_latency_ms=latency["graph_latency_ms"],
-            driver_latency_ms=latency["driver_latency_ms"],
-            total_latency_ms=latency["total_latency_ms"],
-            alerts=alerts,
-            timestamp=datetime.now(timezone.utc).isoformat(),
-        )
-
-        self._cached_snapshot = metrics
-        self._cache_time = now
-        return metrics
+            self._cached_snapshot = metrics
+            self._cache_time = now
+            return metrics
 
     # ---------------------------------------------------------------
     # Alerting

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from itertools import chain, repeat
 
@@ -63,6 +64,129 @@ async def test_check_daemon_uptime_tracks_observed_runtime(monkeypatch: pytest.M
     assert second.running is False
     assert third.running is True
     assert third.uptime_seconds == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_check_daemon_resets_uptime_when_cookie_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PipeWireService()
+    monkeypatch.setattr(pipewire_service_module, "HAS_WPCTL", True)
+
+    outputs = iter(
+        [
+            "PipeWire 'pipewire-0' [1.4.9, mm@MAP2, cookie:123]\n",
+            "PipeWire 'pipewire-0' [1.4.9, mm@MAP2, cookie:999]\n",
+        ]
+    )
+    monotonic_values = chain([10.0, 14.5, 20.0, 20.0], repeat(20.0))
+
+    async def _fake_run_cmd(cmd, timeout=5.0):
+        return next(outputs)
+
+    monkeypatch.setattr(service, "_run_cmd", _fake_run_cmd)
+    monkeypatch.setattr(pipewire_service_module.time, "monotonic", lambda: next(monotonic_values))
+
+    first = await service.check_daemon()
+    second = await service.check_daemon()
+
+    assert first.uptime_seconds == pytest.approx(0.0)
+    assert second.running is True
+    assert second.cookie == "999"
+    assert second.uptime_seconds == pytest.approx(0.0)
+
+
+@pytest.mark.asyncio
+async def test_run_cmd_result_kills_timed_out_subprocess(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PipeWireService()
+    events: list[str] = []
+
+    class _FakeProcess:
+        returncode = None
+
+        async def communicate(self):
+            events.append("communicate")
+            await asyncio.sleep(0)
+            return b"", b""
+
+        def kill(self):
+            events.append("kill")
+
+    async def _fake_create_subprocess_exec(*cmd, **kwargs):
+        return _FakeProcess()
+
+    async def _fake_wait_for(awaitable, timeout):
+        close = getattr(awaitable, "close", None)
+        if callable(close):
+            close()
+        await asyncio.sleep(0)
+        raise asyncio.TimeoutError
+
+    monkeypatch.setattr(pipewire_service_module.asyncio, "create_subprocess_exec", _fake_create_subprocess_exec)
+    monkeypatch.setattr(pipewire_service_module.asyncio, "wait_for", _fake_wait_for)
+
+    stdout, stderr, returncode = await service._run_cmd_result(["pw-dump"], timeout=0.01)
+
+    assert stdout == ""
+    assert "timed out" in stderr
+    assert returncode == 124
+    assert events == ["kill", "communicate"]
+
+
+@pytest.mark.asyncio
+async def test_get_graph_snapshot_serializes_cache_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PipeWireService()
+    monkeypatch.setattr(pipewire_service_module, "HAS_PW_DUMP", False)
+
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    check_calls = 0
+
+    async def _fake_check_daemon():
+        nonlocal check_calls
+        check_calls += 1
+        entered.set()
+        await release.wait()
+        return pipewire_service_module.PipeWireDaemonInfo(running=True, cookie="123")
+
+    async def _fake_get_settings():
+        return pipewire_service_module.PipeWireSettings()
+
+    async def _fake_get_nodes(dump=None):
+        return []
+
+    async def _fake_get_devices():
+        return []
+
+    async def _fake_get_streams(dump=None):
+        return []
+
+    async def _fake_get_links_from_dump(dump=None):
+        return []
+
+    async def _fake_get_clients():
+        return []
+
+    async def _fake_get_xruns_from_dump(dump=None):
+        return 0
+
+    monkeypatch.setattr(service, "check_daemon", _fake_check_daemon)
+    monkeypatch.setattr(service, "get_settings", _fake_get_settings)
+    monkeypatch.setattr(service, "get_nodes", _fake_get_nodes)
+    monkeypatch.setattr(service, "get_devices", _fake_get_devices)
+    monkeypatch.setattr(service, "get_streams", _fake_get_streams)
+    monkeypatch.setattr(service, "_get_links_from_dump", _fake_get_links_from_dump)
+    monkeypatch.setattr(service, "get_clients", _fake_get_clients)
+    monkeypatch.setattr(service, "_get_xruns_from_dump", _fake_get_xruns_from_dump)
+
+    first_task = asyncio.create_task(service.get_graph_snapshot())
+    await entered.wait()
+    second_task = asyncio.create_task(service.get_graph_snapshot())
+    await asyncio.sleep(0)
+    release.set()
+
+    first, second = await asyncio.gather(first_task, second_task)
+
+    assert check_calls == 1
+    assert first is second
 
 
 @pytest.mark.asyncio

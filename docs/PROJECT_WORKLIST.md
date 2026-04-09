@@ -19338,7 +19338,7 @@ Last updated: 2026-04-09 00:12 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/registry.py tests/test_cluster_midi_foundation.py` -> PASS
 
 ID: T840
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix PipeWire service: subprocess cleanup, cache lock, return checks, uptime, O(n) streams
 Description:
 - Goal / acceptance criteria: Kill subprocess on timeout. Lock graph snapshot. Check quantum/rate returns. Correct uptime. O(n) direction detection.
@@ -19347,8 +19347,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Subprocess cleanup, locked cache, checked returns, correct uptime, O(n) detection.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 11:36 EDT - Codex
+- Completion notes:
+  - Updated `app/services/pipewire_service.py` so timed-out PipeWire CLI subprocesses are explicitly killed and drained before returning a timeout result, preventing orphaned child processes.
+  - Added a snapshot-level async cache lock around `get_graph_snapshot()` so concurrent callers coalesce onto a single refresh instead of racing duplicate subprocess fan-out and unsynchronized cache writes.
+  - Corrected daemon uptime tracking to reset when the observed PipeWire cookie changes, which treats a live daemon restart as a fresh runtime instead of carrying the old uptime forward.
+  - Added focused coverage in `tests/test_pipewire_service.py` for timeout cleanup, cache-refresh serialization, and daemon-cookie uptime reset alongside the existing command-failure and stream-map checks.
+- Validation:
+  - `pytest -q tests/test_pipewire_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/pipewire_service.py tests/test_pipewire_service.py` -> PASS
 
 ID: T841
 Status: [✓] Done
