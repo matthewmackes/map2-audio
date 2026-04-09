@@ -232,6 +232,7 @@ export function App({
     <AppShell
       title={`MAP2 / ${screen.title}`}
       subtitle={screen.description}
+      pathContext={`${screen.group} / ${screen.title}`}
       statusLeft={status.left}
       statusRight={status.right}
       terminalColumns={terminal.columns}

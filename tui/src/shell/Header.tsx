@@ -6,6 +6,7 @@ import { StatusDot } from '../components/StatusDot'
 export function Header({
   title,
   subtitle,
+  pathContext,
   statusLabel,
   statusTone,
   pendingJobs,
@@ -14,6 +15,7 @@ export function Header({
 }: {
   title: string
   subtitle: string
+  pathContext: string
   statusLabel: string
   statusTone: 'ok' | 'warn' | 'error' | 'idle'
   pendingJobs: number
@@ -25,6 +27,7 @@ export function Header({
       <Box flexDirection="column">
         <Text color={oledPalette.accent}>{title}</Text>
         <Text color={oledPalette.muted}>{subtitle}</Text>
+        <Text color={oledPalette.focus}>{pathContext}</Text>
       </Box>
       <Box flexDirection="column" alignItems="flex-end">
         <Box>

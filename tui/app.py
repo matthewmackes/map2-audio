@@ -15,6 +15,7 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual import on
 from textual.widgets import Button, ContentSwitcher, Footer, Label, Static
 
 from .api import MAP2APIClient
@@ -128,6 +129,12 @@ class MAP2ConsoleApp(App[None]):
                 ordered_groups.append((group, groups[group]))
         return ordered_groups
 
+    def _group_root_route(self, group: str) -> UnifiedRoute | None:
+        for current_group, routes in self._nav_groups:
+            if current_group == group and routes:
+                return routes[0]
+        return None
+
     def _build_cadence(self) -> dict[str, int]:
         return {
             "snapshot": 1,
@@ -219,6 +226,10 @@ class MAP2ConsoleApp(App[None]):
                         yield Button(route.label, id=f"nav-{route.key}", classes="nav-button")
 
             with VerticalScroll(id="workspace-panel"):
+                with Horizontal(id="workspace-breadcrumbs"):
+                    yield Button("", id="breadcrumb-root", classes="breadcrumb-segment")
+                    yield Static("/", id="breadcrumb-separator", classes="breadcrumb-separator")
+                    yield Button("", id="breadcrumb-current", classes="breadcrumb-segment breadcrumb-segment--current")
                 yield ContentSwitcher(id="workspace-switcher")
 
             with VerticalScroll(id="secondary-panel"):
@@ -340,6 +351,7 @@ class MAP2ConsoleApp(App[None]):
             self.refresh_route_actions()
         self.refresh_nav()
         self.refresh_header()
+        self.refresh_breadcrumbs()
         self.refresh_context_panel()
         self.force_refresh_active_route()
 
@@ -357,6 +369,28 @@ class MAP2ConsoleApp(App[None]):
                 continue
             button = self.query_one(f"#nav-{route.key}", Button)
             button.set_class(route.key == self._active_route_key, "-active")
+
+    def refresh_breadcrumbs(self) -> None:
+        root = self.query_one("#breadcrumb-root", Button)
+        separator = self.query_one("#breadcrumb-separator", Static)
+        current = self.query_one("#breadcrumb-current", Button)
+        route = self._route_map.get(self._active_route_key)
+        if route is None:
+            root.label = ""
+            current.label = ""
+            root.display = False
+            separator.display = False
+            current.display = False
+            return
+
+        group_root = self._group_root_route(route.group)
+        show_group = group_root is not None and group_root.key != route.key
+        root.label = group_root.label if group_root is not None else route.group
+        current.label = route.label
+        root.display = show_group
+        separator.display = show_group
+        current.display = True
+        current.disabled = True
 
     def refresh_route_actions(self) -> None:
         route = self.active_route
@@ -577,6 +611,16 @@ class MAP2ConsoleApp(App[None]):
             target = "dashboard"
             self._route_history = ["dashboard"]
         self._open_route_back(target)
+
+    @on(Button.Pressed, "#breadcrumb-root")
+    def _on_breadcrumb_root_pressed(self) -> None:
+        route = self._route_map.get(self._active_route_key)
+        if route is None:
+            return
+        group_root = self._group_root_route(route.group)
+        if group_root is None or group_root.key == route.key:
+            return
+        self.open_route(group_root.key)
 
     @work(exclusive=True, thread=False)
     async def _open_route_back(self, route_key: str) -> None:

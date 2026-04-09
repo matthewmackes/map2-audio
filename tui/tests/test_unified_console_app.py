@@ -297,6 +297,34 @@ async def test_route_navigation_updates_active_route(tmp_path: Path, monkeypatch
 
 
 @pytest.mark.asyncio
+async def test_breadcrumbs_show_group_context_and_route_back_to_group_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    state_dir = tmp_path / ".config" / "map2"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    (state_dir / "tui_state.json").write_text(
+        '{"onboarding_completed": true, "theme_name": "carbon-dark", "last_route": "dashboard", "environment": "local", "workspace": "map2-audio"}'
+    )
+
+    app = MAP2ConsoleApp()
+    app._poll_manager = _build_fake_poll_manager(app)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.open_route("cluster")
+        await pilot.pause()
+
+        assert app.query_one("#breadcrumb-root").label == "Platform"
+        assert app.query_one("#breadcrumb-current").label == "Cluster"
+
+        app._on_breadcrumb_root_pressed()
+        await pilot.pause()
+        assert app._active_route_key == "platform"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("route_key", "expected_title", "widget_id"),
     [

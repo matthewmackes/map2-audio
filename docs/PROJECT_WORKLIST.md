@@ -20233,7 +20233,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08
 
 ID: T884
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add breadcrumb/path context for deep route navigation
 Description:
 - Goal / acceptance criteria: (1) Add a breadcrumb or path indicator at the top of the Textual workspace panel showing the current navigation trail (e.g. `Dashboard / Audio / Engine Status`). (2) Make breadcrumb segments clickable to navigate back to parent routes. (3) In the Ink TUI, add a lightweight path indicator in the Header subtitle area showing the navigation context.
@@ -20242,8 +20242,15 @@ Description:
 - Estimated effort: Low
 - Required outputs: Breadcrumb widget (Textual), path indicator (Ink), integration into shell layout.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 11:04 EDT - Codex
+- Completion notes:
+  - Added a Textual breadcrumb row in `tui/app.py` above the workspace switcher so the active route now shows its group/root context and the parent segment can navigate back to the group landing route.
+  - Added matching Carbon breadcrumb styling in `tui/styles/carbon.tcss` for the new Textual breadcrumb buttons and separator.
+  - Extended the Ink route registry with group metadata in `tui/src/navigation/screenRegistry.ts` / `tui/src/navigation/types.ts`, then surfaced a visible path line in `tui/src/shell/Header.tsx` via `tui/src/App.tsx` and `tui/src/shell/AppShell.tsx`.
+- Validation:
+  - `pytest -q tui/tests/test_unified_console_app.py` -> PASS
+  - `npm --prefix tui run build` -> PASS
 
 ID: T885
 Status: [ ] Todo

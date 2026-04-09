@@ -101,6 +101,37 @@ Screen {
     padding: 1 2;
 }
 
+#workspace-breadcrumbs {
+    height: auto;
+    margin: 0 0 1 0;
+}
+
+.breadcrumb-segment {
+    min-width: 12;
+    width: auto;
+    margin-right: 0;
+    padding: 0 1;
+    background: transparent;
+    border: none;
+    color: $carbon-accent;
+}
+
+.breadcrumb-segment--current {
+    color: $foreground;
+    text-style: bold;
+}
+
+.breadcrumb-segment:focus {
+    border: round $carbon-focus;
+}
+
+.breadcrumb-separator {
+    width: auto;
+    min-width: 1;
+    color: $carbon-text-secondary;
+    content-align: center middle;
+}
+
 #workspace-switcher {
     width: 100%;
     height: auto;

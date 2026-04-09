@@ -6,6 +6,7 @@ import { StatusBar } from './StatusBar'
 export function AppShell({
   title,
   subtitle,
+  pathContext,
   children,
   statusLeft,
   statusRight,
@@ -18,6 +19,7 @@ export function AppShell({
 }: {
   title: string
   subtitle: string
+  pathContext: string
   children: React.ReactNode
   statusLeft: string
   statusRight: string
@@ -33,6 +35,7 @@ export function AppShell({
       <Header
         title={title}
         subtitle={subtitle}
+        pathContext={pathContext}
         statusLabel={statusLabel}
         statusTone={statusTone}
         pendingJobs={pendingJobs}

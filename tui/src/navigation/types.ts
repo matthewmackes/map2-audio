@@ -16,6 +16,7 @@ export type ScreenId =
 
 export interface ScreenDefinition {
   id: ScreenId
+  group: string
   title: string
   shortTitle: string
   description: string
