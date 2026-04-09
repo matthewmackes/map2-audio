@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1598** total commits | **3** stars | **0** forks | **0** open issues
+**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1600** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4546c032`](https://github.com/matthewmackes/map2-audio/commit/4546c032025e6692c881a88a29f1dd406edd6079) | Mark Carbon shell layering tranche blocked | Map2 Audio | 2026-04-09 |
+| [`d007d908`](https://github.com/matthewmackes/map2-audio/commit/d007d908a12d419f7c59bb065e81ca69c07e5c07) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`0c18310b`](https://github.com/matthewmackes/map2-audio/commit/0c18310bce95fc97288ea420f37f5de500bf4e70) | Mark Carbon form and notification tranche blocked | Map2 Audio | 2026-04-09 |
 | [`fe6c2632`](https://github.com/matthewmackes/map2-audio/commit/fe6c263200bd5369dd0d37c87ba09f622936b34a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`747192e8`](https://github.com/matthewmackes/map2-audio/commit/747192e8f7f282fa1c1c742df5161eabb044eb2f) | Mark Carbon primitive tranche blocked | Map2 Audio | 2026-04-09 |
 | [`9ef8c2dd`](https://github.com/matthewmackes/map2-audio/commit/9ef8c2ddbc2af9f6c0edbf2cb78a5eca40579a2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`857274c2`](https://github.com/matthewmackes/map2-audio/commit/857274c2e2c5b5c59c4b53c486773f8054f14203) | Record blocked frontend dependency tranche | Map2 Audio | 2026-04-08 |
 | [`12f78cdb`](https://github.com/matthewmackes/map2-audio/commit/12f78cdbad1f42e54abefeab7f20d54805177203) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`a15e0b67`](https://github.com/matthewmackes/map2-audio/commit/a15e0b6756af1c9e78ca5f705c675e97563eedb5) | Extract shell navigation CSS and finish AppShell split | Map2 Audio | 2026-04-08 |
-| [`566f1238`](https://github.com/matthewmackes/map2-audio/commit/566f12383c175773076028864c39568835ad9944) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
