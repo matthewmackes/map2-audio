@@ -1,0 +1,54 @@
+.react-flow {
+  --xy-background-color: var(--bg);
+  --xy-node-border: var(--border-strong);
+  --xy-node-background: var(--surface);
+  --xy-edge-stroke: var(--border-strong);
+  --xy-edge-stroke-width: 3px;
+  --xy-edge-stroke-selected: var(--interactive);
+  --xy-controls-button-background: var(--surface);
+  --xy-controls-button-border: var(--border);
+  --xy-controls-button-color: var(--text-secondary);
+  --xy-minimap-background: var(--surface);
+  --xy-minimap-mask: rgba(37, 99, 235, 0.3);
+  --xy-minimap-node: var(--surface-3);
+}
+
+.react-flow__node {
+  transition: opacity 0.2s ease-in-out;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.react-flow__edge-path {
+  transition: stroke 0.2s ease-in-out;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--interactive);
+}
+
+.react-flow__controls {
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  transition: all 0.2s ease-in-out;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-2);
+  border-color: var(--interactive);
+  color: var(--text-primary);
+}
+
+.react-flow__minimap {
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.react-flow__background {
+  opacity: 0.3;
+}

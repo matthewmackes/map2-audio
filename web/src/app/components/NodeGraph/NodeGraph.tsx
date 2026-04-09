@@ -1,4 +1,5 @@
 import './NodeGraph.css'
+import '../shared/ReactFlowTheme.css'
 
 import { useMemo } from 'react'
 import ReactFlow, {

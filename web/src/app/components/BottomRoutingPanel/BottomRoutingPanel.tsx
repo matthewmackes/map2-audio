@@ -7,6 +7,7 @@
 
 import { Add, ArrowRight, FlowConnection, Shuffle, SplitScreen, Subtract } from '@carbon/icons-react'
 import type { ChainSlot } from '../ChainPanel'
+import './BottomRoutingPanel.css'
 
 export type RoutingMode =
   | 'parallel_blend'

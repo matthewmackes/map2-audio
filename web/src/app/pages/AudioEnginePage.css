@@ -1,5 +1,14 @@
 /* AudioEnginePage — IBM Carbon flat operator surface */
 
+.audio-engine-page,
+.audio-engine-page * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* ── Root ──────────────────────────────────────────────────────────────── */
 
 .audio-engine-page {
@@ -7,7 +16,7 @@
   flex-direction: column;
   min-height: 100%;
   width: 100%;
-  background: var(--cds-background);
+  background: var(--bg);
 }
 
 .audio-engine-page__surface {

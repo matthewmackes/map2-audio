@@ -1,5 +1,6 @@
 import { Document } from '@carbon/icons-react'
 import type { SoundFont } from '../../types/library'
+import './ModelList.css'
 
 interface SFItemCardProps {
   soundfont: SoundFont

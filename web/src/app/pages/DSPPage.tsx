@@ -9,6 +9,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Renew, Waveform } from '@carbon/icons-react'
+import { Button, ClickableTile, Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
@@ -119,16 +120,16 @@ export function DSPPage() {
         <PageHeader
           title="DSP · All Nodes"
           subtitle="Cluster-wide DSP budget, load, and processor inventory comparison"
-          icon={<Waveform size={32} style={{ color: '#2563eb' }} />}
+          icon={<Waveform size={32} style={{ color: 'var(--interactive)' }} />}
           actions={
-            <button
-              className="btn btn-secondary"
+            <Button
+              kind="secondary"
+              size="sm"
               onClick={() => clusterDspQuery.refetch()}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              renderIcon={Renew}
             >
-              <Renew size={16} />
               Refresh
-            </button>
+            </Button>
           }
         />
 
@@ -156,53 +157,54 @@ export function DSPPage() {
           {clusterDspQuery.isError ? (
             <div className="pill warn">Failed to load cluster DSP status</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table cluster-summary-table">
-                <thead>
-                  <tr>
-                    <th>Node</th>
-                    <th>Mode</th>
-                    <th>Utilization</th>
-                    <th>Target CPU</th>
-                    <th>Active Plugins</th>
-                    <th>Registered</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer title="Cluster DSP status" style={{ overflowX: 'auto' }}>
+              <Table size="sm" className="cluster-summary-table">
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Node</TableHeader>
+                    <TableHeader>Mode</TableHeader>
+                    <TableHeader>Utilization</TableHeader>
+                    <TableHeader>Target CPU</TableHeader>
+                    <TableHeader>Active Plugins</TableHeader>
+                    <TableHeader>Registered</TableHeader>
+                    <TableHeader>Status</TableHeader>
+                    <TableHeader>Action</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {clusterRows.map(({ node, status, utilization, activePlugins }) => (
-                    <tr key={node.nodeId}>
-                      <td>
+                    <TableRow key={node.nodeId}>
+                      <TableCell>
                         <div style={{ fontWeight: 700 }}>{node.isLocal ? `${node.hostname} (Local)` : node.hostname}</div>
                         <div className="muted" style={{ fontSize: 12 }}>{node.nodeId}</div>
-                      </td>
-                      <td>{status?.mode ?? (node.isOnline ? 'Unknown' : 'Offline')}</td>
-                      <td>{utilization == null ? '—' : `${utilization.toFixed(1)}%`}</td>
-                      <td>{typeof status?.target_cpu_percent === 'number' ? `${status.target_cpu_percent.toFixed(0)}%` : '—'}</td>
-                      <td>{activePlugins}</td>
-                      <td>{status?.registered_plugins ?? '—'}</td>
-                      <td>
-                        <span className={`pill ${status?.is_overloaded ? 'warn' : node.isOnline ? 'success' : 'muted'}`}>
+                      </TableCell>
+                      <TableCell>{status?.mode ?? (node.isOnline ? 'Unknown' : 'Offline')}</TableCell>
+                      <TableCell>{utilization == null ? '—' : `${utilization.toFixed(1)}%`}</TableCell>
+                      <TableCell>{typeof status?.target_cpu_percent === 'number' ? `${status.target_cpu_percent.toFixed(0)}%` : '—'}</TableCell>
+                      <TableCell>{activePlugins}</TableCell>
+                      <TableCell>{status?.registered_plugins ?? '—'}</TableCell>
+                      <TableCell>
+                        <Tag type={status?.is_overloaded ? 'warm-gray' : node.isOnline ? 'green' : 'cool-gray'}>
                           {status?.is_overloaded ? 'Overloaded' : node.isOnline ? 'Online' : 'Offline'}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
+                        </Tag>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          kind="secondary"
+                          size="sm"
                           onClick={() => {
                             setActiveNode(null)
                             setViewedNode(NODE_PAGE_KEYS.dsp, node.nodeId)
                           }}
                         >
                           Inspect
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </div>
 
@@ -220,28 +222,18 @@ export function DSPPage() {
             ? `Live JUCE DSP controls proxied to ${selectedNode?.hostname ?? viewedNodeId}.`
             : `Built-in JUCE audio engine controls with ${NATIVE_PLUGINS.length} processors available.`
         }
-        icon={<Waveform size={32} style={{ color: '#2563eb' }} />}
+        icon={<Waveform size={32} style={{ color: 'var(--interactive)' }} />}
         actions={
-          <button
+          <Button
             onClick={() => navigate('/juce-grid')}
             disabled={remoteSelected}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              background: remoteSelected ? '#1f2937' : '#2563eb',
-              color: remoteSelected ? '#64748b' : '#fff',
-              border: 'none',
-              borderRadius: 8,
-              cursor: remoteSelected ? 'not-allowed' : 'pointer',
-              fontSize: 13,
-              fontWeight: 500,
-            }}
+            kind={remoteSelected ? 'secondary' : 'primary'}
+            size="sm"
+            renderIcon={MapAudioGridIcon}
             title={remoteSelected ? 'Audio Grid is still local-only. Select the node locally to edit chains there.' : 'Open in Audio Grid'}
           >
-            <MapAudioGridIcon size={14} /> Open in Audio Grid
-          </button>
+            Open in Audio Grid
+          </Button>
         }
       />
 
@@ -308,55 +300,40 @@ export function DSPPage() {
                 {remoteSelected ? 'Catalog is read-only while targeting a remote node.' : 'Click a processor to jump into the Grid editor.'}
               </span>
             </div>
-            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: 13, marginBottom: 20 }}>
               All {NATIVE_PLUGINS.length} built-in JUCE processors. DSP controls above target {remoteSelected ? selectedNode?.hostname ?? viewedNodeId : 'the local node'}.
             </p>
             {Object.entries(pluginsByCategory).map(([category, plugins]) => (
               <div key={category} style={{ marginBottom: 20 }}>
-                <h3 style={{ fontSize: 14, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                  {category} <span style={{ color: '#6b7280' }}>({plugins.length})</span>
+                <h3 style={{ fontSize: 14, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                  {category} <span style={{ color: 'var(--text-tertiary)' }}>({plugins.length})</span>
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
                   {plugins.map((plugin) => (
-                    <div
+                    <ClickableTile
                       key={plugin.uri}
+                      href={remoteSelected ? undefined : '/juce-grid'}
+                      disabled={remoteSelected}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
                         padding: '12px 16px',
-                        background: '#111111',
-                        border: '1px solid #1a1a1a',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
                         borderLeft: `3px solid ${plugin.color}`,
-                        borderRadius: 8,
-                        cursor: remoteSelected ? 'default' : 'pointer',
-                        transition: 'all 0.15s',
                         opacity: remoteSelected ? 0.75 : 1,
-                      }}
-                      onClick={() => {
-                        if (!remoteSelected) navigate('/juce-grid')
-                      }}
-                      onMouseEnter={(event) => {
-                        if (remoteSelected) return
-                        event.currentTarget.style.background = '#1a1a1a'
-                        event.currentTarget.style.borderColor = '#1e293b'
-                      }}
-                      onMouseLeave={(event) => {
-                        event.currentTarget.style.background = '#111111'
-                        event.currentTarget.style.borderColor = '#1a1a1a'
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: 13, color: '#f3f4f6' }}>{plugin.name}</div>
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Built-in processor</div>
+                        <div style={{ fontWeight: 500, fontSize: 13, color: 'var(--text-primary)' }}>{plugin.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Built-in processor</div>
                       </div>
                       {plugin.standalone && (
-                        <span style={{ fontSize: 10, padding: '2px 6px', background: '#22c55e22', color: '#22c55e', borderRadius: 4 }}>
-                          Standalone
-                        </span>
+                        <Tag type="green">Standalone</Tag>
                       )}
-                      <ChevronRight size={14} style={{ color: '#6b7280' }} />
-                    </div>
+                      <ChevronRight size={14} style={{ color: 'var(--text-tertiary)' }} />
+                    </ClickableTile>
                   ))}
                 </div>
               </div>

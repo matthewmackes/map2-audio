@@ -2,6 +2,7 @@ import { Modal, Tag } from '@carbon/react'
 import type { Plugin } from '../../map2/types'
 import { useToasts } from './Toasts'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import './Disclosure.css'
 import './PluginDetailsModal.css'
 
 interface PluginDetailsModalProps {

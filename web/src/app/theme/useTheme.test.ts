@@ -31,4 +31,21 @@ describe('theme defaults', () => {
     expect(window.localStorage.getItem('theme')).toBe('white')
     expect(document.documentElement).toHaveAttribute('data-carbon-theme', 'white')
   })
+
+  it.each([
+    ['default', 'g100', 'dark'],
+    ['gray-90', 'g90', 'dark'],
+    ['gray-10', 'g10', 'light'],
+    ['white', 'white', 'light'],
+  ] as const)('applies built-in theme %s using Carbon shell %s', (themeId, carbonTheme, colorScheme) => {
+    applyTheme(themeId)
+
+    expect(document.documentElement).toHaveAttribute('data-carbon-theme', carbonTheme)
+    expect(document.body).toHaveAttribute('data-carbon-theme', carbonTheme)
+    expect(document.documentElement.style.colorScheme).toBe(colorScheme)
+    expect(document.documentElement.style.getPropertyValue('--bg')).toBe('var(--cds-background)')
+    expect(document.documentElement.style.getPropertyValue('--surface')).toBe('var(--cds-layer-01)')
+    expect(document.documentElement.style.getPropertyValue('--interactive')).toBe('var(--cds-button-primary)')
+    expect(document.documentElement.style.getPropertyValue('--focus-ring')).toBe('var(--cds-focus)')
+  })
 })

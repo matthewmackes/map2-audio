@@ -1,0 +1,687 @@
+.horizontal-chain {
+  --chain-color: transparent;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 28px 32px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  background: var(--surface);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--chain-color) 25%, var(--border));
+  min-height: 225px;
+  position: relative;
+}
+
+.horizontal-chain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.horizontal-chain::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontal-chain::-webkit-scrollbar-track {
+  background: var(--surface-2);
+  border-radius: 3px;
+}
+
+.horizontal-chain::-webkit-scrollbar-thumb {
+  background: var(--muted-2);
+  border-radius: 3px;
+}
+
+.horizontal-chain::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+.h-plugin-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.h-plugin-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  background: var(--surface-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.h-plugin-node:hover {
+  border-color: var(--primary);
+  box-shadow: none;
+}
+
+.h-plugin-node:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: none;
+}
+
+.h-plugin-node.selected {
+  border-color: var(--primary);
+  box-shadow: none;
+  background: var(--surface-3);
+}
+
+.h-plugin-node.bypassed {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.h-plugin-node.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.h-plugin-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.h-plugin-icon {
+  width: 24px;
+  height: 24px;
+  fill: var(--muted);
+  transition: fill 0.15s ease;
+}
+
+.h-plugin-node:hover .h-plugin-icon,
+.h-plugin-node.selected .h-plugin-icon {
+  fill: var(--primary);
+}
+
+.h-plugin-node.bypassed .h-plugin-icon {
+  fill: var(--muted-2);
+}
+
+.h-plugin-name {
+  width: 150px;
+  font-size: var(--type-label);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.h-plugin-node.bypassed .h-plugin-name {
+  color: var(--muted);
+}
+
+.h-plugin-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.h-plugin-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.h-plugin-action-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.h-plugin-action-btn.active {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.h-plugin-action-btn.bypassed {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.h-plugin-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--support-danger);
+  border-color: var(--support-danger);
+}
+
+.h-plugin-status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: none;
+}
+
+.h-drop-indicator {
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  background: var(--primary);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.h-drop-indicator.visible {
+  opacity: 1;
+  box-shadow: none;
+}
+
+.h-signal-endpoint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  flex-shrink: 0;
+  width: 32px;
+}
+
+.h-signal-endpoint.input {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.h-signal-endpoint.output {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.h-signal-endpoint-label {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.h-signal-endpoint.input .h-signal-endpoint-label {
+  color: var(--success);
+}
+
+.h-signal-endpoint.output .h-signal-endpoint-label {
+  color: var(--warning);
+}
+
+.h-signal-endpoint-info {
+  display: flex;
+  gap: 2px;
+  font-size: var(--type-caption);
+  color: var(--muted);
+  line-height: 1;
+}
+
+.h-signal-endpoint-info span {
+  padding: 0;
+  background: none;
+}
+
+.h-signal-arrow {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 40px;
+  max-width: 120px;
+  height: 24px;
+  position: relative;
+}
+
+.h-signal-arrow-line {
+  flex: 1;
+  height: 3px;
+  background: var(--muted-2);
+  position: relative;
+  border-radius: 1px;
+}
+
+.h-signal-arrow.active .h-signal-arrow-line {
+  background: var(--surface);
+  background-size: 200% 100%;
+  animation: signal-flow 1.5s linear infinite;
+  box-shadow: none;
+}
+
+@keyframes signal-flow {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-line {
+  height: 2px;
+  background: var(--surface);
+  opacity: 0.6;
+}
+
+.h-signal-arrow-info {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.h-signal-arrow-channels {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 1px 4px;
+  background: var(--surface);
+  border-radius: 2px;
+}
+
+.h-signal-arrow.active .h-signal-arrow-channels {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-channels {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.h-signal-arrow-flow {
+  font-size: var(--type-caption);
+  color: var(--muted-2);
+  text-transform: uppercase;
+}
+
+.h-signal-arrow.active .h-signal-arrow-flow {
+  color: var(--success);
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-flow {
+  color: var(--warning);
+}
+
+.h-signal-arrow-head {
+  width: 0;
+  height: 0;
+  border-left: 8px solid var(--muted-2);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  flex-shrink: 0;
+  margin-left: -1px;
+}
+
+.h-signal-arrow.active .h-signal-arrow-head {
+  border-left-color: var(--success);
+  filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.6));
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-head {
+  border-left-color: var(--warning);
+  opacity: 0.5;
+}
+
+.h-plugin-wrapper.has-sidechain {
+  position: relative;
+  padding-top: 24px;
+}
+
+.h-plugin-sidechain-input {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--surface-2);
+  border: 1px dashed var(--muted-2);
+  border-radius: 8px;
+  font-size: var(--type-caption);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.h-plugin-sidechain-input:hover {
+  background: var(--surface-3);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.h-plugin-sidechain-input.connected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+.h-plugin-sidechain-input.connected:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.h-sidechain-label {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.h-sidechain-connector {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 24px;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.h-sidechain-line-vertical {
+  width: 2px;
+  flex: 1;
+  background: var(--muted-2);
+  border-radius: 1px;
+}
+
+.h-sidechain-connector.connected .h-sidechain-line-vertical {
+  background: var(--primary);
+}
+
+.h-sidechain-connector.active .h-sidechain-line-vertical {
+  background: var(--surface);
+  background-size: 100% 200%;
+  animation: sidechain-flow 1s linear infinite;
+  box-shadow: none;
+}
+
+@keyframes sidechain-flow {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 200%; }
+}
+
+.h-sidechain-source {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--muted-2);
+  border-radius: 4px;
+  font-size: var(--type-caption);
+  color: var(--muted);
+}
+
+.h-sidechain-connector.connected .h-sidechain-source {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.h-sidechain-source-label {
+  font-weight: 700;
+  font-size: var(--type-caption);
+}
+
+.h-sidechain-arrow-down {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted-2);
+}
+
+.h-sidechain-connector.connected .h-sidechain-arrow-down {
+  border-top-color: var(--primary);
+}
+
+.h-sidechain-connector.active .h-sidechain-arrow-down {
+  border-top-color: var(--primary);
+  filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.6));
+}
+
+.h-empty-state {
+  display: none;
+}
+
+.h-plugin-tooltip-wrapper {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.plugin-tooltip {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius-md);
+  box-shadow: none;
+  font-size: var(--type-label);
+  animation: tooltipFadeIn 0.15s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.plugin-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--primary);
+}
+
+.plugin-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.plugin-tooltip-icon {
+  width: 28px;
+  height: 28px;
+  fill: var(--primary);
+  flex-shrink: 0;
+}
+
+.plugin-tooltip-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.plugin-tooltip-name {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plugin-tooltip-category {
+  font-size: var(--type-label);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.plugin-tooltip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.plugin-tooltip-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plugin-tooltip-label {
+  font-size: var(--type-caption);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plugin-tooltip-value {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.plugin-tooltip-value.active {
+  color: var(--success);
+}
+
+.plugin-tooltip-value.bypassed {
+  color: var(--warning);
+}
+
+.plugin-tooltip-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.plugin-tooltip-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.plugin-tooltip-badge.pdc {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.plugin-tooltip-badge.sidechain {
+  background: rgba(168, 85, 247, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+@media (max-width: 600px) {
+  .horizontal-chain {
+    flex-direction: column;
+    overflow-x: visible;
+    overflow-y: auto;
+    max-height: 400px;
+  }
+
+  .h-plugin-wrapper {
+    flex-direction: column;
+  }
+
+  .h-connector {
+    width: 2px;
+    height: 16px;
+  }
+
+  .h-connector::after {
+    right: auto;
+    bottom: -3px;
+    top: auto;
+    left: -3px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--muted-2);
+    border-bottom: none;
+  }
+
+  .h-connector.active::after {
+    border-top-color: var(--primary);
+    border-left-color: transparent;
+  }
+
+  .h-drop-indicator {
+    left: 50%;
+    top: -4px;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+  }
+
+  .h-plugin-tooltip-wrapper {
+    bottom: auto;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .plugin-tooltip::after {
+    bottom: auto;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid var(--primary);
+    border-left: none;
+  }
+}

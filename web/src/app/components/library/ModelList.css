@@ -1,0 +1,35 @@
+.model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  gap: 12px;
+}
+
+.model-item:hover {
+  background: var(--surface-3);
+}
+
+.model-item.active {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.model-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.model-item-name {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.model-item-meta {
+  margin-top: 2px;
+  font-size: var(--type-label);
+  color: var(--muted);
+}

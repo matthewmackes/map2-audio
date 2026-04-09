@@ -1,0 +1,81 @@
+.model-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius-lg, 12px);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.drag-over {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.upload-dropzone.drag-over {
+  transform: scale(1.01);
+  box-shadow: none;
+}
+
+.upload-file-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+  transition: all 0.2s ease;
+}
+
+.upload-file-item.pending {
+  border-color: var(--border);
+}
+
+.upload-file-item.uploading {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.upload-file-item.success {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.upload-file-item.error {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.upload-progress {
+  height: 4px;
+  background: var(--surface-3, var(--border));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  position: relative;
+  height: 100%;
+  background: var(--surface);
+  border-radius: 2px;
+  transition: width 0.15s ease-out;
+}
+
+.upload-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  animation: shimmer 1.5s ease-in-out infinite;
+}

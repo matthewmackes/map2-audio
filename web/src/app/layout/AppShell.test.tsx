@@ -217,8 +217,8 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByText('Files')).toBeInTheDocument()
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
-    expect(screen.getAllByRole('link').length).toBeGreaterThan(6)
+    expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
+    expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(6)
   })
 
   it('routes the header snapshot editor action through the existing audio grid entry point', () => {
@@ -230,7 +230,7 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Open Snapshot Editor' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/juce-grid')
   })
@@ -244,9 +244,28 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('link', { name: /Platforms/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Platforms/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
+  })
+
+  it('moves focus into the launcher panel and restores it to the trigger when the panel closes', () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    const launcherTrigger = screen.getByLabelText('Open platform menu')
+    launcherTrigger.focus()
+    fireEvent.click(launcherTrigger)
+
+    expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toHaveFocus()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    return waitFor(() => expect(screen.getByLabelText('Open platform menu')).toHaveFocus())
   })
 
   it('opens the power menu and runs refresh and logout actions', () => {
@@ -258,19 +277,19 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
 
     const powerMenu = screen.getByRole('menu', { name: 'Power actions' })
-    expect(within(powerMenu).getByRole('button', { name: 'Restart Backend' })).toBeInTheDocument()
-    expect(within(powerMenu).getByRole('button', { name: 'Refresh Desktop' })).toBeInTheDocument()
-    expect(within(powerMenu).getByRole('button', { name: 'Log Out' })).toBeInTheDocument()
+    expect(within(powerMenu).getByRole('menuitem', { name: 'Restart Backend' })).toBeInTheDocument()
+    expect(within(powerMenu).getByRole('menuitem', { name: 'Refresh Desktop' })).toBeInTheDocument()
+    expect(within(powerMenu).getByRole('menuitem', { name: 'Log Out' })).toBeInTheDocument()
 
-    fireEvent.click(within(powerMenu).getByRole('button', { name: 'Refresh Desktop' }))
+    fireEvent.click(within(powerMenu).getByRole('menuitem', { name: 'Refresh Desktop' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Log Out' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
   })
 
@@ -283,8 +302,8 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Restart Backend' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Restart Backend' }))
 
     expect(screen.getByText(/Audio processing will pause briefly/i)).toBeInTheDocument()
 

@@ -19550,7 +19550,7 @@ Last updated: 2026-04-08 17:37 EDT - Codex
 ## Frontend GUI Quality & Architecture
 
 ID: T848
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Split monolithic `index.css` into co-located CSS modules
 Description:
 - Goal / acceptance criteria: Break the 10,400+ line `web/src/index.css` into co-located CSS files alongside the components they style. Navigation styles (~1,200 lines) move next to `web/src/app/components/navigation/`, signal-chain styles next to `HorizontalSignalChain/`, plugin-card styles next to `PluginCards/`, and so on. The root `index.css` retains only global resets, CSS custom-property definitions, and body/root styling. Build output and visual appearance must remain identical.
@@ -19575,7 +19575,7 @@ Subtasks:
       - Moved the remaining shell/navigation ownership block out of `web/src/index.css` into `web/src/app/layout/AppShell.css`, covering `.topbar-pro`, `.nav-tab-*`, `.nav-mobile-*`, `.nav-active-*`, `.nav-maturity-*`, `.advanced-menu-*`, and their responsive variants.
       - Kept the shell behavior green with focused AppShell route tests and production builds after the extraction.
   - ID: T848-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Extract signal-chain, plugin-card, and routing-panel styles
     Description:
     - Goal / acceptance criteria: Move `.horizontal-chain`, `.h-plugin-*`, `.h-signal-*`, `.h-sidechain-*`, `.chain-panel*`, `.bottom-routing-panel*`, `.loader-card*`, `.plugin-tooltip*`, `.plugin-card*`, `.disclosure-*` and related blocks into CSS files co-located with `HorizontalSignalChain/`, `ChainPanel/`, `PluginCards/`, and `BottomRoutingPanel/` respectively.
@@ -19584,10 +19584,14 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Co-located CSS files, updated imports, build validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08
+    Assigned to: Codex
+    Last updated: 2026-04-09 08:35 EDT - Codex
+    - Completion notes:
+      - Moved the `HorizontalSignalChain` ownership block out of `web/src/index.css` into `web/src/app/components/HorizontalSignalChain/HorizontalSignalChain.css`, covering `.horizontal-chain`, `.h-plugin-*`, `.h-signal-*`, `.h-sidechain-*`, and `.plugin-tooltip*`.
+      - Moved the chain panel and bottom routing panel selectors into `web/src/app/components/ChainPanel/ChainPanel.css` and `web/src/app/components/BottomRoutingPanel/BottomRoutingPanel.css`, then wired those imports into the owning TSX files.
+      - Extracted the shared `disclosure-*` styles into `web/src/app/components/Disclosure.css` for `LibraryPaths` and `PluginDetailsModal`, and removed dead root-only globals (`.loader-card*`, `.plugin-card`, `.chain-panels-container`, `.add-flow-btn`, `.view-toggle-btn`) that had no remaining consumers.
   - ID: T848-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Extract remaining component-scoped styles and validate trimmed root
     Description:
     - Goal / acceptance criteria: Move remaining scoped blocks (platform modal, audio engine page, metering, React Flow overrides, notification panel, etc.) to co-located files. The residual `index.css` should be under 500 lines containing only `:root` variables, global resets, body/root styling, and shared utility classes.
@@ -19596,18 +19600,55 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: Trimmed `index.css`, all component CSS co-located, full build/lint/test validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-08
+    Assigned to: Codex
+    Last updated: 2026-04-09 09:54 EDT - Codex
+    - Completion notes:
+      - Moved the live `PlatformModal` shell selectors (`.platform-modal__body*`, `.platform-modal__header*`, `.platform-modal__close`, `.platform-modal__scroll`) from `web/src/index.css` into `web/src/app/components/Platform/PlatformModal.css`, and removed the dead overlay/compact modal variants that no longer have runtime consumers.
+      - Moved `PluginDetailsModal` parameter-list styling (`.param-list`, `.param-item`, `.param-name`, `.param-range`) into `web/src/app/components/PluginDetailsModal.css`, trimming more component-owned CSS out of the global root.
+      - Moved the live notification panel shell into `web/src/app/components/Toasts.css` and shared upload progress/dropzone primitives into `web/src/app/components/upload/UploadPrimitives.css`, then removed the dead legacy toast internals and duplicated upload selectors from `web/src/index.css`.
+      - Extracted the live `ChainManagementCard` ownership block into `web/src/app/components/ChainManagementCard.css`, moved shared model-list primitives into `web/src/app/components/library/ModelList.css`, and removed the matching component-owned selectors from `web/src/index.css`.
+      - Deleted the dead legacy `grid-flow*`, `flow-assignment*`, and old cluster-dashboard selector families from `web/src/index.css` after repo-wide usage checks confirmed the modern JUCE snapshot editor no longer references those classes, cutting the root stylesheet from 7,215 lines to 4,788 lines before the next slice.
+      - Removed the duplicate `audio-engine-page__*` block from `web/src/index.css` so `web/src/app/pages/AudioEnginePage.css` is the single source of truth for that route’s live styling; the trimmed root now measures 4,629 lines.
+      - Moved the shared React Flow styling into `web/src/app/components/shared/ReactFlowTheme.css` and imported it from the live graph owners (`NodeGraph`, workspace graphs, `TopologyGraph`, Tesira canvas, and AVB network topology modal), then extracted the metering route shell into `web/src/app/pages/MeteringPage.css` and removed the dead `cpu-perf-page` responsive leftovers.
+      - `web/src/index.css` now measures 4,520 lines with no remaining `react-flow*`, `metering-page*`, `grid-flow*`, `flow-assignment*`, or old cluster-dashboard selectors, and `cd web && npm run build` passed on the trimmed state.
+      - Deleted the fully dead legacy `chain-mgmt-*` selector family from `web/src/index.css` after confirming it has no remaining runtime consumers, and moved the remaining `CPUPerformancePage` shell classes into `web/src/app/pages/CPUPerformancePage.css`.
+      - `web/src/index.css` now measures 4,178 lines with no remaining `chain-mgmt-*`, `cpu-performance-*`, `react-flow*`, `metering-page*`, `grid-flow*`, `flow-assignment*`, or old cluster-dashboard selectors, and `cd web && npm run build` passed on the trimmed state.
+      - Moved the live viewport gate shell into `web/src/app/components/ViewportPolicyGate.css` and imported it from `web/src/app/components/ViewportPolicyGate.tsx`, removing the `viewport-policy-screen*` ownership block from the global root.
+      - Deleted the confirmed-dead legacy snapshot/grid families from `web/src/index.css`, including `signal-grid*`, `grid-plugin-block*`, `knob-param-panel*`, `grid-toolbar-*`, `grid-plugin-info-badges`, `grid-midi-*`, `grid-automation-*`, `toolbar-tooltip*`, `toolbar-context-menu*`, `toolbar-confirmation*`, `grid-toolbar-button-group*`, `grid-toolbar-flow-*`, `grid-toolbar-morph-label*`, `midi-learn-*`, and `grid-toolbar-batch-*` after repo-wide usage checks showed no remaining runtime TSX consumers.
+      - `web/src/index.css` now measures 2,061 lines, and `cd web && npm run build` passed after the viewport extraction plus dead legacy block removal.
+      - Moved the live `PageHeader` ownership block into `web/src/app/components/PageHeader.css` and imported it from `web/src/app/components/PageHeader.tsx`, removing the `page-header*` shell from the global root.
+      - Removed the unused early shell duplication layer from `web/src/index.css`, including the dead `topbar`, `nav-links`, `nav-link`, and older `app-shell` / `app-content` root definitions that are already owned by `AppShell.css`.
+      - `web/src/index.css` now measures 1,731 lines, and `cd web && npm run build` passed after the `PageHeader` extraction plus duplicate shell cleanup.
+      - Deleted another obsolete shared-primitive layer from the top of `web/src/index.css`, removing the older duplicate definitions for `.card`, `.stat-card`, `.pill`, `.badge`, `.btn*`, `.table*`, and `.dialog*` that were already superseded later in the file by the active Carbon-flattened versions.
+      - `web/src/index.css` now measures 1,570 lines, and `cd web && npm run build` passed after the duplicate primitive cleanup.
+      - Moved the live `NodeSelector` ownership block into `web/src/app/components/shared/NodeSelector.css` and imported it from `web/src/app/components/shared/NodeSelector.tsx`, then moved the `SpecialSettingsDialog` shell into `web/src/app/components/SpecialSettingsDialog.css` and imported it from the dialog owner.
+      - Deleted dead root selectors from `web/src/index.css` after repo-wide usage checks confirmed there were no live consumers for `special-settings-*`, `node-selector`, `snapshot-modal`, `nav-tab-platform*`, `nav-mobile-item--platform*`, and the duplicated root-level `audio-engine-page__latency-grid` responsive leftovers already owned by `web/src/app/pages/AudioEnginePage.css`.
+      - `web/src/index.css` now measures 1,419 lines, and `cd web && npm run build` passed after the `NodeSelector` and `SpecialSettingsDialog` extraction plus dead selector cleanup.
+      - Deleted another duplicate shell layer from `web/src/index.css`: the root-owned `topbar-pro` / `nav-tab-*` / `nav-active-*` / brand-mark shell selectors that are already defined by `web/src/app/layout/AppShell.css`, and removed the dead `welcome-page*` flattener because `web/src/app/pages/WelcomePage.tsx` is now a redirect-only route.
+      - Moved the runtime flattener ownership for `SystemArchitectureFlow`, `PlatformCapabilities`, and `CPUStatusOverview` into `web/src/app/components/StatusPanelFlatteners.css`, imported that file from the three owning components, and moved the `audio-engine-page` flattener into `web/src/app/pages/AudioEnginePage.css`.
+      - Trimmed more stale shell leakage from mixed selector groups in `web/src/index.css`, removing the duplicate `nav-maturity-*`, `advanced-menu-*`, `top-hardware-menu*`, `nav-mobile-*`, and dead `flow-snapshots*` root selectors while keeping the live dialog / primitive rules in place.
+      - `web/src/index.css` now measures 1,096 lines, and `cd web && npm run build` passed after the shell-duplicate cleanup plus runtime flattener extraction.
+      - Moved the live MUI flatteners for the Tesira route into `web/src/app/pages/TesiraPage.css` and for the host-machine route into `web/src/app/components/HostMachine/HostMachine.css`, matching the actual runtime owners (`.tesira-page` and `.hm-page`) rather than leaving those overrides in the global root.
+      - Deleted the dead `avb-routing-page` MUI flattener scope from `web/src/index.css` after confirming no runtime page or component renders that class anymore; AVB routing now stays scoped to `AvbRoutingWorkspace` rather than an orphaned page selector.
+      - `web/src/index.css` now measures 1,058 lines, and `cd web && npm run build` passed after the route-level MUI flattener extraction.
+      - Moved the surviving shared primitive island into `web/src/app/components/shared/GlobalPrimitives.css`, imported it through `web/src/app/layout/AppShell.tsx`, and deleted the corresponding `.pill`, `.badge`, `.tag`, `.card`, `.btn*`, `.table*`, `.dialog*`, `.loading-bar`, `.midi-overview*`, and utility-helper selectors from the global root.
+      - Collapsed the duplicated global foundation inside `web/src/index.css` so there is now one `:root` token block and one body/base layer, then moved the remaining shared helper classes (`.hero`, `.muted`, `.stat-grid`, `.input`, `.combobox`, `.grid*`, `.section-heading`, `.menu*`, `.form-grid`, `.flex*`, `.divider`, `.subtitle`, `.list*`, `.spin`) into `web/src/app/components/shared/GlobalPrimitives.css`.
+      - The residual global stylesheet now measures 361 lines and contains only resets, root/body typography, the parameter/range primitives, focus-visible, and the responsive tail, satisfying the under-500-line acceptance bar.
+      - Validation: `npm --prefix web run build` -> PASS.
 Assigned to: Codex
-Last updated: 2026-04-08 20:52 EDT - Codex
-- Progress notes:
+Last updated: 2026-04-09 09:54 EDT - Codex
+- Completion notes:
   - Starting with shell-owned global leakage: `web/src/index.css` still contains `app-shell`, `topbar-pro`, branded workspace-frame, and `app-content` blocks that belong with `web/src/app/layout/AppShell.tsx` rather than the global stylesheet.
   - Existing page/component CSS co-location is already established across much of `web/src/app`, so the immediate slice is to migrate these remaining shell-scoped blocks into `web/src/app/layout/AppShell.css` and shrink the global root without changing route behavior.
   - Moved the shell/frame/container ownership blocks (`.app-shell*`, `.platform-brand-frame*`, `.platform-brand-backdrop*`, `.app-content*`) out of `web/src/index.css` and into `web/src/app/layout/AppShell.css`, reducing the monolithic root stylesheet while keeping the shell behavior covered by focused AppShell tests and a production build.
   - Closed the shell-owned navigation extraction too, cutting `web/src/index.css` from 10,236 lines to 9,192 lines, but the task acceptance criteria remain blocked because the residual global stylesheet is still far above the under-500-line target and the remaining selectors now belong to many route/component families that need separate ownership passes rather than more shell-side moves.
+  - Completed `T848-subB` by relocating the HorizontalSignalChain, ChainPanel, BottomRoutingPanel, and shared disclosure styles into co-located CSS files and deleting the dead root-only selector families that no longer had runtime consumers.
+  - Completed `T848-subC` by extracting the remaining live page/component owners (`PlatformModal`, `Toasts`, upload primitives, shared library model-list primitives, `ChainManagementCard`, shared React Flow theme, MeteringPage shell, CPUPerformancePage shell, `ViewportPolicyGate`, `PageHeader`, `NodeSelector`, `SpecialSettingsDialog`, `StatusPanelFlatteners`, Tesira/HostMachine route flatteners, and the shared primitive island) into co-located CSS and deleting confirmed-dead legacy selector families from the root stylesheet.
+  - `web/src/index.css` is now 361 lines and limited to global resets, root/body typography, shared parameter/range primitives, focus-visible rules, and the responsive tail, which satisfies the decomposition acceptance bar and clears the blocker for downstream Carbonization work.
+  - Validation: `npm --prefix web run build` -> PASS.
 
 ID: T849
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Unify design tokens — eliminate dual `:root` / Carbon token layer
 Description:
 - Goal / acceptance criteria: Audit all CSS custom properties defined in `web/src/index.css` `:root` and identify those that duplicate Carbon tokens written by the theme system (`themes.ts`). Remove the raw `:root` defaults for any property already aliased to a `--cds-*` token. Ensure all component CSS references use the unified token (either the Carbon alias or the custom alias, not both interchangeably). Hard-coded hex values (`#60a5fa`, `#cbd5e1`, `#0f62fe`, etc.) scattered through `index.css` must be replaced with the appropriate token reference.
@@ -19617,10 +19658,12 @@ Description:
 - Required outputs: Updated `index.css` `:root` block, updated component CSS references, theme switching validation across all four Carbon themes (white, g10, g90, g100), and build validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:52 EDT - Codex
-- Progress notes:
-  - Aligned the early global `:root` defaults with the Carbon-aligned token layer later in `web/src/index.css` so the baseline dark theme no longer drifts on core surface, text, border, radius, and shadow values before Carbon theme tokens apply.
-  - Full completion is blocked because `web/src/index.css` and route/component CSS still contain a large mixed layer of hard-coded hex values and dual custom-vs-Carbon aliases. Finishing the task now requires a broader route-by-route token contract sweep that overlaps the follow-on Carbonization tranche rather than another shell-local edit.
+Last updated: 2026-04-09 09:54 EDT - Codex
+- Completion notes:
+  - Replaced the residual hard-coded root palette in `web/src/index.css` with Carbon-backed aliases (`--cds-background`, `--cds-layer-*`, `--cds-button-primary*`, `--cds-link-primary`, `--cds-text-*`, `--cds-border-*`, `--cds-support-*`, `--cds-focus`) so the default token contract no longer ships a competing dark-only palette for slots already owned by the theme system.
+  - Replaced the remaining raw slider-track and slider-thumb RGBA values in `web/src/index.css` with token-driven `color-mix(...)` expressions over `--interactive` and `--text-primary`, eliminating the last hard-coded color literals from the residual root stylesheet.
+  - Added focused theme-switch validation in `web/src/app/theme/useTheme.test.ts` covering all four built-in Carbon shells (`default/g100`, `gray-90/g90`, `gray-10/g10`, and `white`) and asserting that theme application writes the Carbon theme class, color scheme, and Carbon-backed root aliases.
+  - Validation: `npm --prefix web test -- --runInBand src/app/theme/useTheme.test.ts` -> PASS; `npm --prefix web run build` -> PASS; `rg -n -- '#[0-9a-fA-F]{3,8}|rgba\\(' web/src/index.css` -> no matches.
 
 ID: T850
 Status: [✓] Done
@@ -19644,7 +19687,7 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - The composition root is now under the task target at 147 lines, and the focused AppShell route tests plus production build pass on the extracted structure.
 
 ID: T851
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Consolidate overlapping navigation systems into a single adaptive component
 Description:
 - Goal / acceptance criteria: Unify the three navigation rendering paths — `shell-launcher` panel (start menu tiles), `topbar-pro` nav bar (pill-shaped tab items), and hamburger mobile menu (card grid) — into a single `NavigationItems` renderer that adapts to context (launcher panel vs. top bar vs. mobile). All three currently consume `launcherCatalog.ts` and `advancedMenuItems.ts` but render items with different markup and duplicated logic. The unified renderer should accept a `variant` prop (`'launcher' | 'topbar' | 'mobile'`) and share item rendering, active-state detection, and prefetch-on-hover behavior.
@@ -19654,13 +19697,15 @@ Description:
 - Required outputs: Unified navigation renderer component, updated consumers, visual parity verification, build/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:56 EDT - Codex
-- Progress notes:
-  - This task depends on `T848` and `T850`. `T850` is now complete, but `T848` is blocked with `index.css` still owning thousands of non-shell selectors, so there is not yet a stable component-owned navigation CSS boundary to consolidate against.
-  - The current shell still renders three navigation variants over shared data, but replacing them with one adaptive renderer cleanly now would entangle unresolved shell CSS ownership and token drift rather than reducing maintenance risk.
+Last updated: 2026-04-09 10:03 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/layout/NavigationItems.tsx` as the shared shell-navigation renderer contract and rewired `web/src/app/layout/ShellLauncherPanel.tsx` to consume it, so the remaining launcher tile surface no longer owns its own standalone link/prefetch rendering helper.
+  - Audited live runtime TSX usage for the historical `topbar-pro` / `nav-tab*` / `nav-mobile*` shell navigation surfaces and confirmed they no longer have active renderers in the current app; only the floating launcher tile surface remained live.
+  - Removed the dead legacy topbar/mobile navigation CSS layer from `web/src/app/layout/AppShell.css`, including `topbar-pro`, `nav-tab*`, `nav-mobile*`, `nav-hamburger*`, `advanced-menu*`, and `top-hardware-menu*` selectors that no longer had runtime TSX consumers, while preserving the still-live launcher and latency/taskbar chrome.
+  - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T852
-Status: [✗] Blocked
+Status: [ ] Todo
 Title: Migrate custom CSS primitives to Carbon components
 Description:
 - Goal / acceptance criteria: Replace the custom CSS-only primitives defined in `index.css` (`.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.card`, `.dialog`, `.dialog-backdrop`, `.input`, `.combobox`, `.table`, `.badge`, `.pill`, `.menu`, `.menu-item`, `.modal`, `.toast`) with their Carbon Design System equivalents (`Button`, `Tile`, `ComposedModal`, `TextInput`, `DataTable`, `Tag`, `OverflowMenu`, `ToastNotification`, etc.) or with thin wrappers around Carbon components that preserve any domain-specific styling. Remove the replaced CSS blocks from `index.css`.
@@ -19670,13 +19715,13 @@ Description:
 - Required outputs: Updated component files, removed CSS blocks, Carbon conformance checklist evidence, build/lint/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:56 EDT - Codex
+Last updated: 2026-04-09 09:54 EDT - Codex
 - Progress notes:
-  - This task is blocked by `T848` and `T849`. The CSS primitive inventory still lives inside a mixed global/component stylesheet and the token contract is still split between custom aliases and Carbon tokens.
-  - Converting primitives piecemeal before those ownership and token layers settle would create another mixed state rather than a clean Carbon migration surface.
+  - `T848` and `T849` are now complete, so the remaining primitive migration is unblocked and can proceed surface-by-surface against stable component-owned CSS and a unified token contract.
+  - The next execution slice should prioritize the highest-volume shared primitives still backed by `GlobalPrimitives.css`, especially buttons/cards/dialog shells that have clear Carbon replacements.
 
 ID: T853
-Status: [✗] Blocked
+Status: [ ] Todo
 Title: Align responsive breakpoints to Carbon Design System standard
 Description:
 - Goal / acceptance criteria: Replace the ad-hoc responsive breakpoints (`768px`, `820px`, `960px`, `1200px`, `1600px`) used across `index.css` and `AppShell.css` with Carbon's standard breakpoints (`sm: 320px`, `md: 672px`, `lg: 1056px`, `xlg: 1312px`, `max: 1584px`) or documented deviations justified by the audio workspace's minimum-viewport requirements. Define breakpoint CSS custom properties in the global token layer and reference them consistently.
@@ -19686,10 +19731,10 @@ Description:
 - Required outputs: Updated media queries, breakpoint token definitions, responsive behavior verification at each breakpoint, build validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:56 EDT - Codex
+Last updated: 2026-04-09 09:54 EDT - Codex
 - Progress notes:
-  - This task is blocked by `T848` and `T849`. Breakpoint normalization spans both `web/src/index.css` and `web/src/app/layout/AppShell.css`, and the remaining global-style ownership plus token drift means a breakpoint sweep now would be fighting moving targets.
-  - The shell extraction clarified the breakpoint hotspots, but a full Carbon breakpoint normalization still needs the unresolved CSS split/token work first.
+  - `T848` and `T849` are now complete, so breakpoint normalization is no longer blocked by unresolved root-style ownership or token drift.
+  - The remaining breakpoint work can now focus on consolidating the surviving 820px/960px root tail with `AppShell.css` and documenting any intentional deviations from Carbon's standard breakpoints.
 
 ID: T854
 Status: [✗] Blocked
@@ -19708,7 +19753,7 @@ Last updated: 2026-04-08 20:56 EDT - Codex
   - Finishing this cleanly now requires a shared route-level loading/error-boundary contract for pages such as Audio Engine, Metering, DSP, Snapshot Editor, and MIDI Hub rather than one-off skeleton and redirect patches.
 
 ID: T855
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Accessibility hardening pass for shell and navigation
 Description:
 - Goal / acceptance criteria: (1) Replace the literal `X` text in `.app-window__close` with a Carbon `Close` icon and proper `aria-label`. (2) Add visible `:focus-visible` indicators to all interactive elements in `.nav-mobile-item`, `.start-menu-card`, and `.shell-launcher__button` that currently lack them in dark themes. (3) Ensure all menus and flyouts trap focus when open and return focus to the trigger on close. (4) Add `aria-live="polite"` to the latency-pressure readout and taskbar clock so screen readers announce status changes. (5) Run the Carbon accessibility audit checklist and fix any remaining gaps.
@@ -19718,15 +19763,20 @@ Description:
 - Required outputs: Updated shell/navigation components, focus-trap implementation, Carbon a11y audit results, build/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:56 EDT - Codex
-- Progress notes:
-  - This task depends on `T851`, which is now blocked. The missing unified navigation surface means focus-trap, focus-return, and visible focus fixes would need to be repeated across multiple overlapping shell/menu implementations.
-  - The shell already has baseline dismiss behavior and ARIA labeling, but the full accessibility hardening pass needs the navigation consolidation step first to avoid duplicated fixes.
+Last updated: 2026-04-09 10:12 EDT - Codex
+- Completion notes:
+  - `T851` is now complete, and the old duplicate topbar/mobile navigation renderers have been removed from runtime usage, so the accessibility hardening pass is no longer blocked by overlapping shell surfaces.
+  - Replaced the literal close glyph in `web/src/app/layout/AppWindow.tsx` with the Carbon `Close` icon while preserving the existing `aria-label` contract.
+  - Added polite live-region announcements for the shell latency readout and taskbar clock in `web/src/app/components/LatencyPressureShellReadout.tsx` and `web/src/app/components/TaskbarClock.tsx`.
+  - Added launcher/power-menu focus management in `web/src/app/layout/ShellLauncherPanel.tsx`, including initial focus placement, focus trapping, and focus restoration to the trigger when the menu closes, and locked that behavior with focused coverage in `web/src/app/layout/AppShell.test.tsx`.
+  - Visible focus treatments for the live launcher affordances remain in place via `web/src/app/layout/AppShell.css` (`.shell-launcher__button:focus-visible`, `.start-menu-card:focus-visible`, `.start-menu-power-menu__item:focus-visible`, `.app-window__close:focus-visible`).
+  - Completed the Carbon shell accessibility audit and recorded the results in `docs/design/CARBON_MANUAL_A11Y_SHELL_SWEEP_2026-04-09.md`, including the semantic cleanup to expose launcher and power actions as `menuitem`s inside their `menu` containers.
+  - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ## Carbon Compliance & GUI Polish
 
 ID: T856
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Purge hard-coded hex colors from `index.css` — replace with `--cds-*` tokens
 Description:
 - Goal / acceptance criteria: Audit every hard-coded hex color in `web/src/index.css` (estimated 200+ occurrences of `#60a5fa`, `#cbd5e1`, `#0f62fe`, `#93c5fd`, `#f1f5f9`, `#94a3b8`, `#1e293b`, `#fda4af`, etc.) and replace each with the semantically correct Carbon token (`--cds-link-primary`, `--cds-text-secondary`, `--cds-border-subtle`, `--cds-support-*`, etc.) or the matching custom alias from `themes.ts`. The FLAT/Monochrome design direction means no gradients or glow — only flat token-driven fills.
@@ -19736,13 +19786,14 @@ Description:
 - Required outputs: Zero raw hex colors in component CSS (`:root` definitions excepted), theme-switching validation across all four Carbon shells.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 00:59 EDT - Codex
-- Progress notes:
-  - Fresh inventory confirms `web/src/index.css` still contains a large remaining pool of hard-coded hex colors and mixed token/hex usage spread across legacy primitives, cards, dialogs, menus, and route-specific blocks.
-  - Full completion is blocked by the already-blocked `T848` and `T849` foundation work: the stylesheet ownership split is incomplete and the token contract is still dual-layer, so a repo-wide hex-to-token rewrite now would be another large mixed-state edit rather than a stable Carbon cleanup.
+Last updated: 2026-04-09 06:26 EDT - Codex
+- Completion notes:
+  - Completed the `web/src/index.css` hard-coded hex sweep: `rg -n "#[0-9a-fA-F]{3,8}" web/src/index.css` now reports only the intentional `:root` token-definition lines, which satisfies the task acceptance bar for `index.css`.
+  - Replaced the remaining shared-surface literals with Carbon/custom token aliases across page headers, card/button/input/table primitives, React Flow variables, chains-grid chip variants, and Carbon fallback expressions so the stylesheet no longer carries raw component-level hex values outside token declarations.
+  - Validation: `npm --prefix web run typecheck -- --pretty false` -> PASS, `npm --prefix web run build` -> PASS.
 
 ID: T857
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.btn` / `.btn-primary` / `.btn-ghost` with Carbon `Button` variants
 Description:
 - Goal / acceptance criteria: Remove the `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm` CSS classes from `index.css` and replace every usage with Carbon `<Button kind="primary|secondary|ghost|tertiary|danger" size="sm|md|lg">`. The FLAT style is already Carbon's default — no additional styling needed.
@@ -19752,13 +19803,14 @@ Description:
 - Required outputs: Removed CSS blocks, updated TSX files, build/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 00:59 EDT - Codex
+Last updated: 2026-04-09 06:26 EDT - Codex
 - Progress notes:
-  - The current primitive inventory still shows multiple `.btn*` blocks in `web/src/index.css` plus page-local/button-local CSS in surfaces such as `LCDPage.tsx` and `MidiMappingDialog.tsx`.
-  - This task depends on the broader primitive and token cleanup path; with `T856` blocked, a partial button-only migration would leave conflicting global/page-local button systems in place instead of producing a clean Carbon button baseline.
+  - Unblocked by `T856`: the remaining button work is now a pure component migration problem rather than a mixed token/primitive rewrite.
+  - Converted the shared diagnostics slice to Carbon buttons in `web/src/app/components/JUCEEngineTestStatus.tsx`, `web/src/app/components/PiPedalTestStatus.tsx`, `web/src/app/components/RealtimeTestResults.tsx`, and `web/src/app/pages/DSPPage.tsx`, removing that slice’s dependence on global `.btn*` classes.
+  - Fresh inventory still shows a large tail of `.btn*` usage across `LCDPage.tsx`, upload/onboarding flows, routing panels, cluster update surfaces, and legacy library dialogs, so the task remains in progress rather than blocked.
 
 ID: T858
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.card` / `.stat-card` / `.hero` with Carbon `Tile` and `ClickableTile`
 Description:
 - Goal / acceptance criteria: Migrate all usages of the `.card`, `.stat-card`, `.hero`, `.loader-card`, `.list-item` CSS classes to Carbon `Tile`, `ClickableTile`, or `ExpandableTile` with Carbon layer tokens for backgrounds and borders. Stat values should use Carbon `heading-03` type tokens.
@@ -19768,13 +19820,14 @@ Description:
 - Required outputs: Removed CSS blocks, Carbon Tile usage, visual parity validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 00:59 EDT - Codex
+Last updated: 2026-04-09 06:26 EDT - Codex
 - Progress notes:
-  - The remaining `.card`, `.stat-card`, and `.hero` usage is still split between global CSS primitives and page/component-specific inline style systems.
-  - This task depends on `T856`; until the hard-coded color and primitive foundation is stabilized, a card/tile migration would create another partial parallel visual system rather than retiring the old one.
+  - Unblocked by `T856`: card migration can now proceed surface-by-surface without carrying raw-hex cleanup debt.
+  - Migrated `web/src/app/components/StatCard.tsx` to Carbon `Tile` + `Tag`, converted `web/src/app/pages/LegacyPage.tsx` to `Tile`, moved the JUCE/PipeDAL/Realtime diagnostics tiles to Carbon `Tile`, and converted the DSP plugin catalog cards in `web/src/app/pages/DSPPage.tsx` to `ClickableTile`.
+  - Remaining `.card` / `.hero` usage is still broad across library, LCD, MIDI Commander, node-path, and legacy workspace surfaces, so this task remains in progress with a reduced dependency surface.
 
 ID: T859
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.dialog` / `.modal` with Carbon `ComposedModal`
 Description:
 - Goal / acceptance criteria: Remove the `.dialog`, `.dialog-backdrop`, `.modal`, `.modal-backdrop`, `.modal-header`, `.modal-body`, `.modal-footer` CSS classes and replace all usages with Carbon `ComposedModal`, `ModalHeader`, `ModalBody`, `ModalFooter`. Focus trap, ESC dismissal, and backdrop behavior come for free from Carbon.
@@ -19784,13 +19837,14 @@ Description:
 - Required outputs: Removed CSS blocks, Carbon modal usage, a11y validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 00:59 EDT - Codex
+Last updated: 2026-04-09 06:26 EDT - Codex
 - Progress notes:
-  - The modal/dialog inventory is still mixed: there are legacy global `.dialog*` / `.modal*` classes in `web/src/index.css` and separate page-local dialog CSS embedded in route/component files.
-  - A clean migration needs the primitive cleanup tranche to define which dialog surfaces are still canonical; otherwise Carbon modals would be layered on top of unresolved legacy dialog implementations instead of replacing them coherently.
+  - `T856` no longer blocks this work, and the remaining modal inventory is now clearer: Carbon modals already cover the shell power flow, multiple Tesira dialogs, theme/icon dialogs, and several snapshot/plugin surfaces.
+  - The unresolved tail is concentrated in custom overlays such as `UnifiedUploadDialog.tsx`, `MidiMappingDialog.tsx`, `LCDPage.tsx`, and a handful of route-local dialog shells that still render bespoke panels instead of `ComposedModal`.
+  - This task remains in progress because the remaining work is still route-by-route modal conversion, but it is no longer blocked on the old token/primitive rationale.
 
 ID: T860
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.table` with Carbon `DataTable` pattern
 Description:
 - Goal / acceptance criteria: Remove the `.table` CSS class and migrate usages to Carbon `DataTable`, `Table`, `TableHead`, `TableRow`, `TableHeader`, `TableBody`, `TableCell`. Apply Carbon's sortable/filterable patterns where applicable. The FLAT style uses Carbon's default `zebra={false}` with `--cds-border-subtle` row separators.
@@ -19800,10 +19854,11 @@ Description:
 - Required outputs: Carbon DataTable migration, removed CSS, keyboard navigation validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 00:59 EDT - Codex
+Last updated: 2026-04-09 06:26 EDT - Codex
 - Progress notes:
-  - The global `.table` primitive still exists in `web/src/index.css`, but the app already mixes that with route-specific tables, Carbon table usage, and specialized list/rendering components.
-  - Full completion is blocked because the remaining table surfaces are not yet normalized under one ownership/model layer; a blanket `DataTable` migration now would require route-by-route UI contract decisions rather than a safe mechanical replacement.
+  - The app already had a mixed Carbon/legacy table surface; this slice moved the DSP cluster summary in `web/src/app/pages/DSPPage.tsx` onto Carbon `TableContainer` + `Table`, which removes one more global `.table` dependency.
+  - Remaining legacy table ownership is now easier to enumerate: `ChainDeployModal.tsx`, Host Machine informational tables, Performance Brain route tables, LCD wiring tables, MIDI/Tesira custom console tables, and a few route-local pseudo-table layouts.
+  - This task remains in progress because the remaining work is still a broad route migration, but it is no longer blocked by the previous “can’t normalize ownership yet” rationale.
 
 ID: T861
 Status: [✗] Blocked
@@ -19822,7 +19877,7 @@ Last updated: 2026-04-09 05:49 EDT - Codex
   - A clean Carbon form-control migration is blocked until the primitive ownership split is resolved; otherwise the app would keep parallel global, page-local, and Carbon form systems alive at the same time.
 
 ID: T862
-Status: [✗] Blocked
+Status: [ ] Todo
 Title: Normalize spacing to Carbon 2x grid (8px base unit)
 Description:
 - Goal / acceptance criteria: Audit all `padding`, `margin`, and `gap` values in `index.css` and co-located CSS files. Replace non-8px-aligned values (7px, 9px, 10px, 11px, 14px, etc.) with the nearest Carbon spacing token (`--cds-spacing-01` through `--cds-spacing-13`). The 2x grid uses an 8px base: 2, 4, 8, 12, 16, 24, 32, 48, 64, 96px.
@@ -19832,10 +19887,10 @@ Description:
 - Required outputs: All spacing values aligned to Carbon tokens, visual regression check.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 05:49 EDT - Codex
+Last updated: 2026-04-09 10:03 EDT - Codex
 - Progress notes:
   - Spacing values remain scattered across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and numerous page/component-local style blocks, including inline CSS islands.
-  - This task depends on `T848`; with the CSS ownership split still blocked, a full 2x-grid normalization would be another broad mixed edit with no stable component boundaries.
+  - `T848` is now complete, so the spacing-normalization work is unblocked and can proceed against stable component-owned CSS boundaries instead of the old monolithic root stylesheet.
 
 ID: T863
 Status: [✗] Blocked
@@ -19998,7 +20053,7 @@ Last updated: 2026-04-09 06:31 EDT - Codex
   - This task is blocked because the remaining empty-state patterns are not yet normalized under one reusable primitive; completing it safely now would require a broad route-by-route redesign pass instead of a low-risk shared replacement.
 
 ID: T873
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Add Carbon focus management — visible focus indicators, focus trapping, focus return
 Description:
 - Goal / acceptance criteria: (1) Ensure all interactive elements have a visible `2px solid var(--cds-focus)` outline on `:focus-visible` — audit and fix the ~20 custom button/link/card classes that override or suppress focus outlines. (2) Add focus trapping to all overlay/flyout components (start-menu panel, power menu, advanced menu, context menu) using Carbon's built-in trap or `@carbon/react`'s `FocusScope`. (3) Return focus to the trigger element when overlays close. (4) Ensure focus order follows visual order in the navigation bar.
@@ -20008,10 +20063,13 @@ Description:
 - Required outputs: Visible focus indicators on all interactives, focus-trap implementation, automated focus-order testing.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:31 EDT - Codex
+Last updated: 2026-04-09 10:16 EDT - Codex
 - Progress notes:
   - There are still many `outline: none` sites in `web/src/index.css`, shell CSS, route-local components, and inline style blocks, while overlay behavior remains mixed across Carbon modals, MUI dialogs, custom panels, and bespoke escape-key handlers.
-  - This task depends on blocked `T855`, and completion is blocked until navigation and overlay ownership are stabilized; otherwise focus-trap and focus-return behavior would be patched inconsistently across overlapping systems.
+  - `T855` is now complete, so the remaining focus-management work is unblocked and can continue as a broader repo-wide audit beyond the shell launcher and power-menu surfaces already hardened in that task.
+  - Hardened the Home desktop context menu in `web/src/app/pages/HomePage.tsx` by exposing its actions as `menuitem`s, moving initial focus into the menu, trapping `Tab`, supporting `ArrowUp` / `ArrowDown` / `Home` / `End`, closing on `Escape`, and restoring focus to the desktop trigger on close.
+  - Added visible focus treatment for the desktop context menu actions in `web/src/app/pages/HomePage.css` and locked the overlay behavior with focused coverage in `web/src/app/pages/HomePage.test.tsx`.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T874
 Status: [✗] Blocked

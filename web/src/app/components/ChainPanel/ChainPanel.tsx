@@ -8,6 +8,7 @@
 import { Music, TrashCan, VolumeMute, VolumeUp } from '@carbon/icons-react'
 import type { Chain, ChainPlugin, Plugin, PluginOrderRef } from '../../../map2/types'
 import { HorizontalSignalChain } from '../HorizontalSignalChain'
+import './ChainPanel.css'
 
 export interface ChainSlot {
   id: string

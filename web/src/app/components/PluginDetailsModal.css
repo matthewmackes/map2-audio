@@ -18,3 +18,33 @@
 .plugin-details-modal__truncated {
   color: var(--cds-text-secondary);
 }
+
+.param-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.param-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-label);
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
+.param-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.param-range {
+  color: var(--muted);
+  font-size: var(--type-label);
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Button, Checkbox, InlineLoading, InlineNotification, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
+import '../../shared/ReactFlowTheme.css'
 import ReactFlow, {
   addEdge,
   Background,

@@ -18,6 +18,8 @@ import {
 import { uploadApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import '../library/ModelList.css'
+import './UploadPrimitives.css'
 
 export type AssetType = 'nam' | 'cabinet_ir' | 'reverb_ir' | 'vst3'
 

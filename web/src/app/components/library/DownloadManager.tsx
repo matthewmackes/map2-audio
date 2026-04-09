@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Close as X, Download as DownloadSimple, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, Renew as SpinnerGap, Search as MagnifyingGlass, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import type { SourceProgress } from '../../types/library'
+import '../upload/UploadPrimitives.css'
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`

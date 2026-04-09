@@ -1,0 +1,106 @@
+.bottom-routing-panel {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-top: 1px solid var(--surface-border);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  z-index: 10;
+}
+
+.routing-chain-management {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.routing-chain-count {
+  font-size: var(--type-label);
+  color: var(--muted);
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border-radius: var(--border-radius-sm);
+}
+
+.routing-mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--border-radius-md);
+}
+
+.routing-mode-selector .btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routing-chain-diagram {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.routing-chain-node-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.routing-chain-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  font-weight: 700;
+  font-size: var(--type-label);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.routing-chain-node:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.routing-chain-node.active {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+  box-shadow: none;
+}
+
+.routing-chain-arrow {
+  font-size: var(--type-body);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .bottom-routing-panel {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .routing-mode-selector {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .routing-chain-diagram {
+    order: 2;
+  }
+
+  .routing-chain-management {
+    order: 1;
+  }
+}

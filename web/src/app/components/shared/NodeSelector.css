@@ -1,0 +1,17 @@
+.node-selector {
+  min-width: 17rem;
+  margin-right: var(--cds-spacing-03);
+}
+
+.node-selector .cds--form-item {
+  margin-bottom: 0;
+}
+
+.node-selector .cds--select {
+  width: 100%;
+}
+
+.node-selector .cds--select-input {
+  min-height: 2rem;
+  background: var(--cds-layer-01);
+}

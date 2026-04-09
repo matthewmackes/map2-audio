@@ -13,6 +13,7 @@ import { useRestartBackend } from './useRestartBackend'
 import { useShellLauncherActions } from './useShellLauncherActions'
 import { useRunningRoutes } from './useRunningRoutes'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 const APP_WINDOW_CLOSE_DURATION_MS = 180
 export function AppShell({ children }: { children: ReactNode }) {

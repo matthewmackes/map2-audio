@@ -22,6 +22,7 @@ import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsAp
 import type { SystemMetrics, MetricsSummary } from '../../map2/types'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
+import './StatusPanelFlatteners.css'
 
 interface CategoryResult {
   name: string

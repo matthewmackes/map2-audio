@@ -1,0 +1,49 @@
+.special-settings-banner {
+  margin-bottom: var(--cds-spacing-05);
+}
+
+.special-settings-section + .special-settings-section {
+  margin-top: var(--cds-spacing-07);
+}
+
+.special-settings-section-title {
+  margin: 0 0 var(--cds-spacing-03);
+  color: var(--cds-text-primary);
+  font-size: var(--cds-heading-03-font-size);
+  font-weight: var(--cds-heading-03-font-weight);
+  line-height: var(--cds-heading-03-line-height);
+}
+
+.special-settings-copy {
+  margin: 0 0 var(--cds-spacing-05);
+  color: var(--cds-text-secondary);
+}
+
+.special-settings-plugin-list {
+  max-height: 20rem;
+  overflow-y: auto;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.special-settings-plugin-row {
+  padding: var(--cds-spacing-03) var(--cds-spacing-05);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+
+.special-settings-plugin-row:last-child {
+  border-bottom: none;
+}
+
+.special-settings-plugin-meta {
+  margin: var(--cds-spacing-02) 0 0 2rem;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size);
+}
+
+.special-settings-radio-help {
+  margin: var(--cds-spacing-05) 0 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size);
+  line-height: 1.4;
+}

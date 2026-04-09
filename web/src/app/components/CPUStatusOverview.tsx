@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
+import './StatusPanelFlatteners.css'
 
 interface AudioActivity {
   id: string
