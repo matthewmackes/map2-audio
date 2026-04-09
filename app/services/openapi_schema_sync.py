@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -181,10 +182,13 @@ class OpenApiSchemaSyncService:
 
 
 _schema_sync_service: Optional[OpenApiSchemaSyncService] = None
+_schema_sync_service_lock = threading.Lock()
 
 
 def get_openapi_schema_sync_service() -> OpenApiSchemaSyncService:
     global _schema_sync_service
     if _schema_sync_service is None:
-        _schema_sync_service = OpenApiSchemaSyncService()
+        with _schema_sync_service_lock:
+            if _schema_sync_service is None:
+                _schema_sync_service = OpenApiSchemaSyncService()
     return _schema_sync_service

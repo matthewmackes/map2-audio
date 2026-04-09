@@ -14,11 +14,15 @@ import json
 import logging
 import socket
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
@@ -212,7 +216,7 @@ def preview_clone_reset() -> Dict[str, Any]:
     missing = [str(path) for path in targets if not path.exists()]
 
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": _utc_now_iso(),
         "identity": snapshot.to_dict(),
         "targets": {
             "existing": existing,
@@ -282,7 +286,7 @@ async def reset_clone_to_default_and_rejoin(
         rejoin_result["error"] = f"Failed to rebuild identity after reset: {exc}"
         return {
             "success": False,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utc_now_iso(),
             "pre_reset": pre_reset.to_dict(),
             "post_reset": post_reset.to_dict(),
             "files": {
@@ -323,7 +327,7 @@ async def reset_clone_to_default_and_rejoin(
 
     return {
         "success": success,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": _utc_now_iso(),
         "pre_reset": pre_reset.to_dict(),
         "post_reset": post_reset.to_dict(),
         "files": {
@@ -335,4 +339,3 @@ async def reset_clone_to_default_and_rejoin(
         "rejoin": rejoin_result,
         "warnings": warnings,
     }
-

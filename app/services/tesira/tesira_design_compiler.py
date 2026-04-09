@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
+import threading
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
@@ -20,6 +21,10 @@ from app.services.tesira.tesira_design_workspace import TesiraDesignWorkspaceSer
 
 def _iso(dt: Optional[datetime]) -> Optional[str]:
     return dt.isoformat() if dt is not None else None
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 _BLOCK_WEIGHTS: Dict[str, float] = {
@@ -164,7 +169,7 @@ class TesiraDesignCompilerService:
             if not validation["ok"]:
                 row.compile_status = "FAILED"
                 row.compile_diagnostics = base_diagnostics
-                row.last_compiled_at = datetime.utcnow()
+                row.last_compiled_at = _utc_now()
                 await session.flush()
                 return {
                     "device_id": device_id,
@@ -195,7 +200,7 @@ class TesiraDesignCompilerService:
             row.compile_revision = int(row.compile_revision or 0) + 1
             row.compiled_graph_hash = graph_hash
             row.compile_diagnostics = base_diagnostics
-            row.last_compiled_at = datetime.utcnow()
+            row.last_compiled_at = _utc_now()
             await session.flush()
 
             return {
@@ -305,10 +310,13 @@ class TesiraDesignCompilerService:
 
 
 _tesira_design_compiler_service: Optional[TesiraDesignCompilerService] = None
+_tesira_design_compiler_service_lock = threading.Lock()
 
 
 def get_tesira_design_compiler_service() -> TesiraDesignCompilerService:
     global _tesira_design_compiler_service
     if _tesira_design_compiler_service is None:
-        _tesira_design_compiler_service = TesiraDesignCompilerService()
+        with _tesira_design_compiler_service_lock:
+            if _tesira_design_compiler_service is None:
+                _tesira_design_compiler_service = TesiraDesignCompilerService()
     return _tesira_design_compiler_service

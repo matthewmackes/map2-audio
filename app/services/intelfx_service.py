@@ -5,6 +5,7 @@ IntelFX MIDI bridge service.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.services.midi_sysex_bridge_base import MidiSysexBridgeBase, build_midi_sysex_runtime
@@ -148,10 +149,13 @@ class IntelFXService(MidiSysexBridgeBase):
         return None
 
 _intelfx_service: Optional[IntelFXService] = None
+_intelfx_service_lock = threading.Lock()
 
 
 def get_intelfx_service() -> IntelFXService:
     global _intelfx_service
     if _intelfx_service is None:
-        _intelfx_service = IntelFXService()
+        with _intelfx_service_lock:
+            if _intelfx_service is None:
+                _intelfx_service = IntelFXService()
     return _intelfx_service

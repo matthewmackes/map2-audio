@@ -21,6 +21,7 @@ import logging
 import re
 import socket
 import subprocess
+import threading
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -514,11 +515,14 @@ def _parse_ttp_value(line: str) -> Optional[str]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 _discovery_service: Optional[TesiraDiscoveryService] = None
+_discovery_service_lock = threading.Lock()
 
 
 def get_tesira_discovery() -> TesiraDiscoveryService:
     """Return the singleton TesiraDiscoveryService."""
     global _discovery_service
     if _discovery_service is None:
-        _discovery_service = TesiraDiscoveryService()
+        with _discovery_service_lock:
+            if _discovery_service is None:
+                _discovery_service = TesiraDiscoveryService()
     return _discovery_service

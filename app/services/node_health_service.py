@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import subprocess
+import threading
 from dataclasses import dataclass
 from typing import Optional
 
@@ -150,10 +151,13 @@ class NodeHealthService:
 
 
 _node_health_service: Optional[NodeHealthService] = None
+_node_health_service_lock = threading.Lock()
 
 
 def get_node_health_service() -> NodeHealthService:
     global _node_health_service
     if _node_health_service is None:
-        _node_health_service = NodeHealthService()
+        with _node_health_service_lock:
+            if _node_health_service is None:
+                _node_health_service = NodeHealthService()
     return _node_health_service

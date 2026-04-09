@@ -10,13 +10,17 @@ Reference: https://martinfowler.com/bliki/CircuitBreaker.html
 import asyncio
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Callable, Any, Optional, TypeVar, Coroutine
 from dataclasses import dataclass
 from collections import deque
 
 logger = logging.getLogger(__name__)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 T = TypeVar('T')
 
@@ -189,14 +193,14 @@ class CircuitBreaker:
                 )
         
         elif self.state == CircuitState.CLOSED:
-            self._prune_failure_history(datetime.now())
+            self._prune_failure_history(_utc_now())
             self.failure_count = len(self._failure_history)
     
     def _on_failure(self) -> None:
         """Handle failed call."""
         self.metrics.failed_calls += 1
         self.consecutive_successes = 0
-        now = datetime.now()
+        now = _utc_now()
         self.last_failure_time = now
         self._prune_failure_history(now)
         self._failure_history.append(now)
@@ -233,14 +237,14 @@ class CircuitBreaker:
         if self.opened_at is None:
             return False
         
-        time_passed = (datetime.now() - self.opened_at).total_seconds()
+        time_passed = (_utc_now() - self.opened_at).total_seconds()
         return time_passed >= self.timeout_seconds
     
     def _time_since_open(self) -> float:
         """Get seconds since circuit opened."""
         if self.opened_at is None:
             return 0
-        return (datetime.now() - self.opened_at).total_seconds()
+        return (_utc_now() - self.opened_at).total_seconds()
     
     def _change_state(self, new_state: CircuitState) -> None:
         """Change state and update metrics."""
@@ -248,7 +252,7 @@ class CircuitBreaker:
             old_state = self.state
             self.state = new_state
             self.metrics.state_changes += 1
-            self.metrics.last_state_change = datetime.now()
+            self.metrics.last_state_change = _utc_now()
             logger.debug(f"[{self.name}] State change: {old_state.value} -> {new_state.value}")
     
     def get_state(self) -> CircuitState:
@@ -352,5 +356,7 @@ def get_breaker_manager() -> CircuitBreakerManager:
     """Get global circuit breaker manager (singleton)."""
     global _breaker_manager
     if _breaker_manager is None:
-        _breaker_manager = CircuitBreakerManager()
+        with _breaker_manager_lock:
+            if _breaker_manager is None:
+                _breaker_manager = CircuitBreakerManager()
     return _breaker_manager

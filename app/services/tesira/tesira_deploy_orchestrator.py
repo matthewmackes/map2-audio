@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, select
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def _iso(value: Optional[datetime]) -> Optional[str]:
@@ -459,10 +460,13 @@ class TesiraDeployOrchestrator:
 
 
 _tesira_deploy_orchestrator: Optional[TesiraDeployOrchestrator] = None
+_tesira_deploy_orchestrator_lock = threading.Lock()
 
 
 def get_tesira_deploy_orchestrator() -> TesiraDeployOrchestrator:
     global _tesira_deploy_orchestrator
     if _tesira_deploy_orchestrator is None:
-        _tesira_deploy_orchestrator = TesiraDeployOrchestrator()
+        with _tesira_deploy_orchestrator_lock:
+            if _tesira_deploy_orchestrator is None:
+                _tesira_deploy_orchestrator = TesiraDeployOrchestrator()
     return _tesira_deploy_orchestrator

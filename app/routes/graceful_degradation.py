@@ -6,11 +6,15 @@ Provides monitoring and management endpoints for feature availability.
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.graceful_degradation import get_feature_manager
 
 router = APIRouter(prefix="/api/features", tags=["features"])
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ============================================================================
@@ -35,7 +39,7 @@ async def get_features_status() -> Dict[str, Any]:
     }
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "features": features_status,
         "count": len(manager.features)
     }
@@ -81,7 +85,7 @@ async def get_system_health() -> Dict[str, Any]:
         status = "CRITICAL"
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "status": status,
         "system_health": health
     }
@@ -114,7 +118,7 @@ async def get_features_metrics() -> Dict[str, Any]:
     }
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "features": features_metrics,
         "total_features": len(metrics)
     }
@@ -133,7 +137,7 @@ async def get_feature_metrics(feature_name: str) -> Dict[str, Any]:
     
     return {
         "feature_name": feature_name,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "level": m.level.name,
         "status": m.status.value,
         "availability": {
@@ -158,7 +162,7 @@ async def get_features_summary() -> Dict[str, Any]:
     health = manager.get_system_health()
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "total_features": health["total_features"],
         "core_features": health["core_features"],
         "core_available": health["core_available"],
@@ -194,7 +198,7 @@ async def get_core_features() -> Dict[str, Any]:
     )
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "core_features": core_features,
         "all_operational": all_core_operational,
         "count": len(core_features)
@@ -218,7 +222,7 @@ async def get_degraded_features() -> Dict[str, Any]:
     }
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "degraded_features": degraded_features,
         "count": len(degraded_features)
     }
@@ -241,7 +245,7 @@ async def get_unavailable_features() -> Dict[str, Any]:
     }
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "unavailable_features": unavailable_features,
         "count": len(unavailable_features)
     }
@@ -264,7 +268,7 @@ async def get_feature_dependencies() -> Dict[str, Any]:
     }
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "dependencies": dependencies
     }
 
@@ -283,7 +287,7 @@ async def trigger_health_checks() -> Dict[str, Any]:
     
     return {
         "status": "health checks triggered",
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "message": "Health checks performed for all features"
     }
 
@@ -300,7 +304,7 @@ async def get_availability_report() -> Dict[str, Any]:
     total_successful = sum(m.successful_requests for m in metrics.values())
     
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": _utc_now_iso(),
         "system_overview": {
             "status": "HEALTHY" if health["system_healthy"] else "DEGRADED",
             "total_features": health["total_features"],

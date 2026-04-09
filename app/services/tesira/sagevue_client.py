@@ -8,6 +8,7 @@ trigger Tesira layout deployment jobs without launching Tesira Software UI.
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
@@ -139,12 +140,15 @@ class SageVueClient:
 
 
 _sagevue_client: Optional[SageVueClient] = None
+_sagevue_client_lock = threading.Lock()
 
 
 def get_sagevue_client() -> SageVueClient:
     global _sagevue_client
     if _sagevue_client is None:
-        _sagevue_client = SageVueClient.from_config()
+        with _sagevue_client_lock:
+            if _sagevue_client is None:
+                _sagevue_client = SageVueClient.from_config()
     return _sagevue_client
 
 

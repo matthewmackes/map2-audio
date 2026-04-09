@@ -10,7 +10,7 @@ Provides real-time and historical performance data:
 
 import logging
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services.performance_metrics import (
@@ -23,6 +23,10 @@ from app.services.performance_metrics import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/performance", tags=["performance"])
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 @router.post("/start")
@@ -92,7 +96,7 @@ async def get_history(
             "snapshots": history["snapshots"],
             "count": len(history["snapshots"]),
             "statistics": history.get("statistics", {}),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": _utc_now_iso()
         }
     except Exception as e:
         logger.error(f"Error fetching performance history: {e}")
@@ -132,7 +136,7 @@ async def get_plugin_stats(plugin_id: Optional[str] = None) -> Dict[str, Any]:
             "plugins": stats.get("plugins", []),
             "count": len(stats.get("plugins", [])),
             "total_cpu_percent": stats.get("total_cpu_percent", 0.0),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": _utc_now_iso()
         }
     except Exception as e:
         logger.error(f"Error fetching plugin stats: {e}")
@@ -206,7 +210,7 @@ async def get_performance_alerts() -> Dict[str, Any]:
         return {
             "alerts": alerts,
             "count": len(alerts),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": _utc_now_iso()
         }
     except Exception as e:
         logger.error(f"Error fetching alerts: {e}")

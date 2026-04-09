@@ -8,7 +8,7 @@ Auto-detects environment and routes to appropriate updater.
 import logging
 import os
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -177,7 +177,7 @@ class HybridUpdateManager:
 
     @staticmethod
     def _timestamp() -> str:
-        return datetime.utcnow().isoformat()
+        return datetime.now(timezone.utc).isoformat()
 
     def _step_for_key(self, key: str) -> Optional[tuple[int, HybridApplicationStep]]:
         for index, step in enumerate(self.application_progress.steps):

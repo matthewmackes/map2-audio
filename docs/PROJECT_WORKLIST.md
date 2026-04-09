@@ -19441,11 +19441,13 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 17:37 EDT - Codex
+Last updated: 2026-04-08 20:13 EDT - Codex
 - Progress notes:
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
   - Converted the active validation hotspots in `app/services/performance_metrics.py`, `app/services/snapshot_deployment_service.py`, `app/services/cluster/mdns_discovery_enhanced.py`, `app/services/connection_pool.py`, and `app/services/api_observatory.py` to timezone-aware UTC handling while preserving existing serialization formats and duration math.
   - Focused validation now passes without the earlier datetime deprecation warnings on the touched snapshot/observability route slice, but the repo-wide migration remains open because many untouched modules and tests still use naive datetimes.
+  - Extended the sweep across additional API/service modules in this slice: `app/routes/graceful_degradation.py`, `app/routes/performance.py`, `app/routes/audio_path.py`, `app/services/cluster/hybrid_update_manager.py`, `app/services/cluster/clone_reset.py`, `app/services/circuit_breaker.py`, `app/services/tesira/tesira_design_compiler.py`, and `app/services/tesira/tesira_deploy_orchestrator.py`.
+  - Focused backend validation for the touched service slice now passes with no remaining `datetime.utcnow()` / naive `datetime.now()` matches in those edited files, but broad repo coverage is still incomplete in deployment, LCD, system, package, and other cluster modules.
 
 ID: T846
 Status: [>] In Progress
@@ -19458,12 +19460,14 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 17:37 EDT - Codex
+Last updated: 2026-04-08 20:13 EDT - Codex
 - Progress notes:
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
   - Extended the thread-safe singleton sweep to `usb_audio_manager`, `jack_audio`, `metrics_daemon`, `connection_pool`, `pipewire_service`, `plugin_catalog`, `cluster/version_manifest`, `cluster/adoption_bootstrap`, `tesira/firmware_service`, `tesira/layout_catalog`, `api_observatory`, and `upload_service`.
   - Broader backend singleton sweep is still pending; bare factory patterns remain in other modules and need a dedicated follow-up pass before this task can close.
   - Current singleton inventory still shows remaining bare factory patterns in modules such as `deployment_remediation`, several AVB services, remaining Tesira helpers, and other backend service entrypoints that were outside this sweep.
+  - Added lock-guarded singleton construction in this slice for `intelfx_service`, `mpx1_service`, `node_health_service`, `circuit_breaker`, `openapi_schema_sync`, `tesira.discovery`, `tesira.sagevue_client`, `tesira.tesira_design_compiler`, and `tesira.tesira_deploy_orchestrator`.
+  - The remaining singleton inventory is now concentrated in other backend service entrypoints such as deployment/remediation, additional AVB services, and other untouched orchestration helpers rather than the core audio, observability, and Tesira slices already swept.
 
 ID: T847
 Status: [✓] Done
@@ -20086,3 +20090,879 @@ Description:
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-04-08
+
+## Control Surfaces Completion — Push 1 Drum Machine Parity (Workstream A)
+
+Source plan: `.claude/plans/snuggly-crafting-dusk.md`
+Reference architecture: `docs/plans/PUSH1_DRUM_MACHINE_PARITY_PLAN_2026-03-31.md`
+
+ID: T886
+Status: [ ] Todo
+Title: EPIC — Push 1 Drum Machine Parity (Phases A1–A3)
+Description:
+- Goal / acceptance criteria: Implement full Push 1 Drum Rack parity for MAP2's drum-machine workflow across three phases: core attachment/live control, drum rack performance parity, and sequencing/automation depth. Simulator-first development, hardware validation deferred.
+- Why it matters: This is the highest-priority control surface workstream. The architecture plan (T605) and backend spine (T660-T662) are complete but no implementation tasks exist.
+- Dependencies: T605, T660, T661, T662
+- Estimated effort: Very High (20 subtasks across 3 phases)
+- Required outputs: See subtasks T887–T906
+Subtasks: T887–T906
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T887
+Status: [ ] Todo
+Title: Extend drum instance registry with cluster-wide discovery and live-state ordering
+Description:
+- Goal / acceptance criteria: `app/services/push_surface/drum_registry.py` scans all cluster nodes for `map2://juce/drums` plugin instances, emits stable descriptors, and orders results with currently live/active instances first.
+- Why it matters: Banking across cluster-visible drum instances requires a complete ordered inventory.
+- Dependencies: T660
+- Estimated effort: Medium
+- Required outputs: Extended registry, cluster-wide discovery, live-state sort, route exposure, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T888
+Status: [ ] Todo
+Title: Add Push drum session runtime with instance banking and unbound-when-no-live behavior
+Description:
+- Goal / acceptance criteria: Push drum session runtime supports bank-index navigation across discovered instances, remains unbound when no drum-machine instance is currently live, and does not auto-fall back to MRU or first-available.
+- Why it matters: The operator must explicitly select an instance from Push; unbound state is the safe default.
+- Dependencies: T887
+- Estimated effort: Medium
+- Required outputs: Session runtime with banking, unbound default, route exposure, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T889
+Status: [ ] Todo
+Title: Implement guarded auto-live selection for Push drum instance switching
+Description:
+- Goal / acceptance criteria: When the operator selects a drum-machine instance from Push, that selection triggers live activation automatically. Confirmation is required when the chosen instance is remote, already audible, or would replace another live drum-machine.
+- Why it matters: Safety rule from T605 intake — prevents silent displacement of audible targets.
+- Dependencies: T888
+- Estimated effort: Medium
+- Required outputs: Guarded selection logic, confirmation-required detection, route/command wiring, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T890
+Status: [ ] Todo
+Title: Add hardware-satisfiable Push confirmation flow with pending-action state
+Description:
+- Goal / acceptance criteria: Push drum session exposes explicit `pending_confirmation` state with typed accept/reject commands satisfiable entirely from Push hardware buttons. Backend tracks pending action, timeout, and resolution.
+- Why it matters: Guarded confirmations must be operable from hardware alone on a dark stage.
+- Dependencies: T889
+- Estimated effort: High
+- Required outputs: Pending-action state model, accept/reject commands, timeout, Push manager integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T891
+Status: [ ] Todo
+Title: Add nav-bar Push confirmation notice pill
+Description:
+- Goal / acceptance criteria: When a Push pending-action exists, a notice pill appears left of the node pill in the global nav bar on all cluster nodes. Pill shows pending action type and device identity.
+- Why it matters: Operator visibility for hardware-initiated actions that require confirmation.
+- Dependencies: T890
+- Estimated effort: Medium
+- Required outputs: `usePushConfirmation` hook, nav-bar pill component, WebSocket subscription, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T892
+Status: [ ] Todo
+Title: Mirror Push confirmation flows on Push Surface page with LCD simulator and Carbon modal fallback
+Description:
+- Goal / acceptance criteria: Push Surface page PNG render mirrors what hardware would display during confirmation flows. When no hardware is connected, Carbon modals provide the same guarded actions. Both paths use the same backend contract.
+- Why it matters: Simulator-first development requires web-visible confirmation flows matching hardware behavior.
+- Dependencies: T890, T891
+- Estimated effort: Medium
+- Required outputs: PNG render confirmation overlay, Carbon modal fallback, shared backend contract, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T893
+Status: [ ] Todo
+Title: Wire pad triggering and transport through typed Push drum command plane
+Description:
+- Goal / acceptance criteria: `trigger_pad`, `stop_pad`, and transport commands (play/stop/record) flow through the Push drum session command plane to the targeted drum-machine instance. Pad velocity and channel are preserved.
+- Why it matters: Core live playability — pads must trigger the selected drum-machine instance with correct velocity.
+- Dependencies: T888
+- Estimated effort: Medium
+- Required outputs: Command plane wiring, bridge integration, drum service delegation, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T894
+Status: [ ] Todo
+Title: Focused regression coverage for Push Drum Phase A1
+Description:
+- Goal / acceptance criteria: Simulator scenarios covering instance banking, guarded selection, confirmation accept/reject/timeout, pad triggering, transport, and unbound-state behavior.
+- Why it matters: No Push hardware available — simulator coverage is the primary validation path.
+- Dependencies: T887–T893
+- Estimated effort: Medium
+- Required outputs: `tests/push_surface/test_drum_phase_a1.py`, simulator-backed tests, passing suite.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T895
+Status: [ ] Todo
+Title: Pad browse/load from MAP2 drum kit/pad/sample library via Push
+Description:
+- Goal / acceptance criteria: Push-side browsing targets MAP2's drum kit/pad/sample library only. Category navigation, pad preview, and load-to-pad actions all work through the Push drum command plane.
+- Why it matters: Drum Rack parity requires pad-level sound selection from hardware.
+- Dependencies: T893
+- Estimated effort: High
+- Required outputs: Library browser adapter, Push command integration, load-to-pad flow, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T896
+Status: [ ] Todo
+Title: 16 Velocities mode — single pad sends 16 velocity levels across pad grid
+Description:
+- Goal / acceptance criteria: Activating 16 Velocities mode maps all 16 pads to velocity layers of the selected pad sound. Pad grid shows velocity gradient feedback.
+- Dependencies: T893
+- Estimated effort: Medium
+- Required outputs: Mode toggle command, velocity distribution, pad feedback state, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T897
+Status: [ ] Todo
+Title: 64-Pad navigation — 4 banks of 16 pads with bank switching
+Description:
+- Goal / acceptance criteria: Push navigates across 4 banks of 16 pads (64 total) via bank buttons. Active bank reflected in pad feedback and state projection.
+- Dependencies: T893
+- Estimated effort: Medium
+- Required outputs: Bank switching commands, pad mapping per bank, state projection, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T898
+Status: [ ] Todo
+Title: Repeat mode — pad repeat at configurable rate divisions
+Description:
+- Goal / acceptance criteria: Repeat mode triggers pad at configurable note divisions (1/4, 1/8, 1/16, 1/32, triplet). Rate selection via Push controls. Repeat stops on pad release.
+- Dependencies: T893
+- Estimated effort: Medium
+- Required outputs: Repeat engine in drum sequencer, Push command integration, rate selection, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T899
+Status: [ ] Todo
+Title: Quantize mode — input quantization with configurable grid
+Description:
+- Goal / acceptance criteria: Input quantization snaps recorded pad hits to configurable grid (1/4, 1/8, 1/16, 1/32). Strength parameter (0-100%) for humanization.
+- Dependencies: T893
+- Estimated effort: Medium
+- Required outputs: Quantize engine, Push command integration, grid/strength selection, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T900
+Status: [ ] Todo
+Title: Fixed Length mode — clip/pattern length presets
+Description:
+- Goal / acceptance criteria: Fixed Length sets new pattern/clip length before recording starts. Preset lengths: 1/2/4/8/16/32 bars.
+- Dependencies: T893
+- Estimated effort: Low
+- Required outputs: Fixed length presets, Push command integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T901
+Status: [ ] Todo
+Title: Loop Selector — loop region editing from Push pads
+Description:
+- Goal / acceptance criteria: Loop Selector mode uses Push pads to set loop start/end and duplicate/halve loop regions within the active pattern.
+- Dependencies: T893
+- Estimated effort: Medium
+- Required outputs: Loop selector commands, pad-to-region mapping, drum sequencer integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T902
+Status: [ ] Todo
+Title: Normalized state projection adapter for Push drum rendering
+Description:
+- Goal / acceptance criteria: New `app/services/push_surface/drum_projection.py` builds a normalized state payload (transport, pad names/colors/mute/solo/armed, current bank, step-grid, mode status, browser state, confirmation state) consumed by the Push renderer without understanding drum-service internals.
+- Why it matters: Clean separation between drum runtime and Push display layer.
+- Dependencies: T893, T895–T901
+- Estimated effort: High
+- Required outputs: Projection adapter, typed state model, renderer integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T903
+Status: [ ] Todo
+Title: Step-grid editing — Push pads as step sequencer with per-step note entry
+Description:
+- Goal / acceptance criteria: Step sequencer mode maps 16 pads to 16 steps. Active steps toggle on/off. Step page navigation for longer patterns.
+- Dependencies: T902
+- Estimated effort: High
+- Required outputs: Step-grid commands, pad-to-step mapping, sequencer integration, page navigation, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T904
+Status: [ ] Todo
+Title: Per-step automation entry/edit — velocity, pitch, length, probability per step
+Description:
+- Goal / acceptance criteria: With a step selected, Push encoders edit per-step velocity, pitch, length, and probability. Changes reflected in step-grid state projection.
+- Dependencies: T903
+- Estimated effort: High
+- Required outputs: Per-step automation commands, encoder mapping, state projection updates, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T905
+Status: [ ] Todo
+Title: Push display text rendering for drum mode (pattern/kit/pad names)
+Description:
+- Goal / acceptance criteria: Push 1 display (if display transport verified safe) shows pattern name, kit name, selected pad name, and mode indicators. Falls back to LED-only feedback if display transport is unsafe.
+- Dependencies: T902
+- Estimated effort: High
+- Required outputs: Display page renderer for drum mode, safety gate, fallback behavior, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T906
+Status: [ ] Todo
+Title: Browser metadata and workflow shortcuts for Push drum browsing
+Description:
+- Goal / acceptance criteria: Push drum browser exposes category filtering, favorites, and recent sounds. Quick-select shortcuts for most-used kits/pads.
+- Dependencies: T895
+- Estimated effort: Medium
+- Required outputs: Browser metadata adapter, filter/favorites/recent commands, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — JUCE Engine Prerequisites (Workstream B)
+
+ID: T907
+Status: [ ] Todo
+Title: EPIC — JUCE Engine Control Surface Prerequisites
+Description:
+- Goal / acceptance criteria: Implement four C++ audio engine primitives that unblock T630, T637, T641, and T629: monitoring solo bus, zero-crossing A/B switch, live routing mode reconfiguration, and multi-target expression pedal mapping. Correctness first with reasonable crossfade, optimize to zero-artifact later.
+- Why it matters: Four blocked guitar workflow tasks depend on these engine capabilities.
+- Dependencies: None
+- Estimated effort: Very High (10 tasks including unblocked follow-ups)
+- Required outputs: See subtasks T908–T917
+Subtasks: T908–T917
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T908
+Status: [ ] Todo
+Title: Add single monitoring solo bus to JUCE audio engine
+Description:
+- Goal / acceptance criteria: Configurable output pair for solo monitoring. When a channel is soloed, its signal routes to the designated monitoring outputs while the main mix continues unaffected on the primary outputs. One bus only.
+- Why it matters: Unblocks T641 (Monitoring Solo Output).
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: MonitorBus in Map2AudioEngine, output pair config, solo signal routing in audio callback, PythonBindings exposure.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T909
+Status: [ ] Todo
+Title: Add zero-crossing A/B channel switch to JUCE audio engine
+Description:
+- Goal / acceptance criteria: Detect nearest zero-crossing in the output buffer and execute A-to-B or B-to-A channel cut at that point. Short safety crossfade (~1-2ms) acceptable if exact zero-cross is not found within the current buffer.
+- Why it matters: Unblocks T630 (A/B Hard Switch).
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Zero-cross detection utility, A/B switch command in Map2AudioEngine, crossfade fallback, PythonBindings exposure.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T910
+Status: [ ] Todo
+Title: Add live routing mode reconfiguration to JUCE audio engine
+Description:
+- Goal / acceptance criteria: Switch between parallel_blend, series, morph, and sidechain routing modes in-place without chain teardown or plugin state loss. Short crossfade (5-10ms) acceptable during transition. No audio gap or click.
+- Why it matters: Unblocks T637 (Live Routing Mode Switch Without Snapshot Reload).
+- Dependencies: None
+- Estimated effort: Very High
+- Required outputs: In-place graph topology reconfiguration in JuceAudioGraph, mode switch command in Map2AudioEngine, crossfade during transition, PythonBindings exposure.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T911
+Status: [ ] Todo
+Title: Add multi-target expression pedal mapping engine to JUCE audio engine
+Description:
+- Goal / acceptance criteria: One MIDI CC controls N plugin parameters simultaneously. Each target has independent min/max range and selectable interpolation curve (linear, logarithmic, exponential, S-curve). New ExpressionMapper class or extension to Map2AudioEngine.
+- Why it matters: Unblocks T629 (Per-Snapshot MIDI CC Multi-Target Expression Mapping).
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: ExpressionMapper.h/.cpp (or inline), curve implementations, multi-target dispatch in audio callback, PythonBindings exposure.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T912
+Status: [ ] Todo
+Title: Wire Python bindings and service layer for all four new JUCE engine primitives
+Description:
+- Goal / acceptance criteria: `app/services/juce_engine_service.py` exposes monitoring solo bus, A/B switch, live routing reconfiguration, and expression mapping through async-safe service methods. API routes added where needed.
+- Dependencies: T908, T909, T910, T911
+- Estimated effort: Medium
+- Required outputs: Service methods, route endpoints, async wrapping via asyncio.to_thread.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T913
+Status: [ ] Todo
+Title: Focused C++ and Python regression coverage for engine primitives
+Description:
+- Goal / acceptance criteria: C++ unit tests for solo bus routing, zero-cross detection, mode reconfiguration, and expression mapping. Python service tests for all four bindings.
+- Dependencies: T912
+- Estimated effort: Medium
+- Required outputs: cmake test targets, tests/test_juce_engine_service_*.py coverage.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T914
+Status: [ ] Todo
+Title: Unblock T641 — Monitoring Solo Output with dedicated solo bus
+Description:
+- Goal / acceptance criteria: Complete T641 acceptance criteria using the new monitoring solo bus primitive. monitoring_output_index field consumed by JUCE engine, solo signal routed to designated output pair, main mix unaffected, indicator in editor UI.
+- Dependencies: T908, T912
+- Estimated effort: Medium
+- Required outputs: Engine consumer for monitoring_output_index, frontend I/O section wiring, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T915
+Status: [ ] Todo
+Title: Unblock T630 — A/B Hard Switch with Zero-Crossing Detection
+Description:
+- Goal / acceptance criteria: Complete T630 acceptance criteria using the new zero-cross A/B switch primitive. A/B button in editor plus floating toolbar, MIDI CC assignment per-snapshot, real-time routing visualizer update, Carbon bold color highlighting.
+- Dependencies: T909, T912
+- Estimated effort: Medium
+- Required outputs: Frontend A/B switch controls, MIDI assignment wiring, engine integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T916
+Status: [ ] Todo
+Title: Unblock T637 — Live Routing Mode Switch Without Snapshot Reload
+Description:
+- Goal / acceptance criteria: Complete T637 acceptance criteria using the new live routing reconfiguration primitive. Routing mode selector triggers in-place engine reconfiguration, no chain teardown, routing visualizer updates immediately, dirty flag set.
+- Dependencies: T910, T912
+- Estimated effort: Medium
+- Required outputs: Frontend routing mode selector wired to live engine update, authority-state publish, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T917
+Status: [ ] Todo
+Title: Unblock T629 — Per-Snapshot MIDI CC Multi-Target Expression Mapping
+Description:
+- Goal / acceptance criteria: Complete T629 with multi-target support. One expression pedal CC controls N parameters with independent min/max ranges and selectable curves (linear/log/exp/S-curve). Mapping stored per-snapshot, applied on activation.
+- Dependencies: T911, T912
+- Estimated effort: High
+- Required outputs: Per-snapshot expression map in snapshot data model, mapping editor in MIDI panel, curve selection UI, engine dispatch, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — Ground Control Pro Deep Integration (Workstream C)
+
+ID: T918
+Status: [ ] Todo
+Title: EPIC — Ground Control Pro Deep Integration
+Description:
+- Goal / acceptance criteria: MAP2 replaces Voodoo Lab Editor entirely. Full bidirectional control, relay switching, SysEx backup/restore, snapshot-driven preset push, and GCP state embedded in .map2snapshot bundles.
+- Why it matters: GCP is a primary foot controller for live guitarists. Full editor replacement eliminates dependency on discontinued Voodoo Lab software.
+- Dependencies: Existing app/services/ground_control_pro/ stack
+- Estimated effort: High (8 subtasks)
+- Required outputs: See subtasks T919–T926
+Subtasks: T919–T926
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T919
+Status: [ ] Todo
+Title: GCP full SysEx dump/restore — MAP2 as canonical backup tool
+Description:
+- Goal / acceptance criteria: MAP2 can read and write full GCP memory dumps via SysEx. Standalone backup/restore workflow in the GCP editor page. File format documented.
+- Dependencies: Existing app/services/ground_control_pro/sysex_container.py, serializer.py, parser.py
+- Estimated effort: High
+- Required outputs: Dump/restore service methods, route endpoints, file I/O, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T920
+Status: [ ] Todo
+Title: Embed GCP state in .map2snapshot bundles
+Description:
+- Goal / acceptance criteria: Snapshot export includes GCP SysEx configuration. Import restores GCP state alongside snapshot audio state. GCP state is optional — snapshots without GCP data import normally.
+- Dependencies: T919, T633
+- Estimated effort: Medium
+- Required outputs: Bundle extension, import/export integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T921
+Status: [ ] Todo
+Title: Snapshot-driven GCP preset push — on activation, push PC/CC/relay assignments via SysEx
+Description:
+- Goal / acceptance criteria: When a snapshot is activated, MAP2 pushes the snapshot's GCP button assignments (PC, CC, relay) to the connected GCP via SysEx. Push occurs after chain confirmation and footswitch label push.
+- Dependencies: T919
+- Estimated effort: High
+- Required outputs: Activation-time GCP push, SysEx formatting, relay state push, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T922
+Status: [ ] Todo
+Title: Bidirectional GCP button mapping — button presses mapped to MAP2 actions
+Description:
+- Goal / acceptance criteria: GCP button presses (PC/CC messages) map to MAP2 actions: block bypass, block focus, A/B switch, expression pedal targets. Mapping stored per-snapshot.
+- Dependencies: T919
+- Estimated effort: High
+- Required outputs: MIDI listener integration, action dispatch, per-snapshot mapping storage, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T923
+Status: [ ] Todo
+Title: GCP relay output programming — MAP2 manages relay/switch outputs with snapshot automation
+Description:
+- Goal / acceptance criteria: MAP2 programs GCP relay outputs (for amp channel switching via TRS cables). Relay state is snapshot-driven — activating a snapshot pushes relay configurations automatically. Manual editor programming also supported.
+- Dependencies: T919
+- Estimated effort: Medium
+- Required outputs: Relay SysEx programming, per-snapshot relay map, activation-time push, editor UI, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T924
+Status: [ ] Todo
+Title: Full GCP editor page — replace Voodoo Lab Editor
+Description:
+- Goal / acceptance criteria: Dedicated /ground-control Carbon page with bank/preset browser, per-button CC/PC/relay editor, instant access preset configuration, SysEx backup/restore controls, connection status, and full device programming surface.
+- Dependencies: T919, T921, T922, T923
+- Estimated effort: High
+- Required outputs: web/src/app/pages/GroundControlProPage.tsx rewrite, new component files, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T925
+Status: [ ] Todo
+Title: GCP dedicated daemon with auto-reconnect and full state re-push on reconnect
+Description:
+- Goal / acceptance criteria: Background daemon manages GCP connection lifecycle. On reconnect, re-pushes current snapshot's full controller state (button assignments, relay config, labels) plus notification to nav bar.
+- Dependencies: T921
+- Estimated effort: Medium
+- Required outputs: app/services/ground_control_pro/daemon.py, reconnect logic, state re-push, notification, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T926
+Status: [ ] Todo
+Title: Focused GCP integration tests — SysEx round-trip, snapshot push, relay, backup/restore
+Description:
+- Goal / acceptance criteria: Full test suite covering SysEx dump/restore round-trip, snapshot activation GCP push, relay programming, bidirectional button mapping, and reconnect re-push.
+- Dependencies: T919–T925
+- Estimated effort: Medium
+- Required outputs: tests/test_ground_control_pro_integration.py, passing suite.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — Mackie MCU Pro Integration (Workstream D)
+
+ID: T927
+Status: [ ] Todo
+Title: EPIC — Mackie MCU Pro Plugin Parameter Editing Integration
+Description:
+- Goal / acceptance criteria: Full MCU protocol integration for plugin parameter editing. Faders/V-Pots map to focused plugin block parameters, scribble strips show param names, auto-grouped by parameter category.
+- Why it matters: MCU Pro is the industry-standard studio control surface. Plugin editing from hardware faders accelerates mixing workflow.
+- Dependencies: None
+- Estimated effort: High (7 subtasks)
+- Required outputs: See subtasks T928–T934
+Subtasks: T928–T934
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T928
+Status: [ ] Todo
+Title: MCU protocol service — SysEx handshake, fader/V-Pot/button parsing, scribble strip and meter bridge output
+Description:
+- Goal / acceptance criteria: New app/services/mcu_surface/ package implements Mackie Control Universal protocol: device query/response handshake, fader position parsing (pitch bend per channel), V-Pot CC parsing, button note parsing, scribble strip SysEx output, meter bridge SysEx output.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Protocol service, MIDI I/O integration, scribble strip formatter, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T929
+Status: [ ] Todo
+Title: Plugin parameter page auto-grouping — categorize params into 8-fader banks by category
+Description:
+- Goal / acceptance criteria: Given a plugin's parameter list, auto-group into 8-parameter banks by semantic category: EQ (freq/gain/Q), dynamics (threshold/ratio/attack/release), modulation (rate/depth/mix), etc. Intelligent grouping, not sequential paging.
+- Dependencies: T928
+- Estimated effort: High
+- Required outputs: app/services/mcu_surface/param_grouping.py, category detection heuristics, bank generation, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T930
+Status: [ ] Todo
+Title: MCU-to-snapshot-editor bridge — focused plugin block drives fader/V-Pot/scribble assignment
+Description:
+- Goal / acceptance criteria: When a plugin block is focused in the Snapshot Editor, its auto-grouped parameter pages drive the MCU fader/V-Pot/scribble strip assignments. Channel select buttons on MCU select plugin blocks. Bank left/right navigates parameter pages.
+- Dependencies: T928, T929
+- Estimated effort: High
+- Required outputs: Bridge service, focus-to-MCU sync, block selection from MCU, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T931
+Status: [ ] Todo
+Title: MCU transport section — Play/Stop/Record/Rew/FF and jog wheel mapping
+Description:
+- Goal / acceptance criteria: MCU transport buttons map to MAP2 transport. Jog wheel maps to parameter fine-adjust for the currently focused parameter.
+- Dependencies: T928
+- Estimated effort: Medium
+- Required outputs: Transport button mapping, jog wheel integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T932
+Status: [ ] Todo
+Title: Dedicated /mcu editor page — Carbon layout with fader bank visualization and scribble strip preview
+Description:
+- Goal / acceptance criteria: New /mcu Carbon page showing: connection status, current fader bank visualization (8 fader positions with values), scribble strip text preview, parameter page browser, focused plugin identity, and transport status.
+- Dependencies: T928, T929, T930
+- Estimated effort: High
+- Required outputs: web/src/app/pages/McuPage.tsx, McuPage.css, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T933
+Status: [ ] Todo
+Title: MCU auto-reconnect daemon with state re-push
+Description:
+- Goal / acceptance criteria: MCU connection lifecycle managed by background daemon. On reconnect, re-pushes current plugin focus, fader positions, scribble strip text, transport state, plus nav-bar notification.
+- Dependencies: T928, T930
+- Estimated effort: Medium
+- Required outputs: Daemon service, reconnect logic, state re-push, notification, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T934
+Status: [ ] Todo
+Title: Focused MCU integration tests — handshake, fader assignment, scribble strip, param grouping, banking
+Description:
+- Goal / acceptance criteria: Full test suite covering MCU handshake, fader-to-param assignment, scribble strip output, auto-grouping correctness, bank navigation, and reconnect behavior.
+- Dependencies: T928–T933
+- Estimated effort: Medium
+- Required outputs: tests/test_mcu_surface*.py, passing suite.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — Novation Launch Control Deep Integration (Workstream E)
+
+ID: T935
+Status: [ ] Todo
+Title: EPIC — Novation Launch Control Deep Integration
+Description:
+- Goal / acceptance criteria: Full programming surface with SysEx template auto-push, LED feedback using effect-type Carbon color palette as default with user-configurable override, per-snapshot mappings, and dedicated editor page.
+- Dependencies: None
+- Estimated effort: High (7 subtasks)
+- Required outputs: See subtasks T936–T942
+Subtasks: T936–T942
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T936
+Status: [ ] Todo
+Title: Launch Control SysEx template service — auto-push MAP2 template on device detection
+Description:
+- Goal / acceptance criteria: New app/services/launch_control_surface/ package. On device detection, auto-push a MAP2 SysEx template configuring LED/CC layout. Parse incoming template data for bidirectional mapping awareness.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Template service, auto-push on detection, template parse, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T937
+Status: [ ] Todo
+Title: LED feedback engine — effect-type Carbon color palette default with user-configurable override
+Description:
+- Goal / acceptance criteria: LED colors default to effect-type Carbon palette (delay=blue, drive=green, reverb=purple, modulation=orange, etc. per T650). Operator can override LED color per-mapping in the editor. LEDs set via note-on velocity values per Novation protocol.
+- Dependencies: T936
+- Estimated effort: Medium
+- Required outputs: LED color engine, Carbon palette mapping, per-mapping override, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T938
+Status: [ ] Todo
+Title: Per-snapshot Launch Control mapping persistence — knob/fader/button assignments pushed on activation
+Description:
+- Goal / acceptance criteria: Launch Control knob/fader/button-to-param/action assignments stored per-snapshot. On activation, mappings and LED states pushed to device.
+- Dependencies: T936, T937
+- Estimated effort: Medium
+- Required outputs: Snapshot schema extension, activation-time push, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T939
+Status: [ ] Todo
+Title: Bidirectional Launch Control mapping — knobs/faders to params, buttons to bypass/focus/transport
+Description:
+- Goal / acceptance criteria: Knobs and faders map to plugin parameters. Buttons map to bypass, block focus, and transport actions. All bidirectional — parameter changes from other sources update the device state.
+- Dependencies: T936
+- Estimated effort: Medium
+- Required outputs: Control mapping service, bidirectional sync, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T940
+Status: [ ] Todo
+Title: Dedicated /launch-control editor page — Carbon layout with control grid and LED color editor
+Description:
+- Goal / acceptance criteria: New /launch-control Carbon page showing: control grid visualization matching physical layout, LED color editor per button, mapping assignment per control, connection status, template status.
+- Dependencies: T936, T937, T938, T939
+- Estimated effort: High
+- Required outputs: web/src/app/pages/LaunchControlPage.tsx, LaunchControlPage.css, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T941
+Status: [ ] Todo
+Title: Launch Control auto-reconnect with full state re-push
+Description:
+- Goal / acceptance criteria: On reconnect, re-push SysEx template, LED colors, and current snapshot mappings. Nav-bar notification on reconnect.
+- Dependencies: T936, T937, T938
+- Estimated effort: Medium
+- Required outputs: Reconnect daemon, state re-push, notification, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T942
+Status: [ ] Todo
+Title: Focused Launch Control tests — template push, LED output, mapping round-trip, snapshot integration
+Description:
+- Goal / acceptance criteria: Full test suite covering template auto-push, LED color output per Novation protocol, mapping persistence round-trip, snapshot activation push, and reconnect behavior.
+- Dependencies: T936–T941
+- Estimated effort: Medium
+- Required outputs: tests/test_launch_control_surface*.py, passing suite.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — MeloAudio MIDI Commander Deep Integration (Workstream F)
+
+ID: T943
+Status: [ ] Todo
+Title: EPIC — MeloAudio MIDI Commander Deep Integration
+Description:
+- Goal / acceptance criteria: Full programming surface with dedicated mapping editor, per-snapshot assignments, snapshot-driven configuration push, and standalone /midi-commander route.
+- Dependencies: None
+- Estimated effort: Medium (6 subtasks)
+- Required outputs: See subtasks T944–T949
+Subtasks: T944–T949
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T944
+Status: [ ] Todo
+Title: MIDI Commander device service — parse button/expression MIDI, detect model variant
+Description:
+- Goal / acceptance criteria: New app/services/midi_commander_surface/ package. Parse MIDI Commander button CC/PC messages and expression pedal CC. Detect device model variant from MIDI descriptors.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Device service, MIDI parser, model detection, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T945
+Status: [ ] Todo
+Title: Per-snapshot MIDI Commander button/expression mapping
+Description:
+- Goal / acceptance criteria: Button-to-action assignments (bypass, PC, block focus, expression target) stored per-snapshot. Expression pedal target configurable per-snapshot.
+- Dependencies: T944
+- Estimated effort: Medium
+- Required outputs: Snapshot schema extension, mapping service, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T946
+Status: [ ] Todo
+Title: Snapshot-driven MIDI Commander configuration push
+Description:
+- Goal / acceptance criteria: On activation, push CC/PC assignments to device if device supports SysEx configuration. Otherwise document manual setup procedure in the editor page.
+- Dependencies: T944, T945
+- Estimated effort: Medium
+- Required outputs: Activation-time push (if supported), manual-setup guidance, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T947
+Status: [ ] Todo
+Title: Dedicated /midi-commander editor page — Carbon layout with button grid and expression assignment
+Description:
+- Goal / acceptance criteria: New /midi-commander Carbon page showing: button grid matching physical layout, per-button action assignment, expression pedal target editor, connection status, manual setup guidance if device lacks SysEx.
+- Dependencies: T944, T945, T946
+- Estimated effort: High
+- Required outputs: web/src/app/pages/MidiCommanderPage.tsx, MidiCommanderPage.css, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T948
+Status: [ ] Todo
+Title: MIDI Commander auto-reconnect with state re-push
+Description:
+- Goal / acceptance criteria: On reconnect, re-push current snapshot's button/expression mappings. Nav-bar notification.
+- Dependencies: T944, T945
+- Estimated effort: Low
+- Required outputs: Reconnect logic, state re-push, notification, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T949
+Status: [ ] Todo
+Title: Focused MIDI Commander tests — button parse, mapping persistence, snapshot push
+Description:
+- Goal / acceptance criteria: Full test suite covering button MIDI parse, mapping round-trip, snapshot activation push, and reconnect behavior.
+- Dependencies: T944–T948
+- Estimated effort: Medium
+- Required outputs: tests/test_midi_commander_surface*.py, passing suite.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+## Control Surfaces Completion — Shared Infrastructure (Workstream G)
+
+ID: T950
+Status: [ ] Todo
+Title: Fix Push surface unbounded MIDI queue and GCP session persistence (supersedes T843)
+Description:
+- Goal / acceptance criteria: Bounded _input_queue with overflow handling in Push surface manager. GCP sessions persist to disk for crash recovery.
+- Why it matters: Unbounded queue under MIDI flood. Lost GCP sessions lose backup state before hardware push.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Bounded queue, session persistence, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T951
+Status: [ ] Todo
+Title: Universal device reconnect with state re-push across all 6 surface families
+Description:
+- Goal / acceptance criteria: Shared reconnect/re-push contract in app/services/enriched_surface_runtime.py. On device reconnect: auto-reconnect, re-push current snapshot's full controller state (labels, LEDs, encoder maps, relay config, fader positions, scribble strips, button mappings), nav-bar notification. All 6 families use the same contract.
+- Dependencies: T925, T933, T941, T948
+- Estimated effort: High
+- Required outputs: Shared reconnect contract, per-family re-push adapters, notification integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T952
+Status: [ ] Todo
+Title: Snapshot activation controller dispatch — fan out state push to all connected surfaces
+Description:
+- Goal / acceptance criteria: After snapshot activation, dispatch controller state push to all connected surfaces: Maschine encoder maps, Push drum session, GCP presets/relays, MCU scribble strips/fader positions, Launch Control LEDs/mappings, MIDI Commander assignments, footswitch labels, controller display summaries. Single orchestration point in app/services/snapshot_service.py.
+- Dependencies: T921, T930, T938, T946
+- Estimated effort: High
+- Required outputs: Orchestrated dispatch, per-family push adapters, activation sequence integration, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T953
+Status: [ ] Todo
+Title: Shared per-snapshot controller mapping schema — normalize mapping storage across device families
+Description:
+- Goal / acceptance criteria: Normalize how each device family stores per-snapshot assignments in the snapshot data model. Single controller_mappings field with typed sub-objects per family. Migration for existing Maschine encoder maps and footswitch labels.
+- Dependencies: T920, T938, T945
+- Estimated effort: Medium
+- Required outputs: Schema design, migration, snapshot service updates, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T954
+Status: [ ] Todo
+Title: Update Physical Surfaces shell with deep-link entries for new standalone device routes
+Description:
+- Goal / acceptance criteria: PhysicalSurfacesShell.tsx and PhysicalSurfacesOverviewPage.tsx include navigation entries and status summaries for /mcu, /launch-control, and /midi-commander alongside existing /maschine and /labs/push-surface links.
+- Dependencies: T932, T940, T947
+- Estimated effort: Low
+- Required outputs: Shell navigation updates, overview page device cards, focused tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude
+
+ID: T955
+Status: [ ] Todo
+Title: Navigation and catalog updates for all new device routes
+Description:
+- Goal / acceptance criteria: Add /mcu, /launch-control, /midi-commander to advancedMenuItems.ts, homeCardProfiles.ts, App.tsx routing, and useDeviceLocation.ts search terms.
+- Dependencies: T932, T940, T947
+- Estimated effort: Low
+- Required outputs: Menu items, home card profiles, route registration, device search terms.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-08 - Claude

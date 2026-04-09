@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.services.midi_sysex_bridge_base import MidiSysexBridgeBase, build_midi_sysex_runtime
@@ -143,10 +144,13 @@ class MPX1Service(MidiSysexBridgeBase):
         return None
 
 _mpx1_service: Optional[MPX1Service] = None
+_mpx1_service_lock = threading.Lock()
 
 
 def get_mpx1_service() -> MPX1Service:
     global _mpx1_service
     if _mpx1_service is None:
-        _mpx1_service = MPX1Service()
+        with _mpx1_service_lock:
+            if _mpx1_service is None:
+                _mpx1_service = MPX1Service()
     return _mpx1_service

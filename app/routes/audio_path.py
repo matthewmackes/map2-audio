@@ -11,7 +11,7 @@ Provides:
 
 import logging
 from typing import Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
 import asyncio
 import json
@@ -21,6 +21,10 @@ from app.services.cluster.registry import get_cluster_registry
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/audio-path", tags=["audio-path"])
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ============================================================================
@@ -47,7 +51,7 @@ async def get_local_audio_path() -> Dict:
         audio_path = await svc.get_node_audio_path()
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utc_now_iso(),
             "data": audio_path.to_dict(),
         }
     except Exception as e:
@@ -125,7 +129,7 @@ async def get_all_nodes_audio_paths() -> Dict:
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utc_now_iso(),
             "total_nodes": len(all_nodes),
             "healthy_nodes": len(all_nodes) - unhealthy_count,
             "unhealthy_nodes": unhealthy_count,
@@ -250,7 +254,7 @@ async def get_audio_path_summary() -> Dict:
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utc_now_iso(),
             "summary": {
                 "total_nodes": len(all_nodes),
                 "healthy_nodes": healthy,
@@ -345,7 +349,7 @@ async def broadcast_audio_path_update(node_id: str, change_type: str, data: Dict
     """
     message = {
         "type": "audio_path_update",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": _utc_now_iso(),
         "node_id": node_id,
         "change": change_type,
         "data": data,
