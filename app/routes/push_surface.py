@@ -81,6 +81,8 @@ class PushSurfaceDrumCommandRequest(BaseModel):
     device_fingerprint: str
     command: Literal[
         "select_instance",
+        "accept_pending_confirmation",
+        "reject_pending_confirmation",
         "confirm_instance_switch",
         "trigger_pad",
         "stop_pad",

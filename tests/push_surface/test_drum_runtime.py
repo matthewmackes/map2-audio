@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from itertools import count
+
 import pytest
 
 import app.services.push_surface.drum_runtime as drum_runtime_module
@@ -50,6 +52,15 @@ def _activation_recorder(calls: list[str]):
         return True
 
     return _activate
+
+
+def _time_source(start: float = 1_000.0):
+    values = count()
+
+    def _now() -> float:
+        return start + next(values)
+
+    return _now
 
 
 @pytest.mark.asyncio
@@ -133,12 +144,18 @@ async def test_select_instance_requires_confirmation_for_remote_target(monkeypat
     monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
     monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
     monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+    monkeypatch.setattr(PushDrumSessionService, "_now", staticmethod(lambda: 1_000.0))
 
     state = await service.dispatch_command("fp-4", "select_instance", {"instance_id": "inst-remote"})
 
     assert state["session"]["selected_instance_id"] == "inst-local"
+    assert state["session"]["pending_confirmation"]["action_type"] == "instance_switch"
     assert state["session"]["pending_confirmation"]["reason"] == "remote_instance"
+    assert state["session"]["pending_confirmation"]["device_fingerprint"] == "fp-4"
     assert state["session"]["pending_confirmation"]["target_instance_id"] == "inst-remote"
+    assert state["session"]["pending_confirmation"]["target_display_name"] == "node-remote / inst-remote"
+    assert state["session"]["pending_confirmation"]["expires_at"] == 1_015.0
+    assert state["session"]["last_confirmation_resolution"] is None
     assert calls == []
 
 
@@ -176,11 +193,69 @@ async def test_confirm_instance_switch_activates_target_and_clears_pending_confi
     monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
     monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
     monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+    monkeypatch.setattr(PushDrumSessionService, "_now", staticmethod(_time_source()))
 
     pending = await service.dispatch_command("fp-6", "select_instance", {"instance_id": "inst-next"})
-    confirmed = await service.dispatch_command("fp-6", "confirm_instance_switch", {})
+    action_id = pending["session"]["pending_confirmation"]["action_id"]
+    confirmed = await service.dispatch_command("fp-6", "accept_pending_confirmation", {"action_id": action_id})
 
     assert pending["session"]["pending_confirmation"]["target_instance_id"] == "inst-next"
     assert confirmed["session"]["selected_instance_id"] == "inst-next"
     assert confirmed["session"]["pending_confirmation"] is None
+    assert confirmed["session"]["last_confirmation_resolution"]["status"] == "accepted"
+    assert confirmed["session"]["last_confirmation_resolution"]["action_id"] == action_id
     assert calls == ["inst-next"]
+
+
+@pytest.mark.asyncio
+async def test_reject_pending_confirmation_clears_pending_without_activation(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([
+        _instance("inst-live", is_live=True, node_id="node-local"),
+        _instance("inst-next", is_live=False, node_id="node-local"),
+    ])
+    calls: list[str] = []
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder(calls))
+    monkeypatch.setattr(PushDrumSessionService, "_now", staticmethod(_time_source()))
+
+    pending = await service.dispatch_command("fp-7", "select_instance", {"instance_id": "inst-next"})
+    rejected = await service.dispatch_command(
+        "fp-7",
+        "reject_pending_confirmation",
+        {"action_id": pending["session"]["pending_confirmation"]["action_id"]},
+    )
+
+    assert rejected["session"]["selected_instance_id"] == "inst-live"
+    assert rejected["session"]["pending_confirmation"] is None
+    assert rejected["session"]["last_confirmation_resolution"]["status"] == "rejected"
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_pending_confirmation_expires_on_state_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([
+        _instance("inst-live", is_live=True, node_id="node-local"),
+        _instance("inst-next", is_live=False, node_id="node-local"),
+    ])
+    now = {"value": 100.0}
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "_local_node_id", lambda: "node-local")
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(PushDrumSessionService, "_activate_instance", _activation_recorder([]))
+    monkeypatch.setattr(PushDrumSessionService, "_now", staticmethod(lambda: now["value"]))
+
+    pending = await service.dispatch_command("fp-8", "select_instance", {"instance_id": "inst-next"})
+    assert pending["session"]["pending_confirmation"] is not None
+
+    now["value"] = 116.0
+    expired = await service.get_surface_state("fp-8")
+
+    assert expired["session"]["pending_confirmation"] is None
+    assert expired["session"]["last_confirmation_resolution"]["status"] == "expired"
+    assert expired["session"]["last_confirmation_resolution"]["reason"] == "confirmation_timeout"

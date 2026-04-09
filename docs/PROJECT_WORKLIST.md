@@ -20388,7 +20388,7 @@ Last updated: 2026-04-09 12:31 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T890
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add hardware-satisfiable Push confirmation flow with pending-action state
 Description:
 - Goal / acceptance criteria: Push drum session exposes explicit `pending_confirmation` state with typed accept/reject commands satisfiable entirely from Push hardware buttons. Backend tracks pending action, timeout, and resolution.
@@ -20397,8 +20397,16 @@ Description:
 - Estimated effort: High
 - Required outputs: Pending-action state model, accept/reject commands, timeout, Push manager integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 12:50 EDT - Codex
+- Completion notes:
+  - Expanded `app/services/push_surface/drum_runtime.py` from a bare guarded-target marker into a typed pending-action contract with action ids, device fingerprint, target identity, timeout metadata, accept/reject command names, and last-resolution tracking for accepted/rejected/expired/superseded outcomes.
+  - Added explicit hardware-satisfiable `accept_pending_confirmation` and `reject_pending_confirmation` command handling while preserving the earlier `confirm_instance_switch` path as a compatibility alias.
+  - Updated `app/routes/push_surface.py` and the route fakes so the published Push drum-session API now accepts the richer confirmation command plane and serialized session state.
+  - Expanded focused tests in `tests/push_surface/test_drum_runtime.py` and `tests/push_surface/test_routes.py` to cover confirmation creation, accept, reject, and timeout expiry flows.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T891
 Status: [ ] Todo

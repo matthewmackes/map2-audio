@@ -234,12 +234,14 @@ class _FakePushDrumSessionService:
                 "bank_index": 0,
                 "last_command": None,
                 "pending_confirmation": None,
+                "last_confirmation_resolution": None,
             },
             "available_instances": [{"instance_id": "inst-1"}],
             "selected_projection": {"instance": {"instance_id": "inst-1"}},
         }
 
     async def dispatch_command(self, device_fingerprint: str, command: str, payload: dict[str, object] | None = None):
+        action_id = str((payload or {}).get("action_id") or "push-confirm-demo")
         return {
             "status": "ok",
             "session": {
@@ -247,7 +249,34 @@ class _FakePushDrumSessionService:
                 "selected_instance_id": payload.get("instance_id") if payload else "inst-1",
                 "bank_index": 0,
                 "last_command": command,
-                "pending_confirmation": None,
+                "pending_confirmation": {
+                    "action_id": action_id,
+                    "action_type": "instance_switch",
+                    "reason": "remote_instance",
+                    "device_fingerprint": device_fingerprint,
+                    "target_instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1",
+                    "target_display_name": "Remote / Drum Snapshot",
+                    "target_node_id": "node-remote",
+                    "target_node_label": "Remote",
+                    "created_at": 1000.0,
+                    "expires_at": 1015.0,
+                    "timeout_ms": 15000,
+                    "accept_command": "accept_pending_confirmation",
+                    "reject_command": "reject_pending_confirmation",
+                }
+                if command == "select_instance"
+                else None,
+                "last_confirmation_resolution": {
+                    "action_id": action_id,
+                    "action_type": "instance_switch",
+                    "status": "accepted" if command == "accept_pending_confirmation" else "rejected",
+                    "reason": "remote_instance",
+                    "device_fingerprint": device_fingerprint,
+                    "target_instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1",
+                    "resolved_at": 1005.0,
+                }
+                if command in {"accept_pending_confirmation", "reject_pending_confirmation"}
+                else None,
             },
             "available_instances": [{"instance_id": "inst-1"}],
             "selected_projection": {"instance": {"instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1"}},
@@ -421,3 +450,23 @@ def test_push_surface_drum_registry_assignment_and_session_routes(monkeypatch):
     assert session.json()["session"]["device_fingerprint"] == "fp-1"
     assert command.status_code == 200
     assert command.json()["session"]["last_command"] == "select_instance"
+    assert command.json()["session"]["pending_confirmation"]["accept_command"] == "accept_pending_confirmation"
+
+
+def test_push_surface_drum_session_accepts_pending_confirmation_commands(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    command = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "accept_pending_confirmation",
+            "payload": {"action_id": "push-confirm-123", "instance_id": "inst-1"},
+        },
+    )
+
+    assert command.status_code == 200
+    assert command.json()["session"]["last_command"] == "accept_pending_confirmation"
+    assert command.json()["session"]["last_confirmation_resolution"]["status"] == "accepted"
