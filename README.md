@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1029** Python | **1115** TypeScript | **136** C++/H | **140** Docs | **1605** total commits | **3** stars | **0** forks | **0** open issues
+**1030** Python | **1117** TypeScript | **136** C++/H | **140** Docs | **1618** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`13415397`](https://github.com/matthewmackes/map2-audio/commit/13415397ef70fd6ee101604161cab386bf36e06d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`dbbee697`](https://github.com/matthewmackes/map2-audio/commit/dbbee6978e9d7ea889611d04047963ff50a2a081) | Complete TUI Carbon notification and header tranche | Map2 Audio | 2026-04-09 |
-| [`67700266`](https://github.com/matthewmackes/map2-audio/commit/6770026653cfc20624c8095b87d34f431ffd1c44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`9894f2fd`](https://github.com/matthewmackes/map2-audio/commit/9894f2fd311fb2b0be63d1ed4d3ede6a820041f3) | Mark Carbon loading and flatness tranche blocked | Map2 Audio | 2026-04-09 |
-| [`a7dc31bb`](https://github.com/matthewmackes/map2-audio/commit/a7dc31bba9e3e2a965ed9345c1ccc4cf622c74bd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`4546c032`](https://github.com/matthewmackes/map2-audio/commit/4546c032025e6692c881a88a29f1dd406edd6079) | Mark Carbon shell layering tranche blocked | Map2 Audio | 2026-04-09 |
-| [`d007d908`](https://github.com/matthewmackes/map2-audio/commit/d007d908a12d419f7c59bb065e81ca69c07e5c07) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`0c18310b`](https://github.com/matthewmackes/map2-audio/commit/0c18310bce95fc97288ea420f37f5de500bf4e70) | Mark Carbon form and notification tranche blocked | Map2 Audio | 2026-04-09 |
+| [`6687b3d9`](https://github.com/matthewmackes/map2-audio/commit/6687b3d9cf6093a90411f942d9f20c2cfe7d8813) | Add TUI Carbon status indicators | Map2 Audio | 2026-04-09 |
+| [`6a5fed4e`](https://github.com/matthewmackes/map2-audio/commit/6a5fed4ecd85664fea8e6d1fb6eab4b89c3a19ef) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-09 |
+| [`7adfb671`](https://github.com/matthewmackes/map2-audio/commit/7adfb671c7bc7cad76dfd58f7d04ac1cb867dd83) | Finish Carbon shell foundation sweep | Map2 Audio | 2026-04-09 |
+| [`1e15019d`](https://github.com/matthewmackes/map2-audio/commit/1e15019d49d32ce13f846f670ff40f570557f6c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
+| [`38e45695`](https://github.com/matthewmackes/map2-audio/commit/38e45695e9f9b89aab6aea2cf49b3b74bd13522f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
+| [`8316eb25`](https://github.com/matthewmackes/map2-audio/commit/8316eb2548ff274febab91e46bebc8f07e2162bf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
+| [`68dc2365`](https://github.com/matthewmackes/map2-audio/commit/68dc2365d724024d9b16e6c1b41c570b54b454e9) | Finish Carbon shell foundation sweep | Map2 Audio | 2026-04-09 |
+| [`52f135d4`](https://github.com/matthewmackes/map2-audio/commit/52f135d47034575ec3c3584d0fd9864e7f35db1a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
