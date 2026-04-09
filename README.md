@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1033** Python | **1124** TypeScript | **136** C++/H | **140** Docs | **1643** total commits | **3** stars | **0** forks | **0** open issues
+**1033** Python | **1124** TypeScript | **136** C++/H | **140** Docs | **1645** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`52031e26`](https://github.com/matthewmackes/map2-audio/commit/52031e26032999f011bcf0dee4858835528f65d2) | Mirror Push confirmations on Push Surface page | Map2 Audio | 2026-04-09 |
+| [`8bd0dd1c`](https://github.com/matthewmackes/map2-audio/commit/8bd0dd1cfa9ef46229114846778b7a4fe6a64c65) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`f81ce928`](https://github.com/matthewmackes/map2-audio/commit/f81ce9289080afa6c6280df672922e015822104c) | Add Push confirmation notice pill | Map2 Audio | 2026-04-09 |
 | [`3260b3c6`](https://github.com/matthewmackes/map2-audio/commit/3260b3c6dd77703d1235dda2a613877c20b6b9b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`e4caecb4`](https://github.com/matthewmackes/map2-audio/commit/e4caecb410fc723e6f38401221f516c6219019ac) | Add Push pending confirmation runtime contract | Map2 Audio | 2026-04-09 |
 | [`9a1e622e`](https://github.com/matthewmackes/map2-audio/commit/9a1e622e3283c4d97774427d036a9d2434561ec9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`885a9fc5`](https://github.com/matthewmackes/map2-audio/commit/885a9fc56abfe48d1189f6f54e76a38819fa326a) | Guard Push drum instance live switching | Map2 Audio | 2026-04-09 |
 | [`f865779f`](https://github.com/matthewmackes/map2-audio/commit/f865779f566a25b4a020cfa59359a951d783862f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`63f969ca`](https://github.com/matthewmackes/map2-audio/commit/63f969ca41445b407a2f6a23a72173a6fd39996f) | Add banked Push drum session runtime | Map2 Audio | 2026-04-09 |
-| [`b1060fbc`](https://github.com/matthewmackes/map2-audio/commit/b1060fbcebf3eba58dc4506b530e6c345bdff1f1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
