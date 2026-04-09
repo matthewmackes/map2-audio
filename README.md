@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1030** Python | **1118** TypeScript | **136** C++/H | **140** Docs | **1622** total commits | **3** stars | **0** forks | **0** open issues
+**1030** Python | **1118** TypeScript | **136** C++/H | **140** Docs | **1624** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`faf22956`](https://github.com/matthewmackes/map2-audio/commit/faf229568b0831f625795c3c3930b1dc9ff3ac02) | Implement collapsible TUI side nav | Map2 Audio | 2026-04-09 |
+| [`f48a673e`](https://github.com/matthewmackes/map2-audio/commit/f48a673e786e6dca4e9442fca2c17325b8ccaa68) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`36d1436f`](https://github.com/matthewmackes/map2-audio/commit/36d1436fa4e8b3c6c207630abc8f67f14929351e) | Add TUI breadcrumb path context | Map2 Audio | 2026-04-09 |
 | [`c0695b70`](https://github.com/matthewmackes/map2-audio/commit/c0695b70dd4e43b232261fb48f0769d87effcd05) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`a09b644e`](https://github.com/matthewmackes/map2-audio/commit/a09b644e7499791ba692190454a05856162c5a29) | Fix snapshot client type mismatch | Map2 Audio | 2026-04-09 |
 | [`f8ab3bf7`](https://github.com/matthewmackes/map2-audio/commit/f8ab3bf7f19b605e655e7e208b10f1d998410cf4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`6687b3d9`](https://github.com/matthewmackes/map2-audio/commit/6687b3d9cf6093a90411f942d9f20c2cfe7d8813) | Add TUI Carbon status indicators | Map2 Audio | 2026-04-09 |
 | [`6a5fed4e`](https://github.com/matthewmackes/map2-audio/commit/6a5fed4ecd85664fea8e6d1fb6eab4b89c3a19ef) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-09 |
-| [`7adfb671`](https://github.com/matthewmackes/map2-audio/commit/7adfb671c7bc7cad76dfd58f7d04ac1cb867dd83) | Finish Carbon shell foundation sweep | Map2 Audio | 2026-04-09 |
-| [`1e15019d`](https://github.com/matthewmackes/map2-audio/commit/1e15019d49d32ce13f846f670ff40f570557f6c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
