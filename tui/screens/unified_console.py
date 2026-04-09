@@ -50,10 +50,23 @@ def _ensure_columns(table: DataTable, *columns: str) -> None:
         return
     table.add_columns(*columns)
     table.cursor_type = "row"
+    if columns:
+        loading_row = ["Loading"]
+        if len(columns) > 1:
+            loading_row.append("Waiting for first payload")
+        loading_row.extend("" for _ in range(max(0, len(columns) - len(loading_row))))
+        table.add_row(*loading_row)
 
 
 def _reset_table(table: DataTable) -> None:
     table.clear(columns=False)
+
+
+def _panel_message(title: str, description: str, action: str | None = None) -> str:
+    lines = [title, description]
+    if action:
+        lines.append(action)
+    return "\n".join(lines)
 
 
 def _first_ip(snapshot: NodeSnapshot) -> str:
@@ -175,7 +188,7 @@ class DashboardScreen(BaseScreen):
         elif payload.recent_events:
             events.update("\n".join(payload.recent_events[-8:]))
         else:
-            events.update("No recent events.")
+            events.update(_panel_message("No recent events", "The node has not emitted any recent runtime events.", "Action: refresh the route or wait for live activity."))
 
 
 class AudioScreen(BaseScreen):

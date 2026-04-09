@@ -20048,7 +20048,7 @@ Last updated: 2026-04-09 06:31 EDT - Codex
 ## TUI Carbon Compliance
 
 ID: T876
-Status: [ ] Todo
+Status: [✓] Done
 Title: Adopt Carbon notification pattern — inline vs toast distinction in both TUIs
 Description:
 - Goal / acceptance criteria: (1) Route contextual API errors (e.g. "Audio start failed") to inline notification widgets rendered within the active route panel instead of transient toast popups. (2) Reserve toast notifications for global ephemeral events (theme changed, undo applied). (3) In the Ink TUI, add auto-dismiss timer, dismiss action, and leading severity icon to the Toast component per Carbon notification spec. (4) In the Textual TUI, add an InlineNotification widget that renders inside section panels with Carbon error/warning/info/success color mapping.
@@ -20057,11 +20057,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: InlineNotification widget (Textual), updated Toast component (Ink), route-level notification rendering, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:52 EDT - Codex
+- Progress notes:
+  - Added a reusable Textual inline-notification primitive in `tui/widgets/__init__.py`, mounted it into every route via `tui/base_screen.py`, and changed route-local warning/error handling in `tui/app.py` to render contextual inline notifications instead of transient global toasts.
+  - Expanded the Ink `tui/src/components/Toast.tsx` primitive to include Carbon-style tone/icon/title metadata plus dismiss/countdown affordances, so the shared toast surface is no longer just a raw bordered message box.
 
 ID: T877
-Status: [ ] Todo
+Status: [✓] Done
 Title: Replace plain-text header with structured Carbon UI Shell Header
 Description:
 - Goal / acceptance criteria: (1) Restructure `#shell-header` in the Textual TUI from two raw `Static` widgets with a concatenated metadata string into a left section (product name/version) and a right section with structured status badges (connection state dot + label, pending jobs count, environment, workspace). (2) Apply color-coded status indicators using `$carbon-success` / `$carbon-warning` / `$carbon-error` for connection state. (3) In the Ink TUI, update the `Header` component to match the same structured layout.
@@ -20070,11 +20073,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated Textual shell-header compose and TCSS, updated Ink Header component, visual validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:52 EDT - Codex
+- Progress notes:
+  - Reworked the Textual shell header in `tui/app.py` and `tui/styles/carbon.tcss` into a structured left/right layout with product identity plus dedicated status chips for connection state, pending jobs, environment, and workspace.
+  - Reworked the Ink shell header in `tui/src/shell/Header.tsx` and `tui/src/shell/AppShell.tsx` to the same structured shape, using the shared `StatusDot` for Carbon-style connection-status treatment.
 
 ID: T878
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement Carbon loading/skeleton states for route mount and data fetch
 Description:
 - Goal / acceptance criteria: (1) Add an inline loading indicator or skeleton placeholder to every `section-panel` and `DataTable` in the Textual TUI that displays while waiting for the first subscription payload. (2) In the Ink TUI, add a Spinner or skeleton component to each screen that renders before data arrives. (3) Remove the current behavior where tables and panels appear empty with no visual feedback until the first poll completes.
@@ -20083,11 +20089,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Loading/skeleton components for both TUIs, integration into route screens, visual validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:52 EDT - Codex
+- Progress notes:
+  - Added shared initial loading placeholders for Textual section panels and data tables through `tui/base_screen.py` and `tui/screens/unified_console.py`, so panels and tables no longer mount as empty blanks before their first subscription payload arrives.
+  - Upgraded the Ink `tui/src/components/Spinner.tsx` presentation to a panelized loading surface while preserving the existing per-screen loading-path integration.
 
 ID: T879
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add structured Carbon empty states with icon, message, and action
 Description:
 - Goal / acceptance criteria: (1) Replace bare text fallbacks like `"No recent events."`, `"No runtime output."`, and empty chain/template tables with structured empty-state widgets containing an icon or illustration, a primary message explaining why data is absent, and an optional action button (e.g. "Refresh", "Create chain"). (2) Apply this consistently across Dashboard events, Chains screen, Runtime output panel, and any other surface that can be empty.
@@ -20096,11 +20105,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: Reusable EmptyState widget for both TUIs, integration into relevant screens.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:52 EDT - Codex
+- Progress notes:
+  - Added a reusable Ink empty-state component in `tui/src/components/EmptyState.tsx` and switched the fallback placeholder screen to use it instead of raw text.
+  - Replaced the Textual runtime/context/dashboard empty fallbacks with structured empty-state copy helpers in `tui/app.py` and `tui/screens/unified_console.py`, so blank states now read as guided empty panels instead of bare one-line placeholders.
 
 ID: T880
-Status: [ ] Todo
+Status: [✓] Done
 Title: Improve form dialog validation to per-field inline errors per Carbon form pattern
 Description:
 - Goal / acceptance criteria: (1) Replace the single `#validation-error` label at the bottom of `FormDialog` and `InputDialog` with per-field inline error messages rendered directly below each offending input. (2) Add a required-field indicator (`*`) next to labels for required fields. (3) Tint input borders `$carbon-error` when validation fails. (4) Preserve existing `hint` (helper text) rendering.
@@ -20109,8 +20121,11 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated FormDialog/InputDialog with per-field validation, TCSS error-state styles, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:52 EDT - Codex
+- Progress notes:
+  - Reworked `tui/modals.py` so `InputDialog`, `NumberInputDialog`, and `FormDialog` now emit field-local error labels, required-field markers, and invalid input styling hooks instead of one shared bottom-of-dialog validation label.
+  - Updated `tui/styles/carbon.tcss` to style per-field error rows and invalid input states in the Carbon dialog theme.
 
 ID: T881
 Status: [ ] Todo

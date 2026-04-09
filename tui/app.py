@@ -14,7 +14,7 @@ from typing import Any
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, VerticalScroll
+from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, ContentSwitcher, Footer, Label, Static
 
 from .api import MAP2APIClient
@@ -30,6 +30,13 @@ from .theme.carbon import DEFAULT_THEME_NAME, register_carbon_themes
 from .versioning import get_product_name, get_version
 
 logger = logging.getLogger(__name__)
+
+
+def _empty_state(title: str, description: str, action: str | None = None) -> str:
+    lines = [title, description]
+    if action:
+        lines.append(action)
+    return "\n".join(lines)
 
 
 class MAP2ConsoleApp(App[None]):
@@ -194,8 +201,14 @@ class MAP2ConsoleApp(App[None]):
 
     def compose(self) -> ComposeResult:
         with Container(id="shell-header"):
-            yield Static("", id="shell-title")
-            yield Static("", id="shell-meta")
+            with Vertical(id="shell-header-left"):
+                yield Static("", id="shell-title")
+                yield Static("", id="shell-subtitle")
+            with Horizontal(id="shell-header-right"):
+                yield Static("", id="shell-connection", classes="header-status-chip")
+                yield Static("", id="shell-jobs", classes="header-status-chip")
+                yield Static("", id="shell-environment", classes="header-status-chip")
+                yield Static("", id="shell-workspace", classes="header-status-chip")
 
         with Horizontal(id="shell-body"):
             with VerticalScroll(id="nav-pane"):
@@ -248,13 +261,21 @@ class MAP2ConsoleApp(App[None]):
 
     def refresh_header(self) -> None:
         title = self.query_one("#shell-title", Static)
-        meta = self.query_one("#shell-meta", Static)
-        title.update(f"{get_product_name()} {get_version()}")
-        meta.update(
-            "User: "
-            f"{self._user}  ·  Environment: {self.session_state.environment}  ·  Workspace: {self.session_state.workspace}  "
-            f"·  Connection: {self._connection_status}  ·  Pending jobs: {self._pending_jobs()}"
-        )
+        subtitle = self.query_one("#shell-subtitle", Static)
+        connection = self.query_one("#shell-connection", Static)
+        jobs = self.query_one("#shell-jobs", Static)
+        environment = self.query_one("#shell-environment", Static)
+        workspace = self.query_one("#shell-workspace", Static)
+        title.update(get_product_name())
+        subtitle.update(f"{get_version()}  ·  User {self._user}")
+        connection.update(f"● {self._connection_status}")
+        jobs.update(f"Jobs {self._pending_jobs()}")
+        environment.update(f"Env {self.session_state.environment}")
+        workspace.update(f"Workspace {self.session_state.workspace}")
+        status = self._connection_status.lower()
+        connection.set_class("connected" in status, "-success")
+        connection.set_class("degraded" in status, "-warning")
+        connection.set_class("offline" in status, "-error")
 
     def refresh_context_panel(self) -> None:
         panel = self.query_one("#secondary-panel", VerticalScroll)
@@ -264,8 +285,16 @@ class MAP2ConsoleApp(App[None]):
         context_lines = route.get_context_lines() if route is not None else []
         show_panel = bool(self._runtime_lines) or bool(route and route.show_context_panel)
         panel.set_class(show_panel, "-visible")
-        context.update("\n".join(context_lines) if context_lines else "No route-specific context.")
-        runtime.update("\n".join(self._runtime_lines) if self._runtime_lines else "No runtime output.")
+        context.update(
+            "\n".join(context_lines)
+            if context_lines
+            else _empty_state("No route-specific context", "This route has not published any contextual guidance yet.")
+        )
+        runtime.update(
+            "\n".join(self._runtime_lines)
+            if self._runtime_lines
+            else _empty_state("No runtime output", "Background jobs and live route actions have not emitted runtime lines yet.")
+        )
 
     @property
     def active_route(self) -> BaseScreen | None:
@@ -417,6 +446,15 @@ class MAP2ConsoleApp(App[None]):
             timeout = 3.0
 
         self.log_runtime(level, message)
+        route = self.active_route
+        if route is not None and level in {"warning", "error"}:
+            route.show_inline_notification(
+                title=title or route.route_title,
+                message=message,
+                tone="warning" if level == "warning" else "error",
+                action_hint="Action: review the active route and retry when ready.",
+            )
+            return
         self.notify(message, title=title, severity=severity, timeout=timeout, markup=False)
 
     async def confirm(self, message: str, *, title: str = "Confirm") -> bool:

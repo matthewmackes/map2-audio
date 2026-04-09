@@ -10,6 +10,11 @@ export function AppShell({
   statusLeft,
   statusRight,
   terminalColumns,
+  statusLabel,
+  statusTone,
+  pendingJobs,
+  environment,
+  workspace,
 }: {
   title: string
   subtitle: string
@@ -17,10 +22,23 @@ export function AppShell({
   statusLeft: string
   statusRight: string
   terminalColumns: number
+  statusLabel: string
+  statusTone: 'ok' | 'warn' | 'error' | 'idle'
+  pendingJobs: number
+  environment: string
+  workspace: string
 }) {
   return (
     <Box flexDirection="column">
-      <Header title={title} subtitle={subtitle} />
+      <Header
+        title={title}
+        subtitle={subtitle}
+        statusLabel={statusLabel}
+        statusTone={statusTone}
+        pendingJobs={pendingJobs}
+        environment={environment}
+        workspace={workspace}
+      />
       <Box flexDirection="column" marginTop={1} marginBottom={1}>
         {children}
       </Box>

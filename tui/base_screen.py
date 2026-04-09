@@ -14,6 +14,7 @@ from textual.widgets import Button, Label, Static
 
 from .poll_manager import SubscriptionUpdated
 from .screen_state import screen_state
+from .widgets import InlineNotification
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,7 @@ class BaseScreen(Vertical):
         yield Label(self.route_title, classes="route-title")
         if self.route_summary:
             yield Static(self.route_summary, classes="route-summary")
+        yield InlineNotification(id=f"{self.route_key}-inline-notification", classes="inline-notification")
         actions = self.get_actions()
         if actions:
             self._actions = {action.action_id: action for action in actions}
@@ -117,6 +119,9 @@ class BaseScreen(Vertical):
         saved_state = screen_state.load_screen_state(self.route_key)
         if saved_state:
             self.restore_state(saved_state)
+        for panel in self.query(".section-panel"):
+            if isinstance(panel, Static) and not str(panel.content or "").strip():
+                panel.update("Loading\nWaiting for the first subscription payload.")
 
     def on_unmount(self) -> None:
         state = self.get_state()
@@ -130,7 +135,34 @@ class BaseScreen(Vertical):
         """Handle a poll-manager failure."""
 
         self._error_message = error
+        self.show_inline_notification(
+            title=f"{self.route_title} issue",
+            message=error,
+            tone="error",
+            action_hint=f"Subscription: {subscription}",
+        )
         logger.warning("%s subscription %s failed: %s", self.route_key, subscription, error)
+
+    def _inline_notification(self) -> InlineNotification:
+        return self.query_one(f"#{self.route_key}-inline-notification", InlineNotification)
+
+    def show_inline_notification(
+        self,
+        *,
+        title: str,
+        message: str,
+        tone: str = "info",
+        action_hint: str | None = None,
+    ) -> None:
+        self._inline_notification().show_notification(
+            title=title,
+            message=message,
+            tone=tone,
+            action_hint=action_hint,
+        )
+
+    def clear_inline_notification(self) -> None:
+        self._inline_notification().clear_notification()
 
     def on_resume_from_shell(self) -> None:
         """Refresh route state after the app resumes from a shell suspend."""
@@ -141,6 +173,7 @@ class BaseScreen(Vertical):
             self.handle_subscription_error(message.result.name, message.result.error)
             return
         self._error_message = None
+        self.clear_inline_notification()
         self.handle_subscription(message.result.name, message.result.data)
 
     @on(Button.Pressed)
@@ -167,7 +200,7 @@ class BaseScreen(Vertical):
                 await result
         except Exception as exc:
             if app is not None and hasattr(app, "toast"):
-                app.toast(str(exc), level="error")
+                app.toast(str(exc), level="error", title=self.route_title)
             logger.exception("Route action %s failed", action.action_id)
         finally:
             if app is not None and hasattr(app, "background_job_finished"):

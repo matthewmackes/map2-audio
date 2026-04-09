@@ -11,6 +11,30 @@ from textual.containers import Container, Horizontal, Vertical, Grid
 from textual.binding import Binding
 
 
+def _field_error_id(field_name: str) -> str:
+    return f"error-{field_name}"
+
+
+def _clear_field_error(screen: ModalScreen, field_name: str) -> None:
+    try:
+        label = screen.query_one(f"#{_field_error_id(field_name)}", Label)
+        label.update("")
+    except Exception:
+        pass
+    try:
+        widget = screen.query_one(f"#field-{field_name}")
+        widget.set_class(False, "-invalid")
+    except Exception:
+        pass
+
+
+def _set_field_error(screen: ModalScreen, field_name: str, message: str) -> None:
+    label = screen.query_one(f"#{_field_error_id(field_name)}", Label)
+    label.update(message)
+    widget = screen.query_one(f"#field-{field_name}")
+    widget.set_class(True, "-invalid")
+
+
 class ConfirmDialog(ModalScreen[bool]):
     """
     Confirmation dialog with message and Confirm/Cancel buttons.
@@ -108,10 +132,10 @@ class InputDialog(ModalScreen[Optional[str]]):
         """Compose dialog widgets."""
         yield Container(
             Label(self.title_text, id="dialog-title"),
-            Label(self.label_text, id="dialog-label"),
+            Label(self.label_text, id="dialog-label", classes="field-label"),
             Input(placeholder=self.placeholder, value=self.default_value,
-                 max_length=self.max_length or 0, id="dialog-input"),
-            Label("", id="validation-error"),
+                 max_length=self.max_length or 0, id="field-dialog-input", classes="field-input"),
+            Label("", id=_field_error_id("dialog-input"), classes="field-error"),
             Horizontal(
                 Button("OK", variant="primary", id="btn-ok"),
                 Button("Cancel", variant="default", id="btn-cancel"),
@@ -122,7 +146,7 @@ class InputDialog(ModalScreen[Optional[str]]):
 
     def on_mount(self) -> None:
         """Focus input on mount."""
-        self.query_one("#dialog-input", Input).focus()
+        self.query_one("#field-dialog-input", Input).focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button clicks."""
@@ -137,15 +161,15 @@ class InputDialog(ModalScreen[Optional[str]]):
 
     def submit_input(self) -> None:
         """Validate and submit input."""
-        input_widget = self.query_one("#dialog-input", Input)
+        input_widget = self.query_one("#field-dialog-input", Input)
         value = input_widget.value.strip()
+        _clear_field_error(self, "dialog-input")
 
         # Validate
         if self.validator:
             error = self.validator(value)
             if error:
-                error_label = self.query_one("#validation-error", Label)
-                error_label.update(error)
+                _set_field_error(self, "dialog-input", error)
                 return
 
         self.dismiss(value if value else None)
@@ -205,12 +229,12 @@ class NumberInputDialog(ModalScreen[Optional[float]]):
 
         yield Container(
             Label(self.title_text, id="dialog-title"),
-            Label(f"{self.label_text}{range_str}", id="dialog-label"),
+            Label(f"{self.label_text}{range_str}", id="dialog-label", classes="field-label"),
             Horizontal(
-                Input(placeholder="0.0", value=default_str, id="number-input", type="number"),
+                Input(placeholder="0.0", value=default_str, id="field-number-input", classes="field-input", type="number"),
                 id="input-container"
             ),
-            Label("", id="validation-error"),
+            Label("", id=_field_error_id("number-input"), classes="field-error"),
             Horizontal(
                 Button("OK", variant="primary", id="btn-ok"),
                 Button("Cancel", variant="default", id="btn-cancel"),
@@ -221,7 +245,7 @@ class NumberInputDialog(ModalScreen[Optional[float]]):
 
     def on_mount(self) -> None:
         """Focus input on mount."""
-        self.query_one("#number-input", Input).focus()
+        self.query_one("#field-number-input", Input).focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button clicks."""
@@ -236,8 +260,9 @@ class NumberInputDialog(ModalScreen[Optional[float]]):
 
     def submit_input(self) -> None:
         """Validate and submit number input."""
-        input_widget = self.query_one("#number-input", Input)
+        input_widget = self.query_one("#field-number-input", Input)
         value_str = input_widget.value.strip()
+        _clear_field_error(self, "number-input")
 
         if not value_str:
             self.dismiss(None)
@@ -248,20 +273,17 @@ class NumberInputDialog(ModalScreen[Optional[float]]):
 
             # Validate range
             if self.min_value is not None and value < self.min_value:
-                error_label = self.query_one("#validation-error", Label)
-                error_label.update(f"Value must be >= {self.min_value}")
+                _set_field_error(self, "number-input", f"Value must be >= {self.min_value}")
                 return
 
             if self.max_value is not None and value > self.max_value:
-                error_label = self.query_one("#validation-error", Label)
-                error_label.update(f"Value must be <= {self.max_value}")
+                _set_field_error(self, "number-input", f"Value must be <= {self.max_value}")
                 return
 
             self.dismiss(value)
 
         except ValueError:
-            error_label = self.query_one("#validation-error", Label)
-            error_label.update("Invalid number format")
+            _set_field_error(self, "number-input", "Invalid number format")
 
     def action_cancel(self) -> None:
         """Cancel action (Escape key)."""
@@ -377,16 +399,20 @@ class FormDialog(ModalScreen[Optional[dict]]):
                     fields_container.mount(Label(str(hint), classes="field-hint"))
                 continue
 
+            required = field.get("required", False)
+            label_text = f"{field_label} *" if required else field_label
+            label_classes = "field-label -required" if required else "field-label"
+
             if field_type == "textarea":
-                fields_container.mount(Label(field_label, classes="field-label"))
+                fields_container.mount(Label(label_text, classes=label_classes))
                 # TextArea widget for multi-line
                 fields_container.mount(
                     TextArea(text=default, id=f"field-{field_name}", classes="field-input")
                 )
             elif field_type == "select":
-                fields_container.mount(Label(field_label, classes="field-label"))
+                fields_container.mount(Label(label_text, classes=label_classes))
                 options = field.get("options", [])
-                allow_blank = field.get("allow_blank", not field.get("required", False))
+                allow_blank = field.get("allow_blank", not required)
                 value = default if default != "" else Select.BLANK
                 fields_container.mount(
                     Select(
@@ -401,25 +427,26 @@ class FormDialog(ModalScreen[Optional[dict]]):
             elif field_type == "checkbox":
                 fields_container.mount(
                     Checkbox(
-                        field_label,
+                        label_text,
                         value=bool(default),
                         id=f"field-{field_name}",
                         classes="field-input",
                     )
                 )
             else:
-                fields_container.mount(Label(field_label, classes="field-label"))
+                fields_container.mount(Label(label_text, classes=label_classes))
                 # Regular Input for text
                 fields_container.mount(
                     Input(placeholder=placeholder, value=default,
                          id=f"field-{field_name}", classes="field-input")
                 )
 
+            fields_container.mount(Label("", id=_field_error_id(field_name), classes="field-error"))
+
             if hint:
                 fields_container.mount(Label(str(hint), classes="field-hint"))
 
         container.mount(fields_container)
-        container.mount(Label("", id="validation-error"))
         container.mount(
             Horizontal(
                 Button("Submit", variant="primary", id="btn-submit"),
@@ -447,6 +474,10 @@ class FormDialog(ModalScreen[Optional[dict]]):
     def submit_form(self) -> None:
         """Validate and submit form."""
         result = {}
+        for field in self.fields_def:
+            if field.get("type") == "section":
+                continue
+            _clear_field_error(self, field["name"])
 
         for field in self.fields_def:
             field_name = field["name"]
@@ -470,14 +501,12 @@ class FormDialog(ModalScreen[Optional[dict]]):
 
                 # Check required
                 if required and not value:
-                    error_label = self.query_one("#validation-error", Label)
-                    error_label.update(f"{field.get('label', field_name)} is required")
+                    _set_field_error(self, field_name, f"{field.get('label', field_name)} is required")
                     return
 
                 result[field_name] = value
             except Exception as e:
-                error_label = self.query_one("#validation-error", Label)
-                error_label.update(f"Error reading field {field_name}: {str(e)}")
+                _set_field_error(self, field_name, f"Error reading field {field_name}: {str(e)}")
                 return
 
         self.dismiss(result)

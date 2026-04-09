@@ -9,18 +9,56 @@ Screen {
     background: $carbon-panel;
     border-bottom: solid $carbon-border-strong;
     padding: 0 1;
+    layout: horizontal;
+}
+
+#shell-header-left {
+    width: 1fr;
+    height: 100%;
+}
+
+#shell-header-right {
+    width: auto;
+    height: 100%;
+    align-horizontal: right;
+    content-align: right middle;
+}
+
+#shell-title,
+#shell-subtitle {
+    height: 1;
+    content-align: left middle;
 }
 
 #shell-title {
-    height: 1;
     text-style: bold;
-    content-align: left middle;
 }
 
-#shell-meta {
-    height: 1;
+#shell-subtitle {
     color: $carbon-text-secondary;
-    content-align: left middle;
+}
+
+.header-status-chip {
+    min-width: 16;
+    height: 1;
+    margin-left: 1;
+    padding: 0 1;
+    border: solid $carbon-border-subtle;
+    background: $surface;
+    color: $foreground;
+    content-align: center middle;
+}
+
+.header-status-chip.-success {
+    color: $carbon-success;
+}
+
+.header-status-chip.-warning {
+    color: $carbon-warning;
+}
+
+.header-status-chip.-error {
+    color: $carbon-error;
 }
 
 #shell-body {
@@ -129,6 +167,34 @@ ActionBar Button {
     min-height: 4;
 }
 
+.inline-notification {
+    display: none;
+    border-left: thick $carbon-accent;
+    background: $surface;
+    padding: 1;
+    margin: 0 0 1 0;
+}
+
+.inline-notification.-visible {
+    display: block;
+}
+
+.inline-notification.-info {
+    border-left: thick $carbon-accent;
+}
+
+.inline-notification.-success {
+    border-left: thick $carbon-success;
+}
+
+.inline-notification.-warning {
+    border-left: thick $carbon-warning;
+}
+
+.inline-notification.-error {
+    border-left: thick $carbon-error;
+}
+
 .section-table {
     height: 10;
     margin: 0 0 1 0;
@@ -217,7 +283,7 @@ SelectDialog #dialog-message {
     margin-bottom: 1;
 }
 
-InputDialog #dialog-input,
+InputDialog #field-dialog-input,
 FormDialog .field-input,
 SelectDialog #option-list {
     margin-bottom: 1;
@@ -237,6 +303,12 @@ FormDialog .field-label {
     margin-bottom: 0;
 }
 
+FormDialog .field-label.-required,
+InputDialog .field-label.-required,
+NumberInputDialog .field-label.-required {
+    text-style: bold;
+}
+
 FormDialog .field-section {
     margin: 1 0 0 0;
     text-style: bold;
@@ -246,6 +318,19 @@ FormDialog .field-section {
 FormDialog .field-hint {
     color: $carbon-text-secondary;
     margin: 0 0 1 0;
+}
+
+InputDialog .field-error,
+NumberInputDialog .field-error,
+FormDialog .field-error {
+    color: $carbon-error;
+    margin: 0 0 1 0;
+}
+
+InputDialog .field-input.-invalid,
+NumberInputDialog .field-input.-invalid,
+FormDialog .field-input.-invalid {
+    border: heavy $carbon-error;
 }
 
 InputDialog #validation-error,
@@ -273,7 +358,7 @@ NumberInputDialog #input-container {
     margin-bottom: 1;
 }
 
-NumberInputDialog #number-input {
+NumberInputDialog #field-number-input {
     width: 1fr;
 }
 
