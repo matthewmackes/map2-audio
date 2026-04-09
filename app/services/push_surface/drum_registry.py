@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+import aiohttp
+
 
 DRUM_PLUGIN_URIS = {"map2://juce/drums", "map2://juce/brain"}
 
@@ -52,29 +54,72 @@ class DrumMachineInstanceDescriptor:
 class DrumInstanceRegistry:
     """Enumerate drum-machine instances from snapshot detail payloads."""
 
-    async def _list_snapshot_summaries(self) -> list[dict[str, Any]]:
+    async def _list_local_snapshot_summaries(self) -> list[dict[str, Any]]:
         from app.database import get_session
         from app.services.snapshot_service import SnapshotService
 
         async with get_session() as session:
             return await SnapshotService(session).list_snapshots()
 
-    async def _get_snapshot_detail(self, snapshot_id: int) -> dict[str, Any] | None:
+    async def _get_local_snapshot_detail(self, snapshot_id: int) -> dict[str, Any] | None:
         from app.database import get_session
         from app.services.snapshot_service import SnapshotService
 
         async with get_session() as session:
             return await SnapshotService(session).get_snapshot(snapshot_id)
 
-    async def list_instances(self) -> list[DrumMachineInstanceDescriptor]:
-        summaries = await self._list_snapshot_summaries()
-        instances: list[DrumMachineInstanceDescriptor] = []
-        node_id = _local_node_id()
-        node_label = _local_node_label()
+    async def _list_remote_nodes(self) -> list[dict[str, Any]]:
+        from app.services.cluster.node_visibility import get_visible_remote_nodes
 
+        _summary, visible_nodes = get_visible_remote_nodes()
+        return [
+            node.to_discovered_dict()
+            for node in visible_nodes.values()
+            if node.is_online and node.api_url and node.node_id != _local_node_id()
+        ]
+
+    async def _fetch_remote_json(self, url: str, timeout_s: float = 3.0) -> dict[str, Any] | None:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=timeout_s) as response:
+                    if response.status != 200:
+                        return None
+                    payload = await response.json()
+                    return payload if isinstance(payload, dict) else None
+        except Exception:
+            return None
+
+    async def _list_remote_snapshot_summaries(self, node: dict[str, Any]) -> list[dict[str, Any]]:
+        api_url = str(node.get("api_url") or "").rstrip("/")
+        if not api_url:
+            return []
+        payload = await self._fetch_remote_json(f"{api_url}/api/snapshots")
+        if not isinstance(payload, dict):
+            return []
+        snapshots = payload.get("snapshots", [])
+        return snapshots if isinstance(snapshots, list) else []
+
+    async def _get_remote_snapshot_detail(self, node: dict[str, Any], snapshot_id: int) -> dict[str, Any] | None:
+        api_url = str(node.get("api_url") or "").rstrip("/")
+        if not api_url:
+            return None
+        return await self._fetch_remote_json(f"{api_url}/api/snapshots/{snapshot_id}")
+
+    async def _collect_instances_for_node(
+        self,
+        *,
+        node_id: str,
+        node_label: str,
+        source: str,
+        summaries: list[dict[str, Any]],
+        detail_loader,
+    ) -> list[DrumMachineInstanceDescriptor]:
+        instances: list[DrumMachineInstanceDescriptor] = []
         for summary in summaries:
             snapshot_id = int(summary.get("id") or 0)
-            detail = await self._get_snapshot_detail(snapshot_id)
+            if snapshot_id <= 0:
+                continue
+            detail = await detail_loader(snapshot_id)
             if detail is None:
                 continue
             live_path_chain_ids = {
@@ -113,11 +158,42 @@ class DrumInstanceRegistry:
                             display_name=f"{summary.get('name') or f'Snapshot {snapshot_id}'} / {chain_name}",
                             is_live=is_live,
                             is_audible=is_live and not bool(plugin.get("bypass", False)),
-                            source="snapshot",
+                            source=source,
                             capability_flags=("transport", "pads", "sequencer", "browser"),
                             last_seen_at=_utcnow_iso(),
                         )
                     )
+        return instances
+
+    async def list_instances(self) -> list[DrumMachineInstanceDescriptor]:
+        instances: list[DrumMachineInstanceDescriptor] = []
+        node_id = _local_node_id()
+        node_label = _local_node_label()
+        local_summaries = await self._list_local_snapshot_summaries()
+        instances.extend(
+            await self._collect_instances_for_node(
+                node_id=node_id,
+                node_label=node_label,
+                source="snapshot",
+                summaries=local_summaries,
+                detail_loader=self._get_local_snapshot_detail,
+            )
+        )
+
+        for remote_node in await self._list_remote_nodes():
+            remote_node_id = str(remote_node.get("node_id") or "").strip()
+            if not remote_node_id or remote_node_id == node_id:
+                continue
+            remote_summaries = await self._list_remote_snapshot_summaries(remote_node)
+            instances.extend(
+                await self._collect_instances_for_node(
+                    node_id=remote_node_id,
+                    node_label=str(remote_node.get("hostname") or remote_node.get("node_id") or remote_node_id),
+                    source="cluster_snapshot",
+                    summaries=remote_summaries,
+                    detail_loader=lambda snapshot_id, remote_node=remote_node: self._get_remote_snapshot_detail(remote_node, snapshot_id),
+                )
+            )
 
         instances.sort(
             key=lambda item: (

@@ -20325,7 +20325,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08 - Claude
 
 ID: T887
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extend drum instance registry with cluster-wide discovery and live-state ordering
 Description:
 - Goal / acceptance criteria: `app/services/push_surface/drum_registry.py` scans all cluster nodes for `map2://juce/drums` plugin instances, emits stable descriptors, and orders results with currently live/active instances first.
@@ -20334,8 +20334,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Extended registry, cluster-wide discovery, live-state sort, route exposure, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 12:11 EDT - Codex
+- Completion notes:
+  - Extended `app/services/push_surface/drum_registry.py` to merge local snapshot-backed drum instances with cluster-visible remote nodes discovered through the node-visibility service.
+  - Added remote snapshot summary/detail fetch helpers so online peers with `api_url` contribute the same normalized `DrumMachineInstanceDescriptor` contract as the local node.
+  - Preserved live-first ordering across the merged local/remote inventory and skipped loopback duplication when the visible-cluster feed reports the local node.
+  - Added focused coverage in `tests/push_surface/test_drum_registry.py` for cluster merge ordering and local-node deduplication, while keeping the existing Push bridge and route tests green.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_registry.py tests/push_surface/test_bridge.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_registry.py tests/push_surface/test_drum_registry.py` -> PASS
 
 ID: T888
 Status: [ ] Todo
