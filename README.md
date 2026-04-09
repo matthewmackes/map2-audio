@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1030** Python | **1119** TypeScript | **136** C++/H | **140** Docs | **1628** total commits | **3** stars | **0** forks | **0** open issues
+**1031** Python | **1121** TypeScript | **136** C++/H | **140** Docs | **1630** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e48d60f1`](https://github.com/matthewmackes/map2-audio/commit/e48d60f1d4e9268da9ccadc485c0451478479bf0) | Improve TUI data table rendering and updates | Map2 Audio | 2026-04-09 |
+| [`adb1f44d`](https://github.com/matthewmackes/map2-audio/commit/adb1f44d782a0b2d411d0cb8c36344453840a592) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`e404674e`](https://github.com/matthewmackes/map2-audio/commit/e404674e990e54dc0614521541b67a83194e7a95) | Fix PipeWire service cache and timeout handling | Map2 Audio | 2026-04-09 |
 | [`e8b6c785`](https://github.com/matthewmackes/map2-audio/commit/e8b6c7850a286e868d97784800217151117e1317) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`ea64b7f5`](https://github.com/matthewmackes/map2-audio/commit/ea64b7f56a1acfeaff6939faf1475db2c1ebbee0) | Align Ink TUI palette to Carbon colors | Map2 Audio | 2026-04-09 |
 | [`236d29a0`](https://github.com/matthewmackes/map2-audio/commit/236d29a03a0bff08ad8a6d2c3472deda23ad16ff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`faf22956`](https://github.com/matthewmackes/map2-audio/commit/faf229568b0831f625795c3c3930b1dc9ff3ac02) | Implement collapsible TUI side nav | Map2 Audio | 2026-04-09 |
 | [`f48a673e`](https://github.com/matthewmackes/map2-audio/commit/f48a673e786e6dca4e9442fca2c17325b8ccaa68) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`36d1436f`](https://github.com/matthewmackes/map2-audio/commit/36d1436fa4e8b3c6c207630abc8f67f14929351e) | Add TUI breadcrumb path context | Map2 Audio | 2026-04-09 |
-| [`c0695b70`](https://github.com/matthewmackes/map2-audio/commit/c0695b70dd4e43b232261fb48f0769d87effcd05) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
