@@ -235,6 +235,7 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(screen.getByTestId('home-desktop-default-wallpaper-image')).toBeInTheDocument()
     expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
   })
 

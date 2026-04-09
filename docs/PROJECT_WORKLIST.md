@@ -21272,3 +21272,22 @@ Last updated: 2026-04-09 10:52 EDT - Codex
 - Validation:
   - `npm --prefix tui run build` -> PASS
   - `npm --prefix web test -- --runInBand src/map2/clients/snapshots.test.ts` -> PASS
+
+ID: T957
+Status: [✓] Done
+Title: Set MAP-GRID-HORIZON-2026 as the landing page default wallpaper
+Description:
+- Goal / acceptance criteria: The routed `/` landing page uses `branding/MAP-GRID-HORIZON-2026.png` as the default wallpaper when the desktop wallpaper preference is in `default-image` mode, while preserving the existing uploaded-image and solid-theme behaviors.
+- Why it matters: The user explicitly wants the new 2026 MAP Grid Horizon branding image to become the default first-run landing-page wallpaper.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Home page wallpaper update, focused landing-page regression coverage, asset-import-safe Jest config.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-09 14:09 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` so the `default-image` wallpaper branch renders `branding/MAP-GRID-HORIZON-2026.png` as the landing-page wallpaper while keeping the existing MAP2 brand-mark overlay and desktop underlay treatment.
+  - Refreshed `web/src/app/pages/HomePage.test.tsx` to assert the default wallpaper image is present when no desktop wallpaper preference exists.
+  - Added a shared Jest asset stub in `tests/jest/fileMock.js` and wired `package.json` `moduleNameMapper` to mock common image formats, so the new branding-image import remains testable without special-case setup.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` -> PASS

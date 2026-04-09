@@ -15,6 +15,7 @@
     "testEnvironment": "jsdom",
     "moduleNameMapper": {
       "\\.svg\\?react$": "<rootDir>/tests/jest/svgReactMock.js",
+      "\\.(png|jpe?g|gif|webp|avif)$": "<rootDir>/tests/jest/fileMock.js",
       "\\.(css|less|scss|sass)$": "identity-obj-proxy",
       "^@/(.*)$": "<rootDir>/web/src/$1",
       "^react$": "<rootDir>/node_modules/react",

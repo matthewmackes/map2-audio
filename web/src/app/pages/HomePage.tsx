@@ -7,6 +7,7 @@ import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
+import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import './HomePage.css'
@@ -189,6 +190,12 @@ export function HomePage() {
         ) : null}
         {wallpaper.mode === 'default-image' ? (
           <div className="hp2-desktop__hero-wallpaper" aria-hidden="true">
+            <img
+              src={defaultWallpaperImage}
+              alt=""
+              className="hp2-desktop__default-wallpaper-image"
+              data-testid="home-desktop-default-wallpaper-image"
+            />
             <Map2BrandMark className="hp2-desktop__hero-mark" />
           </div>
         ) : null}
