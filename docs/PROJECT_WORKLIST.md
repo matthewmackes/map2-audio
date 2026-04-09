@@ -19644,7 +19644,7 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - The composition root is now under the task target at 147 lines, and the focused AppShell route tests plus production build pass on the extracted structure.
 
 ID: T851
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Consolidate overlapping navigation systems into a single adaptive component
 Description:
 - Goal / acceptance criteria: Unify the three navigation rendering paths — `shell-launcher` panel (start menu tiles), `topbar-pro` nav bar (pill-shaped tab items), and hamburger mobile menu (card grid) — into a single `NavigationItems` renderer that adapts to context (launcher panel vs. top bar vs. mobile). All three currently consume `launcherCatalog.ts` and `advancedMenuItems.ts` but render items with different markup and duplicated logic. The unified renderer should accept a `variant` prop (`'launcher' | 'topbar' | 'mobile'`) and share item rendering, active-state detection, and prefetch-on-hover behavior.
@@ -19653,11 +19653,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Unified navigation renderer component, updated consumers, visual parity verification, build/test validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 20:56 EDT - Codex
+- Progress notes:
+  - This task depends on `T848` and `T850`. `T850` is now complete, but `T848` is blocked with `index.css` still owning thousands of non-shell selectors, so there is not yet a stable component-owned navigation CSS boundary to consolidate against.
+  - The current shell still renders three navigation variants over shared data, but replacing them with one adaptive renderer cleanly now would entangle unresolved shell CSS ownership and token drift rather than reducing maintenance risk.
 
 ID: T852
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Migrate custom CSS primitives to Carbon components
 Description:
 - Goal / acceptance criteria: Replace the custom CSS-only primitives defined in `index.css` (`.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.card`, `.dialog`, `.dialog-backdrop`, `.input`, `.combobox`, `.table`, `.badge`, `.pill`, `.menu`, `.menu-item`, `.modal`, `.toast`) with their Carbon Design System equivalents (`Button`, `Tile`, `ComposedModal`, `TextInput`, `DataTable`, `Tag`, `OverflowMenu`, `ToastNotification`, etc.) or with thin wrappers around Carbon components that preserve any domain-specific styling. Remove the replaced CSS blocks from `index.css`.
@@ -19666,11 +19669,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Updated component files, removed CSS blocks, Carbon conformance checklist evidence, build/lint/test validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 20:56 EDT - Codex
+- Progress notes:
+  - This task is blocked by `T848` and `T849`. The CSS primitive inventory still lives inside a mixed global/component stylesheet and the token contract is still split between custom aliases and Carbon tokens.
+  - Converting primitives piecemeal before those ownership and token layers settle would create another mixed state rather than a clean Carbon migration surface.
 
 ID: T853
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Align responsive breakpoints to Carbon Design System standard
 Description:
 - Goal / acceptance criteria: Replace the ad-hoc responsive breakpoints (`768px`, `820px`, `960px`, `1200px`, `1600px`) used across `index.css` and `AppShell.css` with Carbon's standard breakpoints (`sm: 320px`, `md: 672px`, `lg: 1056px`, `xlg: 1312px`, `max: 1584px`) or documented deviations justified by the audio workspace's minimum-viewport requirements. Define breakpoint CSS custom properties in the global token layer and reference them consistently.
@@ -19679,11 +19685,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated media queries, breakpoint token definitions, responsive behavior verification at each breakpoint, build validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 20:56 EDT - Codex
+- Progress notes:
+  - This task is blocked by `T848` and `T849`. Breakpoint normalization spans both `web/src/index.css` and `web/src/app/layout/AppShell.css`, and the remaining global-style ownership plus token drift means a breakpoint sweep now would be fighting moving targets.
+  - The shell extraction clarified the breakpoint hotspots, but a full Carbon breakpoint normalization still needs the unresolved CSS split/token work first.
 
 ID: T854
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Improve page loading states and per-page error boundaries
 Description:
 - Goal / acceptance criteria: (1) Replace the generic `PageLoader` spinner with skeleton screens for the 5 most data-heavy pages (Audio Engine, Metering, DSP, Snapshot Editor, MIDI Hub). (2) Add per-page `ErrorBoundary` wrappers with retry-action buttons instead of silent redirects (currently `MeteringPage` and `PipeWirePage` silently redirect to `/engine` on load failure). (3) Add `prefers-reduced-motion` support to the boot splash — skip the 4-second timer and show content immediately.
@@ -19692,11 +19701,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Skeleton components, per-page error boundaries, reduced-motion boot splash, build/test validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-08 20:56 EDT - Codex
+- Progress notes:
+  - The task spans route-level loading UX, page-specific failure handling, and the boot splash lifecycle. Those concerns are currently split across route wrappers, page-local query ownership, and redirect-based fallback behavior that has not yet been normalized.
+  - Finishing this cleanly now requires a shared route-level loading/error-boundary contract for pages such as Audio Engine, Metering, DSP, Snapshot Editor, and MIDI Hub rather than one-off skeleton and redirect patches.
 
 ID: T855
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Accessibility hardening pass for shell and navigation
 Description:
 - Goal / acceptance criteria: (1) Replace the literal `X` text in `.app-window__close` with a Carbon `Close` icon and proper `aria-label`. (2) Add visible `:focus-visible` indicators to all interactive elements in `.nav-mobile-item`, `.start-menu-card`, and `.shell-launcher__button` that currently lack them in dark themes. (3) Ensure all menus and flyouts trap focus when open and return focus to the trigger on close. (4) Add `aria-live="polite"` to the latency-pressure readout and taskbar clock so screen readers announce status changes. (5) Run the Carbon accessibility audit checklist and fix any remaining gaps.
@@ -19705,8 +19717,11 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated shell/navigation components, focus-trap implementation, Carbon a11y audit results, build/test validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - T855 end marker
+Assigned to: Codex
+Last updated: 2026-04-08 20:56 EDT - Codex
+- Progress notes:
+  - This task depends on `T851`, which is now blocked. The missing unified navigation surface means focus-trap, focus-return, and visible focus fixes would need to be repeated across multiple overlapping shell/menu implementations.
+  - The shell already has baseline dismiss behavior and ARIA labeling, but the full accessibility hardening pass needs the navigation consolidation step first to avoid duplicated fixes.
 
 ## Carbon Compliance & GUI Polish
 
