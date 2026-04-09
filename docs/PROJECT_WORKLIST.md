@@ -19726,7 +19726,7 @@ Last updated: 2026-04-08 20:56 EDT - Codex
 ## Carbon Compliance & GUI Polish
 
 ID: T856
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Purge hard-coded hex colors from `index.css` — replace with `--cds-*` tokens
 Description:
 - Goal / acceptance criteria: Audit every hard-coded hex color in `web/src/index.css` (estimated 200+ occurrences of `#60a5fa`, `#cbd5e1`, `#0f62fe`, `#93c5fd`, `#f1f5f9`, `#94a3b8`, `#1e293b`, `#fda4af`, etc.) and replace each with the semantically correct Carbon token (`--cds-link-primary`, `--cds-text-secondary`, `--cds-border-subtle`, `--cds-support-*`, etc.) or the matching custom alias from `themes.ts`. The FLAT/Monochrome design direction means no gradients or glow — only flat token-driven fills.
@@ -19735,11 +19735,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Zero raw hex colors in component CSS (`:root` definitions excepted), theme-switching validation across all four Carbon shells.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 00:59 EDT - Codex
+- Progress notes:
+  - Fresh inventory confirms `web/src/index.css` still contains a large remaining pool of hard-coded hex colors and mixed token/hex usage spread across legacy primitives, cards, dialogs, menus, and route-specific blocks.
+  - Full completion is blocked by the already-blocked `T848` and `T849` foundation work: the stylesheet ownership split is incomplete and the token contract is still dual-layer, so a repo-wide hex-to-token rewrite now would be another large mixed-state edit rather than a stable Carbon cleanup.
 
 ID: T857
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.btn` / `.btn-primary` / `.btn-ghost` with Carbon `Button` variants
 Description:
 - Goal / acceptance criteria: Remove the `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm` CSS classes from `index.css` and replace every usage with Carbon `<Button kind="primary|secondary|ghost|tertiary|danger" size="sm|md|lg">`. The FLAT style is already Carbon's default — no additional styling needed.
@@ -19748,11 +19751,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Removed CSS blocks, updated TSX files, build/test validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 00:59 EDT - Codex
+- Progress notes:
+  - The current primitive inventory still shows multiple `.btn*` blocks in `web/src/index.css` plus page-local/button-local CSS in surfaces such as `LCDPage.tsx` and `MidiMappingDialog.tsx`.
+  - This task depends on the broader primitive and token cleanup path; with `T856` blocked, a partial button-only migration would leave conflicting global/page-local button systems in place instead of producing a clean Carbon button baseline.
 
 ID: T858
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.card` / `.stat-card` / `.hero` with Carbon `Tile` and `ClickableTile`
 Description:
 - Goal / acceptance criteria: Migrate all usages of the `.card`, `.stat-card`, `.hero`, `.loader-card`, `.list-item` CSS classes to Carbon `Tile`, `ClickableTile`, or `ExpandableTile` with Carbon layer tokens for backgrounds and borders. Stat values should use Carbon `heading-03` type tokens.
@@ -19761,11 +19767,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Removed CSS blocks, Carbon Tile usage, visual parity validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 00:59 EDT - Codex
+- Progress notes:
+  - The remaining `.card`, `.stat-card`, and `.hero` usage is still split between global CSS primitives and page/component-specific inline style systems.
+  - This task depends on `T856`; until the hard-coded color and primitive foundation is stabilized, a card/tile migration would create another partial parallel visual system rather than retiring the old one.
 
 ID: T859
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.dialog` / `.modal` with Carbon `ComposedModal`
 Description:
 - Goal / acceptance criteria: Remove the `.dialog`, `.dialog-backdrop`, `.modal`, `.modal-backdrop`, `.modal-header`, `.modal-body`, `.modal-footer` CSS classes and replace all usages with Carbon `ComposedModal`, `ModalHeader`, `ModalBody`, `ModalFooter`. Focus trap, ESC dismissal, and backdrop behavior come for free from Carbon.
@@ -19774,11 +19783,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Removed CSS blocks, Carbon modal usage, a11y validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 00:59 EDT - Codex
+- Progress notes:
+  - The modal/dialog inventory is still mixed: there are legacy global `.dialog*` / `.modal*` classes in `web/src/index.css` and separate page-local dialog CSS embedded in route/component files.
+  - A clean migration needs the primitive cleanup tranche to define which dialog surfaces are still canonical; otherwise Carbon modals would be layered on top of unresolved legacy dialog implementations instead of replacing them coherently.
 
 ID: T860
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.table` with Carbon `DataTable` pattern
 Description:
 - Goal / acceptance criteria: Remove the `.table` CSS class and migrate usages to Carbon `DataTable`, `Table`, `TableHead`, `TableRow`, `TableHeader`, `TableBody`, `TableCell`. Apply Carbon's sortable/filterable patterns where applicable. The FLAT style uses Carbon's default `zebra={false}` with `--cds-border-subtle` row separators.
@@ -19787,8 +19799,11 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Carbon DataTable migration, removed CSS, keyboard navigation validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 00:59 EDT - Codex
+- Progress notes:
+  - The global `.table` primitive still exists in `web/src/index.css`, but the app already mixes that with route-specific tables, Carbon table usage, and specialized list/rendering components.
+  - Full completion is blocked because the remaining table surfaces are not yet normalized under one ownership/model layer; a blanket `DataTable` migration now would require route-by-route UI contract decisions rather than a safe mechanical replacement.
 
 ID: T861
 Status: [ ] Todo
