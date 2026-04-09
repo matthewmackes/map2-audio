@@ -117,7 +117,7 @@
 .app-content {
   position: relative;
   z-index: 1;
-  width: min(100%, 1584px);
+  width: min(100%, var(--breakpoint-max, 99rem));
   margin: 0 auto;
   padding: var(--space-6) var(--space-5) var(--space-9);
 }
@@ -1406,7 +1406,7 @@
   border-radius: 0;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 66rem) {
   .shell-launcher__panel {
     width: min(32rem, calc(100vw - 2rem));
   }
@@ -1906,13 +1906,14 @@ button.topbar-pro__latency-pressure:focus-visible {
   font-weight: 600;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 82rem) {
   .advanced-menu-panel--control-panel {
     --platform-menu-scale: 1;
   }
 }
 
-@media (max-width: 720px) {
+/* 42rem and 35rem remain intentional shell-specific deviations for dense operator menus. */
+@media (max-width: 42rem) {
   .advanced-menu-panel--control-panel {
     --platform-menu-scale: 1;
     width: min(96vw, var(--topbar-dropdown-width));
@@ -1941,7 +1942,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 35rem) {
   .advanced-menu-control-panel__section-heading {
     flex-direction: column;
     align-items: flex-start;

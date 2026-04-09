@@ -19729,7 +19729,7 @@ Last updated: 2026-04-09 09:54 EDT - Codex
   - The next execution slice should prioritize the highest-volume shared primitives still backed by `GlobalPrimitives.css`, especially buttons/cards/dialog shells that have clear Carbon replacements.
 
 ID: T853
-Status: [ ] Todo
+Status: [✓] Done
 Title: Align responsive breakpoints to Carbon Design System standard
 Description:
 - Goal / acceptance criteria: Replace the ad-hoc responsive breakpoints (`768px`, `820px`, `960px`, `1200px`, `1600px`) used across `index.css` and `AppShell.css` with Carbon's standard breakpoints (`sm: 320px`, `md: 672px`, `lg: 1056px`, `xlg: 1312px`, `max: 1584px`) or documented deviations justified by the audio workspace's minimum-viewport requirements. Define breakpoint CSS custom properties in the global token layer and reference them consistently.
@@ -19739,10 +19739,18 @@ Description:
 - Required outputs: Updated media queries, breakpoint token definitions, responsive behavior verification at each breakpoint, build validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 09:54 EDT - Codex
+Last updated: 2026-04-09 12:01 EDT - Codex
 - Progress notes:
   - `T848` and `T849` are now complete, so breakpoint normalization is no longer blocked by unresolved root-style ownership or token drift.
   - The remaining breakpoint work can now focus on consolidating the surviving 820px/960px root tail with `AppShell.css` and documenting any intentional deviations from Carbon's standard breakpoints.
+- Completion notes:
+  - Added shared breakpoint tokens in `web/src/index.css` for Carbon `sm`/`md`/`lg`/`xlg`/`max` widths and updated the root responsive rules to use Carbon-aligned `66rem` and `42rem` thresholds instead of the previous `960px` and `820px` values.
+  - Updated `web/src/app/layout/AppShell.css` to consume the Carbon `max` width token for the main shell content width and replaced the old `960px` / `1200px` breakpoints with Carbon-aligned `66rem` / `82rem` values.
+  - Documented the remaining `42rem` and `35rem` shell-menu cutovers in `AppShell.css` as intentional dense-operator deviations rather than leaving them as unexplained ad-hoc values.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `rg -n "960px|820px|1200px|1600px|@media \\(max-width: 960px\\)|@media \\(max-width: 820px\\)|@media \\(max-width: 1200px\\)" web/src/index.css web/src/app/layout/AppShell.css` -> PASS
 
 ID: T854
 Status: [✗] Blocked
