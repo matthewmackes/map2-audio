@@ -1,0 +1,58 @@
+.notification-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: min(420px, 90vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  overflow: hidden;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  background-image: none;
+}
+
+.notification-panel-header {
+  padding: var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.notification-panel-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--type-subheading);
+}
+
+.notification-panel-header .btn {
+  padding: 6px 10px;
+  font-size: var(--type-label);
+}
+
+.notification-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  padding: var(--cds-spacing-03);
+}
+
+.notification-item {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.notification-item .cds--toast-notification,
+.notification-item .cds--actionable-notification {
+  margin: 0;
+  max-width: 100%;
+}

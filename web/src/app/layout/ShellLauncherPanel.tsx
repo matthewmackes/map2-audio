@@ -1,6 +1,6 @@
+import { useEffect, useRef } from 'react'
 import type { CSSProperties, ComponentType, RefObject, SVGProps } from 'react'
 import { Layer } from '@carbon/react'
-import { NavLink } from 'react-router-dom'
 
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import {
@@ -9,50 +9,9 @@ import {
 } from '../components/branding/map2Branding'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
-import type { NavigationMaturityState } from '../data/advancedMenuItems'
-import { getLauncherCatalogMaturityLabel } from '../data/launcherCatalog'
-import { prefetchAppRoute } from '../routePrefetch'
+import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
 
-export type StartMenuTileItem = {
-  route: string
-  label: string
-  shortLabel: string
-  icon: ComponentType<{ size?: number; ariaHidden?: boolean } | SVGProps<SVGSVGElement>>
-  description: string
-  color: string
-  maturity: NavigationMaturityState
-  featured?: boolean
-}
-
-function renderStartMenuItem(item: StartMenuTileItem, onCloseMenus: () => void) {
-  const Icon = item.icon
-
-  return (
-    <NavLink
-      key={`start-link-${item.route}`}
-      to={item.route}
-      end={item.route === '/'}
-      className={({ isActive }) => `start-menu-card start-menu-card--tile${item.featured ? ' start-menu-card--featured' : ''}${isActive ? ' is-active' : ''}`}
-      style={{ '--item-color': item.color } as CSSProperties}
-      title={`${item.description} • ${getLauncherCatalogMaturityLabel(item.maturity)}`}
-      onClick={onCloseMenus}
-      onMouseEnter={() => prefetchAppRoute(item.route)}
-      onFocus={() => prefetchAppRoute(item.route)}
-    >
-      <span className="start-menu-card__icon-frame" aria-hidden="true">
-        <span className="start-menu-card__icon start-menu-card__icon--tile">
-          <Icon size={28} aria-hidden />
-        </span>
-      </span>
-      <span className="start-menu-card__body">
-        <span className="start-menu-card__label start-menu-card__label--tile">{item.label}</span>
-        {item.maturity === 'hardware-blocked' ? (
-          <span className="start-menu-card__meta">{getLauncherCatalogMaturityLabel(item.maturity)}</span>
-        ) : null}
-      </span>
-    </NavLink>
-  )
-}
+export type StartMenuTileItem = ShellNavigationRenderItem
 
 export function ShellLauncherPanel({
   accentColor,
@@ -87,10 +46,83 @@ export function ShellLauncherPanel({
   onRefreshPage: () => void
   onLogOut: () => void
 }) {
+  const launcherButtonRef = useRef<HTMLButtonElement | null>(null)
+  const launcherPanelRef = useRef<HTMLDivElement | null>(null)
+  const powerButtonRef = useRef<HTMLButtonElement | null>(null)
+  const powerMenuRef = useRef<HTMLDivElement | null>(null)
+  const previousNavOpenRef = useRef(navOpen)
+  const previousPowerMenuOpenRef = useRef(powerMenuOpen)
+
+  useEffect(() => {
+    if (navOpen) {
+      const firstFocusable = launcherPanelRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      )
+      firstFocusable?.focus()
+    } else if (previousNavOpenRef.current) {
+      launcherButtonRef.current?.focus()
+    }
+    previousNavOpenRef.current = navOpen
+  }, [navOpen])
+
+  useEffect(() => {
+    if (powerMenuOpen) {
+      const firstFocusable = powerMenuRef.current?.querySelector<HTMLElement>('button:not([disabled])')
+      firstFocusable?.focus()
+    } else if (previousPowerMenuOpenRef.current) {
+      powerButtonRef.current?.focus()
+    }
+    previousPowerMenuOpenRef.current = powerMenuOpen
+  }, [powerMenuOpen])
+
+  useEffect(() => {
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key !== 'Tab') {
+        return
+      }
+
+      const scope = powerMenuOpen ? powerMenuRef.current : navOpen ? launcherPanelRef.current : null
+      if (!scope) {
+        return
+      }
+
+      const focusable = Array.from(
+        scope.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute('disabled') && element.tabIndex !== -1)
+
+      if (focusable.length === 0) {
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    if (!navOpen) {
+      return undefined
+    }
+
+    window.addEventListener('keydown', trapFocus)
+    return () => {
+      window.removeEventListener('keydown', trapFocus)
+    }
+  }, [navOpen, powerMenuOpen])
+
   return (
     <div className="shell-launcher" ref={launcherRef} style={{ '--window-shell-accent': accentColor } as CSSProperties}>
       <div className="shell-launcher__button-wrap">
         <button
+          ref={launcherButtonRef}
           type="button"
           className={`shell-launcher__button${navOpen ? ' is-active' : ''}`}
           onClick={onToggleMenu}
@@ -108,6 +140,7 @@ export function ShellLauncherPanel({
             className="shell-launcher__panel"
             role="menu"
             aria-label="Platform menu"
+            ref={launcherPanelRef}
           >
             <div className="shell-launcher__header">
               <div className="shell-launcher__header-main">
@@ -125,6 +158,7 @@ export function ShellLauncherPanel({
                 <button
                   type="button"
                   className="shell-launcher__header-action"
+                  role="menuitem"
                   aria-label="Open Snapshot Editor"
                   title="Open Snapshot Editor"
                   onClick={onOpenSnapshotEditor}
@@ -151,16 +185,18 @@ export function ShellLauncherPanel({
 
             <div className="shell-launcher__body">
               <div className="shell-launcher__tile-grid">
-                {startMenuTileItems.map((item) => renderStartMenuItem(item, onCloseMenus))}
+                <NavigationItems items={startMenuTileItems} onNavigate={onCloseMenus} variant="launcher" />
               </div>
             </div>
 
             <div className="shell-launcher__footer">
               <div className="shell-launcher__power-root">
                 <button
+                  ref={powerButtonRef}
                   type="button"
                   className={`shell-launcher__power-button${powerMenuOpen ? ' is-active' : ''}`}
                   onClick={onTogglePowerMenu}
+                  role="menuitem"
                   aria-haspopup="menu"
                   aria-expanded={powerMenuOpen}
                   aria-controls="shell-launcher-power-menu"
@@ -168,10 +204,17 @@ export function ShellLauncherPanel({
                   Power
                 </button>
                 {powerMenuOpen ? (
-                  <div id="shell-launcher-power-menu" className="start-menu-power-menu" role="menu" aria-label="Power actions">
+                  <div
+                    id="shell-launcher-power-menu"
+                    className="start-menu-power-menu"
+                    role="menu"
+                    aria-label="Power actions"
+                    ref={powerMenuRef}
+                  >
                     <button
                       type="button"
                       className="start-menu-power-menu__item"
+                      role="menuitem"
                       onClick={onOpenRestartConfirm}
                     >
                       Restart Backend
@@ -179,6 +222,7 @@ export function ShellLauncherPanel({
                     <button
                       type="button"
                       className="start-menu-power-menu__item"
+                      role="menuitem"
                       onClick={onRefreshPage}
                     >
                       Refresh Desktop
@@ -186,6 +230,7 @@ export function ShellLauncherPanel({
                     <button
                       type="button"
                       className="start-menu-power-menu__item"
+                      role="menuitem"
                       onClick={onLogOut}
                     >
                       Log Out

@@ -53,12 +53,14 @@ export function LatencyPressureShellReadout() {
         aria-label={`Latency pressure ${pressure.scoreDisplay}`}
       >
         <span className="topbar-pro__latency-pressure-label" aria-hidden="true">LAT</span>
-        <SegmentedLedText
-          value={pressure.scoreDisplay}
-          size="sm"
-          color={displayColor}
-          className="topbar-pro__latency-pressure-digits"
-        />
+        <span aria-live="polite" aria-atomic="true">
+          <SegmentedLedText
+            value={pressure.scoreDisplay}
+            size="sm"
+            color={displayColor}
+            className="topbar-pro__latency-pressure-digits"
+          />
+        </span>
       </button>
       <PopoverContent className="window-taskbar__popover">
         <div className="window-taskbar__popover-body">

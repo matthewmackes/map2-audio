@@ -24,6 +24,7 @@ import { chainsApi } from '../../map2/api'
 import { useToasts } from './Toasts'
 import type { Chain, ChainsResponse } from '../../map2/types'
 import { getPluginChipMeta } from '../utils/pluginChipMeta'
+import './ChainManagementCard.css'
 
 const MAX_VISIBLE_CHIPS = 5
 const RUNTIME_CHAIN_CONTROL_NOTICE = 'Runtime-only chain controls. Snapshot control-plane truth lives in Audio Grid.'

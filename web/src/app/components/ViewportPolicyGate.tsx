@@ -5,6 +5,7 @@ import {
   MIN_SUPPORTED_VIEWPORT_WIDTH,
   useViewportPolicy,
 } from '../hooks/useViewportPolicy'
+import './ViewportPolicyGate.css'
 
 function formatViewport(value: number): string {
   return Math.max(0, Math.round(value)).toString()

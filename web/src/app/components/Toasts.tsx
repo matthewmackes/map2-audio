@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, ReactNode } from 'react'
 import { ActionableNotification, Button, ToastNotification } from '@carbon/react'
+import './Toasts.css'
 
 export type NotificationTone = 'info' | 'success' | 'warn' | 'error'
 

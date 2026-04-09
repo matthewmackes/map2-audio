@@ -1,0 +1,21 @@
+.cpu-performance-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+}
+
+.cpu-performance-table-wrap {
+  overflow-x: auto;
+}
+
+@media (max-width: 960px) {
+  .cpu-performance-page {
+    padding: var(--cds-spacing-05, 1rem);
+  }
+}
+
+@media (max-width: 820px) {
+  .cpu-performance-page {
+    padding: var(--cds-spacing-04, 0.75rem);
+  }
+}

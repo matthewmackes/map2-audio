@@ -7,6 +7,7 @@ import {
 } from '@carbon/react'
 import { apiUrl } from '../utils/apiTarget'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import './SpecialSettingsDialog.css'
 
 interface Plugin {
   uri: string

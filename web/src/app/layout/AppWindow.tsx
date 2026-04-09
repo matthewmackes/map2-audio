@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { Close } from '@carbon/icons-react'
 
 import { PageTransition } from '../components/PageTransition'
 
@@ -54,7 +55,7 @@ export function AppWindow({
               aria-label={closeLabel}
               onClick={onClose}
             >
-              X
+              <Close size={16} aria-hidden />
             </button>
           </div>
         </div>

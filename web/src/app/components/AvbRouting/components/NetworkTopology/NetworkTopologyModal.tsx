@@ -15,6 +15,7 @@
 
 import React, { useMemo, useCallback, useState } from 'react';
 import { Close, FitToScreen } from '@carbon/icons-react';
+import '../../../shared/ReactFlowTheme.css';
 import {
   Dialog,
   DialogTitle,

@@ -68,8 +68,10 @@ export function TaskbarClock() {
         title={dateFormatter.format(now)}
         aria-label={`Open clock details for ${timeFormatter.format(now)}`}
       >
-        <span className="window-taskbar__clock-time">{timeFormatter.format(now)}</span>
-        <span className="window-taskbar__clock-date">{compactDateFormatter.format(now)}</span>
+        <span aria-live="polite" aria-atomic="true">
+          <span className="window-taskbar__clock-time">{timeFormatter.format(now)}</span>
+          <span className="window-taskbar__clock-date">{compactDateFormatter.format(now)}</span>
+        </span>
       </button>
       <PopoverContent className="window-taskbar__popover">
         <div className="window-taskbar__popover-body">

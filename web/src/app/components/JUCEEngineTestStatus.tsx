@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Renew as ArrowsClockwise, WarningAlt as WarningCircle } from '@carbon/icons-react'
+import { Button, Tag, Tile } from '@carbon/react'
 
 interface JUCEEngineTestResult {
   timestamp: string
@@ -14,9 +15,12 @@ interface JUCEEngineTestResult {
     sample_rate?: number
     buffer_size?: number
   }
-  categories?: { [key: string]: any }
+  categories?: Record<string, {
+    status?: string
+    passed_tests?: number
+    total_tests?: number
+  }>
   recommendations?: Array<{
-    type: string
     title: string
     description: string
     priority: string
@@ -25,6 +29,40 @@ interface JUCEEngineTestResult {
 
 interface TestStatusProps {
   showDetails?: boolean
+}
+
+const CARD_TITLE_STYLE = { color: 'var(--text-secondary)', fontSize: 'var(--type-body)' } as const
+
+function getStatusTone(status: string, score: number): 'green' | 'blue' | 'warm-gray' | 'red' {
+  if (status === 'excellent' || score >= 90) return 'green'
+  if (status === 'good' || score >= 75) return 'blue'
+  if (status === 'fair' || score >= 50) return 'warm-gray'
+  return 'red'
+}
+
+function getStatusIcon(status: string, score: number) {
+  const tone = getStatusTone(status, score)
+  const color =
+    tone === 'green'
+      ? 'var(--support-success)'
+      : tone === 'blue'
+        ? 'var(--interactive)'
+        : tone === 'warm-gray'
+          ? 'var(--support-warning)'
+          : 'var(--support-danger)'
+  const Icon = tone === 'warm-gray' ? WarningCircle : tone === 'red' ? XCircle : CheckCircle
+  return <Icon size={20} style={{ color }} />
+}
+
+function formatTimestamp(timestamp: string) {
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+
+  if (diffMinutes < 1) return 'Just now'
+  if (diffMinutes < 60) return `${diffMinutes} min ago`
+  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hrs ago`
+  return date.toLocaleDateString()
 }
 
 export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
@@ -43,7 +81,7 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
       } else {
         setError('No test results available')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to fetch test results')
     } finally {
       setLoading(false)
@@ -53,20 +91,16 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
   const runNewTest = async () => {
     setRunningTest(true)
     try {
-      const response = await fetch('/api/system-tests/test/juce-engine/run', {
-        method: 'POST'
-      })
-
+      const response = await fetch('/api/system-tests/test/juce-engine/run', { method: 'POST' })
       if (response.ok) {
         const result = await response.json()
         if (result.status === 'completed') {
-          // Refresh the test results
           await fetchTestResult()
         }
       } else {
         setError('Failed to run test')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to run test')
     } finally {
       setRunningTest(false)
@@ -76,235 +110,179 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
   useEffect(() => {
     fetchTestResult()
 
-    // Auto-refresh every 30 seconds if test was recent
     const interval = setInterval(() => {
-      if (testResult) {
-        const testTime = new Date(testResult.timestamp)
-        const now = new Date()
-        const diffMinutes = (now.getTime() - testTime.getTime()) / (1000 * 60)
-
-        // Only auto-refresh if test is less than 5 minutes old
-        if (diffMinutes < 5) {
-          fetchTestResult()
-        }
+      if (!testResult) return
+      const testTime = new Date(testResult.timestamp)
+      const now = new Date()
+      const diffMinutes = (now.getTime() - testTime.getTime()) / (1000 * 60)
+      if (diffMinutes < 5) {
+        fetchTestResult()
       }
     }, 30000)
 
     return () => clearInterval(interval)
   }, [testResult])
 
-  const getStatusIcon = (status: string, score: number) => {
-    if (status === 'excellent' || score >= 90) {
-      return <CheckCircle className="text-green-500" size={20} />
-    } else if (status === 'good' || score >= 75) {
-      return <CheckCircle className="text-blue-500" size={20} />
-    } else if (status === 'fair' || score >= 50) {
-      return <WarningCircle className="text-yellow-500" size={20} />
-    } else {
-      return <XCircle className="text-red-500" size={20} />
-    }
-  }
-
-  const getStatusColor = (status: string, score: number) => {
-    if (status === 'excellent' || score >= 90) return 'text-green-600'
-    if (status === 'good' || score >= 75) return 'text-blue-600'
-    if (status === 'fair' || score >= 50) return 'text-yellow-600'
-    return 'text-red-600'
-  }
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-
-    if (diffMinutes < 1) return 'Just now'
-    if (diffMinutes < 60) return `${diffMinutes} min ago`
-    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hrs ago`
-    return date.toLocaleDateString()
-  }
-
   if (loading) {
     return (
-      <div className="card">
+      <Tile>
         <div className="flex items-center gap-3">
-          <Pulse className="animate-pulse" size={20} />
-          <span>Loading JUCE Engine test results...</span>
+          <Pulse className="animate-pulse" size={20} style={{ color: 'var(--interactive)' }} />
+          <span>Loading JUCE engine test results...</span>
         </div>
-      </div>
+      </Tile>
     )
   }
 
   if (error && !testResult) {
     return (
-      <div className="card">
-        <div className="flex items-center justify-between">
+      <Tile>
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <XCircle className="text-gray-400" size={20} />
+            <XCircle size={20} style={{ color: 'var(--support-danger)' }} />
             <div>
-              <h3 className="font-semibold">JUCE Audio Engine Test</h3>
-              <p className="text-sm text-gray-600">{error}</p>
+              <h3 className="font-semibold">JUCE audio engine test</h3>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             </div>
           </div>
-          <button
-            onClick={runNewTest}
-            disabled={runningTest}
-            className="btn btn-primary btn-sm"
-          >
-            {runningTest ? (
-              <>
-                <ArrowsClockwise className="animate-spin" size={16} />
-                Running...
-              </>
-            ) : (
-              'Run Test'
-            )}
-          </button>
+          <Button kind="primary" size="sm" renderIcon={ArrowsClockwise} onClick={runNewTest} disabled={runningTest}>
+            {runningTest ? 'Running…' : 'Run test'}
+          </Button>
         </div>
-      </div>
+      </Tile>
     )
   }
 
   if (!testResult) return null
 
+  const tone = getStatusTone(testResult.overall_status, testResult.score)
+
   return (
-    <div className="card">
-      <div className="flex items-start justify-between mb-4">
+    <Tile style={{ display: 'grid', gap: 16 }}>
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           {getStatusIcon(testResult.overall_status, testResult.score)}
           <div>
-            <h3 className="font-semibold">JUCE Audio Engine Test</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold">JUCE audio engine test</h3>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Last run {formatTimestamp(testResult.timestamp)}
             </p>
           </div>
         </div>
-        <button
-          onClick={runNewTest}
-          disabled={runningTest}
-        className="btn btn-ghost btn-sm"
-      >
-        {runningTest ? (
-            <ArrowsClockwise className="animate-spin" size={16} />
-          ) : (
-            <ArrowsClockwise size={16} />
-          )}
-        </button>
+        <Button kind="ghost" size="sm" renderIcon={ArrowsClockwise} onClick={runNewTest} disabled={runningTest}>
+          {runningTest ? 'Refreshing…' : 'Refresh'}
+        </Button>
       </div>
 
-      {/* Main Status Display */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div className="stat-card">
-          <div className="stat-label">Overall Score</div>
-          <div className={`text-2xl font-bold ${getStatusColor(testResult.overall_status, testResult.score)}`}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Tile>
+          <div style={CARD_TITLE_STYLE}>Overall score</div>
+          <div style={{ fontSize: 'var(--type-heading)', color: tone === 'green' ? 'var(--support-success)' : tone === 'blue' ? 'var(--interactive)' : tone === 'warm-gray' ? 'var(--support-warning)' : 'var(--support-danger)' }}>
             {testResult.score}/100
           </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-label">Tests Passed</div>
-          <div className="text-2xl font-bold">
+        </Tile>
+        <Tile>
+          <div style={CARD_TITLE_STYLE}>Tests passed</div>
+          <div style={{ fontSize: 'var(--type-heading)' }}>
             {testResult.passed_tests}/{testResult.total_tests}
           </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-label">Engine Status</div>
-          <div className={`font-semibold capitalize ${getStatusColor(testResult.overall_status, testResult.score)}`}>
-            {testResult.overall_status}
+        </Tile>
+        <Tile>
+          <div style={CARD_TITLE_STYLE}>Engine status</div>
+          <div style={{ marginTop: 8 }}>
+            <Tag type={tone}>{testResult.overall_status}</Tag>
           </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-label">Test Duration</div>
-          <div className="font-semibold">
-            {testResult.duration_seconds.toFixed(1)}s
-          </div>
-        </div>
+        </Tile>
+        <Tile>
+          <div style={CARD_TITLE_STYLE}>Test duration</div>
+          <div style={{ fontSize: 'var(--type-heading)' }}>{testResult.duration_seconds.toFixed(1)}s</div>
+        </Tile>
       </div>
 
-      {/* Engine Information */}
       {testResult.engine_info && (
-        <div className="mb-4">
-          <h4 className="font-medium mb-2">Engine Information</h4>
+        <div>
+          <h4 className="font-medium mb-2">Engine information</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            {testResult.engine_info.version && (
+            {testResult.engine_info.version ? (
               <div>
-                <span className="text-gray-600">Version:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Version:</span>
                 <div className="font-mono">{testResult.engine_info.version}</div>
               </div>
-            )}
-            {testResult.engine_info.plugin_count && (
+            ) : null}
+            {testResult.engine_info.plugin_count ? (
               <div>
-                <span className="text-gray-600">Plugins:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Plugins:</span>
                 <div className="font-semibold">{testResult.engine_info.plugin_count}</div>
               </div>
-            )}
-            {testResult.engine_info.sample_rate && (
+            ) : null}
+            {testResult.engine_info.sample_rate ? (
               <div>
-                <span className="text-gray-600">Sample Rate:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Sample rate:</span>
                 <div className="font-mono">{testResult.engine_info.sample_rate}Hz</div>
               </div>
-            )}
-            {testResult.engine_info.buffer_size && (
+            ) : null}
+            {testResult.engine_info.buffer_size ? (
               <div>
-                <span className="text-gray-600">Buffer Size:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Buffer size:</span>
                 <div className="font-mono">{testResult.engine_info.buffer_size}</div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
 
-      {/* Detailed Results */}
-      {showDetails && testResult.categories && (
-        <div className="mb-4">
-          <h4 className="font-medium mb-2">Test Categories</h4>
+      {showDetails && testResult.categories ? (
+        <div>
+          <h4 className="font-medium mb-2">Test categories</h4>
           <div className="space-y-2">
-            {Object.entries(testResult.categories).map(([name, category]: [string, any]) => (
-              <div key={name} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">{name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">
-                    {category.passed_tests}/{category.total_tests}
-                  </span>
-                  {category.status === 'passed' ? (
-                    <CheckCircle className="text-green-500" size={16} />
-                  ) : category.status === 'partial' ? (
-                    <WarningCircle className="text-yellow-500" size={16} />
-                  ) : (
-                    <XCircle className="text-red-500" size={16} />
-                  )}
+            {Object.entries(testResult.categories).map(([name, category]) => (
+              <Tile key={name} style={{ padding: 12 }}>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="font-medium">{name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">
+                      {category.passed_tests ?? 0}/{category.total_tests ?? 0}
+                    </span>
+                    {category.status === 'passed'
+                      ? <CheckCircle size={16} style={{ color: 'var(--support-success)' }} />
+                      : category.status === 'partial'
+                        ? <WarningCircle size={16} style={{ color: 'var(--support-warning)' }} />
+                        : <XCircle size={16} style={{ color: 'var(--support-danger)' }} />}
+                  </div>
                 </div>
-              </div>
+              </Tile>
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Recommendations */}
-      {testResult.recommendations && testResult.recommendations.length > 0 && (
+      {testResult.recommendations && testResult.recommendations.length > 0 ? (
         <div>
           <h4 className="font-medium mb-2">Recommendations</h4>
           <div className="space-y-2">
             {testResult.recommendations.slice(0, 3).map((rec, index) => (
-              <div
+              <Tile
                 key={index}
-                className={`p-3 rounded-lg border-l-4 ${
-                  rec.priority === 'high' ? 'border-red-400 bg-red-50' :
-                  rec.priority === 'medium' ? 'border-yellow-400 bg-yellow-50' :
-                  'border-blue-400 bg-blue-50'
-                }`}
+                style={{
+                  padding: 12,
+                  borderLeft: `3px solid ${
+                    rec.priority === 'high'
+                      ? 'var(--support-danger)'
+                      : rec.priority === 'medium'
+                        ? 'var(--support-warning)'
+                        : 'var(--interactive)'
+                  }`,
+                }}
               >
                 <div className="font-medium">{rec.title}</div>
-                <div className="text-sm text-gray-600">{rec.description}</div>
-              </div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{rec.description}</div>
+              </Tile>
             ))}
           </div>
         </div>
-      )}
-    </div>
+      ) : null}
+    </Tile>
   )
 }
 
-// Export alias for backward compatibility
 export { JUCEEngineTestStatus as PiPedalTestStatus }

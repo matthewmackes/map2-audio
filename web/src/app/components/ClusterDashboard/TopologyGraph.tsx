@@ -1,4 +1,5 @@
 import { useMemo, useEffect } from 'react'
+import '../shared/ReactFlowTheme.css'
 import ReactFlow, {
   Node,
   Edge,

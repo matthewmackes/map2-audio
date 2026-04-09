@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ChartBar, ChevronDown, ChevronUp, Link, SettingsAdjust, Time, VolumeUp } from '@carbon/icons-react'
+import './MeteringPage.css'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { MAP2_PLATFORM_META, MAP2_PRIMARY_LABEL, Map2BrandMark } from './branding/map2Branding'
+import './PageHeader.css'
 
 interface Props {
   title: string

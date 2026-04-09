@@ -230,11 +230,12 @@ describe('HomePage landing', () => {
     expect(screen.queryByText('Program Catalog')).toBeNull()
   })
 
-  it('renders the default wallpaper image when no desktop wallpaper preference exists', async () => {
+  it('renders the default wallpaper hero treatment when no desktop wallpaper preference exists', async () => {
     renderHome()
     finishBootSplash()
 
-    expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'NEW-map2-landing-bg.png')
+    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
   })
 
   it('supports a solid theme wallpaper mode without rendering the default image', async () => {
@@ -267,10 +268,35 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     fireEvent.contextMenu(await screen.findByTestId('home-desktop'), { clientX: 80, clientY: 120 })
+    act(() => {
+      jest.runOnlyPendingTimers()
+    })
 
     expect(screen.getByRole('menu', { name: 'Desktop context menu' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Display settings' }))
+    expect(screen.getAllByRole('menuitem')).toHaveLength(3)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Display settings' }))
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme')
+  })
+
+  it('moves focus into the desktop context menu and restores it on Escape', async () => {
+    renderHome()
+    finishBootSplash()
+
+    const desktop = await screen.findByTestId('home-desktop')
+
+    fireEvent.contextMenu(desktop, { clientX: 80, clientY: 120 })
+    act(() => {
+      jest.runOnlyPendingTimers()
+    })
+
+    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toHaveFocus()
+
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Desktop context menu' }), { key: 'Tab' })
+    expect(screen.getByRole('menuitem', { name: 'Display settings' })).toHaveFocus()
+
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Desktop context menu' }), { key: 'Escape' })
+    expect(screen.queryByRole('menu', { name: 'Desktop context menu' })).toBeNull()
+    expect(desktop).toHaveFocus()
   })
 
 })

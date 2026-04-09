@@ -157,5 +157,9 @@
 .hp2-desktop__context-item:hover,
 .hp2-desktop__context-item:focus-visible {
   background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-background, #f4f4f4));
-  outline: none;
+}
+
+.hp2-desktop__context-item:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: -2px;
 }

@@ -1,0 +1,120 @@
+.disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: var(--type-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.disclosure-trigger:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: rgba(55, 214, 201, 0.25);
+}
+
+.disclosure-trigger[aria-expanded="true"] {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: rgba(55, 214, 201, 0.35);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.disclosure-trigger[aria-expanded="true"] .disclosure-arrow {
+  transform: rotate(180deg);
+}
+
+.disclosure-arrow {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.disclosure-content {
+  border: 1px solid rgba(55, 214, 201, 0.35);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.disclosure-content[data-enter] {
+  animation: disclosure-open 0.2s ease;
+}
+
+.disclosure-content[data-leave] {
+  animation: disclosure-close 0.2s ease;
+}
+
+@keyframes disclosure-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes disclosure-close {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.disclosure-section {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disclosure-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: var(--type-body);
+}
+
+.disclosure-label {
+  color: var(--muted);
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.disclosure-value {
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
+
+.disclosure-value.uri {
+  font-family: var(--font-ui-tight);
+  font-size: var(--type-label);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.disclosure-params {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}

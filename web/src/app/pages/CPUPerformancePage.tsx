@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './CPUPerformancePage.css'
 import {
   Card,
   CardContent,
@@ -130,11 +131,7 @@ export default function CPUPerformancePage() {
   }
 
   return (
-    <div className="cpu-performance-page" style={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(180deg, #0a0a0a 0%, #111111 100%)',
-      padding: '24px',
-    }}>
+    <div className="cpu-performance-page">
       {/* Page Title */}
       <Box sx={{ mb: 4, textAlign: 'center' }}>
         <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>

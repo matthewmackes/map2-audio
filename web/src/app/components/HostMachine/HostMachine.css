@@ -3,6 +3,28 @@
    All colors via CSS tokens defined in index.css / themes.ts
    ============================================================ */
 
+.hm-page .MuiPaper-root,
+.hm-page .MuiButton-root,
+.hm-page .MuiButtonBase-root,
+.hm-page .MuiChip-root,
+.hm-page .MuiIconButton-root,
+.hm-page .MuiAlert-root,
+.hm-page .MuiDialog-paper,
+.hm-page .MuiPopover-paper,
+.hm-page .MuiMenu-paper,
+.hm-page .MuiList-root,
+.hm-page .MuiListItemButton-root,
+.hm-page .MuiOutlinedInput-root,
+.hm-page .MuiInputBase-root,
+.hm-page .MuiTab-root,
+.hm-page .MuiTabs-root {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 /* ── Page layout ─────────────────────────────────────────────── */
 
 .hm-page {

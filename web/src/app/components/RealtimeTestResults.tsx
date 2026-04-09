@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Renew as ArrowsClockwise, Security as ShieldCheck } from '@carbon/icons-react'
+import { Button, Tag, Tile } from '@carbon/react'
 
 interface TestResult {
   timestamp: string
@@ -136,25 +137,26 @@ export function RealtimeTestResults() {
   const bufferSize = testResult?.engine_info?.buffer_size ?? 64
 
   return (
-    <div className="card">
+    <Tile style={{ display: 'grid', gap: 12 }}>
       <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 12, justifyContent: 'space-between' }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
           <ShieldCheck size={20} />
           <h3 style={{ margin: 0 }}>Realtime testing & scoring</h3>
         </div>
-        <button
+        <Button
           onClick={runNewTest}
           disabled={runningTest || loading}
-          className="btn btn-ghost btn-sm"
-          style={{ padding: '4px 8px' }}
+          kind="ghost"
+          size="sm"
+          renderIcon={ArrowsClockwise}
         >
-          <ArrowsClockwise size={16} className={runningTest ? 'animate-spin' : ''} />
-        </button>
+          {runningTest ? 'Refreshing…' : 'Refresh'}
+        </Button>
       </div>
 
       <div className="grid two" style={{ gap: 12, marginBottom: 12 }}>
-        <div className="stat-card">
-          <div className="stat-label">Overall RT Score</div>
+        <Tile>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--type-body)' }}>Overall RT score</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: getScoreColor(score), marginBottom: 6 }}>
             {loading ? '...' : `${score}/100`}
           </div>
@@ -164,9 +166,9 @@ export function RealtimeTestResults() {
              score >= 50 ? 'Fair performance. Some tests need attention.' :
              'System needs optimization. Review failed tests.'}
           </p>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Latency (round-trip)</div>
+        </Tile>
+        <Tile>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--type-body)' }}>Latency (round-trip)</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>
             {latency} ms
           </div>
@@ -174,7 +176,7 @@ export function RealtimeTestResults() {
             Measured at {(sampleRate / 1000).toFixed(0)} kHz, {bufferSize}-sample buffer.
             {parseFloat(latency) < 10 ? ' Optimal for live performance.' : ' Consider reducing buffer size.'}
           </p>
-        </div>
+        </Tile>
       </div>
 
       <div>
@@ -188,14 +190,17 @@ export function RealtimeTestResults() {
                   <strong>{test.name}</strong> — {test.details}
                 </span>
                 <span
-                  className="pill"
                   style={{
                     whiteSpace: 'nowrap',
-                    backgroundColor: test.passed ? 'var(--success-bg)' : 'var(--error-bg)',
-                    color: test.passed ? 'var(--success)' : 'var(--error)'
+                    display: 'inline-flex',
+                    alignItems: 'center'
                   }}
                 >
-                  {test.passed ? 'Pass' : 'Fail'}
+                  <Tag
+                    type={test.passed ? 'green' : 'red'}
+                  >
+                    {test.passed ? 'Pass' : 'Fail'}
+                  </Tag>
                 </span>
               </div>
             </div>
@@ -230,6 +235,6 @@ export function RealtimeTestResults() {
           </div>
         </div>
       </div>
-    </div>
+    </Tile>
   )
 }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Copy, DataBase as HardDrive, FolderOpen, Music, Renew as ArrowsClockwise, VolumeUp as SpeakerHigh, Waveform as WaveSine } from '@carbon/icons-react'
 import { foldersApi } from '../../../map2/api'
 import type { DisplayPaths } from '../../../map2/api'
+import '../Disclosure.css'
 
 interface PathInfo {
   label: string

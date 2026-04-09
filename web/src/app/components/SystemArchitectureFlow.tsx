@@ -14,6 +14,7 @@ import {
   Waveform,
 } from '@carbon/icons-react'
 import type { CarbonIconType } from '@carbon/icons-react'
+import './StatusPanelFlatteners.css'
 
 interface ComponentDetails {
   description: string

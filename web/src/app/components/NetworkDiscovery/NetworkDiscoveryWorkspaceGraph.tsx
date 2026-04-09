@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import '../shared/ReactFlowTheme.css'
 
 import ReactFlow, {
   Background,

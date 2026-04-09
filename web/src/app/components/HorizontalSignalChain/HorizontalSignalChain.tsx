@@ -11,6 +11,7 @@ import { HorizontalPluginNode } from './HorizontalPluginNode'
 import { SidechainConnector } from './SidechainConnector'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import { buildPluginOrderRef, samePluginIdentity } from '../../../map2/utils/pluginIdentity'
+import './HorizontalSignalChain.css'
 
 interface SignalInfo {
   channels: number

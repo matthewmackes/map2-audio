@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Tag, Tile } from '@carbon/react'
 
 interface Props {
   label: string
@@ -11,15 +12,23 @@ interface Props {
 }
 
 export function StatCard({ label, value, helper, tone = 'default', icon, secondary, color }: Props) {
-  const toneClass = tone === 'success' ? 'pill success' : tone === 'warn' ? 'pill warn' : 'pill muted'
+  const toneType = tone === 'success' ? 'green' : tone === 'warn' ? 'warm-gray' : 'cool-gray'
 
   return (
-    <div className="stat-card">
-      <div className="stat-label">{label}</div>
-      <div className="flex-between" style={{ marginTop: 6 }}>
-        <div className="stat-value">{value}</div>
-        <span className={toneClass}>{helper ?? 'Live'}</span>
+    <Tile style={{ display: 'grid', gap: 8, minHeight: 120 }}>
+      <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--type-body)', letterSpacing: '0.02em' }}>{label}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 'var(--type-heading)', color: color ?? 'var(--text-primary)' }}>{value}</div>
+          {secondary ? (
+            <div style={{ marginTop: 4, color: 'var(--text-tertiary)', fontSize: 'var(--type-caption)' }}>{secondary}</div>
+          ) : null}
+        </div>
+        <Tag type={toneType}>{helper ?? 'Live'}</Tag>
       </div>
-    </div>
+      {icon ? (
+        <div style={{ color: 'var(--text-tertiary)', fontSize: 'var(--type-caption)' }}>{icon}</div>
+      ) : null}
+    </Tile>
   )
 }

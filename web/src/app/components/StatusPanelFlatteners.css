@@ -1,0 +1,11 @@
+.system-architecture-flow,
+.system-architecture-flow *,
+.platform-capabilities,
+.platform-capabilities *,
+.cpu-status-overview,
+.cpu-status-overview * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+}

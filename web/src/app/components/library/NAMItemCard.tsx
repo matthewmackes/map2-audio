@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
+import './ModelList.css'
 
 interface NAMItemCardProps {
   model: {

@@ -1,5 +1,5 @@
-import type { MouseEvent } from 'react'
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import type { KeyboardEvent, MouseEvent } from 'react'
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressBar } from '@carbon/react'
 import {
@@ -23,6 +23,8 @@ export function HomePage() {
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
   const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
+  const contextMenuItemRefs = useRef<Array<HTMLButtonElement | null>>([])
 
   useEffect(() => {
     if (!showBootSplash) {
@@ -55,8 +57,24 @@ export function HomePage() {
     }
   }, [contextMenu])
 
+  useEffect(() => {
+    if (!contextMenu) {
+      restoreFocusRef.current?.focus()
+      return undefined
+    }
+
+    const focusFirstMenuItem = window.setTimeout(() => {
+      contextMenuItemRefs.current[0]?.focus()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(focusFirstMenuItem)
+    }
+  }, [contextMenu])
+
   const openWallpaperMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault()
+    restoreFocusRef.current = event.currentTarget
     setContextMenu({
       x: event.clientX,
       y: event.clientY,
@@ -71,6 +89,62 @@ export function HomePage() {
   const handleOpenDesktopRoute = (route: string) => {
     setContextMenu(null)
     navigate(route)
+  }
+
+  const handleContextMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!contextMenu) {
+      return
+    }
+
+    const focusableItems = contextMenuItemRefs.current.filter(
+      (item): item is HTMLButtonElement => item !== null,
+    )
+
+    if (focusableItems.length === 0) {
+      return
+    }
+
+    const activeIndex = focusableItems.indexOf(document.activeElement as HTMLButtonElement)
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setContextMenu(null)
+      return
+    }
+
+    if (event.key === 'Tab') {
+      event.preventDefault()
+      const nextIndex = event.shiftKey
+        ? (activeIndex <= 0 ? focusableItems.length - 1 : activeIndex - 1)
+        : (activeIndex === -1 || activeIndex === focusableItems.length - 1 ? 0 : activeIndex + 1)
+      focusableItems[nextIndex]?.focus()
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      const nextIndex = activeIndex === -1 || activeIndex === focusableItems.length - 1 ? 0 : activeIndex + 1
+      focusableItems[nextIndex]?.focus()
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      const nextIndex = activeIndex <= 0 ? focusableItems.length - 1 : activeIndex - 1
+      focusableItems[nextIndex]?.focus()
+      return
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault()
+      focusableItems[0]?.focus()
+      return
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault()
+      focusableItems[focusableItems.length - 1]?.focus()
+    }
   }
 
   if (showBootSplash) {
@@ -102,6 +176,7 @@ export function HomePage() {
         data-testid="home-desktop"
         data-wallpaper-mode={wallpaper.mode}
         onContextMenu={openWallpaperMenu}
+        tabIndex={-1}
       >
         {wallpaper.mode === 'uploaded-image' ? (
           <img
@@ -123,15 +198,34 @@ export function HomePage() {
             className="hp2-desktop__context-menu"
             role="menu"
             aria-label="Desktop context menu"
+            onKeyDown={handleContextMenuKeyDown}
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
-            <button type="button" className="hp2-desktop__context-item" onClick={handleRefreshDesktop}>
+            <button
+              ref={(node) => { contextMenuItemRefs.current[0] = node }}
+              type="button"
+              role="menuitem"
+              className="hp2-desktop__context-item"
+              onClick={handleRefreshDesktop}
+            >
               Refresh
             </button>
-            <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/theme')}>
+            <button
+              ref={(node) => { contextMenuItemRefs.current[1] = node }}
+              type="button"
+              role="menuitem"
+              className="hp2-desktop__context-item"
+              onClick={() => handleOpenDesktopRoute('/platforms/theme')}
+            >
               Display settings
             </button>
-            <button type="button" className="hp2-desktop__context-item" onClick={() => handleOpenDesktopRoute('/platforms/about')}>
+            <button
+              ref={(node) => { contextMenuItemRefs.current[2] = node }}
+              type="button"
+              role="menuitem"
+              className="hp2-desktop__context-item"
+              onClick={() => handleOpenDesktopRoute('/platforms/about')}
+            >
               About
             </button>
           </div>
