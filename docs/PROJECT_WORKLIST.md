@@ -20346,7 +20346,7 @@ Last updated: 2026-04-09 12:11 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_registry.py tests/push_surface/test_drum_registry.py` -> PASS
 
 ID: T888
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add Push drum session runtime with instance banking and unbound-when-no-live behavior
 Description:
 - Goal / acceptance criteria: Push drum session runtime supports bank-index navigation across discovered instances, remains unbound when no drum-machine instance is currently live, and does not auto-fall back to MRU or first-available.
@@ -20355,8 +20355,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Session runtime with banking, unbound default, route exposure, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 12:18 EDT - Codex
+- Completion notes:
+  - Extended `app/services/push_surface/drum_runtime.py` so the Push drum session now treats `bank_index` as a real cursor over the discovered instance list instead of inert state.
+  - Added session normalization that auto-binds only to an actually live instance, clears stale selections when they disappear, and stays intentionally unbound when no drum-machine instance is currently live.
+  - Reused the existing `select_instance` command surface to support banked selection via `bank_index` and `bank_delta` payloads, avoiding a new API verb while exposing the needed runtime behavior.
+  - Added focused coverage in `tests/push_surface/test_drum_runtime.py` for live-instance auto-binding, unbound/no-live behavior, and bank-index/bank-delta selection, while keeping the Push routes green.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T889
 Status: [ ] Todo

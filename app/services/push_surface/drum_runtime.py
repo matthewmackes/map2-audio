@@ -114,15 +114,79 @@ class PushDrumSessionService:
             self._sessions[device_fingerprint] = PushDrumSessionState(device_fingerprint=device_fingerprint)
         return self._sessions[device_fingerprint]
 
+    @staticmethod
+    def _clamp_bank_index(bank_index: int, count: int) -> int:
+        if count <= 0:
+            return 0
+        return max(0, min(bank_index, count - 1))
+
+    def _normalize_session_selection(
+        self,
+        session: PushDrumSessionState,
+        instances: list[DrumMachineInstanceDescriptor],
+    ) -> tuple[DrumMachineInstanceDescriptor | None, int | None]:
+        if not instances:
+            session.selected_instance_id = None
+            session.bank_index = 0
+            session.pending_confirmation = None
+            return None, None
+
+        selected_index = next(
+            (index for index, item in enumerate(instances) if item.instance_id == session.selected_instance_id),
+            None,
+        )
+        if selected_index is not None:
+            session.bank_index = selected_index
+            return instances[selected_index], selected_index
+
+        session.selected_instance_id = None
+        live_index = next((index for index, item in enumerate(instances) if item.is_live), None)
+        if live_index is not None:
+            session.selected_instance_id = instances[live_index].instance_id
+            session.bank_index = live_index
+            return instances[live_index], live_index
+
+        session.bank_index = self._clamp_bank_index(session.bank_index, len(instances))
+        return None, None
+
+    def _resolve_target_instance(
+        self,
+        *,
+        session: PushDrumSessionState,
+        instances: list[DrumMachineInstanceDescriptor],
+        payload: dict[str, Any],
+    ) -> DrumMachineInstanceDescriptor:
+        instance_id = str(payload.get("instance_id") or "").strip()
+        if instance_id:
+            instance = next((item for item in instances if item.instance_id == instance_id), None)
+            if instance is None:
+                raise ValueError(f"unknown drum instance: {instance_id}")
+            session.bank_index = next(index for index, item in enumerate(instances) if item.instance_id == instance_id)
+            return instance
+
+        if not instances:
+            raise ValueError("no drum instances available")
+
+        if "bank_index" in payload:
+            session.bank_index = self._clamp_bank_index(int(payload.get("bank_index") or 0), len(instances))
+        elif "bank_delta" in payload:
+            delta = int(payload.get("bank_delta") or 0)
+            session.bank_index = self._clamp_bank_index(session.bank_index + delta, len(instances))
+        else:
+            session.bank_index = self._clamp_bank_index(session.bank_index, len(instances))
+        return instances[session.bank_index]
+
     async def get_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
         session = self._get_session(device_fingerprint)
         instances = await get_drum_instance_registry().list_instances()
-        selected = next((item for item in instances if item.instance_id == session.selected_instance_id), None)
+        selected, selected_index = self._normalize_session_selection(session, instances)
         projection = DrumMachineRuntimeFacade(selected).get_projection() if selected is not None else None
         return {
             "session": session.to_dict(),
             "available_instances": [instance.to_dict() for instance in instances],
             "selected_projection": projection,
+            "banked_instance_id": instances[session.bank_index].instance_id if instances else None,
+            "selected_instance_index": selected_index,
         }
 
     async def select_instance(self, device_fingerprint: str, instance_id: str, require_confirmation: bool | None = None) -> dict[str, Any]:
@@ -136,6 +200,11 @@ class PushDrumSessionService:
             session.last_command = "select_instance"
             return await self.get_surface_state(device_fingerprint)
         session.selected_instance_id = instance_id
+        instances = await get_drum_instance_registry().list_instances()
+        session.bank_index = next(
+            (index for index, item in enumerate(instances) if item.instance_id == instance_id),
+            session.bank_index,
+        )
         session.pending_confirmation = None
         session.last_command = "select_instance"
         return await self.get_surface_state(device_fingerprint)
@@ -152,12 +221,11 @@ class PushDrumSessionService:
         body = dict(payload or {})
         session = self._get_session(device_fingerprint)
         if command == "select_instance":
-            instance_id = str(body.get("instance_id") or "").strip()
-            if not instance_id:
-                raise ValueError("instance_id is required")
+            instances = await get_drum_instance_registry().list_instances()
+            target = self._resolve_target_instance(session=session, instances=instances, payload=body)
             return await self.select_instance(
                 device_fingerprint,
-                instance_id,
+                target.instance_id,
                 require_confirmation=bool(body.get("require_confirmation", False)),
             )
         if command == "confirm_instance_switch":
