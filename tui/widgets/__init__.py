@@ -14,6 +14,7 @@ __all__ = [
     'ActionButton',
     'StatusIndicator',
     'LoadingIndicator',
+    'InlineNotification',
     'MixControl',
     'BypassToggle',
 ]
@@ -123,6 +124,40 @@ class LoadingIndicator(Static):
     def hide(self) -> None:
         self.visible = False
         self.display = False
+
+
+class InlineNotification(Static):
+    """Carbon-style inline notification surface for contextual route feedback."""
+
+    def __init__(self, id: Optional[str] = None, classes: Optional[str] = None):
+        super().__init__("", id=id, classes=classes)
+        self.display = False
+        self._tone = "info"
+
+    def show_notification(
+        self,
+        *,
+        title: str,
+        message: str,
+        tone: str = "info",
+        action_hint: str | None = None,
+    ) -> None:
+        self._tone = tone
+        parts = [f"{title}: {message}".strip(": ")]
+        if action_hint:
+            parts.append(action_hint)
+        self.update("\n".join(part for part in parts if part))
+        self.display = True
+        self.set_class(True, "-visible")
+        for token in ("-info", "-success", "-warning", "-error"):
+            self.set_class(token == f"-{tone}", token)
+
+    def clear_notification(self) -> None:
+        self.update("")
+        self.display = False
+        self.set_class(False, "-visible")
+        for token in ("-info", "-success", "-warning", "-error"):
+            self.set_class(False, token)
 
 
 class MixControl(Static):

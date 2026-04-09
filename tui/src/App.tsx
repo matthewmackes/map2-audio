@@ -10,6 +10,7 @@ import { AppShell } from './shell/AppShell'
 import { CommandPalette } from './shell/CommandPalette'
 import { buildCommandPaletteEntries, filterCommandPaletteEntries } from './shell/commandPaletteEntries'
 import { HelpOverlay } from './shell/HelpOverlay'
+import { EmptyState } from './components/EmptyState'
 import { AudioGridScreen } from './screens/AudioGridScreen'
 import { ArtifactsScreen } from './screens/ArtifactsScreen'
 import { AvbScreen } from './screens/AvbScreen'
@@ -28,10 +29,7 @@ import type { ScreenId } from './navigation/types'
 
 function PlaceholderScreen({ title, description }: { title: string; description: string }) {
   return (
-    <Box flexDirection="column">
-      <Text color={oledPalette.accent}>{title}</Text>
-      <Text color={oledPalette.muted}>{description}</Text>
-    </Box>
+    <EmptyState icon="◇" title={title} description={description} action="Open a mapped route or use Ctrl+P for commands." />
   )
 }
 
@@ -177,6 +175,10 @@ export function App({
     connectionLabel: 'Live backend',
     terminalColumns: terminal.columns,
   })
+  const environment = process.env.MAP2_ENVIRONMENT ?? 'local'
+  const workspace = process.cwd().split('/').filter(Boolean).slice(-1)[0] ?? 'map2'
+  const connectionStatusLabel = 'Live backend'
+  const connectionStatusTone: 'ok' | 'warn' | 'error' | 'idle' = 'ok'
 
   let body: React.ReactNode
   switch (router.current.id) {
@@ -234,6 +236,11 @@ export function App({
       statusLeft={status.left}
       statusRight={status.right}
       terminalColumns={terminal.columns}
+      statusLabel={connectionStatusLabel}
+      statusTone={connectionStatusTone}
+      pendingJobs={0}
+      environment={environment}
+      workspace={workspace}
     >
       {showHelp ? <HelpOverlay /> : null}
       {showPalette ? <CommandPalette query={paletteQuery} entries={paletteEntries} activeIndex={paletteIndex} /> : null}

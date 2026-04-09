@@ -263,7 +263,7 @@ async def test_returning_user_lands_on_dashboard(tmp_path: Path, monkeypatch: py
     async with app.run_test() as pilot:
         await pilot.pause()
         assert app._active_route_key == "dashboard"
-        assert "Connection: Connected" in str(app.query_one("#shell-meta").content)
+        assert "Connected" in str(app.query_one("#shell-connection").content)
 
 
 @pytest.mark.asyncio
