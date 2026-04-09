@@ -1,13 +1,13 @@
 export const oledPalette = {
-  accent: '#36f4ff',
-  focus: '#8cf8ff',
-  text: '#f4fff7',
-  muted: '#91a89f',
-  idle: '#5f746d',
-  success: '#7dff72',
-  warning: '#ffc857',
-  danger: '#ff6b6b',
-  border: '#0aa7b8',
+  accent: '#0f62fe',
+  focus: '#78a9ff',
+  text: '#f4f4f4',
+  muted: '#c6c6c6',
+  idle: '#6f6f6f',
+  success: '#24a148',
+  warning: '#f1c21b',
+  danger: '#fa4d56',
+  border: '#525252',
 } as const
 
 export function statusTone(status: 'ok' | 'warn' | 'error' | 'idle'): string {

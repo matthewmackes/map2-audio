@@ -20228,7 +20228,7 @@ Last updated: 2026-04-09 11:13 EDT - Codex
   - `npm --prefix tui run build` -> PASS
 
 ID: T883
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unify Ink OLED palette with Carbon color tokens for cross-TUI brand consistency
 Description:
 - Goal / acceptance criteria: (1) Replace the Ink `oledPalette` in `tui/src/palette.ts` (cyan `#36f4ff`, neon green `#7dff72`, coral `#ff6b6b`) with Carbon-aligned tokens (`$blue-60` / `#0f62fe`, `$green-40` / `#24a148`, `$red-50` / `#fa4d56`, `$yellow-30` / `#f1c21b`). (2) Update all Ink components and screens that reference `oledPalette` to use the new Carbon-aligned values. (3) Both TUIs should present the same product design language.
@@ -20237,8 +20237,15 @@ Description:
 - Estimated effort: High
 - Required outputs: Updated palette.ts, updated all Ink component color references, visual validation across all screens.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 11:25 EDT - Codex
+- Completion notes:
+  - Replaced the shared Ink `oledPalette` in `tui/src/palette.ts` with Carbon-aligned tokens so accent, focus, status, and neutral colors now match the Textual TUI design language.
+  - Kept the change centralized in the shared palette module, which automatically updated all Ink components and screens already consuming `oledPalette`, `statusTone`, and `toastTone`.
+  - Added `tui/src/palette.test.ts` to lock the shared palette values and helper mappings to the Carbon-aligned contract.
+- Validation:
+  - `npm --prefix tui run test:unit -- --runTestsByPath src/palette.test.ts` -> PASS
+  - `npm --prefix tui run build` -> PASS
 
 ID: T884
 Status: [✓] Done
