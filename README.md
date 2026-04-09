@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1036** Python | **1124** TypeScript | **136** C++/H | **140** Docs | **1651** total commits | **3** stars | **0** forks | **0** open issues
+**1036** Python | **1124** TypeScript | **136** C++/H | **140** Docs | **1653** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a3ef92e7`](https://github.com/matthewmackes/map2-audio/commit/a3ef92e7293d5a47bef79ec68d9ddd8a3657165b) | Set new default landing page wallpaper | Map2 Audio | 2026-04-09 |
+| [`b905c3de`](https://github.com/matthewmackes/map2-audio/commit/b905c3defe500fe5d65c9827fd6ffea1f4dd9fe8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`4900590d`](https://github.com/matthewmackes/map2-audio/commit/4900590d60d4886a967f46d8b178154cd293a57b) | Add Push drum pad source browser and loading | Map2 Audio | 2026-04-09 |
 | [`8f42458d`](https://github.com/matthewmackes/map2-audio/commit/8f42458d2a2c5ce9e7fc8fd05024ca0fe3fea053) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`b8696cc9`](https://github.com/matthewmackes/map2-audio/commit/b8696cc94688a83f07d3fe5c0145ca87f04fcb46) | Add Push drum phase A1 regression coverage | Map2 Audio | 2026-04-09 |
 | [`8d37d723`](https://github.com/matthewmackes/map2-audio/commit/8d37d72358b04f924d8a190cd2bbb24becb04463) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`efa65c8b`](https://github.com/matthewmackes/map2-audio/commit/efa65c8b0a4128040a58e9247803145ca9ff2374) | Add Push drum pad and transport command wiring | Map2 Audio | 2026-04-09 |
 | [`c7c170eb`](https://github.com/matthewmackes/map2-audio/commit/c7c170eb9dcd09b616aa31f1493c3e9210a3ce33) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`52031e26`](https://github.com/matthewmackes/map2-audio/commit/52031e26032999f011bcf0dee4858835528f65d2) | Mirror Push confirmations on Push Surface page | Map2 Audio | 2026-04-09 |
-| [`8bd0dd1c`](https://github.com/matthewmackes/map2-audio/commit/8bd0dd1cfa9ef46229114846778b7a4fe6a64c65) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
