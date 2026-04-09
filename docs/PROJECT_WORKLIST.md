@@ -21133,3 +21133,22 @@ Description:
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-04-08 - Claude
+
+ID: T956
+Status: [✓] Done
+Title: Fix snapshot client nullability contract blocking shared TypeScript builds
+Description:
+- Goal / acceptance criteria: Repair the `web/src/map2/clients/snapshots.ts` type mismatch where a nullable snapshot event field is assigned into a non-nullable `FlowSnapshotLoadedEvent` contract so both `npm --prefix tui run build` and other shared TypeScript checks can pass again without weakening the event model.
+- Why it matters: The TUI TypeScript build currently imports shared web client types, so this cross-package nullability mismatch blocks validation even when the TUI change itself is correct.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Narrow snapshot client type fix, focused validation, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-09 10:52 EDT - Codex
+- Completion notes:
+  - Updated `web/src/map2/clients/snapshots.ts` so `snapshotLoadedEventToFlowSnapshotEvent()` now converts a nullable source `program_number` into the optional `FlowSnapshotLoadedEvent` shape with `?? undefined`, matching the downstream contract instead of forwarding `null`.
+  - Added `web/src/map2/clients/snapshots.test.ts` to lock the null-to-undefined adapter behavior for future snapshot event changes.
+- Validation:
+  - `npm --prefix tui run build` -> PASS
+  - `npm --prefix web test -- --runInBand src/map2/clients/snapshots.test.ts` -> PASS

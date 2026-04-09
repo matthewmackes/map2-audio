@@ -438,7 +438,7 @@ export function snapshotLoadedEventToFlowSnapshotEvent(
       snapshot_name: event.data.snapshot_name,
       snapshot_data: snapshotDetailToDraftData(event.data.snapshot_data),
       triggered_by: event.data.triggered_by,
-      program_number: event.data.program_number,
+      program_number: event.data.program_number ?? undefined,
     },
     timestamp: event.timestamp,
   }
