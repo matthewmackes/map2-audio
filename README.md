@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1596** total commits | **3** stars | **0** forks | **0** open issues
+**1029** Python | **1114** TypeScript | **136** C++/H | **140** Docs | **1598** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0c18310b`](https://github.com/matthewmackes/map2-audio/commit/0c18310bce95fc97288ea420f37f5de500bf4e70) | Mark Carbon form and notification tranche blocked | Map2 Audio | 2026-04-09 |
+| [`fe6c2632`](https://github.com/matthewmackes/map2-audio/commit/fe6c263200bd5369dd0d37c87ba09f622936b34a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`747192e8`](https://github.com/matthewmackes/map2-audio/commit/747192e8f7f282fa1c1c742df5161eabb044eb2f) | Mark Carbon primitive tranche blocked | Map2 Audio | 2026-04-09 |
 | [`9ef8c2dd`](https://github.com/matthewmackes/map2-audio/commit/9ef8c2ddbc2af9f6c0edbf2cb78a5eca40579a2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`857274c2`](https://github.com/matthewmackes/map2-audio/commit/857274c2e2c5b5c59c4b53c486773f8054f14203) | Record blocked frontend dependency tranche | Map2 Audio | 2026-04-08 |
 | [`12f78cdb`](https://github.com/matthewmackes/map2-audio/commit/12f78cdbad1f42e54abefeab7f20d54805177203) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`a15e0b67`](https://github.com/matthewmackes/map2-audio/commit/a15e0b6756af1c9e78ca5f705c675e97563eedb5) | Extract shell navigation CSS and finish AppShell split | Map2 Audio | 2026-04-08 |
 | [`566f1238`](https://github.com/matthewmackes/map2-audio/commit/566f12383c175773076028864c39568835ad9944) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`e6812e95`](https://github.com/matthewmackes/map2-audio/commit/e6812e951ad81e363640c5b77caf9b84e07af97d) | Extend UTC migration and singleton hardening | Map2 Audio | 2026-04-08 |
-| [`fbbeefe4`](https://github.com/matthewmackes/map2-audio/commit/fbbeefe4c93d4d02f474691d91ff840ada6bf312) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
