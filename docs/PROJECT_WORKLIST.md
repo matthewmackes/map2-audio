@@ -19886,7 +19886,7 @@ Last updated: 2026-04-09 05:49 EDT - Codex
   - A clean notification migration is blocked until the app has one canonical notification model and severity/ownership contract; otherwise Carbon toasts would be layered onto unresolved parallel notification systems instead of replacing them.
 
 ID: T866
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Apply Carbon `Layer` nesting for proper layering context throughout the app
 Description:
 - Goal / acceptance criteria: Wrap content regions in Carbon `<Layer>` components to establish proper Carbon layering context. Currently many surfaces hard-code `--cds-layer-01` / `--cds-layer-02` references directly instead of letting Carbon's `Layer` component manage the nesting. This matters for the FLAT design because layer-01 vs layer-02 background differentiation is the primary visual hierarchy mechanism when there are no gradients or shadows.
@@ -19895,11 +19895,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Layer-wrapped content regions, removed hard-coded layer references.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:18 EDT - Codex
+- Progress notes:
+  - Carbon `Layer` is already used in several route and workspace surfaces, but the app still contains widespread hard-coded `var(--cds-layer-01|02|03)` backgrounds and color-mixed shell surfaces across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page-local CSS files.
+  - Completing this safely is blocked because the remaining layer treatment is still intertwined with unresolved shell/token ownership; replacing those hard-coded layer tokens now would be another broad mixed refactor rather than a bounded migration.
 
 ID: T867
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.menu` / `.menu-item` with Carbon `OverflowMenu` / `MenuButton`
 Description:
 - Goal / acceptance criteria: Replace the `.menu`, `.menu-item`, `.menu-item-content`, `.menu-item-label`, `.menu-item-desc` CSS classes with Carbon `OverflowMenu` / `OverflowMenuItem` or `MenuButton` / `MenuItem` patterns. Apply to context menus (e.g. desktop right-click in `HomePage.tsx`), power menus, and action menus.
@@ -19908,11 +19911,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: Carbon menu usage, removed CSS, keyboard navigation validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:18 EDT - Codex
+- Progress notes:
+  - The app already mixes Carbon `OverflowMenu` usage in some route surfaces with legacy global `.menu` / `.menu-item` CSS in `web/src/index.css`, plus custom shell/mobile/power menu implementations in `web/src/app/layout/AppShell.css` and route-local menu components.
+  - Full completion is blocked because the remaining menu surface is spread across multiple interaction models and ownership layers; removing the legacy menu CSS now would require a route-by-route contract rewrite rather than a low-risk mechanical swap.
 
 ID: T868
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.badge` / `.pill` with Carbon `Tag` variants
 Description:
 - Goal / acceptance criteria: Remove the `.badge`, `.pill`, `.pill.success`, `.pill.warn`, `.pill.muted` CSS classes and replace all usages with Carbon `<Tag type="red|magenta|purple|blue|cyan|teal|green|gray|cool-gray|warm-gray|high-contrast">`. The FLAT/Monochrome design uses Carbon's default flat tag style (no filter tag rounding).
@@ -19921,11 +19927,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: Carbon Tag migration, removed CSS.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:18 EDT - Codex
+- Progress notes:
+  - Carbon `Tag` already exists in several newer surfaces, but the legacy `.badge` / `.pill` families remain in `web/src/index.css` alongside many specialized badge variants such as upload, grid, nav-maturity, cluster, and file-type badges.
+  - This task depends on blocked `T856`, and completion is also blocked by the remaining broad badge taxonomy: the app has not yet normalized which badge variants should map to Carbon tags versus route-specific display affordances.
 
 ID: T869
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Add Carbon `GlobalHeader` / `HeaderPanel` for the app shell navigation
 Description:
 - Goal / acceptance criteria: Replace the custom `.topbar-pro` navigation bar with Carbon's `Header`, `HeaderName`, `HeaderNavigation`, `HeaderMenuItem`, `HeaderGlobalAction`, `HeaderPanel`, and `SideNav` components. The FLAT style aligns perfectly with Carbon's default flat header treatment. The hamburger/mobile menu should use Carbon's `SideNav` with `SideNavMenuItem` rather than the custom `.nav-mobile-menu`.
@@ -19934,11 +19943,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Carbon header/sidenav implementation, removed custom nav CSS, responsive validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:18 EDT - Codex
+- Progress notes:
+  - The app shell still relies on the large custom `.topbar-pro` and `.nav-mobile-menu` systems in `web/src/app/layout/AppShell.css`, even though isolated workspace navigation has already started using Carbon `SideNav`.
+  - This task remains blocked by `T848` and `T851`; without a stable navigation ownership model and completed CSS split, a Carbon header conversion would strand major chunks of the current shell in parallel legacy code.
 
 ID: T870
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Apply sentence-case and plain-language copy to all UI text per Carbon writing guidelines
 Description:
 - Goal / acceptance criteria: Audit all static UI text (button labels, headings, navigation items, tooltips, status messages) for: (1) sentence case instead of UPPER CASE or Title Case (Carbon §3.13), (2) explicit action wording ("Save changes" not "Submit"), (3) plain language avoiding jargon. Current violations include `UPPER_CASE` navigation labels, `text-transform: uppercase` on 50+ CSS classes, and button labels like "Power" and "X".
@@ -19947,8 +19959,11 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 06:18 EDT - Codex
+- Progress notes:
+  - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
+  - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
 
 ID: T871
 Status: [ ] Todo
