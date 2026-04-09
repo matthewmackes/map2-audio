@@ -15,6 +15,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, DataTable, Label, Static
 
+from ...table_sync import sync_table_rows
 from ..models import (
     AudioEngineStatus,
     NodeSnapshot,
@@ -95,23 +96,23 @@ class AudioPane(Static):
 
         # ── Channels table ───────────────────────────────────────────
         table = self.query_one("#audio-channels-table", DataTable)
-        table.clear()
         if au.channels:
-            for ch in au.channels:
-                state_icon = (
-                    "[green]●[/green]" if ch.state == ServiceState.RUNNING
-                    else "[red]✖[/red]" if ch.state == ServiceState.FAILED
-                    else "[dim]○[/dim]"
-                )
-                peak_color = "green" if ch.peak_db < -12 else "yellow" if ch.peak_db < -3 else "red"
-                table.add_row(
-                    ch.name,
-                    ch.direction,
-                    ch.format,
-                    str(ch.sample_rate),
-                    state_icon,
-                    str(ch.xruns),
-                    f"[{peak_color}]{ch.peak_db:.1f}[/{peak_color}]",
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        ch.name,
+                        ch.direction,
+                        ch.format,
+                        str(ch.sample_rate),
+                        "[green]●[/green]" if ch.state == ServiceState.RUNNING else "[red]✖[/red]" if ch.state == ServiceState.FAILED else "[dim]○[/dim]",
+                        str(ch.xruns),
+                        f"[{'green' if ch.peak_db < -12 else 'yellow' if ch.peak_db < -3 else 'red'}]{ch.peak_db:.1f}[/{'green' if ch.peak_db < -12 else 'yellow' if ch.peak_db < -3 else 'red'}]",
+                    )
+                    for ch in au.channels
+                ],
+                row_keys=[f"channel-{ch.name}" for ch in au.channels],
+                sort_columns=("Name",),
+            )
         else:
-            table.add_row("[dim]No channels detected[/dim]", "", "", "", "", "", "")
+            sync_table_rows(table, [("[dim]No channels detected[/dim]", "", "", "", "", "", "")], row_keys=["empty"])

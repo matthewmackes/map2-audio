@@ -14,6 +14,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import DataTable, Label, Static
 
+from ...table_sync import sync_table_rows
 from ..models import ClusterStatus, HealthLevel, NodeSnapshot
 
 
@@ -75,45 +76,53 @@ class ClusterPane(Static):
 
         # ── Peers ────────────────────────────────────────────────────
         pt = self.query_one("#cluster-peers-table", DataTable)
-        pt.clear()
         if cl.peers:
-            for peer in cl.peers:
-                h_icon = {
-                    HealthLevel.HEALTHY: "[green]●[/green]",
-                    HealthLevel.WARNING: "[yellow]▲[/yellow]",
-                    HealthLevel.CRITICAL: "[red]✖[/red]",
-                }.get(peer.health, "[dim]○[/dim]")
-                lat_color = "green" if peer.latency_ms < 5 else "yellow" if peer.latency_ms < 20 else "red"
-                pt.add_row(
-                    peer.node_id[:16],
-                    peer.hostname,
-                    peer.ip,
-                    peer.mode,
-                    h_icon,
-                    f"[{lat_color}]{peer.latency_ms:.1f} ms[/{lat_color}]",
-                )
+            sync_table_rows(
+                pt,
+                [
+                    (
+                        peer.node_id[:16],
+                        peer.hostname,
+                        peer.ip,
+                        peer.mode,
+                        {
+                            HealthLevel.HEALTHY: "[green]●[/green]",
+                            HealthLevel.WARNING: "[yellow]▲[/yellow]",
+                            HealthLevel.CRITICAL: "[red]✖[/red]",
+                        }.get(peer.health, "[dim]○[/dim]"),
+                        f"[{'green' if peer.latency_ms < 5 else 'yellow' if peer.latency_ms < 20 else 'red'}]{peer.latency_ms:.1f} ms[/{'green' if peer.latency_ms < 5 else 'yellow' if peer.latency_ms < 20 else 'red'}]",
+                    )
+                    for peer in cl.peers
+                ],
+                row_keys=[peer.node_id for peer in cl.peers],
+                sort_columns=("Hostname",),
+            )
         else:
-            pt.add_row("[dim]No peers discovered[/dim]", "", "", "", "", "")
+            sync_table_rows(pt, [("[dim]No peers discovered[/dim]", "", "", "", "", "")], row_keys=["empty-peers"])
 
         # ── Flows ────────────────────────────────────────────────────
         ft = self.query_one("#cluster-flows-table", DataTable)
-        ft.clear()
         if cl.flows:
-            for flow in cl.flows:
-                loss_color = "green" if flow.packet_loss < 0.1 else "yellow" if flow.packet_loss < 1 else "red"
-                sync_icon = "[green]✓[/green]" if flow.sync_state == "synced" else "[yellow]~[/yellow]"
-                ft.add_row(
-                    flow.flow_id[:12],
-                    flow.source_node[:12],
-                    flow.dest_node[:12],
-                    flow.channel_name,
-                    f"{flow.latency_ms:.1f} ms",
-                    f"[{loss_color}]{flow.packet_loss:.2f}%[/{loss_color}]",
-                    str(flow.drop_count),
-                    sync_icon,
-                )
+            sync_table_rows(
+                ft,
+                [
+                    (
+                        flow.flow_id[:12],
+                        flow.source_node[:12],
+                        flow.dest_node[:12],
+                        flow.channel_name,
+                        f"{flow.latency_ms:.1f} ms",
+                        f"[{'green' if flow.packet_loss < 0.1 else 'yellow' if flow.packet_loss < 1 else 'red'}]{flow.packet_loss:.2f}%[/{'green' if flow.packet_loss < 0.1 else 'yellow' if flow.packet_loss < 1 else 'red'}]",
+                        str(flow.drop_count),
+                        "[green]✓[/green]" if flow.sync_state == "synced" else "[yellow]~[/yellow]",
+                    )
+                    for flow in cl.flows
+                ],
+                row_keys=[flow.flow_id for flow in cl.flows],
+                sort_columns=("Flow",),
+            )
         else:
-            ft.add_row("[dim]No active flows[/dim]", "", "", "", "", "", "", "")
+            sync_table_rows(ft, [("[dim]No active flows[/dim]", "", "", "", "", "", "", "")], row_keys=["empty-flows"])
 
         # ── Clock ────────────────────────────────────────────────────
         clk = self.query_one("#cluster-clock", Static)

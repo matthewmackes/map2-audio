@@ -17,6 +17,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Label, Static
 
+from ...table_sync import sync_table_rows
 from ..models import (
     HealthLevel,
     NodeSnapshot,
@@ -186,10 +187,12 @@ class DashboardPane(Static):
 
         # ── Services table ───────────────────────────────────────────
         table = self.query_one("#dash-services-table", DataTable)
-        table.clear()
-        for svc in snap.services:
-            icon = _state_icon(svc.state)
-            table.add_row(svc.name, icon, svc.state.value)
+        sync_table_rows(
+            table,
+            [(svc.name, _state_icon(svc.state), svc.state.value) for svc in snap.services],
+            row_keys=[svc.name for svc in snap.services],
+            sort_columns=("Service",),
+        )
 
         # ── Events ───────────────────────────────────────────────────
         events_w = self.query_one("#dash-events", Static)

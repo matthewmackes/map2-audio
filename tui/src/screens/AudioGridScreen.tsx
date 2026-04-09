@@ -24,6 +24,7 @@ export function AudioGridScreen() {
   }
 
   const activeChain = data.chains.find((chain) => chain.is_active) ?? data.chains[0]
+  const activeChainIndex = Math.max(data.chains.findIndex((chain) => chain.is_active), 0)
   const chainRows = data.chains.map((chain) => [chain.is_active ? '●' : '○', chain.name, String(chain.plugins.length)])
   const flow = activeChain?.plugins.map((plugin) => `[${truncateLabel(plugin.name || plugin.uri, 18)}]`).join(' → ') ?? 'No plugins loaded'
 
@@ -33,7 +34,7 @@ export function AudioGridScreen() {
         <Text>{flow}</Text>
       </BoxPanel>
       <BoxPanel title="Chains">
-        <DataTable columns={['A', 'Chain', 'Plugins']} rows={chainRows} />
+        <DataTable columns={['A', 'Chain', 'Plugins']} rows={chainRows} selectedIndex={activeChainIndex} sortBy={0} reverse />
       </BoxPanel>
     </Box>
   )

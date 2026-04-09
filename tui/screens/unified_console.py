@@ -15,6 +15,7 @@ from textual.widgets import DataTable, Label, Static
 from ..base_screen import BaseScreen, ScreenAction
 from ..modals import FormDialog, InputDialog, MessageDialog
 from ..session_state import SessionState
+from ..table_sync import ensure_columns, sync_table_rows
 from ..versioning import get_product_name, get_version
 from ..workflows import WorkflowDefinition, WorkflowRunSpec, get_workflow_definitions
 from ..node_console.models import NodeSnapshot
@@ -44,23 +45,6 @@ def _value(value: object) -> str:
     if isinstance(value, float):
         return f"{value:.2f}"
     return str(value)
-
-
-def _ensure_columns(table: DataTable, *columns: str) -> None:
-    if table.columns:
-        return
-    table.add_columns(*columns)
-    table.cursor_type = "row"
-    if columns:
-        loading_row = ["Loading"]
-        if len(columns) > 1:
-            loading_row.append("Waiting for first payload")
-        loading_row.extend("" for _ in range(max(0, len(columns) - len(loading_row))))
-        table.add_row(*loading_row)
-
-
-def _reset_table(table: DataTable) -> None:
-    table.clear(columns=False)
 
 
 def _panel_message(title: str, description: str, action: str | None = None) -> str:
@@ -122,8 +106,8 @@ class DashboardScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#dashboard-node-grid", DataTable), "Field", "Value")
-        _ensure_columns(self.query_one("#dashboard-services", DataTable), "Service", "State")
+        ensure_columns(self.query_one("#dashboard-node-grid", DataTable), "Field", "Value")
+        ensure_columns(self.query_one("#dashboard-services", DataTable), "Service", "State")
         self.update_context(
             "OS/SSH identity is the active session source.",
             "Use Ctrl+K for commands and Ctrl+Z to suspend to the shell.",
@@ -155,14 +139,19 @@ class DashboardScreen(BaseScreen):
             return
         self.snapshot = payload
         node_table = self.query_one("#dashboard-node-grid", DataTable)
-        _reset_table(node_table)
-        node_table.add_row("Hostname", payload.hostname)
-        node_table.add_row("Node mode", payload.mode.value)
-        node_table.add_row("IP address", _first_ip(payload))
-        node_table.add_row("Backend API", "Connected" if payload.api_reachable else "Offline")
-        node_table.add_row("Services", f"{payload.services_running}/{payload.services_total} running")
-        node_table.add_row("Connected nodes", str(payload.cluster.peer_count))
-        node_table.add_row("API version", payload.api_version or get_version())
+        sync_table_rows(
+            node_table,
+            [
+                ("Hostname", payload.hostname),
+                ("Node mode", payload.mode.value),
+                ("IP address", _first_ip(payload)),
+                ("Backend API", "Connected" if payload.api_reachable else "Offline"),
+                ("Services", f"{payload.services_running}/{payload.services_total} running"),
+                ("Connected nodes", str(payload.cluster.peer_count)),
+                ("API version", payload.api_version or get_version()),
+            ],
+            row_keys=["hostname", "mode", "ip", "backend", "services", "connected_nodes", "api_version"],
+        )
 
         summary = self.query_one("#dashboard-summary", Static)
         summary.update(
@@ -179,9 +168,12 @@ class DashboardScreen(BaseScreen):
         )
 
         services = self.query_one("#dashboard-services", DataTable)
-        _reset_table(services)
-        for service in payload.services:
-            services.add_row(service.name, render_status_text(service.state.value))
+        sync_table_rows(
+            services,
+            [(service.name, render_status_text(service.state.value)) for service in payload.services],
+            row_keys=[service.name for service in payload.services],
+            sort_columns=("Service",),
+        )
 
         events = self.query_one("#dashboard-events", Static)
         if payload.collector_errors:
@@ -208,7 +200,7 @@ class AudioScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#audio-levels", DataTable), "Path", "Value")
+        ensure_columns(self.query_one("#audio-levels", DataTable), "Path", "Value")
         self.update_context(
             "Common audio recovery actions are native here.",
             "Use the command palette for additional platform actions.",
@@ -261,9 +253,12 @@ class AudioScreen(BaseScreen):
         elif subscription == "audio.levels":
             data = _as_dict(payload)
             table = self.query_one("#audio-levels", DataTable)
-            _reset_table(table)
-            for key in ("input_left", "input_right", "output_left", "output_right"):
-                table.add_row(key.replace("_", " ").title(), _value(data.get(key, 0.0)))
+            level_keys = ("input_left", "input_right", "output_left", "output_right")
+            sync_table_rows(
+                table,
+                [(key.replace("_", " ").title(), _value(data.get(key, 0.0))) for key in level_keys],
+                row_keys=list(level_keys),
+            )
         elif subscription == "audio.metrics":
             data = _as_dict(payload)
             summary = self.query_one("#audio-services", Static)
@@ -304,8 +299,8 @@ class ChainsManagerScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#chains-table", DataTable), "ID", "Name", "Active")
-        _ensure_columns(self.query_one("#chains-templates", DataTable), "Template", "Plugins")
+        ensure_columns(self.query_one("#chains-table", DataTable), "ID", "Name", "Active")
+        ensure_columns(self.query_one("#chains-templates", DataTable), "Template", "Plugins")
         self.update_context(
             "Use Create chain to add a new chain without leaving the shell.",
             "Template loading keeps common workflow tasks in the TUI.",
@@ -364,19 +359,29 @@ class ChainsManagerScreen(BaseScreen):
         if subscription == "chains.list":
             self._chains = _as_list(payload, "chains", "items")
             table = self.query_one("#chains-table", DataTable)
-            _reset_table(table)
-            for chain in self._chains:
-                table.add_row(
-                    _value(chain.get("id", chain.get("chain_id"))),
-                    _value(chain.get("name")),
-                    "Yes" if chain.get("active") or chain.get("is_active") else "No",
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(chain.get("id", chain.get("chain_id"))),
+                        _value(chain.get("name")),
+                        "Yes" if chain.get("active") or chain.get("is_active") else "No",
+                    )
+                    for chain in self._chains
+                ],
+                row_keys=[f"chain-{_value(chain.get('id', chain.get('chain_id')))}" for chain in self._chains],
+                sort_columns=("Active", "Name"),
+                reverse=True,
+            )
         elif subscription == "chains.templates":
             self._templates = _as_list(payload, "templates", "items")
             table = self.query_one("#chains-templates", DataTable)
-            _reset_table(table)
-            for template in self._templates:
-                table.add_row(_value(template.get("name")), _value(template.get("plugin_count", 0)))
+            sync_table_rows(
+                table,
+                [(_value(template.get("name")), _value(template.get("plugin_count", 0))) for template in self._templates],
+                row_keys=[f"template-{_value(template.get('name'))}" for template in self._templates],
+                sort_columns=("Template",),
+            )
         elif subscription == "system.history":
             data = _as_dict(payload)
             self.query_one("#chains-status", Static).update(
@@ -406,7 +411,7 @@ class EffectsManagerScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#effects-plugins", DataTable), "Name", "Category", "Format")
+        ensure_columns(self.query_one("#effects-plugins", DataTable), "Name", "Category", "Format")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -430,13 +435,20 @@ class EffectsManagerScreen(BaseScreen):
             return
         self._plugins = _as_list(payload, "plugins", "items")
         table = self.query_one("#effects-plugins", DataTable)
-        _reset_table(table)
-        for plugin in self._plugins[:200]:
-            table.add_row(
-                _value(plugin.get("name", plugin.get("display_name"))),
-                _value(plugin.get("category")),
-                _value(plugin.get("format", plugin.get("plugin_format"))),
-            )
+        visible_plugins = self._plugins[:200]
+        sync_table_rows(
+            table,
+            [
+                (
+                    _value(plugin.get("name", plugin.get("display_name"))),
+                    _value(plugin.get("category")),
+                    _value(plugin.get("format", plugin.get("plugin_format"))),
+                )
+                for plugin in visible_plugins
+            ],
+            row_keys=[f"plugin-{index}" for index, _plugin in enumerate(visible_plugins)],
+            sort_columns=("Name",),
+        )
         self.query_one("#effects-summary", Static).update(f"Available plugins: {len(self._plugins)}")
 
 
@@ -455,7 +467,7 @@ class MIDIScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#midi-devices", DataTable), "Direction", "Name", "Status")
+        ensure_columns(self.query_one("#midi-devices", DataTable), "Direction", "Name", "Status")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -483,10 +495,13 @@ class MIDIScreen(BaseScreen):
         if subscription == "midi.devices":
             devices = _as_dict(payload)
             table = self.query_one("#midi-devices", DataTable)
-            _reset_table(table)
+            rows: list[tuple[str, str, str]] = []
+            row_keys: list[str] = []
             for direction in ("inputs", "outputs"):
-                for device in _as_list(devices.get(direction, [])):
-                    table.add_row(direction[:-1].title(), _value(device.get("name", device)), _value(device.get("status", "Available")))
+                for index, device in enumerate(_as_list(devices.get(direction, []))):
+                    rows.append((direction[:-1].title(), _value(device.get("name", device)), _value(device.get("status", "Available"))))
+                    row_keys.append(f"{direction}-{index}-{_value(device.get('name', device))}")
+            sync_table_rows(table, rows, row_keys=row_keys, sort_columns=("Direction", "Name"))
         elif subscription == "midi.status":
             data = _as_dict(payload)
             self.query_one("#midi-summary", Static).update(
@@ -530,7 +545,7 @@ class GuitarScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#guitar-models", DataTable), "Model")
+        ensure_columns(self.query_one("#guitar-models", DataTable), "Model")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -558,9 +573,13 @@ class GuitarScreen(BaseScreen):
         if subscription == "guitar.nam_models":
             self._models = _as_list(payload, "models", "items")
             table = self.query_one("#guitar-models", DataTable)
-            _reset_table(table)
-            for model in self._models[:200]:
-                table.add_row(_value(model.get("name") if isinstance(model, dict) else model))
+            visible_models = self._models[:200]
+            sync_table_rows(
+                table,
+                [(_value(model.get("name") if isinstance(model, dict) else model),) for model in visible_models],
+                row_keys=[f"model-{index}" for index, _model in enumerate(visible_models)],
+                sort_columns=("Model",),
+            )
         elif subscription in {"guitar.cabinet_irs", "guitar.reverb_irs"}:
             cabinets = getattr(self, "_cabinet_irs", [])
             reverbs = getattr(self, "_reverb_irs", [])
@@ -597,7 +616,7 @@ class StageViewScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#stage-sessions", DataTable), "ID", "Name")
+        ensure_columns(self.query_one("#stage-sessions", DataTable), "ID", "Name")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -618,9 +637,12 @@ class StageViewScreen(BaseScreen):
         if subscription == "chains.sessions":
             sessions = _as_list(payload, "sessions", "items")
             table = self.query_one("#stage-sessions", DataTable)
-            _reset_table(table)
-            for session in sessions:
-                table.add_row(_value(session.get("id", session.get("session_id"))), _value(session.get("name")))
+            sync_table_rows(
+                table,
+                [(_value(session.get("id", session.get("session_id"))), _value(session.get("name"))) for session in sessions],
+                row_keys=[f"session-{_value(session.get('id', session.get('session_id')))}" for session in sessions],
+                sort_columns=("Name",),
+            )
             self.query_one("#stage-summary", Static).update(f"Available sessions: {len(sessions)}")
         elif subscription == "chains.list":
             chains = _as_list(payload, "chains", "items")
@@ -645,7 +667,7 @@ class PlatformScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#platform-services", DataTable), "Service", "State")
+        ensure_columns(self.query_one("#platform-services", DataTable), "Service", "State")
         self.update_context(
             "Platform operations are executed in background workers.",
             "Use the runtime panel to inspect progress and failures.",
@@ -679,12 +701,18 @@ class PlatformScreen(BaseScreen):
             if not items and isinstance(services, dict):
                 items = [{"name": key, "state": value} for key, value in services.items()]
             table = self.query_one("#platform-services", DataTable)
-            _reset_table(table)
-            for service in items:
-                table.add_row(
-                    _value(service.get("name", service.get("service"))),
-                    render_status_text(service.get("state", service.get("status"))),
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(service.get("name", service.get("service"))),
+                        render_status_text(service.get("state", service.get("status"))),
+                    )
+                    for service in items
+                ],
+                row_keys=[_value(service.get("name", service.get("service"))) for service in items],
+                sort_columns=("Service",),
+            )
         elif subscription == "system.health":
             data = _as_dict(payload)
             summary = self.query_one("#platform-summary", Static)
@@ -717,7 +745,7 @@ class ClusterScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#cluster-nodes", DataTable), "Host", "Mode", "Latency", "Health")
+        ensure_columns(self.query_one("#cluster-nodes", DataTable), "Host", "Mode", "Latency", "Health")
         self.update_context(
             "Cluster and mode management are unified here.",
             "Use visible controls or Ctrl+K instead of memorizing per-screen keys.",
@@ -743,14 +771,20 @@ class ClusterScreen(BaseScreen):
         if subscription == "cluster.online_nodes":
             items = _as_list(payload, "nodes", "items")
             table = self.query_one("#cluster-nodes", DataTable)
-            _reset_table(table)
-            for node in items:
-                table.add_row(
-                    _value(node.get("hostname")),
-                    _value(node.get("mode")),
-                    f"{_value(node.get('latency_ms', node.get('response_time_ms', 0)))} ms",
-                    _value(node.get("health", node.get("status"))),
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(node.get("hostname")),
+                        _value(node.get("mode")),
+                        f"{_value(node.get('latency_ms', node.get('response_time_ms', 0)))} ms",
+                        _value(node.get("health", node.get("status"))),
+                    )
+                    for node in items
+                ],
+                row_keys=[f"node-{_value(node.get('hostname'))}" for node in items],
+                sort_columns=("Host",),
+            )
         elif subscription == "cluster.health":
             data = _as_dict(payload)
             self.query_one("#cluster-summary", Static).update(
@@ -834,7 +868,7 @@ class NetworkScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#network-interfaces", DataTable), "Interface", "IP", "State", "Speed")
+        ensure_columns(self.query_one("#network-interfaces", DataTable), "Interface", "IP", "State", "Speed")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -863,14 +897,20 @@ class NetworkScreen(BaseScreen):
         elif subscription == "system.ethernet":
             interfaces = _as_list(payload, "interfaces", "items")
             table = self.query_one("#network-interfaces", DataTable)
-            _reset_table(table)
-            for interface in interfaces:
-                table.add_row(
-                    _value(interface.get("name")),
-                    _value(interface.get("ip_address", interface.get("ipv4"))),
-                    _value(interface.get("state", interface.get("status"))),
-                    _value(interface.get("speed", interface.get("speed_mbps"))),
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(interface.get("name")),
+                        _value(interface.get("ip_address", interface.get("ipv4"))),
+                        _value(interface.get("state", interface.get("status"))),
+                        _value(interface.get("speed", interface.get("speed_mbps"))),
+                    )
+                    for interface in interfaces
+                ],
+                row_keys=[f"iface-{_value(interface.get('name'))}" for interface in interfaces],
+                sort_columns=("Interface",),
+            )
 
 
 class AVBScreen(BaseScreen):
@@ -887,7 +927,7 @@ class AVBScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#avb-streams", DataTable), "ID", "State", "Latency")
+        ensure_columns(self.query_one("#avb-streams", DataTable), "ID", "State", "Latency")
         self.update_context("AVB data is polled only while this route is visible.")
 
     def get_subscriptions(self) -> list[str]:
@@ -908,13 +948,19 @@ class AVBScreen(BaseScreen):
         elif subscription == "system.avb_streams":
             streams = _as_list(payload, "streams", "items")
             table = self.query_one("#avb-streams", DataTable)
-            _reset_table(table)
-            for stream in streams:
-                table.add_row(
-                    _value(stream.get("id", stream.get("stream_id"))),
-                    _value(stream.get("state", stream.get("status"))),
-                    f"{_value(stream.get('latency_ms', 0))} ms",
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(stream.get("id", stream.get("stream_id"))),
+                        _value(stream.get("state", stream.get("status"))),
+                        f"{_value(stream.get('latency_ms', 0))} ms",
+                    )
+                    for stream in streams
+                ],
+                row_keys=[f"stream-{_value(stream.get('id', stream.get('stream_id')))}" for stream in streams],
+                sort_columns=("ID",),
+            )
         elif subscription in {"system.ptp", "system.tsn"}:
             data = _as_dict(payload)
             current = _static_text(self.query_one("#avb-summary", Static))
@@ -939,7 +985,7 @@ class LCDScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#lcd-pages", DataTable), "Page")
+        ensure_columns(self.query_one("#lcd-pages", DataTable), "Page")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -978,9 +1024,12 @@ class LCDScreen(BaseScreen):
         elif subscription == "system.lcd_pages":
             self._pages = _as_list(payload, "pages", "items")
             table = self.query_one("#lcd-pages", DataTable)
-            _reset_table(table)
-            for page in self._pages:
-                table.add_row(_value(page.get("page", page.get("name")) if isinstance(page, dict) else page))
+            sync_table_rows(
+                table,
+                [(_value(page.get("page", page.get("name")) if isinstance(page, dict) else page),) for page in self._pages],
+                row_keys=[f"page-{index}" for index, _page in enumerate(self._pages)],
+                sort_columns=("Page",),
+            )
 
 
 class SettingsScreen(BaseScreen):
@@ -1135,8 +1184,8 @@ class WorkflowScreen(BaseScreen):
     def on_mount(self) -> None:
         super().on_mount()
         table = self.query_one("#workflow-tasks", DataTable)
-        _ensure_columns(table, "Task", "Legacy source", "Execution")
-        _reset_table(table)
+        ensure_columns(table, "Task", "Legacy source", "Execution")
+        sync_table_rows(table, [])
         for workflow in self._workflow_defs:
             execution = "Native form + worker"
             if workflow.workflow_id == "node-install":
@@ -1558,7 +1607,7 @@ class BackupScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#backup-table", DataTable), "ID", "Created", "Description")
+        ensure_columns(self.query_one("#backup-table", DataTable), "ID", "Created", "Description")
 
     def get_actions(self) -> list[ScreenAction]:
         return [
@@ -1605,13 +1654,20 @@ class BackupScreen(BaseScreen):
         if subscription == "system.backups":
             self._backups = _as_list(payload, "backups", "items")
             table = self.query_one("#backup-table", DataTable)
-            _reset_table(table)
-            for backup in self._backups:
-                table.add_row(
-                    _value(backup.get("id", backup.get("backup_id"))),
-                    _value(backup.get("created_at", backup.get("timestamp"))),
-                    _value(backup.get("description")),
-                )
+            sync_table_rows(
+                table,
+                [
+                    (
+                        _value(backup.get("id", backup.get("backup_id"))),
+                        _value(backup.get("created_at", backup.get("timestamp"))),
+                        _value(backup.get("description")),
+                    )
+                    for backup in self._backups
+                ],
+                row_keys=[f"backup-{_value(backup.get('id', backup.get('backup_id')))}" for backup in self._backups],
+                sort_columns=("Created",),
+                reverse=True,
+            )
         elif subscription == "system.backup_status":
             data = _as_dict(payload)
             self.query_one("#backup-summary", Static).update(
@@ -1666,7 +1722,7 @@ class DiagnosticsScreen(BaseScreen):
 
     def on_mount(self) -> None:
         super().on_mount()
-        _ensure_columns(self.query_one("#diagnostics-checks", DataTable), "Check", "Status", "Message")
+        ensure_columns(self.query_one("#diagnostics-checks", DataTable), "Check", "Status", "Message")
         self.update_context("Diagnostics is the recommended route after resuming from a suspended shell.")
 
     def get_actions(self) -> list[ScreenAction]:
@@ -1697,9 +1753,12 @@ class DiagnosticsScreen(BaseScreen):
         elif subscription == "system.health_checks":
             checks = _as_list(payload, "checks", "items")
             table = self.query_one("#diagnostics-checks", DataTable)
-            _reset_table(table)
-            for check in checks:
-                table.add_row(_value(check.get("name")), _value(check.get("status")), _value(check.get("message")))
+            sync_table_rows(
+                table,
+                [(_value(check.get("name")), _value(check.get("status")), _value(check.get("message"))) for check in checks],
+                row_keys=[f"check-{_value(check.get('name'))}" for check in checks],
+                sort_columns=("Check",),
+            )
         elif subscription == "system.usb":
             data = _as_dict(payload)
             current = _static_text(self.query_one("#diagnostics-summary", Static))

@@ -20276,7 +20276,7 @@ Last updated: 2026-04-09 11:04 EDT - Codex
   - `npm --prefix tui run build` -> PASS
 
 ID: T885
-Status: [ ] Todo
+Status: [✓] Done
 Title: Improve DataTable rendering — column alignment, in-place updates, and interactive features
 Description:
 - Goal / acceptance criteria: (1) In the Textual TUI, replace the `_reset_table` + `add_row` rebuild pattern with in-place cell updates to eliminate flicker on every poll cycle. (2) In the Ink TUI, replace the pipe-delimited `columns.join(' | ')` DataTable with proper column-width padding, bold header styling, and a separator line. (3) Add row selection states for interactive tables (chains, services). (4) Where applicable, add sortable column headers per Carbon's Data Table spec.
@@ -20285,8 +20285,18 @@ Description:
 - Estimated effort: High
 - Required outputs: Updated Textual subscription handlers with in-place updates, redesigned Ink DataTable component, row selection support, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 11:53 EDT - Codex
+- Completion notes:
+  - Added shared Textual table-sync primitives in `tui/table_sync.py` and rewired the live-updating tables in `tui/screens/unified_console.py` plus the node-console audio/dashboard/cluster panes to update rows in place by stable row key instead of clearing and rebuilding each poll cycle.
+  - The shared sync path now preserves cursor selection across refreshes and applies deterministic sorting on operator-facing tables such as chains, services, backups, nodes, and interfaces.
+  - Replaced the Ink pipe-delimited table renderer with a width-aware frame builder in `tui/src/components/dataTableFrame.ts` / `tui/src/components/DataTable.tsx`, adding bold headers, separator rows, padded columns, and selected-row highlighting.
+  - Wired the upgraded Ink table behavior into `tui/src/screens/AudioGridScreen.tsx` so the active chain reads as the selected row, and added focused coverage for the new frame builder in `tui/src/components/DataTable.test.tsx`.
+- Validation:
+  - `pytest -q tui/tests/test_unified_console_app.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tui/table_sync.py tui/screens/unified_console.py tui/node_console/screens/audio.py tui/node_console/screens/dashboard.py tui/node_console/screens/cluster.py` -> PASS
+  - `npm --prefix tui run test:unit -- --runTestsByPath src/components/DataTable.test.tsx` -> PASS
+  - `npm --prefix tui run build` -> PASS
 
 ## Control Surfaces Completion — Push 1 Drum Machine Parity (Workstream A)
 
