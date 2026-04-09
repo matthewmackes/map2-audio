@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1030** Python | **1117** TypeScript | **136** C++/H | **140** Docs | **1618** total commits | **3** stars | **0** forks | **0** open issues
+**1030** Python | **1118** TypeScript | **136** C++/H | **140** Docs | **1620** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a09b644e`](https://github.com/matthewmackes/map2-audio/commit/a09b644e7499791ba692190454a05856162c5a29) | Fix snapshot client type mismatch | Map2 Audio | 2026-04-09 |
+| [`f8ab3bf7`](https://github.com/matthewmackes/map2-audio/commit/f8ab3bf7f19b605e655e7e208b10f1d998410cf4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`6687b3d9`](https://github.com/matthewmackes/map2-audio/commit/6687b3d9cf6093a90411f942d9f20c2cfe7d8813) | Add TUI Carbon status indicators | Map2 Audio | 2026-04-09 |
 | [`6a5fed4e`](https://github.com/matthewmackes/map2-audio/commit/6a5fed4ecd85664fea8e6d1fb6eab4b89c3a19ef) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-09 |
 | [`7adfb671`](https://github.com/matthewmackes/map2-audio/commit/7adfb671c7bc7cad76dfd58f7d04ac1cb867dd83) | Finish Carbon shell foundation sweep | Map2 Audio | 2026-04-09 |
 | [`1e15019d`](https://github.com/matthewmackes/map2-audio/commit/1e15019d49d32ce13f846f670ff40f570557f6c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`38e45695`](https://github.com/matthewmackes/map2-audio/commit/38e45695e9f9b89aab6aea2cf49b3b74bd13522f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`8316eb25`](https://github.com/matthewmackes/map2-audio/commit/8316eb2548ff274febab91e46bebc8f07e2162bf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`68dc2365`](https://github.com/matthewmackes/map2-audio/commit/68dc2365d724024d9b16e6c1b41c570b54b454e9) | Finish Carbon shell foundation sweep | Map2 Audio | 2026-04-09 |
-| [`52f135d4`](https://github.com/matthewmackes/map2-audio/commit/52f135d47034575ec3c3584d0fd9864e7f35db1a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
