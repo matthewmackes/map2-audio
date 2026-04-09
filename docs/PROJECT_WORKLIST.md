@@ -20452,7 +20452,7 @@ Last updated: 2026-04-09 13:16 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T893
-Status: [ ] Todo
+Status: [✓] Done
 Title: Wire pad triggering and transport through typed Push drum command plane
 Description:
 - Goal / acceptance criteria: `trigger_pad`, `stop_pad`, and transport commands (play/stop/record) flow through the Push drum session command plane to the targeted drum-machine instance. Pad velocity and channel are preserved.
@@ -20461,8 +20461,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Command plane wiring, bridge integration, drum service delegation, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 13:42 EDT - Codex
+- Completion notes:
+  - Extended the typed Push drum command plane in `app/services/push_surface/drum_runtime.py` and `app/routes/push_surface.py` with `play`/`stop`/`record`, replacing the earlier pad-trigger no-op path with real command delegation.
+  - Wired `trigger_pad` and `stop_pad` through the selected drum instance facade so pad commands resolve the pad's mapped note/channel, preserve explicit payload channel and velocity, and inject real note-on/note-off events through the JUCE MIDI input path.
+  - Routed `play` and `stop` through `DrumMachineService.update_transport()` plus transport/position websocket publishes, and routed `record` through the existing shared transport action dispatcher so Push hardware can issue all three typed transport verbs.
+  - Added focused runtime and route coverage in `tests/push_surface/test_drum_runtime.py` and `tests/push_surface/test_routes.py` for pad triggering, mapped stop behavior, transport delegation, and route-level command acceptance.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T894
 Status: [ ] Todo

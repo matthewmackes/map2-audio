@@ -10,11 +10,13 @@ from uuid import uuid4
 
 import aiohttp
 
+from app.services.juce_engine_service import get_audio_engine
 from app.services.push_surface.drum_registry import (
     DrumMachineInstanceDescriptor,
     _local_node_id,
     get_drum_instance_registry,
 )
+from app.services.transport_service import get_transport_service
 from app.services.websocket_manager import ws_manager
 
 
@@ -26,6 +28,9 @@ PushDrumCommandName = Literal[
     "accept_pending_confirmation",
     "reject_pending_confirmation",
     "confirm_instance_switch",
+    "play",
+    "stop",
+    "record",
     "trigger_pad",
     "stop_pad",
     "set_pad_velocity_mode",
@@ -106,6 +111,84 @@ class DrumMachineRuntimeFacade:
 
         return get_drum_machine_service()
 
+    @staticmethod
+    def _coerce_pad_index(payload: dict[str, Any]) -> int:
+        if "pad" not in payload:
+            raise ValueError("pad is required")
+        pad = int(payload["pad"])
+        if pad < 0 or pad >= 16:
+            raise ValueError("pad must be between 0 and 15")
+        return pad
+
+    def _resolve_pad_note_channel(self, pad: int, payload: dict[str, Any]) -> tuple[int, int]:
+        if "note" in payload:
+            note = int(payload["note"])
+        else:
+            mapping = self._service().get_midi_mapping()
+            pads = list(mapping.get("pads") or [])
+            pad_mapping = next((item for item in pads if int(item.get("pad", -1)) == pad), None)
+            notes = list((pad_mapping or {}).get("notes") or [])
+            if not notes:
+                raise ValueError(f"pad {pad} has no MIDI note mapping")
+            note = int(notes[0])
+
+        if note < 0 or note > 127:
+            raise ValueError("note must be between 0 and 127")
+
+        if "channel" in payload:
+            channel = int(payload["channel"])
+        else:
+            mapping = self._service().get_midi_mapping()
+            pads = list(mapping.get("pads") or [])
+            pad_mapping = next((item for item in pads if int(item.get("pad", -1)) == pad), None)
+            channel = int((pad_mapping or {}).get("midi_channel", mapping.get("global_midi_channel", 0)))
+        if channel < 0 or channel > 16:
+            raise ValueError("channel must be between 0 and 16")
+        return note, channel
+
+    async def _dispatch_pad_trigger(self, payload: dict[str, Any], *, note_on: bool) -> dict[str, Any]:
+        pad = self._coerce_pad_index(payload)
+        velocity = int(payload.get("velocity", 127 if note_on else 0))
+        if velocity < 0 or velocity > 127:
+            raise ValueError("velocity must be between 0 and 127")
+        note, channel = self._resolve_pad_note_channel(pad, payload)
+        engine = get_audio_engine()
+        injector = engine.inject_midi_note_on if note_on else engine.inject_midi_note_off
+        ok = await injector(channel, note, velocity)
+        if not ok:
+            raise RuntimeError("audio engine rejected drum pad trigger")
+        return {
+            "status": "accepted",
+            "command": "trigger_pad" if note_on else "stop_pad",
+            "pad": pad,
+            "note": note,
+            "channel": channel,
+            "velocity": velocity,
+            **self.get_projection(),
+        }
+
+    async def _dispatch_transport_command(self, command: PushDrumCommandName, payload: dict[str, Any]) -> dict[str, Any]:
+        service = self._service()
+        if command == "play":
+            transport = service.update_transport({"is_playing": True})
+            await service.publish_transport_update()
+            await service.publish_position_update()
+            return {"status": "accepted", "command": command, "transport": transport, **self.get_projection()}
+        if command == "stop":
+            transport = service.update_transport({"is_playing": False})
+            await service.publish_transport_update()
+            await service.publish_position_update()
+            return {"status": "accepted", "command": command, "transport": transport, **self.get_projection()}
+        if command == "record":
+            transport_result = await get_transport_service().dispatch("record")
+            return {
+                "status": "accepted",
+                "command": command,
+                "transport_owner_result": transport_result,
+                **self.get_projection(),
+            }
+        raise ValueError(f"unsupported transport command: {command}")
+
     def get_projection(self) -> dict[str, Any]:
         service = self._service()
         state = service.get_state()
@@ -128,6 +211,12 @@ class DrumMachineRuntimeFacade:
     async def apply_command(self, command: PushDrumCommandName, payload: dict[str, Any]) -> dict[str, Any]:
         if command == "request_surface_state":
             return self.get_projection()
+        if command in {"play", "stop", "record"}:
+            return await self._dispatch_transport_command(command, payload)
+        if command == "trigger_pad":
+            return await self._dispatch_pad_trigger(payload, note_on=True)
+        if command == "stop_pad":
+            return await self._dispatch_pad_trigger(payload, note_on=False)
         if command in {
             "set_repeat",
             "set_quantize",
@@ -140,8 +229,6 @@ class DrumMachineRuntimeFacade:
             "set_step_automation",
             "clear_step",
             "set_step",
-            "trigger_pad",
-            "stop_pad",
             "accept_pending_confirmation",
             "reject_pending_confirmation",
             "confirm_instance_switch",

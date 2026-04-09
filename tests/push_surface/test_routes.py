@@ -503,3 +503,21 @@ def test_push_surface_drum_session_accepts_pending_confirmation_commands(monkeyp
     assert command.status_code == 200
     assert command.json()["session"]["last_command"] == "accept_pending_confirmation"
     assert command.json()["session"]["last_confirmation_resolution"]["status"] == "accepted"
+
+
+def test_push_surface_drum_session_accepts_transport_commands(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    command = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "play",
+            "payload": {},
+        },
+    )
+
+    assert command.status_code == 200
+    assert command.json()["session"]["last_command"] == "play"

@@ -6,7 +6,7 @@ import pytest
 
 import app.services.push_surface.drum_runtime as drum_runtime_module
 from app.services.push_surface.drum_registry import DrumMachineInstanceDescriptor
-from app.services.push_surface.drum_runtime import PushDrumSessionService
+from app.services.push_surface.drum_runtime import DrumMachineRuntimeFacade, PushDrumSessionService
 
 
 def _instance(instance_id: str, *, is_live: bool, node_id: str = "node-a") -> DrumMachineInstanceDescriptor:
@@ -61,6 +61,61 @@ def _time_source(start: float = 1_000.0):
         return start + next(values)
 
     return _now
+
+
+class _FakeDrumService:
+    def __init__(self) -> None:
+        self.transport_updates: list[dict[str, object]] = []
+        self.transport_publish_count = 0
+        self.position_publish_count = 0
+
+    def get_state(self) -> dict[str, object]:
+        return {"transport": False}
+
+    def get_transport(self) -> dict[str, object]:
+        is_playing = bool(self.transport_updates[-1]["is_playing"]) if self.transport_updates else False
+        return {"is_playing": is_playing, "bpm": 120}
+
+    def get_midi_mapping(self) -> dict[str, object]:
+        return {
+            "global_midi_channel": 9,
+            "pads": [
+                {"pad": pad, "notes": [36 + pad], "midi_channel": 3 if pad == 2 else 9}
+                for pad in range(16)
+            ],
+        }
+
+    def update_transport(self, patch: dict[str, object]) -> dict[str, object]:
+        self.transport_updates.append(dict(patch))
+        return {"is_playing": bool(patch.get("is_playing", False)), "bpm": 120}
+
+    async def publish_transport_update(self) -> None:
+        self.transport_publish_count += 1
+
+    async def publish_position_update(self) -> None:
+        self.position_publish_count += 1
+
+
+class _FakeAudioEngine:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, int, int, int]] = []
+
+    async def inject_midi_note_on(self, channel: int, note: int, velocity: int) -> bool:
+        self.calls.append(("on", channel, note, velocity))
+        return True
+
+    async def inject_midi_note_off(self, channel: int, note: int, velocity: int) -> bool:
+        self.calls.append(("off", channel, note, velocity))
+        return True
+
+
+class _FakeTransportService:
+    def __init__(self) -> None:
+        self.actions: list[str] = []
+
+    async def dispatch(self, action: str) -> dict[str, object]:
+        self.actions.append(action)
+        return {"ok": True, "action": action, "owner": "midi_recorder"}
 
 
 @pytest.mark.asyncio
@@ -259,3 +314,63 @@ async def test_pending_confirmation_expires_on_state_read(monkeypatch: pytest.Mo
     assert expired["session"]["pending_confirmation"] is None
     assert expired["session"]["last_confirmation_resolution"]["status"] == "expired"
     assert expired["session"]["last_confirmation_resolution"]["reason"] == "confirmation_timeout"
+
+
+@pytest.mark.asyncio
+async def test_trigger_pad_preserves_velocity_and_channel(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+    facade = DrumMachineRuntimeFacade(_instance("inst-live", is_live=True, node_id="node-local"))
+
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+
+    result = await facade.apply_command("trigger_pad", {"pad": 2, "velocity": 91, "channel": 7})
+
+    assert fake_engine.calls == [("on", 7, 38, 91)]
+    assert result["status"] == "accepted"
+    assert result["pad"] == 2
+    assert result["note"] == 38
+    assert result["channel"] == 7
+    assert result["velocity"] == 91
+
+
+@pytest.mark.asyncio
+async def test_stop_pad_uses_mapped_channel_when_payload_omits_channel(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+    facade = DrumMachineRuntimeFacade(_instance("inst-live", is_live=True, node_id="node-local"))
+
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+
+    result = await facade.apply_command("stop_pad", {"pad": 2})
+
+    assert fake_engine.calls == [("off", 3, 38, 0)]
+    assert result["channel"] == 3
+    assert result["velocity"] == 0
+
+
+@pytest.mark.asyncio
+async def test_transport_commands_delegate_to_drum_and_transport_services(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_service = _FakeDrumService()
+    fake_transport_service = _FakeTransportService()
+    facade = DrumMachineRuntimeFacade(_instance("inst-live", is_live=True, node_id="node-local"))
+
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module, "get_transport_service", lambda: fake_transport_service)
+
+    play = await facade.apply_command("play", {})
+    stop = await facade.apply_command("stop", {})
+    record = await facade.apply_command("record", {})
+
+    assert fake_service.transport_updates == [{"is_playing": True}, {"is_playing": False}]
+    assert fake_service.transport_publish_count == 2
+    assert fake_service.position_publish_count == 2
+    assert play["transport"]["is_playing"] is True
+    assert stop["transport"]["is_playing"] is False
+    assert fake_transport_service.actions == ["record"]
+    assert record["transport_owner_result"]["action"] == "record"
