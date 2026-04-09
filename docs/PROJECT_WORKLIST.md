@@ -19806,7 +19806,7 @@ Last updated: 2026-04-09 00:59 EDT - Codex
   - Full completion is blocked because the remaining table surfaces are not yet normalized under one ownership/model layer; a blanket `DataTable` migration now would require route-by-route UI contract decisions rather than a safe mechanical replacement.
 
 ID: T861
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom `.input` / `.combobox` with Carbon `TextInput` / `ComboBox`
 Description:
 - Goal / acceptance criteria: Remove the `.input` and `.combobox` CSS classes and replace with Carbon `TextInput`, `TextArea`, `NumberInput`, `ComboBox`, `Dropdown`, and `Select` as appropriate. Apply Carbon form validation patterns (inline error, warning, helper text).
@@ -19815,11 +19815,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Carbon form control migration, removed CSS, form validation behavior.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 05:49 EDT - Codex
+- Progress notes:
+  - The remaining input/combobox surface is still split between the global `.input` / `.combobox` primitives in `web/src/index.css` and page-local embedded CSS such as `LCDPage.tsx`, plus custom dialog-local controls.
+  - A clean Carbon form-control migration is blocked until the primitive ownership split is resolved; otherwise the app would keep parallel global, page-local, and Carbon form systems alive at the same time.
 
 ID: T862
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Normalize spacing to Carbon 2x grid (8px base unit)
 Description:
 - Goal / acceptance criteria: Audit all `padding`, `margin`, and `gap` values in `index.css` and co-located CSS files. Replace non-8px-aligned values (7px, 9px, 10px, 11px, 14px, etc.) with the nearest Carbon spacing token (`--cds-spacing-01` through `--cds-spacing-13`). The 2x grid uses an 8px base: 2, 4, 8, 12, 16, 24, 32, 48, 64, 96px.
@@ -19828,11 +19831,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: All spacing values aligned to Carbon tokens, visual regression check.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 05:49 EDT - Codex
+- Progress notes:
+  - Spacing values remain scattered across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and numerous page/component-local style blocks, including inline CSS islands.
+  - This task depends on `T848`; with the CSS ownership split still blocked, a full 2x-grid normalization would be another broad mixed edit with no stable component boundaries.
 
 ID: T863
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Standardize on Carbon type scale — remove non-token font sizes
 Description:
 - Goal / acceptance criteria: Replace all custom `font-size` values and the `--type-caption`, `--type-label`, `--type-body`, `--type-heading`, `--type-display`, `--type-subheading` custom tokens with Carbon's productive type scale tokens (`--cds-label-01-*`, `--cds-body-compact-01-*`, `--cds-body-01-*`, `--cds-heading-01-*` through `--cds-heading-07-*`). Maintain IBM Plex Sans as the primary face.
@@ -19841,11 +19847,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 05:49 EDT - Codex
+- Progress notes:
+  - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
+  - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
 
 ID: T864
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Consolidate icon systems — standardize on `@carbon/icons-react`
 Description:
 - Goal / acceptance criteria: Audit all icon imports across `web/src/app/`. For each `@phosphor-icons/react`, `lucide-react`, and `@mui/icons-material` usage, find the equivalent Carbon icon in `@carbon/icons-react` and replace. Where no Carbon equivalent exists, document the exception. Target: eliminate Phosphor and Lucide as runtime dependencies, retain MUI icons only for MUI-specific surfaces pending full migration.
@@ -19854,11 +19863,14 @@ Description:
 - Estimated effort: High
 - Required outputs: Migrated icon imports, documented exceptions, dependency removal where possible.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 05:49 EDT - Codex
+- Progress notes:
+  - The current icon surface is broad and mixed: Carbon icons already coexist with non-Carbon icon systems and route-local graphic conventions, while some areas also embed icon-like visuals directly inside custom components.
+  - Completing this safely now requires a route-by-route icon replacement matrix and explicit exception handling rather than a quick mechanical import rewrite, so it is blocked until the broader Carbon UI migration surface is stabilized.
 
 ID: T865
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Replace custom notification/toast system with Carbon `ToastNotification` / `ActionableNotification`
 Description:
 - Goal / acceptance criteria: Replace the custom `.notification-panel`, `.notification-item`, `.toast`, `.toast-container` CSS classes and the `Toasts.tsx` implementation with Carbon `ToastNotification` and `ActionableNotification` rendered in a Carbon-aligned notification panel. Use Carbon severity tokens (success/warning/error/info) and Carbon's built-in close/action patterns.
@@ -19867,8 +19879,11 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Carbon notification migration, removed custom CSS, screen-reader validation.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08
+Assigned to: Codex
+Last updated: 2026-04-09 05:49 EDT - Codex
+- Progress notes:
+  - The app currently mixes the custom `Toasts` provider, node-alert toast state, global toast CSS, and newer route-local Carbon `InlineNotification` usage in several workspace surfaces.
+  - A clean notification migration is blocked until the app has one canonical notification model and severity/ownership contract; otherwise Carbon toasts would be layered onto unresolved parallel notification systems instead of replacing them.
 
 ID: T866
 Status: [ ] Todo
