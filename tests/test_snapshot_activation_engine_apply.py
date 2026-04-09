@@ -28,6 +28,8 @@ class _FakeSnapshotPluginLoader:
 
 class _ActivationApplyEngineStub:
     def __init__(self) -> None:
+        self.is_available = True
+        self.is_running = True
         self.loop_calls: list[tuple[int, list[dict[str, object]]]] = []
         self.parallel_group_calls: list[tuple[int, int]] = []
         self.parallel_branch_calls: list[tuple[int, int, int, int]] = []
@@ -236,5 +238,109 @@ def test_live_routing_blend_edit_reapplies_without_full_reactivation(tmp_path, m
             assert updated is not None
             assert updated["routing_requires_reactivation"] is False
             assert len(engine_stub.parallel_blend_calls) > before_calls
+
+    asyncio.run(_run())
+
+
+def test_live_ab_switch_edit_reapplies_active_channel_selection(tmp_path, monkeypatch):
+    async def _run():
+        session_ctx, engine_stub = await _build_service(tmp_path, monkeypatch)
+        async with session_ctx as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveABSwitchAudit",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                        {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                    ],
+                    "routing": {
+                        "mode": "ab_switch",
+                        "active_channel_key": "channel-b",
+                        "blend_positions": {"channel-a": 100.0, "channel-b": 0.0},
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            before_calls = len(engine_stub.parallel_blend_calls)
+            updated = await service.update_routing(
+                created["id"],
+                {"active_channel_key": "channel-a"},
+            )
+
+            assert updated is not None
+            assert updated["routing_requires_reactivation"] is False
+            assert updated["routing_apply"]["reason"] == "ab_switch_applied"
+            assert len(engine_stub.parallel_blend_calls) > before_calls
+            assert engine_stub.parallel_blend_calls[-1][1] == 0.0
+
+            updated = await service.update_routing(
+                created["id"],
+                {"active_channel_key": "channel-b"},
+            )
+            assert updated is not None
+            assert updated["routing_apply"]["reason"] == "ab_switch_applied"
+            assert engine_stub.parallel_blend_calls[-1][1] == 1.0
+
+    asyncio.run(_run())
+
+
+def test_live_routing_mode_switch_reapplies_without_full_reactivation(tmp_path, monkeypatch):
+    async def _run():
+        session_ctx, engine_stub = await _build_service(tmp_path, monkeypatch)
+        async with session_ctx as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveModeSwitchAudit",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                        {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 50.0, "channel-b": 50.0},
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert engine_stub.parallel_group_calls
+
+            created_group_calls = len(engine_stub.parallel_group_calls)
+            updated = await service.update_routing(
+                created["id"],
+                {
+                    "mode": "series",
+                    "active_channel_key": "channel-a",
+                    "series_order": ["channel-a", "channel-b"],
+                },
+            )
+
+            assert updated is not None
+            assert updated["routing_requires_reactivation"] is False
+            assert updated["routing_mode_changed_live"] is True
+            assert updated["routing_apply"]["applied"] is True
+            assert updated["routing_apply"]["reason"] == "non_parallel_mode"
+            assert len(engine_stub.parallel_group_calls) == created_group_calls
 
     asyncio.run(_run())

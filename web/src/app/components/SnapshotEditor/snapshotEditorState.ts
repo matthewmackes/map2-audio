@@ -169,7 +169,7 @@ function resolveUniqueChannelKey(
 }
 
 function normalizeRoutingMode(value: unknown): RoutingMode {
-  if (value === 'parameter_morph' || value === 'ab_switch') {
+  if (value === 'parameter_morph') {
     return 'morph'
   }
   return typeof value === 'string' && ROUTING_MODES.has(value as RoutingMode)

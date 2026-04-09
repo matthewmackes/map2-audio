@@ -27,6 +27,12 @@ interface SnapshotEditorMenuRailProps {
   midiDisabled: boolean
   midiTitle: string
   midiLearning: boolean
+  onToggleAbSwitch?: () => void
+  abSwitchVisible: boolean
+  abSwitchDisabled: boolean
+  abSwitchPending: boolean
+  abSwitchActiveLabel?: string
+  abSwitchNextLabel?: string
   onOpenLiveRuntime: () => void
   liveRuntimeLabel: string
   liveRuntimeActive: boolean
@@ -90,6 +96,12 @@ export function SnapshotEditorMenuRail({
   midiDisabled,
   midiTitle,
   midiLearning,
+  onToggleAbSwitch,
+  abSwitchVisible,
+  abSwitchDisabled,
+  abSwitchPending,
+  abSwitchActiveLabel,
+  abSwitchNextLabel,
   onOpenLiveRuntime,
   liveRuntimeLabel,
   liveRuntimeActive,
@@ -192,85 +204,109 @@ export function SnapshotEditorMenuRail({
     }
   }
 
-  const primaryItems = useMemo<MenuItemConfig[]>(() => [
-    {
-      id: 'control-center',
-      label: 'Open the control center?',
-      className: 'snapshot-menu-rail__item--control-center',
-      onClick: onOpenControlCenter,
-      disabled: controlCenterDisabled,
-    },
-    {
-      id: 'add-flow',
-      label: 'Add a signal path?',
-      className: 'snapshot-menu-rail__item--add-flow',
-      onClick: onAddFlow,
-      disabled: addFlowDisabled,
-    },
-    {
-      id: 'midi',
-      label: midiLearning ? 'MIDI learn is armed. Edit mappings?' : 'Edit MIDI mappings?',
-      className: 'snapshot-menu-rail__item--midi',
-      onClick: onOpenMidi,
-      disabled: midiDisabled,
-      title: midiTitle,
-    },
-    {
-      id: 'live',
-      label: liveRuntimeActive ? 'Live state is active. Inspect it?' : 'Inspect the live state?',
-      className: 'snapshot-menu-rail__item--live',
-      onClick: onOpenLiveRuntime,
-      title: liveRuntimeLabel,
-    },
-    {
-      id: 'perform',
-      label: 'Open performance view?',
-      className: 'snapshot-menu-rail__item--perform',
-      onClick: onOpenPerform,
-    },
-    {
-      id: 'create',
-      label: 'Create a new snapshot?',
-      pendingLabel: 'Creating a new snapshot...',
-      className: 'snapshot-menu-rail__item--new',
-      onClick: onCreate,
-      disabled: createPending,
-      pending: createPending,
-    },
-    {
-      id: 'load',
-      label: 'Load a saved snapshot?',
-      className: 'snapshot-menu-rail__item--load',
-      onClick: onOpenWorkspace,
-      title,
-    },
-    {
-      id: 'duplicate',
-      label: 'Duplicate this snapshot?',
-      pendingLabel: 'Duplicating this snapshot...',
-      className: 'snapshot-menu-rail__item--duplicate',
-      onClick: onDuplicate,
-      disabled: duplicateDisabled,
-      pending: duplicatePending,
-    },
-    {
-      id: 'history',
-      label: 'Review version history?',
-      className: 'snapshot-menu-rail__item--history',
-      onClick: onOpenVersionHistory,
-      disabled: versionHistoryDisabled,
-    },
-    {
-      id: 'save',
-      label: dirty ? 'Save these changes?' : 'Save the current snapshot?',
-      activeLabel: dirty ? 'Save these changes?' : undefined,
-      pendingLabel: 'Saving these changes...',
-      className: `snapshot-menu-rail__item--save${dirty ? ' is-dirty' : ''}`,
-      onClick: onSave,
-      disabled: saveDisabled,
-      pending: savePending,
-    },
-  ], [
+  const primaryItems = useMemo<MenuItemConfig[]>(() => {
+    const items: MenuItemConfig[] = [
+      {
+        id: 'control-center',
+        label: 'Open the control center?',
+        className: 'snapshot-menu-rail__item--control-center',
+        onClick: onOpenControlCenter,
+        disabled: controlCenterDisabled,
+      },
+      {
+        id: 'add-flow',
+        label: 'Add a signal path?',
+        className: 'snapshot-menu-rail__item--add-flow',
+        onClick: onAddFlow,
+        disabled: addFlowDisabled,
+      },
+      {
+        id: 'midi',
+        label: midiLearning ? 'MIDI learn is armed. Edit mappings?' : 'Edit MIDI mappings?',
+        className: 'snapshot-menu-rail__item--midi',
+        onClick: onOpenMidi,
+        disabled: midiDisabled,
+        title: midiTitle,
+      },
+    ]
+
+    if (abSwitchVisible) {
+      items.push({
+        id: 'ab-switch',
+        label: `Switch A/B from ${abSwitchActiveLabel ?? 'A'} to ${abSwitchNextLabel ?? 'B'}?`,
+        pendingLabel: `Switching A/B to ${abSwitchNextLabel ?? 'B'}...`,
+        className: 'snapshot-menu-rail__item--ab-switch',
+        onClick: onToggleAbSwitch,
+        disabled: abSwitchDisabled || !onToggleAbSwitch,
+        pending: abSwitchPending,
+      })
+    }
+
+    items.push(
+      {
+        id: 'live',
+        label: liveRuntimeActive ? 'Live state is active. Inspect it?' : 'Inspect the live state?',
+        className: 'snapshot-menu-rail__item--live',
+        onClick: onOpenLiveRuntime,
+        title: liveRuntimeLabel,
+      },
+      {
+        id: 'perform',
+        label: 'Open performance view?',
+        className: 'snapshot-menu-rail__item--perform',
+        onClick: onOpenPerform,
+      },
+      {
+        id: 'create',
+        label: 'Create a new snapshot?',
+        pendingLabel: 'Creating a new snapshot...',
+        className: 'snapshot-menu-rail__item--new',
+        onClick: onCreate,
+        disabled: createPending,
+        pending: createPending,
+      },
+      {
+        id: 'load',
+        label: 'Load a saved snapshot?',
+        className: 'snapshot-menu-rail__item--load',
+        onClick: onOpenWorkspace,
+        title,
+      },
+      {
+        id: 'duplicate',
+        label: 'Duplicate this snapshot?',
+        pendingLabel: 'Duplicating this snapshot...',
+        className: 'snapshot-menu-rail__item--duplicate',
+        onClick: onDuplicate,
+        disabled: duplicateDisabled,
+        pending: duplicatePending,
+      },
+      {
+        id: 'history',
+        label: 'Review version history?',
+        className: 'snapshot-menu-rail__item--history',
+        onClick: onOpenVersionHistory,
+        disabled: versionHistoryDisabled,
+      },
+      {
+        id: 'save',
+        label: dirty ? 'Save these changes?' : 'Save the current snapshot?',
+        activeLabel: dirty ? 'Save these changes?' : undefined,
+        pendingLabel: 'Saving these changes...',
+        className: `snapshot-menu-rail__item--save${dirty ? ' is-dirty' : ''}`,
+        onClick: onSave,
+        disabled: saveDisabled,
+        pending: savePending,
+      },
+    )
+
+    return items
+  }, [
+    abSwitchActiveLabel,
+    abSwitchDisabled,
+    abSwitchNextLabel,
+    abSwitchPending,
+    abSwitchVisible,
     addFlowDisabled,
     controlCenterDisabled,
     createPending,
@@ -292,6 +328,7 @@ export function SnapshotEditorMenuRail({
     onOpenVersionHistory,
     onOpenWorkspace,
     onSave,
+    onToggleAbSwitch,
     saveDisabled,
     savePending,
     title,

@@ -28,6 +28,7 @@ _AUTOSAVE_PATH = Path(os.environ.get("MAP2_DRUMS_AUTOSAVE_PATH", _DEFAULT_DRUMS_
 class DrumSequencerStepModel(BaseModel):
     velocity: int = Field(0, ge=0, le=127)
     accent: bool = False
+    gate_length: float | None = Field(default=None, ge=0.01, le=16.0)
     micro_timing: int = Field(0, ge=-48, le=48)
     probability: float = Field(1.0, ge=0.0, le=1.0)
     ratchet_count: int = Field(1, ge=1, le=8)
@@ -79,6 +80,7 @@ class DrumSequencerService(Singleton):
         self._patterns_dir = _PATTERNS_DIR
         self._bundles_dir = _BUNDLES_DIR
         self._autosave_path = _AUTOSAVE_PATH
+        self._loop_regions: Dict[int, Dict[str, int]] = {}
         self._ensure_dirs()
         self._restore_autosave()
 
@@ -138,6 +140,7 @@ class DrumSequencerService(Singleton):
                     {
                         "velocity": int(step.get("velocity", 0)),
                         "accent": bool(step.get("accent", False)),
+                        "gate_length": step.get("gate_length"),
                         "micro_timing": int(step.get("micro_timing", 0)),
                         "probability": float(step.get("probability", 1.0)),
                         "ratchet_count": int(step.get("ratchet_count", 1)),
@@ -187,6 +190,7 @@ class DrumSequencerService(Singleton):
                         value
                         for value in (
                             step.micro_timing != 0,
+                            step.gate_length is not None,
                             step.probability != 1.0,
                             step.ratchet_count != 1,
                             step.ratchet_decay != 0,
@@ -310,6 +314,7 @@ class DrumSequencerService(Singleton):
         step: int,
         velocity: int,
         accent: bool = False,
+        gate_length: float | None = None,
         micro_timing: int = 0,
         probability: float = 1.0,
         ratchet_count: int = 1,
@@ -324,6 +329,7 @@ class DrumSequencerService(Singleton):
         pattern.steps[instrument][step] = DrumSequencerStepModel(
             velocity=velocity,
             accent=accent,
+            gate_length=gate_length,
             micro_timing=micro_timing,
             probability=probability,
             ratchet_count=ratchet_count,
@@ -336,10 +342,110 @@ class DrumSequencerService(Singleton):
         )
         return self.save_pattern(pattern_id, pattern.model_dump())
 
+    def get_step(self, pattern_id: int, instrument: int, step: int) -> Dict[str, Any]:
+        pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
+        return pattern.steps[instrument][step].model_dump()
+
+    def update_step(self, pattern_id: int, instrument: int, step: int, **changes: Any) -> Dict[str, Any]:
+        current = self.get_step(pattern_id, instrument, step)
+        next_step = {**current, **changes}
+        return self.set_step(
+            pattern_id,
+            instrument,
+            step,
+            int(next_step.get("velocity", 0)),
+            bool(next_step.get("accent", False)),
+            next_step.get("gate_length"),
+            int(next_step.get("micro_timing", 0)),
+            float(next_step.get("probability", 1.0)),
+            int(next_step.get("ratchet_count", 1)),
+            int(next_step.get("ratchet_decay", 0)),
+            next_step.get("lock_pitch"),
+            next_step.get("lock_filter_cutoff"),
+            next_step.get("lock_decay"),
+            next_step.get("lock_pan"),
+            next_step.get("lock_volume"),
+        )
+
+    def clear_step(self, pattern_id: int, instrument: int, step: int) -> Dict[str, Any]:
+        return self.set_step(pattern_id, instrument, step, 0, False)
+
     def set_track_length(self, pattern_id: int, instrument: int, length: int) -> Dict[str, Any]:
         pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
         pattern.track_lengths[instrument] = length
         return self.save_pattern(pattern_id, pattern.model_dump())
+
+    @staticmethod
+    def _normalize_loop_bounds(start_step: int, end_step: int) -> tuple[int, int]:
+        start = max(0, min(63, int(start_step)))
+        end = max(0, min(63, int(end_step)))
+        if end < start:
+            start, end = end, start
+        return start, end
+
+    def get_loop_region(self, pattern_id: int) -> Dict[str, int]:
+        pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
+        region = self._loop_regions.get(pattern_id)
+        if region is None:
+            end_step = max(0, min(63, int(pattern.length) - 1))
+            region = {"start_step": 0, "end_step": end_step}
+            self._loop_regions[pattern_id] = dict(region)
+        return {
+            "start_step": int(region["start_step"]),
+            "end_step": int(region["end_step"]),
+            "length_steps": int(region["end_step"]) - int(region["start_step"]) + 1,
+            "pattern_id": pattern_id,
+        }
+
+    def set_loop_region(self, pattern_id: int, start_step: int, end_step: int) -> Dict[str, int]:
+        start, end = self._normalize_loop_bounds(start_step, end_step)
+        pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
+        if end >= pattern.length:
+            pattern.length = min(64, end + 1)
+            self.save_pattern(pattern_id, pattern.model_dump())
+        self._loop_regions[pattern_id] = {"start_step": start, "end_step": end}
+        return self.get_loop_region(pattern_id)
+
+    def duplicate_loop_region(self, pattern_id: int) -> Dict[str, Any]:
+        region = self.get_loop_region(pattern_id)
+        pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
+        start_step = int(region["start_step"])
+        end_step = int(region["end_step"])
+        region_length = max(1, end_step - start_step + 1)
+        destination_start = min(63, end_step + 1)
+        copy_length = max(0, min(region_length, 64 - destination_start))
+        if copy_length <= 0:
+            return {"loop_region": region, "pattern": pattern.model_dump(), "copied_steps": 0}
+
+        for instrument_index, row in enumerate(pattern.steps):
+            for offset in range(copy_length):
+                source_step = row[start_step + offset]
+                pattern.steps[instrument_index][destination_start + offset] = DrumSequencerStepModel.model_validate(
+                    source_step.model_dump()
+                )
+
+        pattern.length = max(pattern.length, destination_start + copy_length)
+        saved = self.save_pattern(pattern_id, pattern.model_dump())
+        self._loop_regions[pattern_id] = {
+            "start_step": start_step,
+            "end_step": min(63, destination_start + copy_length - 1),
+        }
+        return {
+            "loop_region": self.get_loop_region(pattern_id),
+            "pattern": saved,
+            "copied_steps": copy_length,
+        }
+
+    def halve_loop_region(self, pattern_id: int) -> Dict[str, int]:
+        region = self.get_loop_region(pattern_id)
+        start_step = int(region["start_step"])
+        region_length = max(1, int(region["length_steps"]))
+        halved_length = max(1, region_length // 2)
+        self._loop_regions[pattern_id] = {
+            "start_step": start_step,
+            "end_step": min(63, start_step + halved_length - 1),
+        }
+        return self.get_loop_region(pattern_id)
 
     def save_bundle(self, bundle_id: str, kit_path: Optional[str] = None) -> Dict[str, Any]:
         engine = self._engine()

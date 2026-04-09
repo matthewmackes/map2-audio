@@ -117,11 +117,194 @@ export interface PushSurfacePendingConfirmationResponse {
   pending_count: number
 }
 
+export interface PushSurfaceDrumSessionState {
+  device_fingerprint: string
+  selected_instance_id?: string | null
+  bank_index: number
+  pad_bank_index: number
+  pad_velocity_mode_enabled: boolean
+  pad_velocity_source_pad?: number | null
+  repeat_enabled: boolean
+  repeat_rate?: string | null
+  quantize_enabled: boolean
+  quantize_grid?: string | null
+  quantize_strength: number
+  fixed_length_enabled: boolean
+  fixed_length_preset?: string | null
+  step_grid_page: number
+  selected_step_index?: number | null
+  selected_step_instrument?: number | null
+  loop_selector_enabled: boolean
+  loop_selector_page: number
+  loop_start_step?: number | null
+  loop_end_step?: number | null
+  last_command?: string | null
+  pending_confirmation?: Record<string, unknown> | null
+  last_confirmation_resolution?: Record<string, unknown> | null
+}
+
+export interface PushSurfacePadGridCell {
+  physical_pad: number
+  logical_pad: number
+  velocity?: number | null
+  velocity_mode_active?: boolean
+  velocity_mode_source_pad?: number | null
+  is_velocity_mode_source?: boolean
+}
+
+export interface PushSurfaceDrumSurfaceModes {
+  pad_velocity_mode?: {
+    enabled: boolean
+    source_pad?: number | null
+    velocity_levels: number[]
+  }
+  repeat?: {
+    enabled: boolean
+    rate?: string | null
+    available_rates: string[]
+  }
+  quantize?: {
+    enabled: boolean
+    grid?: string | null
+    strength: number
+    available_grids: string[]
+  }
+  pad_bank?: {
+    index: number
+    count: number
+    pads_per_bank: number
+    logical_pad_start: number
+    logical_pad_end: number
+  }
+  fixed_length?: {
+    enabled: boolean
+    preset?: string | null
+    bars?: number | null
+    beats?: number | null
+    steps?: number | null
+    available_presets: string[]
+  }
+  step_grid?: {
+    page: number
+    selected_step_index?: number | null
+    selected_step_instrument?: number | null
+  }
+  loop_selector?: {
+    enabled: boolean
+    page: number
+    start_step?: number | null
+    end_step?: number | null
+    length_steps?: number | null
+  }
+}
+
+export interface PushSurfaceDrumProjectionTransport {
+  is_playing: boolean
+  bpm: number
+  pattern_id: number
+  step: number
+  bar: number
+  beat: number
+}
+
+export interface PushSurfaceDrumProjectionPad {
+  physical_pad: number
+  logical_pad: number
+  name: string
+  mute: boolean
+  solo: boolean
+  armed: boolean
+  source: string
+  color: string
+  bus_assignment: number
+  volume: number
+}
+
+export interface PushSurfaceDrumProjectionStep {
+  step: number
+  active: boolean
+  velocity: number
+  probability: number
+  micro_timing: number
+  pitch?: number | null
+  length?: number | null
+  ratchet_count?: number
+  is_playhead: boolean
+  selected: boolean
+}
+
+export interface PushSurfaceDrumProjection {
+  instance?: Record<string, unknown> | null
+  transport: PushSurfaceDrumProjectionTransport
+  pads: PushSurfaceDrumProjectionPad[]
+  current_bank: {
+    index: number
+    start_pad: number
+    end_pad: number
+  }
+  modes: {
+    pad_velocity_mode: {
+      enabled: boolean
+      source_pad?: number | null
+    }
+    repeat: {
+      enabled: boolean
+      rate?: string | null
+    }
+    quantize: {
+      enabled: boolean
+      grid?: string | null
+      strength: number
+    }
+    fixed_length: {
+      enabled: boolean
+      preset?: string | null
+    }
+    loop_selector: {
+      enabled: boolean
+      page: number
+      start_step?: number | null
+      end_step?: number | null
+    }
+  }
+  step_grid: {
+    pattern_id: number
+    selected_pad: number
+    page: number
+    page_start_step: number
+    page_end_step: number
+    selected_step_index?: number | null
+    selected_step_instrument?: number | null
+    selected_step?: PushSurfaceDrumProjectionStep | null
+    steps: PushSurfaceDrumProjectionStep[]
+  }
+  browser: {
+    favorites: string[]
+    recent: string[]
+    quick_shortcuts: Array<{
+      kind: string
+      item_id: string
+    }>
+    last_browse_payload: Record<string, unknown>
+  }
+  confirmation?: Record<string, unknown> | null
+  display: {
+    transport_safe: boolean
+    fallback: string
+    title: string
+    lines: string[]
+  }
+}
+
 export interface PushSurfaceDrumSessionCommandResponse {
   status?: string
-  session?: Record<string, unknown>
+  session?: PushSurfaceDrumSessionState
   available_instances?: Array<Record<string, unknown>>
   selected_projection?: Record<string, unknown> | null
+  drum_projection?: PushSurfaceDrumProjection | null
+  surface_modes?: PushSurfaceDrumSurfaceModes
+  pad_grid?: PushSurfacePadGridCell[]
+  command_result?: Record<string, unknown>
 }
 
 export interface PushSurfaceRuntimeSnapshot {
@@ -172,6 +355,15 @@ export const pushSurfaceApi = {
   getPendingConfirmation: (nodeId?: string | null) =>
     fetchJson<PushSurfacePendingConfirmationResponse>(
       appendNodeQuery(`${PUSH_SURFACE_API_BASE}/pending-confirmation`, nodeId),
+      { cache: 'no-store' },
+    ),
+
+  getDrumSessionState: (deviceFingerprint: string, nodeId?: string | null) =>
+    fetchJson<PushSurfaceDrumSessionCommandResponse>(
+      appendNodeQuery(
+        `${PUSH_SURFACE_API_BASE}/drum-session/state?device_fingerprint=${encodeURIComponent(deviceFingerprint)}`,
+        nodeId,
+      ),
       { cache: 'no-store' },
     ),
 

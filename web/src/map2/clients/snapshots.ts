@@ -203,7 +203,7 @@ function toLegacyRoutingMode(mode: SnapshotRouting['mode']): RoutingConfigSnapsh
 }
 
 function fromLegacyRoutingMode(mode: RoutingConfigSnapshot['mode']): SnapshotRouting['mode'] {
-  return mode === 'parameter_morph' || mode === 'ab_switch' ? 'morph' : mode
+  return mode === 'parameter_morph' ? 'morph' : mode
 }
 
 function snapshotBundleFilenameFromHeaders(contentDisposition: string | null, fallback = 'snapshot.map2snapshot') {

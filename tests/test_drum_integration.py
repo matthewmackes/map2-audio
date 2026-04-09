@@ -235,9 +235,37 @@ class _FakeIntegratedDrumEngine:
         pattern["length"] = steps
         return True
 
-    def set_drum_step(self, pattern_id, instrument, step, velocity, accent=False):
+    def set_drum_step(
+        self,
+        pattern_id,
+        instrument,
+        step,
+        velocity,
+        accent=False,
+        micro_timing=0,
+        probability=1.0,
+        ratchet_count=1,
+        ratchet_decay=0,
+        lock_pitch=None,
+        lock_filter_cutoff=None,
+        lock_decay=None,
+        lock_pan=None,
+        lock_volume=None,
+    ):
         pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
-        pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
+        pattern["steps"][instrument][step] = {
+            "velocity": velocity,
+            "accent": accent,
+            "micro_timing": micro_timing,
+            "probability": probability,
+            "ratchet_count": ratchet_count,
+            "ratchet_decay": ratchet_decay,
+            "lock_pitch": lock_pitch,
+            "lock_filter_cutoff": lock_filter_cutoff,
+            "lock_decay": lock_decay,
+            "lock_pan": lock_pan,
+            "lock_volume": lock_volume,
+        }
         self._refresh_metering()
         return True
 

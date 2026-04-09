@@ -12,9 +12,18 @@ from app.services.drum_kit_service import get_drum_kit_service
 class PushDrumBrowserService:
     def __init__(self) -> None:
         self._kit_service = get_drum_kit_service
+        self._favorite_item_ids: set[str] = set()
+        self._recent_item_ids: list[str] = []
+        self._last_browse_payload: dict[str, Any] = {}
 
     def _service(self):
         return self._kit_service()
+
+    @staticmethod
+    def _remember_recent(items: list[str], item_id: str, *, limit: int = 8) -> list[str]:
+        next_items = [entry for entry in items if entry != item_id]
+        next_items.insert(0, item_id)
+        return next_items[:limit]
 
     @staticmethod
     def _kit_entry(summary: dict[str, Any]) -> dict[str, Any]:
@@ -43,13 +52,28 @@ class PushDrumBrowserService:
 
     def browse(self, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         body = dict(payload or {})
+        self._last_browse_payload = dict(body)
+        action = str(body.get("action") or "").strip()
+        favorite_id = str(body.get("favorite_id") or body.get("item_id") or "").strip()
+        if action == "toggle_favorite" and favorite_id:
+            if favorite_id in self._favorite_item_ids:
+                self._favorite_item_ids.remove(favorite_id)
+            else:
+                self._favorite_item_ids.add(favorite_id)
         category = str(body.get("category") or "all").strip().lower()
         kit_id = str(body.get("kit_id") or "").strip()
+        shortcut = str(body.get("shortcut") or "").strip().lower()
 
         kits = [self._kit_entry(item) for item in self._service().list_kits()]
         categories = ["all", *sorted({str(item["category"]).lower() for item in kits})]
         if category != "all":
             kits = [item for item in kits if str(item["category"]).lower() == category]
+        if shortcut == "favorites":
+            kits = [item for item in kits if item["id"] in self._favorite_item_ids]
+        elif shortcut == "recent":
+            order = {item_id: index for index, item_id in enumerate(self._recent_item_ids)}
+            kits = [item for item in kits if item["id"] in order]
+            kits.sort(key=lambda item: order[item["id"]])
 
         if kit_id:
             kit = self._service().get_kit(kit_id)
@@ -57,6 +81,12 @@ class PushDrumBrowserService:
                 self._instrument_entry(kit, pad_index, instrument)
                 for pad_index, instrument in enumerate(kit.get("instruments") or [])
             ]
+            if shortcut == "favorites":
+                items = [item for item in items if item["id"] in self._favorite_item_ids]
+            elif shortcut == "recent":
+                order = {item_id: index for index, item_id in enumerate(self._recent_item_ids)}
+                items = [item for item in items if item["id"] in order]
+                items.sort(key=lambda item: order[item["id"]])
             preview_index = max(0, min(int(body.get("cursor", 0) or 0), max(len(items) - 1, 0)))
             return {
                 "scope": "kit",
@@ -64,6 +94,7 @@ class PushDrumBrowserService:
                 "categories": categories,
                 "items": items,
                 "preview": items[preview_index] if items else None,
+                "metadata": self.get_projection(),
             }
 
         preview_index = max(0, min(int(body.get("cursor", 0) or 0), max(len(kits) - 1, 0)))
@@ -72,6 +103,7 @@ class PushDrumBrowserService:
             "categories": categories,
             "items": kits,
             "preview": kits[preview_index] if kits else None,
+            "metadata": self.get_projection(),
         }
 
     def load(self, payload: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -82,11 +114,13 @@ class PushDrumBrowserService:
 
         if "source_pad" not in body:
             loaded = self._service().load_kit(kit_id)
+            self._recent_item_ids = self._remember_recent(self._recent_item_ids, kit_id)
             return {
                 "mode": "kit",
                 "kit_id": kit_id,
                 "loaded_pad_count": int(loaded.get("loaded_pad_count", 0)),
                 "kit": loaded.get("kit"),
+                "metadata": self.get_projection(),
             }
 
         target_pad = int(body.get("pad", -1))
@@ -123,6 +157,7 @@ class PushDrumBrowserService:
                 "default_tune": instrument.get("default_tune"),
             },
         )
+        self._recent_item_ids = self._remember_recent(self._recent_item_ids, f"{kit_id}::pad::{source_pad}")
         return {
             "mode": "pad",
             "kit_id": kit_id,
@@ -132,6 +167,24 @@ class PushDrumBrowserService:
             "instrument_name": instrument.get("name"),
             "sfz_path": relative_sfz_path,
             "kit": updated_kit,
+            "metadata": self.get_projection(),
+        }
+
+    def get_projection(self) -> dict[str, Any]:
+        favorite_ids = sorted(self._favorite_item_ids)
+        recent_ids = list(self._recent_item_ids)
+        quick_shortcuts = [
+            {"kind": "favorite", "item_id": item_id}
+            for item_id in favorite_ids[:4]
+        ] + [
+            {"kind": "recent", "item_id": item_id}
+            for item_id in recent_ids[:4]
+        ]
+        return {
+            "favorites": favorite_ids,
+            "recent": recent_ids,
+            "quick_shortcuts": quick_shortcuts[:6],
+            "last_browse_payload": dict(self._last_browse_payload),
         }
 
     def _copy_instrument_assets_to_active_kit(

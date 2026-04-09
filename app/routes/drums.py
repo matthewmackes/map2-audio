@@ -82,6 +82,7 @@ class DrumPatternStepUpdateModel(BaseModel):
     step: int = Field(..., ge=0, le=63)
     velocity: int = Field(..., ge=0, le=127)
     accent: bool = False
+    gate_length: float | None = Field(default=None, ge=0.01, le=16.0)
     micro_timing: int = Field(0, ge=-48, le=48)
     probability: float = Field(1.0, ge=0.0, le=1.0)
     ratchet_count: int = Field(1, ge=1, le=8)
@@ -532,6 +533,7 @@ def set_drum_pattern_step(pattern_id: int, update: DrumPatternStepUpdateModel) -
             update.step,
             update.velocity,
             update.accent,
+            update.gate_length,
             update.micro_timing,
             update.probability,
             update.ratchet_count,

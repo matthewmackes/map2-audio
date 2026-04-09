@@ -111,6 +111,7 @@ SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = "snapshots.default_output_device"
 SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = "snapshots.default_monitoring_output_index"
 SNAPSHOT_BUNDLE_MANIFEST_FILENAME = "snapshot.json"
 SNAPSHOT_BUNDLE_FORMAT_VERSION = 2
+_GROUND_CONTROL_PRO_EXTENSION_KEY = "ground_control_pro"
 _snapshot_preload_tasks: dict[str, asyncio.Task[None]] = {}
 _TEMPLATE_LINK_NAMESPACE = "state_authority"
 _TEMPLATE_LINK_KEY = "template_link"
@@ -122,9 +123,9 @@ def _stable_channel_label(index: int) -> str:
 
 def _normalize_mode(value: Any) -> str:
     normalized = str(value or "").strip().lower()
-    if normalized in {"parameter_morph", "morph", "ab_switch"}:
+    if normalized in {"parameter_morph", "morph"}:
         return "morph"
-    if normalized in {"parallel_blend", "series", "sidechain"}:
+    if normalized in {"parallel_blend", "series", "sidechain", "ab_switch"}:
         return normalized
     return "parallel_blend"
 
@@ -161,6 +162,193 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return fallback
+
+
+def _clamp_int(value: Any, fallback: int, minimum: int, maximum: int) -> int:
+    parsed = _safe_int(value)
+    if parsed is None:
+        parsed = fallback
+    return max(minimum, min(maximum, parsed))
+
+
+def _normalize_expression_curve(value: Any) -> str:
+    normalized = str(value or "linear").strip().lower()
+    if normalized in {"linear"}:
+        return "linear"
+    if normalized in {"log", "logarithmic"}:
+        return "logarithmic"
+    if normalized in {"exp", "exponential"}:
+        return "exponential"
+    if normalized in {"scurve", "s_curve"}:
+        return "s_curve"
+    if normalized == "custom":
+        return "custom"
+    return "linear"
+
+
+def _normalize_expression_custom_curve(value: Any) -> list[dict[str, float]]:
+    if not isinstance(value, list):
+        return []
+    points: list[dict[str, float]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        x = _safe_float(item.get("x"), 0.0)
+        y = _safe_float(item.get("y"), 0.0)
+        points.append(
+            {
+                "x": max(0.0, min(1.0, x)),
+                "y": max(0.0, min(1.0, y)),
+            }
+        )
+    return points[:2]
+
+
+def _normalize_expression_target(
+    mapping_id: str,
+    target_payload: dict[str, Any],
+    *,
+    target_index: int,
+) -> dict[str, Any] | None:
+    param_id = str(target_payload.get("param_id") or "").strip()
+    if not param_id:
+        return None
+    target_id = str(target_payload.get("id") or f"{mapping_id}-target-{target_index + 1}").strip()
+    if not target_id:
+        target_id = f"{mapping_id}-target-{target_index + 1}"
+    return {
+        "id": target_id,
+        "param_id": param_id,
+        "param_label": str(target_payload.get("param_label") or param_id),
+        "out_min": _safe_float(target_payload.get("out_min"), 0.0),
+        "out_max": _safe_float(target_payload.get("out_max"), 1.0),
+        "curve": _normalize_expression_curve(target_payload.get("curve")),
+        "custom_curve": _normalize_expression_custom_curve(target_payload.get("custom_curve")),
+        "active": _normalize_bool(target_payload.get("active"), True),
+    }
+
+
+async def push_snapshot_ground_control_pro_assignments(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+    detail_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(detail_payload, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_detail_payload",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extensions = detail_payload.get("extensions")
+    if not isinstance(extensions, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_extensions",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extension_payload = extensions.get(_GROUND_CONTROL_PRO_EXTENSION_KEY)
+    if not isinstance(extension_payload, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_ground_control_pro_extension",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    activation_push = extension_payload.get("activation_push")
+    if not isinstance(activation_push, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_activation_push",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    from app.services.ground_control_pro import get_ground_control_pro_service
+
+    return await get_ground_control_pro_service().push_snapshot_activation(
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+        extension_payload=extension_payload,
+    )
+
+
+def _normalize_expression_mapping_entry(
+    entry: dict[str, Any],
+    *,
+    mapping_index: int,
+) -> dict[str, Any] | None:
+    mapping_id = str(entry.get("id") or f"snapshot-expression-{mapping_index + 1}").strip()
+    if not mapping_id:
+        mapping_id = f"snapshot-expression-{mapping_index + 1}"
+    targets_payload = entry.get("targets")
+    normalized_targets: list[dict[str, Any]] = []
+    if isinstance(targets_payload, list):
+        for index, target_payload in enumerate(targets_payload):
+            if not isinstance(target_payload, dict):
+                continue
+            normalized_target = _normalize_expression_target(mapping_id, target_payload, target_index=index)
+            if normalized_target is not None:
+                normalized_targets.append(normalized_target)
+    else:
+        normalized_target = _normalize_expression_target(mapping_id, entry, target_index=0)
+        if normalized_target is not None:
+            normalized_targets.append(normalized_target)
+
+    if not normalized_targets:
+        return None
+
+    return {
+        "id": mapping_id,
+        "label": str(entry.get("label") or entry.get("name") or f"Expression {mapping_index + 1}"),
+        "cc": _clamp_int(entry.get("cc"), 0, 0, 127),
+        "channel": _clamp_int(entry.get("channel"), 0, 0, 16),
+        "cc_min": _clamp_int(entry.get("cc_min"), 0, 0, 127),
+        "cc_max": _clamp_int(entry.get("cc_max"), 127, 0, 127),
+        "active": _normalize_bool(entry.get("active"), True),
+        "targets": normalized_targets,
+    }
+
+
+def _normalize_expression_mappings_payload(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    normalized: list[dict[str, Any]] = []
+    for index, entry in enumerate(value):
+        if not isinstance(entry, dict):
+            continue
+        normalized_entry = _normalize_expression_mapping_entry(entry, mapping_index=index)
+        if normalized_entry is not None:
+            normalized.append(normalized_entry)
+    return normalized
+
+
+def _flatten_snapshot_expression_mappings(entries: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    flattened: list[dict[str, Any]] = []
+    for mapping_index, mapping in enumerate(_normalize_expression_mappings_payload(entries)):
+        mapping_id = str(mapping.get("id") or f"snapshot-expression-{mapping_index + 1}")
+        for target_index, target in enumerate(mapping.get("targets") or []):
+            if not isinstance(target, dict):
+                continue
+            target_id = str(target.get("id") or f"{mapping_id}-target-{target_index + 1}")
+            flattened.append(
+                {
+                    "id": f"{mapping_id}:{target_id}",
+                    "cc": mapping.get("cc", 0),
+                    "channel": mapping.get("channel", 0),
+                    "cc_min": mapping.get("cc_min", 0),
+                    "cc_max": mapping.get("cc_max", 127),
+                    "param_id": target.get("param_id", ""),
+                    "param_label": target.get("param_label") or target.get("param_id") or "",
+                    "out_min": target.get("out_min", 0.0),
+                    "out_max": target.get("out_max", 1.0),
+                    "curve": target.get("curve", "linear"),
+                    "custom_curve": list(target.get("custom_curve") or []),
+                    "active": _normalize_bool(mapping.get("active"), True) and _normalize_bool(target.get("active"), True),
+                }
+            )
+    return flattened
 
 
 def _discard_snapshot_preload_task(node_id: str, task: asyncio.Task[None]) -> None:
@@ -433,6 +621,7 @@ class SnapshotService:
             midi_service=midi_service,
             get_audio_engine=get_audio_engine,
             push_snapshot_footswitch_labels=push_snapshot_footswitch_labels,
+            push_snapshot_ground_control_pro_assignments=push_snapshot_ground_control_pro_assignments,
             push_snapshot_controller_display_preview=push_snapshot_controller_display_preview,
             schedule_snapshot_preload_for_live_snapshot=schedule_snapshot_preload_for_live_snapshot,
             get_activation_hook_plan=self.get_activation_hook_plan,
@@ -817,6 +1006,7 @@ class SnapshotService:
     async def get_activation_hook_plan(self) -> list[str]:
         default_hooks = [
             "push_footswitch_labels",
+            "push_ground_control_pro_assignments",
             "push_controller_display_preview",
             "schedule_preload",
         ]
@@ -834,7 +1024,14 @@ class SnapshotService:
             for item in parsed
             if isinstance(item, str) and str(item).strip()
         ]
-        return hooks or default_hooks
+        hooks = hooks or list(default_hooks)
+        if "push_ground_control_pro_assignments" not in hooks:
+            if "push_footswitch_labels" in hooks:
+                insert_index = hooks.index("push_footswitch_labels") + 1
+                hooks.insert(insert_index, "push_ground_control_pro_assignments")
+            else:
+                hooks.insert(0, "push_ground_control_pro_assignments")
+        return hooks
 
     def _snapshot_preload_stage_plugins(self, snapshot: Snapshot) -> list[Any]:
         chain_by_id = {chain.id: chain for chain in snapshot.chains}
@@ -1364,23 +1561,27 @@ class SnapshotService:
         self,
         entries: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
+        normalized_entries = _normalize_expression_mappings_payload(entries)
+        flattened_entries = _flatten_snapshot_expression_mappings(normalized_entries)
         try:
             service = get_expression_service()
         except Exception as exc:
             return {
                 "synced": False,
                 "reason": f"expression_service_unavailable:{exc}",
+                "mapping_count": len(normalized_entries),
+                "target_count": len(flattened_entries),
                 "cleared_count": 0,
                 "applied_count": 0,
                 "active_snapshot_count": 0,
             }
 
-        result = service.replace_snapshot_assignments(
-            [dict(entry) for entry in entries or [] if isinstance(entry, dict)]
-        )
+        result = service.replace_snapshot_assignments(flattened_entries)
         return {
             "synced": True,
             "reason": "applied",
+            "mapping_count": len(normalized_entries),
+            "target_count": len(flattened_entries),
             **result,
         }
 
@@ -1819,7 +2020,7 @@ class SnapshotService:
             midi_map = source.get("midi_map", source.get("midiMap", [])) or []
         payload["midi_map"] = [dict(entry) for entry in midi_map if isinstance(entry, dict)]
         payload["automation_lanes"] = [dict(entry) for entry in payload.get("automation_lanes", []) if isinstance(entry, dict)]
-        payload["expression_mappings"] = [dict(entry) for entry in payload.get("expression_mappings", []) if isinstance(entry, dict)]
+        payload["expression_mappings"] = _normalize_expression_mappings_payload(payload.get("expression_mappings", []))
         monitoring_output_index = payload.get("monitoring_output_index")
         if monitoring_output_index is None and isinstance(detail_payload, dict):
             controls_source = detail_payload.get("controls")
@@ -2639,11 +2840,11 @@ class SnapshotService:
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
                 requested_mode = _normalize_mode(detail.get("routing", {}).get("mode"))
-                routing_requires_reactivation = requested_mode != previous_mode
+                routing_requires_reactivation = False
                 detail["routing_requires_reactivation"] = routing_requires_reactivation
-                if not routing_requires_reactivation:
-                    detail["routing_apply"] = await snapshot_runtime_service.apply_snapshot_routing_to_engine(detail)
-                    detail["morph_apply"] = await snapshot_runtime_service.apply_snapshot_morph_to_engine(detail)
+                detail["routing_mode_changed_live"] = requested_mode != previous_mode
+                detail["routing_apply"] = await snapshot_runtime_service.apply_snapshot_routing_to_engine(detail)
+                detail["morph_apply"] = await snapshot_runtime_service.apply_snapshot_morph_to_engine(detail)
                 await self._publish_snapshot_desired_state(detail)
         except Exception as exc:
             logger.debug("Snapshot routing live-state/authority sync skipped for %s: %s", snapshot.id, exc)
@@ -2705,23 +2906,31 @@ class SnapshotService:
         detail = await self.get_snapshot(snapshot_id)
         if detail is None:
             return None
-        return {
+        payload = {
             "version": SNAPSHOT_BUNDLE_FORMAT_VERSION,
             "exported_at": _utcnow().isoformat(),
             "snapshot": detail,
             "asset_manifest": self._build_asset_manifest(detail),
         }
+        gcp_payload = await self._build_ground_control_pro_bundle_payload(detail)
+        if gcp_payload is not None:
+            payload[_GROUND_CONTROL_PRO_EXTENSION_KEY] = gcp_payload
+        return payload
 
     async def export_template(self, template_id: int) -> Optional[dict[str, Any]]:
         detail = await self.get_template(template_id)
         if detail is None:
             return None
-        return {
+        payload = {
             "version": SNAPSHOT_BUNDLE_FORMAT_VERSION,
             "exported_at": _utcnow().isoformat(),
             "template": detail,
             "asset_manifest": self._build_asset_manifest(detail),
         }
+        gcp_payload = await self._build_ground_control_pro_bundle_payload(detail)
+        if gcp_payload is not None:
+            payload[_GROUND_CONTROL_PRO_EXTENSION_KEY] = gcp_payload
+        return payload
 
     async def export_template_bundle(self, template_id: int) -> Optional[dict[str, Any]]:
         payload = await self.export_template(template_id)
@@ -4931,6 +5140,23 @@ class SnapshotService:
         )
         return response_payload
 
+    async def _build_ground_control_pro_bundle_payload(
+        self,
+        detail: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        try:
+            from app.services.ground_control_pro import get_ground_control_pro_service
+
+            extensions = detail.get("extensions") if isinstance(detail, dict) else {}
+            gcp_extension = extensions.get(_GROUND_CONTROL_PRO_EXTENSION_KEY) if isinstance(extensions, dict) else None
+            session_id = None
+            if isinstance(gcp_extension, dict):
+                session_id = str(gcp_extension.get("session_id") or "").strip() or None
+            return await get_ground_control_pro_service().export_bundle_payload(session_id=session_id)
+        except Exception as exc:
+            logger.debug("Ground Control Pro bundle export skipped: %s", exc)
+            return None
+
     def _build_bundle_asset_path(
         self,
         asset: dict[str, Any],
@@ -5014,6 +5240,7 @@ class SnapshotService:
             asset_manifest = export_payload.get("asset_manifest") or []
             imported_assets = await self._import_bundle_assets(archive, asset_manifest)
             self._apply_imported_asset_paths(detail_payload, asset_manifest, imported_assets)
+            await self._restore_ground_control_pro_bundle_payload(detail_payload, export_payload)
             return detail_payload
 
     async def _import_bundle_assets(
@@ -5059,6 +5286,30 @@ class SnapshotService:
             }
 
         return stored_assets
+
+    async def _restore_ground_control_pro_bundle_payload(
+        self,
+        detail_payload: dict[str, Any],
+        export_payload: dict[str, Any],
+    ) -> None:
+        gcp_payload = export_payload.get(_GROUND_CONTROL_PRO_EXTENSION_KEY)
+        if not isinstance(gcp_payload, dict):
+            return
+        try:
+            from app.services.ground_control_pro import get_ground_control_pro_service
+
+            restored = await get_ground_control_pro_service().import_bundle_payload(gcp_payload)
+        except Exception as exc:
+            logger.warning("Ground Control Pro bundle restore skipped: %s", exc)
+            return
+        if not isinstance(restored, dict):
+            return
+
+        extensions = copy.deepcopy(detail_payload.get("extensions") or {})
+        if not isinstance(extensions, dict):
+            extensions = {}
+        extensions[_GROUND_CONTROL_PRO_EXTENSION_KEY] = restored
+        detail_payload["extensions"] = extensions
 
     async def _ensure_nam_asset_record(
         self,

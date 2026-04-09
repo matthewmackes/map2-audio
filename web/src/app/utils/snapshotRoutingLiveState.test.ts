@@ -29,7 +29,7 @@ describe('resolveSnapshotRoutingLiveStatus', () => {
     })
   })
 
-  it('reports reactivation-required live mode switches explicitly', () => {
+  it('still exposes the pending-live state when explicitly requested', () => {
     expect(
       resolveSnapshotRoutingLiveStatus({
         isAuthorityLive: true,
@@ -53,7 +53,7 @@ describe('resolveSnapshotRoutingLiveStatus', () => {
     ).toEqual({
       tagLabel: 'Live',
       tagType: 'green',
-      message: 'Morph and same-mode routing edits apply immediately. Mode changes may still require reactivation.',
+      message: 'Routing mode, morph, and branch focus edits apply immediately to the live snapshot.',
     })
   })
 })

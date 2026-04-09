@@ -137,3 +137,23 @@ def test_push_drum_browser_loads_foreign_kit_pad_into_editable_active_kit(tmp_pa
     assert editable_manifest["instruments"][5]["sfz_path"].startswith("imports/factory_two/pad_6/")
     assert (editable_root / editable_manifest["instruments"][5]["sfz_path"]).exists()
     assert (editable_root / "imports" / "factory_two" / "pad_6" / "samples" / "pad_3.wav").exists()
+
+
+def test_push_drum_browser_tracks_projection_metadata_for_favorites_and_recent(tmp_path, monkeypatch):
+    browser, kit_service, factory_dir, _user_dir = _build_browser(tmp_path, monkeypatch)
+    _write_kit(factory_dir, "factory_one", name="Factory One", category="acoustic")
+    _write_kit(factory_dir, "factory_two", name="Factory Two", category="electronic")
+    kit_service.load_kit("factory_one")
+
+    browser.browse({"action": "toggle_favorite", "item_id": "factory_two"})
+    favorites = browser.browse({"shortcut": "favorites"})
+    load_result = browser.load({"kit_id": "factory_two"})
+    recent = browser.browse({"shortcut": "recent"})
+
+    assert favorites["items"][0]["id"] == "factory_two"
+    assert favorites["metadata"]["favorites"] == ["factory_two"]
+    assert load_result["metadata"]["recent"] == ["factory_two"]
+    assert recent["items"][0]["id"] == "factory_two"
+    assert recent["metadata"]["quick_shortcuts"][0] == {"kind": "favorite", "item_id": "factory_two"}
+    assert recent["metadata"]["quick_shortcuts"][1] == {"kind": "recent", "item_id": "factory_two"}
+    assert recent["metadata"]["last_browse_payload"] == {"shortcut": "recent"}

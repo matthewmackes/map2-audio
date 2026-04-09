@@ -44,6 +44,6 @@ export function resolveSnapshotRoutingLiveStatus({
   return {
     tagLabel: 'Live',
     tagType: 'green',
-    message: 'Morph and same-mode routing edits apply immediately. Mode changes may still require reactivation.',
+    message: 'Routing mode, morph, and branch focus edits apply immediately to the live snapshot.',
   }
 }

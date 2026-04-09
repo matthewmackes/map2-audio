@@ -255,6 +255,12 @@ function renderCard(
     snapshotLockPending?: boolean
     snapshotDescriptionPending?: boolean
     tempoPending?: boolean
+    abSwitchVisible?: boolean
+    abSwitchActiveLabel?: string
+    abSwitchNextLabel?: string
+    abSwitchDisabled?: boolean
+    abSwitchPending?: boolean
+    onToggleAbSwitch?: jest.Mock
   } = {},
 ) {
   return render(
@@ -294,6 +300,12 @@ function renderCard(
       snapshotDescriptionPending={options.snapshotDescriptionPending}
       onSubmitTempoBpm={options.onSubmitTempoBpm}
       tempoPending={options.tempoPending}
+      abSwitchVisible={options.abSwitchVisible}
+      abSwitchActiveLabel={options.abSwitchActiveLabel}
+      abSwitchNextLabel={options.abSwitchNextLabel}
+      abSwitchDisabled={options.abSwitchDisabled}
+      abSwitchPending={options.abSwitchPending}
+      onToggleAbSwitch={options.onToggleAbSwitch}
       monitoringStatusLabel={options.monitoringStatusLabel}
       monitoringStatusWarning={options.monitoringStatusWarning}
       detailsAction={<button type="button">Details</button>}
@@ -525,6 +537,30 @@ describe('SnapshotChainManagementCard', () => {
     expect(badge).toHaveClass('juce-grid-page__snapshot-status-monitoring-badge', 'is-warning')
     expect(pillRow).toContainElement(badge as HTMLElement)
     expect(stateRow).not.toContainElement(badge as HTMLElement)
+  })
+
+  it('renders an A/B switch button in the hero area and dispatches the toggle callback', () => {
+    const onToggleAbSwitch = jest.fn()
+    renderCard(buildLiveSnapshot({
+      routing: {
+        mode: 'ab_switch',
+        active_channel_key: 'ch_a',
+        blend_positions: { ch_a: 100, ch_b: 0 },
+        morph_position: 0.5,
+        morph_source_channel_key: null,
+        morph_target_channel_key: null,
+        series_order: ['ch_a', 'ch_b'],
+      },
+    }), {
+      abSwitchVisible: true,
+      abSwitchActiveLabel: 'A',
+      abSwitchNextLabel: 'B',
+      onToggleAbSwitch,
+    })
+
+    expect(screen.getByText('A/B live: A')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to B' }))
+    expect(onToggleAbSwitch).toHaveBeenCalledTimes(1)
   })
 
   it('shows never for snapshots that have not been activated yet', () => {

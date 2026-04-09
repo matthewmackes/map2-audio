@@ -247,6 +247,21 @@ def _parallel_blend_value(snapshot_detail: Dict[str, Any], ordered_paths: List[D
     return max(0.0, min(1.0, second_value / total))
 
 
+def _ab_switch_blend_value(snapshot_detail: Dict[str, Any], ordered_paths: List[Dict[str, Any]]) -> float:
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    if len(ordered_paths) < 2:
+        return 0.0
+
+    active_channel_key = str(routing.get("active_channel_key") or "").strip()
+    first_path_id = str(ordered_paths[0].get("path_id") or "")
+    second_path_id = str(ordered_paths[1].get("path_id") or "")
+    if active_channel_key == second_path_id:
+        return 1.0
+    if active_channel_key == first_path_id:
+        return 0.0
+    return 0.0
+
+
 def _plugin_parameter_symbols(plugin_uri: str) -> Dict[int, str]:
     try:
         from app.routes.plugins import _discovered_plugins
@@ -578,7 +593,7 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
 
     routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
     routing_mode = str(routing.get("mode") or "").strip().lower()
-    if routing_mode != "parallel_blend":
+    if routing_mode not in {"parallel_blend", "ab_switch"}:
         return {
             "applied": True,
             "reason": "non_parallel_mode",
@@ -655,11 +670,15 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
             await engine.add_to_parallel_branch(group_id, branch_index, instance_id, position)
             added_plugin_count += 1
 
-    blend_value = _parallel_blend_value(snapshot_detail, ordered_paths)
+    blend_value = (
+        _ab_switch_blend_value(snapshot_detail, ordered_paths)
+        if routing_mode == "ab_switch"
+        else _parallel_blend_value(snapshot_detail, ordered_paths)
+    )
     await engine.set_parallel_ab_blend(group_id, blend_value)
     return {
         "applied": True,
-        "reason": "parallel_blend_applied",
+        "reason": "ab_switch_applied" if routing_mode == "ab_switch" else "parallel_blend_applied",
         "removed_group_count": removed_group_count,
         "created_group_id": group_id,
         "branch_count": len(branch_plugins),

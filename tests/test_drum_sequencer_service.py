@@ -50,6 +50,7 @@ class _FakeSequencerEngine:
         pattern["steps"][instrument][step] = {
             "velocity": velocity,
             "accent": accent,
+            "gate_length": None,
             "micro_timing": micro_timing,
             "probability": probability,
             "ratchet_count": ratchet_count,
@@ -104,7 +105,7 @@ class _FakeSequencerEngine:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False, "micro_timing": 0, "probability": 1.0, "ratchet_count": 1, "ratchet_decay": 0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "gate_length": None, "micro_timing": 0, "probability": 1.0, "ratchet_count": 1, "ratchet_decay": 0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
             "pattern_id": pattern_id,
@@ -212,6 +213,23 @@ def test_drum_sequencer_service_persists_step_micro_timing(tmp_path, monkeypatch
     assert fake_engine.get_drum_pattern_data(4)["steps"][0][3]["micro_timing"] == -6
 
 
+def test_drum_sequencer_service_updates_and_clears_step_with_gate_length(tmp_path, monkeypatch):
+    service, _, _, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
+
+    service.set_step(9, 5, 13, 101, False)
+    updated = service.update_step(9, 5, 13, gate_length=2.5, lock_pitch=4.0, probability=0.5)
+    step = service.get_step(9, 5, 13)
+    cleared = service.clear_step(9, 5, 13)
+
+    assert updated["steps"][5][13]["gate_length"] == 2.5
+    assert step["lock_pitch"] == 4.0
+    assert step["probability"] == 0.5
+    assert cleared["steps"][5][13]["velocity"] == 0
+    assert cleared["steps"][5][13]["gate_length"] is None
+    persisted = json.loads((patterns_dir / "pattern-009.json").read_text())
+    assert persisted["steps"][5][13]["gate_length"] is None
+
+
 def test_drum_sequencer_service_persists_step_probability(tmp_path, monkeypatch):
     service, _, fake_engine, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
 
@@ -285,3 +303,22 @@ def test_drum_machine_transport_stop_triggers_sequencer_autosave(tmp_path, monke
     assert autosave["patterns"][5]["steps"][0][0]["velocity"] == 120
     assert autosave["song"][0]["pattern"] == 5
     assert autosave["song_loop"] is True
+
+
+def test_drum_sequencer_service_tracks_loop_region_and_duplicate_halve_helpers(tmp_path, monkeypatch):
+    service, _, fake_engine, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
+
+    service.set_step(3, 0, 8, 110, False)
+    service.set_step(3, 1, 9, 95, False)
+    region = service.set_loop_region(3, 8, 11)
+    duplicated = service.duplicate_loop_region(3)
+    halved = service.halve_loop_region(3)
+
+    assert region["start_step"] == 8
+    assert region["end_step"] == 11
+    assert duplicated["copied_steps"] == 4
+    assert fake_engine.get_drum_pattern_data(3)["steps"][0][12]["velocity"] == 110
+    assert fake_engine.get_drum_pattern_data(3)["steps"][1][13]["velocity"] == 95
+    assert halved["length_steps"] == 4
+    persisted = json.loads((patterns_dir / "pattern-003.json").read_text())
+    assert persisted["steps"][0][12]["velocity"] == 110

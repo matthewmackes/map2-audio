@@ -138,28 +138,59 @@ export function GroundControlProPage() {
   const { location: deviceLocation } = useDeviceLocation('ground-control-pro')
 
   useEffect(() => {
-    void (async () => {
+    let cancelled = false
+
+    async function loadPorts(showErrorNotice: boolean) {
       try {
-        const [nextPorts, nextFieldMap] = await Promise.all([
-          groundControlProApi.getPorts(),
-          groundControlProApi.getFieldMap(),
-        ])
+        const nextPorts = await groundControlProApi.getPorts()
+        if (cancelled) return
         setPorts(nextPorts)
-        setFieldMap(nextFieldMap)
         if (nextPorts.recommended_input_index !== undefined && nextPorts.recommended_input_index !== null) {
-          setInputPortIndex(nextPorts.recommended_input_index)
+          setInputPortIndex((current) => current ?? nextPorts.recommended_input_index ?? undefined)
         }
         if (nextPorts.recommended_output_index !== undefined && nextPorts.recommended_output_index !== null) {
-          setOutputPortIndex(nextPorts.recommended_output_index)
+          setOutputPortIndex((current) => current ?? nextPorts.recommended_output_index ?? undefined)
         }
       } catch (error) {
+        if (!showErrorNotice || cancelled) return
         setNotice({
           kind: 'error',
           title: 'Failed to load Ground Control Pro metadata',
           subtitle: error instanceof Error ? error.message : String(error),
         })
       }
+    }
+
+    async function loadFieldMap() {
+      try {
+        const nextFieldMap = await groundControlProApi.getFieldMap()
+        if (cancelled) return
+        setFieldMap(nextFieldMap)
+      } catch (error) {
+        if (cancelled) return
+        setNotice({
+          kind: 'error',
+          title: 'Failed to load Ground Control Pro metadata',
+          subtitle: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
+    void (async () => {
+      await Promise.all([
+        loadPorts(true),
+        loadFieldMap(),
+      ])
     })()
+
+    const pollHandle = window.setInterval(() => {
+      void loadPorts(false)
+    }, 5000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(pollHandle)
+    }
   }, [])
 
   useEffect(() => {
@@ -200,6 +231,14 @@ export function GroundControlProPage() {
   }, [deferredPresetSearch, draftModel])
 
   const selectedPreset = draftModel?.presets[selectedPresetIndex] ?? null
+  const daemonStatus = ports?.daemon_status ?? null
+  const daemonTagType: 'green' | 'blue' | 'red' | 'warm-gray' = daemonStatus?.state === 'connected'
+    ? 'green'
+    : daemonStatus?.state === 'repushing'
+      ? 'blue'
+      : daemonStatus?.state === 'error'
+        ? 'red'
+        : 'warm-gray'
   const pushReady = Boolean(
     session
     && draftModel
@@ -549,6 +588,16 @@ export function GroundControlProPage() {
             />
           ) : null}
 
+          {daemonStatus?.notification ? (
+            <InlineNotification
+              kind={daemonStatus.notification.severity === 'warning' ? 'warning' : daemonStatus.notification.severity === 'error' ? 'error' : 'info'}
+              lowContrast
+              hideCloseButton
+              title={daemonStatus.notification.title}
+              subtitle={daemonStatus.notification.subtitle}
+            />
+          ) : null}
+
           {loading ? <InlineLoading description="Processing Ground Control Pro request" status="active" /> : null}
 
           <Tile className="ground-control-pro-page__hero-tile">
@@ -565,6 +614,7 @@ export function GroundControlProPage() {
                     <Tag type="green">Carbon-first</Tag>
                     <Tag type="warm-gray">Full-memory SysEx</Tag>
                     <Tag type="cool-gray">{fieldMap?.unknown_byte_count ?? 0} unknown bytes</Tag>
+                    {daemonStatus ? <Tag type={daemonTagType}>{daemonStatus.state.replace('_', ' ')}</Tag> : null}
                     {deviceLocation ? <Tag type="blue">On {deviceLocation.hostname}</Tag> : <Tag type="warm-gray">Hardware not detected</Tag>}
                   </div>
                 </div>

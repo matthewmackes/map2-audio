@@ -2260,7 +2260,7 @@ export interface BackupSettings {
 
 // ==================== Unified Snapshot Types ====================
 
-export type RoutingMode = 'parallel_blend' | 'series' | 'morph' | 'sidechain';
+export type RoutingMode = 'parallel_blend' | 'series' | 'morph' | 'sidechain' | 'ab_switch';
 
 export interface SnapshotPlugin {
   id?: number | null;
@@ -2310,6 +2310,30 @@ export interface SnapshotMidiMapEntry {
   program_number?: number;
 }
 
+export type SnapshotExpressionCurve = 'linear' | 'logarithmic' | 'exponential' | 's_curve' | 'custom';
+
+export interface SnapshotExpressionTarget {
+  id: string;
+  param_id: string;
+  param_label: string;
+  out_min: number;
+  out_max: number;
+  curve: SnapshotExpressionCurve;
+  custom_curve?: Array<{ x: number; y: number }>;
+  active: boolean;
+}
+
+export interface SnapshotExpressionMapping {
+  id: string;
+  label: string;
+  cc: number;
+  channel: number;
+  cc_min: number;
+  cc_max: number;
+  active: boolean;
+  targets: SnapshotExpressionTarget[];
+}
+
 export interface SnapshotPath {
   id: string;
   name: string;
@@ -2336,7 +2360,7 @@ export interface SnapshotIOBindings {
 export interface SnapshotControls {
   midi_map: SnapshotMidiMapEntry[];
   automation_lanes: Array<Record<string, unknown>>;
-  expression_mappings: Array<Record<string, unknown>>;
+  expression_mappings: SnapshotExpressionMapping[];
   monitoring_output_index?: number | null;
   maschine_encoder_map: SnapshotMaschineEncoderMap;
 }

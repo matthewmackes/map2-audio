@@ -42,7 +42,6 @@ import {
   TrashCan,
   VolumeMute,
   VolumeUp,
-  ArrowsHorizontal,
   Close,
   Edit,
   Information,
@@ -122,7 +121,24 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { AuthoritativeAudioStateEnvelope, Chain, Plugin, PluginLoaderState, PluginOrderRef, SnapshotDraftData, ChainSnapshot, ChainsResponse, Snapshot, SnapshotDetail, SnapshotSummary, SnapshotMidiMapEntry, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
+import type {
+  AuthoritativeAudioStateEnvelope,
+  Chain,
+  Plugin,
+  PluginLoaderState,
+  PluginOrderRef,
+  SnapshotDraftData,
+  ChainSnapshot,
+  ChainsResponse,
+  Snapshot,
+  SnapshotDetail,
+  SnapshotSummary,
+  SnapshotMidiMapEntry,
+  MIDIMappingV2,
+  MIDIStatus,
+  PluginParameter,
+  SnapshotExpressionMapping,
+} from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
@@ -160,6 +176,16 @@ import {
   sanitizeFootswitchLabel,
 } from '../utils/snapshotFootswitchLabels'
 import {
+  getSnapshotAbSwitchMidiBinding,
+  normalizeSnapshotAbSwitchMidiSnapshot,
+  replaceSnapshotAbSwitchMidiBinding,
+  type SnapshotAbSwitchMidiMessageType,
+} from '../utils/snapshotAbSwitchMidi'
+import {
+  normalizeSnapshotExpressionMappings,
+  normalizeSnapshotExpressionMappingsSnapshot,
+} from '../utils/snapshotExpressionMappings'
+import {
   isSnapshotCurrentAuthorityLive,
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
@@ -181,7 +207,9 @@ import {
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
+import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
+import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { SnapshotEditorMenuRail } from '../components/SnapshotEditor/SnapshotEditorMenuRail'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
@@ -239,10 +267,8 @@ import {
 import { isSystemNoiseGatePlugin } from '../utils/snapshotSystemBlocks'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
-import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
 import { PluginCardRouter } from '../components/PluginCards'
 import { resolveLivePluginCardStrategy } from '../components/PluginCards/liveEditorRouting'
-import type { CcChannelPair } from './ExpressionPage'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -1105,7 +1131,6 @@ export function SnapshotEditorPage() {
 
   // Flow Snapshots Panel State
   const [midiModalOpen, setMidiModalOpen] = useState(false)
-  const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotIoModalState, setSnapshotIoModalState] = useState<SnapshotIoModalState>(() => (
     buildSnapshotIoModalState(null, null)
   ))
@@ -1131,6 +1156,9 @@ export function SnapshotEditorPage() {
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
   const perfSeqRef = useRef(0)
   const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
+  const [abSwitchMidiMessageTypeDraft, setAbSwitchMidiMessageTypeDraft] = useState<SnapshotAbSwitchMidiMessageType>('cc_toggle')
+  const [abSwitchMidiChannelDraft, setAbSwitchMidiChannelDraft] = useState<string>('omni')
+  const [abSwitchMidiNumberDraft, setAbSwitchMidiNumberDraft] = useState<number>(80)
   const [blockFocusMidiChannelDraft, setBlockFocusMidiChannelDraft] = useState<string>('omni')
   const [blockFocusStartNoteDraft, setBlockFocusStartNoteDraft] = useState<number>(60)
   const [footswitchLabelDrafts, setFootswitchLabelDrafts] = useState(createEmptyFootswitchLabelDrafts)
@@ -1527,6 +1555,15 @@ export function SnapshotEditorPage() {
     queryKey: ['audio', 'routing'],
     queryFn: audioApi.getRouting,
     refetchInterval: snapshotStandardCadence,
+  })
+
+  const expressionEngineParametersQuery = useQuery({
+    queryKey: ['expression-engine-parameters', 'snapshot-editor'],
+    queryFn: () => fetchJson<{ parameters: Array<{ id: string; label: string; unit: string; min: number; max: number }> }>(
+      `${API_BASE}/v2/engine/parameters`,
+      { cache: 'no-store' },
+    ),
+    staleTime: 60_000,
   })
 
   const clusterNodesQuery = useQuery({
@@ -1939,6 +1976,14 @@ export function SnapshotEditorPage() {
   const snapshotFootswitchLabelMap = useMemo(
     () => getSnapshotFootswitchLabelMap(snapshotMidiEntries),
     [snapshotMidiEntries],
+  )
+  const snapshotAbSwitchMidiBinding = useMemo(
+    () => getSnapshotAbSwitchMidiBinding(snapshotMidiEntries),
+    [snapshotMidiEntries],
+  )
+  const snapshotExpressionMappings = useMemo(
+    () => normalizeSnapshotExpressionMappings(activeSnapshot?.controls?.expression_mappings ?? []),
+    [activeSnapshot?.controls?.expression_mappings],
   )
   const effectiveChainsResponse = useMemo(() => {
     const baseChainsResponse = activeSnapshot
@@ -2747,6 +2792,7 @@ export function SnapshotEditorPage() {
 
   type SnapshotRoutingMutationResponse = SnapshotDetail & {
     routing_requires_reactivation?: boolean
+    routing_mode_changed_live?: boolean
   }
 
   const updateLiveSnapshotRoutingMutation = useMutation({
@@ -2761,13 +2807,12 @@ export function SnapshotEditorPage() {
       flowSnapshotDataToSnapshotPayload(nextDraft).routing,
     ) as Promise<SnapshotRoutingMutationResponse>,
     onSuccess: (snapshot) => {
-      const requiresReactivation = Boolean(snapshot.routing_requires_reactivation)
       syncSnapshotDetailCaches(snapshot, {
-        updateAuthorityActiveSnapshot: !requiresReactivation,
+        updateAuthorityActiveSnapshot: true,
       })
-      setRoutingLiveApplyState(requiresReactivation ? 'reactivation-required' : 'live-applied')
-      if (requiresReactivation) {
-        pushToast('Routing mode saved. Reactivate the snapshot to apply the new live topology.', 'info')
+      setRoutingLiveApplyState('live-applied')
+      if (snapshot.routing_mode_changed_live) {
+        pushToast('Live routing mode updated', 'success')
       }
     },
     onError: (error) => {
@@ -2952,11 +2997,26 @@ export function SnapshotEditorPage() {
     || blockFocusPlugins.length === 0
     || blockFocusStartNoteOverflow
   )
+  const abSwitchMidiSaveDisabled = (
+    snapshotEditingLocked
+    || !activeSnapshot
+    || (
+      snapshotAbSwitchMidiBinding?.messageType === abSwitchMidiMessageTypeDraft
+      && (snapshotAbSwitchMidiBinding?.midiChannel ?? null) === (abSwitchMidiChannelDraft === 'omni' ? null : Number.parseInt(abSwitchMidiChannelDraft, 10))
+      && (snapshotAbSwitchMidiBinding?.number ?? null) === abSwitchMidiNumberDraft
+    )
+  )
   const footswitchLabelsSaveDisabled = (
     snapshotEditingLocked
     || !activeSnapshot
     || JSON.stringify(footswitchLabelDrafts) === JSON.stringify(snapshotFootswitchLabelMap)
   )
+
+  useEffect(() => {
+    setAbSwitchMidiMessageTypeDraft(snapshotAbSwitchMidiBinding?.messageType ?? 'cc_toggle')
+    setAbSwitchMidiChannelDraft(snapshotAbSwitchMidiBinding?.midiChannel == null ? 'omni' : String(snapshotAbSwitchMidiBinding.midiChannel))
+    setAbSwitchMidiNumberDraft(snapshotAbSwitchMidiBinding?.number ?? 80)
+  }, [activeSnapshot?.id, snapshotAbSwitchMidiBinding])
 
   useEffect(() => {
     setBlockFocusMidiChannelDraft(snapshotBlockFocusRange?.midiChannel == null ? 'omni' : String(snapshotBlockFocusRange.midiChannel))
@@ -3049,6 +3109,25 @@ export function SnapshotEditorPage() {
     () => flowSlots.find((flow) => flow.id !== routing.activeSlotId)?.id ?? null,
     [flowSlots, routing.activeSlotId],
   )
+  const abSwitchFlowSlots = useMemo(
+    () => flowSlots.slice(0, 2),
+    [flowSlots],
+  )
+  const abSwitchEnabled = routing.mode === 'ab_switch' && abSwitchFlowSlots.length >= 2
+  const abSwitchActiveFlow = useMemo(() => {
+    if (!abSwitchEnabled) {
+      return null
+    }
+    return abSwitchFlowSlots.find((flow) => flow.id === routing.activeSlotId) ?? abSwitchFlowSlots[0] ?? null
+  }, [abSwitchEnabled, abSwitchFlowSlots, routing.activeSlotId])
+  const abSwitchAlternateFlow = useMemo(() => {
+    if (!abSwitchEnabled || !abSwitchActiveFlow) {
+      return null
+    }
+    return abSwitchFlowSlots.find((flow) => flow.id !== abSwitchActiveFlow.id) ?? null
+  }, [abSwitchActiveFlow, abSwitchEnabled, abSwitchFlowSlots])
+  const abSwitchActiveLabel = abSwitchActiveFlow?.label ?? 'A'
+  const abSwitchNextLabel = abSwitchAlternateFlow?.label ?? 'B'
   const addEffectFlowId = routing.activeSlotId ?? activeFlow?.id ?? null
   const routingFocusButtons = useMemo(() => (
     flowSlots.map((slot, index) => {
@@ -3805,8 +3884,11 @@ export function SnapshotEditorPage() {
       entries: SnapshotMidiMapEntry[]
     }) => {
       const response = await snapshotsApi.replaceMidiMap(snapshotId, entries)
-      return normalizeSnapshotFootswitchLabelSnapshot(
-        normalizeSnapshotBlockFocusSnapshot(response, entries),
+      return normalizeSnapshotAbSwitchMidiSnapshot(
+        normalizeSnapshotFootswitchLabelSnapshot(
+          normalizeSnapshotBlockFocusSnapshot(response, entries),
+          entries,
+        ),
         entries,
       )
     },
@@ -3817,6 +3899,31 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot MIDI map', 'error')
+    },
+  })
+
+  const updateSnapshotExpressionMappingsMutation = useMutation({
+    mutationFn: async ({
+      snapshotId,
+      mappings,
+    }: {
+      snapshotId: number
+      mappings: SnapshotExpressionMapping[]
+    }) => {
+      const response = await snapshotsApi.update(snapshotId, {
+        controls: {
+          expression_mappings: mappings,
+        },
+      })
+      return normalizeSnapshotExpressionMappingsSnapshot(response.snapshot, mappings)
+    },
+    onSuccess: (snapshot) => {
+      syncSnapshotDetailCaches(snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      pushToast('Snapshot expression mappings updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot expression mappings', 'error')
     },
   })
 
@@ -4484,6 +4591,30 @@ export function SnapshotEditorPage() {
       nextDraft,
     })
   }, [activeSnapshot, isAuthorityLiveSnapshot, updateLiveSnapshotRoutingMutation])
+
+  const toggleAbSwitch = useCallback(() => {
+    if (snapshotEditorMutationDisabled || !abSwitchEnabled || !abSwitchAlternateFlow) {
+      return
+    }
+
+    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
+    nextDraft.routing = {
+      ...nextDraft.routing,
+      mode: 'ab_switch',
+      activeSlotId: abSwitchAlternateFlow.id,
+    }
+    setEditorSnapshotState(nextDraft)
+    recordSnapshotUndoRedoStep(nextDraft, `Switch A/B path to ${abSwitchAlternateFlow.label}`)
+    queueLiveRoutingDraftUpdate(nextDraft)
+  }, [
+    abSwitchAlternateFlow,
+    abSwitchEnabled,
+    captureCurrentState,
+    queueLiveRoutingDraftUpdate,
+    recordSnapshotUndoRedoStep,
+    setEditorSnapshotState,
+    snapshotEditorMutationDisabled,
+  ])
 
   const setRoutingMode = useCallback((mode: RoutingMode) => {
     if (snapshotEditorMutationDisabled) {
@@ -5543,6 +5674,40 @@ export function SnapshotEditorPage() {
     snapshotMidiEntries,
   ])
 
+  const saveSnapshotAbSwitchMidiBinding = useCallback(() => {
+    if (!activeSnapshot || abSwitchMidiSaveDisabled) {
+      return
+    }
+
+    replaceSnapshotMidiMapMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotAbSwitchMidiBinding(snapshotMidiEntries, {
+        messageType: abSwitchMidiMessageTypeDraft,
+        midiChannel: abSwitchMidiChannelDraft === 'omni' ? null : Number.parseInt(abSwitchMidiChannelDraft, 10),
+        number: abSwitchMidiNumberDraft,
+      }),
+    })
+  }, [
+    abSwitchMidiChannelDraft,
+    abSwitchMidiMessageTypeDraft,
+    abSwitchMidiNumberDraft,
+    abSwitchMidiSaveDisabled,
+    activeSnapshot,
+    replaceSnapshotMidiMapMutation,
+    snapshotMidiEntries,
+  ])
+
+  const clearSnapshotAbSwitchMidiBinding = useCallback(() => {
+    if (!activeSnapshot) {
+      return
+    }
+
+    replaceSnapshotMidiMapMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      entries: replaceSnapshotAbSwitchMidiBinding(snapshotMidiEntries, null),
+    })
+  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
+
   const clearSnapshotBlockFocusRange = useCallback(() => {
     if (!activeSnapshot) {
       return
@@ -5590,6 +5755,28 @@ export function SnapshotEditorPage() {
       entries: replaceSnapshotFootswitchLabelMap(snapshotMidiEntries, emptyDrafts),
     })
   }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
+
+  const saveSnapshotExpressionMappings = useCallback((mappings: SnapshotExpressionMapping[]) => {
+    if (!activeSnapshot || snapshotEditingLocked) {
+      return
+    }
+
+    updateSnapshotExpressionMappingsMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      mappings: normalizeSnapshotExpressionMappings(mappings),
+    })
+  }, [activeSnapshot, snapshotEditingLocked, updateSnapshotExpressionMappingsMutation])
+
+  const clearSnapshotExpressionMappings = useCallback(() => {
+    if (!activeSnapshot) {
+      return
+    }
+
+    updateSnapshotExpressionMappingsMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      mappings: [],
+    })
+  }, [activeSnapshot, updateSnapshotExpressionMappingsMutation])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -5775,6 +5962,12 @@ export function SnapshotEditorPage() {
       midiDisabled={snapshotEditingLocked}
       midiTitle={midiMappingsTitle}
       midiLearning={midiLearning}
+      onToggleAbSwitch={toggleAbSwitch}
+      abSwitchVisible={abSwitchEnabled}
+      abSwitchDisabled={snapshotEditingLocked || updateLiveSnapshotRoutingMutation.isPending || !abSwitchAlternateFlow}
+      abSwitchPending={updateLiveSnapshotRoutingMutation.isPending}
+      abSwitchActiveLabel={abSwitchActiveLabel}
+      abSwitchNextLabel={abSwitchNextLabel}
       onOpenLiveRuntime={openLiveRuntimeWorkspace}
       liveRuntimeLabel={
         liveRuntimeDisplayState === 'live_warning'
@@ -5891,14 +6084,6 @@ export function SnapshotEditorPage() {
             {midiMappings.length} shown
             {midiStatus?.mappings_count !== undefined ? ` / ${midiStatus.mappings_count} total` : ''}
           </Tag>
-          <Button
-            size="sm"
-            kind="ghost"
-            renderIcon={ArrowsHorizontal}
-            onClick={() => setShowExpressionOverlay(true)}
-          >
-            Expression Mappings
-          </Button>
           {options.closable && options.onClose && (
             <Button size="sm" kind="ghost" onClick={options.onClose}>
               Close
@@ -5941,6 +6126,24 @@ export function SnapshotEditorPage() {
           </Tag>
         )}
       </div>
+
+      {routing.mode === 'ab_switch' ? (
+        <SnapshotAbSwitchMidiCard
+          hasActiveSnapshot={Boolean(activeSnapshot)}
+          disabled={!activeSnapshot || snapshotEditingLocked}
+          isPending={replaceSnapshotMidiMapMutation.isPending}
+          binding={snapshotAbSwitchMidiBinding}
+          draftMessageType={abSwitchMidiMessageTypeDraft}
+          draftMidiChannel={abSwitchMidiChannelDraft}
+          draftNumber={abSwitchMidiNumberDraft}
+          onDraftMessageTypeChange={setAbSwitchMidiMessageTypeDraft}
+          onDraftMidiChannelChange={setAbSwitchMidiChannelDraft}
+          onDraftNumberChange={setAbSwitchMidiNumberDraft}
+          onSave={saveSnapshotAbSwitchMidiBinding}
+          onClear={clearSnapshotAbSwitchMidiBinding}
+          saveDisabled={abSwitchMidiSaveDisabled}
+        />
+      ) : null}
 
       <Tile className="juce-grid-page__midi-block-focus-card">
         <div className="juce-grid-page__midi-tile-header">
@@ -6056,6 +6259,16 @@ export function SnapshotEditorPage() {
         onSave={saveSnapshotFootswitchLabels}
         onClear={clearSnapshotFootswitchLabels}
         saveDisabled={footswitchLabelsSaveDisabled}
+      />
+
+      <SnapshotExpressionMappingsCard
+        hasActiveSnapshot={Boolean(activeSnapshot)}
+        disabled={!activeSnapshot || snapshotEditingLocked}
+        isPending={updateSnapshotExpressionMappingsMutation.isPending}
+        mappings={snapshotExpressionMappings}
+        availableParameters={expressionEngineParametersQuery.data?.parameters ?? []}
+        onSave={saveSnapshotExpressionMappings}
+        onClear={clearSnapshotExpressionMappings}
       />
 
       {midiMappingsQuery.isLoading ? (
@@ -7460,6 +7673,12 @@ export function SnapshotEditorPage() {
               updateActiveSnapshotTempoMutation.mutate({ snapshotId: activeSnapshot.id, tempoBpm })
             }}
             tempoPending={updateActiveSnapshotTempoMutation.isPending}
+            abSwitchVisible={abSwitchEnabled}
+            abSwitchActiveLabel={abSwitchActiveLabel}
+            abSwitchNextLabel={abSwitchNextLabel}
+            abSwitchDisabled={snapshotEditingLocked || updateLiveSnapshotRoutingMutation.isPending || !abSwitchAlternateFlow}
+            abSwitchPending={updateLiveSnapshotRoutingMutation.isPending}
+            onToggleAbSwitch={toggleAbSwitch}
             monitoringStatusLabel={monitoringStatusLabel}
             monitoringStatusWarning={monitoringStatusWarning}
             outputLevelWarningMessage={outputLevelWarningMessage}
@@ -8462,24 +8681,13 @@ export function SnapshotEditorPage() {
           size="lg"
           modalHeading="Audio Grid MIDI mappings"
           primaryButtonText="Close"
-          onRequestClose={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
-          onRequestSubmit={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
+          onRequestClose={() => { setMidiModalOpen(false) }}
+          onRequestSubmit={() => { setMidiModalOpen(false) }}
         >
           <div className="juce-grid-page__modal-stack juce-grid-page__midi-modal-shell" id="juce-grid-midi-modal">
             <div className="juce-grid-page__midi-modal-panel">
               {renderMidiMappingsWorkspace({ closable: false })}
             </div>
-            {showExpressionOverlay && (
-              <div className="juce-grid-page__midi-modal-expression">
-                <ExpressionOverlay
-                  onBack={() => setShowExpressionOverlay(false)}
-                  highlightedCcPairs={midiMappings.map((m): CcChannelPair => ({ cc: m.cc, channel: m.channel }))}
-                  initialCc={midiMappings[0]?.cc ?? null}
-                  initialChannel={midiMappings[0]?.channel ?? null}
-                  onAssignmentMutated={() => {}}
-                />
-              </div>
-            )}
           </div>
         </Modal>
       )}

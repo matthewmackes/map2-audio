@@ -493,6 +493,7 @@ class _FakeDrumService:
         step,
         velocity,
         accent=False,
+        gate_length=None,
         micro_timing=0,
         probability=1.0,
         ratchet_count=1,
@@ -507,6 +508,7 @@ class _FakeDrumService:
         pattern["steps"][instrument][step] = {
             "velocity": velocity,
             "accent": accent,
+            "gate_length": gate_length,
             "micro_timing": micro_timing,
             "probability": probability,
             "ratchet_count": ratchet_count,

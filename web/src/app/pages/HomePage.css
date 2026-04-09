@@ -117,15 +117,6 @@
   display: block;
 }
 
-.hp2-desktop__hero-mark {
-  position: relative;
-  z-index: 1;
-  width: min(58vw, 42rem);
-  height: auto;
-  color: #fff;
-  opacity: 0.14;
-}
-
 .hp2-desktop--uploaded-image .hp2-desktop__wallpaper {
   opacity: 0.2;
   filter: grayscale(0.6) contrast(0.92) saturate(0.6);

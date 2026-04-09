@@ -59,6 +59,12 @@ interface SnapshotChainManagementCardProps {
   snapshotDescriptionPending?: boolean
   onSubmitTempoBpm?: (tempoBpm: number) => void
   tempoPending?: boolean
+  abSwitchVisible?: boolean
+  abSwitchActiveLabel?: string
+  abSwitchNextLabel?: string
+  abSwitchDisabled?: boolean
+  abSwitchPending?: boolean
+  onToggleAbSwitch?: () => void
   monitoringStatusLabel?: string | null
   monitoringStatusWarning?: boolean
   outputLevelWarningMessage?: string | null
@@ -520,6 +526,12 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
     snapshotDescriptionPending = false,
     onSubmitTempoBpm,
     tempoPending = false,
+    abSwitchVisible = false,
+    abSwitchActiveLabel = 'A',
+    abSwitchNextLabel = 'B',
+    abSwitchDisabled = false,
+    abSwitchPending = false,
+    onToggleAbSwitch,
     monitoringStatusLabel = null,
     monitoringStatusWarning = false,
     outputLevelWarningMessage = null,
@@ -770,6 +782,22 @@ export function SnapshotChainManagementCard(props: SnapshotChainManagementCardPr
                     {liveSnapshot.description?.trim() || 'Add rig notes...'}
                   </button>
                 )
+              ) : null}
+              {liveSnapshot && abSwitchVisible ? (
+                <div className="juce-grid-page__snapshot-status-go-live" aria-live="polite">
+                  <Tag type="green" className="juce-grid-page__snapshot-status-tempo-tag">
+                    A/B live: {abSwitchActiveLabel}
+                  </Tag>
+                  <Button
+                    size="sm"
+                    kind="primary"
+                    className="juce-grid-page__snapshot-status-go-live-button"
+                    onClick={onToggleAbSwitch}
+                    disabled={abSwitchDisabled || !onToggleAbSwitch}
+                  >
+                    {abSwitchPending ? `Switching to ${abSwitchNextLabel}...` : `Switch to ${abSwitchNextLabel}`}
+                  </Button>
+                </div>
               ) : null}
               {liveSnapshot && goLiveState && (goLiveState.phase !== 'live' || Boolean(goLiveState.errorMessage)) ? (
                 <div className="juce-grid-page__snapshot-status-go-live" aria-live="polite">

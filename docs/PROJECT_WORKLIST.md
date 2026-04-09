@@ -20514,7 +20514,7 @@ Last updated: 2026-04-09 13:59 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_browser.py app/services/push_surface/drum_runtime.py app/services/drum_kit_service.py app/services/drum_sample_editor.py tests/push_surface/test_drum_browser.py tests/push_surface/test_drum_runtime.py` -> PASS
 
 ID: T896
-Status: [ ] Todo
+Status: [✓] Done
 Title: 16 Velocities mode — single pad sends 16 velocity levels across pad grid
 Description:
 - Goal / acceptance criteria: Activating 16 Velocities mode maps all 16 pads to velocity layers of the selected pad sound. Pad grid shows velocity gradient feedback.
@@ -20522,11 +20522,19 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Mode toggle command, velocity distribution, pad feedback state, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:07 EDT - Codex
+- Completion notes:
+  - Extended `app/services/push_surface/drum_runtime.py` so the Push drum session now persists `pad_velocity_mode_enabled` and `pad_velocity_source_pad`, then projects a 16-cell pad grid carrying the velocity gradient MAP2 needs for Push-style 16 Velocities feedback.
+  - Wired `set_pad_velocity_mode` into the typed drum session command plane so enabling the mode picks or updates the source pad sound without inventing a second state store.
+  - Updated pad triggering so, when 16 Velocities mode is active, any of the 16 physical pads reuses the selected source pad note/channel while substituting the velocity-layer value for that grid position.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `pytest -q tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/map2_bridge.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T897
-Status: [ ] Todo
+Status: [✓] Done
 Title: 64-Pad navigation — 4 banks of 16 pads with bank switching
 Description:
 - Goal / acceptance criteria: Push navigates across 4 banks of 16 pads (64 total) via bank buttons. Active bank reflected in pad feedback and state projection.
@@ -20534,11 +20542,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Bank switching commands, pad mapping per bank, state projection, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:07 EDT - Codex
+- Completion notes:
+  - Added persistent `pad_bank_index` session state plus `set_64_pad_bank` command handling, clamped to four 16-pad windows, and exposed the active bank metadata through the drum session surface state.
+  - Updated pad triggering to resolve an absolute logical pad index (`0-63`) from the current bank and physical pad position, then derive note/channel mapping from the existing 16-pad drum mapping when later banks are selected.
+  - Mirrored the richer banked drum-session payload through the mock bridge, route fakes, and TypeScript client contract so simulator/web consumers stay aligned with the backend command plane.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `pytest -q tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T898
-Status: [ ] Todo
+Status: [✓] Done
 Title: Repeat mode — pad repeat at configurable rate divisions
 Description:
 - Goal / acceptance criteria: Repeat mode triggers pad at configurable note divisions (1/4, 1/8, 1/16, 1/32, triplet). Rate selection via Push controls. Repeat stops on pad release.
@@ -20546,11 +20563,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Repeat engine in drum sequencer, Push command integration, rate selection, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:33 EDT - Codex
+- Completion notes:
+  - Extended `app/services/push_surface/drum_runtime.py` with persisted repeat-mode state (`repeat_enabled`, `repeat_rate`) plus typed `set_repeat` command handling and surfaced the mode through the shared Push drum session projection.
+  - Added a real repeat scheduler in the Push drum session service that starts on `trigger_pad`, re-fires note on/off events at the selected division using the current transport BPM, and stops on `stop_pad`.
+  - Mirrored the richer repeat-mode state through the mock bridge, route fakes, and TypeScript client contract so simulator and web consumers stay aligned with the backend runtime.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/map2_bridge.py app/services/drum_sequencer_service.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T899
-Status: [ ] Todo
+Status: [✓] Done
 Title: Quantize mode — input quantization with configurable grid
 Description:
 - Goal / acceptance criteria: Input quantization snaps recorded pad hits to configurable grid (1/4, 1/8, 1/16, 1/32). Strength parameter (0-100%) for humanization.
@@ -20558,11 +20584,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Quantize engine, Push command integration, grid/strength selection, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:33 EDT - Codex
+- Completion notes:
+  - Added persisted quantize-mode state (`quantize_enabled`, `quantize_grid`, `quantize_strength`) and typed `set_quantize` command handling to the Push drum session runtime.
+  - Wired quantized Push pad capture into the sequencer write path so a triggered pad can resolve the current pattern/step from the drum runtime, snap toward the configured grid with the configured strength, and write the result through the drum sequencer service.
+  - Added focused runtime coverage proving quantized Push capture writes the expected instrument/step/velocity data into the sequencer helper while preserving the broader drum-session command surface.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/map2_bridge.py app/services/drum_sequencer_service.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T900
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fixed Length mode — clip/pattern length presets
 Description:
 - Goal / acceptance criteria: Fixed Length sets new pattern/clip length before recording starts. Preset lengths: 1/2/4/8/16/32 bars.
@@ -20570,11 +20605,18 @@ Description:
 - Estimated effort: Low
 - Required outputs: Fixed length presets, Push command integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:07 EDT - Codex
+- Completion notes:
+  - Added fixed-length session state to `app/services/push_surface/drum_runtime.py`, with validated presets for `1/2`, `1`, `2`, `4`, `8`, `16`, and `32` bars and a projected metadata payload including bars, beats, and step counts.
+  - Wired `set_fixed_length` through the shared Push drum command plane so future record/step-grid work can consume one canonical preset source instead of adding a separate recording-only settings path.
+  - Added focused runtime and route coverage proving the mode can be enabled and cleared cleanly while preserving the broader drum-session API behavior.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/map2_bridge.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T901
-Status: [ ] Todo
+Status: [✓] Done
 Title: Loop Selector — loop region editing from Push pads
 Description:
 - Goal / acceptance criteria: Loop Selector mode uses Push pads to set loop start/end and duplicate/halve loop regions within the active pattern.
@@ -20582,11 +20624,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Loop selector commands, pad-to-region mapping, drum sequencer integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 14:33 EDT - Codex
+- Completion notes:
+  - Added loop-region helpers to `app/services/drum_sequencer_service.py`, including persistent in-service loop-region tracking plus duplicate and halve operations over the active pattern data.
+  - Extended the Push drum session runtime with loop-selector state (`loop_selector_enabled`, page, start/end steps) and `set_loop_selector` command handling that maps Push pads to step ranges and delegates duplicate/halve actions into the sequencer helper layer.
+  - Added focused sequencer, runtime, and route coverage proving loop-region selection, duplication, and halving behave deterministically and stay visible through the shared Push drum session surface state.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/map2_bridge.py app/services/drum_sequencer_service.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T902
-Status: [ ] Todo
+Status: [✓] Done
 Title: Normalized state projection adapter for Push drum rendering
 Description:
 - Goal / acceptance criteria: New `app/services/push_surface/drum_projection.py` builds a normalized state payload (transport, pad names/colors/mute/solo/armed, current bank, step-grid, mode status, browser state, confirmation state) consumed by the Push renderer without understanding drum-service internals.
@@ -20595,11 +20646,20 @@ Description:
 - Estimated effort: High
 - Required outputs: Projection adapter, typed state model, renderer integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 17:25 EDT - Codex
+- Completion notes:
+  - Added `app/services/push_surface/drum_projection.py` to build a renderer-friendly normalized drum payload covering transport, current bank, named/colorized pad state, mode summaries, browser state, confirmation state, step-grid cells, and display-facing text.
+  - Wired `PushDrumSessionService.get_surface_state()` and the mock bridge payloads to expose `drum_projection`, and extended the web Push client types with normalized projection contracts plus a typed drum-session state fetcher.
+  - Hardened runtime transport responses so fresh play/stop transport state is not overwritten by the richer projection snapshot.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/drum_projection.py app/services/push_surface/drum_browser.py app/services/push_surface/map2_bridge.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T903
-Status: [ ] Todo
+Status: [✓] Done
 Title: Step-grid editing — Push pads as step sequencer with per-step note entry
 Description:
 - Goal / acceptance criteria: Step sequencer mode maps 16 pads to 16 steps. Active steps toggle on/off. Step page navigation for longer patterns.
@@ -20607,11 +20667,20 @@ Description:
 - Estimated effort: High
 - Required outputs: Step-grid commands, pad-to-step mapping, sequencer integration, page navigation, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 17:39 EDT - Codex
+- Completion notes:
+  - Added Push drum session step-grid state (`step_grid_page`, selected step index/instrument) plus `set_step` and `clear_step` command handling that maps 16 physical pads onto 16-step pages across the 64-step sequencer.
+  - Extended the normalized Push drum projection so step-grid pages, selected steps, and per-cell activity stay visible to the renderer without raw sequencer knowledge.
+  - Added focused runtime and route coverage proving step toggles, page navigation, and selected-step tracking behave deterministically.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_browser.py tests/push_surface/test_drum_phase_a1.py tests/test_drum_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/drum_sequencer_service.py app/services/push_surface/drum_runtime.py app/services/push_surface/drum_projection.py app/services/push_surface/drum_browser.py app/services/push_surface/map2_bridge.py app/routes/drums.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/test_drum_routes.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T904
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-step automation entry/edit — velocity, pitch, length, probability per step
 Description:
 - Goal / acceptance criteria: With a step selected, Push encoders edit per-step velocity, pitch, length, and probability. Changes reflected in step-grid state projection.
@@ -20619,11 +20688,20 @@ Description:
 - Estimated effort: High
 - Required outputs: Per-step automation commands, encoder mapping, state projection updates, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 17:39 EDT - Codex
+- Completion notes:
+  - Added sequencer helpers for `get_step`, `update_step`, and `clear_step`, and persisted per-step `gate_length` alongside existing velocity, pitch lock, probability, and micro-timing data.
+  - Added Push `set_step_automation` handling that edits the selected step’s velocity, pitch, length, probability, and related timing state, then reflects those changes through the normalized step-grid projection.
+  - Extended shared drum route contracts and focused tests so the new `gate_length`-backed step automation path remains consistent outside the Push runtime too.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_browser.py tests/push_surface/test_drum_phase_a1.py tests/test_drum_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/drum_sequencer_service.py app/services/push_surface/drum_runtime.py app/services/push_surface/drum_projection.py app/services/push_surface/drum_browser.py app/services/push_surface/map2_bridge.py app/routes/drums.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/test_drum_sequencer_service.py tests/test_drum_routes.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T905
-Status: [ ] Todo
+Status: [✓] Done
 Title: Push display text rendering for drum mode (pattern/kit/pad names)
 Description:
 - Goal / acceptance criteria: Push 1 display (if display transport verified safe) shows pattern name, kit name, selected pad name, and mode indicators. Falls back to LED-only feedback if display transport is unsafe.
@@ -20631,11 +20709,19 @@ Description:
 - Estimated effort: High
 - Required outputs: Display page renderer for drum mode, safety gate, fallback behavior, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 17:25 EDT - Codex
+- Completion notes:
+  - Added a display-facing drum projection payload carrying pattern title, kit name, selected pad label, current step, explicit `transport_safe: false`, and `fallback: "led_only"` so the renderer can remain inside the current safety guard rails.
+  - Added focused runtime and route coverage proving the normalized display payload is present and defaults to LED-only fallback behavior when display transport is not yet verified safe.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/drum_projection.py app/services/push_surface/drum_browser.py app/services/push_surface/map2_bridge.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T906
-Status: [ ] Todo
+Status: [✓] Done
 Title: Browser metadata and workflow shortcuts for Push drum browsing
 Description:
 - Goal / acceptance criteria: Push drum browser exposes category filtering, favorites, and recent sounds. Quick-select shortcuts for most-used kits/pads.
@@ -20643,8 +20729,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Browser metadata adapter, filter/favorites/recent commands, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 17:25 EDT - Codex
+- Completion notes:
+  - Extended the Push drum browser service with favorites toggling, recent-item tracking, quick shortcut synthesis, and last-browse payload tracking, all exposed through both browse/load responses and the normalized drum projection.
+  - Added focused browser and route coverage proving favorites, recent kits, and quick shortcuts remain visible through the Push-facing metadata contract.
+- Validation:
+  - `pytest -q tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py tests/push_surface/test_drum_phase_a1.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/services/push_surface/drum_projection.py app/services/push_surface/drum_browser.py app/services/push_surface/map2_bridge.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py tests/push_surface/test_drum_browser.py tests/test_drum_sequencer_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ## Control Surfaces Completion — JUCE Engine Prerequisites (Workstream B)
 
@@ -20750,7 +20844,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08 - Claude
 
 ID: T915
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unblock T630 — A/B Hard Switch with Zero-Crossing Detection
 Description:
 - Goal / acceptance criteria: Complete T630 acceptance criteria using the new zero-cross A/B switch primitive. A/B button in editor plus floating toolbar, MIDI CC assignment per-snapshot, real-time routing visualizer update, Carbon bold color highlighting.
@@ -20758,11 +20852,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Frontend A/B switch controls, MIDI assignment wiring, engine integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 18:03 EDT - Codex
+- Completion notes:
+  - Preserved `ab_switch` as a first-class routing mode across backend normalization and the web client instead of collapsing it into morph mode.
+  - Wired a live A/B toggle through the snapshot editor hero card and floating quick menu, with immediate `active_channel_key` updates feeding the existing routing visualizer state.
+  - Added snapshot-scoped A/B MIDI binding authoring in the MIDI workspace using `set_routing` trigger payloads, plus focused backend/web tests for routing apply and MIDI command sync.
 
 ID: T916
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unblock T637 — Live Routing Mode Switch Without Snapshot Reload
 Description:
 - Goal / acceptance criteria: Complete T637 acceptance criteria using the new live routing reconfiguration primitive. Routing mode selector triggers in-place engine reconfiguration, no chain teardown, routing visualizer updates immediately, dirty flag set.
@@ -20770,11 +20868,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Frontend routing mode selector wired to live engine update, authority-state publish, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 18:12 EDT - Codex
+- Completion notes:
+  - Removed the live-mode-change reactivation gate in `SnapshotService.update_routing()`. Live routing mode edits now publish authority state and call runtime routing/morph apply immediately, while still exposing whether the mode changed during the live patch.
+  - Updated the editor live-status copy and routing-topology modal expectations to reflect immediate application instead of reactivation-required messaging.
+  - Added focused backend tests for in-place live mode switching and refreshed web tests for the new live-status contract.
 
 ID: T917
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unblock T629 — Per-Snapshot MIDI CC Multi-Target Expression Mapping
 Description:
 - Goal / acceptance criteria: Complete T629 with multi-target support. One expression pedal CC controls N parameters with independent min/max ranges and selectable curves (linear/log/exp/S-curve). Mapping stored per-snapshot, applied on activation.
@@ -20783,7 +20885,11 @@ Description:
 - Required outputs: Per-snapshot expression map in snapshot data model, mapping editor in MIDI panel, curve selection UI, engine dispatch, focused tests.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-09 18:43 EDT - Codex
+- Completion notes:
+  - Normalized snapshot `controls.expression_mappings` into a grouped pedal-plus-target contract in `app/services/snapshot_service.py`, while flattening grouped targets back into runtime expression assignments during activation so one CC can drive multiple parameters.
+  - Added curve-alias support in `app/services/expression_service.py` so `logarithmic`, `exponential`, and `s_curve` snapshot/editor values execute with the intended response curves at runtime.
+  - Replaced the snapshot MIDI modal’s old global-expression overlay path with a dedicated `SnapshotExpressionMappingsCard` plus typed web utilities/tests, saving snapshot-owned mappings through the snapshot controls payload and validating the grouped model end to end.
 
 ## Control Surfaces Completion — Ground Control Pro Deep Integration (Workstream C)
 
@@ -20801,7 +20907,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-08 - Claude
 
 ID: T919
-Status: [ ] Todo
+Status: [✓] Done
 Title: GCP full SysEx dump/restore — MAP2 as canonical backup tool
 Description:
 - Goal / acceptance criteria: MAP2 can read and write full GCP memory dumps via SysEx. Standalone backup/restore workflow in the GCP editor page. File format documented.
@@ -20810,10 +20916,14 @@ Description:
 - Required outputs: Dump/restore service methods, route endpoints, file I/O, focused tests.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-09 18:48 EDT - Codex
+- Completion notes:
+  - Existing `app/services/ground_control_pro/service.py` already provides full dump import, backup capture, compile/export, push, redump verification, artifact persistence, and diff support on top of the canonical parser/serializer/container stack.
+  - Existing `app/routes/ground_control_pro.py` exposes the required import/export/backup/push/verify/artifact endpoints, and the dedicated `/ground-control-pro` Carbon page already ships a standalone backup/restore workflow.
+  - Existing focused coverage in `tests/test_ground_control_pro_parser.py`, `tests/test_ground_control_pro_service.py`, `tests/test_ground_control_pro_routes.py`, and `tests/test_ground_control_pro_restart.py` already exercises round-trip dump handling, route behavior, and restart-safe persistence.
 
 ID: T920
-Status: [ ] Todo
+Status: [✓] Done
 Title: Embed GCP state in .map2snapshot bundles
 Description:
 - Goal / acceptance criteria: Snapshot export includes GCP SysEx configuration. Import restores GCP state alongside snapshot audio state. GCP state is optional — snapshots without GCP data import normally.
@@ -20822,10 +20932,14 @@ Description:
 - Required outputs: Bundle extension, import/export integration, focused tests.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-09 18:56 EDT - Codex
+- Completion notes:
+  - Added optional Ground Control Pro bundle payload helpers in `app/services/ground_control_pro/service.py` so a validated GCP session can be serialized into a snapshot bundle and recreated on import.
+  - Extended snapshot/template export and bundle import in `app/services/snapshot_service.py` to embed optional `ground_control_pro` data alongside the normal manifest and restore snapshot `extensions.ground_control_pro` metadata when such data is present.
+  - Added focused bundle coverage in `tests/test_snapshot_service.py` and confirmed the surrounding route contracts still pass in `tests/test_snapshot_routes.py` and `tests/test_ground_control_pro_routes.py`.
 
 ID: T921
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot-driven GCP preset push — on activation, push PC/CC/relay assignments via SysEx
 Description:
 - Goal / acceptance criteria: When a snapshot is activated, MAP2 pushes the snapshot's GCP button assignments (PC, CC, relay) to the connected GCP via SysEx. Push occurs after chain confirmation and footswitch label push.
@@ -20833,11 +20947,15 @@ Description:
 - Estimated effort: High
 - Required outputs: Activation-time GCP push, SysEx formatting, relay state push, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 19:34 EDT - Codex
+- Completion notes:
+  - Added snapshot-driven Ground Control Pro activation push support in `app/services/ground_control_pro/service.py`, including session-backed model overlay helpers for preset program changes, instant-access button definitions/state, GCX relay loop state, transport resolution, and forced validated SysEx push on snapshot activation.
+  - Wired a new `push_ground_control_pro_assignments` hook into `app/services/state_authority_activation_service.py` and `app/services/snapshot_service.py`, with default hook ordering that inserts the GCP push immediately after footswitch labels even for installs carrying the older persisted activation-hook config.
+  - Added focused regressions in `tests/test_ground_control_pro_service.py` and `tests/test_snapshot_service.py` covering direct activation-push overlay behavior plus snapshot activation ordering through the post-activation hook path.
 
 ID: T922
-Status: [ ] Todo
+Status: [✓] Done
 Title: Bidirectional GCP button mapping — button presses mapped to MAP2 actions
 Description:
 - Goal / acceptance criteria: GCP button presses (PC/CC messages) map to MAP2 actions: block bypass, block focus, A/B switch, expression pedal targets. Mapping stored per-snapshot.
@@ -20845,11 +20963,15 @@ Description:
 - Estimated effort: High
 - Required outputs: MIDI listener integration, action dispatch, per-snapshot mapping storage, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 19:55 EDT - Codex
+- Completion notes:
+  - Added inbound MIDI Hub handling to `app/services/ground_control_pro/service.py` so Ground Control Pro CC/PC traffic is recognized by source/profile, matched against the live snapshot's `extensions.ground_control_pro.input_map.mappings`, and dispatched through snapshot-scoped actions instead of a separate controller stack.
+  - Implemented live dispatch handlers for `toggle_plugin`, `focus_block`, `set_routing` A/B toggles, and `expression_mapping`, reusing the existing Maschine audio-grid focus/bypass path, live snapshot routing updates, and snapshot-owned expression-mapping runtime path.
+  - Added focused regressions in `tests/test_ground_control_pro_service.py` covering activation-push overlay behavior plus live inbound GCP mapping dispatch for bypass, focus, A/B switch, expression-target passthrough, and non-GCP source rejection.
 
 ID: T923
-Status: [ ] Todo
+Status: [✓] Done
 Title: GCP relay output programming — MAP2 manages relay/switch outputs with snapshot automation
 Description:
 - Goal / acceptance criteria: MAP2 programs GCP relay outputs (for amp channel switching via TRS cables). Relay state is snapshot-driven — activating a snapshot pushes relay configurations automatically. Manual editor programming also supported.
@@ -20857,11 +20979,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Relay SysEx programming, per-snapshot relay map, activation-time push, editor UI, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:26 EDT - Codex
+- Completion notes:
+  - Verified the snapshot-driven relay path is already implemented end to end: `app/services/ground_control_pro/service.py` overlays `activation_push.preset.gcx_loop_states` and `gcx_toggles` into the target preset model before SysEx transmit, so snapshot activation now programs relay/switch outputs automatically.
+  - Confirmed the dedicated Carbon editor page already exposes manual relay programming in `web/src/app/pages/GroundControlProPage.tsx` through the per-preset `GCX Loop States` and `GCX Toggles` controls.
+  - Kept the relay editor regression in `web/src/app/pages/GroundControlProPage.test.tsx` passing so preset relay changes are preserved into the compiled model.
 
 ID: T924
-Status: [ ] Todo
+Status: [✓] Done
 Title: Full GCP editor page — replace Voodoo Lab Editor
 Description:
 - Goal / acceptance criteria: Dedicated /ground-control Carbon page with bank/preset browser, per-button CC/PC/relay editor, instant access preset configuration, SysEx backup/restore controls, connection status, and full device programming surface.
@@ -20869,11 +20995,14 @@ Description:
 - Estimated effort: High
 - Required outputs: web/src/app/pages/GroundControlProPage.tsx rewrite, new component files, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:26 EDT - Codex
+- Completion notes:
+  - Closed with repo evidence: `web/src/app/pages/GroundControlProPage.tsx` already provides the dedicated Carbon-first `/ground-control-pro` workspace with Overview, Configuration, Presets, Validation & Transfer, and Forensics tabs, connection status, SysEx import/export/backup/push/verify flows, instant-access editing, and per-preset program/relay editing.
+  - Kept focused coverage in `web/src/app/pages/GroundControlProPage.test.tsx` for page rendering, import/edit/compile flow, relay editing, and daemon-status surfacing so the route stays regression-covered as the canonical replacement editor.
 
 ID: T925
-Status: [ ] Todo
+Status: [✓] Done
 Title: GCP dedicated daemon with auto-reconnect and full state re-push on reconnect
 Description:
 - Goal / acceptance criteria: Background daemon manages GCP connection lifecycle. On reconnect, re-pushes current snapshot's full controller state (button assignments, relay config, labels) plus notification to nav bar.
@@ -20881,11 +21010,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: app/services/ground_control_pro/daemon.py, reconnect logic, state re-push, notification, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:26 EDT - Codex
+- Completion notes:
+  - Added `app/services/ground_control_pro/daemon.py` with a dedicated reconnect poller that tracks Ground Control-specific MIDI port availability, transitions through reconnect/repush/connected states, and re-pushes the live snapshot's full Ground Control assignment payload when the device returns.
+  - Integrated daemon status into `app/services/ground_control_pro/service.py` so `/api/ground-control-pro/ports` now exposes reconnect state and notifications while also preferring Ground Control-matched outputs for automatic activation transport resolution.
+  - Surfaced daemon reconnect notifications and status tags in `web/src/app/pages/GroundControlProPage.tsx` and added focused regressions in `tests/test_ground_control_pro_daemon.py` and `web/src/app/pages/GroundControlProPage.test.tsx`.
 
 ID: T926
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused GCP integration tests — SysEx round-trip, snapshot push, relay, backup/restore
 Description:
 - Goal / acceptance criteria: Full test suite covering SysEx dump/restore round-trip, snapshot activation GCP push, relay programming, bidirectional button mapping, and reconnect re-push.
@@ -20893,13 +21026,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: tests/test_ground_control_pro_integration.py, passing suite.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:36 EDT - Codex
+- Completion notes:
+  - Added `tests/test_ground_control_pro_integration.py` as the dedicated GCP integration suite covering SysEx backup/import/compile/push/re-dump verification, bundle export/import restore, snapshot-driven relay push, inbound button/expression mapping dispatch, and reconnect-triggered live-state re-push.
+  - Reused the existing snapshot-runtime test harness so the new integration suite exercises the real Ground Control service against the live snapshot runtime path instead of only isolated unit helpers.
+  - Validated the combined Ground Control Pro backend slice with `tests/test_ground_control_pro_daemon.py`, `tests/test_ground_control_pro_service.py`, `tests/test_ground_control_pro_restart.py`, `tests/test_ground_control_pro_routes.py`, and `tests/test_ground_control_pro_integration.py`.
 
 ## Control Surfaces Completion — Mackie MCU Pro Integration (Workstream D)
 
 ID: T927
-Status: [ ] Todo
+Status: [>] In Progress
 Title: EPIC — Mackie MCU Pro Plugin Parameter Editing Integration
 Description:
 - Goal / acceptance criteria: Full MCU protocol integration for plugin parameter editing. Faders/V-Pots map to focused plugin block parameters, scribble strips show param names, auto-grouped by parameter category.
@@ -20908,11 +21045,11 @@ Description:
 - Estimated effort: High (7 subtasks)
 - Required outputs: See subtasks T928–T934
 Subtasks: T928–T934
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:41 EDT - Codex
 
 ID: T928
-Status: [ ] Todo
+Status: [✓] Done
 Title: MCU protocol service — SysEx handshake, fader/V-Pot/button parsing, scribble strip and meter bridge output
 Description:
 - Goal / acceptance criteria: New app/services/mcu_surface/ package implements Mackie Control Universal protocol: device query/response handshake, fader position parsing (pitch bend per channel), V-Pot CC parsing, button note parsing, scribble strip SysEx output, meter bridge SysEx output.
@@ -20920,8 +21057,12 @@ Description:
 - Estimated effort: High
 - Required outputs: Protocol service, MIDI I/O integration, scribble strip formatter, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:45 EDT - Codex
+- Completion notes:
+  - Added the new `app/services/mcu_surface/` package with protocol helpers for MCU device inquiry, identity-reply parsing, motor-fader pitch-bend decoding, V-Pot relative CC decoding, button note parsing, and SysEx builders for scribble-strip and meter-bridge output.
+  - Added `app/services/mcu_surface/service.py` so the MCU branch can subscribe to MIDI Hub traffic, recognize Mackie MCU Pro sources, emit parsed MCU events through the realtime publisher, and send device-query / scribble-strip / meter-bridge messages back through MIDI Hub.
+  - Added focused regressions in `tests/test_mcu_surface_protocol.py` and `tests/test_mcu_surface_service.py`.
 
 ID: T929
 Status: [ ] Todo

@@ -137,6 +137,37 @@ def test_custom_curve_affects_output(expression_service):
     assert live["curved"] < live["normalized"]
 
 
+@pytest.mark.parametrize("curve_name", ["logarithmic", "exponential", "s_curve"])
+def test_curve_aliases_affect_output(expression_service, curve_name):
+    expression_service.create_assignment(
+        {
+            "id": f"expr-{curve_name}",
+            "cc": 13,
+            "channel": 1,
+            "cc_min": 0,
+            "cc_max": 127,
+            "param_id": "engine.delay_mix",
+            "param_label": "Delay Mix",
+            "out_min": 0.0,
+            "out_max": 1.0,
+            "curve": curve_name,
+            "source": "snapshot",
+        }
+    )
+
+    expression_service.process_midi_cc(cc=13, value=32, channel=1)
+    expression_service._apply_queue.join()
+
+    live = expression_service.get_live_state()[f"expr-{curve_name}"]
+    assert 0.0 <= live["mapped_value"] <= 1.0
+    if curve_name == "logarithmic":
+        assert live["curved"] < live["normalized"]
+    elif curve_name == "exponential":
+        assert live["curved"] > live["normalized"]
+    else:
+        assert live["curved"] != pytest.approx(live["normalized"], abs=1e-6)
+
+
 def test_performance_events_emit_for_cc_and_pc(expression_service):
     expression_service.create_assignment(
         {

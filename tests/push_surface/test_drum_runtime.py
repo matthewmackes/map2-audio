@@ -5,6 +5,8 @@ from itertools import count
 import pytest
 
 import app.services.push_surface.drum_runtime as drum_runtime_module
+import app.services.push_surface.drum_projection as drum_projection_module
+import app.services.drum_sequencer_service as drum_sequencer_module
 from app.services.push_surface.drum_registry import DrumMachineInstanceDescriptor
 from app.services.push_surface.drum_runtime import DrumMachineRuntimeFacade, PushDrumSessionService
 
@@ -43,7 +45,23 @@ class _FakeRegistry:
 
 
 def _fake_projection(self) -> dict[str, object]:
-    return {"instance": self.descriptor.to_dict(), "pad_count": 16}
+    return {
+        "instance": self.descriptor.to_dict(),
+        "state": {
+            "pattern": 0,
+            "bpm": 120,
+            "pad_controls": [{"mute": False, "solo": False, "volume": 100.0, "bus_assignment": index % 8} for index in range(16)],
+            "pad_sound_sources": ["sample" for _ in range(16)],
+        },
+        "transport": {"is_playing": False, "bpm": 120},
+        "position": {"pattern_id": 0, "pattern": 0, "step": 5, "bar": 1, "beat": 2},
+        "active_kit": {
+            "name": "Runtime Kit",
+            "instruments": [{"name": f"Pad {index + 1}"} for index in range(16)],
+        },
+        "pad_count": 16,
+        "total_pad_count": 64,
+    }
 
 
 def _activation_recorder(calls: list[str]):
@@ -68,6 +86,7 @@ class _FakeDrumService:
         self.transport_updates: list[dict[str, object]] = []
         self.transport_publish_count = 0
         self.position_publish_count = 0
+        self.position = {"pattern_id": 0, "pattern": 0, "step": 5}
 
     def get_state(self) -> dict[str, object]:
         return {"transport": False}
@@ -75,6 +94,9 @@ class _FakeDrumService:
     def get_transport(self) -> dict[str, object]:
         is_playing = bool(self.transport_updates[-1]["is_playing"]) if self.transport_updates else False
         return {"is_playing": is_playing, "bpm": 120}
+
+    def get_position(self) -> dict[str, object]:
+        return dict(self.position)
 
     def get_midi_mapping(self) -> dict[str, object]:
         return {
@@ -131,6 +153,108 @@ class _FakeBrowserService:
         self.load_calls.append(dict(payload))
         return {"mode": "pad", "kit_id": "kit-a", "target_pad": int(payload["pad"])}
 
+    def get_projection(self) -> dict[str, object]:
+        return {
+            "favorites": ["kit-a"],
+            "recent": ["kit-a"],
+            "quick_shortcuts": [{"kind": "favorite", "item_id": "kit-a"}],
+            "last_browse_payload": {"category": "electronic"},
+        }
+
+
+class _FakeSequencerService:
+    def __init__(self) -> None:
+        self.step_calls: list[tuple[int, int, int, int]] = []
+        self.loop_calls: list[tuple[str, int, tuple[int, ...]]] = []
+        self.patterns: dict[int, dict[str, object]] = {}
+
+    def _ensure_pattern(self, pattern_id: int) -> dict[str, object]:
+        pattern = self.patterns.get(pattern_id)
+        if pattern is None:
+            pattern = {
+                "pattern_id": pattern_id,
+                "steps": [
+                    [
+                        {
+                            "velocity": 127 if step == 5 else 0,
+                            "accent": False,
+                            "gate_length": None,
+                            "probability": 1.0,
+                            "micro_timing": 0,
+                            "ratchet_count": 1,
+                            "lock_pitch": None,
+                        }
+                        for step in range(64)
+                    ]
+                    for _ in range(16)
+                ],
+            }
+            self.patterns[pattern_id] = pattern
+        return pattern
+
+    def set_step(self, pattern_id: int, instrument: int, step: int, velocity: int, accent: bool = False):
+        self.step_calls.append((pattern_id, instrument, step, velocity))
+        pattern = self._ensure_pattern(pattern_id)
+        row = pattern["steps"][instrument]
+        current = dict(row[step])
+        current.update({"velocity": velocity, "accent": accent})
+        row[step] = current
+        return pattern
+
+    def get_step(self, pattern_id: int, instrument: int, step: int):
+        pattern = self._ensure_pattern(pattern_id)
+        return dict(pattern["steps"][instrument][step])
+
+    def update_step(self, pattern_id: int, instrument: int, step: int, **changes):
+        pattern = self._ensure_pattern(pattern_id)
+        row = pattern["steps"][instrument]
+        current = dict(row[step])
+        current.update(changes)
+        row[step] = current
+        return pattern
+
+    def clear_step(self, pattern_id: int, instrument: int, step: int):
+        pattern = self._ensure_pattern(pattern_id)
+        pattern["steps"][instrument][step] = {
+            "velocity": 0,
+            "accent": False,
+            "gate_length": None,
+            "probability": 1.0,
+            "micro_timing": 0,
+            "ratchet_count": 1,
+            "lock_pitch": None,
+        }
+        return pattern
+
+    def set_loop_region(self, pattern_id: int, start_step: int, end_step: int):
+        self.loop_calls.append(("set", pattern_id, (start_step, end_step)))
+        return {"pattern_id": pattern_id, "start_step": start_step, "end_step": end_step, "length_steps": end_step - start_step + 1}
+
+    def duplicate_loop_region(self, pattern_id: int):
+        self.loop_calls.append(("duplicate", pattern_id, ()))
+        return {
+            "loop_region": {"pattern_id": pattern_id, "start_step": 8, "end_step": 23, "length_steps": 16},
+            "pattern": {"pattern_id": pattern_id},
+            "copied_steps": 8,
+        }
+
+    def halve_loop_region(self, pattern_id: int):
+        self.loop_calls.append(("halve", pattern_id, ()))
+        return {"pattern_id": pattern_id, "start_step": 8, "end_step": 15, "length_steps": 8}
+
+    def get_pattern(self, pattern_id: int):
+        return self._ensure_pattern(pattern_id)
+
+
+@pytest.fixture(autouse=True)
+def _stub_projection_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_browser = _FakeBrowserService()
+    fake_sequencer = _FakeSequencerService()
+    monkeypatch.setattr(drum_runtime_module, "get_push_drum_browser_service", lambda: fake_browser)
+    monkeypatch.setattr(drum_projection_module, "get_push_drum_browser_service", lambda: fake_browser)
+    monkeypatch.setattr(drum_runtime_module, "get_drum_sequencer_service", lambda: fake_sequencer, raising=False)
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+
 
 @pytest.mark.asyncio
 async def test_runtime_auto_binds_to_live_instance_when_present(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -139,9 +263,19 @@ async def test_runtime_auto_binds_to_live_instance_when_present(monkeypatch: pyt
         _instance("inst-offline", is_live=False),
         _instance("inst-live", is_live=True, node_id="node-live"),
     ])
+    fake_browser = _FakeBrowserService()
+    fake_sequencer = _FakeSequencerService()
 
     monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
     monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "get_push_drum_browser_service", lambda: fake_browser)
+    monkeypatch.setattr(drum_runtime_module, "get_drum_sequencer_service", lambda: fake_sequencer, raising=False)
+
+    import app.services.drum_sequencer_service as drum_sequencer_module
+    import app.services.push_surface.drum_projection as drum_projection_module
+
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+    monkeypatch.setattr(drum_projection_module, "get_push_drum_browser_service", lambda: fake_browser)
 
     state = await service.get_surface_state("fp-1")
 
@@ -150,6 +284,10 @@ async def test_runtime_auto_binds_to_live_instance_when_present(monkeypatch: pyt
     assert state["banked_instance_id"] == "inst-live"
     assert state["selected_instance_index"] == 1
     assert state["selected_projection"]["instance"]["instance_id"] == "inst-live"
+    assert state["drum_projection"]["transport"]["beat"] == 2
+    assert state["drum_projection"]["step_grid"]["steps"][5]["is_playhead"] is True
+    assert state["drum_projection"]["browser"]["quick_shortcuts"][0]["item_id"] == "kit-a"
+    assert state["drum_projection"]["display"]["fallback"] == "led_only"
 
 
 @pytest.mark.asyncio
@@ -405,3 +543,266 @@ async def test_browse_and_load_pad_source_delegate_to_push_drum_browser(monkeypa
     assert fake_browser.load_calls == [{"kit_id": "kit-a", "source_pad": 2, "pad": 7}]
     assert browse["browser"]["preview"]["id"] == "kit-a"
     assert load["load_result"]["target_pad"] == 7
+
+
+@pytest.mark.asyncio
+async def test_set_pad_velocity_mode_projects_velocity_grid(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    await service.get_surface_state("fp-velocity")
+    state = await service.dispatch_command("fp-velocity", "set_pad_velocity_mode", {"enabled": True, "pad": 18})
+
+    assert state["session"]["last_command"] == "set_pad_velocity_mode"
+    assert state["session"]["pad_velocity_mode_enabled"] is True
+    assert state["session"]["pad_velocity_source_pad"] == 18
+    assert state["surface_modes"]["pad_velocity_mode"]["velocity_levels"][0] == 8
+    assert state["surface_modes"]["pad_velocity_mode"]["velocity_levels"][-1] == 127
+    assert state["pad_grid"][0]["velocity"] == 8
+    assert state["pad_grid"][-1]["velocity"] == 127
+
+
+@pytest.mark.asyncio
+async def test_trigger_pad_uses_velocity_mode_source_pad_and_grid_velocity(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    await service.get_surface_state("fp-velocity-trigger")
+    await service.dispatch_command("fp-velocity-trigger", "set_pad_velocity_mode", {"enabled": True, "source_pad": 18})
+    result = await service.dispatch_command("fp-velocity-trigger", "trigger_pad", {"pad": 5})
+
+    assert result["command_result"]["source_pad"] == 18
+    assert result["command_result"]["resolved_pad"] == 5
+    assert result["command_result"]["velocity"] == 48
+    assert result["command_result"]["velocity_mode_velocity"] == 48
+    assert fake_engine.calls == [("on", 3, 54, 48)]
+
+
+@pytest.mark.asyncio
+async def test_set_64_pad_bank_clamps_and_extends_pad_note_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    await service.get_surface_state("fp-64-pad")
+    banked = await service.dispatch_command("fp-64-pad", "set_64_pad_bank", {"bank_index": 9})
+    triggered = await service.dispatch_command("fp-64-pad", "trigger_pad", {"pad": 2})
+
+    assert banked["session"]["pad_bank_index"] == 3
+    assert banked["surface_modes"]["pad_bank"]["logical_pad_start"] == 48
+    assert banked["pad_grid"][2]["logical_pad"] == 50
+    assert triggered["command_result"]["resolved_pad"] == 50
+    assert triggered["command_result"]["note"] == 86
+    assert fake_engine.calls == [("on", 3, 86, 127)]
+
+
+@pytest.mark.asyncio
+async def test_set_fixed_length_tracks_supported_presets(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    await service.get_surface_state("fp-fixed-length")
+    enabled = await service.dispatch_command("fp-fixed-length", "set_fixed_length", {"enabled": True, "preset": "4"})
+    disabled = await service.dispatch_command("fp-fixed-length", "set_fixed_length", {"enabled": False})
+
+    assert enabled["session"]["fixed_length_enabled"] is True
+    assert enabled["session"]["fixed_length_preset"] == "4"
+    assert enabled["surface_modes"]["fixed_length"]["steps"] == 64
+    assert enabled["command_result"]["fixed_length"]["bars"] == 4
+    assert disabled["session"]["fixed_length_enabled"] is False
+    assert disabled["surface_modes"]["fixed_length"]["preset"] is None
+
+
+@pytest.mark.asyncio
+async def test_set_repeat_tracks_rate_and_starts_repeat_scheduler_on_trigger(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+    repeat_starts: list[tuple[str, int]] = []
+    repeat_stops: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(
+        PushDrumSessionService,
+        "_start_repeat_task",
+        lambda self, **kwargs: repeat_starts.append((kwargs["device_fingerprint"], kwargs["pad"])),
+    )
+    monkeypatch.setattr(
+        PushDrumSessionService,
+        "_stop_repeat_task",
+        lambda self, **kwargs: repeat_stops.append((kwargs["device_fingerprint"], kwargs["pad"])),
+    )
+
+    await service.get_surface_state("fp-repeat")
+    repeat_mode = await service.dispatch_command("fp-repeat", "set_repeat", {"enabled": True, "rate": "1/16"})
+    triggered = await service.dispatch_command("fp-repeat", "trigger_pad", {"pad": 1, "velocity": 77})
+    stopped = await service.dispatch_command("fp-repeat", "stop_pad", {"pad": 1})
+
+    assert repeat_mode["session"]["repeat_enabled"] is True
+    assert repeat_mode["session"]["repeat_rate"] == "1/16"
+    assert repeat_mode["surface_modes"]["repeat"]["available_rates"][-1] == "triplet"
+    assert triggered["command_result"]["velocity"] == 77
+    assert repeat_starts == [("fp-repeat", 1)]
+    assert repeat_stops == [("fp-repeat", 1)]
+    assert stopped["session"]["last_command"] == "stop_pad"
+
+
+@pytest.mark.asyncio
+async def test_trigger_pad_quantizes_recorded_step_when_quantize_mode_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_engine = _FakeAudioEngine()
+    fake_sequencer = _FakeSequencerService()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+    monkeypatch.setattr(drum_runtime_module, "get_drum_sequencer_service", lambda: fake_sequencer, raising=False)
+
+    import app.services.drum_sequencer_service as drum_sequencer_module
+
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+
+    await service.get_surface_state("fp-quantize")
+    quantize = await service.dispatch_command(
+        "fp-quantize",
+        "set_quantize",
+        {"enabled": True, "grid": "1/4", "strength": 100},
+    )
+    triggered = await service.dispatch_command("fp-quantize", "trigger_pad", {"pad": 2, "velocity": 92})
+
+    assert quantize["session"]["quantize_enabled"] is True
+    assert quantize["surface_modes"]["quantize"]["grid"] == "1/4"
+    assert fake_sequencer.step_calls == [(0, 2, 4, 92)]
+    assert triggered["command_result"]["quantized_capture"]["quantized_step"] == 4
+    assert triggered["command_result"]["quantized_capture"]["grid"] == "1/4"
+
+
+@pytest.mark.asyncio
+async def test_set_loop_selector_updates_loop_region_and_supports_duplicate_and_halve(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_sequencer = _FakeSequencerService()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    import app.services.drum_sequencer_service as drum_sequencer_module
+
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+
+    await service.get_surface_state("fp-loop")
+    selected = await service.dispatch_command(
+        "fp-loop",
+        "set_loop_selector",
+        {"enabled": True, "page": 1, "start_pad": 0, "end_pad": 7},
+    )
+    duplicated = await service.dispatch_command(
+        "fp-loop",
+        "set_loop_selector",
+        {"enabled": True, "action": "duplicate"},
+    )
+    halved = await service.dispatch_command(
+        "fp-loop",
+        "set_loop_selector",
+        {"enabled": True, "action": "halve"},
+    )
+
+    assert selected["session"]["loop_selector_enabled"] is True
+    assert selected["session"]["loop_start_step"] == 16
+    assert selected["session"]["loop_end_step"] == 23
+    assert duplicated["command_result"]["copied_steps"] == 8
+    assert halved["surface_modes"]["loop_selector"]["length_steps"] == 8
+    assert fake_sequencer.loop_calls == [
+        ("set", 0, (16, 23)),
+        ("duplicate", 0, ()),
+        ("halve", 0, ()),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_set_step_toggles_grid_step_and_tracks_selected_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_sequencer = _FakeSequencerService()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    import app.services.drum_sequencer_service as drum_sequencer_module
+
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+
+    await service.get_surface_state("fp-step-grid")
+    enabled = await service.dispatch_command("fp-step-grid", "set_step", {"instrument": 3, "page": 1, "pad": 2})
+    disabled = await service.dispatch_command("fp-step-grid", "set_step", {"instrument": 3, "page": 1, "pad": 2})
+
+    assert enabled["session"]["step_grid_page"] == 1
+    assert enabled["session"]["selected_step_instrument"] == 3
+    assert enabled["session"]["selected_step_index"] == 18
+    assert enabled["drum_projection"]["step_grid"]["page"] == 1
+    assert enabled["drum_projection"]["step_grid"]["selected_step_index"] == 18
+    assert enabled["drum_projection"]["step_grid"]["steps"][2]["active"] is True
+    assert disabled["drum_projection"]["step_grid"]["steps"][2]["active"] is False
+
+
+@pytest.mark.asyncio
+async def test_set_step_automation_updates_selected_step_projection(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = PushDrumSessionService()
+    registry = _FakeRegistry([_instance("inst-live", is_live=True, node_id="node-local")])
+    fake_service = _FakeDrumService()
+    fake_sequencer = _FakeSequencerService()
+
+    monkeypatch.setattr(drum_runtime_module, "get_drum_instance_registry", lambda: registry)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "_service", lambda self: fake_service)
+    monkeypatch.setattr(drum_runtime_module.DrumMachineRuntimeFacade, "get_projection", _fake_projection)
+
+    import app.services.drum_sequencer_service as drum_sequencer_module
+
+    monkeypatch.setattr(drum_sequencer_module, "get_drum_sequencer_service", lambda: fake_sequencer)
+
+    await service.get_surface_state("fp-step-automation")
+    await service.dispatch_command("fp-step-automation", "set_step", {"instrument": 4, "step": 11, "enabled": True, "velocity": 90})
+    automated = await service.dispatch_command(
+        "fp-step-automation",
+        "set_step_automation",
+        {"instrument": 4, "velocity": 108, "pitch": 7.0, "length": 2.5, "probability": 0.35},
+    )
+    cleared = await service.dispatch_command("fp-step-automation", "clear_step", {"instrument": 4, "step": 11})
+
+    selected_step = automated["drum_projection"]["step_grid"]["selected_step"]
+    assert automated["command_result"]["automation"]["velocity"] == 108
+    assert selected_step["velocity"] == 108
+    assert selected_step["pitch"] == 7.0
+    assert selected_step["length"] == 2.5
+    assert selected_step["probability"] == 0.35
+    assert cleared["drum_projection"]["step_grid"]["selected_step"]["active"] is False

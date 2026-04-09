@@ -132,8 +132,24 @@ def _sample_custom_curve(normalized: float, points: List[Dict[str, float]]) -> f
     return _clamp01((3.0 * (u ** 2) * t * p1y) + (3.0 * u * (t ** 2) * p2y) + (t ** 3))
 
 
+def _normalize_curve_name(curve_name: str) -> str:
+    normalized = str(curve_name or "linear").strip().lower()
+    if normalized in {"linear"}:
+        return "linear"
+    if normalized in {"log", "logarithmic"}:
+        return "log"
+    if normalized in {"exp", "exponential"}:
+        return "exp"
+    if normalized in {"scurve", "s_curve"}:
+        return "scurve"
+    if normalized == "custom":
+        return "custom"
+    return "linear"
+
+
 def _curve(normalized: float, curve_name: str, custom_curve: Optional[List[Dict[str, float]]] = None) -> float:
     t = _clamp01(normalized)
+    curve_name = _normalize_curve_name(curve_name)
     if curve_name == "custom":
         return _sample_custom_curve(t, list(custom_curve or []))
     if curve_name == "log":

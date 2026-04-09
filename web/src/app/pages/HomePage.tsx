@@ -3,7 +3,6 @@ import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressBar } from '@carbon/react'
 import {
-  Map2BrandMark,
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
@@ -196,7 +195,6 @@ export function HomePage() {
               className="hp2-desktop__default-wallpaper-image"
               data-testid="home-desktop-default-wallpaper-image"
             />
-            <Map2BrandMark className="hp2-desktop__hero-mark" />
           </div>
         ) : null}
         <div className="hp2-desktop__underlay" aria-hidden="true" />

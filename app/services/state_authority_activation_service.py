@@ -37,6 +37,7 @@ class StateAuthorityActivationService:
         midi_service: Any,
         get_audio_engine: Callable[[], Any],
         push_snapshot_footswitch_labels: Callable[..., Any],
+        push_snapshot_ground_control_pro_assignments: Callable[..., Any],
         push_snapshot_controller_display_preview: Callable[..., Any],
         schedule_snapshot_preload_for_live_snapshot: Callable[[int], None],
         get_activation_hook_plan: Callable[[], Any],
@@ -57,6 +58,7 @@ class StateAuthorityActivationService:
         self.midi_service = midi_service
         self.get_audio_engine = get_audio_engine
         self.push_snapshot_footswitch_labels = push_snapshot_footswitch_labels
+        self.push_snapshot_ground_control_pro_assignments = push_snapshot_ground_control_pro_assignments
         self.push_snapshot_controller_display_preview = push_snapshot_controller_display_preview
         self.schedule_snapshot_preload_for_live_snapshot = schedule_snapshot_preload_for_live_snapshot
         self.get_activation_hook_plan = get_activation_hook_plan
@@ -1069,11 +1071,19 @@ class StateAuthorityActivationService:
                 preview_payload=refreshed_detail.get("controller_display_preview"),
             )
 
+        async def _push_ground_control_pro_assignments() -> dict[str, Any]:
+            return await self.push_snapshot_ground_control_pro_assignments(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                detail_payload=refreshed_detail,
+            )
+
         async def _schedule_preload() -> None:
             self.schedule_snapshot_preload_for_live_snapshot(snapshot.id)
 
         hook_map = {
             "push_footswitch_labels": _push_footswitch_labels,
+            "push_ground_control_pro_assignments": _push_ground_control_pro_assignments,
             "push_controller_display_preview": _push_controller_preview,
             "schedule_preload": _schedule_preload,
         }
@@ -1084,11 +1094,19 @@ class StateAuthorityActivationService:
                 results.append({"hook": str(hook_name), "status": "skipped", "reason": "unknown_hook"})
                 continue
             try:
-                await hook()
+                hook_result = await hook()
+                result_payload = dict(hook_result) if isinstance(hook_result, dict) else None
+                hook_status = (
+                    str(result_payload.get("status")).strip().lower()
+                    if isinstance(result_payload, dict) and str(result_payload.get("status") or "").strip()
+                    else "completed"
+                )
                 results.append(
                     {
                         "hook": str(hook_name),
-                        "status": "completed",
+                        "status": hook_status if hook_status in {"completed", "skipped"} else "completed",
+                        "reason": result_payload.get("reason") if isinstance(result_payload, dict) else None,
+                        "result": result_payload,
                         "preload_candidate_count": (
                             len(preload_plan.get("candidates", []))
                             if str(hook_name) == "schedule_preload" and isinstance(preload_plan, dict)

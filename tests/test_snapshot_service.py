@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from app import database as database_module
+import app.services.ground_control_pro as ground_control_pro_module
 from app.services import audio_state_authority as audio_state_authority_module
 from app.services import performance_brain_authority_sync as performance_brain_authority_sync_module
 from app.services import performance_metrics as performance_metrics_module
@@ -65,6 +66,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     scheduled_health_checks: list[dict[str, object]] = []
     footswitch_pushes: list[dict[str, object]] = []
     controller_display_pushes: list[dict[str, object]] = []
+    gcp_pushes: list[dict[str, object]] = []
+    hook_order: list[str] = []
 
     async def _passthrough(snapshot_data):
         return snapshot_data
@@ -77,12 +80,25 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         return 1
 
     async def _fake_push_footswitch_labels(**kwargs):
+        hook_order.append("footswitch")
         footswitch_pushes.append(dict(kwargs))
         return {"labels_pushed": 2, "device_count": 1, "devices": ["morningstar_mc6:main"], "lcd_updated": True}
 
     async def _fake_push_controller_display(**kwargs):
+        hook_order.append("controller_display")
         controller_display_pushes.append(dict(kwargs))
         return {"slots_pushed": 1, "device_count": 1, "devices": ["morningstar_mc6:main"]}
+
+    class _FakeGroundControlProService:
+        async def push_snapshot_activation(self, **kwargs):
+            hook_order.append("ground_control_pro")
+            gcp_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "session_id": "gcp-session-1",
+                "preset_index": 4,
+                "transport": {"port_index": 0, "port_name": "Ground Control Pro Out"},
+            }
 
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
@@ -90,6 +106,11 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
     monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
     monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(
+        ground_control_pro_module,
+        "get_ground_control_pro_service",
+        lambda: _FakeGroundControlProService(),
+    )
     monkeypatch.setattr(
         runtime_state_service_module,
         "schedule_post_activation_health_check",
@@ -158,6 +179,30 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                         "blend_positions": {"channel-0": 100.0},
                         "morph_position": 0.5,
                         "series_order": ["channel-0"],
+                    },
+                    "extensions": {
+                        "ground_control_pro": {
+                            "session_id": "gcp-session-1",
+                            "activation_push": {
+                                "preset": {
+                                    "index": 4,
+                                    "name": "UNIFYSNAP",
+                                    "device_program_changes": [
+                                        {"device_index": 0, "enabled": 1, "program": 10},
+                                    ],
+                                    "instant_access_state": [{"index": 1, "value": 1}],
+                                    "gcx_loop_states": [{"index": 0, "value": 1}],
+                                },
+                                "global_config": {
+                                    "instant_access": [
+                                        {"index": 1, "function": 55, "detail": 9, "transmit_cc": 1, "switch_type": 1},
+                                    ],
+                                },
+                                "transport": {
+                                    "output_port_index": 0,
+                                },
+                            },
+                        },
                     },
                     "midi_map": [
                         {"action": "load_snapshot", "program_number": 10},
@@ -272,10 +317,44 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     ],
                 }
             ]
+            assert hook_order == ["footswitch", "ground_control_pro", "controller_display"]
+            assert gcp_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
+                    "extension_payload": {
+                        "session_id": "gcp-session-1",
+                        "activation_push": {
+                            "preset": {
+                                "index": 4,
+                                "name": "UNIFYSNAP",
+                                "device_program_changes": [
+                                    {"device_index": 0, "enabled": 1, "program": 10},
+                                ],
+                                "instant_access_state": [{"index": 1, "value": 1}],
+                                "gcx_loop_states": [{"index": 0, "value": 1}],
+                                },
+                                "global_config": {
+                                    "instant_access": [
+                                        {"index": 1, "function": 55, "detail": 9, "transmit_cc": 1, "switch_type": 1},
+                                    ],
+                                },
+                            "transport": {
+                                "output_port_index": 0,
+                            },
+                        },
+                    },
+                }
+            ]
             assert controller_display_pushes[0]["snapshot_id"] == created["id"]
             assert controller_display_pushes[0]["snapshot_name"] == "UnifiedSnapshot"
             assert controller_display_pushes[0]["preview_payload"]["slots"][0]["display_label"] == "Clean"
             assert controller_display_pushes[0]["preview_payload"]["slots"][0]["key_parameter"]["formatted_value"] == "0.5"
+            assert (await service.get_activation_hook_plan())[:3] == [
+                "push_footswitch_labels",
+                "push_ground_control_pro_assignments",
+                "push_controller_display_preview",
+            ]
 
             live_snapshot = await service.get_live_snapshot()
             assert live_snapshot is not None
@@ -1218,6 +1297,104 @@ def test_snapshot_service_bundle_export_import_embeds_and_restores_assets(tmp_pa
             records = nam_models.scalars().all()
             assert len(records) == 1
             assert records[0].file_path == str(imported_nam_path)
+
+    asyncio.run(_run())
+
+
+def test_snapshot_service_bundle_export_import_embeds_ground_control_pro_state(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _FakeGroundControlProService:
+        def __init__(self) -> None:
+            self.export_calls: list[str | None] = []
+            self.import_payloads: list[dict[str, object]] = []
+
+        async def export_bundle_payload(self, session_id: str | None = None):
+            self.export_calls.append(session_id)
+            return {
+                "profile_id": "v1_13_bulk_dump",
+                "session_id": session_id or "gcp-session-live",
+                "source_name": "ground-control-pro.syx",
+                "source_artifact_id": "artifact-source",
+                "compiled_artifact_id": None,
+                "backup_artifact_id": None,
+                "sysex_base64": "8AAABxA=",
+                "model": {"profile_id": "v1_13_bulk_dump", "global_config": {}, "presets": []},
+                "validation": {"errors": []},
+                "artifacts": [],
+                "artifact_metadata": {},
+            }
+
+        async def import_bundle_payload(self, payload):
+            copied = dict(payload)
+            self.import_payloads.append(copied)
+            return {
+                "profile_id": "v1_13_bulk_dump",
+                "session_id": "restored-gcp-session",
+                "source_artifact_id": "restored-artifact",
+                "compiled_artifact_id": None,
+                "backup_artifact_id": None,
+                "source_name": str(payload.get("source_name") or "ground-control-pro.syx"),
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    fake_gcp_service = _FakeGroundControlProService()
+    monkeypatch.setattr(ground_control_pro_module, "get_ground_control_pro_service", lambda: fake_gcp_service)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="SnapshotWithGcp",
+                apply_default_system_blocks=False,
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-0",
+                        "blend_positions": {"channel-0": 100.0},
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                    "extensions": {
+                        "ground_control_pro": {
+                            "session_id": "snapshot-gcp-session",
+                        }
+                    },
+                },
+            )
+
+            bundle = await service.export_snapshot_bundle(created["id"])
+            assert bundle is not None
+
+            with zipfile.ZipFile(io.BytesIO(bundle["content"]), "r") as archive:
+                payload = json.loads(archive.read("snapshot.json").decode("utf-8"))
+                assert payload["ground_control_pro"]["session_id"] == "snapshot-gcp-session"
+                assert payload["ground_control_pro"]["source_artifact_id"] == "artifact-source"
+
+            imported = await service.import_snapshot(bundle["content"])
+            assert imported["extensions"]["ground_control_pro"]["session_id"] == "restored-gcp-session"
+            assert fake_gcp_service.export_calls == ["snapshot-gcp-session"]
+            assert len(fake_gcp_service.import_payloads) == 1
 
     asyncio.run(_run())
 
@@ -2289,6 +2466,10 @@ def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monk
             )
             assert updated is not None
             assert updated["routing"]["mode"] == "series"
+            assert updated["routing_requires_reactivation"] is False
+            assert updated["routing_mode_changed_live"] is True
+            assert updated["routing_apply"]["applied"] is True
+            assert updated["routing_apply"]["reason"] == "non_parallel_mode"
 
             runtime_payload = await SnapshotRuntimeStateService(session).get_live_snapshot_payload()
             assert runtime_payload is not None
@@ -3904,6 +4085,117 @@ def test_replace_midi_map_resyncs_live_snapshot_commands_to_engine(tmp_path, mon
     asyncio.run(_run())
 
 
+def test_replace_midi_map_syncs_snapshot_ab_switch_command_to_engine(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _SnapshotMidiEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.command_batches: list[list[dict[str, object]]] = []
+
+        async def set_all_midi_commands(self, commands):
+            self.command_batches.append([dict(item) for item in commands])
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return {
+                "mutation_count": 0,
+                "no_op_skip_count": 0,
+                "last_mutation_duration_ms": 0.0,
+                "peak_mutation_duration_ms": 0.0,
+                "avg_mutation_duration_ms": 0.0,
+                "last_removed_connection_count": 0,
+                "last_added_connection_count": 0,
+                "last_chain_size": 0,
+                "last_parallel_group_count": 0,
+            }
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 1, 0
+
+    async def _healthy_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _fake_push_footswitch_labels(**_kwargs):
+        return {"labels_pushed": 0, "device_count": 0, "devices": [], "lcd_updated": False}
+
+    async def _fake_push_controller_display(**_kwargs):
+        return {"slots_pushed": 0, "device_count": 0, "devices": []}
+
+    engine_stub = _SnapshotMidiEngineStub()
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
+    monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _healthy_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="SnapshotABSwitchMidi",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "A", "plugins": []},
+                        {"id": 2, "name": "B", "plugins": []},
+                    ],
+                    "routing": {
+                        "mode": "ab_switch",
+                        "active_channel_key": "channel-a",
+                        "blend_positions": {"channel-a": 100.0, "channel-b": 0.0},
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            replaced = await service.replace_midi_map(
+                created["id"],
+                [
+                    {
+                        "action": "set_routing",
+                        "routing_action": "ab_switch_toggle",
+                        "cc_number": 83,
+                        "midi_channel": 4,
+                        "active_channel_key": "__toggle__",
+                        "mode": "ab_switch",
+                    },
+                ],
+            )
+
+            assert replaced is not None
+            synced_batch = engine_stub.command_batches[-1]
+            assert synced_batch[-1]["command_type"] == "cc_toggle"
+            assert synced_batch[-1]["channel"] == 4
+            assert synced_batch[-1]["data1"] == 83
+            assert synced_batch[-1]["action_type"] == "set_routing"
+            assert synced_batch[-1]["action_data"]["routing_action"] == "ab_switch_toggle"
+
+    asyncio.run(_run())
+
+
 def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 
@@ -4454,14 +4746,29 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
                     "expression_mappings": [
                         {
                             "id": "snapshot-wah",
+                            "label": "EXP 1",
                             "cc": 11,
                             "channel": 1,
                             "cc_min": 0,
                             "cc_max": 127,
-                            "param_id": "engine.wah_freq",
-                            "param_label": "Wah",
-                            "out_min": 0.1,
-                            "out_max": 0.9,
+                            "targets": [
+                                {
+                                    "id": "wah-target",
+                                    "param_id": "engine.wah_freq",
+                                    "param_label": "Wah",
+                                    "out_min": 0.1,
+                                    "out_max": 0.9,
+                                    "curve": "linear",
+                                },
+                                {
+                                    "id": "delay-target",
+                                    "param_id": "engine.delay_mix",
+                                    "param_label": "Delay Mix",
+                                    "out_min": 0.2,
+                                    "out_max": 0.8,
+                                    "curve": "s_curve",
+                                },
+                            ],
                         }
                     ],
                     "automation_lanes": [
@@ -4526,10 +4833,74 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
 
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None
-            assert expression_stub.calls == [[created["controls"]["expression_mappings"][0]]]
+            assert created["controls"]["expression_mappings"] == [
+                {
+                    "id": "snapshot-wah",
+                    "label": "EXP 1",
+                    "cc": 11,
+                    "channel": 1,
+                    "cc_min": 0,
+                    "cc_max": 127,
+                    "active": True,
+                    "targets": [
+                        {
+                            "id": "wah-target",
+                            "param_id": "engine.wah_freq",
+                            "param_label": "Wah",
+                            "out_min": 0.1,
+                            "out_max": 0.9,
+                            "curve": "linear",
+                            "custom_curve": [],
+                            "active": True,
+                        },
+                        {
+                            "id": "delay-target",
+                            "param_id": "engine.delay_mix",
+                            "param_label": "Delay Mix",
+                            "out_min": 0.2,
+                            "out_max": 0.8,
+                            "curve": "s_curve",
+                            "custom_curve": [],
+                            "active": True,
+                        },
+                    ],
+                }
+            ]
+            assert expression_stub.calls == [[
+                {
+                    "id": "snapshot-wah:wah-target",
+                    "cc": 11,
+                    "channel": 1,
+                    "cc_min": 0,
+                    "cc_max": 127,
+                    "param_id": "engine.wah_freq",
+                    "param_label": "Wah",
+                    "out_min": 0.1,
+                    "out_max": 0.9,
+                    "curve": "linear",
+                    "custom_curve": [],
+                    "active": True,
+                },
+                {
+                    "id": "snapshot-wah:delay-target",
+                    "cc": 11,
+                    "channel": 1,
+                    "cc_min": 0,
+                    "cc_max": 127,
+                    "param_id": "engine.delay_mix",
+                    "param_label": "Delay Mix",
+                    "out_min": 0.2,
+                    "out_max": 0.8,
+                    "curve": "s_curve",
+                    "custom_curve": [],
+                    "active": True,
+                },
+            ]]
             assert automation_stub.calls == [[created["controls"]["automation_lanes"][0]]]
             assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["synced"] is True
-            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["applied_count"] == 1
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["mapping_count"] == 1
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["target_count"] == 2
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["applied_count"] == 2
             assert activated["runtime_live_state"]["runtime_metrics"]["automation_lanes"]["synced"] is True
             assert activated["runtime_live_state"]["runtime_metrics"]["automation_lanes"]["applied_count"] == 1
 

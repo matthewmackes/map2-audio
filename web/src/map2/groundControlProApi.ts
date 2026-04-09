@@ -130,6 +130,25 @@ export interface GroundControlPortsResponse {
   outputs: Array<{ index: number; name: string; connected: boolean }>
   recommended_input_index?: number | null
   recommended_output_index?: number | null
+  daemon_status?: {
+    enabled: boolean
+    state: string
+    available: boolean
+    poll_interval_s: number
+    last_checked_at?: string | null
+    last_seen_at?: string | null
+    last_repush_at?: string | null
+    last_error?: string | null
+    reconnect_count: number
+    matched_input_count: number
+    matched_output_count: number
+    notification?: {
+      severity: string
+      title: string
+      subtitle: string
+      emitted_at: string
+    } | null
+  }
 }
 
 export interface GroundControlFieldMapResponse {

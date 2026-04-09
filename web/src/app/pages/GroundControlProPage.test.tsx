@@ -253,4 +253,118 @@ describe('GroundControlProPage', () => {
     expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
     expect(screen.getAllByRole('button', { name: 'Compile' })[0]).not.toBeDisabled()
   })
+
+  it('keeps GCX loop relay edits in the compiled preset model', async () => {
+    const importedModel = buildModel()
+    mockGroundControlProApi.importDump.mockResolvedValue({
+      session_id: 'session-1',
+      source_name: 'factory_default_v113.syx',
+      profile_id: 'v1_13_bulk_dump',
+      created_at: '2026-03-30T12:00:00Z',
+      updated_at: '2026-03-30T12:00:00Z',
+      model: importedModel,
+      validation: {
+        total_payload_size: 16567,
+        exact_size_ok: true,
+        preamble_ok: true,
+        terminator_ok: true,
+        offsets_ok: true,
+        field_ranges_ok: true,
+        unknown_bytes_preserved: true,
+        round_trip_identity: true,
+        unknown_byte_count: 1608,
+        errors: [],
+        warnings: [],
+        changed_offsets: [],
+      },
+      summary: {
+        preset_count: 200,
+        unknown_byte_count: 1608,
+        source_artifact_id: 'artifact-1',
+        compiled_artifact_id: null,
+        backup_artifact_id: null,
+      },
+      artifacts: [],
+    })
+    mockGroundControlProApi.compileSession.mockImplementation(async (_sessionId, model) => ({
+      session_id: 'session-1',
+      artifact: {
+        artifact_id: 'compiled-1',
+        kind: 'compiled_syx',
+        path: '/tmp/compiled.syx',
+        size_bytes: 16567,
+        sha256: 'compiled',
+        created_at: '2026-03-30T12:05:00Z',
+        metadata: {},
+      },
+      validation: {
+        total_payload_size: 16567,
+        exact_size_ok: true,
+        preamble_ok: true,
+        terminator_ok: true,
+        offsets_ok: true,
+        field_ranges_ok: true,
+        unknown_bytes_preserved: true,
+        round_trip_identity: true,
+        unknown_byte_count: 1608,
+        errors: [],
+        warnings: [],
+        changed_offsets: [],
+      },
+      model,
+    }))
+
+    render(<GroundControlProPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drop a Ground Control Pro .syx dump here or click to browse' }))
+    await waitFor(() => expect(mockGroundControlProApi.importDump).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Presets' }))
+    const relayToggle = await screen.findByRole('switch', { name: 'GCX 1 Loop 1' })
+    expect(relayToggle).toHaveAttribute('aria-checked', 'false')
+
+    fireEvent.click(relayToggle)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Compile' })[0])
+
+    await waitFor(() => expect(mockGroundControlProApi.compileSession).toHaveBeenCalled())
+    const compiledModel = mockGroundControlProApi.compileSession.mock.calls[0][1]
+    expect(compiledModel.presets[0].gcx_loop_states[0]).toBe(1)
+  })
+
+  it('surfaces reconnect and re-push daemon status in the hero chrome', async () => {
+    mockGroundControlProApi.getPorts.mockResolvedValue({
+      rtmidi_available: true,
+      inputs: [{ index: 0, name: 'Ground Control Pro In', connected: true }],
+      outputs: [{ index: 0, name: 'Ground Control Pro Out', connected: true }],
+      recommended_input_index: 0,
+      recommended_output_index: 0,
+      daemon_status: {
+        enabled: true,
+        state: 'repushing',
+        available: true,
+        poll_interval_s: 2,
+        last_checked_at: '2026-04-09T20:30:00Z',
+        last_seen_at: '2026-04-09T20:30:00Z',
+        last_repush_at: '2026-04-09T20:30:01Z',
+        last_error: null,
+        reconnect_count: 1,
+        matched_input_count: 1,
+        matched_output_count: 1,
+        notification: {
+          severity: 'info',
+          title: 'Ground Control Pro state restored',
+          subtitle: 'Live snapshot preset 1 re-pushed.',
+          emitted_at: '2026-04-09T20:30:01Z',
+        },
+      },
+    })
+
+    render(<GroundControlProPage />)
+
+    await waitFor(() => expect(mockGroundControlProApi.getPorts).toHaveBeenCalled())
+
+    expect(screen.getByText(/repushing/i)).toBeTruthy()
+    expect(screen.getByText('Ground Control Pro state restored')).toBeTruthy()
+    expect(screen.getByText('Live snapshot preset 1 re-pushed.')).toBeTruthy()
+  })
 })

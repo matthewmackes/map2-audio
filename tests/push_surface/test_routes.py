@@ -253,12 +253,108 @@ class _FakePushDrumSessionService:
                 "device_fingerprint": device_fingerprint,
                 "selected_instance_id": "inst-1",
                 "bank_index": 0,
+                "pad_bank_index": 0,
+                "pad_velocity_mode_enabled": False,
+                "pad_velocity_source_pad": None,
+                "repeat_enabled": False,
+                "repeat_rate": None,
+                "quantize_enabled": False,
+                "quantize_grid": None,
+                "quantize_strength": 100,
+                "fixed_length_enabled": False,
+                "fixed_length_preset": None,
+                "step_grid_page": 0,
+                "selected_step_index": None,
+                "selected_step_instrument": None,
+                "loop_selector_enabled": False,
+                "loop_selector_page": 0,
+                "loop_start_step": None,
+                "loop_end_step": None,
                 "last_command": None,
                 "pending_confirmation": None,
                 "last_confirmation_resolution": None,
             },
             "available_instances": [{"instance_id": "inst-1"}],
             "selected_projection": {"instance": {"instance_id": "inst-1"}},
+            "drum_projection": {
+                "instance": {"instance_id": "inst-1"},
+                "transport": {"is_playing": False, "bpm": 120, "pattern_id": 0, "step": 0, "bar": 1, "beat": 1},
+                "pads": [{"physical_pad": 0, "logical_pad": 0, "name": "Kick", "mute": False, "solo": False, "armed": True, "source": "sample", "color": "green", "bus_assignment": 0, "volume": 100.0}],
+                "current_bank": {"index": 0, "start_pad": 0, "end_pad": 15},
+                "modes": {
+                    "pad_velocity_mode": {"enabled": False, "source_pad": None},
+                    "repeat": {"enabled": False, "rate": None},
+                    "quantize": {"enabled": False, "grid": None, "strength": 100},
+                    "fixed_length": {"enabled": False, "preset": None},
+                    "step_grid": {"page": 0, "selected_step_index": None, "selected_step_instrument": None},
+                    "loop_selector": {"enabled": False, "page": 0, "start_step": None, "end_step": None},
+                },
+                "step_grid": {
+                    "pattern_id": 0,
+                    "selected_pad": 0,
+                    "page": 0,
+                    "page_start_step": 0,
+                    "page_end_step": 15,
+                    "selected_step_index": None,
+                    "selected_step_instrument": None,
+                    "selected_step": None,
+                    "steps": [],
+                },
+                "browser": {
+                    "favorites": [],
+                    "recent": [],
+                    "quick_shortcuts": [],
+                    "last_browse_payload": {},
+                },
+                "confirmation": None,
+                "display": {
+                    "transport_safe": False,
+                    "fallback": "led_only",
+                    "title": "Pattern 001",
+                    "lines": ["No kit loaded", "Kick", "Step 01", "LED fallback"],
+                },
+            },
+            "surface_modes": {
+                "pad_velocity_mode": {
+                    "enabled": False,
+                    "source_pad": None,
+                    "velocity_levels": [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127],
+                },
+                "repeat": {
+                    "enabled": False,
+                    "rate": None,
+                    "available_rates": ["1/4", "1/8", "1/16", "1/32", "triplet"],
+                },
+                "quantize": {
+                    "enabled": False,
+                    "grid": None,
+                    "strength": 100,
+                    "available_grids": ["1/4", "1/8", "1/16", "1/32"],
+                },
+                "pad_bank": {
+                    "index": 0,
+                    "count": 4,
+                    "pads_per_bank": 16,
+                    "logical_pad_start": 0,
+                    "logical_pad_end": 15,
+                },
+                "fixed_length": {
+                    "enabled": False,
+                    "preset": None,
+                    "bars": None,
+                    "beats": None,
+                    "steps": None,
+                    "available_presets": ["1/2", "1", "2", "4", "8", "16", "32"],
+                },
+                "loop_selector": {
+                    "enabled": False,
+                    "page": 0,
+                    "start_step": None,
+                    "end_step": None,
+                    "length_steps": None,
+                },
+            },
+            "pad_grid": [{"physical_pad": pad, "logical_pad": pad, "velocity": None} for pad in range(16)],
         }
 
     async def dispatch_command(self, device_fingerprint: str, command: str, payload: dict[str, object] | None = None):
@@ -269,6 +365,23 @@ class _FakePushDrumSessionService:
                 "device_fingerprint": device_fingerprint,
                 "selected_instance_id": payload.get("instance_id") if payload else "inst-1",
                 "bank_index": 0,
+                "pad_bank_index": int((payload or {}).get("bank_index", 0)) if command == "set_64_pad_bank" else 0,
+                "pad_velocity_mode_enabled": bool((payload or {}).get("enabled")) if command == "set_pad_velocity_mode" else False,
+                "pad_velocity_source_pad": (payload or {}).get("pad") if command == "set_pad_velocity_mode" else None,
+                "repeat_enabled": bool((payload or {}).get("enabled")) if command == "set_repeat" else False,
+                "repeat_rate": (payload or {}).get("rate") if command == "set_repeat" else None,
+                "quantize_enabled": bool((payload or {}).get("enabled")) if command == "set_quantize" else False,
+                "quantize_grid": (payload or {}).get("grid") if command == "set_quantize" else None,
+                "quantize_strength": int((payload or {}).get("strength", 100)) if command == "set_quantize" else 100,
+                "fixed_length_enabled": bool((payload or {}).get("enabled")) if command == "set_fixed_length" else False,
+                "fixed_length_preset": (payload or {}).get("preset") if command == "set_fixed_length" else None,
+                "step_grid_page": int((payload or {}).get("page", 0)) if command in {"set_step", "set_step_automation"} else 0,
+                "selected_step_index": int((payload or {}).get("step", ((payload or {}).get("page", 0) * 16) + (payload or {}).get("pad", 0))) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                "selected_step_instrument": int((payload or {}).get("instrument", 0)) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                "loop_selector_enabled": bool((payload or {}).get("enabled")) if command == "set_loop_selector" else False,
+                "loop_selector_page": int((payload or {}).get("page", 0)) if command == "set_loop_selector" else 0,
+                "loop_start_step": 16 if command == "set_loop_selector" else None,
+                "loop_end_step": 23 if command == "set_loop_selector" else None,
                 "last_command": command,
                 "pending_confirmation": {
                     "action_id": action_id,
@@ -301,6 +414,138 @@ class _FakePushDrumSessionService:
             },
             "available_instances": [{"instance_id": "inst-1"}],
             "selected_projection": {"instance": {"instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1"}},
+            "drum_projection": {
+                "instance": {"instance_id": payload.get("instance_id", "inst-1") if payload else "inst-1"},
+                "transport": {"is_playing": command == "play", "bpm": 120, "pattern_id": 0, "step": 0, "bar": 1, "beat": 1},
+                "pads": [{"physical_pad": 0, "logical_pad": 0, "name": "Kick", "mute": False, "solo": False, "armed": True, "source": "sample", "color": "green", "bus_assignment": 0, "volume": 100.0}],
+                "current_bank": {"index": int((payload or {}).get("bank_index", 0)) if command == "set_64_pad_bank" else 0, "start_pad": 0, "end_pad": 15},
+                "modes": {
+                    "pad_velocity_mode": {
+                        "enabled": bool((payload or {}).get("enabled")) if command == "set_pad_velocity_mode" else False,
+                        "source_pad": (payload or {}).get("pad") if command == "set_pad_velocity_mode" else None,
+                    },
+                    "repeat": {
+                        "enabled": bool((payload or {}).get("enabled")) if command == "set_repeat" else False,
+                        "rate": (payload or {}).get("rate") if command == "set_repeat" else None,
+                    },
+                    "quantize": {
+                        "enabled": bool((payload or {}).get("enabled")) if command == "set_quantize" else False,
+                        "grid": (payload or {}).get("grid") if command == "set_quantize" else None,
+                        "strength": int((payload or {}).get("strength", 100)) if command == "set_quantize" else 100,
+                    },
+                    "fixed_length": {
+                        "enabled": bool((payload or {}).get("enabled")) if command == "set_fixed_length" else False,
+                        "preset": (payload or {}).get("preset") if command == "set_fixed_length" else None,
+                    },
+                    "step_grid": {
+                        "page": int((payload or {}).get("page", 0)) if command in {"set_step", "set_step_automation"} else 0,
+                        "selected_step_index": int((payload or {}).get("step", ((payload or {}).get("page", 0) * 16) + (payload or {}).get("pad", 0))) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                        "selected_step_instrument": int((payload or {}).get("instrument", 0)) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                    },
+                    "loop_selector": {
+                        "enabled": bool((payload or {}).get("enabled")) if command == "set_loop_selector" else False,
+                        "page": int((payload or {}).get("page", 0)) if command == "set_loop_selector" else 0,
+                        "start_step": 16 if command == "set_loop_selector" else None,
+                        "end_step": 23 if command == "set_loop_selector" else None,
+                    },
+                },
+                "step_grid": {
+                    "pattern_id": 0,
+                    "selected_pad": int((payload or {}).get("instrument", 0)) if command in {"set_step", "set_step_automation", "clear_step"} else 0,
+                    "page": int((payload or {}).get("page", 0)) if command in {"set_step", "set_step_automation"} else 0,
+                    "page_start_step": (int((payload or {}).get("page", 0)) * 16) if command in {"set_step", "set_step_automation"} else 0,
+                    "page_end_step": ((int((payload or {}).get("page", 0)) * 16) + 15) if command in {"set_step", "set_step_automation"} else 15,
+                    "selected_step_index": int((payload or {}).get("step", ((payload or {}).get("page", 0) * 16) + (payload or {}).get("pad", 0))) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                    "selected_step_instrument": int((payload or {}).get("instrument", 0)) if command in {"set_step", "set_step_automation", "clear_step"} else None,
+                    "selected_step": {
+                        "step": int((payload or {}).get("step", ((payload or {}).get("page", 0) * 16) + (payload or {}).get("pad", 0))),
+                        "active": command != "clear_step",
+                        "velocity": int((payload or {}).get("velocity", 100)),
+                        "probability": float((payload or {}).get("probability", 1.0)),
+                        "micro_timing": int((payload or {}).get("micro_timing", 0)),
+                        "pitch": (payload or {}).get("pitch"),
+                        "length": (payload or {}).get("length"),
+                        "ratchet_count": 1,
+                        "is_playhead": False,
+                        "selected": True,
+                    }
+                    if command in {"set_step", "set_step_automation", "clear_step"}
+                    else None,
+                    "steps": [
+                        {
+                            "step": ((int((payload or {}).get("page", 0)) * 16) + index) if command in {"set_step", "set_step_automation"} else index,
+                            "active": index == int((payload or {}).get("pad", 0)) if command == "set_step" else False,
+                            "velocity": int((payload or {}).get("velocity", 100)) if index == int((payload or {}).get("pad", -1)) and command in {"set_step", "set_step_automation"} else 0,
+                            "probability": float((payload or {}).get("probability", 1.0)),
+                            "micro_timing": int((payload or {}).get("micro_timing", 0)),
+                            "pitch": (payload or {}).get("pitch"),
+                            "length": (payload or {}).get("length"),
+                            "ratchet_count": 1,
+                            "is_playhead": False,
+                            "selected": index == int((payload or {}).get("pad", 0)) if command in {"set_step", "set_step_automation", "clear_step"} else False,
+                        }
+                        for index in range(16)
+                    ],
+                },
+                "browser": {
+                    "favorites": [],
+                    "recent": [],
+                    "quick_shortcuts": [],
+                    "last_browse_payload": {},
+                },
+                "confirmation": {
+                    "action_id": action_id,
+                }
+                if command == "select_instance"
+                else None,
+                "display": {
+                    "transport_safe": False,
+                    "fallback": "led_only",
+                    "title": "Pattern 001",
+                    "lines": ["No kit loaded", "Kick", "Step 01", "LED fallback"],
+                },
+            },
+            "surface_modes": {
+                "pad_velocity_mode": {
+                    "enabled": bool((payload or {}).get("enabled")) if command == "set_pad_velocity_mode" else False,
+                    "source_pad": (payload or {}).get("pad") if command == "set_pad_velocity_mode" else None,
+                    "velocity_levels": [8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 127],
+                },
+                "repeat": {
+                    "enabled": bool((payload or {}).get("enabled")) if command == "set_repeat" else False,
+                    "rate": (payload or {}).get("rate") if command == "set_repeat" else None,
+                    "available_rates": ["1/4", "1/8", "1/16", "1/32", "triplet"],
+                },
+                "quantize": {
+                    "enabled": bool((payload or {}).get("enabled")) if command == "set_quantize" else False,
+                    "grid": (payload or {}).get("grid") if command == "set_quantize" else None,
+                    "strength": int((payload or {}).get("strength", 100)) if command == "set_quantize" else 100,
+                    "available_grids": ["1/4", "1/8", "1/16", "1/32"],
+                },
+                "pad_bank": {
+                    "index": int((payload or {}).get("bank_index", 0)) if command == "set_64_pad_bank" else 0,
+                    "count": 4,
+                    "pads_per_bank": 16,
+                    "logical_pad_start": 0,
+                    "logical_pad_end": 15,
+                },
+                "fixed_length": {
+                    "enabled": bool((payload or {}).get("enabled")) if command == "set_fixed_length" else False,
+                    "preset": (payload or {}).get("preset") if command == "set_fixed_length" else None,
+                    "bars": 4 if command == "set_fixed_length" and (payload or {}).get("preset") == "4" else None,
+                    "beats": 16 if command == "set_fixed_length" and (payload or {}).get("preset") == "4" else None,
+                    "steps": 64 if command == "set_fixed_length" and (payload or {}).get("preset") == "4" else None,
+                    "available_presets": ["1/2", "1", "2", "4", "8", "16", "32"],
+                },
+                "loop_selector": {
+                    "enabled": bool((payload or {}).get("enabled")) if command == "set_loop_selector" else False,
+                    "page": int((payload or {}).get("page", 0)) if command == "set_loop_selector" else 0,
+                    "start_step": 16 if command == "set_loop_selector" else None,
+                    "end_step": 23 if command == "set_loop_selector" else None,
+                    "length_steps": 8 if command == "set_loop_selector" else None,
+                },
+            },
+            "pad_grid": [{"physical_pad": pad, "logical_pad": pad, "velocity": None} for pad in range(16)],
         }
 
 
@@ -469,9 +714,11 @@ def test_push_surface_drum_registry_assignment_and_session_routes(monkeypatch):
     assert resolve.json()["status"] == "assigned"
     assert session.status_code == 200
     assert session.json()["session"]["device_fingerprint"] == "fp-1"
+    assert session.json()["drum_projection"]["display"]["fallback"] == "led_only"
     assert command.status_code == 200
     assert command.json()["session"]["last_command"] == "select_instance"
     assert command.json()["session"]["pending_confirmation"]["accept_command"] == "accept_pending_confirmation"
+    assert command.json()["drum_projection"]["confirmation"]["action_id"] == "push-confirm-demo"
 
 
 def test_push_surface_pending_confirmation_summary_route(monkeypatch):
@@ -521,3 +768,116 @@ def test_push_surface_drum_session_accepts_transport_commands(monkeypatch):
 
     assert command.status_code == 200
     assert command.json()["session"]["last_command"] == "play"
+
+
+def test_push_surface_drum_session_accepts_phase_a2_mode_commands(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    velocity_mode = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_pad_velocity_mode",
+            "payload": {"enabled": True, "pad": 18},
+        },
+    )
+    pad_bank = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_64_pad_bank",
+            "payload": {"bank_index": 2},
+        },
+    )
+    fixed_length = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_fixed_length",
+            "payload": {"enabled": True, "preset": "4"},
+        },
+    )
+    repeat = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_repeat",
+            "payload": {"enabled": True, "rate": "1/16"},
+        },
+    )
+    quantize = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_quantize",
+            "payload": {"enabled": True, "grid": "1/8", "strength": 60},
+        },
+    )
+    loop_selector = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_loop_selector",
+            "payload": {"enabled": True, "page": 1, "start_pad": 0, "end_pad": 7},
+        },
+    )
+
+    assert velocity_mode.status_code == 200
+    assert velocity_mode.json()["session"]["pad_velocity_mode_enabled"] is True
+    assert velocity_mode.json()["surface_modes"]["pad_velocity_mode"]["source_pad"] == 18
+    assert pad_bank.status_code == 200
+    assert pad_bank.json()["session"]["pad_bank_index"] == 2
+    assert fixed_length.status_code == 200
+    assert fixed_length.json()["session"]["fixed_length_preset"] == "4"
+    assert repeat.status_code == 200
+    assert repeat.json()["session"]["repeat_rate"] == "1/16"
+    assert quantize.status_code == 200
+    assert quantize.json()["surface_modes"]["quantize"]["strength"] == 60
+    assert loop_selector.status_code == 200
+    assert loop_selector.json()["session"]["loop_start_step"] == 16
+    assert quantize.json()["drum_projection"]["modes"]["quantize"]["strength"] == 60
+    assert fixed_length.json()["drum_projection"]["modes"]["fixed_length"]["preset"] == "4"
+
+
+def test_push_surface_drum_session_accepts_step_grid_and_automation_commands(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    set_step = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_step",
+            "payload": {"instrument": 4, "page": 1, "pad": 3, "velocity": 96},
+        },
+    )
+    set_automation = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "set_step_automation",
+            "payload": {"instrument": 4, "step": 19, "velocity": 108, "pitch": 5.0, "length": 2.5, "probability": 0.4},
+        },
+    )
+    clear_step = client.post(
+        "/api/push-surface/drum-session/command",
+        json={
+            "device_fingerprint": "fp-1",
+            "command": "clear_step",
+            "payload": {"instrument": 4, "step": 19},
+        },
+    )
+
+    assert set_step.status_code == 200
+    assert set_step.json()["session"]["step_grid_page"] == 1
+    assert set_step.json()["session"]["selected_step_index"] == 19
+    assert set_step.json()["drum_projection"]["step_grid"]["selected_step"]["active"] is True
+    assert set_automation.status_code == 200
+    assert set_automation.json()["drum_projection"]["step_grid"]["selected_step"]["pitch"] == 5.0
+    assert set_automation.json()["drum_projection"]["step_grid"]["selected_step"]["length"] == 2.5
+    assert set_automation.json()["drum_projection"]["step_grid"]["selected_step"]["probability"] == 0.4
+    assert clear_step.status_code == 200
+    assert clear_step.json()["drum_projection"]["step_grid"]["selected_step"]["active"] is False
