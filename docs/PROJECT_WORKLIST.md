@@ -20409,7 +20409,7 @@ Last updated: 2026-04-09 12:50 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/push_surface/drum_runtime.py app/routes/push_surface.py tests/push_surface/test_drum_runtime.py tests/push_surface/test_routes.py` -> PASS
 
 ID: T891
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add nav-bar Push confirmation notice pill
 Description:
 - Goal / acceptance criteria: When a Push pending-action exists, a notice pill appears left of the node pill in the global nav bar on all cluster nodes. Pill shows pending action type and device identity.
@@ -20418,8 +20418,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: `usePushConfirmation` hook, nav-bar pill component, WebSocket subscription, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 13:01 EDT - Codex
+- Completion notes:
+  - Added a shared pending-confirmation summary contract to the Push surface backend via `app/routes/push_surface.py` and `app/services/push_surface/drum_runtime.py`, including a websocket broadcast topic (`push_surface:pending_confirmation`) for shell-level visibility updates.
+  - Extended `web/src/map2/clients/pushSurface.ts` with the summary types/API call and added `web/src/app/hooks/usePushConfirmation.ts` so the shell can hydrate from REST and live-update from websocket events.
+  - Inserted a Carbon-aligned Push confirmation notice pill into the launcher summary row ahead of the node pills through `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/ShellLauncherPanel.tsx`, `web/src/app/layout/PushConfirmationNoticePill.tsx`, and `web/src/app/layout/AppShell.css`.
+  - Added focused route, hook, and shell coverage in `tests/push_surface/test_routes.py`, `web/src/app/hooks/usePushConfirmation.test.tsx`, and `web/src/app/layout/AppShell.test.tsx`.
+- Validation:
+  - `pytest -q tests/push_surface/test_routes.py tests/push_surface/test_drum_runtime.py` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/hooks/usePushConfirmation.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T892
 Status: [ ] Todo

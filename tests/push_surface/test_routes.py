@@ -226,6 +226,27 @@ class _FakeAssignmentService:
 
 
 class _FakePushDrumSessionService:
+    def get_pending_confirmation_summary(self):
+        return {
+            "pending_confirmation": {
+                "action_id": "push-confirm-demo",
+                "action_type": "instance_switch",
+                "reason": "remote_instance",
+                "device_fingerprint": "fp-1",
+                "device_identity": "fp-1",
+                "target_instance_id": "inst-1",
+                "target_display_name": "Remote / Drum Snapshot",
+                "target_node_id": "node-remote",
+                "target_node_label": "Remote",
+                "created_at": 1000.0,
+                "expires_at": 1015.0,
+                "timeout_ms": 15000,
+                "accept_command": "accept_pending_confirmation",
+                "reject_command": "reject_pending_confirmation",
+            },
+            "pending_count": 1,
+        }
+
     async def get_surface_state(self, device_fingerprint: str):
         return {
             "session": {
@@ -451,6 +472,18 @@ def test_push_surface_drum_registry_assignment_and_session_routes(monkeypatch):
     assert command.status_code == 200
     assert command.json()["session"]["last_command"] == "select_instance"
     assert command.json()["session"]["pending_confirmation"]["accept_command"] == "accept_pending_confirmation"
+
+
+def test_push_surface_pending_confirmation_summary_route(monkeypatch):
+    manager = _FakePushSurfaceManager()
+    runtime_config = _FakeRuntimeConfigManager()
+    client = _build_client(monkeypatch, manager=manager, runtime_config=runtime_config)
+
+    response = client.get("/api/push-surface/pending-confirmation")
+
+    assert response.status_code == 200
+    assert response.json()["pending_confirmation"]["device_identity"] == "fp-1"
+    assert response.json()["pending_count"] == 1
 
 
 def test_push_surface_drum_session_accepts_pending_confirmation_commands(monkeypatch):

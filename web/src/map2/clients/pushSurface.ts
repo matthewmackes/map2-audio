@@ -94,6 +94,29 @@ export interface PushSurfacePresetSummary {
   selected?: boolean
 }
 
+export interface PushSurfacePendingConfirmation {
+  action_id: string
+  action_type: string
+  reason: string
+  device_fingerprint: string
+  device_identity: string
+  target_instance_id: string
+  target_display_name: string
+  target_node_id: string
+  target_node_label: string
+  created_at: number
+  expires_at: number
+  timeout_ms: number
+  accept_command: string
+  reject_command: string
+}
+
+export interface PushSurfacePendingConfirmationResponse {
+  status: string
+  pending_confirmation: PushSurfacePendingConfirmation | null
+  pending_count: number
+}
+
 export interface PushSurfaceRuntimeSnapshot {
   running: boolean
   active_page: string
@@ -136,6 +159,12 @@ export const pushSurfaceApi = {
   getState: (nodeId?: string | null) =>
     fetchJson<{ status: string; snapshot: PushSurfaceRuntimeSnapshot }>(
       appendNodeQuery(`${PUSH_SURFACE_API_BASE}/state`, nodeId),
+      { cache: 'no-store' },
+    ),
+
+  getPendingConfirmation: (nodeId?: string | null) =>
+    fetchJson<PushSurfacePendingConfirmationResponse>(
+      appendNodeQuery(`${PUSH_SURFACE_API_BASE}/pending-confirmation`, nodeId),
       { cache: 'no-store' },
     ),
 }

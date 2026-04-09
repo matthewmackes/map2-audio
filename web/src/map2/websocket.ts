@@ -59,6 +59,7 @@ export type WebSocketTopic =
   | 'brain:runtime'
   | 'snapshot_runtime_live_state'
   | 'snapshot_activation_events'
+  | 'push_surface:pending_confirmation'
   | 'maschine:status'
   | 'maschine:hid_traffic';
 

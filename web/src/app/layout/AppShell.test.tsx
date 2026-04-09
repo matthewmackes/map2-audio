@@ -43,9 +43,14 @@ jest.mock('../pages/homeDesktopSession', () => {
 })
 
 const mockUseWebSocketConnection = jest.fn()
+const mockUsePushConfirmation = jest.fn()
 
 jest.mock('../../map2/hooks/useWebSocket', () => ({
   useWebSocketConnection: () => mockUseWebSocketConnection(),
+}))
+
+jest.mock('../hooks/usePushConfirmation', () => ({
+  usePushConfirmation: () => mockUsePushConfirmation(),
 }))
 
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
@@ -94,6 +99,13 @@ describe('AppShell floating launcher shell', () => {
     mockUseWebSocketConnection.mockReturnValue({
       status: 'connected',
       client: null,
+    })
+    mockUsePushConfirmation.mockReturnValue({
+      data: {
+        status: 'ok',
+        pending_confirmation: null,
+        pending_count: 0,
+      },
     })
     mockRestartBackend.mockReset()
     mockRestartBackend.mockResolvedValue({ status: 'restarting', message: 'Backend service is restarting...' })
@@ -335,5 +347,44 @@ describe('AppShell floating launcher shell', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Connection lost - reconnecting...')
     expect(container.querySelector('.shell-launcher')?.previousElementSibling).toHaveClass('mobile-connection-banner')
+  })
+
+  it('renders the Push confirmation notice pill ahead of node navigation when a pending action exists', () => {
+    mockUsePushConfirmation.mockReturnValue({
+      data: {
+        status: 'ok',
+        pending_confirmation: {
+          action_id: 'push-confirm-9',
+          action_type: 'instance_switch',
+          reason: 'remote_instance',
+          device_fingerprint: 'push-stage-left',
+          device_identity: 'push-stage-left',
+          target_instance_id: 'inst-1',
+          target_display_name: 'Remote / Drums',
+          target_node_id: 'node-b',
+          target_node_label: 'Node B',
+          created_at: 1000,
+          expires_at: 1015,
+          timeout_ms: 15000,
+          accept_command: 'accept_pending_confirmation',
+          reject_command: 'reject_pending_confirmation',
+        },
+        pending_count: 1,
+      },
+    })
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+
+    const pill = screen.getByRole('status', { name: /Instance switch pending on push-stage-left/i })
+    expect(pill).toHaveTextContent('Push confirm')
+    expect(pill).toHaveTextContent('Instance switch')
+    expect(screen.getByTestId('node-nav-bar').previousElementSibling).toBe(pill)
   })
 })

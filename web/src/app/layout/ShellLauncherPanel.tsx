@@ -10,6 +10,8 @@ import {
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
 import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
+import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
+import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
 
 export type StartMenuTileItem = ShellNavigationRenderItem
 
@@ -19,6 +21,7 @@ export function ShellLauncherPanel({
   navOpen,
   powerMenuOpen,
   launcherSummaryItems,
+  pendingPushConfirmation,
   platformStatusLabels,
   startMenuTileItems,
   SnapshotEditorIcon,
@@ -35,6 +38,7 @@ export function ShellLauncherPanel({
   navOpen: boolean
   powerMenuOpen: boolean
   launcherSummaryItems: string[]
+  pendingPushConfirmation: PushSurfacePendingConfirmation | null
   platformStatusLabels: string[]
   startMenuTileItems: StartMenuTileItem[]
   SnapshotEditorIcon: ComponentType<SVGProps<SVGSVGElement>> | null
@@ -169,7 +173,8 @@ export function ShellLauncherPanel({
             </div>
 
             <div className="shell-launcher__system-summary" aria-label="System summary">
-              <div className="shell-launcher__summary-row">
+              <div className="shell-launcher__summary-row shell-launcher__summary-row--node-status">
+                <PushConfirmationNoticePill pendingConfirmation={pendingPushConfirmation} />
                 <NodeNavBar />
               </div>
               <div className="shell-launcher__summary-row shell-launcher__summary-row--metrics">

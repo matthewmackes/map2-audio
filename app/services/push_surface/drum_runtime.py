@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from dataclasses import asdict, dataclass
 from time import time
 from typing import Any, Literal
@@ -14,6 +15,10 @@ from app.services.push_surface.drum_registry import (
     _local_node_id,
     get_drum_instance_registry,
 )
+from app.services.websocket_manager import ws_manager
+
+
+PUSH_PENDING_CONFIRMATION_TOPIC = "push_surface:pending_confirmation"
 
 
 PushDrumCommandName = Literal[
@@ -232,18 +237,21 @@ class PushDrumSessionService:
         self,
         session: PushDrumSessionState,
         instances: list[DrumMachineInstanceDescriptor],
-    ) -> tuple[DrumMachineInstanceDescriptor | None, int | None]:
+    ) -> tuple[DrumMachineInstanceDescriptor | None, int | None, bool]:
+        pending_changed = False
+        before_pending_id = session.pending_confirmation.action_id if session.pending_confirmation is not None else None
         self._expire_pending_confirmation(session)
         if not instances:
             session.selected_instance_id = None
             session.bank_index = 0
             session.pending_confirmation = None
-            return None, None
+            return None, None, before_pending_id is not None
 
         if session.pending_confirmation is not None and not any(
             item.instance_id == session.pending_confirmation.target_instance_id for item in instances
         ):
             self._clear_pending_confirmation(session, status="expired", reason="target_unavailable")
+            pending_changed = True
 
         selected_index = next(
             (index for index, item in enumerate(instances) if item.instance_id == session.selected_instance_id),
@@ -251,17 +259,56 @@ class PushDrumSessionService:
         )
         if selected_index is not None:
             session.bank_index = selected_index
-            return instances[selected_index], selected_index
+            return instances[selected_index], selected_index, pending_changed or before_pending_id != (
+                session.pending_confirmation.action_id if session.pending_confirmation is not None else None
+            )
 
         session.selected_instance_id = None
         live_index = next((index for index, item in enumerate(instances) if item.is_live), None)
         if live_index is not None:
             session.selected_instance_id = instances[live_index].instance_id
             session.bank_index = live_index
-            return instances[live_index], live_index
+            return instances[live_index], live_index, pending_changed or before_pending_id != (
+                session.pending_confirmation.action_id if session.pending_confirmation is not None else None
+            )
 
         session.bank_index = self._clamp_bank_index(session.bank_index, len(instances))
-        return None, None
+        return None, None, pending_changed or before_pending_id != (
+            session.pending_confirmation.action_id if session.pending_confirmation is not None else None
+        )
+
+    def _build_pending_confirmation_summary(self, pending: PushDrumPendingConfirmation) -> dict[str, Any]:
+        return {
+            **pending.to_dict(),
+            "device_identity": pending.device_fingerprint,
+        }
+
+    def get_pending_confirmation_summary(self) -> dict[str, Any]:
+        for session in self._sessions.values():
+            self._expire_pending_confirmation(session)
+        pending = [
+            session.pending_confirmation
+            for session in self._sessions.values()
+            if session.pending_confirmation is not None
+        ]
+        pending.sort(key=lambda item: item.created_at, reverse=True)
+        current = pending[0] if pending else None
+        return {
+            "pending_confirmation": self._build_pending_confirmation_summary(current) if current is not None else None,
+            "pending_count": len(pending),
+        }
+
+    async def _broadcast_pending_confirmation_summary(self) -> None:
+        summary = self.get_pending_confirmation_summary()
+        await ws_manager.broadcast_json(
+            {
+                "type": "push_surface_pending_confirmation",
+                "topic": PUSH_PENDING_CONFIRMATION_TOPIC,
+                "data": summary,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            topic=PUSH_PENDING_CONFIRMATION_TOPIC,
+        )
 
     def _resolve_target_instance(
         self,
@@ -333,7 +380,9 @@ class PushDrumSessionService:
     async def get_surface_state(self, device_fingerprint: str) -> dict[str, Any]:
         session = self._get_session(device_fingerprint)
         instances = await get_drum_instance_registry().list_instances()
-        selected, selected_index = self._normalize_session_selection(session, instances)
+        selected, selected_index, pending_changed = self._normalize_session_selection(session, instances)
+        if pending_changed:
+            await self._broadcast_pending_confirmation_summary()
         projection = DrumMachineRuntimeFacade(selected).get_projection() if selected is not None else None
         return {
             "session": session.to_dict(),
@@ -359,6 +408,7 @@ class PushDrumSessionService:
                 reason=guard_reason or "guarded_live_switch",
             )
             session.last_command = "select_instance"
+            await self._broadcast_pending_confirmation_summary()
             return await self.get_surface_state(device_fingerprint)
         activated = await self._activate_instance(instance)
         if not activated:
@@ -370,6 +420,7 @@ class PushDrumSessionService:
         )
         session.pending_confirmation = None
         session.last_command = "select_instance"
+        await self._broadcast_pending_confirmation_summary()
         return await self.get_surface_state(device_fingerprint)
 
     async def accept_pending_confirmation(self, device_fingerprint: str, action_id: str | None = None) -> dict[str, Any]:
@@ -388,6 +439,7 @@ class PushDrumSessionService:
             )
             self._clear_pending_confirmation(session, status="accepted")
         session.last_command = "accept_pending_confirmation"
+        await self._broadcast_pending_confirmation_summary()
         return await self.get_surface_state(device_fingerprint)
 
     async def reject_pending_confirmation(self, device_fingerprint: str, action_id: str | None = None) -> dict[str, Any]:
@@ -398,6 +450,7 @@ class PushDrumSessionService:
                 raise ValueError(f"stale pending confirmation: {action_id}")
             self._clear_pending_confirmation(session, status="rejected")
         session.last_command = "reject_pending_confirmation"
+        await self._broadcast_pending_confirmation_summary()
         return await self.get_surface_state(device_fingerprint)
 
     async def confirm_instance_switch(self, device_fingerprint: str, action_id: str | None = None) -> dict[str, Any]:

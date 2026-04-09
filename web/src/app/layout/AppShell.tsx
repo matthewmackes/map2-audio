@@ -12,6 +12,7 @@ import { useAppShellPresentation } from './useAppShellPresentation'
 import { useRestartBackend } from './useRestartBackend'
 import { useShellLauncherActions } from './useShellLauncherActions'
 import { useRunningRoutes } from './useRunningRoutes'
+import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { status: websocketStatus } = useWebSocketConnection()
+  const pendingPushConfirmationQuery = usePushConfirmation(undefined, { refetchInterval: 15_000 })
   const platformStatus = useHomePlatformStatus()
   const { data: hostInfo } = useHostMachineInfo()
   const {
@@ -118,6 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           navOpen={navOpen}
           powerMenuOpen={powerMenuOpen}
           launcherSummaryItems={launcherSummaryItems}
+          pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
           platformStatusLabels={platformStatusLabels}
           startMenuTileItems={startMenuTileItems}
           SnapshotEditorIcon={SnapshotEditorIcon}

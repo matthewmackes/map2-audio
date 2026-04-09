@@ -362,6 +362,15 @@ async def get_push_surface_drum_session_state(device_fingerprint: str = Query(..
     }
 
 
+@router.get("/pending-confirmation")
+async def get_push_surface_pending_confirmation() -> dict[str, Any]:
+    service = get_push_drum_session_service()
+    return {
+        "status": "ok",
+        **service.get_pending_confirmation_summary(),
+    }
+
+
 @router.post("/drum-session/command")
 async def dispatch_push_surface_drum_command(request: PushSurfaceDrumCommandRequest) -> dict[str, Any]:
     service = get_push_drum_session_service()
