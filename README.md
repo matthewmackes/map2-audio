@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1074** Python | **1143** TypeScript | **136** C++/H | **141** Docs | **1659** total commits | **3** stars | **0** forks | **0** open issues
+**1074** Python | **1147** TypeScript | **136** C++/H | **143** Docs | **1661** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,11 +176,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-10 |
+| [MAP2 FAQ: Simple Consumer Version](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_CONSUMER_11TH_GRADE_2026-04-10.md) | 2026-04-10 |
+| [MAP2 FAQ: What Is the MAP Platform and How Different Music Users Could Use It](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_MARKET_ALIGNED_2026-04-10.md) | 2026-04-10 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-10 |
 | [MAP2 Audio Platform — Backend Architecture Audit v2](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT_V2.md) | 2026-04-07 |
 | [Enriched MIDI Physical Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md) | 2026-04-07 |
-| [Maschine MK1 PyUSB Claim Validation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_PYUSB_CLAIM_VALIDATION_2026-04-07.md) | 2026-04-07 |
-| [MAP2 Audio Platform — Full Forensic Audit](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_AUDIT_2026-03-28.md) | 2026-04-07 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8a6c1ef0`](https://github.com/matthewmackes/map2-audio/commit/8a6c1ef02cf5f3e20f8dbd46d244dabb6ab562fd) | Complete control-surface engine prerequisites and Carbon ... | Map2 Audio | 2026-04-10 |
+| [`d20b5d2e`](https://github.com/matthewmackes/map2-audio/commit/d20b5d2e8cd321f2f9a99a2cc1e44168ea934717) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`836fb291`](https://github.com/matthewmackes/map2-audio/commit/836fb291ed4254dd0917abac249a8ac3199d4e90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`1b9b4e42`](https://github.com/matthewmackes/map2-audio/commit/1b9b4e4238bf74e786ab8ac6acd68a974f9e133d) | Complete controller surface integrations through MIDI Com... | Map2 Audio | 2026-04-10 |
 | [`4f7288c6`](https://github.com/matthewmackes/map2-audio/commit/4f7288c64d80a4c148be24f1d19e411395759bef) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-04-10 |
 | [`8800ebbd`](https://github.com/matthewmackes/map2-audio/commit/8800ebbd2877aa82dd0711365bd9a38b58df5609) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 | [`760b8282`](https://github.com/matthewmackes/map2-audio/commit/760b82829c726b720731d9e35684b5ccd0e38771) | Finish Push, snapshot, GCP, and MCU integration slices | Map2 Audio | 2026-04-09 |
 | [`25e4296d`](https://github.com/matthewmackes/map2-audio/commit/25e4296de53858cf1442806bc39606d81319d2d1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`a3ef92e7`](https://github.com/matthewmackes/map2-audio/commit/a3ef92e7293d5a47bef79ec68d9ddd8a3657165b) | Set new default landing page wallpaper | Map2 Audio | 2026-04-09 |
-| [`b905c3de`](https://github.com/matthewmackes/map2-audio/commit/b905c3defe500fe5d65c9827fd6ffea1f4dd9fe8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
