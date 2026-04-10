@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-export const MIN_SUPPORTED_VIEWPORT_WIDTH = 820
-export const MIN_SUPPORTED_VIEWPORT_HEIGHT = 1180
+export const MIN_SUPPORTED_VIEWPORT_WIDTH = 560
+export const MIN_SUPPORTED_VIEWPORT_HEIGHT = 917
 
 export interface ViewportPolicyState {
   width: number

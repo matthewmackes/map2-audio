@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-mega-menu-mobile-status {
@@ -106,7 +106,7 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-mega-menu-mobile-meter-label {
@@ -292,10 +292,10 @@
 .mpx1-mega-menu__sidebar {
   border-right: 1px solid var(--mpx1-border);
   background: var(--mpx1-surface);
-  padding: 14px;
+  padding: var(--cds-spacing-05, 1rem);
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-mega-menu__sidebar-title {
@@ -368,8 +368,8 @@
 .mpx1-mega-menu__content {
   display: grid;
   grid-template-rows: 1fr auto;
-  gap: 10px;
-  padding: 14px;
+  gap: var(--cds-spacing-04, 0.75rem);
+  padding: var(--cds-spacing-05, 1rem);
 }
 
 .mpx1-mega-menu__tiles {
@@ -385,7 +385,7 @@
   background: var(--mpx1-surface-2);
   color: var(--mpx1-text);
   text-decoration: none;
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 8px;
@@ -452,7 +452,7 @@
   border: 1px solid var(--cds-border-subtle-02);
   background: var(--mpx1-surface-2);
   color: var(--cds-text-primary);
-  padding: 9px 10px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-04, 0.75rem);
   font-size: var(--type-label);
   font-weight: 700;
   letter-spacing: 0.03em;

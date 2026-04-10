@@ -1,5 +1,6 @@
 export type { CarbonThemeId, Theme, ThemeColors, ThemeWidgets } from './types';
-export { themes, themeOrder, generateThemeFromPalette } from './themes';
+export { themes, themeOrder } from './themes';
+export { generateThemeFromPalette } from './themeFactory';
 export { PRESET_THEMES, PRESET_THEME_MAP, PRESET_THEME_ORDER } from './presetThemes';
 export { CARBON_COLOR_FAMILIES, CARBON_FAMILY_BY_ID, PICKER_SHADES } from './carbonPalette';
 export type { CarbonColorFamily, BaseShell, DarkBase, LightBase } from './carbonPalette';

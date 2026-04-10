@@ -3,7 +3,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   margin-top: 12px;
   border-radius: 10px;
   border: 1px solid var(--border);

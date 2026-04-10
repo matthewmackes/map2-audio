@@ -83,7 +83,7 @@
 **MAP2** (Mackes Audio Platform 2) is an enterprise-grade, real-time audio processing system that transforms commodity Linux hardware into a professional-grade guitar/audio processor. It combines a **C++ JUCE audio engine**, **Python FastAPI backend**, and **React web dashboard** into a unified platform.
 
 > [!IMPORTANT]
-> The MAP2 web GUI is desktop-only. Mobile, tablet, split-screen, and reduced-size browser windows are not supported. The current minimum supported viewport is `1920x1080`.
+> The MAP2 web GUI supports large-phone portrait and larger displays. Very small mobile screens and heavily reduced browser windows are not supported. The current minimum supported viewport is `560x917`.
 
 ### Operating Modes
 

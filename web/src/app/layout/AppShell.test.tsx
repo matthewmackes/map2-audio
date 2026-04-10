@@ -1,6 +1,7 @@
 import React from 'react'
 import '@testing-library/jest-dom'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
@@ -44,6 +45,7 @@ jest.mock('../pages/homeDesktopSession', () => {
 
 const mockUseWebSocketConnection = jest.fn()
 const mockUsePushConfirmation = jest.fn()
+const mockFetch = jest.fn()
 
 jest.mock('../../map2/hooks/useWebSocket', () => ({
   useWebSocketConnection: () => mockUseWebSocketConnection(),
@@ -70,16 +72,26 @@ jest.mock('../components/TaskbarClock', () => ({
 }))
 
 function renderInRouter(ui: React.ReactNode, initialEntries: string[] = ['/']) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
   return render(
-    <MemoryRouter
-      initialEntries={initialEntries}
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      {ui}
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter
+        initialEntries={initialEntries}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        {ui}
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -111,6 +123,42 @@ describe('AppShell floating launcher shell', () => {
     mockRestartBackend.mockResolvedValue({ status: 'restarting', message: 'Backend service is restarting...' })
     mockReloadHomeDesktopShell.mockReset()
     mockReturnHomeDesktopToBoot.mockReset()
+    mockFetch.mockReset()
+    mockFetch.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/audio/status')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            running: true,
+            sample_rate: 48000,
+            buffer_size: 128,
+            cpu_load: 0.12,
+            engine: 'juce',
+            available: true,
+            available_input_devices: ['MOTU UltraLite mk5', 'Focusrite Clarett+ 4Pre'],
+            available_output_devices: ['MOTU UltraLite mk5'],
+          }),
+        })
+      }
+      if (url.includes('/midi/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            inputs: [
+              { name: 'Morningstar MC6 Pro', is_virtual: false },
+              { name: 'Virtual Input 1', is_virtual: true },
+            ],
+            outputs: [
+              { name: 'Morningstar MC6 Pro', is_virtual: false },
+              { name: 'DIN Port A', kind: 'alsa' },
+            ],
+          }),
+        })
+      }
+      return Promise.reject(new Error(`Unhandled fetch in AppShell.test.tsx: ${url}`))
+    })
+    global.fetch = mockFetch as typeof fetch
     window.localStorage.clear()
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -205,7 +253,7 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
   })
 
-  it('shows the merged floating menu with header, system summary, and launcher tiles', () => {
+  it('shows the merged floating menu with header, system summary, and launcher tiles', async () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -225,12 +273,66 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByText('AVB: operational')).toBeInTheDocument()
     expect(screen.getByText('AVDECC: 2 entities')).toBeInTheDocument()
     expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
+    expect(screen.getByText('Audio Interfaces')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('MOTU UltraLite mk5')).toBeInTheDocument()
+      expect(screen.getByText('Focusrite Clarett+ 4Pre')).toBeInTheDocument()
+      expect(screen.getByText('MIDI Interfaces')).toBeInTheDocument()
+      expect(screen.getByText('Morningstar MC6 Pro')).toBeInTheDocument()
+      expect(screen.getByText('DIN Port A')).toBeInTheDocument()
+      expect(screen.queryByText('Virtual Input 1')).not.toBeInTheDocument()
+    })
     expect(screen.getByText('Platforms')).toBeInTheDocument()
     expect(screen.getByText('Files')).toBeInTheDocument()
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
     expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(6)
+  })
+
+  it('shows empty interface copy when no physical audio or MIDI interfaces are detected', async () => {
+    mockFetch.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/audio/status')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            running: true,
+            sample_rate: 48000,
+            buffer_size: 128,
+            cpu_load: 0.12,
+            engine: 'juce',
+            available: true,
+            available_input_devices: [],
+            available_output_devices: [],
+          }),
+        })
+      }
+      if (url.includes('/midi/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            inputs: [{ name: 'Virtual Input 1', is_virtual: true }],
+            outputs: [{ name: 'Virtual Output 1', is_virtual: true }],
+          }),
+        })
+      }
+      return Promise.reject(new Error(`Unhandled fetch in AppShell.test.tsx: ${url}`))
+    })
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+
+    await waitFor(() => {
+      expect(screen.getByText('No audio interfaces detected')).toBeInTheDocument()
+      expect(screen.getByText('No MIDI interfaces detected')).toBeInTheDocument()
+    })
   })
 
   it('routes the header snapshot editor action through the existing audio grid entry point', () => {

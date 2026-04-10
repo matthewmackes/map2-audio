@@ -231,6 +231,159 @@ def _ordered_runtime_paths(snapshot_detail: Dict[str, Any]) -> List[Dict[str, An
     return runtime_paths
 
 
+def _resolved_runtime_path_plugins(snapshot_detail: Dict[str, Any], engine: Any) -> List[Dict[str, Any]]:
+    ordered_paths = _ordered_runtime_paths(snapshot_detail)
+    runtime_chains = {
+        int(chain.get("id")): chain
+        for chain in snapshot_detail.get("live_state", {}).get("runtime_chains", [])
+        if isinstance(chain, dict) and isinstance(chain.get("id"), int)
+    }
+
+    resolved_paths: List[Dict[str, Any]] = []
+    for path in ordered_paths:
+        runtime_chain_id = path.get("runtime_chain_id")
+        if not isinstance(runtime_chain_id, int):
+            continue
+        runtime_chain = runtime_chains.get(runtime_chain_id)
+        if not isinstance(runtime_chain, dict):
+            continue
+        plugins = [
+            dict(plugin)
+            for plugin in runtime_chain.get("plugins", [])
+            if isinstance(plugin, dict)
+        ]
+        plugins.sort(key=lambda plugin: int(plugin.get("position", 0)))
+        resolved_plugins: List[Dict[str, Any]] = []
+        for plugin in plugins:
+            instance_id = plugin.get("instance_id")
+            if not isinstance(instance_id, int):
+                resolver = getattr(engine, "_get_instance_id_for_uri", None)
+                if callable(resolver):
+                    try:
+                        instance_id = resolver(
+                            str(plugin.get("uri") or ""),
+                            snapshot_plugin_position(plugin),
+                        )
+                    except Exception as exc:
+                        logger.debug("Could not resolve runtime instance for %s: %s", plugin.get("uri"), exc)
+                        instance_id = None
+            if isinstance(instance_id, int) and instance_id > 0:
+                resolved_plugin = dict(plugin)
+                resolved_plugin["instance_id"] = instance_id
+                resolved_plugins.append(resolved_plugin)
+        if resolved_plugins:
+            resolved_paths.append(
+                {
+                    "path_id": str(path.get("path_id") or ""),
+                    "runtime_chain_id": runtime_chain_id,
+                    "plugins": resolved_plugins,
+                }
+            )
+    return resolved_paths
+
+
+def _routing_chain_order(path_entry: Dict[str, Any]) -> List[int]:
+    return [
+        int(plugin["instance_id"])
+        for plugin in path_entry.get("plugins", [])
+        if isinstance(plugin, dict) and isinstance(plugin.get("instance_id"), int)
+    ]
+
+
+def _build_routing_topology_spec(snapshot_detail: Dict[str, Any], engine: Any) -> Dict[str, Any]:
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    routing_mode = str(routing.get("mode") or "").strip().lower()
+    resolved_paths = _resolved_runtime_path_plugins(snapshot_detail, engine)
+    path_by_id = {
+        str(path.get("path_id") or ""): path
+        for path in resolved_paths
+        if str(path.get("path_id") or "")
+    }
+
+    topology: Dict[str, Any] = {
+        "chain_order": [],
+        "parallel_groups": [],
+        "sidechain_connections": [],
+    }
+    if not resolved_paths:
+        return topology
+
+    if routing_mode in {"parallel_blend", "ab_switch"}:
+        branches = []
+        for path in resolved_paths:
+            branch_plugin_ids = _routing_chain_order(path)
+            if not branch_plugin_ids:
+                continue
+            branches.append(
+                {
+                    "plugin_ids": branch_plugin_ids,
+                    "chain_id": int(path.get("runtime_chain_id") or -1),
+                    "level": 1.0,
+                }
+            )
+        if len(branches) >= 2:
+            topology["parallel_groups"] = [
+                {
+                    "mode": "ab_blend",
+                    "ab_blend": (
+                        _ab_switch_blend_value(snapshot_detail, _ordered_runtime_paths(snapshot_detail))
+                        if routing_mode == "ab_switch"
+                        else _parallel_blend_value(snapshot_detail, _ordered_runtime_paths(snapshot_detail))
+                    ),
+                    "branches": branches,
+                }
+            ]
+        return topology
+
+    primary_path_id = (
+        str(routing.get("morph_source_channel_key") or "").strip()
+        if routing_mode == "morph"
+        else str(routing.get("active_channel_key") or "").strip()
+    )
+    primary_path = path_by_id.get(primary_path_id) if primary_path_id else None
+    if primary_path is None:
+        primary_path = resolved_paths[0]
+
+    if routing_mode == "series":
+        topology["chain_order"] = [
+            plugin_id
+            for path in resolved_paths
+            for plugin_id in _routing_chain_order(path)
+        ]
+        return topology
+
+    topology["chain_order"] = _routing_chain_order(primary_path)
+    if routing_mode != "sidechain":
+        return topology
+
+    primary_plugins = primary_path.get("plugins", [])
+    for plugin in primary_plugins:
+        if not isinstance(plugin, dict) or not isinstance(plugin.get("instance_id"), int):
+            continue
+        source_path_id = str(plugin.get("sidechain_source") or "").strip()
+        if not source_path_id:
+            continue
+        source_path = path_by_id.get(source_path_id)
+        if not isinstance(source_path, dict):
+            continue
+        source_plugin_ids = _routing_chain_order(source_path)
+        if not source_plugin_ids:
+            continue
+        try:
+            dest_bus = int(plugin.get("sidechain_bus") or 1)
+        except (TypeError, ValueError):
+            dest_bus = 1
+        topology["sidechain_connections"].append(
+            {
+                "source_plugin": source_plugin_ids[-1],
+                "dest_plugin": int(plugin["instance_id"]),
+                "dest_bus": dest_bus,
+                "active": True,
+            }
+        )
+    return topology
+
+
 def _parallel_blend_value(snapshot_detail: Dict[str, Any], ordered_paths: List[Dict[str, Any]]) -> float:
     routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
     blend_positions = routing.get("blend_positions")
@@ -550,7 +703,7 @@ def _build_chain_morph_document(snapshot_detail: Dict[str, Any], chain: Dict[str
 
 
 async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> Dict[str, Any]:
-    """Apply snapshot routing mode and branch blend to the JUCE parallel-group runtime."""
+    """Apply snapshot routing mode to the JUCE runtime."""
     from app.services.juce_engine_service import get_audio_engine
 
     engine = get_audio_engine()
@@ -572,6 +725,27 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
             "branch_count": 0,
         }
 
+    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
+    routing_mode = str(routing.get("mode") or "").strip().lower()
+    topology_spec = _build_routing_topology_spec(snapshot_detail, engine)
+    branch_count = sum(len(group.get("branches", [])) for group in topology_spec.get("parallel_groups", []))
+
+    apply_topology = getattr(engine, "apply_routing_topology", None)
+    if callable(apply_topology):
+        applied = await apply_topology(topology_spec)
+        result = {
+            "applied": bool(applied),
+            "reason": f"{routing_mode}_applied" if applied else "apply_routing_topology_failed",
+            "removed_group_count": 0,
+            "created_group_id": None,
+            "branch_count": branch_count,
+            "chain_length": len(topology_spec.get("chain_order", [])),
+            "sidechain_connection_count": len(topology_spec.get("sidechain_connections", [])),
+        }
+        if topology_spec.get("parallel_groups"):
+            result["blend_value"] = topology_spec["parallel_groups"][0].get("ab_blend", 0.5)
+        return result
+
     try:
         existing_groups = await engine.get_parallel_groups()
     except Exception as exc:
@@ -591,8 +765,6 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
         except Exception as exc:
             logger.debug("Could not remove parallel group %s: %s", parsed_group_id, exc)
 
-    routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
-    routing_mode = str(routing.get("mode") or "").strip().lower()
     if routing_mode not in {"parallel_blend", "ab_switch"}:
         return {
             "applied": True,
@@ -603,45 +775,11 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
         }
 
     ordered_paths = _ordered_runtime_paths(snapshot_detail)
-    runtime_chains = {
-        int(chain.get("id")): chain
-        for chain in snapshot_detail.get("live_state", {}).get("runtime_chains", [])
-        if isinstance(chain, dict) and isinstance(chain.get("id"), int)
-    }
     branch_plugins: List[List[Dict[str, Any]]] = []
-    for path in ordered_paths:
-        runtime_chain_id = path.get("runtime_chain_id")
-        if not isinstance(runtime_chain_id, int):
-            continue
-        runtime_chain = runtime_chains.get(runtime_chain_id)
-        if not isinstance(runtime_chain, dict):
-            continue
-        plugins = [
-            dict(plugin)
-            for plugin in runtime_chain.get("plugins", [])
-            if isinstance(plugin, dict)
-        ]
-        plugins.sort(key=lambda plugin: int(plugin.get("position", 0)))
-        resolved_plugins: List[Dict[str, Any]] = []
-        for plugin in plugins:
-            instance_id = plugin.get("instance_id")
-            if not isinstance(instance_id, int):
-                resolver = getattr(engine, "_get_instance_id_for_uri", None)
-                if callable(resolver):
-                    try:
-                        instance_id = resolver(
-                            str(plugin.get("uri") or ""),
-                            snapshot_plugin_position(plugin),
-                        )
-                    except Exception as exc:
-                        logger.debug("Could not resolve runtime instance for %s: %s", plugin.get("uri"), exc)
-                        instance_id = None
-            if isinstance(instance_id, int) and instance_id > 0:
-                resolved_plugin = dict(plugin)
-                resolved_plugin["instance_id"] = instance_id
-                resolved_plugins.append(resolved_plugin)
-        if resolved_plugins:
-            branch_plugins.append(resolved_plugins)
+    branch_chain_ids: List[int] = []
+    for path in _resolved_runtime_path_plugins(snapshot_detail, engine):
+        branch_plugins.append(list(path.get("plugins", [])))
+        branch_chain_ids.append(int(path.get("runtime_chain_id") or -1))
 
     if len(branch_plugins) < 2:
         return {
@@ -669,13 +807,22 @@ async def apply_snapshot_routing_to_engine(snapshot_detail: Dict[str, Any]) -> D
             position = int(plugin.get("position", -1))
             await engine.add_to_parallel_branch(group_id, branch_index, instance_id, position)
             added_plugin_count += 1
+        set_branch_chain_id = getattr(engine, "set_parallel_branch_chain_id", None)
+        if callable(set_branch_chain_id):
+            await set_branch_chain_id(group_id, branch_index, branch_chain_ids[branch_index])
 
     blend_value = (
         _ab_switch_blend_value(snapshot_detail, ordered_paths)
         if routing_mode == "ab_switch"
         else _parallel_blend_value(snapshot_detail, ordered_paths)
     )
-    await engine.set_parallel_ab_blend(group_id, blend_value)
+    if routing_mode == "ab_switch" and hasattr(engine, "trigger_parallel_ab_switch"):
+        branch_index = 0 if blend_value <= 0.5 else 1
+        switched = await engine.trigger_parallel_ab_switch(group_id, branch_index)
+        if not switched:
+            await engine.set_parallel_ab_blend(group_id, blend_value)
+    else:
+        await engine.set_parallel_ab_blend(group_id, blend_value)
     return {
         "applied": True,
         "reason": "ab_switch_applied" if routing_mode == "ab_switch" else "parallel_blend_applied",

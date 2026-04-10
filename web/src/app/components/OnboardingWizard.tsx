@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, ArrowRight, BareMetalServer, Certificate, ChartNetwork, Checkmark, CheckmarkFilled, Close, Document, Link, Locked, Renew, Search, Security, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from './ParameterControl'
+import { LegacyButton } from './shared/LegacyButton'
 
 interface WizardStep {
   id: number
@@ -274,13 +275,13 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <p style={{ color: '#a0a0a0' }}>Discover nodes on your network or manually add them:</p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={handleAutoDiscover}>
+              <LegacyButton variant="primary" onClick={handleAutoDiscover}>
                 <Search size={14} style={{ marginRight: 6 }} /> Auto-Discover
-              </button>
-              <button className="btn">➕ Add Manually</button>
-              <button className="btn" onClick={handleAutoDiscover}>
+              </LegacyButton>
+              <LegacyButton variant="secondary">➕ Add Manually</LegacyButton>
+              <LegacyButton variant="secondary" onClick={handleAutoDiscover}>
                 <Renew size={14} style={{ marginRight: 6 }} /> Refresh
-              </button>
+              </LegacyButton>
             </div>
 
             <div
@@ -625,28 +626,28 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
       {/* Navigation Buttons */}
       <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button
-          className="btn"
+        <LegacyButton
+          variant="secondary"
           onClick={handleBack}
           disabled={currentStep === 1}
           style={{ opacity: currentStep === 1 ? 0.4 : 1 }}
         >
           <ArrowLeft size={14} style={{ marginRight: 6 }} /> Back
-        </button>
+        </LegacyButton>
 
         {currentStep < 5 ? (
-          <button className="btn btn-primary" onClick={handleNext}>
+          <LegacyButton variant="primary" onClick={handleNext}>
             Next <ArrowRight size={14} style={{ marginLeft: 6 }} />
-          </button>
+          </LegacyButton>
         ) : (
-          <button className="btn btn-success" onClick={handleFinish}>
+          <LegacyButton variant="success" onClick={handleFinish}>
             <CheckmarkFilled size={14} style={{ marginRight: 6 }} /> Finish Setup
-          </button>
+          </LegacyButton>
         )}
 
-        <button className="btn btn-error" onClick={() => onComplete && onComplete()}>
+        <LegacyButton variant="error" onClick={() => onComplete && onComplete()}>
           <Close size={14} style={{ marginRight: 6 }} /> Cancel
-        </button>
+        </LegacyButton>
       </div>
     </div>
   )

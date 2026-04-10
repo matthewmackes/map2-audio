@@ -356,7 +356,7 @@ const styles = `
 
   .cluster-banner {
     margin-bottom: 20px;
-    padding: 14px 16px;
+    padding: 'var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem)';
     border-radius: 12px;
     border: 1px solid rgba(96, 165, 250, 0.2);
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.92));
@@ -404,7 +404,7 @@ const styles = `
     background: #0a0a0a;
     border: 1px solid #1a1a1a;
     border-radius: 12px;
-    padding: 20px;
+    padding: 'var(--cds-spacing-06, 1.5rem)';
   }
 
   .section-title {

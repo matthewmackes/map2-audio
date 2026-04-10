@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Copy, DataBase as HardDrive, FolderOpen, Music, Renew as ArrowsClockwise, VolumeUp as SpeakerHigh, Waveform as WaveSine } from '@carbon/icons-react'
 import { foldersApi } from '../../../map2/api'
 import type { DisplayPaths } from '../../../map2/api'
+import { LegacyButton } from '../shared/LegacyButton'
+import { LegacyTile } from '../shared/LegacyTile'
 import '../Disclosure.css'
 
 interface PathInfo {
@@ -70,9 +72,10 @@ export function LibraryPaths() {
   ] : []
 
   return (
-    <div className="card">
+    <LegacyTile>
       <button
         className="disclosure-trigger"
+        type="button"
         onClick={() => setExpanded(!expanded)}
         style={{
           width: '100%',
@@ -94,16 +97,17 @@ export function LibraryPaths() {
           </span>
         </div>
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <button
-            className="btn btn-ghost btn-sm"
+          <LegacyButton
+            variant="ghost"
+            size="sm"
+            iconDescription="Refresh paths"
             onClick={(e) => {
               e.stopPropagation()
               handleRefresh()
             }}
-            title="Refresh paths"
           >
             <ArrowsClockwise size={14} className={pathsQuery.isFetching ? 'spin' : ''} />
-          </button>
+          </LegacyButton>
           {expanded ? <CaretUp size={20} /> : <CaretDown size={20} />}
         </div>
       </button>
@@ -125,9 +129,8 @@ export function LibraryPaths() {
           ) : (
             <div className="stack" style={{ gap: 8 }}>
               {paths.map(({ label, path, displayPath, icon: Icon, description }) => (
-                <div
+                <LegacyTile
                   key={label}
-                  className="card"
                   style={{
                     padding: '12px 16px',
                     background: 'var(--bg-secondary)',
@@ -163,10 +166,10 @@ export function LibraryPaths() {
                       </code>
                     </div>
                   </div>
-                  <button
-                    className="btn btn-ghost btn-sm"
+                  <LegacyButton
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleCopyPath(path)}
-                    title="Copy full path"
                     style={{ flexShrink: 0 }}
                   >
                     {copiedPath === path ? (
@@ -180,8 +183,8 @@ export function LibraryPaths() {
                         Copy
                       </>
                     )}
-                  </button>
-                </div>
+                  </LegacyButton>
+                </LegacyTile>
               ))}
             </div>
           )}
@@ -191,6 +194,6 @@ export function LibraryPaths() {
           </p>
         </div>
       )}
-    </div>
+    </LegacyTile>
   )
 }

@@ -53,7 +53,7 @@ export function ExpressionOverlay({
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 10px 16px;
+          padding: 'var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem)';
           border-bottom: 1px solid rgba(255, 255, 255, 0.07);
           background: rgba(0, 0, 0, 0.2);
           flex-shrink: 0;
@@ -84,7 +84,7 @@ export function ExpressionOverlay({
         .expr-overlay-title {
           display: flex;
           align-items: center;
-          gap: 7px;
+          gap: 'var(--cds-spacing-03, 0.5rem)';
           font-family: var(--font-ui);
           font-size: 14px;
           font-weight: 600;

@@ -93,7 +93,7 @@ export function ParameterSection({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 12px;
+          padding: 'var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem)';
           background: rgba(0, 0, 0, 0.2);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }

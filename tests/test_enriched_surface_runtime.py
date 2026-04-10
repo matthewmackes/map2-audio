@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.services.enriched_surface_runtime import (
+    build_reconnect_runtime,
     build_shared_operator_contract,
     build_surface_lab,
     build_surface_lab_snapshot,
@@ -15,6 +16,35 @@ def test_shared_operator_contract_tracks_synth_first_surface_rules():
     assert contract["multi_synth_mode"] == "parallel"
     assert contract["view_sync"] == "independent-per-surface"
     assert contract["community_firmware_support"] == "first-class"
+    assert contract["reconnect_strategy"] == "auto-reconnect-and-repush-current-snapshot-state"
+
+
+def test_reconnect_runtime_normalizes_daemon_backed_surface_notifications():
+    runtime = build_reconnect_runtime(
+        "novation-launch-control",
+        {
+            "daemon_status": {
+                "enabled": True,
+                "state": "repushing",
+                "available": True,
+                "reconnect_count": 2,
+                "last_seen_at": "2026-04-10T11:00:00Z",
+                "last_repush_at": "2026-04-10T11:00:03Z",
+                "notification": {
+                    "severity": "info",
+                    "title": "Launch Control state restored",
+                    "subtitle": "Live snapshot mappings and LED state re-pushed.",
+                    "emitted_at": "2026-04-10T11:00:03Z",
+                },
+            },
+        },
+    )
+
+    assert runtime["auto_reconnect"] is True
+    assert runtime["state"] == "repushing"
+    assert runtime["reconnect_count"] == 2
+    assert runtime["notification"]["title"] == "Launch Control state restored"
+    assert "led_feedback" in runtime["repush_scope"]
 
 
 def test_maschine_view_state_promotes_parameter_page_when_audio_grid_has_selection():

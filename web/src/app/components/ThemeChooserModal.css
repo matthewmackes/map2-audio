@@ -458,7 +458,8 @@
   color: var(--cds-text-primary);
   font-size: 0.875rem;
   font-family: inherit;
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   transition: border-color 0.12s;
 }
 

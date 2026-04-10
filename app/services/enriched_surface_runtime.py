@@ -419,8 +419,102 @@ _PUSH_PAGE_TO_VIEW_ID = {
 }
 
 
+def _normalize_notification(payload: Any) -> dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    emitted_at = str(payload.get("emitted_at") or "").strip()
+    title = str(payload.get("title") or "").strip()
+    subtitle = str(payload.get("subtitle") or "").strip()
+    if not emitted_at or not title or not subtitle:
+        return None
+    severity = str(payload.get("severity") or "info").strip().lower() or "info"
+    return {
+        "severity": severity,
+        "title": title,
+        "subtitle": subtitle,
+        "emitted_at": emitted_at,
+    }
+
+
+def build_reconnect_runtime(unit_id: str, service_state: dict[str, Any]) -> dict[str, Any]:
+    daemon_status = service_state.get("daemon_status") if isinstance(service_state.get("daemon_status"), dict) else {}
+
+    if unit_id == "maschine-mk1":
+        connected = bool(service_state.get("daemon_connected") or service_state.get("websocket_connected"))
+        return {
+            "auto_reconnect": True,
+            "state": "connected" if connected else "reconnecting",
+            "available": connected,
+            "reconnect_count": int(service_state.get("reconnect_count") or 0),
+            "last_seen_at": service_state.get("last_seen_at"),
+            "last_repush_at": service_state.get("last_repush_at"),
+            "repush_scope": [
+                "encoder_map",
+                "audio_grid_selection",
+                "lcd_frames",
+                "pad_led_state",
+            ],
+            "notification": _normalize_notification(service_state.get("notification")),
+        }
+
+    if unit_id == "ableton-push":
+        available = bool(service_state.get("active_device"))
+        return {
+            "auto_reconnect": True,
+            "state": "connected" if available else "reconnecting",
+            "available": available,
+            "reconnect_count": int(service_state.get("reconnect_count") or 0),
+            "last_seen_at": service_state.get("last_seen_at"),
+            "last_repush_at": service_state.get("last_repush_at"),
+            "repush_scope": [
+                "page_state",
+                "pad_led_state",
+                "display_frame",
+                "touchstrip_state",
+            ],
+            "notification": _normalize_notification(service_state.get("notification")),
+        }
+
+    repush_scope = {
+        "ground-control-pro": [
+            "snapshot_assignments",
+            "relay_state",
+            "transport_selection",
+        ],
+        "meloaudio-midi-commander": [
+            "snapshot_assignments",
+            "manual_setup_guidance",
+            "expression_profile",
+        ],
+        "novation-launch-control": [
+            "template_selection",
+            "snapshot_mappings",
+            "led_feedback",
+        ],
+        "mackie-mcu-pro": [
+            "focused_bank_projection",
+            "scribble_strip_labels",
+            "motor_faders",
+            "transport_state",
+        ],
+    }.get(unit_id, ["snapshot_assignments"])
+
+    return {
+        "auto_reconnect": bool(daemon_status.get("enabled", True)),
+        "state": str(daemon_status.get("state") or "idle"),
+        "available": bool(daemon_status.get("available")),
+        "reconnect_count": int(daemon_status.get("reconnect_count") or 0),
+        "last_seen_at": daemon_status.get("last_seen_at"),
+        "last_repush_at": daemon_status.get("last_repush_at"),
+        "repush_scope": repush_scope,
+        "notification": _normalize_notification(daemon_status.get("notification")),
+    }
+
+
 def build_shared_operator_contract() -> dict[str, Any]:
-    return deepcopy(_SHARED_OPERATOR_CONTRACT)
+    payload = deepcopy(_SHARED_OPERATOR_CONTRACT)
+    payload["reconnect_strategy"] = "auto-reconnect-and-repush-current-snapshot-state"
+    return payload
 
 
 def get_unit_view_ids(unit_id: str) -> list[str]:
@@ -608,6 +702,7 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "transport_candidate_count": len(service_state.get("transport_candidates") or []),
             "hid_history_depth": int(service_state.get("hid_history_depth") or 0),
             "last_event_type": service_state.get("last_event_type"),
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     if unit_id == "ableton-push":
         snapshot_state = service_state.get("snapshot_state") if isinstance(service_state.get("snapshot_state"), dict) else {}
@@ -618,6 +713,7 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "midi_events_out": int(service_state.get("midi_events_out") or 0),
             "decoded_events": len(snapshot_state.get("diagnostics", {}).get("decoded_events", []) if isinstance(snapshot_state.get("diagnostics"), dict) else []),
             "last_diagnostics_export": service_state.get("last_diagnostics_export"),
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     if unit_id == "ground-control-pro":
         return {
@@ -629,6 +725,7 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "artifact_count": int(service_state.get("artifact_count") or 0),
             "job_count": int(service_state.get("job_count") or 0),
             "active_job_count": int(service_state.get("active_job_count") or 0),
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     if unit_id == "meloaudio-midi-commander":
         profile = service_state.get("profile") if isinstance(service_state.get("profile"), dict) else {}
@@ -640,6 +737,7 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "footswitch_count": len(profile.get("footswitches") or []),
             "expression_pedal_count": len(profile.get("expression_pedals") or []),
             "supports_firmware_update": bool(profile.get("supports_firmware_update")),
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     if unit_id == "novation-launch-control":
         display_capabilities = service_state.get("display_capabilities") if isinstance(service_state.get("display_capabilities"), dict) else {}
@@ -649,6 +747,7 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "profile_id": profile.get("profile_id"),
             "led_feedback": bool(display_capabilities.get("supports_led_feedback")),
             "template_strategy": profile.get("metadata", {}).get("template_strategy") if isinstance(profile.get("metadata"), dict) else None,
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     if unit_id == "mackie-mcu-pro":
         display_capabilities = service_state.get("display_capabilities") if isinstance(service_state.get("display_capabilities"), dict) else {}
@@ -657,5 +756,6 @@ def build_surface_lab_snapshot(unit_id: str, service_state: dict[str, Any]) -> d
             "motor_faders": int(display_capabilities.get("motor_faders") or 0),
             "scribble_strip_transport": display_capabilities.get("transport"),
             "supports_channel_labels": bool(display_capabilities.get("supports_channel_labels")),
+            "reconnect_runtime": build_reconnect_runtime(unit_id, service_state),
         }
     return {}

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { TopologyGraph } from './TopologyGraph'
 import { useClusterSimulation } from '../../hooks/useClusterSimulation'
 import { normalizeClusterNodes, normalizeClusterMetrics, summarizeClusterMetrics } from './clusterData'
+import { LegacyTile } from '../shared/LegacyTile'
 
 interface ClusterOverviewTabProps {
   simulationMode: boolean
@@ -223,37 +224,37 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
     <div className="cluster-overview-tab" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Quick Stats */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-        <div className="stat-card" style={{ background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`, borderColor: healthColor }}>
+        <LegacyTile style={{ background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`, borderColor: healthColor }}>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Health</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: healthColor, marginTop: 8 }}>{stats.healthScore.toFixed(0)}%</div>
-        </div>
+        </LegacyTile>
 
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
             {stats.onlineCount}/{stats.nodeCount}
           </div>
-        </div>
+        </LegacyTile>
 
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>CPU</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#ffa726', marginTop: 8 }}>{stats.avgCpuUsage.toFixed(0)}%</div>
-        </div>
+        </LegacyTile>
 
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>RAM</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6', marginTop: 8 }}>{stats.avgMemoryUsage.toFixed(0)}%</div>
-        </div>
+        </LegacyTile>
 
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>DSP</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', marginTop: 8 }}>{stats.avgDspLoad.toFixed(0)}%</div>
-        </div>
+        </LegacyTile>
 
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Latency</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>{stats.totalLatency.toFixed(1)}ms</div>
-        </div>
+        </LegacyTile>
       </div>
 
       {/* Cluster Topology */}
@@ -292,22 +293,22 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
               marginBottom: 16,
             }}
           >
-            <div className="stat-card" style={{ margin: 0 }}>
+            <LegacyTile style={{ margin: 0 }}>
               <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#60a5fa', marginTop: 8 }}>{hardwareSummary.node_count}</div>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
+            </LegacyTile>
+            <LegacyTile style={{ margin: 0 }}>
               <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>USB Audio</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#34d399', marginTop: 8 }}>{hardwareSummary.usb_audio_device_count}</div>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
+            </LegacyTile>
+            <LegacyTile style={{ margin: 0 }}>
               <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>MIDI</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>{hardwareSummary.midi_device_count}</div>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
+            </LegacyTile>
+            <LegacyTile style={{ margin: 0 }}>
               <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>PipeWire</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#f472b6', marginTop: 8 }}>{hardwareSummary.pipewire_device_count}</div>
-            </div>
+            </LegacyTile>
           </div>
 
           {hardwareNodes.length === 0 ? (

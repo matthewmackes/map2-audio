@@ -279,6 +279,16 @@ describe('PhysicalSurfacesShell', () => {
     expect(await screen.findByText('MIDI Hub Devices')).toBeTruthy()
     expect(await screen.findByText('Synth-first surface rules')).toBeTruthy()
     expect(await screen.findByText(/snd-usb-caiaq/i)).toBeTruthy()
+    expect(
+      screen.getAllByRole('link', { name: 'Open Native Instruments Maschine MK1' }).some((link) => link.getAttribute('href') === '/maschine'),
+    ).toBe(true)
+    expect(screen.getByRole('link', { name: 'Open Ableton Push' })).toHaveAttribute('href', '/labs/push-surface')
+    expect(
+      screen.getAllByRole('link', { name: 'Open Mackie MCU Pro' }).some((link) => link.getAttribute('href') === '/mcu'),
+    ).toBe(true)
+    expect(screen.getByRole('link', { name: 'Open Novation Launch Control Family' })).toHaveAttribute('href', '/launch-control')
+    expect(screen.getByRole('link', { name: 'Open MeloAudio MIDI Commander' })).toHaveAttribute('href', '/midi-commander')
+    expect(screen.getAllByRole('button', { name: 'Open Dedicated Route' }).length).toBeGreaterThan(0)
   })
 
   it('renders an individual unit page with transport and firmware posture', async () => {

@@ -238,6 +238,146 @@ std::string normalizeDeviceType(const std::string& deviceType) {
     return normalized;
 }
 
+const juce::var* findSnapshotExpressionValue(
+    const std::map<std::string, juce::var>& mapping,
+    const char* key) {
+    const auto it = mapping.find(key);
+    if (it == mapping.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+int snapshotExpressionInt(
+    const std::map<std::string, juce::var>& mapping,
+    const char* key,
+    int fallback) {
+    if (const auto* value = findSnapshotExpressionValue(mapping, key)) {
+        if (value->isInt() || value->isInt64()) {
+            return static_cast<int>(*value);
+        }
+        if (value->isDouble()) {
+            return static_cast<int>(static_cast<double>(*value));
+        }
+        if (value->isString()) {
+            return value->toString().getIntValue();
+        }
+        if (value->isBool()) {
+            return static_cast<bool>(*value) ? 1 : 0;
+        }
+    }
+    return fallback;
+}
+
+float snapshotExpressionFloat(
+    const std::map<std::string, juce::var>& mapping,
+    const char* key,
+    float fallback) {
+    if (const auto* value = findSnapshotExpressionValue(mapping, key)) {
+        if (value->isDouble()) {
+            return static_cast<float>(static_cast<double>(*value));
+        }
+        if (value->isInt() || value->isInt64()) {
+            return static_cast<float>(static_cast<int>(*value));
+        }
+        if (value->isString()) {
+            return value->toString().getFloatValue();
+        }
+        if (value->isBool()) {
+            return static_cast<bool>(*value) ? 1.0f : 0.0f;
+        }
+    }
+    return fallback;
+}
+
+bool snapshotExpressionBool(
+    const std::map<std::string, juce::var>& mapping,
+    const char* key,
+    bool fallback) {
+    if (const auto* value = findSnapshotExpressionValue(mapping, key)) {
+        if (value->isBool()) {
+            return static_cast<bool>(*value);
+        }
+        if (value->isInt() || value->isInt64()) {
+            return static_cast<int>(*value) != 0;
+        }
+        if (value->isString()) {
+            const auto normalized = value->toString().trim().toLowerCase();
+            return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+        }
+    }
+    return fallback;
+}
+
+std::string snapshotExpressionString(
+    const std::map<std::string, juce::var>& mapping,
+    const char* key,
+    const std::string& fallback = {}) {
+    if (const auto* value = findSnapshotExpressionValue(mapping, key)) {
+        return value->toString().toStdString();
+    }
+    return fallback;
+}
+
+float clamp01(float value) {
+    return std::clamp(value, 0.0f, 1.0f);
+}
+
+float sampleCustomExpressionCurve(float normalized, const juce::var& customCurve) {
+    const auto* curvePoints = customCurve.getArray();
+    if (curvePoints == nullptr || curvePoints->size() < 2) {
+        return clamp01(normalized);
+    }
+
+    auto pointYAt = [&](int index, float fallback) {
+        if (index < 0 || index >= curvePoints->size()) {
+            return fallback;
+        }
+        const auto& point = curvePoints->getReference(index);
+        if (auto* object = point.getDynamicObject()) {
+            const auto y = object->getProperty("y");
+            if (y.isDouble()) {
+                return clamp01(static_cast<float>(static_cast<double>(y)));
+            }
+            if (y.isInt() || y.isInt64()) {
+                return clamp01(static_cast<float>(static_cast<int>(y)));
+            }
+            if (y.isString()) {
+                return clamp01(y.toString().getFloatValue());
+            }
+        }
+        return fallback;
+    };
+
+    const float t = clamp01(normalized);
+    const float p1y = pointYAt(0, 0.3f);
+    const float p2y = pointYAt(1, 0.7f);
+    const float u = 1.0f - t;
+    return clamp01((3.0f * u * u * t * p1y) + (3.0f * u * t * t * p2y) + (t * t * t));
+}
+
+std::string normalizeExpressionCurveName(const std::string& curveName) {
+    std::string normalized(curveName);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (normalized == "log" || normalized == "logarithmic") {
+        return "log";
+    }
+    if (normalized == "exp" || normalized == "exponential") {
+        return "exp";
+    }
+    if (normalized == "scurve" || normalized == "s_curve") {
+        return "scurve";
+    }
+    if (normalized == "custom") {
+        return "custom";
+    }
+    return "linear";
+}
+
 constexpr const char* kJsonTreeKeyProperty = "__json_key";
 constexpr const char* kJsonScalarProperty = "__json_scalar";
 constexpr const char* kJsonKindProperty = "__json_kind";
@@ -624,12 +764,21 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
                             false, false, true);
     spilloverBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                              false, false, true);
+    monitorBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                           false, false, true);
     graphCrossfadeInputBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                                        false, false, true);
     graphCrossfadeOldBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                                      false, false, true);
     graphCrossfadeNewBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
                                      false, false, true);
+    topologyTransitionReferenceBuffer_.setSize(
+        numOutputChannels_,
+        std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+        false,
+        false,
+        true);
+    topologyTransitionReferenceBuffer_.clear();
 
     // ============================================================================
     // REALTIME OPTIMIZATION: Lock ALL memory to RAM to prevent page faults
@@ -2130,8 +2279,10 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         reverbProcessor_.process(buffer);
     }
 
-    // Copy output to the selected monitoring pair so snapshot-level output
-    // selection can move the live stereo mix between hardware pairs.
+    applyTopologyTransitionFade(buffer, processSamples);
+
+    // Keep the house mix on outputs 1/2 and mirror an isolated solo source
+    // to the configured monitoring pair when one branch is soloed.
     int monitoringOutputStart = monitoringOutputIndex_.load(std::memory_order_acquire);
     if (monitoringOutputStart < 0 || monitoringOutputStart >= safeOutputChannels) {
         monitoringOutputStart = 0;
@@ -2142,23 +2293,43 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         monitoringOutputStart = 0;
     }
 
-    const int availableMonitoringChannels = std::max(0, safeOutputChannels - monitoringOutputStart);
-    const int copyOutputChannels = std::min(processChannels, availableMonitoringChannels);
-    for (int ch = 0; ch < copyOutputChannels; ++ch) {
-        const int outputIndex = monitoringOutputStart + ch;
-        if (outputs[outputIndex] != nullptr) {
-            std::copy_n(buffer.getReadPointer(ch), processSamples, outputs[outputIndex]);
+    const int primaryOutputChannels = std::min(processChannels, std::min(safeOutputChannels, 2));
+    for (int ch = 0; ch < safeOutputChannels; ++ch) {
+        if (outputs[ch] != nullptr) {
+            std::fill_n(outputs[ch], safeNumSamples, 0.0f);
+        }
+    }
+    for (int ch = 0; ch < primaryOutputChannels; ++ch) {
+        if (outputs[ch] != nullptr) {
+            std::copy_n(buffer.getReadPointer(ch), processSamples, outputs[ch]);
             if (processSamples < safeNumSamples) {
-                std::fill_n(outputs[outputIndex] + processSamples, safeNumSamples - processSamples, 0.0f);
+                std::fill_n(outputs[ch] + processSamples, safeNumSamples - processSamples, 0.0f);
             }
         }
     }
-    for (int ch = 0; ch < safeOutputChannels; ++ch) {
-        if (ch >= monitoringOutputStart && ch < monitoringOutputStart + copyOutputChannels) {
-            continue;
-        }
-        if (outputs[ch] != nullptr) {
-            std::fill_n(outputs[ch], safeNumSamples, 0.0f);
+
+    const bool monitoringPairOverlapsPrimary =
+        monitoringOutputStart < primaryOutputChannels
+        && (monitoringOutputStart + std::min(processChannels, 2)) > 0;
+    if (!monitoringPairOverlapsPrimary
+        && monitorBuffer_.getNumChannels() >= processChannels
+        && monitorBuffer_.getNumSamples() >= processSamples) {
+        juce::AudioBuffer<float> monitorBuffer(
+            monitorBuffer_.getArrayOfWritePointers(),
+            processChannels,
+            processSamples);
+        if (buildSoloMonitorMix(monitorBuffer, processSamples)) {
+            const int availableMonitoringChannels = std::max(0, safeOutputChannels - monitoringOutputStart);
+            const int monitorCopyChannels = std::min(processChannels, availableMonitoringChannels);
+            for (int ch = 0; ch < monitorCopyChannels; ++ch) {
+                const int outputIndex = monitoringOutputStart + ch;
+                if (outputs[outputIndex] != nullptr) {
+                    std::copy_n(monitorBuffer.getReadPointer(ch), processSamples, outputs[outputIndex]);
+                    if (processSamples < safeNumSamples) {
+                        std::fill_n(outputs[outputIndex] + processSamples, safeNumSamples - processSamples, 0.0f);
+                    }
+                }
+            }
         }
     }
 
@@ -2229,7 +2400,11 @@ void Map2AudioEngine::drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSampl
 
     auto appendEvent = [&](const QueuedMidiEvent& event) {
         const uint8_t op = static_cast<uint8_t>(event.status & 0xF0);
+        const int channel = static_cast<int>(event.status & 0x0F) + 1;
         const int offset = std::clamp(event.sampleOffset, 0, std::max(0, numSamples - 1));
+        if (op == 0xB0) {
+            applySnapshotExpressionControlChange(channel, static_cast<int>(event.data1), static_cast<int>(event.data2));
+        }
         if (op == 0xC0 || op == 0xD0) {
             midiBuffer.addEvent(juce::MidiMessage(event.status, event.data1), offset);
         } else {
@@ -2289,6 +2464,133 @@ void Map2AudioEngine::sendDrumSequencerMidiEvent(const drummachine::DrumSequence
     midiHandler_.sendMessage(msg);
 }
 
+void Map2AudioEngine::applySnapshotExpressionControlChange(int midiChannel, int cc, int value) {
+    const auto mappings = std::atomic_load(&snapshotExpressionMappings_);
+    if (mappings == nullptr || mappings->empty()) {
+        return;
+    }
+
+    for (const auto& mapping : *mappings) {
+        if (!snapshotExpressionBool(mapping, "active", true)) {
+            continue;
+        }
+        if (snapshotExpressionInt(mapping, "cc", -1) != cc) {
+            continue;
+        }
+
+        const int configuredChannel = snapshotExpressionInt(mapping, "channel", 0);
+        if (configuredChannel > 0 && configuredChannel != midiChannel) {
+            continue;
+        }
+
+        const int ccMin = std::clamp(snapshotExpressionInt(mapping, "cc_min", 0), 0, 127);
+        const int ccMax = std::clamp(snapshotExpressionInt(mapping, "cc_max", 127), 0, 127);
+        const int lo = std::min(ccMin, ccMax);
+        const int hi = std::max(ccMin, ccMax);
+        if (hi <= lo) {
+            continue;
+        }
+
+        const float normalized = clamp01(
+            (static_cast<float>(value) - static_cast<float>(lo))
+            / static_cast<float>(hi - lo));
+        const auto* customCurve = findSnapshotExpressionValue(mapping, "custom_curve");
+        const float curved = applySnapshotExpressionCurve(
+            normalized,
+            snapshotExpressionString(mapping, "curve", "linear"),
+            customCurve != nullptr ? *customCurve : juce::var());
+        const float outMin = snapshotExpressionFloat(mapping, "out_min", 0.0f);
+        const float outMax = snapshotExpressionFloat(mapping, "out_max", 1.0f);
+        const float mappedValue = outMin + ((outMax - outMin) * curved);
+        (void)applySnapshotExpressionMappedValue(mapping, mappedValue);
+    }
+}
+
+bool Map2AudioEngine::applySnapshotExpressionMappedValue(
+    const std::map<std::string, juce::var>& mapping,
+    float value) {
+    const InstanceId targetPlugin = static_cast<InstanceId>(
+        snapshotExpressionInt(mapping, "target_plugin", INVALID_INSTANCE_ID));
+    const int paramIndex = snapshotExpressionInt(mapping, "param_index", -1);
+    const std::string parameterSymbol = snapshotExpressionString(mapping, "parameter_symbol");
+
+    if (targetPlugin != INVALID_INSTANCE_ID && targetPlugin > 0) {
+        if (paramIndex >= 0) {
+            return pluginHost_.setParameter(targetPlugin, paramIndex, value);
+        }
+        if (!parameterSymbol.empty()) {
+            return pluginHost_.setParameterByName(targetPlugin, parameterSymbol, value);
+        }
+    }
+
+    const std::string paramId = snapshotExpressionString(mapping, "param_id");
+    if (paramId == "engine.reverb_mix") {
+        setReverbMix(clamp01(value));
+        return true;
+    }
+    if (paramId == "engine.delay_mix") {
+        setDelayMix(clamp01(value));
+        setPassionFXDelayMix(clamp01(value));
+        return true;
+    }
+    if (paramId == "engine.chorus_mix") {
+        setChorusMix(clamp01(value));
+        setPassionFXChorusMix(clamp01(value));
+        return true;
+    }
+    if (paramId == "engine.wah_freq") {
+        setPassionFXWahEnabled(true);
+        setPassionFXWahPosition(clamp01((value - 200.0f) / 3800.0f));
+        return true;
+    }
+    if (paramId == "engine.gate_thresh") {
+        setGateThreshold(value);
+        setPassionFXGateThreshold(value);
+        return true;
+    }
+    if (paramId == "engine.comp_thresh") {
+        setCompressorThreshold(value);
+        setPassionFXCompThreshold(value);
+        return true;
+    }
+    if (paramId == "engine.pitch_shift") {
+        setPitchShifterPitchL(value * 100.0f);
+        setPitchShifterPitchR(value * 100.0f);
+        return true;
+    }
+    if (paramId == "engine.nam_level") {
+        setNAMOutputGain(value);
+        return true;
+    }
+    if (paramId == "engine.cab_mix") {
+        setCabinetMix(clamp01(value));
+        return true;
+    }
+
+    return false;
+}
+
+float Map2AudioEngine::applySnapshotExpressionCurve(
+    float normalized,
+    const std::string& curveName,
+    const juce::var& customCurve) {
+    const float t = clamp01(normalized);
+    const std::string normalizedCurve = normalizeExpressionCurveName(curveName);
+    if (normalizedCurve == "custom") {
+        return sampleCustomExpressionCurve(t, customCurve);
+    }
+    if (normalizedCurve == "log") {
+        return t * t;
+    }
+    if (normalizedCurve == "exp") {
+        return std::sqrt(t);
+    }
+    if (normalizedCurve == "scurve") {
+        return t * t * (3.0f - (2.0f * t));
+    }
+    return t;
+}
+
 // ========================================
 // Configuration
 // ========================================
@@ -2339,12 +2641,17 @@ void Map2AudioEngine::setBufferSize(int size) {
                                 false, false, true);
         spilloverBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                  false, false, true);
+        monitorBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                               false, false, true);
         graphCrossfadeInputBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                            false, false, true);
         graphCrossfadeOldBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                          false, false, true);
         graphCrossfadeNewBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                          false, false, true);
+        topologyTransitionReferenceBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                                   false, false, true);
+        topologyTransitionReferenceBuffer_.clear();
 
         // Re-prepare all processors with new buffer size
         prepareAllProcessors(sampleRate_, size, 2);
@@ -2567,6 +2874,45 @@ bool Map2AudioEngine::reorderChain(const std::vector<InstanceId>& order) {
 
 bool Map2AudioEngine::prewarmPluginNode(InstanceId instanceId) {
     return audioGraph_->prewarmPluginNode(instanceId);
+}
+
+bool Map2AudioEngine::applyRoutingTopology(const JuceAudioGraph::RoutingTopologySpec& spec) {
+    cleanupExpiredIndependentGraphCrossfades();
+    cleanupExpiredSpilloverChains();
+    const bool applied = audioGraph_->applyRoutingTopology(spec);
+    if (!applied) {
+        return false;
+    }
+
+    const int transitionSamples = std::max(
+        1,
+        std::min(
+            std::max(bufferSize_, 1),
+            static_cast<int>(std::ceil(sampleRate_ * 0.010))));
+    topologyTransitionTotalSamples_.store(transitionSamples, std::memory_order_release);
+    topologyTransitionSamplesRemaining_.store(transitionSamples, std::memory_order_release);
+    return true;
+}
+
+bool Map2AudioEngine::replaceSnapshotExpressionMappings(
+    const std::vector<std::map<std::string, juce::var>>& entries) {
+    std::shared_ptr<const std::vector<std::map<std::string, juce::var>>> normalizedEntries =
+        std::make_shared<std::vector<std::map<std::string, juce::var>>>(entries);
+    std::atomic_store(&snapshotExpressionMappings_, std::move(normalizedEntries));
+    return true;
+}
+
+bool Map2AudioEngine::triggerParallelABSwitch(int groupId, int branchIndex) {
+    return audioGraph_->triggerParallelABSwitch(groupId, branchIndex);
+}
+
+bool Map2AudioEngine::copyParallelBranchTap(
+    int groupId,
+    int branchIndex,
+    juce::AudioBuffer<float>& dest,
+    int numSamples
+) const {
+    return audioGraph_->copyParallelBranchTap(groupId, branchIndex, dest, numSamples);
 }
 
 std::vector<Map2AudioEngine::SpilloverChainState> Map2AudioEngine::getSpilloverChainStates() const {
@@ -2813,6 +3159,90 @@ void Map2AudioEngine::processIndependentGraphCrossfades(
     }
 
     cleanupExpiredIndependentGraphCrossfades();
+}
+
+void Map2AudioEngine::applyTopologyTransitionFade(juce::AudioBuffer<float>& buffer, int numSamples) {
+    const int transitionTotal = topologyTransitionTotalSamples_.load(std::memory_order_acquire);
+    int remaining = topologyTransitionSamplesRemaining_.load(std::memory_order_acquire);
+    if (transitionTotal <= 0 || remaining <= 0) {
+        const int captureChannels =
+            std::min(buffer.getNumChannels(), topologyTransitionReferenceBuffer_.getNumChannels());
+        const int captureSamples =
+            std::min(numSamples, topologyTransitionReferenceBuffer_.getNumSamples());
+        for (int ch = 0; ch < captureChannels; ++ch) {
+            topologyTransitionReferenceBuffer_.copyFrom(ch, 0, buffer, ch, 0, captureSamples);
+        }
+        return;
+    }
+
+    const int captureChannels =
+        std::min(buffer.getNumChannels(), topologyTransitionReferenceBuffer_.getNumChannels());
+    const int captureSamples =
+        std::min(numSamples, topologyTransitionReferenceBuffer_.getNumSamples());
+    const int processedStart = std::max(0, transitionTotal - remaining);
+    for (int sample = 0; sample < captureSamples; ++sample) {
+        const double progress = juce::jlimit(
+            0.0,
+            1.0,
+            static_cast<double>(processedStart + sample) / static_cast<double>(transitionTotal));
+        const float oldGain =
+            static_cast<float>(std::cos(progress * juce::MathConstants<double>::halfPi));
+        const float newGain =
+            static_cast<float>(std::sin(progress * juce::MathConstants<double>::halfPi));
+        for (int ch = 0; ch < captureChannels; ++ch) {
+            const float previous = topologyTransitionReferenceBuffer_.getSample(ch, sample);
+            const float current = buffer.getSample(ch, sample);
+            buffer.setSample(ch, sample, (previous * oldGain) + (current * newGain));
+        }
+    }
+
+    for (int ch = 0; ch < captureChannels; ++ch) {
+        topologyTransitionReferenceBuffer_.copyFrom(ch, 0, buffer, ch, 0, captureSamples);
+    }
+
+    remaining = std::max(0, remaining - numSamples);
+    topologyTransitionSamplesRemaining_.store(remaining, std::memory_order_release);
+    if (remaining == 0) {
+        topologyTransitionTotalSamples_.store(0, std::memory_order_release);
+    }
+}
+
+bool Map2AudioEngine::buildSoloMonitorMix(juce::AudioBuffer<float>& dest, int numSamples) {
+    if (dest.getNumChannels() <= 0 || dest.getNumSamples() < numSamples || numSamples <= 0) {
+        return false;
+    }
+
+    std::map<int, bool> soloStates;
+    {
+        std::lock_guard<std::mutex> guard(chainStateMutex_);
+        soloStates = chainSoloState_;
+    }
+
+    const bool hasSolo = std::any_of(
+        soloStates.begin(),
+        soloStates.end(),
+        [](const auto& entry) { return entry.second; });
+    if (!hasSolo) {
+        dest.clear();
+        return false;
+    }
+
+    const auto groups = audioGraph_->getParallelGroups();
+    for (const auto& group : groups) {
+        for (size_t branchIndex = 0; branchIndex < group.branchChainIds.size(); ++branchIndex) {
+            const int chainId = group.branchChainIds[branchIndex];
+            auto soloIt = soloStates.find(chainId);
+            if (soloIt == soloStates.end() || !soloIt->second) {
+                continue;
+            }
+            if (audioGraph_->copyParallelBranchTap(group.id, static_cast<int>(branchIndex), dest, numSamples)) {
+                return true;
+            }
+        }
+    }
+
+    dest.clear();
+    return false;
 }
 
 bool Map2AudioEngine::replaceChainWithIndependentGraphCrossfade(

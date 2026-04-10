@@ -10,7 +10,7 @@
 .mpx1-scene-current {
   display: grid;
   gap: 4px;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--surface-3);
@@ -39,7 +39,7 @@
 .mpx1-scene-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-scene-btn {
@@ -49,7 +49,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 14px 10px 10px;
+  padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   min-height: 80px;
   background: var(--surface-3);
   border: 1.5px solid var(--border-strong);
@@ -122,7 +122,7 @@
 .mpx1-morph-strip__controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   flex-wrap: wrap;
 }
 
@@ -189,7 +189,8 @@
 }
 
 .mpx1-scene-capture-row__input:focus {
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--interactive));
+  outline-offset: 2px;
   border-color: var(--interactive);
 }
 
@@ -235,11 +236,11 @@
   .mpx1-scene-btn {
     align-items: center;
     display: grid;
-    gap: 10px;
+    gap: var(--cds-spacing-04, 0.75rem);
     grid-template-columns: 1fr auto;
     justify-content: space-between;
     min-height: 56px;
-    padding: 10px 12px;
+    padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
     text-align: left;
   }
 

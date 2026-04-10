@@ -151,7 +151,7 @@
 .hm-inline-notification {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   padding: 12px 16px;
   font-size: 13px;
   line-height: 1.5;
@@ -288,7 +288,7 @@
 
 .hm-kpi-card {
   background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
-  padding: 20px 20px 18px;
+  padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-06, 1.5rem) var(--cds-spacing-05, 1rem);
   min-height: 8rem;
 }
 
@@ -361,7 +361,7 @@
 }
 
 .hm-tabs__panel {
-  padding: 28px;
+  padding: var(--cds-spacing-07, 2rem);
   background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent);
 }
 
@@ -370,7 +370,7 @@
 .hm-section-card {
   background: color-mix(in srgb, var(--cds-layer-01, var(--surface-2)) 96%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
-  padding: 20px;
+  padding: var(--cds-spacing-06, 1.5rem);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 38%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
@@ -423,7 +423,7 @@
 }
 
 .hm-info-table__key {
-  padding: 7px 12px 7px 0;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-04, 0.75rem) var(--cds-spacing-03, 0.5rem) 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -433,7 +433,7 @@
 }
 
 .hm-info-table__val {
-  padding: 7px 0;
+  padding: var(--cds-spacing-03, 0.5rem) 0;
   font-size: 12px;
   color: var(--text-primary);
   word-break: break-all;
@@ -548,7 +548,7 @@
 }
 
 .hm-cluster-table__hcell {
-  padding: 10px 14px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   font-size: 11px;
   font-weight: 700;
   color: var(--text-tertiary);
@@ -597,7 +597,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
+  padding: var(--cds-spacing-05, 1rem);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -633,7 +633,7 @@
 .hm-temp-display {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   margin: 8px 0 4px;
 }
 
@@ -749,7 +749,7 @@
 .hm-disk-metric {
   background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 32%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
@@ -801,9 +801,9 @@
 .hm-branding {
   display: grid;
   grid-template-columns: auto auto 1fr;
-  gap: 28px;
+  gap: var(--cds-spacing-07, 2rem);
   align-items: center;
-  padding: 28px;
+  padding: var(--cds-spacing-07, 2rem);
   background:
     linear-gradient(
       180deg,
@@ -945,7 +945,7 @@
     );
   border: 1px solid color-mix(in srgb, var(--interactive) 32%, transparent);
   border-inline-start: 3px solid color-mix(in srgb, var(--interactive) 96%, transparent);
-  padding: 20px 24px;
+  padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-06, 1.5rem);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 34%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
@@ -968,7 +968,7 @@
 .hm-feature-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 @media (max-width: 900px) { .hm-feature-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -1072,7 +1072,7 @@
       color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
-  padding: 20px;
+  padding: var(--cds-spacing-06, 1.5rem);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 30%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);

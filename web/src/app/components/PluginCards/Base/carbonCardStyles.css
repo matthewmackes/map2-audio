@@ -286,7 +286,7 @@
   flex: 1 1 auto;
   min-width: 0;
   min-height: 2.75rem;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   background: var(--cds-field-02, var(--cds-layer-02, #262626));
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
@@ -356,7 +356,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
   background: color-mix(in srgb, var(--cds-layer-02, #262626) 82%, transparent);

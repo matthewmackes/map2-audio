@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.enriched_surface_runtime import (
+    build_reconnect_runtime,
     build_surface_lab_snapshot,
     build_unit_recent_target,
     build_shared_operator_contract,
@@ -20,8 +21,10 @@ from app.services.enriched_surface_runtime import (
 from app.services.enriched_surface_session import get_enriched_surface_session_service
 from app.services.ground_control_pro import get_ground_control_pro_service
 from app.services.launch_control_surface import get_launch_control_surface_service
+from app.services.mcu_surface import get_mcu_surface_service
 from app.services.midi_device_profiles import device_profile_service
 from app.services.midi_hub.device_registry import get_midi_device_registry
+from app.services.midi_commander_surface import get_midi_commander_surface_service
 from app.services.maschine_service import get_maschine_service
 from app.services.push_surface import get_push_surface_manager
 
@@ -379,6 +382,8 @@ class EnrichedMidiPhysicalSurfacesService:
         push_snapshot = await self._get_push_snapshot()
         ground_control_state = await self._get_ground_control_state()
         launch_control_state = await self._get_launch_control_state()
+        midi_commander_state = await self._get_midi_commander_state()
+        mcu_state = await self._get_mcu_state()
         midi_hub_inventory = await self._get_midi_hub_inventory()
         midi_hub_devices = [
             deepcopy(device)
@@ -439,6 +444,8 @@ class EnrichedMidiPhysicalSurfacesService:
                 midi_hub_profiles=midi_hub_profiles,
                 meloaudio_profile_state=meloaudio_profile_state,
                 launch_control_state=launch_control_state,
+                midi_commander_state=midi_commander_state,
+                mcu_state=mcu_state,
             )
             unit["transport_layers"] = self._resolve_transport_layers(
                 unit,
@@ -481,10 +488,23 @@ class EnrichedMidiPhysicalSurfacesService:
             unit["operator_session"] = session_state
             units.append(unit)
 
+        notifications = [
+            {
+                "id": f"surface-reconnect-{unit['unit_id']}-{notification['emitted_at']}",
+                "unit_id": unit["unit_id"],
+                "display_name": unit["display_name"],
+                **notification,
+            }
+            for unit in units
+            for notification in [build_reconnect_runtime(str(unit["unit_id"]), unit["service_state"]).get("notification")]
+            if isinstance(notification, dict)
+        ]
+
         return {
             "stack_name": STACK_NAME,
             "summary_generated_at": self._timestamp(),
             "shared_operator_contract": build_shared_operator_contract(),
+            "notifications": notifications,
             "host_observations": {
                 "usb_devices": usb_devices,
                 "sound_cards": sound_cards,
@@ -546,6 +566,20 @@ class EnrichedMidiPhysicalSurfacesService:
     async def _get_launch_control_state(self) -> dict[str, Any]:
         try:
             service = get_launch_control_surface_service()
+            return service.get_state_snapshot()
+        except Exception as exc:
+            return {"error": str(exc)}
+
+    async def _get_midi_commander_state(self) -> dict[str, Any]:
+        try:
+            service = get_midi_commander_surface_service()
+            return service.get_state_snapshot()
+        except Exception as exc:
+            return {"error": str(exc)}
+
+    async def _get_mcu_state(self) -> dict[str, Any]:
+        try:
+            service = get_mcu_surface_service()
             return service.get_state_snapshot()
         except Exception as exc:
             return {"error": str(exc)}
@@ -699,6 +733,8 @@ class EnrichedMidiPhysicalSurfacesService:
         midi_hub_profiles: list[dict[str, Any]],
         meloaudio_profile_state: dict[str, Any],
         launch_control_state: dict[str, Any],
+        midi_commander_state: dict[str, Any],
+        mcu_state: dict[str, Any],
     ) -> dict[str, Any]:
         if unit_id == "maschine-mk1":
             return {
@@ -711,8 +747,12 @@ class EnrichedMidiPhysicalSurfacesService:
                 "led_state": deepcopy(maschine_status.get("led_state") or {}),
                 "transport": deepcopy(maschine_status.get("transport") or {}),
                 "transport_candidates": deepcopy(maschine_status.get("transport_candidates") or []),
+                "last_seen_at": maschine_status.get("last_seen_at"),
                 "hid_history_depth": len(maschine_hid_history),
                 "last_event_type": maschine_status.get("last_event_type"),
+                "reconnect_count": int(maschine_status.get("reconnect_count") or 0),
+                "last_repush_at": maschine_status.get("last_repush_at"),
+                "notification": deepcopy(maschine_status.get("notification")),
             }
         if unit_id == "ableton-push":
             return {
@@ -724,6 +764,10 @@ class EnrichedMidiPhysicalSurfacesService:
                 "welcome_runtime": deepcopy(push_snapshot.get("welcome_runtime") or {}),
                 "midi_events_in": push_health.get("midi_events_in"),
                 "midi_events_out": push_health.get("midi_events_out"),
+                "reconnect_count": int(push_health.get("reconnect_count") or 0),
+                "last_seen_at": push_health.get("last_seen_at"),
+                "last_repush_at": push_health.get("last_repush_at"),
+                "notification": deepcopy(push_health.get("notification")),
                 "last_capability_dump": deepcopy(push_health.get("last_capability_dump")),
                 "last_diagnostics_export": push_health.get("last_diagnostics_export"),
             }
@@ -738,6 +782,9 @@ class EnrichedMidiPhysicalSurfacesService:
                 "calibration_count": len(meloaudio_profile_state.get("expression_calibrations") or {}),
                 "detected_device_count": len(matched_midi_devices),
                 "detected_devices": deepcopy(matched_midi_devices),
+                "daemon_status": deepcopy(midi_commander_state.get("daemon_status") or {}),
+                "active_snapshot_mapping": deepcopy(midi_commander_state.get("active_snapshot_mapping") or {}),
+                "last_activation_push": deepcopy(midi_commander_state.get("last_activation_push") or {}),
             }
         if unit_id == "novation-launch-control":
             profile = _resolve_profile_payload(midi_hub_profiles, matched_midi_devices)
@@ -749,6 +796,9 @@ class EnrichedMidiPhysicalSurfacesService:
                 "template_state_by_port": deepcopy(launch_control_state.get("template_state_by_port") or {}),
                 "push_count": int(launch_control_state.get("push_count") or 0),
                 "last_push": deepcopy(launch_control_state.get("last_push") or {}),
+                "daemon_status": deepcopy(launch_control_state.get("daemon_status") or {}),
+                "active_snapshot_mapping": deepcopy(launch_control_state.get("active_snapshot_mapping") or {}),
+                "last_activation_push": deepcopy(launch_control_state.get("last_activation_push") or {}),
             }
         if unit_id == "mackie-mcu-pro":
             profile = _resolve_profile_payload(midi_hub_profiles, matched_midi_devices)
@@ -757,6 +807,9 @@ class EnrichedMidiPhysicalSurfacesService:
                 "display_capabilities": deepcopy(profile.get("metadata", {}).get("display_capabilities") or {}),
                 "detected_device_count": len(matched_midi_devices),
                 "detected_devices": deepcopy(matched_midi_devices),
+                "daemon_status": deepcopy(mcu_state.get("daemon_status") or {}),
+                "identity": deepcopy(mcu_state.get("identity") or {}),
+                "last_activation_push": deepcopy(mcu_state.get("last_activation_push") or {}),
             }
         return {}
 

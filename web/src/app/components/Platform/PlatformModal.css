@@ -53,7 +53,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   flex-shrink: 0;
 }
@@ -904,7 +904,8 @@
 .platform-shell__table-row.is-interactive:focus-visible,
 .platform-shell__table-row.is-selected {
   background: var(--cds-layer-selected-01);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary));
+  outline-offset: -2px;
 }
 
 .platform-shell__table-container .platform-shell__table-row.is-interactive:hover > td,

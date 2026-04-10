@@ -612,7 +612,7 @@ export function EQCard({
         .eq-expanded-band {
           background: #222;
           border-radius: 6px;
-          padding: 10px;
+          padding: 'var(--cds-spacing-04, 0.75rem)';
         }
 
         .eq-expanded-band.disabled {

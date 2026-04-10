@@ -73,6 +73,7 @@ import {
   WarningAlt,
   Waveform,
 } from '@carbon/icons-react'
+import { LegacyButton } from '../components/shared/LegacyButton'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { NumberInput } from '../components/ParameterControl'
@@ -306,13 +307,14 @@ function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
           />
         </div>
 
-        <button
-          className="btn btn-primary composer-send"
+        <LegacyButton
+          variant="primary"
+          className="composer-send"
           onClick={() => { onSend(targetLcd, line1, line2, duration); setLine1(''); setLine2('') }}
           disabled={!line1.trim()}
         >
           <Send size={16} /> Send Message
-        </button>
+        </LegacyButton>
       </div>
     </div>
   )
@@ -498,10 +500,10 @@ function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, is
       </div>
 
       <div className="hardware-actions">
-        <button className="btn btn-ghost" onClick={onScan} disabled={isScanning}>
+        <LegacyButton variant="ghost" onClick={onScan} disabled={isScanning}>
           <Scan size={16} />
           {isScanning ? 'Scanning…' : 'Scan I2C Bus'}
-        </button>
+        </LegacyButton>
 
         {scanResult && (
           <div className="scan-results">
@@ -523,10 +525,10 @@ function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, is
           <div key={lcdId} className="lcd-control-card">
             <div className="lcd-control-header"><MapRackDeviceIcon size={14} /><span>LCD {lcdId + 1}</span></div>
             <div className="lcd-control-buttons">
-              <button className="btn btn-sm" onClick={() => onTest(lcdId)} title="Run display test"><Chemistry size={14} /> Test</button>
-              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, true)} title="Backlight on"><Sun size={14} /></button>
-              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, false)} title="Backlight off"><Sun size={14} /></button>
-              <button className="btn btn-sm" onClick={() => onReset(lcdId)} title="Reset display"><Reset size={14} /></button>
+              <LegacyButton variant="secondary" size="sm" onClick={() => onTest(lcdId)} title="Run display test"><Chemistry size={14} /> Test</LegacyButton>
+              <LegacyButton variant="secondary" size="sm" iconDescription="Backlight on" onClick={() => onBacklight(lcdId, true)} title="Backlight on"><Sun size={14} /></LegacyButton>
+              <LegacyButton variant="secondary" size="sm" iconDescription="Backlight off" onClick={() => onBacklight(lcdId, false)} title="Backlight off"><Sun size={14} /></LegacyButton>
+              <LegacyButton variant="secondary" size="sm" iconDescription="Reset display" onClick={() => onReset(lcdId)} title="Reset display"><Reset size={14} /></LegacyButton>
             </div>
           </div>
         ))}
@@ -603,9 +605,9 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
           <div className="status-item"><span className="status-label">I2C Frequency</span><span className="status-value mono">{deviceStatus?.frequency || 100000} Hz</span></div>
           <div className="status-item"><span className="status-label">URL</span><span className="status-value mono small">{deviceStatus?.url || 'ftdi://ftdi:232h/1'}</span></div>
 
-          <button className="btn btn-primary full-width" onClick={onScan} disabled={isScanning}>
+          <LegacyButton variant="primary" fullWidth onClick={onScan} disabled={isScanning}>
             <Scan size={16} /> {isScanning ? 'Scanning…' : 'Scan I2C Bus'}
-          </button>
+          </LegacyButton>
 
           {scanResult && (
             <div className="scan-results-box">
@@ -701,8 +703,8 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
               <label>Test Message</label>
               <input type="text" value={testMessage} onChange={(e) => setTestMessage(e.target.value)} maxLength={20} placeholder="Enter message…" />
             </div>
-            <button className="btn btn-primary full-width" onClick={() => onTestWrite(testAddress, testMessage)}><Send size={16} /> Send to LCD</button>
-            <button className="btn btn-ghost full-width" onClick={() => onTestLCD(testAddress)}><Chemistry size={16} /> Run Display Test</button>
+            <LegacyButton variant="primary" fullWidth onClick={() => onTestWrite(testAddress, testMessage)}><Send size={16} /> Send to LCD</LegacyButton>
+            <LegacyButton variant="ghost" fullWidth onClick={() => onTestLCD(testAddress)}><Chemistry size={16} /> Run Display Test</LegacyButton>
           </div>
 
           <div className="panel-header" style={{ marginTop: 16 }}><Terminal size={16} /><span>CLI Commands</span></div>
@@ -741,7 +743,7 @@ function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDe
               <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>{event.source_node}</p>
             </div>
           </div>
-          <button className="btn btn-sm" onClick={onClose}><Close size={18} /></button>
+          <LegacyButton variant="ghost" size="sm" iconDescription="Close event details" onClick={onClose}><Close size={18} /></LegacyButton>
         </div>
 
         <div className="event-modal-body">
@@ -774,10 +776,10 @@ function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDe
         </div>
 
         <div className="event-modal-footer">
-          <button className="btn btn-primary" style={{ flex: 1 }} onClick={isPinned ? onUnpin : onPin}>
+          <LegacyButton variant="primary" style={{ flex: 1 }} onClick={isPinned ? onUnpin : onPin}>
             <Pin size={14} /> {isPinned ? 'Unpin' : 'Pin'}
-          </button>
-          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Close</button>
+          </LegacyButton>
+          <LegacyButton variant="ghost" style={{ flex: 1 }} onClick={onClose}>Close</LegacyButton>
         </div>
       </div>
     </div>
@@ -994,13 +996,13 @@ export function LCDPage() {
         icon={<MapRackDeviceIcon size={32} style={{ color: '#22c55e' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
-            <button className={`btn ${isPolling ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
+            <LegacyButton variant={isPolling ? 'primary' : 'ghost'} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
               {isPolling ? <Pause size={16} /> : <Play size={16} />}
               {isPolling ? 'Live' : 'Paused'}
-            </button>
-            <button className="btn btn-ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
+            </LegacyButton>
+            <LegacyButton variant="ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
               <Renew size={16} /> Refresh
-            </button>
+            </LegacyButton>
           </div>
         }
       />
@@ -1397,9 +1399,9 @@ export function LCDPage() {
                         </div>
 
                         {/* Test Sound */}
-                        <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }}>
+                        <LegacyButton variant="ghost" style={{ alignSelf: 'flex-start' }}>
                           🔊 Test Alert Sound
-                        </button>
+                        </LegacyButton>
                       </>
                     )}
                   </div>
@@ -1437,16 +1439,16 @@ export function LCDPage() {
                     </div>
 
                     {/* Clear */}
-                    <button className="btn" style={{ background: '#7f1d1d', color: '#fca5a5', alignSelf: 'flex-start' }}>
+                    <LegacyButton variant="danger" style={{ alignSelf: 'flex-start' }}>
                       🗑️ Clear Event History
-                    </button>
+                    </LegacyButton>
                   </div>
                 </div>
 
                 {/* Save / Reset */}
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <button
-                    className="btn btn-primary"
+                  <LegacyButton
+                    variant="primary"
                     style={{ flex: 1, padding: '12px 24px', fontSize: 15 }}
                     onClick={handleSaveSettings}
                     disabled={saveStatus !== 'idle'}
@@ -1455,8 +1457,8 @@ export function LCDPage() {
                     {saveStatus === 'saved' && '✓ Saved!'}
                     {saveStatus === 'error' && '✗ Error'}
                     {saveStatus === 'idle' && 'Save Settings'}
-                  </button>
-                  <button className="btn btn-ghost" style={{ padding: '12px 24px', fontSize: 15 }}>Reset</button>
+                  </LegacyButton>
+                  <LegacyButton variant="ghost" style={{ padding: '12px 24px', fontSize: 15 }}>Reset</LegacyButton>
                 </div>
               </div>
 
@@ -1536,7 +1538,7 @@ export function LCDPage() {
           background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 100%);
           border: 1px solid rgba(34,197,94,0.2);
           border-radius: 10px;
-          padding: 14px 18px;
+          padding: 'var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem)';
           margin-bottom: 20px;
           font-size: 13px;
           line-height: 1.6;
@@ -1559,7 +1561,7 @@ export function LCDPage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 20px;
+          padding: 'var(--cds-spacing-04, 0.75rem) var(--cds-spacing-06, 1.5rem)';
           border: none;
           background: transparent;
           color: #888;
@@ -1579,7 +1581,7 @@ export function LCDPage() {
           background: #111;
           border: 1px solid #222;
           border-radius: 12px;
-          padding: 20px;
+          padding: 'var(--cds-spacing-06, 1.5rem)';
         }
 
         /* ── Displays Tab ── */
@@ -1594,7 +1596,7 @@ export function LCDPage() {
           background: linear-gradient(145deg, #1a1a1a 0%, #111 100%);
           border: 1px solid #2a2a2a;
           border-radius: 16px;
-          padding: 20px;
+          padding: 'var(--cds-spacing-06, 1.5rem)';
           box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
         .lcd-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -1635,7 +1637,7 @@ export function LCDPage() {
         .lcd-page-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
 
         /* Input Controller */
-        .input-controller { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; }
+        .input-controller { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .input-title { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .input-grid { display: flex; flex-direction: column; gap: 16px; }
         .input-dpad { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -1659,10 +1661,10 @@ export function LCDPage() {
         .encoder-btn.press { background: #333; color: #22c55e; }
         .encoder-label { color: #666; font-size: 12px; }
         .input-function-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .input-btn.func { padding: 10px 16px; font-size: 12px; font-weight: 500; }
+        .input-btn.func { padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); font-size: 12px; font-weight: 500; }
 
         /* Message Composer */
-        .message-composer { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; }
+        .message-composer { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .composer-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .composer-content { display: flex; flex-direction: column; gap: 16px; }
         .composer-target { display: flex; align-items: center; gap: 12px; }
@@ -1679,7 +1681,7 @@ export function LCDPage() {
         .composer-line input {
           flex: 1; background: #222; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; color: #fff; font-family: var(--font-ui-tight);
         }
-        .composer-line input:focus { outline: none; border-color: #22c55e; }
+        .composer-line input:focus { outline: 2px solid var(--cds-focus, #22c55e); outline-offset: 2px; border-color: #22c55e; }
         .char-count { color: #666; font-size: 11px; min-width: 40px; }
         .composer-duration { display: flex; align-items: center; gap: 12px; }
         .composer-duration label { color: #888; font-size: 13px; }
@@ -1688,12 +1690,12 @@ export function LCDPage() {
         .composer-send { width: 100%; }
 
         /* Event Triggers */
-        .event-triggers { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; }
+        .event-triggers { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .triggers-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .triggers-hint { color: #666; font-size: 12px; font-weight: 400; margin-left: auto; }
         .triggers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .trigger-btn {
-          display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+          display: flex; align-items: center; gap: 8px; padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
           background: #222; border: 1px solid #333; border-radius: 8px; color: #888; font-size: 12px; cursor: pointer; transition: all 0.2s;
         }
         .trigger-btn:hover { background: #333; color: #fff; border-color: #444; }
@@ -1701,7 +1703,7 @@ export function LCDPage() {
 
         /* ── Events Tab ── */
         .lcd-filters-bar {
-          display: flex; align-items: center; gap: 16px; padding: 14px 18px;
+          display: flex; align-items: center; gap: 16px; padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
           background: #111; border: 1px solid #222; border-radius: 10px; margin-bottom: 20px;
         }
         .lcd-filter-group { display: flex; flex-direction: column; gap: 4px; }
@@ -1718,13 +1720,13 @@ export function LCDPage() {
           background: #111; border: 2px solid #22d3ee; border-radius: 12px; max-width: 640px; width: 100%; max-height: 80vh; overflow-y: auto;
         }
         .event-modal-header {
-          display: flex; align-items: flex-start; justify-content: space-between; padding: 20px; border-bottom: 1px solid #222;
+          display: flex; align-items: flex-start; justify-content: space-between; padding: var(--cds-spacing-06, 1.5rem); border-bottom: 1px solid #222;
         }
-        .event-modal-body { padding: 20px; }
-        .event-modal-footer { display: flex; gap: 12px; padding: 20px; border-top: 1px solid #222; }
+        .event-modal-body { padding: var(--cds-spacing-06, 1.5rem); }
+        .event-modal-footer { display: flex; gap: 12px; padding: var(--cds-spacing-06, 1.5rem); border-top: 1px solid #222; }
 
         /* ── Alerts Tab ── */
-        .alert-router-config { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; }
+        .alert-router-config { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .alert-router-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 20px; }
         .alert-types-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
         .alert-type-card {
@@ -1738,7 +1740,7 @@ export function LCDPage() {
         .alert-toggle { padding: 3px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: 10px; font-weight: 600; cursor: pointer; }
         .alert-toggle.on { background: #22c55e; color: #fff; }
         .alert-toggle.off { background: #444; color: #666; }
-        .alert-type-target { display: flex; align-items: center; gap: 10px; color: #888; font-size: 12px; }
+        .alert-type-target { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); color: #888; font-size: 12px; }
         .lcd-target-btns { display: flex; gap: 4px; }
         .lcd-target-btn {
           padding: 4px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: 11px; cursor: pointer; transition: all 0.2s;
@@ -1746,21 +1748,21 @@ export function LCDPage() {
         .lcd-target-btn:hover { background: #444; color: #fff; }
         .lcd-target-btn.active { background: #3b82f6; color: #fff; }
         .alert-type-details { margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
-        .alert-detail-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .alert-detail-row { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); margin-bottom: 8px; }
         .alert-detail-row label { color: #888; font-size: 12px; min-width: 100px; }
         .alert-detail-row input {
           width: 60px; padding: 4px 8px; background: #333; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 12px;
         }
-        .active-alerts-panel { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; margin-top: 24px; }
+        .active-alerts-panel { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); margin-top: 24px; }
         .alerts-panel-header { display: flex; align-items: center; gap: 8px; color: #f59e0b; font-weight: 600; margin-bottom: 16px; }
         .alerts-list { display: flex; flex-direction: column; gap: 8px; }
-        .alert-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #222; border-radius: 8px; }
+        .alert-item { display: flex; align-items: center; gap: 12px; padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem); background: #222; border-radius: 8px; }
         .alert-item .alert-type { color: #f59e0b; font-weight: 500; font-size: 13px; }
         .alert-item .alert-message { flex: 1; color: #888; font-size: 13px; }
         .alert-item .alert-target { color: #666; font-size: 12px; }
 
         /* ── Hardware Tab ── */
-        .hardware-controls { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; }
+        .hardware-controls { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .hardware-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .hardware-actions { margin-bottom: 20px; }
         .scan-results { margin-top: 12px; padding: 12px; background: #222; border-radius: 8px; }
@@ -1773,8 +1775,8 @@ export function LCDPage() {
         .lcd-control-card { background: #222; border: 1px solid #333; border-radius: 10px; padding: 16px; }
         .lcd-control-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 500; margin-bottom: 12px; }
         .lcd-control-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .lcd-control-buttons .btn { padding: 6px 10px; }
-        .hardware-info { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; margin-top: 24px; }
+        .lcd-control-buttons .cds--btn { padding: 6px 10px; }
+        .hardware-info { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); margin-top: 24px; }
         .info-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
         @media (max-width: 800px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -1783,11 +1785,11 @@ export function LCDPage() {
         .info-value { color: #fff; font-size: 16px; font-weight: 500; }
 
         /* FT232H */
-        .ft232h-config { background: #111; border: 1px solid #222; border-radius: 12px; padding: 20px; }
-        .ft232h-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 18px; font-weight: 600; color: #fff; }
+        .ft232h-config { background: #111; border: 1px solid #222; border-radius: 12px; padding: var(--cds-spacing-06, 1.5rem); }
+        .ft232h-header { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); margin-bottom: var(--cds-spacing-06, 1.5rem); font-size: 18px; font-weight: 600; color: #fff; }
         .ft232h-docs-link { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #22c55e; text-decoration: none; }
         .ft232h-docs-link:hover { text-decoration: underline; }
-        .ft232h-layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: 20px; }
+        .ft232h-layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: var(--cds-spacing-06, 1.5rem); }
         @media (max-width: 1200px) { .ft232h-layout { grid-template-columns: 1fr; } }
         .ft232h-status-panel, .ft232h-wiring-panel { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 16px; }
         .panel-header { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #888; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #222; }
@@ -1818,15 +1820,15 @@ export function LCDPage() {
         .pin-overlay.power { background: rgba(239,68,68,0.8); border: 2px solid #ef4444; color: #fff; }
         .pin-overlay:hover, .pin-overlay.selected { transform: scale(1.1); box-shadow: 0 0 20px currentColor; z-index: 10; }
         .pin-label { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        .ft232h-schematic-svg { width: 100%; max-width: 450px; height: auto; background: #0a0a0a; border-radius: 8px; border: 1px solid #222; padding: 10px; }
-        .pin-detail-popup { margin-top: 10px; padding: 10px 16px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: 6px; color: #22c55e; font-size: 13px; text-align: center; }
+        .ft232h-schematic-svg { width: 100%; max-width: 450px; height: auto; background: #0a0a0a; border-radius: 8px; border: 1px solid #222; padding: var(--cds-spacing-04, 0.75rem); }
+        .pin-detail-popup { margin-top: var(--cds-spacing-04, 0.75rem); padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: 6px; color: #22c55e; font-size: 13px; text-align: center; }
         .wiring-table { font-size: 13px; }
-        .wiring-header { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; padding: 8px 0; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #222; }
-        .wiring-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+        .wiring-header { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #222; }
+        .wiring-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
         .wire-from { font-family: var(--font-ui-tight); color: #22c55e; }
         .wire-arrow { color: #444; }
         .wire-to { font-family: var(--font-ui-tight); color: #3b82f6; }
-        .wiring-notes { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; color: #f59e0b; font-size: 12px; }
+        .wiring-notes { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: var(--cds-spacing-04, 0.75rem); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; color: #f59e0b; font-size: 12px; }
         .test-controls { display: flex; flex-direction: column; gap: 12px; }
         .test-address label, .test-message label { display: block; color: #666; font-size: 11px; margin-bottom: 4px; }
         .test-address select, .test-message input { width: 100%; padding: 8px 12px; background: #111; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 13px; }
@@ -1847,16 +1849,6 @@ export function LCDPage() {
         .pill.warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
         .pill.muted { background: rgba(107,114,128,0.15); color: #9ca3af; }
 
-        .btn {
-          display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px;
-          font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-primary { background: #22c55e; color: #fff; }
-        .btn-primary:hover { background: #16a34a; }
-        .btn-ghost { background: #222; color: #888; border: 1px solid #333; }
-        .btn-ghost:hover { background: #333; color: #fff; }
-        .btn-sm { padding: 5px 10px; font-size: 12px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
       </div>
       </Layer>

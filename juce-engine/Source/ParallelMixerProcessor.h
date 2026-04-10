@@ -79,6 +79,18 @@ public:
     float getABBlend() const { return abBlend_.load(); }
 
     /**
+     * Schedule a hard switch to branch 0 or 1 at the next zero crossing,
+     * falling back to a short crossfade if the current buffer has none.
+     */
+    void triggerABSwitchToBranch(int branchIndex);
+
+    /**
+     * Copy the latest isolated branch input captured during processBlock.
+     * Returns false when the branch is out of range or no processed tap exists yet.
+     */
+    bool copyBranchTapToBuffer(int branchIndex, juce::AudioBuffer<float>& dest, int numSamples) const;
+
+    /**
      * Set individual branch level (0.0 - 1.0)
      * @param branch Branch index (0 to MAX_BRANCHES-1)
      * @param level Mix level (0.0 - 1.0)
@@ -116,6 +128,10 @@ private:
 
     // A/B blend (0 = A, 1 = B)
     std::atomic<float> abBlend_{0.5f};
+    std::atomic<float> currentABBlend_{0.5f};
+    std::atomic<bool> hardSwitchPending_{false};
+    std::atomic<int> hardSwitchSamplesRemaining_{0};
+    std::atomic<int> hardSwitchCrossfadeSamples_{16};
 
     // Individual branch levels
     std::array<std::atomic<float>, MAX_BRANCHES> branchLevels_;
@@ -132,6 +148,8 @@ private:
     // Branch 0 input shares channels with the output bus, so copy it once
     // before clearing the output and mix the remaining buses directly.
     juce::AudioBuffer<float> branch0Scratch_;
+    std::array<juce::AudioBuffer<float>, MAX_BRANCHES> branchTapBuffers_;
+    std::atomic<int> branchTapNumSamples_{0};
 
     // Processing state
     double sampleRate_{44100.0};

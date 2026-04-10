@@ -14,6 +14,7 @@ import { useShellLauncherActions } from './useShellLauncherActions'
 import { useRunningRoutes } from './useRunningRoutes'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import { useLauncherInterfaceSummary } from './useLauncherInterfaceSummary'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 const APP_WINDOW_CLOSE_DURATION_MS = 180
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setNavOpen,
     setPowerMenuOpen,
   } = useAppShellState({ pathname: location.pathname })
+  const launcherInterfaceSummary = useLauncherInterfaceSummary(navOpen)
   const {
     SnapshotEditorIcon,
     isAudioGridWorkspaceRoute,
@@ -116,6 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {showLauncherShell ? (
         <ShellLauncherPanel
           accentColor={shellAccentColor}
+          launcherInterfaceSummary={launcherInterfaceSummary}
           launcherRef={navMenuRef}
           navOpen={navOpen}
           powerMenuOpen={powerMenuOpen}

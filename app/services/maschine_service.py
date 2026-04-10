@@ -198,6 +198,44 @@ class MaschineService:
         await self._broadcast_status_payload(payload)
         return normalized
 
+    async def push_snapshot_activation(
+        self,
+        session: AsyncSession,
+        *,
+        snapshot_id: int,
+        snapshot_name: str,
+        controls_payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if not (self._state.connected or self._state.websocket_connected):
+            return {
+                "status": "skipped",
+                "reason": "maschine_not_connected",
+                "snapshot_id": int(snapshot_id),
+            }
+
+        normalized = normalize_maschine_encoder_map((controls_payload or {}).get("maschine_encoder_map"))
+        self._encoder_map_fallback = copy.deepcopy(normalized)
+        async with self._lock:
+            payload = self._status_event_payload_locked(
+                event="encoder_map_updated",
+                extra={"encoder_map": copy.deepcopy(normalized)},
+            )
+        await self._broadcast_status_payload(payload)
+        audio_grid = await self.get_audio_grid_projection(session)
+        return {
+            "status": "completed",
+            "snapshot_id": int(snapshot_id),
+            "snapshot_name": str(snapshot_name or f"Snapshot {snapshot_id}"),
+            "encoder_map": copy.deepcopy(normalized),
+            "encoder_assignment_count": sum(
+                1
+                for entry in normalized.values()
+                if isinstance(entry, dict) and str(entry.get("param_id") or "").strip()
+            ),
+            "audio_grid_block_count": len(audio_grid.get("blocks") or []),
+            "selected_block_id": audio_grid.get("selected_block_id"),
+        }
+
     async def get_audio_grid_projection(self, session: AsyncSession) -> dict[str, Any]:
         projection = await self._build_audio_grid_projection(session)
         async with self._lock:

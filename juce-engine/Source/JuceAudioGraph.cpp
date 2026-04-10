@@ -346,6 +346,119 @@ bool JuceAudioGraph::replaceChain(const std::vector<InstanceId>& order) {
     return true;
 }
 
+bool JuceAudioGraph::applyRoutingTopology(const RoutingTopologySpec& spec) {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+
+    std::set<InstanceId> seen;
+    auto validatePlugin = [this, &seen](InstanceId instanceId) -> bool {
+        if (!seen.insert(instanceId).second) {
+            return false;
+        }
+        return addPluginNode(instanceId) != juce::AudioProcessorGraph::NodeID();
+    };
+
+    for (const auto instanceId : spec.chainOrder) {
+        if (!validatePlugin(instanceId)) {
+            return false;
+        }
+    }
+
+    for (const auto& groupSpec : spec.parallelGroups) {
+        if (groupSpec.branches.size() < 2
+            || groupSpec.branches.size() > static_cast<size_t>(ParallelMixerProcessor::MAX_BRANCHES)) {
+            return false;
+        }
+        for (const auto& branchSpec : groupSpec.branches) {
+            for (const auto instanceId : branchSpec.pluginIds) {
+                if (!validatePlugin(instanceId)) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    for (const auto& connection : spec.sidechainConnections) {
+        if (connection.sourcePlugin == INVALID_INSTANCE_ID || connection.destPlugin == INVALID_INSTANCE_ID) {
+            return false;
+        }
+        if (seen.find(connection.sourcePlugin) == seen.end() || seen.find(connection.destPlugin) == seen.end()) {
+            return false;
+        }
+    }
+
+    {
+        const juce::SpinLock::ScopedLockType graphLock(graphLock_);
+        for (const auto& [groupId, nodeId] : parallelMixerNodes_) {
+            graph_->removeNode(nodeId, juce::AudioProcessorGraph::UpdateKind::none);
+            parallelMixers_.erase(groupId);
+        }
+    }
+    parallelMixerNodes_.clear();
+    parallelGroups_.clear();
+
+    chain_ = spec.chainOrder;
+    sidechainConnections_ = spec.sidechainConnections;
+
+    {
+        std::lock_guard<std::mutex> meterLock(meterMutex_);
+        pluginMeters_.clear();
+        for (const auto instanceId : spec.chainOrder) {
+            pluginMeters_[instanceId] = std::make_unique<VuMeter>();
+        }
+        for (const auto& groupSpec : spec.parallelGroups) {
+            for (const auto& branchSpec : groupSpec.branches) {
+                for (const auto instanceId : branchSpec.pluginIds) {
+                    if (pluginMeters_.find(instanceId) == pluginMeters_.end()) {
+                        pluginMeters_[instanceId] = std::make_unique<VuMeter>();
+                    }
+                }
+            }
+        }
+    }
+
+    for (const auto& groupSpec : spec.parallelGroups) {
+        ParallelGroup group;
+        group.id = nextParallelGroupId_++;
+        group.abBlend = std::clamp(groupSpec.abBlend, 0.0f, 1.0f);
+        group.masterLevel = std::clamp(groupSpec.masterLevel, 0.0f, 2.0f);
+        group.bypass = groupSpec.bypass;
+        group.mode = groupSpec.mode;
+        group.branches.resize(groupSpec.branches.size());
+        group.branchLevels.resize(groupSpec.branches.size(), 1.0f);
+        group.branchChainIds.resize(groupSpec.branches.size(), -1);
+
+        auto mixer = std::make_unique<ParallelMixerProcessor>();
+        mixer->setNumBranches(static_cast<int>(groupSpec.branches.size()));
+        mixer->setMode(groupSpec.mode);
+        mixer->setABBlend(group.abBlend);
+        mixer->setMasterLevel(group.masterLevel);
+        mixer->setBypass(group.bypass);
+        for (size_t branchIndex = 0; branchIndex < groupSpec.branches.size(); ++branchIndex) {
+            const auto& branchSpec = groupSpec.branches[branchIndex];
+            group.branches[branchIndex] = branchSpec.pluginIds;
+            group.branchLevels[branchIndex] = std::clamp(branchSpec.level, 0.0f, 2.0f);
+            group.branchChainIds[branchIndex] = branchSpec.chainId;
+            mixer->setBranchLevel(static_cast<int>(branchIndex), group.branchLevels[branchIndex]);
+        }
+        mixer->prepareToPlay(sampleRate_, bufferSize_);
+
+        juce::AudioProcessorGraph::Node::Ptr node;
+        {
+            const juce::SpinLock::ScopedLockType graphLock(graphLock_);
+            node = graph_->addNode(std::move(mixer), std::nullopt, juce::AudioProcessorGraph::UpdateKind::none);
+        }
+        if (node == nullptr) {
+            return false;
+        }
+
+        parallelMixerNodes_[group.id] = node->nodeID;
+        parallelGroups_.push_back(std::move(group));
+    }
+
+    markTopologyDirtyAndMaybeRebuildLocked();
+    return true;
+}
+
 bool JuceAudioGraph::prewarmPluginNode(InstanceId instanceId) {
     std::lock_guard<std::mutex> lock(chainMutex_);
     return addPluginNode(instanceId) != juce::AudioProcessorGraph::NodeID();
@@ -861,6 +974,7 @@ int JuceAudioGraph::createParallelGroup(int position, int numBranches) {
     group.id = nextParallelGroupId_++;
     group.branches.resize(numBranches);
     group.branchLevels.resize(numBranches, 1.0f);
+    group.branchChainIds.resize(numBranches, -1);
 
     // Create the mixer processor
     auto mixer = std::make_unique<ParallelMixerProcessor>();
@@ -1007,6 +1121,38 @@ void JuceAudioGraph::setParallelABBlend(int groupId, float blend) {
     }
 }
 
+bool JuceAudioGraph::triggerParallelABSwitch(int groupId, int branchIndex) {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+
+    auto it = std::find_if(parallelGroups_.begin(), parallelGroups_.end(),
+        [groupId](const ParallelGroup& g) { return g.id == groupId; });
+
+    if (it == parallelGroups_.end() || branchIndex < 0 || branchIndex > 1) {
+        return false;
+    }
+
+    it->abBlend = branchIndex == 0 ? 0.0f : 1.0f;
+
+    auto nodeIt = parallelMixerNodes_.find(groupId);
+    if (nodeIt == parallelMixerNodes_.end()) {
+        return false;
+    }
+
+    const juce::SpinLock::ScopedLockType graphLock(graphLock_);
+    auto* node = graph_->getNodeForId(nodeIt->second);
+    if (node == nullptr) {
+        return false;
+    }
+
+    auto* mixer = dynamic_cast<ParallelMixerProcessor*>(node->getProcessor());
+    if (mixer == nullptr) {
+        return false;
+    }
+
+    mixer->triggerABSwitchToBranch(branchIndex);
+    return true;
+}
+
 float JuceAudioGraph::getParallelABBlend(int groupId) const {
     std::lock_guard<std::mutex> lock(chainMutex_);
 
@@ -1042,6 +1188,24 @@ void JuceAudioGraph::setParallelBranchLevel(int groupId, int branchIndex, float 
             }
         }
     }
+}
+
+bool JuceAudioGraph::setParallelBranchChainId(int groupId, int branchIndex, int chainId) {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+
+    auto it = std::find_if(parallelGroups_.begin(), parallelGroups_.end(),
+        [groupId](const ParallelGroup& g) { return g.id == groupId; });
+
+    if (it == parallelGroups_.end()) {
+        return false;
+    }
+
+    if (branchIndex < 0 || branchIndex >= static_cast<int>(it->branchChainIds.size())) {
+        return false;
+    }
+
+    it->branchChainIds[static_cast<size_t>(branchIndex)] = chainId;
+    return true;
 }
 
 void JuceAudioGraph::setParallelBypass(int groupId, bool bypass) {
@@ -1083,6 +1247,33 @@ std::optional<JuceAudioGraph::ParallelGroup> JuceAudioGraph::getParallelGroup(in
         return *it;
     }
     return std::nullopt;
+}
+
+bool JuceAudioGraph::copyParallelBranchTap(
+    int groupId,
+    int branchIndex,
+    juce::AudioBuffer<float>& dest,
+    int numSamples
+) const {
+    std::lock_guard<std::mutex> lock(chainMutex_);
+
+    auto nodeIt = parallelMixerNodes_.find(groupId);
+    if (nodeIt == parallelMixerNodes_.end()) {
+        return false;
+    }
+
+    const juce::SpinLock::ScopedLockType graphLock(graphLock_);
+    auto* node = graph_->getNodeForId(nodeIt->second);
+    if (node == nullptr) {
+        return false;
+    }
+
+    auto* mixer = dynamic_cast<ParallelMixerProcessor*>(node->getProcessor());
+    if (mixer == nullptr) {
+        return false;
+    }
+
+    return mixer->copyBranchTapToBuffer(branchIndex, dest, numSamples);
 }
 
 bool JuceAudioGraph::isPluginInParallelGroupsUnlocked(InstanceId instanceId) const {

@@ -107,8 +107,8 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  gap: 10px;
-  padding: 10px 12px 12px;
+  gap: var(--cds-spacing-04, 0.75rem);
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
 }
 
 /* -- Canvas area ------------------------------------------------------------ */
@@ -134,7 +134,7 @@
   align-items: flex-start;
   padding: 34px 40px 44px;
   min-width: 960px;
-  gap: 22px;
+  gap: var(--cds-spacing-06, 1.5rem);
   transform-origin: top left;
   will-change: transform;
 }
@@ -148,7 +148,7 @@
 .intelfx-flow__path-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--cds-spacing-05, 1rem);
   position: relative;
   padding-top: 20px;
 }
@@ -209,7 +209,8 @@
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: border-color 0.15s, opacity 0.2s, filter 0.2s;
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   animation: intelfx-flow-glow 2.8s ease-in-out infinite;
 }
 
@@ -247,7 +248,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 7px 8px 3px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem) var(--cds-spacing-02, 0.25rem);
 }
 
 .intelfx-flow-card__dot {
@@ -371,8 +372,8 @@
 .intelfx-flow-sidebar__header {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 12px;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-04, 0.75rem);
   border-bottom: 1px solid var(--border-strong);
   background: var(--bg);
   flex-shrink: 0;
@@ -421,7 +422,7 @@
   border: 1px solid var(--interactive);
   border-radius: var(--border-radius-sm);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  padding: 7px 8px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
 }
 
 .intelfx-flow-sidebar__page-title {
@@ -445,7 +446,7 @@
   font-size: var(--type-label);
   color: var(--interactive);
   text-align: center;
-  padding: 20px 0;
+  padding: var(--cds-spacing-06, 1.5rem) 0;
 }
 
 /* Param control widgets inside the sidebar */
@@ -545,7 +546,7 @@
 .intelfx-flow__chain-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   padding: 5px 14px;
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   border-bottom: 1px solid var(--border-strong);
@@ -587,8 +588,8 @@
 
   .intelfx-flow__canvas-inner {
     min-width: 780px;
-    padding: 26px 28px 30px;
-    gap: 18px;
+    padding: var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem);
+    gap: var(--cds-spacing-05, 1rem);
   }
 }
 

@@ -564,8 +564,8 @@ export function PluginCardShell({
         /* sm: 400-600px - Compact */
         @container plugin-card (min-width: 400px) and (max-width: 600px) {
           .plugin-card-shell {
-            --card-padding: 10px;
-            --card-gap: 10px;
+            --card-padding: var(--cds-spacing-04, 0.75rem);
+            --card-gap: var(--cds-spacing-04, 0.75rem);
             --header-padding: 8px 12px;
             --knob-size: 44px;
             --font-scale: 0.9;
@@ -595,9 +595,9 @@ export function PluginCardShell({
         /* lg: 800-1000px - Comfortable */
         @container plugin-card (min-width: 800px) and (max-width: 1000px) {
           .plugin-card-shell {
-            --card-padding: 18px;
-            --card-gap: 14px;
-            --header-padding: 14px 18px;
+            --card-padding: var(--cds-spacing-05, 1rem);
+            --card-gap: var(--cds-spacing-05, 1rem);
+            --header-padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
             --knob-size: 64px;
             --font-scale: 1.05;
             --viz-width-base: 448px;
@@ -608,7 +608,7 @@ export function PluginCardShell({
         /* xl: > 1000px - Spacious */
         @container plugin-card (min-width: 1000px) {
           .plugin-card-shell {
-            --card-padding: 20px;
+            --card-padding: var(--cds-spacing-06, 1.5rem);
             --card-gap: 16px;
             --header-padding: 16px 20px;
             --knob-size: 72px;

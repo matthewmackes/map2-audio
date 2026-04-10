@@ -109,7 +109,8 @@
 .platform-guide-library__chip:hover,
 .platform-guide-library__chip:focus-visible {
   border-color: var(--cds-border-interactive);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-border-interactive));
+  outline-offset: 2px;
 }
 
 .platform-guide-library__chip--muted {

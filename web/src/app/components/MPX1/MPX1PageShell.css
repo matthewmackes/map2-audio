@@ -18,7 +18,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 10px 6px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-03, 0.5rem);
 }
 
 .mpx1-shell__sidebar-btn {
@@ -56,7 +56,7 @@
 
 .mpx1-shell__content {
   min-height: 0;
-  padding: 14px;
+  padding: var(--cds-spacing-05, 1rem);
 }
 
 .mpx1-statusbar {
@@ -74,7 +74,7 @@
 .mpx1-statusbar__left {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--cds-spacing-03, 0.5rem);
 }
 
 .mpx1-statusbar__dot {
@@ -283,6 +283,6 @@
   }
 
   .mpx1-shell__content {
-    padding: 10px;
+    padding: var(--cds-spacing-04, 0.75rem);
   }
 }

@@ -175,10 +175,31 @@ public:
         int id = -1;
         std::vector<std::vector<InstanceId>> branches;  // Each branch is a chain of plugins
         std::vector<float> branchLevels;                // Per-branch mix levels
+        std::vector<int> branchChainIds;                // Optional runtime chain IDs per branch
         float abBlend = 0.5f;                           // A/B blend (0=A, 1=B)
         float masterLevel = 1.0f;
         bool bypass = false;
         ParallelMixerProcessor::Mode mode = ParallelMixerProcessor::Mode::ABBlend;
+    };
+
+    struct RoutingBranchSpec {
+        std::vector<InstanceId> pluginIds;
+        float level = 1.0f;
+        int chainId = -1;
+    };
+
+    struct RoutingParallelGroupSpec {
+        std::vector<RoutingBranchSpec> branches;
+        float abBlend = 0.5f;
+        float masterLevel = 1.0f;
+        bool bypass = false;
+        ParallelMixerProcessor::Mode mode = ParallelMixerProcessor::Mode::ABBlend;
+    };
+
+    struct RoutingTopologySpec {
+        std::vector<InstanceId> chainOrder;
+        std::vector<RoutingParallelGroupSpec> parallelGroups;
+        std::vector<SidechainConnection> sidechainConnections;
     };
 
     /**
@@ -220,6 +241,11 @@ public:
     void setParallelABBlend(int groupId, float blend);
 
     /**
+     * Hard-switch an A/B group to branch 0 or 1 at the next zero crossing.
+     */
+    bool triggerParallelABSwitch(int groupId, int branchIndex);
+
+    /**
      * Get A/B blend for a parallel group
      */
     float getParallelABBlend(int groupId) const;
@@ -228,6 +254,7 @@ public:
      * Set individual branch level
      */
     void setParallelBranchLevel(int groupId, int branchIndex, float level);
+    bool setParallelBranchChainId(int groupId, int branchIndex, int chainId);
 
     /**
      * Set parallel group bypass
@@ -243,6 +270,17 @@ public:
      * Get a specific parallel group
      */
     std::optional<ParallelGroup> getParallelGroup(int groupId) const;
+
+    /**
+     * Copy the latest isolated audio captured for one branch of a parallel group.
+     */
+    bool copyParallelBranchTap(int groupId, int branchIndex, juce::AudioBuffer<float>& dest, int numSamples) const;
+
+    /**
+     * Replace the current chain/parallel/sidechain topology in one mutation while
+     * preserving existing plugin nodes and instances.
+     */
+    bool applyRoutingTopology(const RoutingTopologySpec& spec);
 
     // ========================================
     // Latency

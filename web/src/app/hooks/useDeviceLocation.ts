@@ -37,6 +37,9 @@ const DEVICE_TYPE_SEARCH_TERMS: Record<string, string[]> = {
   'generic-interface': ['hotone jogg', 'jogg', '84ef 0014'],
   'lexicon-mpx1': ['lexicon mpx 1', 'mpx 1', 'lexicon'],
   'ground-control-pro': ['ground control pro', 'voodoo lab ground control', 'gc pro', 'groundcontrolpro', 'voodoo lab'],
+  'mackie-mcu-pro': ['mackie mcu pro', 'mcu pro', 'mackie control universal', 'mackie control', 'mcu'],
+  'novation-launch-control': ['novation launch control', 'launch control xl', 'launch control', 'novation'],
+  'meloaudio-midi-commander': ['meloaudio midi commander', 'midi commander', 'meloaudio', 'mc6'],
 }
 
 function normalize(value: unknown): string {

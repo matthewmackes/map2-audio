@@ -12,11 +12,13 @@ import { TaskbarClock } from '../components/TaskbarClock'
 import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
 import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
 import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
+import type { LauncherInterfaceSummary } from './useLauncherInterfaceSummary'
 
 export type StartMenuTileItem = ShellNavigationRenderItem
 
 export function ShellLauncherPanel({
   accentColor,
+  launcherInterfaceSummary,
   launcherRef,
   navOpen,
   powerMenuOpen,
@@ -34,6 +36,7 @@ export function ShellLauncherPanel({
   onLogOut,
 }: {
   accentColor: string
+  launcherInterfaceSummary: LauncherInterfaceSummary
   launcherRef: RefObject<HTMLDivElement | null>
   navOpen: boolean
   powerMenuOpen: boolean
@@ -185,6 +188,40 @@ export function ShellLauncherPanel({
                 {platformStatusLabels.map((label) => (
                   <span key={label}>{label}</span>
                 ))}
+              </div>
+              <div className="shell-launcher__device-summary" aria-label="Detected interfaces">
+                <div className="shell-launcher__device-group">
+                  <span className="shell-launcher__device-heading">Audio Interfaces</span>
+                  <div className="shell-launcher__device-list">
+                    {launcherInterfaceSummary.isLoading && launcherInterfaceSummary.audioInterfaces.length === 0 ? (
+                      <span className="shell-launcher__device-empty">Detecting audio interfaces...</span>
+                    ) : launcherInterfaceSummary.audioInterfaces.length > 0 ? (
+                      launcherInterfaceSummary.audioInterfaces.map((name) => (
+                        <span key={name} className="shell-launcher__device-pill">
+                          {name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="shell-launcher__device-empty">No audio interfaces detected</span>
+                    )}
+                  </div>
+                </div>
+                <div className="shell-launcher__device-group">
+                  <span className="shell-launcher__device-heading">MIDI Interfaces</span>
+                  <div className="shell-launcher__device-list">
+                    {launcherInterfaceSummary.isLoading && launcherInterfaceSummary.midiInterfaces.length === 0 ? (
+                      <span className="shell-launcher__device-empty">Detecting MIDI interfaces...</span>
+                    ) : launcherInterfaceSummary.midiInterfaces.length > 0 ? (
+                      launcherInterfaceSummary.midiInterfaces.map((name) => (
+                        <span key={name} className="shell-launcher__device-pill">
+                          {name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="shell-launcher__device-empty">No MIDI interfaces detected</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -31,7 +31,7 @@
   font-size: var(--type-subheading);
 }
 
-.notification-panel-header .btn {
+.notification-panel-header .cds--btn {
   padding: 6px 10px;
   font-size: var(--type-label);
 }

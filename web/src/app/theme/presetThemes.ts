@@ -14,7 +14,7 @@
  * full Carbon token coverage, with targeted hex overrides for character.
  */
 
-import { generateThemeFromPalette } from './themes';
+import { generateThemeFromPalette } from './themeFactory';
 import type { Theme, ThemeColors } from './types';
 
 /* ─── helper ──────────────────────────────────────────────────────────────── */

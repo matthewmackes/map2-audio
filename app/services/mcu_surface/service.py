@@ -194,6 +194,19 @@ class McuSurfaceService:
             "transport": transport,
         }
 
+    async def push_snapshot_activation(self, *, snapshot_id: int, snapshot_name: str) -> dict[str, Any]:
+        if not self.list_output_ports():
+            return {
+                "status": "skipped",
+                "reason": "mcu_output_unavailable",
+                "snapshot_id": int(snapshot_id),
+            }
+        result = await self._repush_surface_state()
+        payload = dict(result) if isinstance(result, dict) else {"status": "completed"}
+        payload["snapshot_id"] = int(snapshot_id)
+        payload["snapshot_name"] = str(snapshot_name or f"Snapshot {snapshot_id}")
+        return payload
+
     def query_device(self, *, destination_port: str, source_port: str = "map2:mcu_surface", metadata: dict[str, Any] | None = None) -> bool:
         if self._midi_hub is None:
             return False

@@ -198,6 +198,131 @@ py::dict sidechainConnectionToDict(const SidechainConnection& conn) {
     return d;
 }
 
+ParallelMixerProcessor::Mode parallelMixerModeFromString(const std::string& value) {
+    if (value == "multi_mix") {
+        return ParallelMixerProcessor::Mode::MultiMix;
+    }
+    if (value == "wet_dry") {
+        return ParallelMixerProcessor::Mode::WetDry;
+    }
+    return ParallelMixerProcessor::Mode::ABBlend;
+}
+
+JuceAudioGraph::RoutingTopologySpec dictToRoutingTopologySpec(const py::dict& raw) {
+    JuceAudioGraph::RoutingTopologySpec spec;
+
+    if (raw.contains("chain_order")) {
+        for (auto item : raw["chain_order"].cast<py::list>()) {
+            spec.chainOrder.push_back(item.cast<InstanceId>());
+        }
+    }
+
+    if (raw.contains("parallel_groups")) {
+        for (auto groupItem : raw["parallel_groups"].cast<py::list>()) {
+            const auto groupDict = groupItem.cast<py::dict>();
+            JuceAudioGraph::RoutingParallelGroupSpec groupSpec;
+            if (groupDict.contains("ab_blend")) {
+                groupSpec.abBlend = groupDict["ab_blend"].cast<float>();
+            }
+            if (groupDict.contains("master_level")) {
+                groupSpec.masterLevel = groupDict["master_level"].cast<float>();
+            }
+            if (groupDict.contains("bypass")) {
+                groupSpec.bypass = groupDict["bypass"].cast<bool>();
+            }
+            if (groupDict.contains("mode")) {
+                groupSpec.mode = parallelMixerModeFromString(groupDict["mode"].cast<std::string>());
+            }
+            if (groupDict.contains("branches")) {
+                for (auto branchItem : groupDict["branches"].cast<py::list>()) {
+                    const auto branchDict = branchItem.cast<py::dict>();
+                    JuceAudioGraph::RoutingBranchSpec branchSpec;
+                    if (branchDict.contains("plugin_ids")) {
+                        for (auto pluginItem : branchDict["plugin_ids"].cast<py::list>()) {
+                            branchSpec.pluginIds.push_back(pluginItem.cast<InstanceId>());
+                        }
+                    }
+                    if (branchDict.contains("level")) {
+                        branchSpec.level = branchDict["level"].cast<float>();
+                    }
+                    if (branchDict.contains("chain_id")) {
+                        branchSpec.chainId = branchDict["chain_id"].cast<int>();
+                    }
+                    groupSpec.branches.push_back(std::move(branchSpec));
+                }
+            }
+            spec.parallelGroups.push_back(std::move(groupSpec));
+        }
+    }
+
+    if (raw.contains("sidechain_connections")) {
+        for (auto connItem : raw["sidechain_connections"].cast<py::list>()) {
+            const auto connDict = connItem.cast<py::dict>();
+            SidechainConnection connection;
+            if (connDict.contains("source_plugin")) {
+                connection.sourcePlugin = connDict["source_plugin"].cast<InstanceId>();
+            }
+            if (connDict.contains("dest_plugin")) {
+                connection.destPlugin = connDict["dest_plugin"].cast<InstanceId>();
+            }
+            if (connDict.contains("dest_bus")) {
+                connection.destBus = connDict["dest_bus"].cast<int>();
+            }
+            if (connDict.contains("active")) {
+                connection.active = connDict["active"].cast<bool>();
+            }
+            spec.sidechainConnections.push_back(connection);
+        }
+    }
+
+    return spec;
+}
+
+juce::var pyObjectToJuceVar(const py::handle& value);
+
+std::map<std::string, juce::var> pyDictToJuceVarMap(const py::dict& raw) {
+    std::map<std::string, juce::var> result;
+    for (auto item : raw) {
+        result[item.first.cast<std::string>()] = pyObjectToJuceVar(item.second);
+    }
+    return result;
+}
+
+juce::var pyObjectToJuceVar(const py::handle& value) {
+    if (value.is_none()) {
+        return {};
+    }
+    if (py::isinstance<py::bool_>(value)) {
+        return juce::var(py::cast<bool>(value));
+    }
+    if (py::isinstance<py::int_>(value)) {
+        return juce::var(static_cast<juce::int64>(py::cast<int64_t>(value)));
+    }
+    if (py::isinstance<py::float_>(value)) {
+        return juce::var(py::cast<double>(value));
+    }
+    if (py::isinstance<py::str>(value)) {
+        return juce::var(juce::String(py::cast<std::string>(value)));
+    }
+    if (py::isinstance<py::dict>(value)) {
+        auto dynamicObject = std::make_unique<juce::DynamicObject>();
+        for (auto item : value.cast<py::dict>()) {
+            dynamicObject->setProperty(
+                juce::Identifier(item.first.cast<std::string>()),
+                pyObjectToJuceVar(item.second));
+        }
+        return juce::var(dynamicObject.release());
+    }
+    if (py::isinstance<py::list>(value) || py::isinstance<py::tuple>(value)) {
+        juce::Array<juce::var> items;
+        for (auto item : value.cast<py::sequence>()) {
+            items.add(pyObjectToJuceVar(item));
+        }
+        return juce::var(items);
+    }
+    return juce::var(juce::String(py::str(value).cast<std::string>()));
+}
+
 // Convert IRInfo to Python dict
 py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     py::dict d;
@@ -2906,6 +3031,19 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("replace_chain_with_spillover", &Map2AudioEngine::replaceChainWithSpillover,
              py::arg("order"),
              "Replace the active chain order while preserving outgoing wet tails when possible")
+        .def("apply_routing_topology", [](Map2AudioEngine& self, py::dict spec) {
+            return self.applyRoutingTopology(dictToRoutingTopologySpec(spec));
+        }, py::arg("spec"),
+             "Replace chain, parallel-group, and sidechain topology in one graph mutation")
+        .def("replace_snapshot_expression_mappings", [](Map2AudioEngine& self, py::list entries) {
+            std::vector<std::map<std::string, juce::var>> nativeEntries;
+            nativeEntries.reserve(py::len(entries));
+            for (auto item : entries) {
+                nativeEntries.push_back(pyDictToJuceVarMap(item.cast<py::dict>()));
+            }
+            return self.replaceSnapshotExpressionMappings(nativeEntries);
+        }, py::arg("entries"),
+             "Replace callback-time snapshot expression CC mappings")
         .def("add_to_chain", &Map2AudioEngine::addToChain,
              py::arg("instance_id"), py::arg("position") = -1,
              "Add plugin to chain at position")
@@ -4648,6 +4786,10 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, py::arg("group_id"), py::arg("blend"),
            "Set A/B blend for parallel group (0.0 = all A, 1.0 = all B)")
 
+        .def("trigger_parallel_ab_switch", &Map2AudioEngine::triggerParallelABSwitch,
+             py::arg("group_id"), py::arg("branch_index"),
+             "Hard-switch an A/B parallel group to branch 0 or 1 at the next zero crossing")
+
         .def("get_parallel_ab_blend", [](const Map2AudioEngine& self, int groupId) {
             return const_cast<Map2AudioEngine&>(self).getAudioGraph().getParallelABBlend(groupId);
         }, py::arg("group_id"), "Get A/B blend for parallel group")
@@ -4656,6 +4798,11 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             self.getAudioGraph().setParallelBranchLevel(groupId, branchIndex, level);
         }, py::arg("group_id"), py::arg("branch_index"), py::arg("level"),
            "Set individual branch level (0.0 - 2.0)")
+
+        .def("set_parallel_branch_chain_id", [](Map2AudioEngine& self, int groupId, int branchIndex, int chainId) {
+            return self.getAudioGraph().setParallelBranchChainId(groupId, branchIndex, chainId);
+        }, py::arg("group_id"), py::arg("branch_index"), py::arg("chain_id"),
+           "Associate a runtime chain ID with one branch of a parallel group")
 
         .def("set_parallel_bypass", [](Map2AudioEngine& self, int groupId, bool bypass) {
             self.getAudioGraph().setParallelBypass(groupId, bypass);
@@ -4687,6 +4834,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                     levels.append(level);
                 }
                 d["branch_levels"] = levels;
+
+                py::list branchChainIds;
+                for (int chainId : group.branchChainIds) {
+                    branchChainIds.append(chainId);
+                }
+                d["branch_chain_ids"] = branchChainIds;
 
                 result.append(d);
             }

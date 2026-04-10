@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
+import { LegacyButton } from '../shared/LegacyButton'
 import './ModelList.css'
 
 interface NAMItemCardProps {
@@ -67,8 +68,9 @@ export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardP
             <Check size={12} /> Active
           </span>
         ) : (
-          <button
-            className="btn btn-sm btn-primary"
+          <LegacyButton
+            variant="primary"
+            size="sm"
             onClick={() => activateMutation.mutate()}
             disabled={loadMutation.isPending || activateMutation.isPending}
           >
@@ -77,7 +79,7 @@ export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardP
             ) : (
               'Load'
             )}
-          </button>
+          </LegacyButton>
         )}
       </div>
     </div>

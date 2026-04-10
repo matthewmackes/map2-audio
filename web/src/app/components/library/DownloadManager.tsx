@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Close as X, Download as DownloadSimple, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, Renew as SpinnerGap, Search as MagnifyingGlass, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import type { SourceProgress } from '../../types/library'
+import { LegacyButton } from '../shared/LegacyButton'
+import { LegacyTile } from '../shared/LegacyTile'
 import '../upload/UploadPrimitives.css'
 
 function formatDuration(seconds: number): string {
@@ -84,7 +86,7 @@ export function DownloadManager() {
   const isComplete = !isDownloading && stats && stats.total_files > 0
 
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <LegacyTile style={{ padding: 16 }}>
       {/* Header */}
       <div className="flex-between" style={{ marginBottom: 12 }}>
         <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
@@ -103,20 +105,21 @@ export function DownloadManager() {
         </div>
         <div className="flex" style={{ gap: 8 }}>
           {isComplete && (
-            <button
-              className="btn btn-ghost btn-sm"
+            <LegacyButton
+              variant="ghost"
+              size="sm"
+              iconDescription="Clear status"
               onClick={() => resetDownload()}
-              title="Clear status"
             >
               <ArrowCounterClockwise size={14} />
-            </button>
+            </LegacyButton>
           )}
           {isDownloading && isPaused && (
-            <button
-              className="btn btn-ghost btn-sm"
+            <LegacyButton
+              variant="ghost"
+              size="sm"
               onClick={() => resumeDownload()}
               disabled={isResuming}
-              title="Resume download"
             >
               {isResuming ? (
                 <>
@@ -129,14 +132,14 @@ export function DownloadManager() {
                   Resume
                 </>
               )}
-            </button>
+            </LegacyButton>
           )}
           {isDownloading && !isPaused && (
-            <button
-              className="btn btn-ghost btn-sm"
+            <LegacyButton
+              variant="ghost"
+              size="sm"
               onClick={() => pauseDownload()}
               disabled={isPausing}
-              title="Pause download"
             >
               {isPausing ? (
                 <>
@@ -149,11 +152,12 @@ export function DownloadManager() {
                   Pause
                 </>
               )}
-            </button>
+            </LegacyButton>
           )}
           {isDownloading && (
-            <button
-              className="btn btn-ghost btn-sm"
+            <LegacyButton
+              variant="ghost"
+              size="sm"
               onClick={() => cancelDownload()}
               disabled={isCancelling}
               style={{ color: 'var(--danger)' }}
@@ -169,7 +173,7 @@ export function DownloadManager() {
                   Cancel
                 </>
               )}
-            </button>
+            </LegacyButton>
           )}
         </div>
       </div>
@@ -232,8 +236,9 @@ export function DownloadManager() {
 
             {/* Per-file progress toggle */}
             {fileTasks && fileTasks.length > 0 && (
-              <button
-                className="btn btn-ghost btn-sm"
+              <LegacyButton
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowFiles(!showFiles)}
                 style={{ width: '100%', justifyContent: 'space-between', gap: 8 }}
               >
@@ -241,7 +246,7 @@ export function DownloadManager() {
                   Active Downloads ({fileTasks.filter(t => t.state === 'DOWNLOADING').length})
                 </span>
                 {showFiles ? <CaretUp size={14} /> : <CaretDown size={14} />}
-              </button>
+              </LegacyButton>
             )}
 
             {/* Per-file progress display */}
@@ -299,14 +304,15 @@ export function DownloadManager() {
       {/* Per-source details toggle */}
       {sources && sources.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <button
-            className="btn btn-ghost btn-sm"
+          <LegacyButton
+            variant="ghost"
+            size="sm"
             onClick={() => setShowSources(!showSources)}
             style={{ width: '100%', justifyContent: 'space-between' }}
           >
             <span>Source Details ({sources.length} sources)</span>
             {showSources ? <CaretUp size={14} /> : <CaretDown size={14} />}
-          </button>
+          </LegacyButton>
 
           {showSources && (
             <div style={{ marginTop: 8 }}>
@@ -348,14 +354,15 @@ export function DownloadManager() {
                       </span>
                     )}
                     {(source.state === 'failed' || source.failed > 0) && !isDownloading && (
-                      <button
-                        className="btn btn-ghost btn-sm"
+                      <LegacyButton
+                        variant="ghost"
+                        size="sm"
+                        iconDescription={`Retry ${source.name}`}
                         onClick={() => retrySource(source.name)}
-                        title={`Retry ${source.name}`}
                         style={{ padding: 4 }}
                       >
                         <ArrowsClockwise size={12} />
-                      </button>
+                      </LegacyButton>
                     )}
                   </div>
                 </div>
@@ -364,6 +371,6 @@ export function DownloadManager() {
           )}
         </div>
       )}
-    </div>
+    </LegacyTile>
   )
 }

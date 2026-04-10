@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckmarkFilled, Flash, Link, Music, Screen, Time, VolumeUp, Warning, WarningAlt } from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
+import { LegacyTile } from './shared/LegacyTile'
 
 interface Service {
   type: string
@@ -118,7 +119,7 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
     <div className="stack">
       {/* Node selector for cluster view */}
       {showCluster && clusterNodes && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>Select Node</h4>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {clusterNodes.map(node => (
@@ -140,11 +141,11 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
               </button>
             ))}
           </div>
-        </div>
+        </LegacyTile>
       )}
       
       {/* Overall Health */}
-      <div className="card" style={{ padding: 16, background: healthColor.bg, border: `2px solid ${healthColor.border}` }}>
+      <LegacyTile style={{ padding: 16, background: healthColor.bg, border: `2px solid ${healthColor.border}` }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <HealthIcon size={24} style={{ color: healthColor.text }} />
           <div>
@@ -157,10 +158,10 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
             </div>
           </div>
         </div>
-      </div>
+      </LegacyTile>
       
       {/* Services Grid */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>Audio Services</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
           {audioPath.services.map((svc, i) => {
@@ -198,11 +199,11 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
             )
           })}
         </div>
-      </div>
+      </LegacyTile>
       
       {/* Detailed Service Info */}
       {audioPath.pipewire && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>PipeWire Details</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12, color: '#aaa' }}>
             <div className="flex-between"><span>Daemon</span><span style={{ color: '#fff' }}>{audioPath.pipewire.daemon_running ? '✓ Running' : '✗ Offline'}</span></div>
@@ -216,12 +217,12 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
             <div className="flex-between"><span>Links</span><span style={{ color: '#fff' }}>{audioPath.pipewire.links.length}</span></div>
             <div className="flex-between"><span>Graph Nodes</span><span style={{ color: '#fff' }}>{audioPath.pipewire.graph_nodes}</span></div>
           </div>
-        </div>
+        </LegacyTile>
       )}
       
       {/* JUCE Engine */}
       {audioPath.juce_engine && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>JUCE Audio Engine</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12, color: '#aaa' }}>
             <div className="flex-between"><span>Status</span><span style={{ color: audioPath.juce_engine.running ? '#22c55e' : '#ef4444' }}>{audioPath.juce_engine.running ? '▶ Running' : '⏸ Stopped'}</span></div>
@@ -233,11 +234,11 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
             <div className="flex-between"><span>Plugins Loaded</span><span style={{ color: '#fff' }}>{audioPath.juce_engine.plugin_count}</span></div>
             <div className="flex-between"><span>XRun Count</span><span style={{ color: audioPath.juce_engine.xrun_count > 0 ? '#f59e0b' : '#22c55e' }}>{audioPath.juce_engine.xrun_count}</span></div>
           </div>
-        </div>
+        </LegacyTile>
       )}
       
       {/* Latency Breakdown */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 12 }}>Latency Breakdown</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12, color: '#aaa', marginBottom: 12 }}>
           <div className="flex-between"><span>PipeWire Graph</span><span style={{ color: '#fff' }}>{audioPath.latency.pipewire_graph_ms.toFixed(2)} ms</span></div>
@@ -256,11 +257,11 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
             {audioPath.latency.total_ms > 50 && 'High (> 50ms)'}
           </div>
         </div>
-      </div>
+      </LegacyTile>
       
       {/* Dependency Graph */}
       {audioPath.dependencies && Object.keys(audioPath.dependencies).length > 0 && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>Service Dependencies</h4>
           <div style={{ fontSize: 12, color: '#aaa', lineHeight: 2 }}>
             {Object.entries(audioPath.dependencies).map(([svc, deps]) => (
@@ -270,19 +271,19 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
               </div>
             ))}
           </div>
-        </div>
+        </LegacyTile>
       )}
       
       {/* Alerts */}
       {audioPath.alerts && audioPath.alerts.length > 0 && (
-        <div className="card" style={{ padding: 16, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444' }}>
+        <LegacyTile style={{ padding: 16, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444' }}>
           <h4 style={{ marginBottom: 12, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }}><WarningAlt size={16} /> Alerts</h4>
           <ul style={{ fontSize: 12, color: '#ddd', margin: 0, paddingLeft: 20 }}>
             {audioPath.alerts.map((alert, i) => (
               <li key={i} style={{ marginBottom: 4 }}>{alert}</li>
             ))}
           </ul>
-        </div>
+        </LegacyTile>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Information, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, WarningAlt as Warning } from '@carbon/icons-react'
+import { LegacyButton } from './shared/LegacyButton'
 
 interface UpdateStage {
   name: string
@@ -205,16 +206,15 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
 
       {/* Controls */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <button className="btn btn-primary" onClick={() => window.location.reload()}>
-          <ArrowsClockwise size={16} /> Refresh Now
-        </button>
-        <button className="btn" onClick={() => setAutoRefresh(!autoRefresh)}>
-          {autoRefresh ? <Pause size={16} /> : <Play size={16} />}
+        <LegacyButton variant="primary" renderIcon={ArrowsClockwise} onClick={() => window.location.reload()}>
+          Refresh Now
+        </LegacyButton>
+        <LegacyButton variant="secondary" renderIcon={autoRefresh ? Pause : Play} onClick={() => setAutoRefresh(!autoRefresh)}>
           {autoRefresh ? 'Pause' : 'Resume'} Auto-Refresh
-        </button>
-        <button className="btn btn-error" onClick={handleRollback}>
-          <ArrowCounterClockwise size={16} /> Rollback
-        </button>
+        </LegacyButton>
+        <LegacyButton variant="error" renderIcon={ArrowCounterClockwise} onClick={handleRollback}>
+          Rollback
+        </LegacyButton>
       </div>
 
       {/* Node Progress */}

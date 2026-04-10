@@ -243,6 +243,45 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Ground Control Pro when you need a safe, auditable editor for device-wide configuration rather than ad hoc MIDI writes or undocumented partial changes.',
     bestFor: 'Ground Control Pro backup, editing, and qualified writeback',
   },
+  '/mcu': {
+    summary: 'Dedicated Mackie MCU Pro workspace for live connection posture, focused plugin bank browsing, scribble-strip preview, and transport visibility.',
+    capabilities: [
+      'Live MCU connection and daemon posture',
+      'Focused-plugin bank browsing with bank navigation',
+      'Scribble-strip preview exactly as hardware sees it',
+      'Fader-bank position and focused-strip visibility',
+      'Shared transport-owner status from the active runtime',
+      'One standalone route for MCU-specific operator checks',
+    ],
+    learnMore: 'Use MCU Pro when you need the Mackie-specific editor instead of the broader shared Physical Surfaces shell.',
+    bestFor: 'Dedicated MCU workflow and transport inspection',
+  },
+  '/launch-control': {
+    summary: 'Dedicated Novation Launch Control workspace for template posture, live snapshot mappings, and per-button LED override editing.',
+    capabilities: [
+      'Live Launch Control connection and reconnect status',
+      'Template push posture and matched-port visibility',
+      'Grouped knob, fader, and button mapping review',
+      'Per-button LED override editing from one Carbon route',
+      'Snapshot-owned control assignments surfaced directly',
+      'Reconnect notifications through the shared toast flow',
+    ],
+    learnMore: 'Use Launch Control when you need the standalone Novation editor rather than the shared controller-family overview.',
+    bestFor: 'Launch Control mapping and LED workflow',
+  },
+  '/midi-commander': {
+    summary: 'Dedicated MeloAudio MIDI Commander workspace for manual setup guidance, per-button action assignment, and expression-target editing.',
+    capabilities: [
+      'Live MIDI Commander connection and daemon posture',
+      'Matched-port and model-variant visibility',
+      'Per-button action assignment editing',
+      'Expression-target configuration from the active snapshot contract',
+      'Manual setup guidance when no programmable SysEx path exists',
+      'Reconnect notifications and shared runtime status',
+    ],
+    learnMore: 'Use MIDI Commander when you need the dedicated foot-controller editor and explicit setup guidance for the current snapshot.',
+    bestFor: 'Dedicated MIDI Commander assignment workflow',
+  },
   '/expression': {
     summary: 'Expression-control mapping surface connecting pedals and MIDI CC to realtime engine parameters.',
     capabilities: [

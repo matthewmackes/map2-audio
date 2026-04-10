@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Renew as ArrowsClockwise, Renew as SpinnerGap, Waveform as WaveSine, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import type { Chain, EffectsLoop, LoopInsertion } from '../../../map2/types'
 import { effectsLoopsApi } from '../../../map2/api'
+import { LegacyButton } from '../shared/LegacyButton'
 import { useToasts } from '../Toasts'
 
 interface EffectsLoopSummaryPanelProps {
@@ -91,9 +92,9 @@ export function EffectsLoopSummaryPanel({
             <span className="pill warn">{latencyMs.toFixed(1)} ms</span>
           )}
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={invalidate}>
+        <LegacyButton variant="ghost" size="sm" iconDescription="Refresh effects loops" onClick={invalidate}>
           <ArrowsClockwise size={14} />
-        </button>
+        </LegacyButton>
       </div>
 
       {chains.length > 0 && (
@@ -167,8 +168,9 @@ export function EffectsLoopSummaryPanel({
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button
-                    className="btn btn-secondary btn-sm"
+                  <LegacyButton
+                    variant="secondary"
+                    size="sm"
                     disabled={busy}
                     onClick={async () => {
                       try {
@@ -180,9 +182,10 @@ export function EffectsLoopSummaryPanel({
                     }}
                   >
                     Activate
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
+                  </LegacyButton>
+                  <LegacyButton
+                    variant="ghost"
+                    size="sm"
                     disabled={busy}
                     onClick={async () => {
                       try {
@@ -194,9 +197,10 @@ export function EffectsLoopSummaryPanel({
                     }}
                   >
                     {loop.state_actual === 'bypassed' ? 'Enable' : 'Bypass'}
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
+                  </LegacyButton>
+                  <LegacyButton
+                    variant="ghost"
+                    size="sm"
                     disabled={busy}
                     onClick={async () => {
                       try {
@@ -208,7 +212,7 @@ export function EffectsLoopSummaryPanel({
                     }}
                   >
                     Calibrate
-                  </button>
+                  </LegacyButton>
                 </div>
               </div>
             )

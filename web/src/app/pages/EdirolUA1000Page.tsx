@@ -56,6 +56,8 @@ import {
 } from '@carbon/icons-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
+import { LegacyButton } from '../components/shared/LegacyButton'
+import { LegacyTile } from '../components/shared/LegacyTile'
 import { useToasts } from '../components/Toasts'
 import { audioApi, diagnosticsApi, getWsUrl } from '../../map2/api'
 import { useCluster } from '../contexts/useCluster'
@@ -270,37 +272,41 @@ export function EdirolUA1000Page() {
         actions={
           <div className="flex" style={{ gap: 8 }}>
             {!isRunning ? (
-              <button
-                className="btn btn-primary"
+              <LegacyButton
+                variant="primary"
+                renderIcon={startAudio.isPending ? undefined : Play}
                 onClick={() => startAudio.mutate()}
                 disabled={startAudio.isPending}
               >
-                {startAudio.isPending ? <CircularProgress size={16} /> : <Play size={16} />}
+                {startAudio.isPending ? <CircularProgress size={16} /> : null}
                 Start Audio
-              </button>
+              </LegacyButton>
             ) : (
-              <button
-                className="btn btn-ghost"
+              <LegacyButton
+                variant="ghost"
+                renderIcon={stopAudio.isPending ? undefined : StopFilled}
                 onClick={() => stopAudio.mutate()}
                 disabled={stopAudio.isPending}
               >
-                {stopAudio.isPending ? <CircularProgress size={16} /> : <StopFilled size={16} />}
+                {stopAudio.isPending ? <CircularProgress size={16} /> : null}
                 Stop
-              </button>
+              </LegacyButton>
             )}
-            <button
-              className="btn btn-ghost"
+            <LegacyButton
+              variant="ghost"
+              renderIcon={Renew}
               onClick={() => restartAudio.mutate()}
               disabled={restartAudio.isPending || !isRunning}
             >
-              <Renew size={16} /> Restart
-            </button>
-            <button
-              className="btn btn-primary"
+              Restart
+            </LegacyButton>
+            <LegacyButton
+              variant="primary"
+              renderIcon={SettingsAdjust}
               onClick={() => setConfigDialogOpen(true)}
             >
-              <SettingsAdjust size={16} /> Configure
-            </button>
+              Configure
+            </LegacyButton>
           </div>
         }
       />
@@ -472,7 +478,7 @@ export function EdirolUA1000Page() {
       </div>
 
       {/* Hardware Images */}
-      <div className="card" style={{ padding: 24 }}>
+      <LegacyTile style={{ padding: 24 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h3 style={{ marginBottom: 8, color: 'var(--text-muted)' }}>Front Panel</h3>
           <div style={{
@@ -559,10 +565,10 @@ export function EdirolUA1000Page() {
             />
           </div>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Tabbed Sections */}
-      <div className="card">
+      <LegacyTile>
         <TabProvider
           defaultSelectedId="engine"
           selectedId={selectedTab}
@@ -632,10 +638,10 @@ export function EdirolUA1000Page() {
             <DiagnosticsTab nodeId={apiNodeId} />
           </TabPanel>
         </TabProvider>
-      </div>
+      </LegacyTile>
 
       {/* Help Me Find a Unit Button */}
-      <div className="card" style={{ padding: 24, textAlign: 'center', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.1))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+      <LegacyTile style={{ padding: 24, textAlign: 'center', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.1))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
         <div style={{ marginBottom: 16 }}>
           <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20 }}>Looking to Upgrade or Expand?</h3>
           <p style={{ margin: 0, color: '#94a3b8', fontSize: 14 }}>
@@ -659,7 +665,7 @@ export function EdirolUA1000Page() {
         <div style={{ marginTop: 12, fontSize: 12, color: '#94a3b8' }}>
           Live marketplace search • Price sorted • Latency ranked
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Configuration Dialog */}
       <ConfigDialog
@@ -711,7 +717,7 @@ function JuceEngineTab({
 
       <div className="grid three">
         {/* Engine Info */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <Activity size={20} style={{ color: status?.running ? '#22c55e' : '#ef4444' }} />
             <h4>Engine</h4>
@@ -738,10 +744,10 @@ function JuceEngineTab({
               <span>{status?.active_pedalboard ?? 'None'}</span>
             </div>
           </div>
-        </div>
+        </LegacyTile>
 
         {/* Audio Device */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <Usb size={20} style={{ color: '#0066cc' }} />
             <h4>Audio Device</h4>
@@ -774,10 +780,10 @@ function JuceEngineTab({
               <Chip label="USB 2.0 Hi-Speed" size="small" color="info" />
             </div>
           </div>
-        </div>
+        </LegacyTile>
 
         {/* Performance */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <Meter size={20} style={{ color: '#f59e0b' }} />
             <h4>Performance</h4>
@@ -814,11 +820,11 @@ function JuceEngineTab({
               <span>{status?.buffer_size ?? '—'} samples</span>
             </div>
           </div>
-        </div>
+        </LegacyTile>
       </div>
 
       {/* WebSocket Status */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 12 }}>Real-Time Connection</h4>
         <div className="grid two">
           <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
@@ -835,10 +841,10 @@ function JuceEngineTab({
             Live metering updates at 30fps when connected
           </div>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* PipeWire Audio Server Status */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>PipeWire Audio Server</h4>
         <div className="grid two" style={{ gap: 16 }}>
           {/* PipeWire Status Metrics */}
@@ -882,10 +888,10 @@ function JuceEngineTab({
             </div>
           </div>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Signal Flow */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>Signal Flow Architecture</h4>
         <div style={{
           background: 'var(--bg-secondary)',
@@ -1003,7 +1009,7 @@ function JuceEngineTab({
           The quantum (buffer) and latency values above are PipeWire's current settings.
           If latency is high or you experience XRuns, adjust the quantum via the <a href="/pipewire" style={{ color: '#60a5fa' }}>PipeWire dashboard</a>.
         </div>
-      </div>
+      </LegacyTile>
     </div>
   )
 }
@@ -1069,7 +1075,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
 
       <div className="grid two">
         {/* Input Meters */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16, textAlign: 'center' }}>
             <Microphone size={16} style={{ marginRight: 8 }} />
             Input Levels
@@ -1078,10 +1084,10 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
             <MeterBar value={meterData.input_left} label="L" color="#22c55e" />
             <MeterBar value={meterData.input_right} label="R" color="#22c55e" />
           </div>
-        </div>
+        </LegacyTile>
 
         {/* Output Meters */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16, textAlign: 'center' }}>
             <VolumeUp size={16} style={{ marginRight: 8 }} />
             Output Levels
@@ -1090,11 +1096,11 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
             <MeterBar value={meterData.output_left} label="L" color="#3b82f6" />
             <MeterBar value={meterData.output_right} label="R" color="#3b82f6" />
           </div>
-        </div>
+        </LegacyTile>
       </div>
 
       {/* Multi-channel overview */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>All Channels Overview</h4>
         <div className="grid two">
           <div>
@@ -1177,7 +1183,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
             </div>
           </div>
         </div>
-      </div>
+      </LegacyTile>
     </div>
   )
 }
@@ -1198,7 +1204,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
       </div>
 
       {/* Front Panel Inputs 1-4 */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Microphone size={16} style={{ marginRight: 8 }} />
           Front Panel Inputs (XLR/TRS Combo)
@@ -1208,7 +1214,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
             const level = ch === 1 ? meterData.input_left : ch === 2 ? meterData.input_right : 0
             const isHiZ = ch === 3
             return (
-              <div key={ch} className="card" style={{ padding: 12, background: 'var(--bg-secondary)' }}>
+              <LegacyTile key={ch} style={{ padding: 12, background: 'var(--bg-secondary)' }}>
                 <div className="flex-between" style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>Input {ch}</span>
                   {isHiZ && <Chip label="Hi-Z" size="small" color="warning" />}
@@ -1249,14 +1255,14 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
                   }
                   label={<span style={{ fontSize: 11 }}>48V</span>}
                 />
-              </div>
+              </LegacyTile>
             )
           })}
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Outputs */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <VolumeUp size={16} style={{ marginRight: 8 }} />
           Analog Outputs (TRS Balanced)
@@ -1266,7 +1272,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
             const level = ch === 1 ? meterData.output_left : ch === 2 ? meterData.output_right : 0
             const isMain = ch <= 2
             return (
-              <div key={ch} className="card" style={{ padding: 12, background: 'var(--bg-secondary)' }}>
+              <LegacyTile key={ch} style={{ padding: 12, background: 'var(--bg-secondary)' }}>
                 <div className="flex-between" style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>Output {ch}</span>
                   {isMain && <Chip label="Main" size="small" color="primary" />}
@@ -1283,14 +1289,14 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
                     },
                   }}
                 />
-              </div>
+              </LegacyTile>
             )
           })}
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Headphones */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Headphones size={16} style={{ marginRight: 8 }} />
           Headphones Output
@@ -1315,7 +1321,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
             <Headphones size={48} style={{ color: 'var(--accent)' }} />
           </div>
         </div>
-      </div>
+      </LegacyTile>
     </div>
   )
 }
@@ -1333,7 +1339,7 @@ function DigitalIOTab() {
       </div>
 
       <div className="grid two">
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16 }}>
             <NetworkAdminControl size={16} style={{ marginRight: 8 }} />
             S/PDIF (Coaxial & Optical)
@@ -1352,9 +1358,9 @@ function DigitalIOTab() {
               <Chip label="S/PDIF Mode" size="small" />
             </div>
           </div>
-        </div>
+        </LegacyTile>
 
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16 }}>
             <Waveform size={16} style={{ marginRight: 8 }} />
             ADAT Lightpipe
@@ -1373,10 +1379,10 @@ function DigitalIOTab() {
               ADAT mode provides 8 channels at 44.1/48kHz
             </p>
           </div>
-        </div>
+        </LegacyTile>
       </div>
 
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Time size={16} style={{ marginRight: 8 }} />
           Word Clock (BNC)
@@ -1391,7 +1397,7 @@ function DigitalIOTab() {
             <Chip label="Active" size="small" color="info" />
           </div>
         </div>
-      </div>
+      </LegacyTile>
     </div>
   )
 }
@@ -1409,7 +1415,7 @@ function MIDITab() {
       </div>
 
       <div className="grid two">
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <Music size={24} style={{ color: 'var(--accent)' }} />
             <div>
@@ -1418,9 +1424,9 @@ function MIDITab() {
             </div>
           </div>
           <Chip label="Available" size="small" color="success" />
-        </div>
+        </LegacyTile>
 
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <Music size={24} style={{ color: 'var(--accent)' }} />
             <div>
@@ -1429,15 +1435,15 @@ function MIDITab() {
             </div>
           </div>
           <Chip label="Available" size="small" color="success" />
-        </div>
+        </LegacyTile>
       </div>
 
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 12 }}>USB MIDI</h4>
         <p className="subtitle">
           The UA-1000 also provides a USB MIDI interface to the JUCE engine.
         </p>
-      </div>
+      </LegacyTile>
     </div>
   )
 }
@@ -1484,34 +1490,34 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
       </div>
 
       {/* XRun Statistics */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <WarningAlt size={16} style={{ marginRight: 8 }} />
           XRun Statistics
         </h4>
         <div className="grid four">
-          <div className="list-item" style={{ textAlign: 'center' }}>
+          <LegacyTile style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 600 }}>{xruns?.total ?? 0}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Total</div>
-          </div>
-          <div className="list-item" style={{ textAlign: 'center' }}>
+          </LegacyTile>
+          <LegacyTile style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 600 }}>{xruns?.last_minute ?? 0}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Last Minute</div>
-          </div>
-          <div className="list-item" style={{ textAlign: 'center' }}>
+          </LegacyTile>
+          <LegacyTile style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 24, fontWeight: 600 }}>{xruns?.last_hour ?? 0}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Last Hour</div>
-          </div>
-          <div className="list-item" style={{ textAlign: 'center' }}>
+          </LegacyTile>
+          <LegacyTile style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 12 }}>{xruns?.last_timestamp ?? '—'}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Last Occurred</div>
-          </div>
+          </LegacyTile>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Auto-mute control */}
       {health?.auto_muted && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <Alert
             severity="warning"
             action={
@@ -1527,12 +1533,12 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
           >
             Audio has been automatically muted due to excessive XRuns. Consider increasing buffer size.
           </Alert>
-        </div>
+        </LegacyTile>
       )}
 
       {/* Alerts */}
       {health?.alerts && health.alerts.length > 0 && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>Active Alerts</h4>
           <div className="stack" style={{ gap: 8 }}>
             {health.alerts.map((alert, i) => (
@@ -1541,7 +1547,7 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
               </Alert>
             ))}
           </div>
-        </div>
+        </LegacyTile>
       )}
     </div>
   )
@@ -1631,7 +1637,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
       </div>
 
       {/* Factory Reset Instructions */}
-      <div className="card" style={{ padding: 16, background: 'linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%)', border: '1px solid #234' }}>
+      <LegacyTile style={{ padding: 16, background: 'linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%)', border: '1px solid #234' }}>
         <div className="flex" style={{ alignItems: 'flex-start', gap: 16 }}>
           <div style={{
             background: '#0066cc',
@@ -1659,10 +1665,10 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             </Alert>
           </div>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Quick Actions */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Tools size={16} style={{ marginRight: 8 }} />
           Quick Actions
@@ -1706,10 +1712,10 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             Reset ALSA
           </Button>
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Buffer Stability Tests */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Chemistry size={16} style={{ marginRight: 8 }} />
           Buffer Stability Tests
@@ -1730,10 +1736,10 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             </Button>
           ))}
         </div>
-      </div>
+      </LegacyTile>
 
       {/* ALSA Diagnostic Commands */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <DataBase size={16} style={{ marginRight: 8 }} />
           ALSA Diagnostics
@@ -1750,7 +1756,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             { cmd: 'dmesg | grep -i snd', desc: 'Check kernel audio messages' },
             { cmd: 'lsusb -v | grep -A 20 "Edirol\\|Roland"', desc: 'USB device descriptor' },
           ].map(({ cmd, desc }) => (
-            <div key={cmd} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <LegacyTile key={cmd} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <code style={{ fontSize: 12, background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 3 }}>{cmd}</code>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
@@ -1766,14 +1772,14 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                   Copy
                 </Button>
               </Tooltip>
-            </div>
+            </LegacyTile>
           ))}
         </div>
-      </div>
+      </LegacyTile>
 
       {/* Test Results */}
       {testResults.length > 0 && (
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex-between" style={{ marginBottom: 16 }}>
             <h4>
               <Meter size={16} style={{ marginRight: 8 }} />
@@ -1783,9 +1789,8 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
           </div>
           <div className="stack" style={{ gap: 8 }}>
             {testResults.map((result, i) => (
-              <div
+              <LegacyTile
                 key={i}
-                className="list-item"
                 style={{
                   borderLeft: `3px solid ${result.success ? '#22c55e' : '#ef4444'}`,
                   paddingLeft: 12,
@@ -1815,14 +1820,14 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                   {result.quality_score && ` • Quality: ${(result.quality_score * 100).toFixed(0)}%`}
                   {result.xruns_detected > 0 && ` • XRuns: ${result.xruns_detected}`}
                 </div>
-              </div>
+              </LegacyTile>
             ))}
           </div>
-        </div>
+        </LegacyTile>
       )}
 
       {/* Troubleshooting Tips */}
-      <div className="card" style={{ padding: 16 }}>
+      <LegacyTile style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
           <Information size={16} style={{ marginRight: 8 }} />
           Troubleshooting Tips
@@ -1844,7 +1849,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             <strong>Crackling/Pops:</strong> Disable USB power saving in Linux. Check with: <code style={{ fontSize: 11 }}>cat /sys/module/usbcore/parameters/autosuspend</code>
           </Alert>
         </div>
-      </div>
+      </LegacyTile>
     </div>
   )
 }

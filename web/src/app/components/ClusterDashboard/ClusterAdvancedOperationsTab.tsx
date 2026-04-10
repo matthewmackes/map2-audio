@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Renew as ArrowsClockwise, CheckmarkFilled as CheckCircle, WarningAlt as Warning } from '@carbon/icons-react'
+import { LegacyButton } from '../shared/LegacyButton'
 
 interface ResetPreviewResponse {
   status: string
@@ -132,10 +133,9 @@ export function ClusterAdvancedOperationsTab() {
           <div style={{ fontSize: 13, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6 }}>
             Reset Preview
           </div>
-          <button className="btn btn-sm" onClick={loadPreview} disabled={loadingPreview}>
-            <ArrowsClockwise size={14} />
+          <LegacyButton variant="secondary" size="sm" renderIcon={ArrowsClockwise} onClick={loadPreview} disabled={loadingPreview}>
             {loadingPreview ? 'Refreshing...' : 'Refresh'}
-          </button>
+          </LegacyButton>
         </div>
 
         {previewError && (
@@ -229,8 +229,8 @@ export function ClusterAdvancedOperationsTab() {
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button
-            className="btn"
+          <LegacyButton
+            variant="danger"
             disabled={!canExecute}
             onClick={runReset}
             style={{
@@ -241,7 +241,7 @@ export function ClusterAdvancedOperationsTab() {
             }}
           >
             {running ? 'Running reset...' : 'Reset to Default, Rejoin'}
-          </button>
+          </LegacyButton>
           {result?.success && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#34d399' }}>
               <CheckCircle size={14} />

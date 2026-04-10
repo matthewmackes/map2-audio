@@ -14,6 +14,7 @@ import {
   Waveform,
 } from '@carbon/icons-react'
 import type { CarbonIconType } from '@carbon/icons-react'
+import { LegacyTile } from './shared/LegacyTile'
 import './StatusPanelFlatteners.css'
 
 interface ComponentDetails {
@@ -469,7 +470,7 @@ export function SystemArchitectureFlow() {
   const pipeWireColor = getStatusColor(health.pipeWire.status)
 
   return (
-    <div className="card system-architecture-flow">
+    <LegacyTile className="system-architecture-flow">
       <div style={{ marginBottom: 16 }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
           <FlowArrow size={22} style={{ color: '#64b5f6' }} />
@@ -682,6 +683,6 @@ export function SystemArchitectureFlow() {
           <span style={{ color: '#ef4444' }}>● Red</span> = Critical
         </div>
       </div>
-    </div>
+    </LegacyTile>
   )
 }

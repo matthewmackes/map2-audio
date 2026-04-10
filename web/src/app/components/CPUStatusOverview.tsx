@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
+import { LegacyButton } from './shared/LegacyButton'
 import './StatusPanelFlatteners.css'
 
 interface AudioActivity {
@@ -526,20 +527,22 @@ export function CPUStatusOverview() {
                   <div className="flex-between">
                     <strong>Core {core.core_id}</strong>
                     <div className="flex" style={{ gap: 4 }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
+                      <LegacyButton
+                        variant="ghost"
+                        size="sm"
+                        iconDescription="Save changes"
                         onClick={handleSaveCore}
-                        title="Save changes"
                       >
                         <Check size={14} />
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
+                      </LegacyButton>
+                      <LegacyButton
+                        variant="ghost"
+                        size="sm"
+                        iconDescription="Cancel"
                         onClick={handleCancel}
-                        title="Cancel"
                       >
                         <X size={14} />
-                      </button>
+                      </LegacyButton>
                     </div>
                   </div>
 
@@ -606,13 +609,14 @@ export function CPUStatusOverview() {
                   {/* Header with Edit */}
                   <div className="flex-between">
                     <strong>Core {core.core_id}</strong>
-                    <button
-                      className="btn btn-ghost btn-sm"
+                    <LegacyButton
+                      variant="ghost"
+                      size="sm"
+                      iconDescription="Edit core"
                       onClick={() => handleEditCore(core.core_id)}
-                      title="Edit"
                     >
                       <PencilSimple size={14} />
-                    </button>
+                    </LegacyButton>
                   </div>
 
                   {/* Utilization Bar */}
@@ -724,8 +728,8 @@ export function CPUStatusOverview() {
             <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600 }}>Verify Live CPU Core Pinning</h4>
             <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Check current system configuration against applied settings</p>
           </div>
-          <button
-            className="btn btn-secondary"
+          <LegacyButton
+            variant="secondary"
             onClick={handleVerifyLiveConfig}
             disabled={isVerifying}
             style={{ whiteSpace: 'nowrap' }}
@@ -741,7 +745,7 @@ export function CPUStatusOverview() {
                 Verify Live Config
               </>
             )}
-          </button>
+          </LegacyButton>
         </div>
 
         {/* Verification Results */}
@@ -802,16 +806,16 @@ export function CPUStatusOverview() {
       {/* Apply Button */}
       {hasChanges && (
         <div className="flex" style={{ gap: 8 }}>
-          <button
-            className="btn btn-primary"
+          <LegacyButton
+            variant="primary"
             onClick={handleApplyChanges}
             disabled={applyMutation.isPending}
           >
             {applyMutation.isPending ? <SpinnerGap className="spin" size={14} /> : 'Apply Changes'}
-          </button>
-          <button className="btn btn-ghost" onClick={() => setHasChanges(false)}>
+          </LegacyButton>
+          <LegacyButton variant="ghost" onClick={() => setHasChanges(false)}>
             Discard
-          </button>
+          </LegacyButton>
         </div>
       )}
     </div>

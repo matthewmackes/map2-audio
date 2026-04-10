@@ -357,6 +357,31 @@ class PushSurfaceManager:
         frame = self.controller.build_render_frame()
         await self._send_frame(frame, urgent_controls=urgent_controls, force=force)
 
+    async def push_snapshot_activation(self, *, snapshot_id: int, snapshot_name: str) -> dict[str, Any]:
+        if not self._running:
+            return {
+                "status": "skipped",
+                "reason": "push_surface_not_running",
+                "snapshot_id": int(snapshot_id),
+            }
+        await self.scan_devices()
+        if self.active_device is None:
+            return {
+                "status": "skipped",
+                "reason": "push_surface_device_unavailable",
+                "snapshot_id": int(snapshot_id),
+            }
+        await self.refresh_state()
+        await self.render(force=True)
+        snapshot = await self.get_state_snapshot()
+        return {
+            "status": "completed",
+            "snapshot_id": int(snapshot_id),
+            "snapshot_name": str(snapshot_name or f"Snapshot {snapshot_id}"),
+            "active_device_id": self.active_device.device_id,
+            "active_page": snapshot.get("active_page"),
+        }
+
     @staticmethod
     def _should_skip_welcome(parsed_event) -> bool:
         event_name = getattr(parsed_event.event_type, "value", "")

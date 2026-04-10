@@ -169,7 +169,7 @@ export function ReportingTab() {
     <meta charset="utf-8" />
     <title>Cluster Health Report</title>
     <style>
-      body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 20px; }
+      body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 24px; }
       h1, h2 { margin: 0 0 12px 0; }
       .meta { color: #94a3b8; margin-bottom: 20px; }
       .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -177,7 +177,7 @@ export function ReportingTab() {
       .label { color: #94a3b8; font-size: 12px; }
       .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
       table { width: 100%; border-collapse: collapse; background: #111827; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
-      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1e293b; font-size: 13px; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: 13px; }
       th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 11px; }
     </style>
   </head>
@@ -225,7 +225,7 @@ export function ReportingTab() {
     <meta charset="utf-8" />
     <title>Service Uptime Snapshot</title>
     <style>
-      body { font-family: Arial, sans-serif; margin: 20px; color: #111827; }
+      body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
       h1 { margin: 0 0 8px 0; }
       .muted { color: #6b7280; margin-bottom: 20px; }
       .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -233,7 +233,7 @@ export function ReportingTab() {
       .k { font-size: 12px; color: #6b7280; }
       .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
       th { font-size: 11px; text-transform: uppercase; color: #6b7280; }
     </style>
   </head>

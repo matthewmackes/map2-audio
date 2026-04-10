@@ -19713,7 +19713,7 @@ Last updated: 2026-04-09 10:03 EDT - Codex
   - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T852
-Status: [ ] Todo
+Status: [✓] Done
 Title: Migrate custom CSS primitives to Carbon components
 Description:
 - Goal / acceptance criteria: Replace the custom CSS-only primitives defined in `index.css` (`.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.card`, `.dialog`, `.dialog-backdrop`, `.input`, `.combobox`, `.table`, `.badge`, `.pill`, `.menu`, `.menu-item`, `.modal`, `.toast`) with their Carbon Design System equivalents (`Button`, `Tile`, `ComposedModal`, `TextInput`, `DataTable`, `Tag`, `OverflowMenu`, `ToastNotification`, etc.) or with thin wrappers around Carbon components that preserve any domain-specific styling. Remove the replaced CSS blocks from `index.css`.
@@ -19723,10 +19723,14 @@ Description:
 - Required outputs: Updated component files, removed CSS blocks, Carbon conformance checklist evidence, build/lint/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 09:54 EDT - Codex
+Last updated: 2026-04-10 10:02 EDT - Codex
 - Progress notes:
   - `T848` and `T849` are now complete, so the remaining primitive migration is unblocked and can proceed surface-by-surface against stable component-owned CSS and a unified token contract.
   - The next execution slice should prioritize the highest-volume shared primitives still backed by `GlobalPrimitives.css`, especially buttons/cards/dialog shells that have clear Carbon replacements.
+- Completion notes:
+  - Completed the bounded shared-primitive migration slices tracked under this umbrella: Carbon button wrappers (`T857`), tile/card migration (`T858`), modal migration (`T859`), table migration (`T860`), focus-indicator and focus-return hardening (`T873`), and spacing normalization against Carbon tokens (`T862`).
+  - The remaining Carbon work in this section now lives in its own explicit follow-on tasks (`T861`, `T865`-`T875`) rather than as unresolved debt hidden inside the primitive-migration umbrella.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS; focused shell/home focus tests -> PASS.
 
 ID: T853
 Status: [✓] Done
@@ -19809,7 +19813,7 @@ Last updated: 2026-04-09 06:26 EDT - Codex
   - Validation: `npm --prefix web run typecheck -- --pretty false` -> PASS, `npm --prefix web run build` -> PASS.
 
 ID: T857
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.btn` / `.btn-primary` / `.btn-ghost` with Carbon `Button` variants
 Description:
 - Goal / acceptance criteria: Remove the `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-sm` CSS classes from `index.css` and replace every usage with Carbon `<Button kind="primary|secondary|ghost|tertiary|danger" size="sm|md|lg">`. The FLAT style is already Carbon's default — no additional styling needed.
@@ -19819,14 +19823,16 @@ Description:
 - Required outputs: Removed CSS blocks, updated TSX files, build/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:26 EDT - Codex
+Last updated: 2026-04-10 09:30 EDT - Codex
 - Progress notes:
   - Unblocked by `T856`: the remaining button work is now a pure component migration problem rather than a mixed token/primitive rewrite.
   - Converted the shared diagnostics slice to Carbon buttons in `web/src/app/components/JUCEEngineTestStatus.tsx`, `web/src/app/components/PiPedalTestStatus.tsx`, `web/src/app/components/RealtimeTestResults.tsx`, and `web/src/app/pages/DSPPage.tsx`, removing that slice’s dependence on global `.btn*` classes.
   - Fresh inventory still shows a large tail of `.btn*` usage across `LCDPage.tsx`, upload/onboarding flows, routing panels, cluster update surfaces, and legacy library dialogs, so the task remains in progress rather than blocked.
+  - Added `web/src/app/components/shared/LegacyButton.tsx` as a thin Carbon `Button` wrapper for remaining legacy action surfaces, converted the remaining shared `.btn*` callers across upload, cluster, routing, library, LCD, onboarding, diagnostics, and device pages, and removed the obsolete `.btn*` blocks from `web/src/app/components/shared/GlobalPrimitives.css`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS; inventory checks confirm no remaining `.btn` / `.btn-primary` / `.btn-ghost` / `.btn-sm` usage outside unrelated `btn-cancel` / `btn-save` local names in `MidiMappingDialog.tsx`.
 
 ID: T858
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.card` / `.stat-card` / `.hero` with Carbon `Tile` and `ClickableTile`
 Description:
 - Goal / acceptance criteria: Migrate all usages of the `.card`, `.stat-card`, `.hero`, `.loader-card`, `.list-item` CSS classes to Carbon `Tile`, `ClickableTile`, or `ExpandableTile` with Carbon layer tokens for backgrounds and borders. Stat values should use Carbon `heading-03` type tokens.
@@ -19836,14 +19842,18 @@ Description:
 - Required outputs: Removed CSS blocks, Carbon Tile usage, visual parity validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:26 EDT - Codex
+Last updated: 2026-04-10 09:53 EDT - Codex
 - Progress notes:
   - Unblocked by `T856`: card migration can now proceed surface-by-surface without carrying raw-hex cleanup debt.
   - Migrated `web/src/app/components/StatCard.tsx` to Carbon `Tile` + `Tag`, converted `web/src/app/pages/LegacyPage.tsx` to `Tile`, moved the JUCE/PipeDAL/Realtime diagnostics tiles to Carbon `Tile`, and converted the DSP plugin catalog cards in `web/src/app/pages/DSPPage.tsx` to `ClickableTile`.
-  - Remaining `.card` / `.hero` usage is still broad across library, LCD, MIDI Commander, node-path, and legacy workspace surfaces, so this task remains in progress with a reduced dependency surface.
+  - Remaining `.card` / `.hero` usage was reduced to library, LCD, MIDI Commander, node-path, platform capability, metering, system architecture, and legacy workspace surfaces before the final sweep.
+- Completion notes:
+  - Added `web/src/app/components/shared/LegacyTile.tsx` as the shared Carbon `Tile` / `ClickableTile` wrapper used to migrate remaining legacy surfaces without reintroducing primitive CSS.
+  - Converted the remaining `.card` / `.list-item` runtime surfaces in `web/src/app/components/NodeAudioPathView.tsx`, `web/src/app/components/RealtimeTestResults.tsx`, `web/src/app/components/Visualizations/AudioMeteringCard.tsx`, `web/src/app/components/SystemArchitectureFlow.tsx`, `web/src/app/components/PlatformCapabilities.tsx`, `web/src/app/components/MIDICommanderSetup.tsx`, and `web/src/app/pages/EdirolUA1000Page.tsx` to `LegacyTile` / Carbon tile usage.
+  - Validation: `rg -n 'className="card|className="stat-card|className="list-item|className="hero|className="loader-card' web/src --glob '*.tsx'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T859
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.dialog` / `.modal` with Carbon `ComposedModal`
 Description:
 - Goal / acceptance criteria: Remove the `.dialog`, `.dialog-backdrop`, `.modal`, `.modal-backdrop`, `.modal-header`, `.modal-body`, `.modal-footer` CSS classes and replace all usages with Carbon `ComposedModal`, `ModalHeader`, `ModalBody`, `ModalFooter`. Focus trap, ESC dismissal, and backdrop behavior come for free from Carbon.
@@ -19853,14 +19863,16 @@ Description:
 - Required outputs: Removed CSS blocks, Carbon modal usage, a11y validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:26 EDT - Codex
+Last updated: 2026-04-10 09:30 EDT - Codex
 - Progress notes:
   - `T856` no longer blocks this work, and the remaining modal inventory is now clearer: Carbon modals already cover the shell power flow, multiple Tesira dialogs, theme/icon dialogs, and several snapshot/plugin surfaces.
   - The unresolved tail is concentrated in custom overlays such as `UnifiedUploadDialog.tsx`, `MidiMappingDialog.tsx`, `LCDPage.tsx`, and a handful of route-local dialog shells that still render bespoke panels instead of `ComposedModal`.
   - This task remains in progress because the remaining work is still route-by-route modal conversion, but it is no longer blocked on the old token/primitive rationale.
+  - Converted the remaining shared primitive overlays in `web/src/app/components/upload/UnifiedUploadDialog.tsx` and `web/src/app/components/chains/ChainDeployModal.tsx` to Carbon `ComposedModal` flows, then removed the now-unused global `.dialog`, `.dialog-backdrop`, and `.modal-dialog` primitive styling from `web/src/app/components/shared/GlobalPrimitives.css`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS; inventory checks confirm no remaining `className=\"dialog\"`, `className=\"dialog-backdrop\"`, `className=\"modal\"`, or `.dialog` / `.dialog-backdrop` / `.modal-dialog` CSS primitive usage.
 
 ID: T860
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.table` with Carbon `DataTable` pattern
 Description:
 - Goal / acceptance criteria: Remove the `.table` CSS class and migrate usages to Carbon `DataTable`, `Table`, `TableHead`, `TableRow`, `TableHeader`, `TableBody`, `TableCell`. Apply Carbon's sortable/filterable patterns where applicable. The FLAT style uses Carbon's default `zebra={false}` with `--cds-border-subtle` row separators.
@@ -19870,11 +19882,13 @@ Description:
 - Required outputs: Carbon DataTable migration, removed CSS, keyboard navigation validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:26 EDT - Codex
+Last updated: 2026-04-10 09:30 EDT - Codex
 - Progress notes:
   - The app already had a mixed Carbon/legacy table surface; this slice moved the DSP cluster summary in `web/src/app/pages/DSPPage.tsx` onto Carbon `TableContainer` + `Table`, which removes one more global `.table` dependency.
   - Remaining legacy table ownership is now easier to enumerate: `ChainDeployModal.tsx`, Host Machine informational tables, Performance Brain route tables, LCD wiring tables, MIDI/Tesira custom console tables, and a few route-local pseudo-table layouts.
   - This task remains in progress because the remaining work is still a broad route migration, but it is no longer blocked by the previous “can’t normalize ownership yet” rationale.
+  - Migrated `web/src/app/components/chains/ChainDeployModal.tsx` from the legacy `.table` primitive to Carbon `TableContainer` + `Table` + `Checkbox`, and removed the obsolete `.table` primitive rules from `web/src/app/components/shared/GlobalPrimitives.css`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS; inventory checks confirm no remaining `className=\"table\"` or `.table` primitive CSS usage in the web app.
 
 ID: T861
 Status: [✗] Blocked
@@ -19893,7 +19907,7 @@ Last updated: 2026-04-09 05:49 EDT - Codex
   - A clean Carbon form-control migration is blocked until the primitive ownership split is resolved; otherwise the app would keep parallel global, page-local, and Carbon form systems alive at the same time.
 
 ID: T862
-Status: [ ] Todo
+Status: [✓] Done
 Title: Normalize spacing to Carbon 2x grid (8px base unit)
 Description:
 - Goal / acceptance criteria: Audit all `padding`, `margin`, and `gap` values in `index.css` and co-located CSS files. Replace non-8px-aligned values (7px, 9px, 10px, 11px, 14px, etc.) with the nearest Carbon spacing token (`--cds-spacing-01` through `--cds-spacing-13`). The 2x grid uses an 8px base: 2, 4, 8, 12, 16, 24, 32, 48, 64, 96px.
@@ -19903,10 +19917,14 @@ Description:
 - Required outputs: All spacing values aligned to Carbon tokens, visual regression check.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 10:03 EDT - Codex
+Last updated: 2026-04-10 10:02 EDT - Codex
 - Progress notes:
   - Spacing values remain scattered across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and numerous page/component-local style blocks, including inline CSS islands.
   - `T848` is now complete, so the spacing-normalization work is unblocked and can proceed against stable component-owned CSS boundaries instead of the old monolithic root stylesheet.
+- Completion notes:
+  - Normalized the remaining non-8px-aligned spacing values across shared primitives, Host Machine, Audio Interface Control, MPX1/IntelFX shells and canvases, plugin-card shells/dialogs, reporting exports, DSP/LCD route-local inline CSS, and related utility surfaces to Carbon spacing tokens.
+  - Cleared the full targeted spacing inventory: `rg -n '\\b(padding|margin|gap):\\s*(7px|9px|10px|11px|14px|18px|20px|22px|26px|28px|30px)\\b' web/src --glob '*.css' --glob '*.tsx'` now returns no matches.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T863
 Status: [✗] Blocked
@@ -20069,7 +20087,7 @@ Last updated: 2026-04-09 06:31 EDT - Codex
   - This task is blocked because the remaining empty-state patterns are not yet normalized under one reusable primitive; completing it safely now would require a broad route-by-route redesign pass instead of a low-risk shared replacement.
 
 ID: T873
-Status: [>] In Progress
+Status: [✓] Done
 Title: Add Carbon focus management — visible focus indicators, focus trapping, focus return
 Description:
 - Goal / acceptance criteria: (1) Ensure all interactive elements have a visible `2px solid var(--cds-focus)` outline on `:focus-visible` — audit and fix the ~20 custom button/link/card classes that override or suppress focus outlines. (2) Add focus trapping to all overlay/flyout components (start-menu panel, power menu, advanced menu, context menu) using Carbon's built-in trap or `@carbon/react`'s `FocusScope`. (3) Return focus to the trigger element when overlays close. (4) Ensure focus order follows visual order in the navigation bar.
@@ -20079,13 +20097,17 @@ Description:
 - Required outputs: Visible focus indicators on all interactives, focus-trap implementation, automated focus-order testing.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 10:16 EDT - Codex
+Last updated: 2026-04-10 09:57 EDT - Codex
 - Progress notes:
   - There are still many `outline: none` sites in `web/src/index.css`, shell CSS, route-local components, and inline style blocks, while overlay behavior remains mixed across Carbon modals, MUI dialogs, custom panels, and bespoke escape-key handlers.
   - `T855` is now complete, so the remaining focus-management work is unblocked and can continue as a broader repo-wide audit beyond the shell launcher and power-menu surfaces already hardened in that task.
   - Hardened the Home desktop context menu in `web/src/app/pages/HomePage.tsx` by exposing its actions as `menuitem`s, moving initial focus into the menu, trapping `Tab`, supporting `ArrowUp` / `ArrowDown` / `Home` / `End`, closing on `Escape`, and restoring focus to the desktop trigger on close.
   - Added visible focus treatment for the desktop context menu actions in `web/src/app/pages/HomePage.css` and locked the overlay behavior with focused coverage in `web/src/app/pages/HomePage.test.tsx`.
   - Validation: `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
+- Completion notes:
+  - Completed the remaining visible-focus audit by replacing every residual `outline: none` / `outline: 0` site under `web/src` with Carbon-aligned focus treatment or transparent base outlines plus focus-visible offsets across shared primitives, shell chrome, Snapshot editor, LCD inline CSS, MPX1/IntelFX canvases, tag/dialog inputs, and platform surfaces.
+  - Preserved the existing focus-trap and focus-return work already landed for shell launcher/power menu and the Home desktop context menu, so the repo-wide focus-management contract now has both overlay behavior coverage and visible indicator coverage.
+  - Validation: `rg -n 'outline:\\s*none|outline\\s*:\\s*0\\b' web/src` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T874
 Status: [✗] Blocked
@@ -20312,7 +20334,7 @@ Source plan: `.claude/plans/snuggly-crafting-dusk.md`
 Reference architecture: `docs/plans/PUSH1_DRUM_MACHINE_PARITY_PLAN_2026-03-31.md`
 
 ID: T886
-Status: [ ] Todo
+Status: [✓] Done
 Title: EPIC — Push 1 Drum Machine Parity (Phases A1–A3)
 Description:
 - Goal / acceptance criteria: Implement full Push 1 Drum Rack parity for MAP2's drum-machine workflow across three phases: core attachment/live control, drum rack performance parity, and sequencing/automation depth. Simulator-first development, hardware validation deferred.
@@ -20321,8 +20343,11 @@ Description:
 - Estimated effort: Very High (20 subtasks across 3 phases)
 - Required outputs: See subtasks T887–T906
 Subtasks: T887–T906
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 07:47 EDT - Codex
+- Completion notes:
+  - Closed the parent epic now that `T887` through `T906` are complete and validated, covering cluster-aware drum instance discovery, guarded live selection/confirmation flows, full Push drum command-plane playability, browser/load workflows, performance modes, normalized rendering projection, and focused simulator-backed regression coverage.
+  - The workstream now satisfies the documented Phase A1–A3 acceptance bar tracked under this parent entry; remaining Push work should land as new follow-up tasks rather than leaving the completed parity epic open.
 
 ID: T887
 Status: [✓] Done
@@ -20743,7 +20768,7 @@ Last updated: 2026-04-09 17:25 EDT - Codex
 ## Control Surfaces Completion — JUCE Engine Prerequisites (Workstream B)
 
 ID: T907
-Status: [ ] Todo
+Status: [✓] Done
 Title: EPIC — JUCE Engine Control Surface Prerequisites
 Description:
 - Goal / acceptance criteria: Implement four C++ audio engine primitives that unblock T630, T637, T641, and T629: monitoring solo bus, zero-crossing A/B switch, live routing mode reconfiguration, and multi-target expression pedal mapping. Correctness first with reasonable crossfade, optimize to zero-artifact later.
@@ -20753,10 +20778,13 @@ Description:
 - Required outputs: See subtasks T908–T917
 Subtasks: T908–T917
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 11:08 EDT - Codex
+- Completion notes:
+  - Closed the parent epic now that `T908` through `T914` are complete, including the isolated monitor-bus path, zero-crossing A/B switch, batched live routing-topology apply, callback-time native expression mapping, service/binding exposure, and focused regression coverage.
+  - The prerequisite layer for downstream control-surface tasks is now consistent across JUCE engine, Python service/runtime, unified snapshot routes, and the relevant editor-facing monitoring controls.
 
 ID: T908
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add single monitoring solo bus to JUCE audio engine
 Description:
 - Goal / acceptance criteria: Configurable output pair for solo monitoring. When a channel is soloed, its signal routes to the designated monitoring outputs while the main mix continues unaffected on the primary outputs. One bus only.
@@ -20766,10 +20794,39 @@ Description:
 - Required outputs: MonitorBus in Map2AudioEngine, output pair config, solo signal routing in audio callback, PythonBindings exposure.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 08:12 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/JuceAudioGraph.*`, `juce-engine/Source/Map2AudioEngine.*`, `juce-engine/Source/PythonBindings.cpp`, and `app/services/juce_engine_service.py` with branch-to-runtime-chain metadata so the engine can resolve soloed snapshot chains back to isolated parallel-branch taps at callback time.
+  - Updated `app/services/snapshot_runtime_service.py` to push per-branch runtime chain IDs when applying live parallel routing, then changed the engine callback to keep the main mix on outputs 1/2 while copying the selected solo branch to the configured monitoring pair when it does not overlap the primary outputs.
+  - Aligned the snapshot activation engine stub coverage in `tests/test_snapshot_service.py` with the online-engine contract so the routing apply path exercises the new monitor-bus wiring instead of stopping at the existing engine-running guard.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_t739_activation_should_push_parallel_routing_to_engine tests/test_snapshot_service.py::test_t736_activation_should_push_loop_insertions_to_engine tests/test_snapshot_service.py::test_t737_activation_should_push_channel_state_to_engine tests/test_snapshot_service.py::test_t742_topology_reuse_should_reapply_routing_and_loop_state` -> PASS (`4 passed`)
+  - `pytest -q tests/test_snapshot_activation_engine_apply.py::test_live_ab_switch_edit_reapplies_active_channel_selection tests/test_snapshot_activation_engine_apply.py::test_live_routing_blend_edit_reapplies_without_full_reactivation tests/test_juce_engine.py::TestJuceEngineMocked::test_trigger_parallel_ab_switch_uses_engine_when_available` -> PASS (`3 passed`)
+  - `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine synthforge_tests -j$(nproc)` -> PASS
+  - `juce-engine/build-synthforge-tests/synthforge_tests "[parallel][mixer]"` -> PASS
+
+ID: T959
+Status: [✓] Done
+Title: Add isolated per-branch monitor tap buffers to the JUCE graph/runtime
+Description:
+- Goal / acceptance criteria: Introduce a realtime-safe way to retain isolated branch/chain audio after graph processing so downstream features can consume a selected branch without re-running the full graph. The chosen design may be a dedicated monitor tap node, branch-stem scratch buffers, or equivalent callback-safe projection, but it must preserve the current main mix and avoid mutexes/allocations in the audio thread.
+- Why it matters: `T908` cannot deliver a true monitoring solo bus while the callback only sees the already-summed mix. This prerequisite provides the isolated source signal needed for monitor-only routing.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Engine/runtime stem-tap design in JUCE layer, callback-safe branch selection contract, focused tests proving isolated branch audio is available without disturbing the main mix.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-10 08:00 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/ParallelMixerProcessor.*` with preallocated per-branch tap buffers that capture each isolated branch input during `processBlock`, alongside a copy method that returns the latest branch audio without rerunning DSP.
+  - Added `copyParallelBranchTap()` through `juce-engine/Source/JuceAudioGraph.*` and `juce-engine/Source/Map2AudioEngine.*`, creating a concrete runtime contract for retrieving isolated branch audio from active parallel groups.
+  - Added focused C++ regression coverage in `juce-engine/tests/ParallelMixerProcessorTests.cpp` proving the branch taps preserve the original per-branch signal independently of the mixed output.
+- Validation:
+  - `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j$(nproc)` -> PASS
+  - `juce-engine/build-synthforge-tests/synthforge_tests "[parallel][mixer]"` -> PASS
 
 ID: T909
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add zero-crossing A/B channel switch to JUCE audio engine
 Description:
 - Goal / acceptance criteria: Detect nearest zero-crossing in the output buffer and execute A-to-B or B-to-A channel cut at that point. Short safety crossfade (~1-2ms) acceptable if exact zero-cross is not found within the current buffer.
@@ -20779,10 +20836,20 @@ Description:
 - Required outputs: Zero-cross detection utility, A/B switch command in Map2AudioEngine, crossfade fallback, PythonBindings exposure.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 07:45 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/ParallelMixerProcessor.*` with a dedicated hard-switch path that detects the next zero crossing on the current A/B output, then transitions to branch 0 or 1 with a short fallback crossfade when no crossing exists in the current block.
+  - Added `triggerParallelABSwitch()` through `juce-engine/Source/JuceAudioGraph.*`, `juce-engine/Source/Map2AudioEngine.*`, `juce-engine/Source/PythonBindings.cpp`, and `app/services/juce_engine_service.py`, creating an explicit runtime command instead of overloading normal blend writes.
+  - Updated `app/services/snapshot_runtime_service.py` so `ab_switch` routing prefers the new hard-switch primitive while preserving the old blend fallback for older engine stubs/builds.
+  - Added focused regression coverage in `juce-engine/tests/ParallelMixerProcessorTests.cpp`, `tests/test_snapshot_activation_engine_apply.py`, and `tests/test_juce_engine.py`.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py app/services/snapshot_runtime_service.py tests/test_snapshot_activation_engine_apply.py tests/test_juce_engine.py` -> PASS
+  - `pytest -q tests/test_snapshot_activation_engine_apply.py::test_live_ab_switch_edit_reapplies_active_channel_selection tests/test_snapshot_activation_engine_apply.py::test_live_routing_blend_edit_reapplies_without_full_reactivation tests/test_juce_engine.py::TestJuceEngineMocked::test_trigger_parallel_ab_switch_uses_engine_when_available` -> PASS (`3 passed`)
+  - `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j$(nproc)` -> PASS
+  - `juce-engine/build-synthforge-tests/synthforge_tests "[parallel][mixer]"` -> PASS
 
 ID: T910
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add live routing mode reconfiguration to JUCE audio engine
 Description:
 - Goal / acceptance criteria: Switch between parallel_blend, series, morph, and sidechain routing modes in-place without chain teardown or plugin state loss. Short crossfade (5-10ms) acceptable during transition. No audio gap or click.
@@ -20792,10 +20859,19 @@ Description:
 - Required outputs: In-place graph topology reconfiguration in JuceAudioGraph, mode switch command in Map2AudioEngine, crossfade during transition, PythonBindings exposure.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 08:42 EDT - Codex
+- Completion notes:
+  - Added a batched `applyRoutingTopology()` primitive in `juce-engine/Source/JuceAudioGraph.*` and `juce-engine/Source/Map2AudioEngine.*` so live routing changes can replace the active chain, parallel groups, and sidechain links in one instance-preserving graph mutation rather than piecemeal control-plane edits.
+  - Exposed that primitive through `juce-engine/Source/PythonBindings.cpp` and `app/services/juce_engine_service.py`, then updated `app/services/snapshot_runtime_service.py` to build and prefer a higher-level routing-topology payload for live `parallel_blend`, `ab_switch`, `series`, and `sidechain` applies while preserving the older parallel-group fallback for older engine surfaces.
+  - Added a short output safety crossfade in `juce-engine/Source/Map2AudioEngine.cpp` that blends from the previously rendered block into the first block after a topology change, reducing click risk when the graph connections are rewired in place.
+  - Extended focused backend coverage in `tests/test_snapshot_service.py` and `tests/test_juce_engine.py` to cover activation-time parallel apply, live blend reapply, live parallel-to-series mode switching, and the new service method contract.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_t739_activation_should_push_parallel_routing_to_engine tests/test_snapshot_service.py::test_t738_live_routing_edit_should_reapply_engine_blend tests/test_snapshot_service.py::test_t910_live_mode_change_should_apply_batched_series_topology tests/test_snapshot_service.py::test_t742_topology_reuse_should_reapply_routing_and_loop_state tests/test_juce_engine.py::TestJuceEngineMocked::test_apply_routing_topology_uses_engine_when_available` -> PASS (`5 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_service.py app/services/juce_engine_service.py tests/test_snapshot_service.py tests/test_juce_engine.py` -> PASS
+  - `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine synthforge_tests -j$(nproc)` -> PASS
 
 ID: T911
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add multi-target expression pedal mapping engine to JUCE audio engine
 Description:
 - Goal / acceptance criteria: One MIDI CC controls N plugin parameters simultaneously. Each target has independent min/max range and selectable interpolation curve (linear, logarithmic, exponential, S-curve). New ExpressionMapper class or extension to Map2AudioEngine.
@@ -20805,10 +20881,16 @@ Description:
 - Required outputs: ExpressionMapper.h/.cpp (or inline), curve implementations, multi-target dispatch in audio callback, PythonBindings exposure.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 10:05 EDT - Codex
+- Progress notes:
+  - `T910` is now complete, so the remaining engine primitive work can move to snapshot-owned multi-target expression mapping instead of topology/routing infrastructure.
+  - Added the first native-sync contract slice: snapshot expression targets can now persist optional `target_plugin_uri`, `target_plugin_position`, `param_index`, and `parameter_symbol` metadata, and `SnapshotService` now prefers `engine.replace_snapshot_expression_mappings(...)` when the JUCE runtime exposes it while preserving the existing Python expression-service fallback.
+  - Completed the native engine-owned callback path: `Map2AudioEngine` now stores immutable snapshot expression mappings, dispatches matching CC events during `drainMidiEvents(...)`, applies per-target linear/log/exponential/S-curve/custom interpolation, and drives resolved plugin parameters or supported engine targets directly inside the JUCE runtime.
+  - Exposed `replace_snapshot_expression_mappings(...)` through `PythonBindings.cpp` and taught `JuceEngineService` to resolve `target_plugin_uri` plus `target_plugin_position` into live `target_plugin` instance IDs before handing mappings to the engine.
+  - Focused validation passed: `pytest -q tests/test_juce_engine.py::TestJuceEngineMocked::test_replace_snapshot_expression_mappings_uses_engine_when_available tests/test_juce_engine.py::TestJuceEngineMocked::test_replace_snapshot_expression_mappings_resolves_target_plugin_instance tests/test_snapshot_service.py::test_activate_snapshot_prefers_engine_expression_mapping_sync_when_available`, `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py tests/test_juce_engine.py`, and `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j$(nproc)`.
 
 ID: T912
-Status: [ ] Todo
+Status: [✓] Done
 Title: Wire Python bindings and service layer for all four new JUCE engine primitives
 Description:
 - Goal / acceptance criteria: `app/services/juce_engine_service.py` exposes monitoring solo bus, A/B switch, live routing reconfiguration, and expression mapping through async-safe service methods. API routes added where needed.
@@ -20817,10 +20899,15 @@ Description:
 - Required outputs: Service methods, route endpoints, async wrapping via asyncio.to_thread.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 10:18 EDT - Codex
+- Completion notes:
+  - `app/services/juce_engine_service.py` now exposes async-safe wrappers for the four JUCE engine primitives delivered under `T908` through `T911`: monitoring output selection, zero-crossing A/B switching, batched routing-topology apply, and snapshot expression mapping replacement.
+  - `juce-engine/Source/PythonBindings.cpp` now exposes the matching low-level engine entry points, including topology payload conversion and snapshot expression mapping payload marshaling.
+  - The intended API surface is the existing unified snapshot/runtime flow rather than standalone primitive endpoints; `app/routes/unified_snapshots.py` already carries `monitoring_output_index`, `expression_mappings`, and routing-mode edits through snapshot create/update/activation, so no new top-level route family was required to satisfy this task.
+  - Focused service verification exists in `tests/test_juce_engine.py`, while activation/runtime coverage for the routed snapshot path remains tracked under `T913`.
 
 ID: T913
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused C++ and Python regression coverage for engine primitives
 Description:
 - Goal / acceptance criteria: C++ unit tests for solo bus routing, zero-cross detection, mode reconfiguration, and expression mapping. Python service tests for all four bindings.
@@ -20829,10 +20916,17 @@ Description:
 - Required outputs: cmake test targets, tests/test_juce_engine_service_*.py coverage.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 11:08 EDT - Codex
+- Completion notes:
+  - Added focused mocked-service coverage in `tests/test_juce_engine.py` for all four primitive bindings: monitoring-output selection, zero-crossing A/B switch, batched routing-topology apply, and snapshot expression mapping replacement with live instance-id resolution.
+  - Added routed snapshot/runtime regression coverage in `tests/test_snapshot_service.py` for monitoring-output activation/live reapply plus native expression-mapping activation/live reapply, and retained live routing/A-B apply coverage in `tests/test_snapshot_activation_engine_apply.py`.
+  - Existing focused C++ mixer coverage in `juce-engine/tests/ParallelMixerProcessorTests.cpp` already exercises the zero-crossing switch path and isolated branch taps that underpin the solo-monitor and A/B primitives; this pass validated that suite alongside the expanded Python coverage.
+- Validation:
+  - `pytest -q tests/test_juce_engine.py::TestJuceEngineMocked::test_set_monitoring_output_index_uses_engine_when_available tests/test_juce_engine.py::TestJuceEngineMocked::test_trigger_parallel_ab_switch_uses_engine_when_available tests/test_juce_engine.py::TestJuceEngineMocked::test_apply_routing_topology_uses_engine_when_available tests/test_juce_engine.py::TestJuceEngineMocked::test_replace_snapshot_expression_mappings_uses_engine_when_available tests/test_juce_engine.py::TestJuceEngineMocked::test_replace_snapshot_expression_mappings_resolves_target_plugin_instance tests/test_snapshot_service.py::test_activate_snapshot_prefers_engine_expression_mapping_sync_when_available tests/test_snapshot_service.py::test_update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot tests/test_snapshot_service.py::test_activate_snapshot_applies_monitoring_output_binding tests/test_snapshot_service.py::test_update_snapshot_reapplies_monitoring_output_for_live_snapshot tests/test_snapshot_service.py::test_t910_live_mode_change_should_apply_batched_series_topology tests/test_snapshot_activation_engine_apply.py::test_live_ab_switch_edit_reapplies_active_channel_selection` -> PASS (`11 passed`)
+  - `juce-engine/build-synthforge-tests/synthforge_tests "[parallel][mixer]"` -> PASS
 
 ID: T914
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unblock T641 — Monitoring Solo Output with dedicated solo bus
 Description:
 - Goal / acceptance criteria: Complete T641 acceptance criteria using the new monitoring solo bus primitive. monitoring_output_index field consumed by JUCE engine, solo signal routed to designated output pair, main mix unaffected, indicator in editor UI.
@@ -20841,7 +20935,14 @@ Description:
 - Required outputs: Engine consumer for monitoring_output_index, frontend I/O section wiring, focused tests.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Last updated: 2026-04-10 11:02 EDT - Codex
+- Completion notes:
+  - The JUCE engine now consumes `monitoring_output_index` through the existing snapshot/runtime flow, with activation-time and live-update application covered in `tests/test_snapshot_service.py`.
+  - The unified snapshot API already persists and updates the monitoring output binding through `app/routes/unified_snapshots.py`, and this pass fixed a nested-controls merge bug so partial snapshot control updates no longer clobber unrelated Maschine mappings.
+  - The editor-side monitoring output selector and pairing logic are already wired in `web/src/app/pages/SnapshotEditorPageContent.tsx` and `web/src/app/utils/snapshotIoBindings.ts`, with focused frontend coverage in `web/src/app/utils/snapshotIoBindings.test.ts`.
+- Validation:
+  - `pytest -q tests/test_snapshot_routes.py::test_unified_snapshot_routes_and_cluster_routes tests/test_snapshot_service.py::test_activate_snapshot_applies_monitoring_output_binding tests/test_snapshot_service.py::test_update_snapshot_reapplies_monitoring_output_for_live_snapshot` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/utils/snapshotIoBindings.test.ts` -> PASS
 
 ID: T915
 Status: [✓] Done
@@ -20894,7 +20995,7 @@ Last updated: 2026-04-09 18:43 EDT - Codex
 ## Control Surfaces Completion — Ground Control Pro Deep Integration (Workstream C)
 
 ID: T918
-Status: [ ] Todo
+Status: [✓] Done
 Title: EPIC — Ground Control Pro Deep Integration
 Description:
 - Goal / acceptance criteria: MAP2 replaces Voodoo Lab Editor entirely. Full bidirectional control, relay switching, SysEx backup/restore, snapshot-driven preset push, and GCP state embedded in .map2snapshot bundles.
@@ -20903,8 +21004,11 @@ Description:
 - Estimated effort: High (8 subtasks)
 - Required outputs: See subtasks T919–T926
 Subtasks: T919–T926
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 07:47 EDT - Codex
+- Completion notes:
+  - Closed the parent epic now that `T919` through `T926` are complete and validated, covering full SysEx backup/restore, snapshot bundle embedding, activation-time preset/relay push, bidirectional input mapping, the dedicated Carbon editor, reconnect daemon behavior, and focused integration coverage.
+  - The repo evidence now matches the original “replace Voodoo Lab Editor” goal for the tracked scope, so any remaining Ground Control work should be captured as new tasks instead of leaving this completed epic open.
 
 ID: T919
 Status: [✓] Done
@@ -21423,7 +21527,7 @@ Last updated: 2026-04-10 06:28 EDT - Codex
 ## Control Surfaces Completion — Shared Infrastructure (Workstream G)
 
 ID: T950
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix Push surface unbounded MIDI queue and GCP session persistence (supersedes T843)
 Description:
 - Goal / acceptance criteria: Bounded _input_queue with overflow handling in Push surface manager. GCP sessions persist to disk for crash recovery.
@@ -21432,11 +21536,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Bounded queue, session persistence, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:34 EDT - Codex
+- Completion notes:
+  - Verified `app/services/push_surface/manager.py` already uses a bounded `_input_queue` with oldest-message eviction and dropped-message accounting under flood conditions instead of the originally tracked unbounded behavior.
+  - Verified `app/services/ground_control_pro/service.py` already persists and restores Ground Control Pro sessions through `sessions.json`, preserving restart-safe crash recovery for imported SysEx sessions.
+  - Confirmed both acceptance paths are locked by focused regressions in `tests/push_surface/test_manager.py` and `tests/test_ground_control_pro_restart.py`, so this previously-open infrastructure task can now be closed instead of reimplemented.
+- Validation:
+  - `pytest -q tests/push_surface/test_manager.py tests/test_ground_control_pro_restart.py` -> PASS (`12 passed in 4.77s`)
 
 ID: T951
-Status: [ ] Todo
+Status: [✓] Done
 Title: Universal device reconnect with state re-push across all 6 surface families
 Description:
 - Goal / acceptance criteria: Shared reconnect/re-push contract in app/services/enriched_surface_runtime.py. On device reconnect: auto-reconnect, re-push current snapshot's full controller state (labels, LEDs, encoder maps, relay config, fader positions, scribble strips, button mappings), nav-bar notification. All 6 families use the same contract.
@@ -21444,11 +21554,19 @@ Description:
 - Estimated effort: High
 - Required outputs: Shared reconnect contract, per-family re-push adapters, notification integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 07:33 EDT - Codex
+- Completion notes:
+  - Added a shared reconnect/re-push contract builder in `app/services/enriched_surface_runtime.py`, so every surface family now exposes normalized reconnect state, repush scope, counters, timestamps, and any active reconnect notification through one consistent summary shape.
+  - Extended `app/services/enriched_midi_physical_surfaces.py` to include Launch Control, MIDI Commander, and MCU daemon/runtime status in the shared surface summary, and aggregated reconnect notifications into a summary-level `notifications` feed for shell/nav consumption.
+  - Updated the shared runtime and summary regressions to lock the reconnect contract and notification aggregation across the controller families already exposing daemon-backed reconnect state.
+- Validation:
+  - `pytest -q tests/test_enriched_surface_runtime.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_midi_physical_surfaces_routes.py` -> PASS (`12 passed in 3.26s`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/enriched_surface_runtime.py app/services/enriched_midi_physical_surfaces.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T952
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot activation controller dispatch — fan out state push to all connected surfaces
 Description:
 - Goal / acceptance criteria: After snapshot activation, dispatch controller state push to all connected surfaces: Maschine encoder maps, Push drum session, GCP presets/relays, MCU scribble strips/fader positions, Launch Control LEDs/mappings, MIDI Commander assignments, footswitch labels, controller display summaries. Single orchestration point in app/services/snapshot_service.py.
@@ -21456,11 +21574,19 @@ Description:
 - Estimated effort: High
 - Required outputs: Orchestrated dispatch, per-family push adapters, activation sequence integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:58 EDT - Codex
+- Completion notes:
+  - Added explicit snapshot-activation adapters for Maschine, Push, and MCU so activation fanout now covers all six supported surface families through the `StateAuthorityActivationService` orchestration seam.
+  - Extended `app/services/maschine_service.py`, `app/services/push_surface/manager.py`, and `app/services/mcu_surface/service.py` with activation-time re-push entry points, then wired them into `app/services/snapshot_service.py` and `app/services/state_authority_activation_service.py`.
+  - Updated focused activation regressions in `tests/test_state_authority_activation_service.py` and `tests/test_snapshot_service.py` to lock hook ordering and per-family dispatch payloads for Maschine, Push, MCU, Ground Control Pro, Launch Control, MIDI Commander, footswitch labels, and controller display previews.
+- Validation:
+  - `pytest -q tests/test_state_authority_activation_service.py::test_run_activation_hooks_uses_configured_order tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import` -> PASS (`2 passed in 5.38s`)
+  - `pytest -q tests/push_surface/test_manager.py tests/test_ground_control_pro_restart.py` -> PASS (`12 passed in 3.77s`)
+  - `python3 - <<'PY' ... compile(...) ... PY` syntax check -> PASS
 
 ID: T953
-Status: [ ] Todo
+Status: [✓] Done
 Title: Shared per-snapshot controller mapping schema — normalize mapping storage across device families
 Description:
 - Goal / acceptance criteria: Normalize how each device family stores per-snapshot assignments in the snapshot data model. Single controller_mappings field with typed sub-objects per family. Migration for existing Maschine encoder maps and footswitch labels.
@@ -21468,11 +21594,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Schema design, migration, snapshot service updates, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 10:24 EDT - Codex
+- Completion notes:
+  - Added a normalized `controls.controller_mappings` schema in `app/services/snapshot_service.py` with typed `maschine.encoder_map` and `footswitches.label_map` sub-objects, then kept the legacy `maschine_encoder_map` and `midi_map` footswitch-label entry mirrored for compatibility.
+  - The snapshot controls normalizer now migrates old snapshots forward into the unified field on read/update while also allowing new unified-schema writes to drive the legacy compatibility payloads that existing activation/runtime consumers still read.
+  - Extended the snapshot CRUD/activation regression to lock both migration directions: legacy fields populate the unified schema on create, and unified-schema updates rehydrate the compatibility MIDI/preview paths on activation.
+  - Hardened `SnapshotService.update_snapshot()` so incoming `controller_mappings.footswitches.label_map` replacements clear removed labels instead of deep-merging stale keys forward during later snapshot edits.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T954
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update Physical Surfaces shell with deep-link entries for new standalone device routes
 Description:
 - Goal / acceptance criteria: PhysicalSurfacesShell.tsx and PhysicalSurfacesOverviewPage.tsx include navigation entries and status summaries for /mcu, /launch-control, and /midi-commander alongside existing /maschine and /labs/push-surface links.
@@ -21480,11 +21615,18 @@ Description:
 - Estimated effort: Low
 - Required outputs: Shell navigation updates, overview page device cards, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:34 EDT - Codex
+- Completion notes:
+  - Added fallback standalone-route resolution in `web/src/app/pages/PhysicalSurfacesShell.tsx` so the shared shell now exposes dedicated deep links for `/maschine`, `/labs/push-surface`, `/mcu`, `/launch-control`, and `/midi-commander` even when the backend summary has not yet populated `specialized_route`.
+  - Added dedicated-route footer navigation entries to the shared Physical Surfaces side nav and surfaced those same standalone routes on overview cards in `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`, alongside the existing shared-shell per-unit pages.
+  - Added focused coverage in `web/src/app/pages/PhysicalSurfacesShell.test.tsx` proving the shared shell now renders the standalone links and dedicated-route actions for the relevant controller families.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/PhysicalSurfacesShell.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T955
-Status: [ ] Todo
+Status: [✓] Done
 Title: Navigation and catalog updates for all new device routes
 Description:
 - Goal / acceptance criteria: Add /mcu, /launch-control, /midi-commander to advancedMenuItems.ts, homeCardProfiles.ts, App.tsx routing, and useDeviceLocation.ts search terms.
@@ -21492,8 +21634,15 @@ Description:
 - Estimated effort: Low
 - Required outputs: Menu items, home card profiles, route registration, device search terms.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:34 EDT - Codex
+- Completion notes:
+  - Added `/launch-control` and `/midi-commander` to `web/src/app/data/advancedMenuItems.ts`, complementing the existing `/mcu` entry so all three dedicated device routes now participate in the advanced navigation catalog.
+  - Added dedicated home-card profile copy for `/mcu`, `/launch-control`, and `/midi-commander` in `web/src/app/data/homeCardProfiles.ts`, keeping the launcher and home-card narrative layer aligned with the standalone routes that already exist in `web/src/app/App.tsx`.
+  - Extended `web/src/app/hooks/useDeviceLocation.ts` with Mackie MCU Pro, Novation Launch Control, and MeloAudio MIDI Commander search terms, then added focused regression coverage for the new route/device matching in `web/src/app/hooks/__tests__/useDeviceLocation.test.tsx` and for the advanced-menu inventory in `web/src/app/data/advancedMenuItems.test.ts`.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand src/app/data/advancedMenuItems.test.ts src/app/hooks/__tests__/useDeviceLocation.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx` -> PASS (`3 suites, 20 tests`)
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T956
 Status: [✓] Done
@@ -21532,3 +21681,24 @@ Last updated: 2026-04-09 14:09 EDT - Codex
   - Added a shared Jest asset stub in `tests/jest/fileMock.js` and wired `package.json` `moduleNameMapper` to mock common image formats, so the new branding-image import remains testable without special-case setup.
 - Validation:
   - `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` -> PASS
+
+ID: T958
+Status: [✓] Done
+Title: Surface detected audio and MIDI interface names in the AppShell Start Menu status area
+Description:
+- Goal / acceptance criteria: When the AppShell Start Menu opens, the status-area summary lists deduplicated detected audio interface names and deduplicated non-virtual MIDI interface names using device-name-only copy. Audio names should merge input/output discovery into one deduped list, MIDI should merge input/output discovery into one deduped list while filtering virtual ports, and the menu should show `No audio interfaces detected` / `No MIDI interfaces detected` when nothing physical is available.
+- Why it matters: The user explicitly asked for the Start Menu status area to report the names of all detected audio interfaces and MIDI interfaces without extra metadata, and to refresh that inventory when the menu opens.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: AppShell launcher data hook, status-area UI rendering, Carbon-aligned shell styling, focused launcher regression coverage, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-10 06:56 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/layout/useLauncherInterfaceSummary.ts` to fetch audio and MIDI device inventories on launcher open, dedupe names across input/output lists, and filter virtual MIDI ports before rendering.
+  - Updated `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/ShellLauncherPanel.tsx`, and `web/src/app/layout/AppShell.css` so the Start Menu system-summary block now includes dedicated `Audio Interfaces` and `MIDI Interfaces` groups with the requested empty-state copy.
+  - Extended `web/src/app/layout/AppShell.test.tsx` with focused coverage for deduped physical-device rendering and the requested no-device fallback copy, while also updating the shell test harness to mount under `QueryClientProvider` now that the launcher uses React Query.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS

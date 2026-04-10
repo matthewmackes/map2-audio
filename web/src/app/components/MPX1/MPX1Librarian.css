@@ -1,6 +1,6 @@
 .mpx1-library {
   display: grid;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   min-height: 520px;
 }
 
@@ -9,7 +9,7 @@
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   display: grid;
   gap: 8px;
 }
@@ -169,7 +169,7 @@
 }
 
 .mpx1-library__empty {
-  padding: 14px;
+  padding: var(--cds-spacing-05, 1rem);
   color: var(--interactive);
   font-size: var(--type-label);
 }

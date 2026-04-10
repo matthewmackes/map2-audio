@@ -10,7 +10,10 @@ import pytest
 from app import database as database_module
 import app.services.ground_control_pro as ground_control_pro_module
 import app.services.launch_control_surface as launch_control_surface_module
+import app.services.maschine_service as maschine_service_module
 import app.services.midi_commander_surface as midi_commander_surface_module
+import app.services.mcu_surface as mcu_surface_module
+import app.services.push_surface as push_surface_module
 from app.services import audio_state_authority as audio_state_authority_module
 from app.services import performance_brain_authority_sync as performance_brain_authority_sync_module
 from app.services import performance_metrics as performance_metrics_module
@@ -68,7 +71,10 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     scheduled_health_checks: list[dict[str, object]] = []
     footswitch_pushes: list[dict[str, object]] = []
     controller_display_pushes: list[dict[str, object]] = []
+    maschine_pushes: list[dict[str, object]] = []
+    push_surface_pushes: list[dict[str, object]] = []
     gcp_pushes: list[dict[str, object]] = []
+    mcu_pushes: list[dict[str, object]] = []
     launch_control_pushes: list[dict[str, object]] = []
     midi_commander_pushes: list[dict[str, object]] = []
     hook_order: list[str] = []
@@ -104,6 +110,35 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 "transport": {"port_index": 0, "port_name": "Ground Control Pro Out"},
             }
 
+    class _FakeMaschineService:
+        async def push_snapshot_activation(self, session, **kwargs):
+            hook_order.append("maschine")
+            maschine_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "encoder_assignment_count": 1,
+                "audio_grid_block_count": 2,
+            }
+
+    class _FakePushSurfaceManager:
+        async def push_snapshot_activation(self, **kwargs):
+            hook_order.append("push_surface")
+            push_surface_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "active_device_id": "push:main",
+                "active_page": "home",
+            }
+
+    class _FakeMcuSurfaceService:
+        async def push_snapshot_activation(self, **kwargs):
+            hook_order.append("mcu")
+            mcu_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "destination_ports": ["mcu-out"],
+            }
+
     class _FakeLaunchControlService:
         async def push_snapshot_activation(self, **kwargs):
             hook_order.append("launch_control")
@@ -135,6 +170,21 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         ground_control_pro_module,
         "get_ground_control_pro_service",
         lambda: _FakeGroundControlProService(),
+    )
+    monkeypatch.setattr(
+        maschine_service_module,
+        "get_maschine_service",
+        lambda: _FakeMaschineService(),
+    )
+    monkeypatch.setattr(
+        push_surface_module,
+        "get_push_surface_manager",
+        lambda: _FakePushSurfaceManager(),
+    )
+    monkeypatch.setattr(
+        mcu_surface_module,
+        "get_mcu_surface_service",
+        lambda: _FakeMcuSurfaceService(),
     )
     monkeypatch.setattr(
         launch_control_surface_module,
@@ -299,6 +349,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert created["io_bindings"]["input_device"] == "Capture 1"
             assert created["controls"]["midi_map"][0]["program_number"] == 10
             assert created["controls"]["maschine_encoder_map"]["enc2"]["param_id"] == "gain"
+            assert created["controls"]["controller_mappings"]["maschine"]["encoder_map"]["enc2"]["param_id"] == "gain"
+            assert created["controls"]["controller_mappings"]["footswitches"]["label_map"] == {"1": "Clean", "2": "Lead"}
             assert created["lineage"]["derived_from_snapshot_id"] is None
             assert created["activated_at"] is None
             assert created["paths"][0]["id"] == "channel-0"
@@ -336,9 +388,16 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 input_device="Capture 2",
                 output_device=None,
                 controls_payload={
-                    "maschine_encoder_map": {
-                        "enc3": {"block_id": "block-2", "param_id": "mix", "label": "Mix"},
-                    }
+                    "controller_mappings": {
+                        "maschine": {
+                            "encoder_map": {
+                                "enc3": {"block_id": "block-2", "param_id": "mix", "label": "Mix"},
+                            },
+                        },
+                        "footswitches": {
+                            "label_map": {"1": "Rhythm", "3": "Lead+"},
+                        },
+                    },
                 },
             )
             assert renamed is not None
@@ -349,6 +408,12 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert renamed["output_device"] is None
             assert renamed["controls"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
             assert renamed["controls"]["maschine_encoder_map"]["enc1"] is None
+            assert renamed["controls"]["controller_mappings"]["maschine"]["encoder_map"]["enc3"]["param_id"] == "mix"
+            assert renamed["controls"]["controller_mappings"]["footswitches"]["label_map"] == {"1": "Rhythm", "3": "Lead+"}
+            assert renamed["controls"]["midi_map"] == [
+                {"action": "load_snapshot", "program_number": 10},
+                {"action": "footswitch_label_map", "label_map": {"1": "Rhythm", "3": "Lead+"}, "max_length": 8},
+            ]
 
             updated = await service.add_channel(
                 created["id"],
@@ -373,7 +438,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert activated["snapshot_data"]["tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["active_tempo_bpm"] == 140.0
             assert activated["snapshot_data"]["tempo_source"] == "stored"
-            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["display_label"] == "Clean"
+            assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["display_label"] == "Rhythm"
             assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["target_plugin_uri"] == "urn:test:plugin"
             assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["slot_state"] == "active"
             assert activated["snapshot_data"]["controller_display_preview"]["slots"][0]["key_parameter"]["parameter_symbol"] == "gain"
@@ -386,11 +451,35 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     "snapshot_name": "UnifiedSnapshot",
                     "midi_map_entries": [
                         {"action": "load_snapshot", "program_number": 10},
-                        {"action": "footswitch_label_map", "label_map": {"1": "Clean", "2": "Lead"}},
+                        {"action": "footswitch_label_map", "label_map": {"1": "Rhythm", "3": "Lead+"}, "max_length": 8},
                     ],
                 }
             ]
-            assert hook_order == ["footswitch", "ground_control_pro", "launch_control", "midi_commander", "controller_display"]
+            assert hook_order == [
+                "footswitch",
+                "maschine",
+                "push_surface",
+                "ground_control_pro",
+                "mcu",
+                "launch_control",
+                "midi_commander",
+                "controller_display",
+            ]
+            assert maschine_pushes[0]["snapshot_id"] == created["id"]
+            assert maschine_pushes[0]["snapshot_name"] == "UnifiedSnapshot"
+            assert maschine_pushes[0]["controls_payload"]["maschine_encoder_map"]["enc3"]["param_id"] == "mix"
+            assert maschine_pushes[0]["controls_payload"]["midi_map"] == [
+                {"action": "load_snapshot", "program_number": 10},
+                {"action": "footswitch_label_map", "label_map": {"1": "Rhythm", "3": "Lead+"}, "max_length": 8},
+            ]
+            assert maschine_pushes[0]["controls_payload"]["automation_lanes"] == []
+            assert maschine_pushes[0]["controls_payload"]["expression_mappings"] == []
+            assert push_surface_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
+                }
+            ]
             assert gcp_pushes == [
                 {
                     "snapshot_id": created["id"],
@@ -417,6 +506,12 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                             },
                         },
                     },
+                }
+            ]
+            assert mcu_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
                 }
             ]
             assert launch_control_pushes == [
@@ -448,7 +543,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             ]
             assert controller_display_pushes[0]["snapshot_id"] == created["id"]
             assert controller_display_pushes[0]["snapshot_name"] == "UnifiedSnapshot"
-            assert controller_display_pushes[0]["preview_payload"]["slots"][0]["display_label"] == "Clean"
+            assert controller_display_pushes[0]["preview_payload"]["slots"][0]["display_label"] == "Rhythm"
             assert controller_display_pushes[0]["preview_payload"]["slots"][0]["key_parameter"]["formatted_value"] == "0.5"
             assert midi_commander_pushes == [
                 {
@@ -473,12 +568,16 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     },
                 }
             ]
-            assert (await service.get_activation_hook_plan())[:5] == [
+            assert (await service.get_activation_hook_plan())[:9] == [
                 "push_footswitch_labels",
+                "push_maschine_assignments",
+                "push_push_surface_state",
                 "push_ground_control_pro_assignments",
+                "push_mcu_surface_state",
                 "push_launch_control_assignments",
                 "push_midi_commander_assignments",
                 "push_controller_display_preview",
+                "schedule_preload",
             ]
 
             live_snapshot = await service.get_live_snapshot()
@@ -489,7 +588,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
             assert live_snapshot["snapshot_revision"] == activated["snapshot_revision"]
             assert live_snapshot["tempo_bpm"] == 140.0
             assert live_snapshot["active_tempo_bpm"] == 140.0
-            assert live_snapshot["controller_display_preview"]["slots"][0]["display_label"] == "Clean"
+            assert live_snapshot["controller_display_preview"]["slots"][0]["display_label"] == "Rhythm"
 
             runtime_state_service = SnapshotRuntimeStateService(session)
             runtime_live_state = await runtime_state_service.get_live_state()
@@ -4972,6 +5071,10 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
                             "id": "wah-target",
                             "param_id": "engine.wah_freq",
                             "param_label": "Wah",
+                            "target_plugin_uri": "",
+                            "target_plugin_position": None,
+                            "param_index": None,
+                            "parameter_symbol": "",
                             "out_min": 0.1,
                             "out_max": 0.9,
                             "curve": "linear",
@@ -4982,6 +5085,10 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
                             "id": "delay-target",
                             "param_id": "engine.delay_mix",
                             "param_label": "Delay Mix",
+                            "target_plugin_uri": "",
+                            "target_plugin_position": None,
+                            "param_index": None,
+                            "parameter_symbol": "",
                             "out_min": 0.2,
                             "out_max": 0.8,
                             "curve": "s_curve",
@@ -5000,6 +5107,10 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
                     "cc_max": 127,
                     "param_id": "engine.wah_freq",
                     "param_label": "Wah",
+                    "target_plugin_uri": "",
+                    "target_plugin_position": None,
+                    "param_index": None,
+                    "parameter_symbol": "",
                     "out_min": 0.1,
                     "out_max": 0.9,
                     "curve": "linear",
@@ -5014,6 +5125,10 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
                     "cc_max": 127,
                     "param_id": "engine.delay_mix",
                     "param_label": "Delay Mix",
+                    "target_plugin_uri": "",
+                    "target_plugin_position": None,
+                    "param_index": None,
+                    "parameter_symbol": "",
                     "out_min": 0.2,
                     "out_max": 0.8,
                     "curve": "s_curve",
@@ -5032,13 +5147,363 @@ def test_activate_snapshot_syncs_expression_mappings_and_automation_lanes(tmp_pa
     asyncio.run(_run())
 
 
+def test_activate_snapshot_prefers_engine_expression_mapping_sync_when_available(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _ExpressionServiceStub:
+        def __init__(self):
+            self.calls = []
+
+        def replace_snapshot_assignments(self, entries):
+            self.calls.append([dict(entry) for entry in entries])
+            return {
+                "cleared_count": 1,
+                "applied_count": len(entries),
+                "active_snapshot_count": len(entries),
+            }
+
+    class _RuntimeEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.expression_calls: list[list[dict[str, object]]] = []
+
+        async def set_all_midi_commands(self, commands):
+            self.commands = [dict(command) for command in commands]
+            return True
+
+        async def replace_snapshot_expression_mappings(self, entries):
+            self.expression_calls.append([dict(entry) for entry in entries])
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return None
+
+    expression_stub = _ExpressionServiceStub()
+    runtime_engine_stub = _RuntimeEngineStub()
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: runtime_engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "get_expression_service", lambda: expression_stub)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="NativeExpressionSnapshot",
+                controls_payload={
+                    "expression_mappings": [
+                        {
+                            "id": "snapshot-filter",
+                            "label": "EXP Native",
+                            "cc": 1,
+                            "channel": 0,
+                            "targets": [
+                                {
+                                    "id": "native-target",
+                                    "param_id": "plugin.filter_cutoff",
+                                    "param_label": "Filter Cutoff",
+                                    "target_plugin_uri": "urn:test:plugin",
+                                    "target_plugin_position": 0,
+                                    "param_index": 2,
+                                    "parameter_symbol": "cutoff",
+                                    "out_min": 0.2,
+                                    "out_max": 0.9,
+                                    "curve": "logarithmic",
+                                }
+                            ],
+                        }
+                    ],
+                },
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Test Plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"2": 0.5},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "series",
+                        "active_channel_key": "channel-0",
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            assert expression_stub.calls == []
+            assert runtime_engine_stub.expression_calls == [[
+                {
+                    "id": "snapshot-filter:native-target",
+                    "cc": 1,
+                    "channel": 0,
+                    "cc_min": 0,
+                    "cc_max": 127,
+                    "param_id": "plugin.filter_cutoff",
+                    "param_label": "Filter Cutoff",
+                    "target_plugin_uri": "urn:test:plugin",
+                    "target_plugin_position": 0,
+                    "param_index": 2,
+                    "parameter_symbol": "cutoff",
+                    "out_min": 0.2,
+                    "out_max": 0.9,
+                    "curve": "logarithmic",
+                    "custom_curve": [],
+                    "active": True,
+                }
+            ]]
+            assert activated["runtime_live_state"]["runtime_metrics"]["expression_mappings"]["reason"] == "engine_applied"
+
+    asyncio.run(_run())
+
+
+def test_update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    class _ExpressionServiceStub:
+        def __init__(self):
+            self.calls = []
+
+        def replace_snapshot_assignments(self, entries):
+            self.calls.append([dict(entry) for entry in entries])
+            return {
+                "cleared_count": 1,
+                "applied_count": len(entries),
+                "active_snapshot_count": len(entries),
+            }
+
+    class _RuntimeEngineStub:
+        is_available = True
+        is_running = True
+
+        def __init__(self) -> None:
+            self.expression_calls: list[list[dict[str, object]]] = []
+
+        async def set_all_midi_commands(self, commands):
+            self.commands = [dict(command) for command in commands]
+            return True
+
+        async def replace_snapshot_expression_mappings(self, entries):
+            self.expression_calls.append([dict(entry) for entry in entries])
+            return True
+
+        async def get_topology_mutation_stats(self):
+            return None
+
+    expression_stub = _ExpressionServiceStub()
+    runtime_engine_stub = _RuntimeEngineStub()
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: runtime_engine_stub)
+    monkeypatch.setattr(snapshot_service_module, "get_expression_service", lambda: expression_stub)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="LiveNativeExpressionSnapshot",
+                controls_payload={
+                    "expression_mappings": [
+                        {
+                            "id": "snapshot-filter",
+                            "label": "EXP Native",
+                            "cc": 1,
+                            "channel": 0,
+                            "targets": [
+                                {
+                                    "id": "native-target",
+                                    "param_id": "plugin.filter_cutoff",
+                                    "param_label": "Filter Cutoff",
+                                    "target_plugin_uri": "urn:test:plugin",
+                                    "target_plugin_position": 0,
+                                    "param_index": 2,
+                                    "parameter_symbol": "cutoff",
+                                    "out_min": 0.2,
+                                    "out_max": 0.9,
+                                    "curve": "logarithmic",
+                                }
+                            ],
+                        }
+                    ],
+                },
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-0",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:plugin",
+                                    "name": "Test Plugin",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {"2": 0.5},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "series",
+                        "active_channel_key": "channel-0",
+                        "series_order": ["channel-0"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            updated = await service.update_snapshot(
+                created["id"],
+                controls_payload={
+                    "expression_mappings": [
+                        {
+                            "id": "snapshot-filter",
+                            "label": "EXP Native",
+                            "cc": 11,
+                            "channel": 1,
+                            "targets": [
+                                {
+                                    "id": "native-target",
+                                    "param_id": "plugin.filter_cutoff",
+                                    "param_label": "Filter Cutoff",
+                                    "target_plugin_uri": "urn:test:plugin",
+                                    "target_plugin_position": 0,
+                                    "param_index": 2,
+                                    "parameter_symbol": "cutoff",
+                                    "out_min": 0.3,
+                                    "out_max": 0.8,
+                                    "curve": "exponential",
+                                }
+                            ],
+                        }
+                    ],
+                },
+            )
+
+            assert updated is not None
+            assert expression_stub.calls == []
+            assert len(runtime_engine_stub.expression_calls) == 2
+            assert runtime_engine_stub.expression_calls[-1] == [
+                {
+                    "id": "snapshot-filter:native-target",
+                    "cc": 11,
+                    "channel": 1,
+                    "cc_min": 0,
+                    "cc_max": 127,
+                    "param_id": "plugin.filter_cutoff",
+                    "param_label": "Filter Cutoff",
+                    "target_plugin_uri": "urn:test:plugin",
+                    "target_plugin_position": 0,
+                    "param_index": 2,
+                    "parameter_symbol": "cutoff",
+                    "out_min": 0.3,
+                    "out_max": 0.8,
+                    "curve": "exponential",
+                    "custom_curve": [],
+                    "active": True,
+                }
+            ]
+
+    asyncio.run(_run())
+
+
 class _OpenGapMatrixEngineStub:
     def __init__(self) -> None:
-        self.is_available = False
-        self.is_running = False
+        self.is_available = True
+        self.is_running = True
         self.loop_calls: list[tuple[int, list[dict[str, object]]]] = []
+        self.apply_routing_topology_calls: list[dict[str, object]] = []
         self.parallel_group_calls: list[tuple[int, int]] = []
         self.parallel_branch_calls: list[tuple[int, int, int, int]] = []
+        self.parallel_branch_chain_id_calls: list[tuple[int, int, int]] = []
         self.parallel_blend_calls: list[tuple[int, float]] = []
         self.chain_mute_calls: list[tuple[int, bool]] = []
         self.chain_solo_calls: list[tuple[int, bool]] = []
@@ -5056,6 +5521,10 @@ class _OpenGapMatrixEngineStub:
     async def get_topology_mutation_stats(self):
         return None
 
+    async def apply_routing_topology(self, spec: dict[str, object]) -> bool:
+        self.apply_routing_topology_calls.append(dict(spec))
+        return True
+
     async def set_chain_loop_insertions(self, chain_id: int, insertions: list[dict[str, object]]) -> bool:
         self.loop_calls.append((chain_id, [dict(entry) for entry in insertions]))
         return True
@@ -5066,6 +5535,10 @@ class _OpenGapMatrixEngineStub:
 
     async def add_to_parallel_branch(self, group_id: int, branch_index: int, plugin_id: int, position: int = -1) -> bool:
         self.parallel_branch_calls.append((group_id, branch_index, plugin_id, position))
+        return True
+
+    async def set_parallel_branch_chain_id(self, group_id: int, branch_index: int, chain_id: int) -> bool:
+        self.parallel_branch_chain_id_calls.append((group_id, branch_index, chain_id))
         return True
 
     async def set_parallel_ab_blend(self, group_id: int, blend: float) -> None:
@@ -5293,9 +5766,11 @@ def test_t739_activation_should_push_parallel_routing_to_engine(tmp_path, monkey
             },
         )
         assert activated is not None
-        assert engine_stub.parallel_group_calls
-        assert engine_stub.parallel_branch_calls
-        assert engine_stub.parallel_blend_calls
+        assert engine_stub.apply_routing_topology_calls
+        topology = engine_stub.apply_routing_topology_calls[-1]
+        assert topology["chain_order"] == []
+        assert topology["parallel_groups"]
+        assert topology["parallel_groups"][0]["branches"]
 
     asyncio.run(_run())
 
@@ -5362,7 +5837,7 @@ def test_t738_live_routing_edit_should_reapply_engine_blend(tmp_path, monkeypatc
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None
 
-            before_calls = len(engine_stub.parallel_blend_calls)
+            before_calls = len(engine_stub.apply_routing_topology_calls)
             updated = await service.update_routing(
                 created["id"],
                 {"blend_positions": {"channel-a": 25.0, "channel-b": 75.0}},
@@ -5370,7 +5845,49 @@ def test_t738_live_routing_edit_should_reapply_engine_blend(tmp_path, monkeypatc
             assert updated is not None
             assert updated["routing_requires_reactivation"] is False
             assert updated["routing_apply"]["applied"] is True
-            assert len(engine_stub.parallel_blend_calls) > before_calls
+            assert len(engine_stub.apply_routing_topology_calls) > before_calls
+            latest = engine_stub.apply_routing_topology_calls[-1]
+            assert latest["parallel_groups"][0]["ab_blend"] == pytest.approx(0.75)
+
+    asyncio.run(_run())
+
+
+def test_t910_live_mode_change_should_apply_batched_series_topology(tmp_path, monkeypatch):
+    async def _run():
+        service, created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                    {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                ],
+                "chains": [
+                    {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                    {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                ],
+                "routing": {
+                    "mode": "parallel_blend",
+                    "active_channel_key": "channel-a",
+                    "blend_positions": {"channel-a": 100.0, "channel-b": 0.0},
+                    "series_order": ["channel-a", "channel-b"],
+                },
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+
+        updated = await service.update_routing(
+            created["id"],
+            {"mode": "series", "series_order": ["channel-a", "channel-b"]},
+        )
+        assert updated is not None
+        assert updated["routing_mode_changed_live"] is True
+        assert updated["routing_apply"]["applied"] is True
+        topology = engine_stub.apply_routing_topology_calls[-1]
+        assert topology["parallel_groups"] == []
+        assert topology["sidechain_connections"] == []
+        assert topology["chain_order"] == [1, 2]
 
     asyncio.run(_run())
 

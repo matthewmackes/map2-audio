@@ -67,7 +67,11 @@ from app.services.snapshot_system_blocks import (
     extract_chain_system_blocks,
     is_system_noise_gate_loader_state,
 )
-from app.services.snapshot_footswitch_label_service import push_snapshot_footswitch_labels
+from app.services.snapshot_footswitch_label_service import (
+    extract_snapshot_footswitch_label_map,
+    push_snapshot_footswitch_labels,
+    replace_snapshot_footswitch_label_map,
+)
 from app.services.state_authority_document_service import (
     StateAuthorityDocumentService,
 )
@@ -117,6 +121,40 @@ _MIDI_COMMANDER_EXTENSION_KEY = "midi_commander"
 _snapshot_preload_tasks: dict[str, asyncio.Task[None]] = {}
 _TEMPLATE_LINK_NAMESPACE = "state_authority"
 _TEMPLATE_LINK_KEY = "template_link"
+
+
+def _normalize_controller_mappings_payload(
+    value: Any,
+    *,
+    fallback_midi_map: list[dict[str, Any]],
+    fallback_maschine_encoder_map: dict[str, Any],
+) -> dict[str, Any]:
+    payload = dict(value or {}) if isinstance(value, dict) else {}
+    maschine_payload = payload.get("maschine") if isinstance(payload.get("maschine"), dict) else {}
+    footswitch_payload = payload.get("footswitches") if isinstance(payload.get("footswitches"), dict) else {}
+
+    normalized_encoder_map = normalize_maschine_encoder_map(
+        maschine_payload.get("encoder_map", fallback_maschine_encoder_map)
+    )
+    if isinstance(footswitch_payload.get("label_map"), dict):
+        normalized_label_map = extract_snapshot_footswitch_label_map(
+            [{"action": "footswitch_label_map", "label_map": footswitch_payload.get("label_map")}]
+        )
+    else:
+        normalized_label_map = extract_snapshot_footswitch_label_map(
+            footswitch_payload.get("midi_map")
+            if isinstance(footswitch_payload.get("midi_map"), list)
+            else fallback_midi_map
+        )
+
+    return {
+        "maschine": {
+            "encoder_map": normalized_encoder_map,
+        },
+        "footswitches": {
+            "label_map": normalized_label_map,
+        },
+    }
 
 
 def _stable_channel_label(index: int) -> str:
@@ -222,6 +260,12 @@ def _normalize_expression_target(
         "id": target_id,
         "param_id": param_id,
         "param_label": str(target_payload.get("param_label") or param_id),
+        "target_plugin_uri": str(target_payload.get("target_plugin_uri") or target_payload.get("targetPluginUri") or ""),
+        "target_plugin_position": _safe_int(
+            target_payload.get("target_plugin_position", target_payload.get("targetPluginPosition"))
+        ),
+        "param_index": _safe_int(target_payload.get("param_index", target_payload.get("paramIndex"))),
+        "parameter_symbol": str(target_payload.get("parameter_symbol") or target_payload.get("parameterSymbol") or ""),
         "out_min": _safe_float(target_payload.get("out_min"), 0.0),
         "out_max": _safe_float(target_payload.get("out_max"), 1.0),
         "curve": _normalize_expression_curve(target_payload.get("curve")),
@@ -348,6 +392,49 @@ async def push_snapshot_midi_commander_assignments(
     )
 
 
+async def push_snapshot_maschine_assignments(
+    *,
+    session: AsyncSession,
+    snapshot_id: int,
+    snapshot_name: str,
+    controls_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    from app.services.maschine_service import get_maschine_service
+
+    return await get_maschine_service().push_snapshot_activation(
+        session,
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+        controls_payload=controls_payload,
+    )
+
+
+async def push_snapshot_push_surface_state(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+) -> dict[str, Any]:
+    from app.services.push_surface import get_push_surface_manager
+
+    return await get_push_surface_manager().push_snapshot_activation(
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+    )
+
+
+async def push_snapshot_mcu_surface_state(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+) -> dict[str, Any]:
+    from app.services.mcu_surface import get_mcu_surface_service
+
+    return await get_mcu_surface_service().push_snapshot_activation(
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+    )
+
+
 def _normalize_expression_mapping_entry(
     entry: dict[str, Any],
     *,
@@ -415,6 +502,10 @@ def _flatten_snapshot_expression_mappings(entries: list[dict[str, Any]] | None) 
                     "cc_max": mapping.get("cc_max", 127),
                     "param_id": target.get("param_id", ""),
                     "param_label": target.get("param_label") or target.get("param_id") or "",
+                    "target_plugin_uri": target.get("target_plugin_uri") or "",
+                    "target_plugin_position": _safe_int(target.get("target_plugin_position")),
+                    "param_index": _safe_int(target.get("param_index")),
+                    "parameter_symbol": target.get("parameter_symbol") or "",
                     "out_min": target.get("out_min", 0.0),
                     "out_max": target.get("out_max", 1.0),
                     "curve": target.get("curve", "linear"),
@@ -695,7 +786,10 @@ class SnapshotService:
             midi_service=midi_service,
             get_audio_engine=get_audio_engine,
             push_snapshot_footswitch_labels=push_snapshot_footswitch_labels,
+            push_snapshot_maschine_assignments=push_snapshot_maschine_assignments,
+            push_snapshot_push_surface_state=push_snapshot_push_surface_state,
             push_snapshot_ground_control_pro_assignments=push_snapshot_ground_control_pro_assignments,
+            push_snapshot_mcu_surface_state=push_snapshot_mcu_surface_state,
             push_snapshot_launch_control_assignments=push_snapshot_launch_control_assignments,
             push_snapshot_midi_commander_assignments=push_snapshot_midi_commander_assignments,
             push_snapshot_controller_display_preview=push_snapshot_controller_display_preview,
@@ -1082,7 +1176,10 @@ class SnapshotService:
     async def get_activation_hook_plan(self) -> list[str]:
         default_hooks = [
             "push_footswitch_labels",
+            "push_maschine_assignments",
+            "push_push_surface_state",
             "push_ground_control_pro_assignments",
+            "push_mcu_surface_state",
             "push_launch_control_assignments",
             "push_midi_commander_assignments",
             "push_controller_display_preview",
@@ -1103,33 +1200,20 @@ class SnapshotService:
             if isinstance(item, str) and str(item).strip()
         ]
         hooks = hooks or list(default_hooks)
-        if "push_ground_control_pro_assignments" not in hooks:
-            if "push_footswitch_labels" in hooks:
-                insert_index = hooks.index("push_footswitch_labels") + 1
-                hooks.insert(insert_index, "push_ground_control_pro_assignments")
-            else:
-                hooks.insert(0, "push_ground_control_pro_assignments")
-        if "push_launch_control_assignments" not in hooks:
-            if "push_ground_control_pro_assignments" in hooks:
-                insert_index = hooks.index("push_ground_control_pro_assignments") + 1
-                hooks.insert(insert_index, "push_launch_control_assignments")
-            elif "push_footswitch_labels" in hooks:
-                insert_index = hooks.index("push_footswitch_labels") + 1
-                hooks.insert(insert_index, "push_launch_control_assignments")
-            else:
-                hooks.insert(0, "push_launch_control_assignments")
-        if "push_midi_commander_assignments" not in hooks:
-            if "push_launch_control_assignments" in hooks:
-                insert_index = hooks.index("push_launch_control_assignments") + 1
-                hooks.insert(insert_index, "push_midi_commander_assignments")
-            elif "push_ground_control_pro_assignments" in hooks:
-                insert_index = hooks.index("push_ground_control_pro_assignments") + 1
-                hooks.insert(insert_index, "push_midi_commander_assignments")
-            elif "push_footswitch_labels" in hooks:
-                insert_index = hooks.index("push_footswitch_labels") + 1
-                hooks.insert(insert_index, "push_midi_commander_assignments")
-            else:
-                hooks.insert(0, "push_midi_commander_assignments")
+        def _ensure_hook_after(hook_name: str, anchor_name: str | None) -> None:
+            if hook_name in hooks:
+                return
+            if anchor_name and anchor_name in hooks:
+                hooks.insert(hooks.index(anchor_name) + 1, hook_name)
+                return
+            hooks.insert(0, hook_name)
+
+        _ensure_hook_after("push_maschine_assignments", "push_footswitch_labels")
+        _ensure_hook_after("push_push_surface_state", "push_maschine_assignments")
+        _ensure_hook_after("push_ground_control_pro_assignments", "push_push_surface_state")
+        _ensure_hook_after("push_mcu_surface_state", "push_ground_control_pro_assignments")
+        _ensure_hook_after("push_launch_control_assignments", "push_mcu_surface_state")
+        _ensure_hook_after("push_midi_commander_assignments", "push_launch_control_assignments")
         return hooks
 
     def _snapshot_preload_stage_plugins(self, snapshot: Snapshot) -> list[Any]:
@@ -1660,8 +1744,22 @@ class SnapshotService:
         self,
         entries: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
+        engine = get_audio_engine()
         normalized_entries = _normalize_expression_mappings_payload(entries)
         flattened_entries = _flatten_snapshot_expression_mappings(normalized_entries)
+        replace_snapshot_expression_mappings = getattr(engine, "replace_snapshot_expression_mappings", None) if engine else None
+        if callable(replace_snapshot_expression_mappings):
+            synced = await replace_snapshot_expression_mappings(flattened_entries)
+            if synced:
+                return {
+                    "synced": True,
+                    "reason": "engine_applied",
+                    "mapping_count": len(normalized_entries),
+                    "target_count": len(flattened_entries),
+                    "cleared_count": len(flattened_entries),
+                    "applied_count": len(flattened_entries),
+                    "active_snapshot_count": len(flattened_entries),
+                }
         try:
             service = get_expression_service()
         except Exception as exc:
@@ -2131,6 +2229,20 @@ class SnapshotService:
                     monitoring_output_index = io_source.get("monitoring_output_index")
         payload["monitoring_output_index"] = _normalize_monitoring_output_index(monitoring_output_index)
         payload["maschine_encoder_map"] = normalize_maschine_encoder_map(payload.get("maschine_encoder_map"))
+        payload["controller_mappings"] = _normalize_controller_mappings_payload(
+            payload.get("controller_mappings"),
+            fallback_midi_map=payload["midi_map"],
+            fallback_maschine_encoder_map=payload["maschine_encoder_map"],
+        )
+        controller_mappings = payload["controller_mappings"]
+        if isinstance(controller_mappings, dict):
+            maschine_payload = controller_mappings.get("maschine") if isinstance(controller_mappings.get("maschine"), dict) else {}
+            footswitch_payload = controller_mappings.get("footswitches") if isinstance(controller_mappings.get("footswitches"), dict) else {}
+            payload["maschine_encoder_map"] = normalize_maschine_encoder_map(maschine_payload.get("encoder_map"))
+            payload["midi_map"] = replace_snapshot_footswitch_label_map(
+                payload["midi_map"],
+                footswitch_payload.get("label_map") if isinstance(footswitch_payload.get("label_map"), dict) else {},
+            )
         return payload
 
     async def get_snapshot(self, snapshot_id: int) -> Optional[dict[str, Any]]:
@@ -2302,10 +2414,11 @@ class SnapshotService:
         revision_source = await self.get_snapshot(snapshot_id) if create_revision else None
         previous_input_device = snapshot.input_device
         previous_output_device = snapshot.output_device
-        previous_monitoring_output_index = self._normalize_controls_payload(
+        previous_controls_payload = self._normalize_controls_payload(
             snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
             None,
-        ).get("monitoring_output_index")
+        )
+        previous_monitoring_output_index = previous_controls_payload.get("monitoring_output_index")
 
         if program_number is not UNSET and program_number != snapshot.program_number:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
@@ -2335,8 +2448,31 @@ class SnapshotService:
         if output_device is not UNSET:
             snapshot.output_device = output_device
         if controls_payload is not UNSET:
-            merged_controls_payload = dict(snapshot.controls_payload or {})
-            merged_controls_payload.update(dict(controls_payload or {}))
+            incoming_controls_payload = dict(controls_payload or {})
+            merged_controls_payload = self._deep_merge_mapping(
+                dict(snapshot.controls_payload or {}),
+                incoming_controls_payload,
+            )
+            if "maschine_encoder_map" in incoming_controls_payload:
+                controller_mappings = merged_controls_payload.get("controller_mappings")
+                if isinstance(controller_mappings, dict):
+                    controller_mappings = copy.deepcopy(controller_mappings)
+                    controller_mappings.pop("maschine", None)
+                    merged_controls_payload["controller_mappings"] = controller_mappings
+            incoming_controller_mappings = (
+                incoming_controls_payload.get("controller_mappings")
+                if isinstance(incoming_controls_payload.get("controller_mappings"), dict)
+                else None
+            )
+            if incoming_controller_mappings is not None:
+                merged_controller_mappings = merged_controls_payload.get("controller_mappings")
+                if isinstance(merged_controller_mappings, dict):
+                    merged_controller_mappings = copy.deepcopy(merged_controller_mappings)
+                    if "footswitches" in incoming_controller_mappings:
+                        merged_controller_mappings["footswitches"] = copy.deepcopy(
+                            incoming_controller_mappings.get("footswitches")
+                        )
+                    merged_controls_payload["controller_mappings"] = merged_controller_mappings
             snapshot.controls_payload = self._normalize_controls_payload(
                 merged_controls_payload,
                 detail_payload if detail_payload is not UNSET else None,
@@ -2388,6 +2524,18 @@ class SnapshotService:
                 (detail.get("controls") or {}).get("monitoring_output_index")
             )
         )
+        current_controls_payload = self._normalize_controls_payload(
+            detail.get("controls") if isinstance(detail.get("controls"), dict) else None,
+            detail,
+        )
+        expression_mappings_changed = (
+            previous_controls_payload.get("expression_mappings", [])
+            != current_controls_payload.get("expression_mappings", [])
+        )
+        automation_lanes_changed = (
+            previous_controls_payload.get("automation_lanes", [])
+            != current_controls_payload.get("automation_lanes", [])
+        )
         try:
             from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
@@ -2410,6 +2558,22 @@ class SnapshotService:
                     await self._apply_snapshot_audio_device_bindings(detail)
                 if monitoring_output_changed:
                     await self._apply_snapshot_monitoring_output_binding(detail)
+                if expression_mappings_changed:
+                    await self._sync_snapshot_expression_mappings_to_runtime(
+                        [
+                            dict(entry)
+                            for entry in current_controls_payload.get("expression_mappings", [])
+                            if isinstance(entry, dict)
+                        ]
+                    )
+                if automation_lanes_changed:
+                    await self._sync_snapshot_automation_lanes_to_runtime(
+                        [
+                            dict(entry)
+                            for entry in current_controls_payload.get("automation_lanes", [])
+                            if isinstance(entry, dict)
+                        ]
+                    )
             except Exception as exc:
                 logger.debug("Snapshot runtime live-state sync skipped for %s: %s", snapshot.id, exc)
 

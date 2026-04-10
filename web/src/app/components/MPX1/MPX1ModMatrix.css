@@ -1,6 +1,6 @@
 .mpx1-matrix {
   display: grid;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   min-height: 520px;
 }
 
@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-matrix__title {
@@ -36,7 +36,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(220px, 280px);
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-matrix__sources,
@@ -45,7 +45,7 @@
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   min-height: 0;
   display: grid;
   gap: 8px;
@@ -72,7 +72,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  padding: 7px 8px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
   text-align: left;
   font-size: var(--type-label);
   cursor: pointer;
@@ -190,7 +190,7 @@
 
 .mpx1-matrix__detail-form {
   display: grid;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-matrix__detail-name {
@@ -202,7 +202,7 @@
 .mpx1-matrix__empty {
   border: 1px dashed var(--interactive);
   border-radius: var(--border-radius-sm);
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   color: var(--interactive);
   font-size: var(--type-label);
 }
@@ -212,7 +212,7 @@
   border: 1px solid var(--support-danger);
   background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
   color: var(--support-danger);
-  padding: 7px 8px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
   cursor: pointer;
 }
 

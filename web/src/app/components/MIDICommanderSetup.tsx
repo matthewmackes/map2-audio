@@ -45,6 +45,7 @@ import type {
 import { createParameterDescriptor } from '../data/parameterSchema'
 import { ParameterControl } from './ParameterControl'
 import { useToasts } from './Toasts'
+import { LegacyTile } from './shared/LegacyTile'
 
 // ============================================================================
 // Device Profile Card
@@ -59,8 +60,8 @@ interface ProfileCardProps {
 
 function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProps) {
   return (
-    <div
-      className={`card ${isActive ? 'ring ring-accent' : ''}`}
+    <LegacyTile
+      className={isActive ? 'ring ring-accent' : undefined}
       style={{ padding: 16, position: 'relative' }}
     >
       {isActive && (
@@ -133,7 +134,7 @@ function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProp
           {isApplying ? 'Applying...' : 'Apply Profile'}
         </Button>
       )}
-    </div>
+    </LegacyTile>
   )
 }
 
@@ -178,9 +179,8 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
         }}
       >
         {ccSwitches.map(fs => (
-          <div
+          <LegacyTile
             key={fs.switch_id}
-            className="card"
             style={{
               padding: 8,
               textAlign: 'center',
@@ -194,7 +194,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
             <div style={{ fontSize: 10 }} className="subtitle">
               {fs.label}
             </div>
-          </div>
+          </LegacyTile>
         ))}
       </div>
 
@@ -208,9 +208,8 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
         }}
       >
         {pcSwitches.map(fs => (
-          <div
+          <LegacyTile
             key={fs.switch_id}
-            className="card"
             style={{
               padding: 8,
               textAlign: 'center',
@@ -221,7 +220,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
             <div style={{ fontWeight: 600, marginBottom: 4 }}>{fs.switch_id}</div>
             <div style={{ fontSize: 11, opacity: 0.9 }}>PC {fs.number}</div>
             <div style={{ fontSize: 10, opacity: 0.8 }}>{fs.label}</div>
-          </div>
+          </LegacyTile>
         ))}
       </div>
 
@@ -416,7 +415,7 @@ export function ExpressionCalibrationPanel({
   const processedValue = liveValue !== undefined ? processValue(liveValue) : null
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 12 }}>
+    <LegacyTile style={{ padding: 16, marginBottom: 12 }}>
       <div
         style={{
           display: 'flex',
@@ -521,7 +520,7 @@ export function ExpressionCalibrationPanel({
           />
         </div>
       )}
-    </div>
+    </LegacyTile>
   )
 }
 
@@ -568,7 +567,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
   const instructions = instructionsQuery.data
 
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <LegacyTile style={{ padding: 16 }}>
       <h3 style={{ marginBottom: 16 }}>
         <Upload size={20} style={{ marginRight: 8 }} />
         Firmware Update
@@ -695,7 +694,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
           </StepContent>
         </Step>
       </Stepper>
-    </div>
+    </LegacyTile>
   )
 }
 
@@ -816,7 +815,7 @@ export function MIDICommanderSetup() {
 
           {/* Active profile details */}
           {activeProfile && (
-            <div className="card" style={{ padding: 16, marginTop: 16 }}>
+            <LegacyTile style={{ padding: 16, marginTop: 16 }}>
               <h4 style={{ marginBottom: 16 }}>
                 <Music size={18} style={{ marginRight: 8 }} />
                 {activeProfile.name} Layout
@@ -866,7 +865,7 @@ export function MIDICommanderSetup() {
                   </div>
                 </div>
               )}
-            </div>
+            </LegacyTile>
           )}
         </>
       )}

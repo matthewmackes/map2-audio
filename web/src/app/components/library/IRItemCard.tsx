@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
+import { LegacyButton } from '../shared/LegacyButton'
 import './ModelList.css'
 
 interface IRItemCardProps {
@@ -71,8 +72,9 @@ export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCard
             <Check size={12} /> Active
           </span>
         ) : (
-          <button
-            className="btn btn-sm btn-primary"
+          <LegacyButton
+            variant="primary"
+            size="sm"
             onClick={() => loadMutation.mutate()}
             disabled={loadMutation.isPending}
           >
@@ -81,7 +83,7 @@ export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCard
             ) : (
               'Load'
             )}
-          </button>
+          </LegacyButton>
         )}
       </div>
     </div>

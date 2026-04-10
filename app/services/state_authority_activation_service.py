@@ -37,7 +37,10 @@ class StateAuthorityActivationService:
         midi_service: Any,
         get_audio_engine: Callable[[], Any],
         push_snapshot_footswitch_labels: Callable[..., Any],
+        push_snapshot_maschine_assignments: Callable[..., Any],
+        push_snapshot_push_surface_state: Callable[..., Any],
         push_snapshot_ground_control_pro_assignments: Callable[..., Any],
+        push_snapshot_mcu_surface_state: Callable[..., Any],
         push_snapshot_launch_control_assignments: Callable[..., Any],
         push_snapshot_midi_commander_assignments: Callable[..., Any],
         push_snapshot_controller_display_preview: Callable[..., Any],
@@ -60,7 +63,10 @@ class StateAuthorityActivationService:
         self.midi_service = midi_service
         self.get_audio_engine = get_audio_engine
         self.push_snapshot_footswitch_labels = push_snapshot_footswitch_labels
+        self.push_snapshot_maschine_assignments = push_snapshot_maschine_assignments
+        self.push_snapshot_push_surface_state = push_snapshot_push_surface_state
         self.push_snapshot_ground_control_pro_assignments = push_snapshot_ground_control_pro_assignments
+        self.push_snapshot_mcu_surface_state = push_snapshot_mcu_surface_state
         self.push_snapshot_launch_control_assignments = push_snapshot_launch_control_assignments
         self.push_snapshot_midi_commander_assignments = push_snapshot_midi_commander_assignments
         self.push_snapshot_controller_display_preview = push_snapshot_controller_display_preview
@@ -1068,6 +1074,20 @@ class StateAuthorityActivationService:
                 midi_map_entries=midi_map_entries,
             )
 
+        async def _push_maschine_assignments() -> dict[str, Any]:
+            return await self.push_snapshot_maschine_assignments(
+                session=self.session,
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                controls_payload=refreshed_detail.get("controls"),
+            )
+
+        async def _push_push_surface_state() -> dict[str, Any]:
+            return await self.push_snapshot_push_surface_state(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+            )
+
         async def _push_controller_preview() -> None:
             await self.push_snapshot_controller_display_preview(
                 snapshot_id=snapshot.id,
@@ -1080,6 +1100,12 @@ class StateAuthorityActivationService:
                 snapshot_id=snapshot.id,
                 snapshot_name=snapshot.name,
                 detail_payload=refreshed_detail,
+            )
+
+        async def _push_mcu_surface_state() -> dict[str, Any]:
+            return await self.push_snapshot_mcu_surface_state(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
             )
 
         async def _push_launch_control_assignments() -> dict[str, Any]:
@@ -1101,7 +1127,10 @@ class StateAuthorityActivationService:
 
         hook_map = {
             "push_footswitch_labels": _push_footswitch_labels,
+            "push_maschine_assignments": _push_maschine_assignments,
+            "push_push_surface_state": _push_push_surface_state,
             "push_ground_control_pro_assignments": _push_ground_control_pro_assignments,
+            "push_mcu_surface_state": _push_mcu_surface_state,
             "push_launch_control_assignments": _push_launch_control_assignments,
             "push_midi_commander_assignments": _push_midi_commander_assignments,
             "push_controller_display_preview": _push_controller_preview,

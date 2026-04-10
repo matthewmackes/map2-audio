@@ -4,7 +4,10 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { PageHeader } from '../components/PageHeader'
 import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
-import type { PhysicalSurfacesShellContextValue } from './PhysicalSurfacesShell'
+import {
+  resolvePhysicalSurfaceStandaloneRoute,
+  type PhysicalSurfacesShellContextValue,
+} from './PhysicalSurfacesShell'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
   if (status === 'online') return 'green'
@@ -39,6 +42,7 @@ function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
 
 function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
   const navigate = useNavigate()
+  const standaloneRoute = resolvePhysicalSurfaceStandaloneRoute(unit.unit_id, unit.specialized_route)
 
   return (
     <Tile className="physical-surfaces-page__card" key={unit.unit_id}>
@@ -64,6 +68,7 @@ function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
         ) : null}
         <Tag type="blue">{unit.view_state.page_layout_mode}</Tag>
         <Tag type="green">{unit.surface_lab.access}</Tag>
+        {standaloneRoute ? <Tag type="purple">{standaloneRoute}</Tag> : null}
       </div>
       <div className="physical-surfaces-page__list-block">
         <h3>Transport layers</h3>
@@ -80,9 +85,9 @@ function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
         <Button kind="ghost" size="sm" onClick={() => navigate(`/physical-surfaces/${unit.unit_id}`)}>
           Open Surface Page
         </Button>
-        {unit.specialized_route ? (
-          <Button kind="secondary" size="sm" onClick={() => navigate(unit.specialized_route ?? `/physical-surfaces/${unit.unit_id}`)}>
-            Open Existing Route
+        {standaloneRoute ? (
+          <Button kind="secondary" size="sm" onClick={() => navigate(standaloneRoute)}>
+            Open Dedicated Route
           </Button>
         ) : null}
       </div>

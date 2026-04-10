@@ -474,7 +474,7 @@ export function MidiMappingDialog({
         .midi-mapping-dialog-header {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 'var(--cds-spacing-04, 0.75rem)';
           padding: 16px 20px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           background: rgba(0, 0, 0, 0.2);
@@ -507,7 +507,7 @@ export function MidiMappingDialog({
         .midi-mapping-dialog-title {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 'var(--cds-spacing-04, 0.75rem)';
           font-size: 16px;
           font-weight: 600;
           color: #f2f6ff;
@@ -540,7 +540,7 @@ export function MidiMappingDialog({
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 20px;
+          padding: 'var(--cds-spacing-04, 0.75rem) var(--cds-spacing-06, 1.5rem)';
           background: rgba(255, 51, 51, 0.15);
           border-bottom: 1px solid rgba(255, 51, 51, 0.3);
           color: #ff6b6b;
@@ -585,7 +585,7 @@ export function MidiMappingDialog({
         }
 
         .midi-mapping-table td {
-          padding: 10px 16px;
+          padding: 'var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem)';
           border-bottom: 1px solid rgba(255, 255, 255, 0.04);
           vertical-align: middle;
         }
@@ -642,7 +642,8 @@ export function MidiMappingDialog({
         }
 
         .cc-input:focus {
-          outline: none;
+          outline: 2px solid var(--cds-focus, var(--primary, #2563eb));
+          outline-offset: 2px;
           border-color: var(--primary, #2563eb);
         }
 
@@ -669,7 +670,8 @@ export function MidiMappingDialog({
 
         .channel-select:focus,
         .scope-select:focus {
-          outline: none;
+          outline: 2px solid var(--cds-focus, var(--primary, #2563eb));
+          outline-offset: 2px;
           border-color: var(--primary, #2563eb);
         }
 
@@ -696,7 +698,7 @@ export function MidiMappingDialog({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 14px 20px;
+          padding: 'var(--cds-spacing-05, 1rem) var(--cds-spacing-06, 1.5rem)';
           border-top: 1px solid rgba(255, 255, 255, 0.08);
           background: rgba(0, 0, 0, 0.2);
         }
@@ -713,7 +715,7 @@ export function MidiMappingDialog({
 
         .footer-right {
           display: flex;
-          gap: 10px;
+          gap: 'var(--cds-spacing-04, 0.75rem)';
         }
 
         .btn-cancel,

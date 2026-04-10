@@ -134,7 +134,8 @@
   font-weight: 600;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  outline: 0;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .numeric-input__field.is-overlay-hidden {

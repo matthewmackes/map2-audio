@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   background: var(--surface);
   border-bottom: 2px solid var(--slot-color, var(--primary));
 }
@@ -67,7 +67,8 @@
 }
 
 .chain-panel-select:focus {
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--slot-color, var(--primary)));
+  outline-offset: 2px;
   border-color: var(--slot-color, var(--primary));
   box-shadow: none;
 }

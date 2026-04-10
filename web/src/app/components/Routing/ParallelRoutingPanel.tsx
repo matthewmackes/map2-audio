@@ -1,5 +1,6 @@
 import { Add as Plus, Branch as GitBranch, Renew as ArrowsClockwise, Renew as SpinnerGap, TrashCan as Trash, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useParallel } from '../../hooks/useParallel'
+import { LegacyButton } from '../shared/LegacyButton'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
 
@@ -50,11 +51,12 @@ export function ParallelRoutingPanel({
           )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => refetch()}>
+          <LegacyButton variant="ghost" size="sm" iconDescription="Refresh parallel routing" onClick={() => refetch()}>
             <ArrowsClockwise size={14} />
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
+          </LegacyButton>
+          <LegacyButton
+            variant="secondary"
+            size="sm"
             disabled={isCreating}
             onClick={async () => {
               try {
@@ -67,7 +69,7 @@ export function ParallelRoutingPanel({
           >
             {isCreating ? <SpinnerGap size={14} className="spin" /> : <Plus size={14} />}
             New Group
-          </button>
+          </LegacyButton>
         </div>
       </div>
 
@@ -102,8 +104,9 @@ export function ParallelRoutingPanel({
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className={`btn btn-sm ${group.bypass ? 'btn-primary' : 'btn-ghost'}`}
+                  <LegacyButton
+                    variant={group.bypass ? 'primary' : 'ghost'}
+                    size="sm"
                     disabled={isUpdating}
                     onClick={async () => {
                       try {
@@ -115,9 +118,11 @@ export function ParallelRoutingPanel({
                     }}
                   >
                     {group.bypass ? 'Bypassed' : 'Live'}
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
+                  </LegacyButton>
+                  <LegacyButton
+                    variant="ghost"
+                    size="sm"
+                    iconDescription="Remove parallel group"
                     disabled={isRemoving}
                     onClick={async () => {
                       try {
@@ -129,7 +134,7 @@ export function ParallelRoutingPanel({
                     }}
                   >
                     <Trash size={14} />
-                  </button>
+                  </LegacyButton>
                 </div>
               </div>
 

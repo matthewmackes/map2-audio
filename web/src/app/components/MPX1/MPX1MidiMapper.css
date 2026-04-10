@@ -1,6 +1,6 @@
 .mpx1-midi-map {
   display: grid;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
   min-height: 520px;
 }
 
@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-midi-map__map-select {
@@ -73,7 +73,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(240px, 320px);
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-midi-map__column,
@@ -81,7 +81,7 @@
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   min-height: 0;
   display: grid;
   gap: 8px;
@@ -133,7 +133,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  padding: 7px 8px;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -161,7 +161,7 @@
 .mpx1-midi-map__empty {
   border: 1px dashed var(--interactive);
   border-radius: var(--border-radius-sm);
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   color: var(--interactive);
   font-size: var(--type-label);
 }
@@ -211,7 +211,7 @@
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  padding: 10px;
+  padding: var(--cds-spacing-04, 0.75rem);
   display: grid;
   gap: 8px;
 }
@@ -245,7 +245,7 @@
 }
 
 .mpx1-midi-map__targets {
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .mpx1-midi-map__target-group {

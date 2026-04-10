@@ -140,6 +140,9 @@ describe('navigation catalog', () => {
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
       '/physical-surfaces',
+      '/mcu',
+      '/launch-control',
+      '/midi-commander',
       '/mpx1',
       '/intelfx',
       '/tesira',

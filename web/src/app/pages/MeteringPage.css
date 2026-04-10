@@ -11,13 +11,13 @@
   display: grid;
   grid-template-columns: repeat(14, 1fr);
   grid-template-rows: auto;
-  gap: 20px;
+  gap: var(--cds-spacing-06, 1.5rem);
 }
 
 .metering-status-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: var(--cds-spacing-06, 1.5rem);
 }
 
 @media (max-width: 960px) {

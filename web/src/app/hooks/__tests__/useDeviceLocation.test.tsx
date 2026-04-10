@@ -124,4 +124,62 @@ describe('useDeviceLocation', () => {
       expect.objectContaining({ nodeId: 'node-usb', hostname: 'rack-b' }),
     )
   })
+
+  it('matches standalone controller routes using the dedicated search terms', async () => {
+    fetchMock.mockResolvedValueOnce(
+      makeJsonResponse({
+        nodes: {
+          'node-mcu': {
+            hostname: 'mix-a',
+            status: 'online',
+            usb_audio_devices: [],
+            midi_devices: [{ name: 'Mackie Control Universal Pro', direction: 'input', type: 'midi_hub' }],
+            audio_interfaces: [],
+            pipewire_devices: [],
+          },
+          'node-launch': {
+            hostname: 'mix-b',
+            status: 'online',
+            usb_audio_devices: [],
+            midi_devices: [{ name: 'Novation Launch Control XL', direction: 'input', type: 'midi_hub' }],
+            audio_interfaces: [],
+            pipewire_devices: [],
+          },
+          'node-commander': {
+            hostname: 'mix-c',
+            status: 'online',
+            usb_audio_devices: [],
+            midi_devices: [{ name: 'MeloAudio MIDI Commander', direction: 'input', type: 'midi_hub' }],
+            audio_interfaces: [],
+            pipewire_devices: [],
+          },
+        },
+      }),
+    )
+
+    const { result } = renderHook(
+      () =>
+        useHardwareMenuLocations([
+          { to: '/mcu', deviceType: 'mackie-mcu-pro' },
+          { to: '/launch-control', deviceType: 'novation-launch-control' },
+          { to: '/midi-commander', deviceType: 'meloaudio-midi-commander' },
+        ]),
+      {
+        wrapper: makeWrapper(),
+      },
+    )
+
+    await waitFor(() =>
+      expect(result.current.locationsByRoute['/mcu']).toEqual(
+        expect.objectContaining({ nodeId: 'node-mcu', hostname: 'mix-a' }),
+      ),
+    )
+
+    expect(result.current.locationsByRoute['/launch-control']).toEqual(
+      expect.objectContaining({ nodeId: 'node-launch', hostname: 'mix-b' }),
+    )
+    expect(result.current.locationsByRoute['/midi-commander']).toEqual(
+      expect.objectContaining({ nodeId: 'node-commander', hostname: 'mix-c' }),
+    )
+  })
 })

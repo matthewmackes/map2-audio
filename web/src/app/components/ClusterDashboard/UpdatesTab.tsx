@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Renew as ArrowsClockwise, Upload as CloudArrowUp, Download as CloudArrowDown, Security as ShieldCheck, WarningAlt as Warning } from '@carbon/icons-react'
+import { LegacyButton } from '../shared/LegacyButton'
 
 export function UpdatesTab() {
   const [nodeId, setNodeId] = useState('')
@@ -37,15 +38,15 @@ export function UpdatesTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <button className="btn" onClick={() => run('Triggering cluster update', () => post('/api/cluster/update/trigger', { target_version: 'latest', dry_run: false }))}>
-          <CloudArrowUp size={16} /> Update All Nodes
-        </button>
-        <button className="btn" onClick={() => run('Checking schedule', () => get('/api/cluster/update/schedule'))}>
-          <ArrowsClockwise size={16} /> Check Schedule
-        </button>
-        <button className="btn" onClick={() => run('Loading manifest', () => get('/api/cluster/update/manifest'))}>
-          <CloudArrowDown size={16} /> View Manifest
-        </button>
+        <LegacyButton variant="secondary" renderIcon={CloudArrowUp} onClick={() => run('Triggering cluster update', () => post('/api/cluster/update/trigger', { target_version: 'latest', dry_run: false }))}>
+          Update All Nodes
+        </LegacyButton>
+        <LegacyButton variant="secondary" renderIcon={ArrowsClockwise} onClick={() => run('Checking schedule', () => get('/api/cluster/update/schedule'))}>
+          Check Schedule
+        </LegacyButton>
+        <LegacyButton variant="secondary" renderIcon={CloudArrowDown} onClick={() => run('Loading manifest', () => get('/api/cluster/update/manifest'))}>
+          View Manifest
+        </LegacyButton>
       </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -55,26 +56,29 @@ export function UpdatesTab() {
           placeholder="node id"
           style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #333', background: '#1f1f1f', color: '#fff' }}
         />
-        <button
-          className="btn"
+        <LegacyButton
+          variant="secondary"
+          renderIcon={ShieldCheck}
           onClick={() => run('Capturing manifest', () => post('/api/cluster/update/manifest/capture', { source_node_id: nodeId }))}
           disabled={!nodeId}
         >
-          <ShieldCheck size={16} /> Capture Manifest
-        </button>
-        <button
-          className="btn"
+          Capture Manifest
+        </LegacyButton>
+        <LegacyButton
+          variant="secondary"
+          renderIcon={Warning}
           onClick={() => run('Checking drift', () => get('/api/cluster/update/manifest/drift'))}
         >
-          <Warning size={16} /> Check Drift
-        </button>
-        <button
-          className="btn"
+          Check Drift
+        </LegacyButton>
+        <LegacyButton
+          variant="secondary"
+          renderIcon={ShieldCheck}
           onClick={() => run('Enforcing manifest', () => post('/api/cluster/update/manifest/enforce', { node_id: nodeId, dry_run: false }))}
           disabled={!nodeId}
         >
-          <ShieldCheck size={16} /> Enforce Manifest
-        </button>
+          Enforce Manifest
+        </LegacyButton>
       </div>
 
       <div style={{ padding: 12, border: '1px solid #333', borderRadius: 8, background: '#1a1a1a' }}>

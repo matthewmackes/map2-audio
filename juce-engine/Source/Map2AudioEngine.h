@@ -308,6 +308,10 @@ public:
     bool removeFromChain(InstanceId instanceId);
     bool reorderChain(const std::vector<InstanceId>& order);
     bool prewarmPluginNode(InstanceId instanceId);
+    bool applyRoutingTopology(const JuceAudioGraph::RoutingTopologySpec& spec);
+    bool replaceSnapshotExpressionMappings(const std::vector<std::map<std::string, juce::var>>& entries);
+    bool triggerParallelABSwitch(int groupId, int branchIndex);
+    bool copyParallelBranchTap(int groupId, int branchIndex, juce::AudioBuffer<float>& dest, int numSamples) const;
 
     struct SpilloverChainState {
         int id = 0;
@@ -1499,6 +1503,14 @@ private:
         juce::AudioBuffer<float>& buffer,
         const juce::AudioBuffer<float>& dryInputBuffer,
         int numSamples);
+    void applyTopologyTransitionFade(juce::AudioBuffer<float>& buffer, int numSamples);
+    void applySnapshotExpressionControlChange(int midiChannel, int cc, int value);
+    bool applySnapshotExpressionMappedValue(const std::map<std::string, juce::var>& mapping, float value);
+    static float applySnapshotExpressionCurve(
+        float normalized,
+        const std::string& curveName,
+        const juce::var& customCurve);
+    bool buildSoloMonitorMix(juce::AudioBuffer<float>& dest, int numSamples);
     bool replaceChainWithIndependentGraphCrossfade(
         const std::vector<InstanceId>& order,
         int maxCrossfadeMs);
@@ -1518,9 +1530,11 @@ private:
     std::unique_ptr<JuceAudioGraph> audioGraph_;
     juce::AudioBuffer<float> callbackBuffer_;
     juce::AudioBuffer<float> spilloverBuffer_;
+    juce::AudioBuffer<float> monitorBuffer_;
     juce::AudioBuffer<float> graphCrossfadeInputBuffer_;
     juce::AudioBuffer<float> graphCrossfadeOldBuffer_;
     juce::AudioBuffer<float> graphCrossfadeNewBuffer_;
+    juce::AudioBuffer<float> topologyTransitionReferenceBuffer_;
 
     // Lexicon MPX-1 Hardware Plugin
     // Raw pointer (non-owning) — lifetime managed by pluginHost_.hardwareInstances_
@@ -1699,6 +1713,8 @@ private:
     int numInputChannels_ = 2;
     int numOutputChannels_ = 2;
     std::atomic<int> monitoringOutputIndex_{0};
+    std::atomic<int> topologyTransitionSamplesRemaining_{0};
+    std::atomic<int> topologyTransitionTotalSamples_{0};
     std::string audioDevice_ = "default";
     std::string lv2Path_ = "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2";
 
@@ -1711,7 +1727,6 @@ private:
     void enqueueMidiEvent(const MidiMessage& msg);
     void drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSamples);
     void sendDrumSequencerMidiEvent(const drummachine::DrumSequencer::MidiOutputEvent& event);
-
     static constexpr int MIDI_RING_SIZE = 512;
     struct QueuedMidiEvent {
         uint8_t status = 0;
@@ -1722,6 +1737,7 @@ private:
     std::array<QueuedMidiEvent, MIDI_RING_SIZE> midiRing_;
     juce::AbstractFifo midiFifo_{MIDI_RING_SIZE};
     std::atomic<bool> midiDataReady_{false};
+    std::shared_ptr<const std::vector<std::map<std::string, juce::var>>> snapshotExpressionMappings_;
 };
 
 } // namespace map2

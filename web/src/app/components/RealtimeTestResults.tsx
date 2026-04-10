@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Renew as ArrowsClockwise, Security as ShieldCheck } from '@carbon/icons-react'
 import { Button, Tag, Tile } from '@carbon/react'
+import { LegacyTile } from './shared/LegacyTile'
 
 interface TestResult {
   timestamp: string
@@ -183,7 +184,7 @@ export function RealtimeTestResults() {
         <h4 style={{ marginBottom: 8 }}>Test results</h4>
         <div className="stack" style={{ gap: 8 }}>
           {getKeyTests().map((test, index) => (
-            <div key={index} className="list-item" style={{ padding: 10 }}>
+            <LegacyTile key={index} style={{ padding: 10 }}>
               <div className="flex-between" style={{ gap: 8 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {getStatusIcon(test.passed)}
@@ -203,7 +204,7 @@ export function RealtimeTestResults() {
                   </Tag>
                 </span>
               </div>
-            </div>
+            </LegacyTile>
           ))}
         </div>
       </div>
@@ -218,21 +219,21 @@ export function RealtimeTestResults() {
       <div style={{ marginTop: 12 }}>
         <h4 style={{ marginBottom: 8 }}>Known fixes & optimizations</h4>
         <div className="stack" style={{ gap: 6 }}>
-          <div className="list-item" style={{ padding: 8, fontSize: 13 }}>
+          <LegacyTile style={{ padding: 8, fontSize: 13 }}>
             <strong>1. Interrupt coalescing disabled</strong> — Reduced audio latency variance by 40%
-          </div>
-          <div className="list-item" style={{ padding: 8, fontSize: 13 }}>
+          </LegacyTile>
+          <LegacyTile style={{ padding: 8, fontSize: 13 }}>
             <strong>2. CPU freq scaling tuned</strong> — P-States locked to performance mode during DSP load
-          </div>
-          <div className="list-item" style={{ padding: 8, fontSize: 13 }}>
+          </LegacyTile>
+          <LegacyTile style={{ padding: 8, fontSize: 13 }}>
             <strong>3. Watchdog thread priority boosted</strong> — Prevents XRuns from task scheduling delays
-          </div>
-          <div className="list-item" style={{ padding: 8, fontSize: 13 }}>
+          </LegacyTile>
+          <LegacyTile style={{ padding: 8, fontSize: 13 }}>
             <strong>4. JUCE audio engine affinity</strong> — Pinned to cores 1-2, isolation map active
-          </div>
-          <div className="list-item" style={{ padding: 8, fontSize: 13 }}>
+          </LegacyTile>
+          <LegacyTile style={{ padding: 8, fontSize: 13 }}>
             <strong>5. Timer tick disabled on RT cores</strong> — Eliminates high-frequency context switches
-          </div>
+          </LegacyTile>
         </div>
       </div>
     </Tile>

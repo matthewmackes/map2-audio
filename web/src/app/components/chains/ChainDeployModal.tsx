@@ -1,8 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Checkbox,
+  ComposedModal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@carbon/react'
+import {
   CheckmarkFilled as CheckCircle,
-  Close as X,
   ErrorFilled as XCircle,
   Renew as SpinnerGap,
   Share,
@@ -10,6 +23,7 @@ import {
 } from '@carbon/icons-react'
 import type { Chain } from '../../../map2/types'
 import { useCluster } from '../../contexts/useCluster'
+import { LegacyButton } from '../shared/LegacyButton'
 import { useToasts } from '../Toasts'
 
 type ClusterPlugin = {
@@ -153,39 +167,16 @@ export function ChainDeployModal({
   if (!open || !chain) return null
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.58)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={() => {
-        if (!deployMutation.isPending) onClose()
-      }}
-    >
-      <div
-        className="card"
-        style={{ width: 'min(920px, 94vw)', maxHeight: '90vh', overflow: 'auto', padding: 24 }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 8 }}>
-              Deploy Chain
-            </div>
-            <h3 style={{ margin: 0, fontSize: 24 }}>{chain.name}</h3>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', lineHeight: 1.6 }}>
-              Source node <strong style={{ color: '#e2e8f0' }}>{nodeLabelById.get(sourceNodeId) ?? sourceNodeId}</strong>. Targets missing non-builtin plugins are blocked before deployment.
-            </p>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={deployMutation.isPending}>
-            <X size={16} />
-          </button>
-        </div>
+    <ComposedModal open={open} onClose={onClose} size="lg">
+      <ModalHeader
+        title={chain.name}
+        label="Deploy Chain"
+        closeModal={onClose}
+      />
+      <ModalBody>
+        <p style={{ margin: '0 0 20px', color: '#94a3b8', lineHeight: 1.6 }}>
+          Source node <strong style={{ color: '#e2e8f0' }}>{nodeLabelById.get(sourceNodeId) ?? sourceNodeId}</strong>. Targets missing non-builtin plugins are blocked before deployment.
+        </p>
 
         <div
           style={{
@@ -212,37 +203,39 @@ export function ChainDeployModal({
             color: '#e2e8f0',
           }}
         >
-          <input
-            type="checkbox"
+          <Checkbox
+            id="chain-deploy-activate"
+            labelText=""
             checked={activateOnTargets}
-            onChange={(event) => setActivateOnTargets(event.target.checked)}
+            onChange={(_, { checked }) => setActivateOnTargets(Boolean(checked))}
             disabled={deployMutation.isPending}
           />
           Activate the deployed chain on each target node
         </label>
 
         <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-          <table className="table" style={{ minWidth: 760 }}>
-            <thead>
-              <tr>
-                <th>Target</th>
-                <th>Plugin Coverage</th>
-                <th>Deploy Mode</th>
-                <th>Select</th>
-              </tr>
-            </thead>
-            <tbody>
+          <TableContainer title="Target nodes" description="Select the peers that should receive this chain deployment.">
+            <Table size="md" useZebraStyles={false}>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Target</TableHeader>
+                  <TableHeader>Plugin Coverage</TableHeader>
+                  <TableHeader>Deploy Mode</TableHeader>
+                  <TableHeader>Select</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
               {rows.map(({ node, missingPlugins, canDeploy }) => {
                 const checked = selectedTargetIds.has(node.nodeId)
                 return (
-                  <tr key={node.nodeId}>
-                    <td>
+                  <TableRow key={node.nodeId}>
+                    <TableCell>
                       <div style={{ fontWeight: 600 }}>{nodeLabelById.get(node.nodeId) ?? node.nodeId}</div>
                       <div className="muted" style={{ fontSize: 12 }}>
                         {node.isOnline ? `Latency ${node.latencyMs ?? 'n/a'} ms` : 'Offline'}
                       </div>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       {missingPlugins.length === 0 ? (
                         <span className="pill success">
                           <CheckCircle size={14} /> Ready
@@ -252,13 +245,14 @@ export function ChainDeployModal({
                           <XCircle size={14} /> Missing {missingPlugins.length} plugin{missingPlugins.length === 1 ? '' : 's'}
                         </span>
                       )}
-                    </td>
-                    <td>{activateOnTargets ? 'Activate after deploy' : 'Stage only'}</td>
-                    <td>
-                      <input
-                        type="checkbox"
+                    </TableCell>
+                    <TableCell>{activateOnTargets ? 'Activate after deploy' : 'Stage only'}</TableCell>
+                    <TableCell>
+                      <Checkbox
+                        id={`chain-deploy-${node.nodeId}`}
                         checked={checked}
                         disabled={!canDeploy || deployMutation.isPending}
+                        labelText=""
                         onChange={() => {
                           setSelectedTargetIds((previous) => {
                             const next = new Set(previous)
@@ -271,12 +265,13 @@ export function ChainDeployModal({
                           })
                         }}
                       />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </div>
 
         {pluginCatalogQuery.isLoading && (
@@ -305,16 +300,18 @@ export function ChainDeployModal({
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+      </ModalBody>
+      <ModalFooter>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', width: '100%' }}>
           <div className="muted" style={{ fontSize: 13 }}>
             {selectedTargetIds.size} target node{selectedTargetIds.size === 1 ? '' : 's'} selected
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" onClick={onClose} disabled={deployMutation.isPending}>
+            <LegacyButton variant="ghost" onClick={onClose} disabled={deployMutation.isPending}>
               Cancel
-            </button>
-            <button
-              className="btn btn-primary"
+            </LegacyButton>
+            <LegacyButton
+              variant="primary"
               disabled={selectedTargetIds.size === 0 || deployMutation.isPending}
               onClick={() => deployMutation.mutate(Array.from(selectedTargetIds))}
             >
@@ -329,11 +326,11 @@ export function ChainDeployModal({
                   Deploy Chain
                 </>
               )}
-            </button>
+            </LegacyButton>
           </div>
         </div>
-      </div>
-    </div>
+      </ModalFooter>
+    </ComposedModal>
   )
 }
 

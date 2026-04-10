@@ -66,7 +66,8 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 input[type="range"]:focus {
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--interactive));
+  outline-offset: 2px;
 }
 
 input[type="range"]:focus::-webkit-slider-thumb {
@@ -108,7 +109,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .disclosure-actions {
   display: flex;
   gap: 8px;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border-top: 1px solid var(--border);
   background: var(--surface-3);
 }

@@ -33,7 +33,9 @@ class _ActivationApplyEngineStub:
         self.loop_calls: list[tuple[int, list[dict[str, object]]]] = []
         self.parallel_group_calls: list[tuple[int, int]] = []
         self.parallel_branch_calls: list[tuple[int, int, int, int]] = []
+        self.parallel_branch_chain_id_calls: list[tuple[int, int, int]] = []
         self.parallel_blend_calls: list[tuple[int, float]] = []
+        self.parallel_switch_calls: list[tuple[int, int]] = []
         self.chain_mute_calls: list[tuple[int, bool]] = []
         self.chain_solo_calls: list[tuple[int, bool]] = []
         self.chain_mix_calls: list[tuple[int, float]] = []
@@ -64,8 +66,16 @@ class _ActivationApplyEngineStub:
         self.parallel_branch_calls.append((group_id, branch_index, plugin_id, position))
         return True
 
+    async def set_parallel_branch_chain_id(self, group_id: int, branch_index: int, chain_id: int) -> bool:
+        self.parallel_branch_chain_id_calls.append((group_id, branch_index, chain_id))
+        return True
+
     async def set_parallel_ab_blend(self, group_id: int, blend: float) -> None:
         self.parallel_blend_calls.append((group_id, float(blend)))
+
+    async def trigger_parallel_ab_switch(self, group_id: int, branch_index: int) -> bool:
+        self.parallel_switch_calls.append((group_id, int(branch_index)))
+        return True
 
     async def set_chain_mute(self, chain_id: int, muted: bool) -> bool:
         self.chain_mute_calls.append((chain_id, bool(muted)))
@@ -191,6 +201,7 @@ def test_snapshot_activation_applies_routing_channel_and_loop_state(tmp_path, mo
             assert activated is not None
             assert engine_stub.parallel_group_calls
             assert engine_stub.parallel_branch_calls
+            assert engine_stub.parallel_branch_chain_id_calls
             assert engine_stub.parallel_blend_calls
             assert engine_stub.loop_calls
             assert engine_stub.chain_mute_calls
@@ -272,7 +283,7 @@ def test_live_ab_switch_edit_reapplies_active_channel_selection(tmp_path, monkey
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None
 
-            before_calls = len(engine_stub.parallel_blend_calls)
+            before_calls = len(engine_stub.parallel_switch_calls)
             updated = await service.update_routing(
                 created["id"],
                 {"active_channel_key": "channel-a"},
@@ -281,8 +292,8 @@ def test_live_ab_switch_edit_reapplies_active_channel_selection(tmp_path, monkey
             assert updated is not None
             assert updated["routing_requires_reactivation"] is False
             assert updated["routing_apply"]["reason"] == "ab_switch_applied"
-            assert len(engine_stub.parallel_blend_calls) > before_calls
-            assert engine_stub.parallel_blend_calls[-1][1] == 0.0
+            assert len(engine_stub.parallel_switch_calls) > before_calls
+            assert engine_stub.parallel_switch_calls[-1][1] == 0
 
             updated = await service.update_routing(
                 created["id"],
@@ -290,7 +301,7 @@ def test_live_ab_switch_edit_reapplies_active_channel_selection(tmp_path, monkey
             )
             assert updated is not None
             assert updated["routing_apply"]["reason"] == "ab_switch_applied"
-            assert engine_stub.parallel_blend_calls[-1][1] == 1.0
+            assert engine_stub.parallel_switch_calls[-1][1] == 1
 
     asyncio.run(_run())
 

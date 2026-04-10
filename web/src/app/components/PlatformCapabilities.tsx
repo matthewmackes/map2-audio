@@ -22,6 +22,8 @@ import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsAp
 import type { SystemMetrics, MetricsSummary } from '../../map2/types'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
+import { LegacyButton } from './shared/LegacyButton'
+import { LegacyTile } from './shared/LegacyTile'
 import './StatusPanelFlatteners.css'
 
 interface CategoryResult {
@@ -335,7 +337,7 @@ export function PlatformCapabilities() {
       {/* Capabilities Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         {/* Connectivity & Integration - Full Service Management */}
-        <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
+        <LegacyTile style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <Graph size={20} style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
@@ -659,10 +661,10 @@ export function PlatformCapabilities() {
               <strong style={{ color: '#64b5f6', fontSize: 11 }}>Integration Architecture:</strong> MAP2 provides multi-layered connectivity. Audio flows through ALSA (hardware access) and JACK (app routing). MIDI uses USB and ALSA sequencer protocols. REST API with {apiCount || '120+'}  endpoints enables remote monitoring and control. WebSocket connections deliver real-time updates. All {Object.keys(servicesStatus.data?.services || {}).length} services feature health monitoring, automatic failover, and graceful degradation for robust audio processing.
             </div>
           </div>
-        </div>
+        </LegacyTile>
 
         {/* System Metrics - Live Performance Monitoring */}
-        <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
+        <LegacyTile style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <TrendUp size={20} style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
@@ -797,10 +799,10 @@ export function PlatformCapabilities() {
               <strong style={{ color: '#64b5f6', fontSize: 11 }}>Performance Overview:</strong> Real-time system metrics provide visibility into MAP2 platform health. CPU and memory usage indicate system load, while audio latency and XRun counts reflect audio engine stability. The metrics refresh every 4 seconds for current status and every 10 seconds for statistical summaries (min/avg/max), enabling proactive performance monitoring and optimization.
             </div>
           </div>
-        </div>
+        </LegacyTile>
 
         {/* Platform Standards, Assets & Tools - Table Card */}
-        <div className="card" style={{ padding: 16 }}>
+        <LegacyTile style={{ padding: 16 }}>
           <div className="flex" style={{ gap: 10, marginBottom: 16, alignItems: 'flex-start' }}>
             <Lightning size={20} style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
             <div>
@@ -873,11 +875,11 @@ export function PlatformCapabilities() {
               </tr>
             </tfoot>
           </table>
-        </div>
+        </LegacyTile>
 
         {/* Engine Performance - Unified JUCE Health Card */}
         {testResult && (
-          <div className="card" style={{ padding: 16 }}>
+          <LegacyTile style={{ padding: 16 }}>
             <div className="flex" style={{ gap: 10, marginBottom: 16, alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <div className="flex" style={{ gap: 10, alignItems: 'flex-start' }}>
                 {getStatusIcon(testResult.overall_status, testResult.score)}
@@ -886,15 +888,16 @@ export function PlatformCapabilities() {
                   <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time audio engine testing & metrics</p>
                 </div>
               </div>
-              <button
+              <LegacyButton
+                variant="ghost"
+                size="sm"
+                iconDescription="Rerun performance test"
                 onClick={runNewTest}
                 disabled={runningTest}
-                className="btn btn-ghost btn-sm"
                 style={{ padding: '4px 8px', flexShrink: 0 }}
-                title="Rerun performance test"
               >
                 <ArrowsClockwise size={14} className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
-              </button>
+              </LegacyButton>
             </div>
 
             {/* Score and Latency Stats */}
@@ -1001,7 +1004,7 @@ export function PlatformCapabilities() {
                 {testResult.duration_seconds && ` (${testResult.duration_seconds.toFixed(1)}s)`}
               </div>
             </div>
-          </div>
+          </LegacyTile>
         )}
 
       </div>

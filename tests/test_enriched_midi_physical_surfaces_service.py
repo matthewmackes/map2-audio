@@ -20,7 +20,7 @@ class _FakeMaschineService:
 
 class _FakePushManager:
     async def get_health(self) -> dict[str, object]:
-        return {"running": False, "discovery": {}, "active_device": None}
+        return {"running": False, "discovery": {}, "active_device": None, "reconnect_count": 0}
 
     async def get_state_snapshot(self) -> dict[str, object]:
         return {"state": {}}
@@ -102,6 +102,75 @@ class _FakeRegistry:
         }
 
 
+class _FakeMidiCommanderService:
+    def get_state_snapshot(self) -> dict[str, object]:
+        return {
+            "daemon_status": {
+                "enabled": True,
+                "state": "connected",
+                "available": True,
+                "reconnect_count": 1,
+                "last_seen_at": "2026-04-10T11:20:00Z",
+                "last_repush_at": "2026-04-10T11:20:03Z",
+                "notification": {
+                    "severity": "info",
+                    "title": "MIDI Commander state refreshed",
+                    "subtitle": "Current snapshot mappings were refreshed.",
+                    "emitted_at": "2026-04-10T11:20:03Z",
+                },
+            },
+            "active_snapshot_mapping": {"snapshot_id": 7},
+            "last_activation_push": {"snapshot_id": 7},
+        }
+
+
+class _FakeLaunchControlService:
+    def get_state_snapshot(self) -> dict[str, object]:
+        return {
+            "template_state_by_port": {"lc-out": {"variant": "launch_control_xl"}},
+            "push_count": 4,
+            "last_push": {"destination_port": "lc-out"},
+            "active_snapshot_mapping": {"snapshot_id": 7},
+            "last_activation_push": {"snapshot_id": 7},
+            "daemon_status": {
+                "enabled": True,
+                "state": "connected",
+                "available": True,
+                "reconnect_count": 2,
+                "last_seen_at": "2026-04-10T11:19:00Z",
+                "last_repush_at": "2026-04-10T11:19:03Z",
+                "notification": {
+                    "severity": "info",
+                    "title": "Launch Control state restored",
+                    "subtitle": "Live snapshot mappings and LED state re-pushed.",
+                    "emitted_at": "2026-04-10T11:19:03Z",
+                },
+            },
+        }
+
+
+class _FakeMcuService:
+    def get_state_snapshot(self) -> dict[str, object]:
+        return {
+            "daemon_status": {
+                "enabled": True,
+                "state": "connected",
+                "available": True,
+                "reconnect_count": 3,
+                "last_seen_at": "2026-04-10T11:18:00Z",
+                "last_repush_at": "2026-04-10T11:18:05Z",
+                "notification": {
+                    "severity": "info",
+                    "title": "MCU surface state restored",
+                    "subtitle": "Focused plugin bank and transport state re-pushed.",
+                    "emitted_at": "2026-04-10T11:18:05Z",
+                },
+            },
+            "identity": {"device_name": "MCU Pro"},
+            "last_activation_push": {"snapshot_id": 7},
+        }
+
+
 class _FakeSessionService:
     async def resolve_session(
         self,
@@ -128,6 +197,9 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
     monkeypatch.setattr(enriched_module, "get_maschine_service", lambda: _FakeMaschineService())
     monkeypatch.setattr(enriched_module, "get_push_surface_manager", lambda: _FakePushManager())
     monkeypatch.setattr(enriched_module, "get_ground_control_pro_service", lambda: _FakeGroundControlService())
+    monkeypatch.setattr(enriched_module, "get_launch_control_surface_service", lambda: _FakeLaunchControlService())
+    monkeypatch.setattr(enriched_module, "get_midi_commander_surface_service", lambda: _FakeMidiCommanderService())
+    monkeypatch.setattr(enriched_module, "get_mcu_surface_service", lambda: _FakeMcuService())
     monkeypatch.setattr(enriched_module, "get_midi_device_registry", lambda: _FakeRegistry())
     monkeypatch.setattr(enriched_module, "get_enriched_surface_session_service", lambda: _FakeSessionService())
     monkeypatch.setattr(
@@ -156,21 +228,36 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
     assert ground_control["service_state"]["session_count"] == 2
     assert ground_control["view_state"]["current_view_id"] == "surface-lab"
     assert ground_control["surface_lab"]["snapshot"]["active_job_count"] == 1
+    assert ground_control["surface_lab"]["snapshot"]["reconnect_runtime"]["repush_scope"] == [
+        "snapshot_assignments",
+        "relay_state",
+        "transport_selection",
+    ]
 
     commander = units["meloaudio-midi-commander"]
     assert commander["specialized_route"] == "/midi-commander"
     assert commander["status"] == "online"
     assert commander["matched_midi_devices"][0]["profile_id"] == "meloaudio_midi_commander"
     assert commander["surface_lab"]["snapshot"]["current_bank"] == 2
+    assert commander["service_state"]["daemon_status"]["reconnect_count"] == 1
 
     launch_control = units["novation-launch-control"]
     assert launch_control["status"] == "detected"
     assert launch_control["matched_midi_devices"][0]["profile_id"] == "novation_launch_control"
     assert launch_control["service_state"]["profile"]["metadata"]["template_strategy"] == "components-managed-custom-modes"
     assert any(layer["status"] == "attention" for layer in launch_control["transport_layers"])
+    assert launch_control["surface_lab"]["snapshot"]["reconnect_runtime"]["notification"]["title"] == "Launch Control state restored"
 
     mackie = units["mackie-mcu-pro"]
     assert mackie["status"] == "detected"
     assert mackie["specialized_route"] == "/mcu"
     assert mackie["view_state"]["current_view_source"] == "midi-hub-profile-detected"
     assert mackie["surface_lab"]["snapshot"]["scribble_strip_transport"] == "mcu_scribble_strip"
+    assert mackie["service_state"]["daemon_status"]["reconnect_count"] == 3
+
+    assert len(summary["notifications"]) == 3
+    assert {item["unit_id"] for item in summary["notifications"]} == {
+        "novation-launch-control",
+        "meloaudio-midi-commander",
+        "mackie-mcu-pro",
+    }

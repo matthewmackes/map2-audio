@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Upload } from '@carbon/icons-react'
+import { LegacyButton } from '../shared/LegacyButton'
 import { UnifiedUploadDialog, type AssetType } from './UnifiedUploadDialog'
 
 interface Props {
@@ -21,17 +22,18 @@ export function UploadButton({
 }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const sizeClass = size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : ''
-
   return (
     <>
-      <button
-        className={`btn btn-${variant} ${sizeClass} ${className}`}
+      <LegacyButton
+        className={className}
+        variant={variant}
+        size={size}
+        renderIcon={Upload}
+        iconDescription={label}
         onClick={() => setDialogOpen(true)}
       >
-        <Upload size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />
         {label}
-      </button>
+      </LegacyButton>
 
       <UnifiedUploadDialog
         open={dialogOpen}

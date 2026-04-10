@@ -1787,7 +1787,8 @@
 .juce-grid-page__chain-tile:hover,
 .juce-grid-page__chain-tile:focus-visible {
   border-color: var(--cds-link-primary, #0f62fe);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__chain-tile:focus-visible {
@@ -2191,7 +2192,8 @@
 .juce-grid-page__snapshot-status-description-button:hover:not(:disabled),
 .juce-grid-page__snapshot-status-description-button:focus-visible {
   color: var(--cds-text-primary, var(--text-primary));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__snapshot-status-description-button.is-placeholder {
@@ -2759,7 +2761,8 @@
 
 .juce-grid-page__routing-terminal[role="button"]:focus-visible,
 .juce-grid-page__routing-marker[role="button"]:focus-visible {
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__routing-terminal[role="button"]:focus-visible line,
@@ -3273,7 +3276,8 @@
 .juce-grid-page__flow-card:hover,
 .juce-grid-page__flow-card:focus-visible {
   background: var(--juce-grid-flow-bar-bg-hover);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card.is-active {
@@ -3389,7 +3393,8 @@
 .juce-grid-page__flow-card-title-button:hover,
 .juce-grid-page__flow-card-title-button:focus-visible {
   color: var(--cds-text-primary, var(--text-primary));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card-title-heading {
@@ -3483,7 +3488,8 @@
 .juce-grid-page__flow-card-meta:hover,
 .juce-grid-page__flow-card-meta:focus-visible {
   color: var(--cds-text-secondary, var(--text-secondary));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card-meta--inline {
@@ -3614,7 +3620,8 @@
 .juce-grid-page__flow-card-routing-summary:hover,
 .juce-grid-page__flow-card-routing-summary:focus-visible {
   color: var(--cds-text-primary, var(--text));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
   background: color-mix(in srgb, var(--juce-grid-flow-bar-chip-bg) 80%, var(--cds-link-primary, #0f62fe) 6%);
 }
 
@@ -3788,7 +3795,8 @@
 .juce-grid-page__flow-card-state:hover,
 .juce-grid-page__flow-card-state:focus-visible {
   color: var(--cds-text-primary, var(--text-primary));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card-state--mute.is-active {
@@ -3841,7 +3849,8 @@
 .juce-grid-page__flow-card-assign:hover,
 .juce-grid-page__flow-card-assign:focus-visible {
   background: color-mix(in srgb, var(--juce-grid-flow-bar-chip-bg) 78%, var(--cds-link-primary, #0f62fe) 10%);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card-delete {
@@ -3859,7 +3868,8 @@
 .juce-grid-page__flow-card-delete:hover,
 .juce-grid-page__flow-card-delete:focus-visible {
   color: var(--cds-support-error, #da1e28);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-support-error, #da1e28));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__flow-card-action.cds--btn {
@@ -5398,7 +5408,8 @@
 .juce-grid-page__snapshot-tile:hover,
 .juce-grid-page__snapshot-tile:focus-visible {
   border-color: var(--cds-link-primary);
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__snapshot-tile.is-active {
@@ -5662,7 +5673,8 @@
 .juce-grid-page__assignment-card:focus-visible {
   border-color: var(--cds-border-interactive, var(--cds-link-primary));
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.03));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-link-primary, #0f62fe));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__assignment-card.is-selected {
@@ -6512,7 +6524,8 @@
   overflow: hidden;
   transition: border-color 160ms ease, transform 120ms ease, opacity 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
   cursor: pointer;
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .juce-grid-page__signal-plugin-card.is-selected {
@@ -7014,7 +7027,8 @@
 .juce-grid-page__port-card:focus-visible {
   border-color: color-mix(in srgb, var(--juce-grid-port-accent) 45%, var(--cds-border-subtle, var(--border)));
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.04));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--juce-grid-port-accent));
+  outline-offset: 2px;
 }
 
 .juce-grid-page__port-card.is-selected {

@@ -7577,7 +7577,7 @@ export function SnapshotEditorPage() {
     return (
       <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
         <MapAudioGridIcon size={120} />
-        <h1 className="juce-grid-page__viewport-block-heading">This experience requires a 1920x1080 or larger display</h1>
+        <h1 className="juce-grid-page__viewport-block-heading">This experience requires a 560x917 or larger display</h1>
         {showViewportRotateHint && (
           <p>Maximize the browser window or move to a larger display, then reopen Audio Grid.</p>
         )}

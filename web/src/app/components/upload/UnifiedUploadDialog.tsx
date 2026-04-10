@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { ComposedModal, ModalBody, ModalFooter, ModalHeader } from '@carbon/react'
 import {
   CheckmarkFilled as CheckCircle,
   Close as X,
@@ -16,6 +16,7 @@ import {
   Watson as PuzzlePiece,
 } from '@carbon/icons-react'
 import { uploadApi } from '../../../map2/api'
+import { LegacyButton } from '../shared/LegacyButton'
 import { useToasts } from '../Toasts'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import '../library/ModelList.css'
@@ -327,40 +328,25 @@ export function UnifiedUploadDialog({
 
   if (!open) return null
 
-  return createPortal(
-    <div
-      className="dialog-backdrop"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: isMobile ? 'stretch' : 'center',
-        justifyContent: isMobile ? 'stretch' : 'center',
-        zIndex: 1000,
-      }}
+  return (
+    <ComposedModal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      className="upload-dialog"
     >
-      <div
-        className="dialog"
-        onClick={(e) => e.stopPropagation()}
+      <ModalHeader
+        title="Upload Audio Assets"
+        label="Asset library"
+        closeModal={onClose}
+      />
+      <ModalBody
         style={{
-          width: isMobile ? '100vw' : 'min(700px, 95vw)',
           maxHeight: isMobile ? '100vh' : '85vh',
-          minHeight: isMobile ? '100vh' : undefined,
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: isMobile ? 0 : undefined,
         }}
       >
-        {/* Header */}
-        <div className="flex-between" style={{ marginBottom: 12 }}>
-          <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <UploadSimple size={22} style={{ color: 'var(--primary)' }} />
-            <h3 style={{ margin: 0 }}>Upload Audio Assets</h3>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
-          </button>
+        <div className="flex" style={{ gap: 10, alignItems: 'center', marginBottom: 12 }}>
+          <UploadSimple size={22} style={{ color: 'var(--primary)' }} />
         </div>
 
         <p style={{ margin: '0 0 16px', color: 'var(--muted)' }}>
@@ -369,19 +355,21 @@ export function UnifiedUploadDialog({
 
         {/* Asset Type Filter */}
         <div className="flex" style={{ gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-          <button
-            className={`btn btn-sm ${selectedType === 'auto' ? 'btn-primary' : 'btn-ghost'}`}
+          <LegacyButton
+            variant={selectedType === 'auto' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => setSelectedType('auto')}
           >
             Auto-detect
-          </button>
+          </LegacyButton>
           {(Object.keys(ASSET_CONFIGS) as AssetType[]).map((type) => {
             const config = ASSET_CONFIGS[type]
             const Icon = config.icon
             return (
-              <button
+              <LegacyButton
                 key={type}
-                className={`btn btn-sm ${selectedType === type ? 'btn-primary' : 'btn-ghost'}`}
+                variant={selectedType === type ? 'primary' : 'ghost'}
+                size="sm"
                 onClick={() => setSelectedType(type)}
                 style={{
                   borderColor: selectedType === type ? config.color : undefined,
@@ -389,7 +377,7 @@ export function UnifiedUploadDialog({
               >
                 <Icon size={14} style={{ color: config.color }} />
                 {config.name}
-              </button>
+              </LegacyButton>
             )
           })}
         </div>
@@ -444,9 +432,9 @@ export function UnifiedUploadDialog({
                 )}
               </span>
               {stats.success > 0 && (
-                <button className="btn btn-ghost btn-sm" onClick={clearCompleted}>
+                <LegacyButton variant="ghost" size="sm" onClick={clearCompleted}>
                   Clear completed
-                </button>
+                </LegacyButton>
               )}
             </div>
 
@@ -506,13 +494,15 @@ export function UnifiedUploadDialog({
 
                         {/* Remove button */}
                         {file.status !== 'uploading' && (
-                          <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => removeFile(file.id)}
-                          style={{ padding: 4 }}
-                        >
+                          <LegacyButton
+                            variant="ghost"
+                            size="sm"
+                            iconDescription={`Remove ${file.name}`}
+                            onClick={() => removeFile(file.id)}
+                            style={{ padding: 4 }}
+                          >
                             <Trash size={14} />
-                          </button>
+                          </LegacyButton>
                         )}
                       </div>
                     </div>
@@ -540,27 +530,19 @@ export function UnifiedUploadDialog({
           </div>
         )}
 
-        {/* Footer */}
-        <div className="divider" />
-        <div
-          className="flex-between"
-          style={{
-            position: isMobile ? 'sticky' : 'static',
-            bottom: 0,
-            background: isMobile ? 'var(--surface)' : 'transparent',
-            paddingTop: isMobile ? 12 : 0,
-          }}
-        >
+      </ModalBody>
+      <ModalFooter>
+        <div className="flex-between" style={{ width: '100%' }}>
           <span className="muted" style={{ fontSize: 12 }}>
             Supported: .nam, .wav, .aif, .aiff, .flac, .vst3, .zip
           </span>
           <div className="flex" style={{ gap: 8 }}>
-            <button className="btn btn-ghost" onClick={onClose}>
+            <LegacyButton variant="ghost" onClick={onClose}>
               Close
-            </button>
+            </LegacyButton>
             {stats.pending > 0 && (
-              <button
-                className="btn btn-primary"
+              <LegacyButton
+                variant="primary"
                 onClick={uploadAll}
                 disabled={stats.uploading > 0 || stats.needsType > 0}
               >
@@ -575,12 +557,11 @@ export function UnifiedUploadDialog({
                     Upload {stats.pending} file(s)
                   </>
                 )}
-              </button>
+              </LegacyButton>
             )}
           </div>
         </div>
-      </div>
-    </div>,
-    document.body
+      </ModalFooter>
+    </ComposedModal>
   )
 }

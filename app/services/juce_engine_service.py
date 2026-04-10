@@ -439,6 +439,12 @@ class JuceEngineService(Singleton):
             return False
         return await asyncio.to_thread(self._engine.replace_chain_with_spillover, list(order))
 
+    async def apply_routing_topology(self, spec: Dict[str, Any]) -> bool:
+        """Replace chain, parallel-group, and sidechain topology in one engine mutation."""
+        if not self._engine or not hasattr(self._engine, "apply_routing_topology"):
+            return False
+        return await asyncio.to_thread(self._engine.apply_routing_topology, dict(spec))
+
     async def get_spillover_chain_states(self) -> List[Dict[str, Any]]:
         """Return active spillover runtime diagnostics when the engine exposes them."""
         if not self._engine or not hasattr(self._engine, "get_spillover_chain_states"):
@@ -1200,6 +1206,33 @@ class JuceEngineService(Singleton):
             if callable(add_handler):
                 await asyncio.to_thread(add_handler, mapping)
         return True
+
+    async def replace_snapshot_expression_mappings(self, entries: List[Dict[str, Any]]) -> bool:
+        """Replace snapshot-owned native expression mappings in the JUCE runtime."""
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "replace_snapshot_expression_mappings", None)
+        if not callable(method):
+            return False
+        native_entries: List[Dict[str, Any]] = []
+        can_resolve_instances = callable(getattr(self._engine, "get_current_pedalboard", None))
+        for entry in entries:
+            native_entry = dict(entry)
+            plugin_uri = str(native_entry.get("target_plugin_uri") or "")
+            plugin_position = native_entry.get("target_plugin_position")
+            if can_resolve_instances and plugin_uri:
+                instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+                if isinstance(instance_id, int) and instance_id > 0:
+                    native_entry["target_plugin"] = instance_id
+                else:
+                    logger.warning(
+                        "Snapshot expression mapping %s could not resolve %s (position=%s)",
+                        native_entry.get("id"),
+                        plugin_uri,
+                        plugin_position,
+                    )
+            native_entries.append(native_entry)
+        return bool(await asyncio.to_thread(method, native_entries))
 
     async def set_midi_command(
         self,
@@ -2122,6 +2155,15 @@ class JuceEngineService(Singleton):
         if self._engine:
             await asyncio.to_thread(self._engine.set_parallel_ab_blend, group_id, blend)
 
+    async def trigger_parallel_ab_switch(self, group_id: int, branch_index: int) -> bool:
+        """Hard-switch an A/B group to branch 0 or 1 at the next zero crossing."""
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "trigger_parallel_ab_switch", None)
+        if not callable(method):
+            return False
+        return bool(await asyncio.to_thread(method, group_id, branch_index))
+
     async def get_parallel_ab_blend(self, group_id: int) -> float:
         """Get A/B blend for a parallel group"""
         if not self._engine:
@@ -2133,6 +2175,15 @@ class JuceEngineService(Singleton):
         """Set individual branch level (0.0 to 2.0)"""
         if self._engine:
             await asyncio.to_thread(self._engine.set_parallel_branch_level, group_id, branch_index, level)
+
+    async def set_parallel_branch_chain_id(self, group_id: int, branch_index: int, chain_id: int) -> bool:
+        """Associate a runtime chain ID with one branch of a parallel group."""
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_parallel_branch_chain_id", None)
+        if not callable(method):
+            return False
+        return bool(await asyncio.to_thread(method, group_id, branch_index, chain_id))
 
     async def set_parallel_bypass(self, group_id: int, bypass: bool) -> None:
         """Set bypass for a parallel group"""

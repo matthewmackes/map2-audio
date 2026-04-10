@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 30px;
+  padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-07, 2rem);
   background: linear-gradient(90deg, rgba(13, 71, 161, 0.3) 0%, transparent 100%);
   border-bottom: 1px solid rgba(77, 158, 255, 0.2);
 }
@@ -178,7 +178,7 @@
 /* Quick Stats */
 .audio-quick-stats {
   display: flex;
-  gap: 30px;
+  gap: var(--cds-spacing-07, 2rem);
 }
 
 .audio-quick-stat {
@@ -250,7 +250,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   border: 1px solid rgba(77, 158, 255, 0.1);
@@ -296,7 +296,7 @@
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(77, 158, 255, 0.3);
   color: #fff;
-  padding: 10px 14px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
@@ -309,7 +309,8 @@
 }
 
 .audio-select:focus {
-  outline: none;
+  outline: 2px solid var(--cds-focus, #4a9eff);
+  outline-offset: 2px;
   border-color: #4a9eff;
   box-shadow: 0 0 20px rgba(77, 158, 255, 0.3);
 }
@@ -365,14 +366,14 @@
 .audio-status-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--cds-spacing-04, 0.75rem);
 }
 
 .audio-status-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   border: 1px solid rgba(77, 158, 255, 0.1);
@@ -430,7 +431,7 @@
 /* Config Guide Panel */
 .audio-config-guide {
   background: linear-gradient(145deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-  padding: 20px 30px;
+  padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-07, 2rem);
   border-top: 1px solid rgba(77, 158, 255, 0.2);
 }
 
@@ -488,7 +489,7 @@
   }
 
   .audio-hero-section {
-    padding: 30px 20px;
+    padding: var(--cds-spacing-07, 2rem) var(--cds-spacing-06, 1.5rem);
   }
 }
 
@@ -516,7 +517,7 @@
   .audio-panel {
     border-right: none;
     border-bottom: 1px solid rgba(77, 158, 255, 0.1);
-    padding: 20px;
+    padding: var(--cds-spacing-06, 1.5rem);
   }
 
   .audio-panel:last-child {
@@ -535,7 +536,7 @@
 
   .audio-quick-stats {
     flex-wrap: wrap;
-    gap: 20px;
+    gap: var(--cds-spacing-06, 1.5rem);
   }
 
   .audio-quick-stat-value {
@@ -553,7 +554,7 @@
   }
 
   .audio-hero-section {
-    padding: 20px 16px;
+    padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-05, 1rem);
   }
 
   .audio-device-image {

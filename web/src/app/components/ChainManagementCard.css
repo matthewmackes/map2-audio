@@ -74,7 +74,7 @@
 .chains-grid-cell.active {
   min-height: 68px;
   grid-column: span 1;
-  padding: 10px 12px;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border-color: var(--interactive-active, var(--primary-strong));
   background: var(--bg);
 }
@@ -283,7 +283,8 @@
   color: var(--text-primary);
   font-size: var(--type-label);
   box-shadow: none;
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .chains-grid-input:focus {

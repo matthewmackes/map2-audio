@@ -26,6 +26,12 @@ def _build_service(fake_engine: _FakeAudioEngine, *, owner=None) -> StateAuthori
     async def _default_hook_plan():
         return [
             "push_footswitch_labels",
+            "push_maschine_assignments",
+            "push_push_surface_state",
+            "push_ground_control_pro_assignments",
+            "push_mcu_surface_state",
+            "push_launch_control_assignments",
+            "push_midi_commander_assignments",
             "push_controller_display_preview",
             "schedule_preload",
         ]
@@ -46,7 +52,10 @@ def _build_service(fake_engine: _FakeAudioEngine, *, owner=None) -> StateAuthori
         midi_service=SimpleNamespace(),
         get_audio_engine=lambda: fake_engine,
         push_snapshot_footswitch_labels=lambda *args, **kwargs: None,
+        push_snapshot_maschine_assignments=lambda *args, **kwargs: None,
+        push_snapshot_push_surface_state=lambda *args, **kwargs: None,
         push_snapshot_ground_control_pro_assignments=lambda *args, **kwargs: None,
+        push_snapshot_mcu_surface_state=lambda *args, **kwargs: None,
         push_snapshot_launch_control_assignments=lambda *args, **kwargs: None,
         push_snapshot_midi_commander_assignments=lambda *args, **kwargs: None,
         push_snapshot_controller_display_preview=lambda *args, **kwargs: None,
@@ -196,6 +205,22 @@ def test_run_activation_hooks_uses_configured_order():
     async def _push_footswitch_labels(**kwargs):
         executed.append("push_footswitch_labels")
 
+    async def _push_maschine_assignments(**kwargs):
+        executed.append("push_maschine_assignments")
+        return {"status": "completed"}
+
+    async def _push_push_surface_state(**kwargs):
+        executed.append("push_push_surface_state")
+        return {"status": "completed"}
+
+    async def _push_ground_control_pro_assignments(**kwargs):
+        executed.append("push_ground_control_pro_assignments")
+        return {"status": "completed"}
+
+    async def _push_mcu_surface_state(**kwargs):
+        executed.append("push_mcu_surface_state")
+        return {"status": "completed"}
+
     async def _push_launch_control_assignments(**kwargs):
         executed.append("push_launch_control_assignments")
 
@@ -206,7 +231,17 @@ def test_run_activation_hooks_uses_configured_order():
         executed.append("push_controller_display_preview")
 
     async def _hook_plan():
-        return ["schedule_preload", "push_launch_control_assignments", "push_midi_commander_assignments", "push_footswitch_labels", "unknown_hook"]
+        return [
+            "schedule_preload",
+            "push_maschine_assignments",
+            "push_push_surface_state",
+            "push_ground_control_pro_assignments",
+            "push_mcu_surface_state",
+            "push_launch_control_assignments",
+            "push_midi_commander_assignments",
+            "push_footswitch_labels",
+            "unknown_hook",
+        ]
 
     service = StateAuthorityActivationService(
         session=_FakeSession(),
@@ -216,7 +251,10 @@ def test_run_activation_hooks_uses_configured_order():
         midi_service=SimpleNamespace(),
         get_audio_engine=lambda: fake_engine,
         push_snapshot_footswitch_labels=_push_footswitch_labels,
-        push_snapshot_ground_control_pro_assignments=lambda *args, **kwargs: None,
+        push_snapshot_maschine_assignments=_push_maschine_assignments,
+        push_snapshot_push_surface_state=_push_push_surface_state,
+        push_snapshot_ground_control_pro_assignments=_push_ground_control_pro_assignments,
+        push_snapshot_mcu_surface_state=_push_mcu_surface_state,
         push_snapshot_launch_control_assignments=_push_launch_control_assignments,
         push_snapshot_midi_commander_assignments=_push_midi_commander_assignments,
         push_snapshot_controller_display_preview=_push_controller_display_preview,
@@ -242,9 +280,22 @@ def test_run_activation_hooks_uses_configured_order():
         )
     )
 
-    assert executed == ["schedule_preload", "push_launch_control_assignments", "push_midi_commander_assignments", "push_footswitch_labels"]
+    assert executed == [
+        "schedule_preload",
+        "push_maschine_assignments",
+        "push_push_surface_state",
+        "push_ground_control_pro_assignments",
+        "push_mcu_surface_state",
+        "push_launch_control_assignments",
+        "push_midi_commander_assignments",
+        "push_footswitch_labels",
+    ]
     assert [item["hook"] for item in results] == [
         "schedule_preload",
+        "push_maschine_assignments",
+        "push_push_surface_state",
+        "push_ground_control_pro_assignments",
+        "push_mcu_surface_state",
         "push_launch_control_assignments",
         "push_midi_commander_assignments",
         "push_footswitch_labels",
@@ -252,5 +303,5 @@ def test_run_activation_hooks_uses_configured_order():
     ]
     assert results[0]["preload_candidate_count"] == 2
     assert results[3]["status"] == "completed"
-    assert results[4]["status"] == "skipped"
-    assert results[4]["reason"] == "unknown_hook"
+    assert results[-1]["status"] == "skipped"
+    assert results[-1]["reason"] == "unknown_hook"

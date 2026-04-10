@@ -40,6 +40,14 @@ function normalizeTarget(
     id: String(entry.id ?? `${mappingId}-target-${targetIndex + 1}`),
     param_id: paramId,
     param_label: String(entry.param_label ?? paramId),
+    target_plugin_uri: typeof entry.target_plugin_uri === 'string' ? entry.target_plugin_uri : null,
+    target_plugin_position: typeof entry.target_plugin_position === 'number' && Number.isFinite(entry.target_plugin_position)
+      ? Math.trunc(entry.target_plugin_position)
+      : null,
+    param_index: typeof entry.param_index === 'number' && Number.isFinite(entry.param_index)
+      ? Math.trunc(entry.param_index)
+      : null,
+    parameter_symbol: typeof entry.parameter_symbol === 'string' ? entry.parameter_symbol : null,
     out_min: clampFloat(entry.out_min, 0),
     out_max: clampFloat(entry.out_max, 1),
     curve: normalizeCurve(entry.curve),

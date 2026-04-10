@@ -293,7 +293,11 @@ def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpda
             "monitoring_output_index": monitoring_output_index,
         }
 
-    payload = request.controls.model_dump(exclude_none=True) if request.controls is not None else {}
+    payload = (
+        request.controls.model_dump(exclude_none=True, exclude_unset=True)
+        if request.controls is not None
+        else {}
+    )
     if request.controls is not None and "monitoring_output_index" in request.controls.model_fields_set:
         payload["monitoring_output_index"] = request.controls.monitoring_output_index
     if monitoring_output_index is not UNSET:

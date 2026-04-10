@@ -461,12 +461,22 @@ export interface EnrichedPhysicalSurfaceSharedOperatorContract {
   snapshot_strategy: string;
   community_firmware_support: string;
   surface_lab_mode: string;
+  reconnect_strategy?: string;
 }
 
 export interface EnrichedPhysicalSurfacesSummary {
   stack_name: string;
   summary_generated_at: string;
   shared_operator_contract: EnrichedPhysicalSurfaceSharedOperatorContract;
+  notifications?: Array<{
+    id: string;
+    unit_id: string;
+    display_name: string;
+    severity: string;
+    title: string;
+    subtitle: string;
+    emitted_at: string;
+  }>;
   host_observations: {
     usb_devices: EnrichedPhysicalSurfaceMatch[];
     sound_cards: EnrichedPhysicalSurfaceMatch[];
@@ -2316,6 +2326,10 @@ export interface SnapshotExpressionTarget {
   id: string;
   param_id: string;
   param_label: string;
+  target_plugin_uri?: string | null;
+  target_plugin_position?: number | null;
+  param_index?: number | null;
+  parameter_symbol?: string | null;
   out_min: number;
   out_max: number;
   curve: SnapshotExpressionCurve;

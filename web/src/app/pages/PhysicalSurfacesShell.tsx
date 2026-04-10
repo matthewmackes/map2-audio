@@ -27,6 +27,14 @@ import { useTheme } from '../theme'
 
 type NavAccent = 'green' | 'blue' | 'warm-gray' | 'red'
 
+const STANDALONE_SURFACE_ROUTE_BY_UNIT_ID: Record<string, string> = {
+  'maschine-mk1': '/maschine',
+  'ableton-push': '/labs/push-surface',
+  'mackie-mcu-pro': '/mcu',
+  'novation-launch-control': '/launch-control',
+  'meloaudio-midi-commander': '/midi-commander',
+}
+
 function PhysicalSurfaceNavDot({ accent }: { accent: NavAccent | 'active' }) {
   return (
     <span
@@ -60,6 +68,16 @@ function unitIcon(unitId: string) {
     default:
       return Music
   }
+}
+
+export function resolvePhysicalSurfaceStandaloneRoute(
+  unitId: string,
+  specializedRoute?: string | null,
+): string | null {
+  if (specializedRoute && specializedRoute.trim()) {
+    return specializedRoute
+  }
+  return STANDALONE_SURFACE_ROUTE_BY_UNIT_ID[unitId] ?? null
 }
 
 const FALLBACK_UNITS: Array<Pick<EnrichedPhysicalSurfaceUnit, 'unit_id' | 'display_name'> & { status: string }> = [
@@ -135,6 +153,30 @@ export function PhysicalSurfacesShell() {
     return items
   }, [location.pathname, navigate, summary])
 
+  const footerRouteItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => {
+    const units = summary?.units ?? []
+    const unitsById = new Map(units.map((unit) => [unit.unit_id, unit]))
+    const routeUnits = FALLBACK_UNITS
+      .map((fallback) => unitsById.get(fallback.unit_id) ?? fallback)
+      .filter((unit) => resolvePhysicalSurfaceStandaloneRoute(unit.unit_id) !== null)
+
+    return routeUnits.map((unit) => {
+      const route = resolvePhysicalSurfaceStandaloneRoute(unit.unit_id)!
+      return {
+        key: `standalone:${unit.unit_id}`,
+        label: unit.display_name,
+        to: route,
+        icon: unitIcon(unit.unit_id),
+        active: location.pathname === route,
+        onOpen: () => navigate(route),
+        description: `Open the dedicated ${unit.display_name} route outside the shared physical-surface shell.`,
+        labelDecor: <PhysicalSurfaceNavDot accent={location.pathname === route ? 'active' : statusAccent(unit.status)} />,
+        meta: buildMetaTag(unit.status, statusAccent(unit.status)),
+        variant: 'utility',
+      }
+    })
+  }, [location.pathname, navigate, summary])
+
   return (
     <GlobalTheme theme={resolvedTheme}>
       <Theme as="div" theme={resolvedTheme} className="physical-surfaces-shell">
@@ -152,7 +194,8 @@ export function PhysicalSurfacesShell() {
               title="Enriched_MIDI_Physical_Surfaces"
               description="Unified controller architecture for richer physical-surface discovery, transport selection, and device-family workflows."
               items={navItems}
-              footerTitle="Runtime note"
+              footerTitle="Dedicated Routes"
+              footerItems={footerRouteItems}
               footer={(
                 <div className="physical-surfaces-shell__warning">
                   <WarningAltFilled size={14} />

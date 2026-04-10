@@ -69,7 +69,8 @@
 .node-nav-chip:hover,
 .node-nav-chip:focus-visible {
   border-color: var(--cds-focus);
-  outline: none;
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
 }
 
 .node-nav-chip--local {

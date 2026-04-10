@@ -333,7 +333,8 @@
 .app-window__close:focus-visible {
   border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 42%, var(--window-shell-border));
   background: color-mix(in srgb, var(--cds-support-error, #da1e28) 10%, var(--window-shell-surface-strong));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--cds-support-error, #da1e28));
+  outline-offset: 2px;
 }
 
 .app-window__close:active {
@@ -549,7 +550,8 @@
 .shell-launcher__header-action:focus-visible {
   border-color: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 28%, var(--window-shell-border));
   background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 10%, var(--cds-layer-01, #ffffff));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)));
+  outline-offset: 2px;
 }
 
 .shell-launcher__system-summary {
@@ -647,6 +649,50 @@
   font-weight: 500;
 }
 
+.shell-launcher__device-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.shell-launcher__device-group {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.shell-launcher__device-heading {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shell-launcher__device-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.shell-launcher__device-pill,
+.shell-launcher__device-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
+  background: var(--cds-layer-01, #ffffff);
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.shell-launcher__device-empty {
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
 .shell-launcher__body {
   padding: 1.1rem 1.2rem;
   overflow: visible;
@@ -687,7 +733,8 @@
 .shell-launcher__power-button.is-active {
   border-color: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 32%, var(--window-shell-border));
   background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-02, #f4f4f4));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)));
+  outline-offset: 2px;
 }
 
 .mobile-connection-banner-dot {
@@ -1107,7 +1154,8 @@
 .start-menu-panel__static-item.is-active {
   border-color: color-mix(in srgb, var(--window-shell-accent, var(--interactive, var(--cds-link-primary, #0f62fe))) 28%, var(--border, var(--window-shell-border)));
   background: color-mix(in srgb, var(--window-shell-accent, var(--interactive, var(--cds-link-primary, #0f62fe))) 16%, var(--surface-2, #dde1e6));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--window-shell-accent, var(--interactive, var(--cds-link-primary, #0f62fe))));
+  outline-offset: 2px;
 }
 
 .start-menu-power-menu {
@@ -1141,7 +1189,8 @@
 .start-menu-power-menu__item:hover,
 .start-menu-power-menu__item:focus-visible {
   background: color-mix(in srgb, var(--window-shell-accent, var(--interactive, var(--cds-link-primary, #0f62fe))) 16%, var(--surface-2, #dde1e6));
-  outline: none;
+  outline: 2px solid var(--cds-focus, var(--window-shell-accent, var(--interactive, var(--cds-link-primary, #0f62fe))));
+  outline-offset: 2px;
 }
 
 .start-menu-panel__tiles-column {
@@ -1453,6 +1502,10 @@
 @media (max-width: 66rem) {
   .shell-launcher__panel {
     width: min(32rem, calc(100vw - 2rem));
+  }
+
+  .shell-launcher__device-summary {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .shell-launcher__tile-grid {

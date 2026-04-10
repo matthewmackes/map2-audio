@@ -7,6 +7,7 @@
 
 import { Add, ArrowRight, FlowConnection, Shuffle, SplitScreen, Subtract } from '@carbon/icons-react'
 import type { ChainSlot } from '../ChainPanel'
+import { LegacyButton } from '../shared/LegacyButton'
 import './BottomRoutingPanel.css'
 
 export type RoutingMode =
@@ -80,16 +81,18 @@ export function BottomRoutingPanel({
     <div className="bottom-routing-panel">
       {/* Chain Management Section */}
       <div className="routing-chain-management">
-        <button
-          className="btn btn-sm btn-ghost"
+        <LegacyButton
+          variant="ghost"
+          size="sm"
           onClick={onAddChain}
           disabled={!canAddChain}
-          title="Add chain"
+          iconDescription="Add chain"
         >
           <Add size={16} />
-        </button>
-        <button
-          className="btn btn-sm btn-ghost"
+        </LegacyButton>
+        <LegacyButton
+          variant="ghost"
+          size="sm"
           onClick={() => {
             const lastSlot = chainSlots[chainSlots.length - 1]
             if (lastSlot && canRemoveChain) {
@@ -97,10 +100,10 @@ export function BottomRoutingPanel({
             }
           }}
           disabled={!canRemoveChain}
-          title="Remove last chain"
+          iconDescription="Remove last chain"
         >
           <Subtract size={16} />
-        </button>
+        </LegacyButton>
         <span className="routing-chain-count">
           {chainSlots.length} chain{chainSlots.length !== 1 ? 's' : ''}
         </span>
@@ -109,15 +112,16 @@ export function BottomRoutingPanel({
       {/* Routing Mode Selector */}
       <div className="routing-mode-selector">
         {ROUTING_MODES.map(({ mode, label, icon, description }) => (
-          <button
+          <LegacyButton
             key={mode}
-            className={`btn btn-sm ${routing.mode === mode ? 'btn-primary' : 'btn-ghost'}`}
+            variant={routing.mode === mode ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => onSetRoutingMode(mode)}
             title={description}
           >
             {icon}
             <span>{label}</span>
-          </button>
+          </LegacyButton>
         ))}
       </div>
 

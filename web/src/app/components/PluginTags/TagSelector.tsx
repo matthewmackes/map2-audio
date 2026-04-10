@@ -420,7 +420,8 @@ export function TagSelector({
         }
 
         .tag-search input:focus {
-          outline: none;
+          outline: 2px solid var(--cds-focus, #6b7280);
+          outline-offset: 2px;
           border-color: #6b7280;
         }
 

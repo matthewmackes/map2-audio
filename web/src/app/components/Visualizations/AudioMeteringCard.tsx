@@ -5,6 +5,7 @@ import { LoudnessMeter } from './LoudnessMeter'
 import { CPUMeterPanel } from './CPUMeterPanel'
 import { LatencyDisplay } from './LatencyDisplay'
 import { PhaseCorrelationMeter } from './PhaseCorrelationMeter'
+import { LegacyTile } from '../shared/LegacyTile'
 
 type MeteringTab = 'spectrum' | 'loudness' | 'cpu' | 'latency' | 'phase'
 
@@ -23,7 +24,7 @@ export function AudioMeteringCard({
   const accentColor = '#2563eb'
 
   return (
-    <div className="card" style={{
+    <LegacyTile style={{
       background: 'linear-gradient(135deg, rgba(14, 22, 37, 0.95), rgba(20, 30, 50, 0.9))',
       borderColor: `rgba(55, 214, 201, 0.2)`,
       padding: 0,
@@ -177,6 +178,6 @@ export function AudioMeteringCard({
           </div>
         </div>
       </div>
-    </div>
+    </LegacyTile>
   )
 }

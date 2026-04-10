@@ -195,6 +195,93 @@ class TestJuceEngineMocked:
         version = service.get_version()
         assert isinstance(version, str)
 
+    @pytest.mark.asyncio
+    async def test_set_monitoring_output_index_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.set_monitoring_output_index.return_value = True
+
+        result = await service.set_monitoring_output_index(4)
+
+        assert result is True
+        service._engine.set_monitoring_output_index.assert_called_once_with(4)
+
+    @pytest.mark.asyncio
+    async def test_trigger_parallel_ab_switch_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.trigger_parallel_ab_switch.return_value = True
+
+        result = await service.trigger_parallel_ab_switch(7, 1)
+
+        assert result is True
+        service._engine.trigger_parallel_ab_switch.assert_called_once_with(7, 1)
+
+    @pytest.mark.asyncio
+    async def test_apply_routing_topology_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.apply_routing_topology.return_value = True
+
+        result = await service.apply_routing_topology({"chain_order": [1, 2], "parallel_groups": []})
+
+        assert result is True
+        service._engine.apply_routing_topology.assert_called_once_with({"chain_order": [1, 2], "parallel_groups": []})
+
+    @pytest.mark.asyncio
+    async def test_replace_snapshot_expression_mappings_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.replace_snapshot_expression_mappings.return_value = True
+
+        payload = [{"id": "expr-1", "cc": 11, "param_id": "plugin.cutoff"}]
+        result = await service.replace_snapshot_expression_mappings(payload)
+
+        assert result is True
+        service._engine.replace_snapshot_expression_mappings.assert_called_once_with(payload)
+
+    @pytest.mark.asyncio
+    async def test_replace_snapshot_expression_mappings_resolves_target_plugin_instance(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.replace_snapshot_expression_mappings.return_value = True
+        service._engine.get_current_pedalboard.return_value = {
+            "items": [
+                {
+                    "uri": "urn:test:plugin",
+                    "position": 0,
+                    "instance_id": 41,
+                }
+            ]
+        }
+
+        payload = [
+            {
+                "id": "expr-1",
+                "cc": 11,
+                "param_id": "plugin.cutoff",
+                "target_plugin_uri": "urn:test:plugin",
+                "target_plugin_position": 0,
+                "param_index": 2,
+            }
+        ]
+        result = await service.replace_snapshot_expression_mappings(payload)
+
+        assert result is True
+        service._engine.replace_snapshot_expression_mappings.assert_called_once_with(
+            [
+                {
+                    "id": "expr-1",
+                    "cc": 11,
+                    "param_id": "plugin.cutoff",
+                    "target_plugin_uri": "urn:test:plugin",
+                    "target_plugin_position": 0,
+                    "param_index": 2,
+                    "target_plugin": 41,
+                }
+            ]
+        )
+
 
 class TestPiPedalCompatibility:
     """Test backward compatibility with PiPedal API."""

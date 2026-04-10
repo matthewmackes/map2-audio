@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning, Activity as Cpu, DataBase as HardDrive, Wifi as WifiHigh } from '@carbon/icons-react'
 import { useMemo } from 'react'
+import { LegacyTile } from '../shared/LegacyTile'
 
 interface ClusterOverviewTabProps {
   simulationMode: boolean
@@ -87,8 +88,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
       {/* Health Summary Cards */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         {/* Health Score */}
-        <div
-          className="stat-card"
+        <LegacyTile
           style={{
             background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`,
             borderColor: healthColor,
@@ -120,10 +120,10 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
             {stats.onlineCount === stats.nodeCount ? 'All nodes healthy' : `${stats.nodeCount - stats.onlineCount} node(s) offline`}
           </div>
-        </div>
+        </LegacyTile>
 
         {/* Nodes */}
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
@@ -148,10 +148,10 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
             {stats.nodeCount === 1 ? 'Single node deployment' : `${stats.nodeCount} node cluster`}
           </div>
-        </div>
+        </LegacyTile>
 
         {/* CPU */}
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -176,10 +176,10 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalCpu} cores available</div>
-        </div>
+        </LegacyTile>
 
         {/* Memory */}
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -204,10 +204,10 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalMemory} GB available</div>
-        </div>
+        </LegacyTile>
 
         {/* DSP */}
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -232,10 +232,10 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Cluster audio load</div>
-        </div>
+        </LegacyTile>
 
         {/* Network Latency */}
-        <div className="stat-card">
+        <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -260,7 +260,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Inter-node latency</div>
-        </div>
+        </LegacyTile>
       </div>
 
       {/* Deployment Mode Info */}
