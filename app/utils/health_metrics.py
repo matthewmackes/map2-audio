@@ -11,16 +11,18 @@ Provides:
 import asyncio
 import time
 import psutil
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Dict
 from collections import deque
 
 from app.utils.logging_utils import get_logger
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = get_logger(__name__)
 
 
-class HealthMetrics:
+class HealthMetrics(Singleton):
     """Collect system health metrics."""
     
     def __init__(self):
@@ -135,7 +137,7 @@ class HealthMetrics:
         
         return {
             'status': 'healthy' if all_ok else 'degraded',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': utc_now().isoformat(),
             'uptime_seconds': int(self.get_uptime_seconds()),
             'events_processed': self.events_processed,
             'events_per_sec': round(self.get_events_per_second(), 2),
@@ -150,21 +152,13 @@ class HealthMetrics:
             },
         }
 
-
-# Global metrics instance
-_health_metrics = None
-
-
 def get_health_metrics() -> HealthMetrics:
-    """Get global health metrics instance."""
-    global _health_metrics
-    if _health_metrics is None:
-        _health_metrics = HealthMetrics()
-    return _health_metrics
+    """Get the process-wide health metrics collector."""
+    return HealthMetrics.get_instance()
 
 
 def init_health_metrics():
     """Initialize health metrics."""
-    global _health_metrics
-    _health_metrics = HealthMetrics()
+    HealthMetrics.reset_instance()
+    HealthMetrics.get_instance()
     logger.info("Health metrics initialized")

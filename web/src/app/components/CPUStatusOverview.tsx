@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { Select, SelectItem } from '@carbon/react'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { LegacyButton } from './shared/LegacyButton'
@@ -581,16 +582,18 @@ export function CPUStatusOverview() {
                   {/* Priority */}
                   <div>
                     <label className="stat-label" style={{ marginBottom: 4 }}>Priority</label>
-                    <select
-                      className="input"
+                    <Select
+                      id={`cpu-core-priority-${core.core_id}`}
+                      hideLabel
+                      labelText="Priority"
                       value={editingPriority}
                       onChange={(e) => setEditingPriority(e.target.value as any)}
-                      style={{ fontSize: 12 }}
+                      size="sm"
                     >
-                      <option value="normal">normal</option>
-                      <option value="SCHED_RR">SCHED_RR</option>
-                      <option value="SCHED_FIFO">SCHED_FIFO</option>
-                    </select>
+                      <SelectItem value="normal" text="normal" />
+                      <SelectItem value="SCHED_RR" text="SCHED_RR" />
+                      <SelectItem value="SCHED_FIFO" text="SCHED_FIFO" />
+                    </Select>
                   </div>
 
                   {/* Isolation */}

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Button, InlineNotification, Layer, Tile } from '@carbon/react'
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -60,50 +61,39 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         <div
           style={{
             width: 'min(640px, 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.45)',
-            borderRadius: 12,
-            background: 'rgba(15, 23, 42, 0.92)',
-            padding: 20,
-            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)',
           }}
         >
-          <h2 style={{ margin: 0, color: '#fecaca', fontSize: 20 }}>{title}</h2>
-          <p style={{ margin: '10px 0 0 0', color: '#cbd5e1', lineHeight: 1.5 }}>{message}</p>
-          {this.state.errorMessage && (
-            <p style={{ margin: '8px 0 0 0', color: '#fca5a5', fontSize: 13, fontFamily: 'var(--font-mono)' }}>
-              {this.state.errorMessage}
-            </p>
-          )}
-          <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
-            <button
-              type="button"
-              onClick={this.handleAction}
-              style={{
-                border: '1px solid rgba(147, 197, 253, 0.5)',
-                background: 'rgba(59, 130, 246, 0.16)',
-                color: '#dbeafe',
-                borderRadius: 8,
-                padding: '8px 12px',
-                cursor: 'pointer',
-              }}
-            >
-              {actionLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              style={{
-                border: '1px solid rgba(148, 163, 184, 0.45)',
-                background: 'rgba(30, 41, 59, 0.6)',
-                color: '#e2e8f0',
-                borderRadius: 8,
-                padding: '8px 12px',
-                cursor: 'pointer',
-              }}
-            >
-              Reload
-            </button>
-          </div>
+          <Layer>
+            <Tile style={{ padding: 20 }}>
+              <InlineNotification
+                kind="error"
+                lowContrast
+                title={title}
+                subtitle={message}
+                hideCloseButton
+              />
+              {this.state.errorMessage && (
+                <p
+                  style={{
+                    margin: '12px 0 0 0',
+                    color: 'var(--cds-text-secondary)',
+                    fontSize: 13,
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                >
+                  {this.state.errorMessage}
+                </p>
+              )}
+              <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Button type="button" kind="primary" size="sm" onClick={this.handleAction}>
+                  {actionLabel}
+                </Button>
+                <Button type="button" kind="secondary" size="sm" onClick={() => window.location.reload()}>
+                  Reload
+                </Button>
+              </div>
+            </Tile>
+          </Layer>
         </div>
       </div>
     )

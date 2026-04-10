@@ -40,6 +40,16 @@ const mockNodePageContext = {
   },
 }
 
+const mockReducedEffectsPreference = {
+  reducedEffectsEnabled: false,
+  pageTransitionPreset: 'fade',
+  prefersReducedMotion: false,
+  shouldReduceEffects: false,
+  setReducedEffectsEnabled: jest.fn(),
+  setPageTransitionPreset: jest.fn(),
+  resolvedPageTransitionMode: 'fade',
+}
+
 jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
@@ -71,6 +81,10 @@ jest.mock('../../map2/hooks/useWebSocket', () => ({
 
 jest.mock('../hooks/useSpecialSettings', () => ({
   useSpecialSettings: () => mockSpecialSettingsState,
+}))
+
+jest.mock('../hooks/useReducedEffectsPreference', () => ({
+  useReducedEffectsPreference: () => mockReducedEffectsPreference,
 }))
 
 function makeJsonResponse(body: unknown, ok = true): Response {
@@ -174,6 +188,8 @@ describe('HomePage landing', () => {
     }
     mockSpecialSettingsState.isLoading = false
     mockSpecialSettingsState.updateSettings.mockReset()
+    mockReducedEffectsPreference.prefersReducedMotion = false
+    mockReducedEffectsPreference.shouldReduceEffects = false
   })
 
   afterEach(() => {
@@ -209,6 +225,17 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
+  })
+
+  it('skips the boot splash immediately when reduced motion is preferred', async () => {
+    mockReducedEffectsPreference.prefersReducedMotion = true
+    mockReducedEffectsPreference.shouldReduceEffects = true
+
+    renderHome()
+
+    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
+    expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
   it('renders the landing shell without the legacy desktop object surface', async () => {

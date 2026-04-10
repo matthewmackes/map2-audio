@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Loading } from '@carbon/react'
+import { DataTableSkeleton, Loading, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
 import { Map2BrandMark } from './components/branding/map2Branding'
 import { ViewportPolicyGate } from './components/ViewportPolicyGate'
@@ -51,8 +51,8 @@ const CPUPerformancePage    = lazy(() => import('./pages/CPUPerformancePage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
 const PerformanceBrainPage  = lazy(() => import('./pages/PerformanceBrainPage').then(m => ({ default: m.PerformanceBrainPage })))
-const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
-const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
+const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
+const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const TesiraPage            = lazy(() => import('./pages/TesiraPage').then(m => ({ default: m.TesiraPage })))
 const MPX1Page              = lazy(() => import('./pages/MPX1Page').then(m => ({ default: m.MPX1Page })))
 const MPX1PanelView         = lazy(() => import('./pages/MPX1PanelView').then(m => ({ default: m.MPX1PanelView })))
@@ -75,13 +75,98 @@ const PerformPage           = lazy(() => import('./pages/PerformPage').then(m =>
 const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
 const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
 
-/** Lightweight loading fallback — pure CSS, no MUI dependency */
-function PageLoader() {
+function RouteLoadingState({ variant }: { variant: 'default' | 'snapshot' | 'midi-hub' | 'metrics' | 'audio-engine' }) {
+  if (variant === 'snapshot') {
+    return (
+      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <SkeletonText heading width="26%" />
+        <SkeletonText paragraph lineCount={2} width="68%" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+          <SkeletonPlaceholder style={{ height: 180 }} />
+          <SkeletonPlaceholder style={{ height: 180 }} />
+          <SkeletonPlaceholder style={{ height: 180 }} />
+        </div>
+        <SkeletonPlaceholder style={{ height: 320 }} />
+      </div>
+    )
+  }
+
+  if (variant === 'midi-hub') {
+    return (
+      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <SkeletonText heading width="22%" />
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16 }}>
+          <SkeletonPlaceholder style={{ height: 540 }} />
+          <div style={{ display: 'grid', gap: 16 }}>
+            <SkeletonText paragraph lineCount={2} width="58%" />
+            <DataTableSkeleton rowCount={6} columnCount={5} zebra={false} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (variant === 'metrics' || variant === 'audio-engine') {
+    return (
+      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <SkeletonText heading width="24%" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+          <SkeletonPlaceholder style={{ height: 120 }} />
+          <SkeletonPlaceholder style={{ height: 120 }} />
+          <SkeletonPlaceholder style={{ height: 120 }} />
+          <SkeletonPlaceholder style={{ height: 120 }} />
+        </div>
+        <div style={{ display: 'grid', gap: 16 }}>
+          <SkeletonPlaceholder style={{ height: 240 }} />
+          <SkeletonPlaceholder style={{ height: 240 }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '8px' }}>
       <Loading active small withOverlay={false} description="Loading page content" />
       <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Loading…</span>
     </div>
+  )
+}
+
+function PageLoader() {
+  const location = useLocation()
+  const pathname = location.pathname
+
+  const variant: 'default' | 'snapshot' | 'midi-hub' | 'metrics' | 'audio-engine' =
+    pathname.startsWith('/snapshot-editor')
+      ? 'snapshot'
+      : pathname.startsWith('/midi-hub')
+        ? 'midi-hub'
+        : pathname.startsWith('/metering')
+          ? 'metrics'
+          : pathname.startsWith('/engine') || pathname.startsWith('/pipewire') || pathname.startsWith('/dsp')
+            ? 'audio-engine'
+            : 'default'
+
+  return <RouteLoadingState variant={variant} />
+}
+
+function RouteBoundary({
+  children,
+  title,
+  actionLabel,
+}: {
+  children: React.ReactNode
+  title: string
+  actionLabel: string
+}) {
+  return (
+    <ErrorBoundary
+      title={title}
+      message="This page hit a render or load error. Retry the view or reload the page."
+      actionLabel={actionLabel}
+    >
+      {children}
+    </ErrorBoundary>
   )
 }
 
@@ -245,7 +330,7 @@ export function App() {
                                   <Route index element={<PhysicalSurfacesOverviewPage />} />
                                   <Route path=":surfaceId" element={<PhysicalSurfaceUnitPage />} />
                                 </Route>
-                                <Route path="/midi-hub/*" element={<MidiHubShell />}>
+                                <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />
                                   <Route path="presets" element={<MidiHubPresetsPage />} />
@@ -257,17 +342,17 @@ export function App() {
                                 </Route>
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
-                                <Route path="/snapshot-editor" element={<SnapshotEditorPage />} />
+                                <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
-                                <Route path="/dsp" element={<DSPPage />} />
+                                <Route path="/dsp" element={<RouteBoundary title="DSP view crashed" actionLabel="Reload DSP view"><DSPPage /></RouteBoundary>} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
                                 <Route path="/host-machine" element={<LegacyStandalonePanelRedirect panel="host-machine" />} />
                                 <Route path="/cpu-performance" element={<CPUPerformancePage />} />
                                 <Route path="/engine" element={<LegacyStandalonePanelRedirect panel="audio-engine" />} />
-                                <Route path="/metering" element={<MeteringPage />} />
-                                <Route path="/pipewire" element={<PipeWirePage />} />
+                                <Route path="/metering" element={<RouteBoundary title="Metering view crashed" actionLabel="Reload metering"><MeteringPage /></RouteBoundary>} />
+                                <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/lcd" element={<LCDPage />} />
                                 <Route path="/brain" element={<PerformanceBrainPage />} />

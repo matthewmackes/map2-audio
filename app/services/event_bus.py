@@ -12,6 +12,7 @@ import threading
 from typing import Callable, Dict, List, Any, Optional
 from collections import deque
 
+from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class EventType(str, Enum):
     AUDIO_PATH_CHANGED = "audio_path.changed"
 
 
-class EventBus:
+class EventBus(Singleton):
     """
     Simple async event bus for cluster events.
     """
@@ -99,17 +100,6 @@ class EventBus:
 
         return history[-limit:]
 
-
-# Singleton instance
-_event_bus = None
-_event_bus_lock = threading.Lock()
-
-
 def get_event_bus() -> EventBus:
-    """Get or create the singleton event bus instance."""
-    global _event_bus
-    if _event_bus is None:
-        with _event_bus_lock:
-            if _event_bus is None:
-                _event_bus = EventBus()
-    return _event_bus
+    """Get the process-wide event bus instance."""
+    return EventBus.get_instance()

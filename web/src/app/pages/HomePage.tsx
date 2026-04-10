@@ -9,6 +9,7 @@ import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
+import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
@@ -20,6 +21,7 @@ interface WallpaperContextMenuState {
 
 export function HomePage() {
   const navigate = useNavigate()
+  const { shouldReduceEffects } = useReducedEffectsPreference()
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
   const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
@@ -28,6 +30,14 @@ export function HomePage() {
 
   useEffect(() => {
     if (!showBootSplash) {
+      return undefined
+    }
+
+    if (shouldReduceEffects) {
+      completeHomeDesktopBoot()
+      startTransition(() => {
+        setShowBootSplash(false)
+      })
       return undefined
     }
 
@@ -41,7 +51,7 @@ export function HomePage() {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [showBootSplash])
+  }, [showBootSplash, shouldReduceEffects])
 
   useEffect(() => {
     if (!contextMenu) {

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ComposedModal, ModalBody, ModalFooter, ModalHeader } from '@carbon/react'
+import { ComposedModal, ModalBody, ModalFooter, ModalHeader, Select, SelectItem } from '@carbon/react'
 import {
   CheckmarkFilled as CheckCircle,
   Close as X,
@@ -467,18 +467,21 @@ export function UnifiedUploadDialog({
                       <div className="flex" style={{ gap: 8 }}>
                         {/* Type selector for audio files */}
                         {file.requiresTypeSelection && file.status === 'pending' && (
-                          <select
+                          <Select
+                            id={`upload-asset-type-${file.id}`}
+                            hideLabel
+                            labelText="Select asset type"
                             value={file.type || ''}
                             onChange={(e) =>
                               updateFileType(file.id, e.target.value as AssetType)
                             }
-                            className="combobox"
-                            style={{ width: 'auto', padding: '4px 8px', fontSize: 12 }}
+                            size="sm"
+                            style={{ width: 180 }}
                           >
-                            <option value="">Select type...</option>
-                            <option value="cabinet_ir">Cabinet IR</option>
-                            <option value="reverb_ir">Reverb IR</option>
-                          </select>
+                            <SelectItem value="" text="Select type..." />
+                            <SelectItem value="cabinet_ir" text="Cabinet IR" />
+                            <SelectItem value="reverb_ir" text="Reverb IR" />
+                          </Select>
                         )}
 
                         {/* Status indicators */}

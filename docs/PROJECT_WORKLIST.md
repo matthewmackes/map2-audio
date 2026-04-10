@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-08 - Added TUI Carbon Compliance epic (T876-T885): 10 improvement suggestions for Textual and Ink TUIs from a Carbon Design System review.
+Last updated: 2026-04-10 - Reconciled stale blocked statuses after JUCE prerequisite closures, refreshed requested frontend/backend cleanup task state, and corrected tracker inconsistencies in the requested backlog slices.
 
 ## Performance Brain
 
@@ -4656,7 +4656,7 @@ Last updated: 2026-04-01 23:12 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T641
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Monitoring Solo Output — Dedicated Solo Bus to Separate Hardware Output
 Description:
 - Goal / acceptance criteria: When a channel is soloed (T619), its signal is routed to a designated monitoring hardware output (a specific output channel on the audio interface) rather than simply muting all other channels through the main output. The main output mix continues playing all non-soloed channels uninterrupted — the guitarist's front-of-house sound is unaffected. The monitoring output assignment is configurable per-snapshot (overriding the global default) and is visible and editable directly in the editor's I/O section. A clear indicator in the UI shows when monitoring solo is active ("Monitoring: Channel Lead → Output 3/4").
@@ -4665,10 +4665,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: monitoring_output_index field in snapshot io_bindings (and global default in config), audio engine routing change to send soloed channel signal to the designated output pair, solo state indicator in editor UI, configurable per-snapshot in I/O panel, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - `monitoring_output_index` is fully wired through config, API payloads, normalization, and editor UI, but source inspection shows zero JUCE-engine consumers for that field. The current implementation stops at persistence and hero/I/O presentation.
-  - There is no engine-side monitoring bus or alternate output-pair send that can route a soloed channel to a separate hardware output while leaving the main mix intact, so the acceptance criteria cannot be met honestly in the present runtime.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this earlier blocker against the completed JUCE prerequisite and unblock path. `T908` and `T959` delivered the monitor-bus primitives, `T912` exposed them through the service/runtime layer, and `T914` completed the snapshot/editor integration and focused regression coverage.
+  - `monitoring_output_index` is now consumed by the engine through the existing snapshot/runtime flow, so solo monitoring no longer stops at persistence-only configuration.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_activate_snapshot_applies_monitoring_output_binding tests/test_snapshot_service.py::test_update_snapshot_reapplies_monitoring_output_for_live_snapshot` -> PASS
+  - `npm --prefix web test -- --runInBand web/src/app/utils/snapshotIoBindings.test.ts` -> PASS
 
 ID: T640
 Status: [✓] Done
@@ -4710,7 +4713,7 @@ Last updated: 2026-04-01 11:28 - Codex
 - Validation: `python3 -m pytest tests/test_snapshot_service.py tests/test_snapshot_routes.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/SnapshotEditor/SnapshotVersionHistoryModal.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T637
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Live Routing Mode Switch Without Snapshot Reload
 Description:
 - Goal / acceptance criteria: While a snapshot is live and making sound, the player can change the routing mode (parallel_blend → series, series → morph, etc.) directly from the routing mode selector in the Snapshot Detail Grid (T611). The audio engine reconfigures the signal path in-place without deactivating and reactivating the snapshot — no audio gap, no chain teardown, no loss of plugin state. The routing visualizer updates immediately. The new routing mode is applied to the live engine and saved to the snapshot's current state (marked dirty until explicitly saved).
@@ -4719,10 +4722,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: in-place routing reconfiguration in the JUCE audio engine (no chain teardown), API endpoint for live routing mode update on active snapshot, frontend routing mode selector wired to live update (not just draft update), routing visualizer real-time update, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-04 20:12 EDT - Codex
-- Blocked notes:
-  - The editor still changes routing mode only in local draft state, while `SnapshotService.update_routing()` only persists metadata and never publishes a live routing change into the runtime engine or authoritative audio-state desired routing.
-  - Source inspection confirmed there is still no snapshot-aware JUCE/runtime primitive that can switch a live snapshot between `parallel_blend`, `series`, `morph`, or `sidechain` in place without rebuilding or reactivating chains. Existing runtime seams cover chain replacement, spillover handoff, and generic parallel-group A/B blend only.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this earlier blocker against the completed JUCE prerequisite and unblock chain. `T910` delivered the live routing-topology primitive, `T912` exposed it through the service/runtime surface, and `T916` completed the Snapshot Editor/runtime integration for in-place live mode changes.
+  - Live routing mode edits now publish authority state and apply immediately without forcing snapshot reactivation, while the editor and test surface were updated to reflect the new real-time contract.
+- Validation:
+  - `pytest -q tests/test_snapshot_activation_engine_apply.py::test_live_routing_blend_edit_reapplies_without_full_reactivation tests/test_snapshot_service.py::test_t910_live_mode_change_should_apply_batched_series_topology` -> PASS
 
 ID: T636
 Status: [✓] Done
@@ -4831,7 +4836,7 @@ Last updated: 2026-04-01 11:54 - Codex
 - Validation: `npm test -- --runInBand --runTestsByPath web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
 
 ID: T630
-Status: [✗] Blocked
+Status: [✓] Done
 Title: A/B Hard Switch with Zero-Crossing Detection
 Description:
 - Goal / acceptance criteria: When routing mode is parallel_blend or the snapshot has two active channels, a dedicated A/B switch button is displayed prominently in the editor (and in the floating toolbar T642). Pressing it (or triggering via MIDI note/CC assignment) immediately cuts the active channel from A to B or B to A. The switch waits for the nearest zero-crossing in the audio signal before executing — ensuring a click-free transition imperceptible to the listener. The active channel is highlighted using its Carbon bold color (T612). The A/B switch state is reflected in real-time in the routing visualizer. MIDI assignment for the A/B switch is configurable per-snapshot.
@@ -4840,25 +4845,29 @@ Description:
 - Estimated effort: Medium
 - Required outputs: zero-crossing detection in JUCE audio engine for channel switch timing, A/B switch command in activation API, A/B switch button in editor and floating toolbar, MIDI CC/note assignment for A/B switch per-snapshot, active channel highlight using channel color, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - `active_channel_key` is persisted as routing metadata, but there is no live engine command that switches the active channel at audio-thread time, and source inspection found no zero-cross detection path in the current JUCE routing/snapshot stack.
-  - The task also depends on `T619`; without an engine-level live channel-switch architecture, the requested A/B control cannot be made click-free or reflected truthfully as a runtime action.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this stale blocker against the completed prerequisite and unblock path. `T909` delivered zero-crossing A/B switching in the JUCE engine, `T912` exposed the command through the runtime service layer, and `T915` completed the editor/MIDI wiring and focused regression coverage.
+  - The runtime now supports click-safe live channel switching with immediate editor and visualizer state updates through the snapshot workflow.
+- Validation:
+  - `pytest -q tests/test_snapshot_activation_engine_apply.py::test_live_ab_switch_edit_reapplies_active_channel_selection tests/test_juce_engine.py::TestJuceEngineMocked::test_trigger_parallel_ab_switch_uses_engine_when_available` -> PASS
 
 ID: T629
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Morph Mode — Expression Pedal (MIDI CC) Continuous Blend Between Two Channels
 Description:
 - Goal / acceptance criteria: When routing mode is set to "morph", the editor displays a large horizontal morph position slider (0–100%) as the primary performance control. The slider is mappable to a MIDI CC (e.g., expression pedal CC#11 or CC#7) via MIDI learn in the per-snapshot MIDI map. Heel down (CC value 0) = Channel A at 100%; toe down (CC value 127) = Channel B at 100%. The blend is continuous and smooth — no stepped values, no audio artifacts at the extremes. The morph position is reflected in real-time in both the slider and the routing visualizer. The MIDI CC mapping is per-snapshot and persisted.
 - Why it matters: The morph routing mode is the MAP2 equivalent of Fractal's scene morphing and provides an infinite tonal range between two fully-configured chains with one foot movement. The expression pedal is the natural hardware control for this — the mapping must be effortless to configure.
-- Dependencies: T629 (routing mode), T655 (MIDI note-on block focus)
+- Dependencies: T637 (routing mode), T655 (MIDI note-on block focus)
 - Estimated effort: Medium
 - Required outputs: morph position MIDI CC listener in midi_service.py, morph position real-time update to audio engine during CC receive, MIDI learn UI for morph CC assignment in per-snapshot MIDI map, large morph slider in routing visualizer with real-time CC feedback, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - The current stack persists `morph_position`, source/target channel ids, and exposes `/api/snapshots/{id}/routing/morph`, but source inspection found no JUCE-engine morph/blend runtime that consumes those values as live audio behavior.
-  - `expression_mappings` is stored and normalized in the snapshot contract but is otherwise unused. There is no per-snapshot MIDI-learn or CC-listener path that binds an expression pedal to morph position and pushes that control into the engine in real time.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this stale blocker against the completed JUCE prerequisite and unblock chain. `T911` delivered snapshot-scoped multi-target expression mapping support in the runtime layer, `T912` exposed the control surface through the service bindings, and `T917` completed the grouped per-snapshot mapping model, editor UI, and activation/live reapply coverage.
+  - Snapshot-owned expression mappings now drive live runtime behavior instead of stopping at persisted metadata.
+- Validation:
+  - `pytest -q tests/test_juce_engine.py::TestJuceEngineMocked::test_replace_snapshot_expression_mappings_uses_engine_when_available tests/test_snapshot_service.py::test_activate_snapshot_prefers_engine_expression_mapping_sync_when_available tests/test_snapshot_service.py::test_update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot` -> PASS
 
 ID: T628
 Status: [✓] Done
@@ -5030,10 +5039,10 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Mute and Solo buttons on channel card (always visible, not hover-dependent), mute/unmute in live audio engine via API, solo routing to monitoring output via T641, visual muted/solo state on card, single-solo enforcement, state persisted on save, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-02 03:53 EDT - Codex
+Last updated: 2026-04-10 11:16 EDT - Codex
 - Blocked notes:
-  - The visual groundwork for prominent channel controls landed, but the acceptance criteria require immediate engine mute plus dedicated solo-to-monitor behavior. The current runtime has no per-channel mute/solo audio path beyond persisted channel flags in snapshot detail.
-  - Because `T641` is blocked on a missing monitoring-bus/output-send architecture, this task cannot satisfy its live solo-routing requirement or be closed honestly.
+  - Earlier blocker notes are now stale in part: the runtime mute/solo apply path landed under `T737`, and `T641` is no longer blocked after the dedicated monitoring-bus workstream (`T908`, `T914`) closed.
+  - This task remains open because the remaining acceptance surface is UI-contract specific rather than primitive-related: the current channel-card controls still need explicit single-solo enforcement and final acceptance proof that the always-visible card affordances, visual states, persistence behavior, and monitor-solo behavior all satisfy this task end to end.
 
 ID: T618
 Status: [✓] Done
@@ -5291,8 +5300,8 @@ Description:
 Subtasks: T607, T610–T659 (50 tasks across 3 phases)
 Last updated: 2026-04-02 03:53 EDT - Codex
 - Blocked notes:
-  - Phase 1 and most of the snapshot-editor UX backlog are complete, but the remaining Phase 2/3 items now terminate in blocked runtime/controller tasks: `T614`, `T619`, `T629`, `T630`, `T634`, `T637`, `T641`, `T646`, and `T647`.
-  - The epic cannot meet its acceptance criteria until the underlying live-switching, monitoring-bus, morph/expression, preload/spillover, zero-cross routing, and controller-display architecture is either implemented or re-scoped into feasible replacement tasks.
+  - This epic was previously blocked by runtime gaps that have since been closed. `T629`, `T630`, `T637`, and `T641` are now complete via the JUCE prerequisite and unblock chain, and `T634` was already completed separately.
+  - The epic remains blocked only on the still-open downstream tasks that have not yet been closed honestly: `T614`, `T619`, `T646`, and `T647`.
 
 ID: T605
 Status: [✓] Done
@@ -16973,7 +16982,7 @@ Last updated: 2026-04-04 20:27 EDT - Codex
 
 ---
 
-ID: T606
+ID: T606B
 Status: [✓] Done
 Title: Replace workspace-catalog artwork with generated screenshot-style previews
 Description:
@@ -16983,25 +16992,25 @@ Description:
 - Estimated effort: Medium
 - Required outputs: generated screenshot-style catalog previews, any supporting styling updates, focused regression stability, and validation evidence.
 Subtasks:
-  - ID: T606-subA
+  - ID: T606B-subA
     Status: [✓] Done
     Title: Build deterministic screenshot-preview composition for launcher artwork
     Description:
     - Goal / acceptance criteria: Rework `WorkspaceCatalogArtwork` to render a screenshot-like composition with window chrome, panel structure, metrics, and route-specific variation derived from launcher metadata instead of the current abstract bars/pulses artwork. Preserve accessibility and responsive sizing for card and modal contexts.
     - Why it matters: This is the core visual change needed to replace the current illustrative placeholder art with generated screenshot-like previews.
-    - Dependencies: T606
+    - Dependencies: T606B
     - Estimated effort: Medium
     - Required outputs: updated artwork component and CSS that render screenshot-style previews consistently across all catalog surfaces.
     Subtasks: None
     Assigned to: Codex
     Last updated: 2026-04-04 20:27 EDT - Codex
-  - ID: T606-subB
+  - ID: T606B-subB
     Status: [✓] Done
     Title: Validate screenshot previews against workspace-catalog regressions
     Description:
     - Goal / acceptance criteria: Ensure the new preview component does not break the catalog layout or tests, and extend focused assertions only if needed to cover the screenshot-preview integration points.
     - Why it matters: The artwork renders in every card and configure modal, so regressions here can destabilize the whole catalog surface.
-    - Dependencies: T606-subA
+    - Dependencies: T606B-subA
     - Estimated effort: Low
     - Required outputs: stable focused tests and validation notes for the new screenshot previews.
     Subtasks: None
@@ -19457,6 +19466,7 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - Extended the sweep across additional API/service modules in this slice: `app/routes/graceful_degradation.py`, `app/routes/performance.py`, `app/routes/audio_path.py`, `app/services/cluster/hybrid_update_manager.py`, `app/services/cluster/clone_reset.py`, `app/services/circuit_breaker.py`, `app/services/tesira/tesira_design_compiler.py`, and `app/services/tesira/tesira_deploy_orchestrator.py`.
   - Focused backend validation for the touched service slice now passes with no remaining `datetime.utcnow()` / naive `datetime.now()` matches in those edited files, but broad repo coverage is still incomplete in deployment, LCD, system, package, and other cluster modules.
   - Current remaining matches are concentrated in compatibility-sensitive paths such as persisted LCD/session/request data, certificate validity windows, local wall-clock display routes, and broad test fixtures. Finishing the migration safely now requires an explicit naive-to-aware compatibility policy for stored timestamps and fixture expectations rather than another blind mechanical pass.
+  - Extended the cleanup in this pass by moving `app/utils/health_metrics.py` status timestamps onto the shared timezone-aware `utc_now()` helper, removing another naive timestamp emitter from the actively used backend health surface.
 
 ID: T846
 Status: [✗] Blocked
@@ -19478,6 +19488,7 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - Added lock-guarded singleton construction in this slice for `intelfx_service`, `mpx1_service`, `node_health_service`, `circuit_breaker`, `openapi_schema_sync`, `tesira.discovery`, `tesira.sagevue_client`, `tesira.tesira_design_compiler`, and `tesira.tesira_deploy_orchestrator`.
   - The remaining singleton inventory is now concentrated in other backend service entrypoints such as deployment/remediation, additional AVB services, and other untouched orchestration helpers rather than the core audio, observability, and Tesira slices already swept.
   - The remaining factory surface is not limited to process-wide singletons; it includes keyed/parameterized constructors such as DSP, node-lifecycle, updater, and client factories where forcing the same singleton pattern would be incorrect without deciding lifecycle, cache-key, and teardown ownership first.
+  - Extended the shared-factory sweep in this pass by converting `app/services/event_bus.py` and `app/utils/health_metrics.py` onto the shared `Singleton` base/getter pattern, eliminating two more ad hoc module-level singleton implementations while preserving their existing public accessors.
 
 ID: T847
 Status: [✓] Done
@@ -19757,7 +19768,7 @@ Last updated: 2026-04-09 12:01 EDT - Codex
   - `rg -n "960px|820px|1200px|1600px|@media \\(max-width: 960px\\)|@media \\(max-width: 820px\\)|@media \\(max-width: 1200px\\)" web/src/index.css web/src/app/layout/AppShell.css` -> PASS
 
 ID: T854
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Improve page loading states and per-page error boundaries
 Description:
 - Goal / acceptance criteria: (1) Replace the generic `PageLoader` spinner with skeleton screens for the 5 most data-heavy pages (Audio Engine, Metering, DSP, Snapshot Editor, MIDI Hub). (2) Add per-page `ErrorBoundary` wrappers with retry-action buttons instead of silent redirects (currently `MeteringPage` and `PipeWirePage` silently redirect to `/engine` on load failure). (3) Add `prefers-reduced-motion` support to the boot splash — skip the 4-second timer and show content immediately.
@@ -19767,10 +19778,16 @@ Description:
 - Required outputs: Skeleton components, per-page error boundaries, reduced-motion boot splash, build/test validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:56 EDT - Codex
-- Progress notes:
-  - The task spans route-level loading UX, page-specific failure handling, and the boot splash lifecycle. Those concerns are currently split across route wrappers, page-local query ownership, and redirect-based fallback behavior that has not yet been normalized.
-  - Finishing this cleanly now requires a shared route-level loading/error-boundary contract for pages such as Audio Engine, Metering, DSP, Snapshot Editor, and MIDI Hub rather than one-off skeleton and redirect patches.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Replaced the generic route spinner with route-aware Carbon skeleton screens in `web/src/app/App.tsx` for the five targeted heavy surfaces: Audio Engine, Metering, DSP, Snapshot Editor, and MIDI Hub.
+  - Added explicit per-page `ErrorBoundary` wrappers for the routed heavy surfaces and removed the old redirect-on-load-failure fallback pattern for Metering and PipeWire by handling render failures in place with retry/reload actions.
+  - Updated `web/src/app/components/ErrorBoundary.tsx` to render Carbon `InlineNotification`, `Button`, `Tile`, and `Layer` instead of the old bespoke error card.
+  - Added reduced-motion boot-splash handling in `web/src/app/pages/HomePage.tsx`, so `prefers-reduced-motion` now skips the four-second splash delay and shows content immediately.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T855
 Status: [✓] Done
@@ -19891,7 +19908,7 @@ Last updated: 2026-04-10 09:30 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS; inventory checks confirm no remaining `className=\"table\"` or `.table` primitive CSS usage in the web app.
 
 ID: T861
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Replace custom `.input` / `.combobox` with Carbon `TextInput` / `ComboBox`
 Description:
 - Goal / acceptance criteria: Remove the `.input` and `.combobox` CSS classes and replace with Carbon `TextInput`, `TextArea`, `NumberInput`, `ComboBox`, `Dropdown`, and `Select` as appropriate. Apply Carbon form validation patterns (inline error, warning, helper text).
@@ -19901,10 +19918,14 @@ Description:
 - Required outputs: Carbon form control migration, removed CSS, form validation behavior.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 05:49 EDT - Codex
-- Progress notes:
-  - The remaining input/combobox surface is still split between the global `.input` / `.combobox` primitives in `web/src/index.css` and page-local embedded CSS such as `LCDPage.tsx`, plus custom dialog-local controls.
-  - A clean Carbon form-control migration is blocked until the primitive ownership split is resolved; otherwise the app would keep parallel global, page-local, and Carbon form systems alive at the same time.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Replaced the remaining global `.input` / `.combobox` consumers in the active shared surface with Carbon `Select` controls in `web/src/app/components/CPUStatusOverview.tsx` and `web/src/app/components/upload/UnifiedUploadDialog.tsx`.
+  - Removed the dead `.input` and `.combobox` primitives from `web/src/app/components/shared/GlobalPrimitives.css`, so the app no longer carries those generic form-control classes as shared styling primitives.
+- Validation:
+  - `rg -n 'className=\"(input|combobox)\"' web/src` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T862
 Status: [✓] Done
@@ -19943,7 +19964,7 @@ Last updated: 2026-04-09 05:49 EDT - Codex
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
 
 ID: T864
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Consolidate icon systems — standardize on `@carbon/icons-react`
 Description:
 - Goal / acceptance criteria: Audit all icon imports across `web/src/app/`. For each `@phosphor-icons/react`, `lucide-react`, and `@mui/icons-material` usage, find the equivalent Carbon icon in `@carbon/icons-react` and replace. Where no Carbon equivalent exists, document the exception. Target: eliminate Phosphor and Lucide as runtime dependencies, retain MUI icons only for MUI-specific surfaces pending full migration.
@@ -19953,13 +19974,17 @@ Description:
 - Required outputs: Migrated icon imports, documented exceptions, dependency removal where possible.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 05:49 EDT - Codex
-- Progress notes:
-  - The current icon surface is broad and mixed: Carbon icons already coexist with non-Carbon icon systems and route-local graphic conventions, while some areas also embed icon-like visuals directly inside custom components.
-  - Completing this safely now requires a route-by-route icon replacement matrix and explicit exception handling rather than a quick mechanical import rewrite, so it is blocked until the broader Carbon UI migration surface is stabilized.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this stale blocker against the current web surface: there are no remaining `@phosphor-icons/react`, `lucide-react`, or `@mui/icons-material` imports under `web/`.
+  - Removed the unused non-Carbon icon packages from `web/package.json` and `web/package-lock.json`, leaving `@carbon/icons-react` as the surviving runtime icon dependency in this frontend.
+- Validation:
+  - `rg -n '@phosphor-icons/react|lucide-react|@mui/icons-material' web` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T865
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Replace custom notification/toast system with Carbon `ToastNotification` / `ActionableNotification`
 Description:
 - Goal / acceptance criteria: Replace the custom `.notification-panel`, `.notification-item`, `.toast`, `.toast-container` CSS classes and the `Toasts.tsx` implementation with Carbon `ToastNotification` and `ActionableNotification` rendered in a Carbon-aligned notification panel. Use Carbon severity tokens (success/warning/error/info) and Carbon's built-in close/action patterns.
@@ -19969,10 +19994,13 @@ Description:
 - Required outputs: Carbon notification migration, removed custom CSS, screen-reader validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 05:49 EDT - Codex
-- Progress notes:
-  - The app currently mixes the custom `Toasts` provider, node-alert toast state, global toast CSS, and newer route-local Carbon `InlineNotification` usage in several workspace surfaces.
-  - A clean notification migration is blocked until the app has one canonical notification model and severity/ownership contract; otherwise Carbon toasts would be layered onto unresolved parallel notification systems instead of replacing them.
+Last updated: 2026-04-10 11:16 EDT - Codex
+- Completion notes:
+  - Reconciled this stale blocker against the current implementation: `web/src/app/components/Toasts.tsx` now renders Carbon `ToastNotification` and `ActionableNotification` as the canonical notification surface while preserving the existing provider contract for callers.
+  - The remaining wrapper CSS is panel layout only; the actual toast/item rendering and action/close affordances now come from Carbon notification components rather than bespoke toast widgets.
+- Validation:
+  - `rg -n 'ToastNotification|ActionableNotification' web/src/app/components/Toasts.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T866
 Status: [✗] Blocked
