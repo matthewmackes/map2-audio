@@ -82,6 +82,22 @@ jest.mock('./pages/GroundControlProPage', () => ({
   },
 }))
 
+jest.mock('./pages/LaunchControlPage', () => ({
+  LaunchControlPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="launch-control-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
+jest.mock('./pages/MidiCommanderPage', () => ({
+  MidiCommanderPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="midi-commander-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -127,6 +143,24 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
+  })
+
+  it('keeps the dedicated /launch-control route available inside AppShell', async () => {
+    window.history.pushState({}, '', '/launch-control')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('launch-control-route')).toHaveTextContent('/launch-control')
+    expect(screen.getByTestId('app-shell')).toBeTruthy()
+  })
+
+  it('keeps the dedicated /midi-commander route available inside AppShell', async () => {
+    window.history.pushState({}, '', '/midi-commander')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('midi-commander-route')).toHaveTextContent('/midi-commander')
+    expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 
   it('redirects the bare /platforms route into the overview workspace', async () => {

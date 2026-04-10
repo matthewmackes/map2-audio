@@ -28,6 +28,9 @@ const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').th
 const PlatformWorkspacePage = lazy(() => import('./pages/PlatformWorkspacePage').then(m => ({ default: m.PlatformWorkspacePage })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
+const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
+const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
+const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
 const PhysicalSurfacesShell = lazy(() => import('./pages/PhysicalSurfacesShell').then(m => ({ default: m.PhysicalSurfacesShell })))
 const PhysicalSurfacesOverviewPage = lazy(() => import('./pages/PhysicalSurfacesOverviewPage').then(m => ({ default: m.PhysicalSurfacesOverviewPage })))
 const PhysicalSurfaceUnitPage = lazy(() => import('./pages/PhysicalSurfaceUnitPage').then(m => ({ default: m.PhysicalSurfaceUnitPage })))
@@ -223,6 +226,9 @@ export function App() {
                                 <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
+                                <Route path="/mcu" element={<McuPage />} />
+                                <Route path="/launch-control" element={<LaunchControlPage />} />
+                                <Route path="/midi-commander" element={<MidiCommanderPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<LegacyStandalonePanelRedirect panel="about" />} />

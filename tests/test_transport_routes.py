@@ -32,6 +32,14 @@ class _FakeOwner:
         self.actions.append("erase")
         return {"ok": True, "transport": {"erased": True}}
 
+    async def rew(self):
+        self.actions.append("rew")
+        return {"ok": True, "transport": {"rewound": True}}
+
+    async def ff(self):
+        self.actions.append("ff")
+        return {"ok": True, "transport": {"fast_forwarded": True}}
+
     def get_state(self):
         return {"name": self.name, "actions": list(self.actions)}
 
@@ -59,10 +67,18 @@ def test_transport_routes_dispatch_and_owner_transfer(monkeypatch):
     assert play.json()["owner"] == "fake"
     assert play.json()["transport"]["playing"] is True
 
+    rew = client.post("/api/transport/rew")
+    assert rew.status_code == 200
+    assert rew.json()["transport"]["rewound"] is True
+
+    ff = client.post("/api/transport/ff")
+    assert ff.status_code == 200
+    assert ff.json()["transport"]["fast_forwarded"] is True
+
     erase = client.post("/api/transport/erase")
     assert erase.status_code == 200
     assert erase.json()["transport"]["erased"] is True
-    assert fake_owner.actions == ["play", "erase"]
+    assert fake_owner.actions == ["play", "rew", "ff", "erase"]
 
     transfer = client.post("/api/transport/owner", json={"owner": "midi_recorder"})
     assert transfer.status_code == 200

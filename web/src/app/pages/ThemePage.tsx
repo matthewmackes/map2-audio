@@ -30,6 +30,7 @@ import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
   PICKER_SHADES,
+  PRESET_THEME_ORDER,
   deleteCustomTheme,
   generateThemeFromPalette,
   getCustomThemes,
@@ -261,6 +262,48 @@ const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
     id: 'pager-slide',
     name: 'Pager Slide',
     description: 'Bring the next page in with a horizontal pager-style glide inspired by card-deck navigation.',
+  },
+]
+
+/** Core Carbon shell theme IDs (non-preset) */
+const CORE_THEME_IDS = ['default', 'gray-90', 'gray-10', 'white']
+
+/** Preset theme grouping for catalog display */
+const PRESET_THEME_GROUPS: Array<{ label: string; tag: string; ids: string[] }> = [
+  {
+    label: 'Windows Classic Era',
+    tag: '3.1 – 2000',
+    ids: ['win31-program-manager', 'win95-desktop', 'win98-active-desktop', 'win2000-professional', 'win-me-millennium', 'win-nt-workstation', 'win31-hot-dog-stand', 'win-classic-high-contrast'],
+  },
+  {
+    label: 'Windows XP Era',
+    tag: 'Luna',
+    ids: ['xp-luna-blue', 'xp-luna-olive', 'xp-luna-silver', 'xp-royale', 'xp-zune'],
+  },
+  {
+    label: 'Windows Vista / 7',
+    tag: 'Aero',
+    ids: ['vista-aero', 'vista-basic', 'win7-aero', 'win7-starter', 'win7-high-contrast-black', 'win7-high-contrast-white'],
+  },
+  {
+    label: 'Windows 8 / 8.1',
+    tag: 'Metro',
+    ids: ['win8-metro', 'win81-modern', 'win8-start-screen', 'win-phone-8'],
+  },
+  {
+    label: 'Windows 10 / 11',
+    tag: 'Fluent',
+    ids: ['win10-dark', 'win10-light', 'win10-blueberry', 'win11-dark', 'win11-light', 'win11-bloom', 'win11-glow', 'win-terminal', 'win365-cloud'],
+  },
+  {
+    label: 'Microsoft Products',
+    tag: 'MS',
+    ids: ['azure-devops', 'visual-studio-dark', 'vscode-dark-plus', 'ms-teams', 'office-365'],
+  },
+  {
+    label: 'Developer / Web',
+    tag: 'Community',
+    ids: ['dracula', 'solarized-dark', 'solarized-light', 'nord-polar', 'monokai-pro', 'one-dark-pro', 'gruvbox-dark', 'catppuccin-mocha', 'synthwave-84', 'github-dark', 'material-palenight', 'tokyo-night', 'cyberpunk-2077'],
   },
 ]
 
@@ -738,13 +781,22 @@ export function ThemePage() {
                 }}
               >
                 {draftDirty ? <option value="__draft__">Draft preview</option> : null}
-                <optgroup label="Built-in themes">
-                  {themeOrder.map((builtInThemeId) => (
-                    <option key={builtInThemeId} value={`builtin:${builtInThemeId}`}>
-                      {builtInThemes[builtInThemeId].name}
+                <optgroup label="Core Carbon themes">
+                  {CORE_THEME_IDS.map((coreId) => (
+                    <option key={coreId} value={`builtin:${coreId}`}>
+                      {builtInThemes[coreId].name}
                     </option>
                   ))}
                 </optgroup>
+                {PRESET_THEME_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.ids.filter((pid) => builtInThemes[pid]).map((pid) => (
+                      <option key={pid} value={`builtin:${pid}`}>
+                        {builtInThemes[pid].name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
                 {customThemeEntries.length > 0 ? (
                   <optgroup label="Custom themes">
                     {customThemeEntries.map((customTheme) => (
@@ -766,40 +818,80 @@ export function ThemePage() {
               <div className="theme-page__catalog-grid">
                 <section className="theme-page__catalog-block">
                   <div className="theme-page__dialog-subhead">
-                    <strong>Built-in themes</strong>
-                    <Tag type="cool-gray" size="sm">{themeOrder.length}</Tag>
+                    <strong>Core Carbon themes</strong>
+                    <Tag type="cool-gray" size="sm">{CORE_THEME_IDS.length}</Tag>
                   </div>
                   <div className="theme-page__catalog-list">
-                    {themeOrder.map((builtInThemeId) => {
-                      const builtInTheme = builtInThemes[builtInThemeId]
-                      const active = !draftDirty && themeId === builtInThemeId
+                    {CORE_THEME_IDS.map((coreId) => {
+                      const coreTheme = builtInThemes[coreId]
+                      const active = !draftDirty && themeId === coreId
 
                       return (
                         <button
-                          key={builtInThemeId}
+                          key={coreId}
                           type="button"
                           className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
                           onClick={() => {
-                            setTheme(builtInThemeId)
+                            setTheme(coreId)
                             setDraftDirty(false)
                           }}
                           aria-pressed={active}
                         >
                           <span className="theme-page__catalog-item-copy">
-                            <strong>{builtInTheme.name}</strong>
-                            <span>{builtInTheme.description}</span>
+                            <strong>{coreTheme.name}</strong>
+                            <span>{coreTheme.description}</span>
                           </span>
                           <span className="theme-page__catalog-item-meta">
                             <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
-                              {active ? 'Active' : carbonThemeLabel(builtInTheme.carbonTheme)}
+                              {active ? 'Active' : carbonThemeLabel(coreTheme.carbonTheme)}
                             </Tag>
-                            <ThemeSwatchStrip theme={resolvePreviewTheme(builtInThemeId, builtInTheme)} />
+                            <ThemeSwatchStrip theme={resolvePreviewTheme(coreId, coreTheme)} />
                           </span>
                         </button>
                       )
                     })}
                   </div>
                 </section>
+
+                {PRESET_THEME_GROUPS.map((group) => (
+                  <section key={group.label} className="theme-page__catalog-block">
+                    <div className="theme-page__dialog-subhead">
+                      <strong>{group.label}</strong>
+                      <Tag type="teal" size="sm">{group.tag}</Tag>
+                      <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
+                    </div>
+                    <div className="theme-page__catalog-list">
+                      {group.ids.filter((pid) => builtInThemes[pid]).map((pid) => {
+                        const presetTheme = builtInThemes[pid]
+                        const active = !draftDirty && themeId === pid
+
+                        return (
+                          <button
+                            key={pid}
+                            type="button"
+                            className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+                            onClick={() => {
+                              setTheme(pid)
+                              setDraftDirty(false)
+                            }}
+                            aria-pressed={active}
+                          >
+                            <span className="theme-page__catalog-item-copy">
+                              <strong>{presetTheme.name}</strong>
+                              <span>{presetTheme.description}</span>
+                            </span>
+                            <span className="theme-page__catalog-item-meta">
+                              <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
+                                {active ? 'Active' : carbonThemeLabel(presetTheme.carbonTheme)}
+                              </Tag>
+                              <ThemeSwatchStrip theme={presetTheme} />
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ))}
 
                 <section className="theme-page__catalog-block">
                   <div className="theme-page__dialog-subhead">

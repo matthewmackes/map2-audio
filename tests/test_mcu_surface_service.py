@@ -51,6 +51,7 @@ def test_mcu_surface_service_emits_parsed_events_and_tracks_identity() -> None:
     assert result["event"]["event_type"] == "identity_response"
     snapshot = service.get_state_snapshot()
     assert snapshot["identity"]["version"] == "1.2.3.4"
+    assert snapshot["daemon_status"]["state"] in {"idle", "reconnecting", "connected"}
     assert publisher.messages[-1][0] == ("mcu_surface:event", "mcu_surface")
 
 
@@ -60,12 +61,14 @@ def test_mcu_surface_service_sends_device_query_scribble_strip_and_meter_bridge(
 
     assert service.query_device(destination_port="Mackie MCU Pro Out") is True
     assert service.push_scribble_strip(destination_port="Mackie MCU Pro Out", labels=["Bass", "Lead"]) is True
+    assert service.push_fader_positions(destination_port="Mackie MCU Pro Out", normalized_values=[0.0, 0.5, 1.0]) is True
     assert service.push_meter_bridge(destination_port="Mackie MCU Pro Out", levels=[1, 2, 3, 4, 5, 6, 7, 8]) is True
 
-    assert len(midi_hub.sent) == 3
+    assert len(midi_hub.sent) == 6
     assert midi_hub.sent[0]["metadata"]["message_type"] == "device_query"
     assert midi_hub.sent[1]["metadata"]["message_type"] == "scribble_strip"
-    assert midi_hub.sent[2]["metadata"]["message_type"] == "meter_bridge"
+    assert midi_hub.sent[2]["metadata"]["message_type"] == "motor_fader"
+    assert midi_hub.sent[5]["metadata"]["message_type"] == "meter_bridge"
     assert midi_hub.sent[0]["data"] == bytes([0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7])
 
 

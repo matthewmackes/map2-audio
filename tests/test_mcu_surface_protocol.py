@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from app.services.mcu_surface.protocol import (
     build_device_query,
+    build_fader_pitch_bend,
     build_meter_bridge_sysex,
     build_scribble_strip_sysex,
     is_mcu_port_name,
+    MCU_JOG_WHEEL_CONTROLLER,
     parse_identity_response,
     parse_mcu_message,
 )
@@ -45,6 +47,15 @@ def test_mcu_protocol_parses_faders_vpots_and_buttons() -> None:
         "delta": -63,
     }
 
+    jog = parse_mcu_message(bytes([0xB0, MCU_JOG_WHEEL_CONTROLLER, 0x01]))
+    assert jog == {
+        "event_type": "jog_wheel",
+        "channel": 1,
+        "controller": MCU_JOG_WHEEL_CONTROLLER,
+        "value": 1,
+        "delta": 1,
+    }
+
     button = parse_mcu_message(bytes([0x90, 0x5A, 0x7F]))
     assert button == {
         "event_type": "button",
@@ -57,6 +68,7 @@ def test_mcu_protocol_parses_faders_vpots_and_buttons() -> None:
 
 def test_mcu_protocol_formats_scribble_strip_and_meter_payloads() -> None:
     scribble = build_scribble_strip_sysex(["Bass", "Lead", "Rev", "Del", "Mod", "Comp", "Gate", "Out"])
+    fader = build_fader_pitch_bend(1, 0x1234)
     assert scribble[:6] == bytes([0xF0, 0x00, 0x00, 0x66, 0x14, 0x12])
     assert scribble[-1] == 0xF7
     assert len(scribble) == 64
@@ -64,6 +76,7 @@ def test_mcu_protocol_formats_scribble_strip_and_meter_payloads() -> None:
 
     meter = build_meter_bridge_sysex([0, 1, 2, 3, 4, 5, 16, -1])
     assert meter == bytes([0xF0, 0x00, 0x00, 0x66, 0x14, 0x20, 0, 1, 2, 3, 4, 5, 15, 0, 0xF7])
+    assert fader == bytes([0xE1, 0x34, 0x24])
 
 
 def test_mcu_protocol_detects_mcu_port_names() -> None:

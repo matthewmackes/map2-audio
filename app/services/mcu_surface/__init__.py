@@ -1,8 +1,30 @@
+from .bridge import (
+    MCU_BANK_LEFT_NOTE,
+    MCU_BANK_RIGHT_NOTE,
+    MCU_CHANNEL_SELECT_BASE_NOTE,
+    MCU_CHANNEL_SELECT_COUNT,
+    MCU_FAST_FORWARD_NOTE,
+    MCU_PLAY_NOTE,
+    MCU_RECORD_NOTE,
+    MCU_REWIND_NOTE,
+    MCU_STOP_NOTE,
+    McuSnapshotEditorBridgeService,
+    get_mcu_snapshot_editor_bridge_service,
+)
+from .daemon import McuSurfaceDaemon
+from .param_grouping import (
+    MCU_BANK_SIZE,
+    build_parameter_banks,
+    build_plugin_parameter_banks,
+    classify_parameter_group,
+)
 from .protocol import (
     build_device_query,
+    build_fader_pitch_bend,
     build_meter_bridge_sysex,
     build_scribble_strip_sysex,
     is_mcu_port_name,
+    MCU_JOG_WHEEL_CONTROLLER,
     parse_identity_response,
     parse_mcu_message,
 )
@@ -10,9 +32,27 @@ from .service import McuSurfaceService, get_mcu_surface_service
 
 __all__ = [
     "McuSurfaceService",
+    "McuSurfaceDaemon",
+    "MCU_BANK_SIZE",
+    "MCU_BANK_LEFT_NOTE",
+    "MCU_BANK_RIGHT_NOTE",
+    "MCU_CHANNEL_SELECT_BASE_NOTE",
+    "MCU_CHANNEL_SELECT_COUNT",
+    "MCU_FAST_FORWARD_NOTE",
+    "MCU_JOG_WHEEL_CONTROLLER",
+    "MCU_PLAY_NOTE",
+    "MCU_RECORD_NOTE",
+    "MCU_REWIND_NOTE",
+    "MCU_STOP_NOTE",
+    "McuSnapshotEditorBridgeService",
     "build_device_query",
+    "build_fader_pitch_bend",
     "build_meter_bridge_sysex",
+    "build_parameter_banks",
+    "build_plugin_parameter_banks",
     "build_scribble_strip_sysex",
+    "classify_parameter_group",
+    "get_mcu_snapshot_editor_bridge_service",
     "get_mcu_surface_service",
     "is_mcu_port_name",
     "parse_identity_response",

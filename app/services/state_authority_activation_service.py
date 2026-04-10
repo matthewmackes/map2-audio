@@ -38,6 +38,8 @@ class StateAuthorityActivationService:
         get_audio_engine: Callable[[], Any],
         push_snapshot_footswitch_labels: Callable[..., Any],
         push_snapshot_ground_control_pro_assignments: Callable[..., Any],
+        push_snapshot_launch_control_assignments: Callable[..., Any],
+        push_snapshot_midi_commander_assignments: Callable[..., Any],
         push_snapshot_controller_display_preview: Callable[..., Any],
         schedule_snapshot_preload_for_live_snapshot: Callable[[int], None],
         get_activation_hook_plan: Callable[[], Any],
@@ -59,6 +61,8 @@ class StateAuthorityActivationService:
         self.get_audio_engine = get_audio_engine
         self.push_snapshot_footswitch_labels = push_snapshot_footswitch_labels
         self.push_snapshot_ground_control_pro_assignments = push_snapshot_ground_control_pro_assignments
+        self.push_snapshot_launch_control_assignments = push_snapshot_launch_control_assignments
+        self.push_snapshot_midi_commander_assignments = push_snapshot_midi_commander_assignments
         self.push_snapshot_controller_display_preview = push_snapshot_controller_display_preview
         self.schedule_snapshot_preload_for_live_snapshot = schedule_snapshot_preload_for_live_snapshot
         self.get_activation_hook_plan = get_activation_hook_plan
@@ -1078,12 +1082,28 @@ class StateAuthorityActivationService:
                 detail_payload=refreshed_detail,
             )
 
+        async def _push_launch_control_assignments() -> dict[str, Any]:
+            return await self.push_snapshot_launch_control_assignments(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                detail_payload=refreshed_detail,
+            )
+
+        async def _push_midi_commander_assignments() -> dict[str, Any]:
+            return await self.push_snapshot_midi_commander_assignments(
+                snapshot_id=snapshot.id,
+                snapshot_name=snapshot.name,
+                detail_payload=refreshed_detail,
+            )
+
         async def _schedule_preload() -> None:
             self.schedule_snapshot_preload_for_live_snapshot(snapshot.id)
 
         hook_map = {
             "push_footswitch_labels": _push_footswitch_labels,
             "push_ground_control_pro_assignments": _push_ground_control_pro_assignments,
+            "push_launch_control_assignments": _push_launch_control_assignments,
+            "push_midi_commander_assignments": _push_midi_commander_assignments,
             "push_controller_display_preview": _push_controller_preview,
             "schedule_preload": _schedule_preload,
         }

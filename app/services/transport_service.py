@@ -61,6 +61,16 @@ class MidiHubRecorderTransportOwner(TransportOwner):
         self._last_action = "erase"
         return {"ok": bool(stopped or deleted), "transport": {"stopped": stopped, "deleted": deleted}}
 
+    async def rew(self) -> dict[str, Any]:
+        result = await self.restart()
+        self._last_action = "rew"
+        return result
+
+    async def ff(self) -> dict[str, Any]:
+        result = await self.play()
+        self._last_action = "ff"
+        return result
+
     def get_state(self) -> dict[str, Any]:
         active_session = (
             self._recorder.get_session(self._current_session_id)
@@ -128,7 +138,7 @@ class TransportService:
     async def dispatch(self, action: str) -> dict[str, Any]:
         owner = self.get_active_transport_owner()
         normalized_action = str(action or "").strip().lower()
-        if normalized_action not in {"play", "stop", "record", "restart", "erase"}:
+        if normalized_action not in {"play", "stop", "record", "restart", "erase", "rew", "ff"}:
             raise ValueError("transport_action_invalid")
         result = await getattr(owner, normalized_action)()
         return {

@@ -9,10 +9,19 @@ MCU_METER_COMMAND = 0x20
 MCU_CHANNEL_STRIP_COUNT = 8
 MCU_LCD_CHARS_PER_STRIP = 7
 MCU_LCD_TOTAL_CHARS = MCU_CHANNEL_STRIP_COUNT * MCU_LCD_CHARS_PER_STRIP
+MCU_JOG_WHEEL_CONTROLLER = 0x3C
 
 
 def build_device_query() -> bytes:
     return bytes([0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7])
+
+
+def build_fader_pitch_bend(fader_index: int, absolute: int) -> bytes:
+    channel = max(0, min(0x07, int(fader_index)))
+    value = max(0, min(0x3FFF, int(absolute)))
+    lsb = value & 0x7F
+    msb = (value >> 7) & 0x7F
+    return bytes([0xE0 | channel, lsb, msb])
 
 
 def is_mcu_port_name(name: str) -> bool:
@@ -77,6 +86,14 @@ def parse_mcu_message(data: bytes) -> dict[str, Any] | None:
     if status == 0xB0 and len(payload) >= 3:
         controller = payload[1] & 0x7F
         value = payload[2] & 0x7F
+        if controller == MCU_JOG_WHEEL_CONTROLLER:
+            return {
+                "event_type": "jog_wheel",
+                "channel": channel,
+                "controller": controller,
+                "value": value,
+                "delta": _decode_relative_twos_complement(value),
+            }
         if 0x10 <= controller <= 0x17:
             return {
                 "event_type": "vpot",

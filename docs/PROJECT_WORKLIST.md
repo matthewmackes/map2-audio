@@ -21036,7 +21036,7 @@ Last updated: 2026-04-09 20:36 EDT - Codex
 ## Control Surfaces Completion — Mackie MCU Pro Integration (Workstream D)
 
 ID: T927
-Status: [>] In Progress
+Status: [✓] Done
 Title: EPIC — Mackie MCU Pro Plugin Parameter Editing Integration
 Description:
 - Goal / acceptance criteria: Full MCU protocol integration for plugin parameter editing. Faders/V-Pots map to focused plugin block parameters, scribble strips show param names, auto-grouped by parameter category.
@@ -21046,7 +21046,10 @@ Description:
 - Required outputs: See subtasks T928–T934
 Subtasks: T928–T934
 Assigned to: Codex
-Last updated: 2026-04-09 20:41 EDT - Codex
+Last updated: 2026-04-09 20:35 EDT - Codex
+- Completion notes:
+  - Completed the full MCU Pro workstream through `T934`: protocol handshake/parsing/output, semantic 8-strip parameter banking, focused snapshot-editor bridge, transport and jog-wheel control, dedicated `/mcu` Carbon editor page, reconnect daemon with live-state re-push, and end-to-end MCU integration coverage.
+  - Kept the implementation aligned across backend routes, realtime publisher topics, specialized physical-surface routing, the dedicated web client/page, and focused backend/frontend validation so the MCU path is system-consistent rather than a backend-only slice.
 
 ID: T928
 Status: [✓] Done
@@ -21065,7 +21068,7 @@ Last updated: 2026-04-09 20:45 EDT - Codex
   - Added focused regressions in `tests/test_mcu_surface_protocol.py` and `tests/test_mcu_surface_service.py`.
 
 ID: T929
-Status: [ ] Todo
+Status: [✓] Done
 Title: Plugin parameter page auto-grouping — categorize params into 8-fader banks by category
 Description:
 - Goal / acceptance criteria: Given a plugin's parameter list, auto-group into 8-parameter banks by semantic category: EQ (freq/gain/Q), dynamics (threshold/ratio/attack/release), modulation (rate/depth/mix), etc. Intelligent grouping, not sequential paging.
@@ -21073,11 +21076,15 @@ Description:
 - Estimated effort: High
 - Required outputs: app/services/mcu_surface/param_grouping.py, category detection heuristics, bank generation, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 21:56 EDT - Codex
+- Completion notes:
+  - Added `app/services/mcu_surface/param_grouping.py` with semantic parameter classification, plugin-category biasing, cluster-aware ordering, and 8-slot bank/page generation for EQ, dynamics, modulation, delay, reverb, pitch, amp, mixer, switch, and utility groups.
+  - Exported the grouping helpers from `app/services/mcu_surface/__init__.py` so the upcoming bridge/runtime slices can consume a stable MCU banking API directly.
+  - Added focused regressions in `tests/test_mcu_surface_param_grouping.py` covering EQ band grouping, dynamics ordering, modulation mix placement, and multi-page overflow behavior.
 
 ID: T930
-Status: [ ] Todo
+Status: [✓] Done
 Title: MCU-to-snapshot-editor bridge — focused plugin block drives fader/V-Pot/scribble assignment
 Description:
 - Goal / acceptance criteria: When a plugin block is focused in the Snapshot Editor, its auto-grouped parameter pages drive the MCU fader/V-Pot/scribble strip assignments. Channel select buttons on MCU select plugin blocks. Bank left/right navigates parameter pages.
@@ -21085,11 +21092,15 @@ Description:
 - Estimated effort: High
 - Required outputs: Bridge service, focus-to-MCU sync, block selection from MCU, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 21:59 EDT - Codex
+- Completion notes:
+  - Added `app/services/mcu_surface/bridge.py` with `McuSnapshotEditorBridgeService`, using Maschine audio-grid selection as the block-focus source of truth and resolving the selected live snapshot plugin through the controller-display catalog plus MCU parameter banks.
+  - Added button-driven MCU navigation for channel-select block focus and bank-left/right page switching, while projecting the active bank into fader/V-Pot/channel-strip payloads and scribble-strip labels.
+  - Added focused regressions in `tests/test_mcu_surface_bridge.py` covering projection build, scribble-strip push, block selection, and parameter-page navigation.
 
 ID: T931
-Status: [ ] Todo
+Status: [✓] Done
 Title: MCU transport section — Play/Stop/Record/Rew/FF and jog wheel mapping
 Description:
 - Goal / acceptance criteria: MCU transport buttons map to MAP2 transport. Jog wheel maps to parameter fine-adjust for the currently focused parameter.
@@ -21097,11 +21108,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Transport button mapping, jog wheel integration, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 22:14 EDT - Codex
+- Completion notes:
+  - Extended MCU protocol parsing with dedicated jog-wheel decoding and wired `app/services/mcu_surface/bridge.py` to dispatch MCU transport buttons through `TransportService` plus apply jog-wheel deltas to the last-touched focused parameter strip.
+  - Extended `app/services/transport_service.py` with `rew` and `ff` actions so the MCU transport row maps cleanly onto the existing transport owner model instead of using MCU-specific shortcuts.
+  - Added `SnapshotService.update_plugin_parameter_by_position()` so jog-wheel edits can persist back into the live control-plane snapshot by snapshot-chain and plugin position, and fixed `param_grouping.py` to preserve live `current` values in bank projections.
+  - Added focused regressions covering jog-wheel protocol parsing, bridge transport dispatch, focused-parameter jog edits, and transport route aliases.
 
 ID: T932
-Status: [ ] Todo
+Status: [✓] Done
 Title: Dedicated /mcu editor page — Carbon layout with fader bank visualization and scribble strip preview
 Description:
 - Goal / acceptance criteria: New /mcu Carbon page showing: connection status, current fader bank visualization (8 fader positions with values), scribble strip text preview, parameter page browser, focused plugin identity, and transport status.
@@ -21109,11 +21125,15 @@ Description:
 - Estimated effort: High
 - Required outputs: web/src/app/pages/McuPage.tsx, McuPage.css, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:33 EDT - Codex
+- Completion notes:
+  - Added the dedicated `/mcu` backend route and Carbon web page, including connection posture, focused plugin identity, 8-fader bank visualization, scribble-strip preview, parameter-page browsing, and shared transport-owner state.
+  - Wired the page into the app router, advanced menu, launcher exclusions, and the enriched MIDI physical-surface catalog so Mackie MCU Pro hardware now resolves to a specialized workspace route instead of a generic surface view.
+  - Added focused regressions in `tests/test_mcu_surface_routes.py`, `web/src/app/pages/McuPage.test.tsx`, and the related route/catalog coverage so the dedicated MCU page remains wired end to end.
 
 ID: T933
-Status: [ ] Todo
+Status: [✓] Done
 Title: MCU auto-reconnect daemon with state re-push
 Description:
 - Goal / acceptance criteria: MCU connection lifecycle managed by background daemon. On reconnect, re-pushes current plugin focus, fader positions, scribble strip text, transport state, plus nav-bar notification.
@@ -21121,11 +21141,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Daemon service, reconnect logic, state re-push, notification, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:33 EDT - Codex
+- Completion notes:
+  - Added `app/services/mcu_surface/daemon.py` and integrated it into `McuSurfaceService` so MCU connectivity is polled in the background, disconnect/reconnect transitions are tracked, and reconnect automatically re-pushes device inquiry, focused-bank scribble labels, motor-fader positions, meter levels, and current transport ownership.
+  - Extended `McuSurfaceService` and `app/routes/mcu_surface.py` so `/api/mcu/status` exposes daemon state, reconnect notifications, matched-port counts, and last transport owner for the dedicated page and global notification layer.
+  - Surfaced reconnect notifications in `web/src/app/pages/McuPage.tsx` through both inline Carbon notifications and the shared toast system so the MCU state changes are visible in the workspace chrome instead of being silent backend-only events.
 
 ID: T934
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused MCU integration tests — handshake, fader assignment, scribble strip, param grouping, banking
 Description:
 - Goal / acceptance criteria: Full test suite covering MCU handshake, fader-to-param assignment, scribble strip output, auto-grouping correctness, bank navigation, and reconnect behavior.
@@ -21133,13 +21157,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: tests/test_mcu_surface*.py, passing suite.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:33 EDT - Codex
+- Completion notes:
+  - Added `tests/test_mcu_surface_daemon.py` for reconnect lifecycle coverage and `tests/test_mcu_surface_integration.py` for handshake, focused projection re-push, motor-fader output, scribble-strip output, meter bridge output, and transport-state republish validation.
+  - Expanded the focused MCU unit/regression suite across protocol, service, bridge, route, and page layers so the workstream now has explicit coverage for banking, focused parameter projection, reconnect recovery, and the dedicated workspace contract.
 
 ## Control Surfaces Completion — Novation Launch Control Deep Integration (Workstream E)
 
 ID: T935
-Status: [ ] Todo
+Status: [✓] Done
 Title: EPIC — Novation Launch Control Deep Integration
 Description:
 - Goal / acceptance criteria: Full programming surface with SysEx template auto-push, LED feedback using effect-type Carbon color palette as default with user-configurable override, per-snapshot mappings, and dedicated editor page.
@@ -21147,11 +21174,15 @@ Description:
 - Estimated effort: High (7 subtasks)
 - Required outputs: See subtasks T936–T942
 Subtasks: T936–T942
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 05:49 EDT - Codex
+- Completion notes:
+  - Completed the full Launch Control deep-integration slice across backend, snapshot activation, dedicated route/page, reconnect handling, and focused validation.
+  - Added reconnect-aware daemon state with runtime re-push of the MAP2 template, snapshot mappings, and LED feedback, plus surfaced reconnect notifications through the Launch Control workspace and shared toast path.
+  - Expanded the Launch Control focused test suite so the workstream now covers template push, LED output, activation-time mapping restore, route projection/editing, and reconnect recovery end to end.
 
 ID: T936
-Status: [ ] Todo
+Status: [✓] Done
 Title: Launch Control SysEx template service — auto-push MAP2 template on device detection
 Description:
 - Goal / acceptance criteria: New app/services/launch_control_surface/ package. On device detection, auto-push a MAP2 SysEx template configuring LED/CC layout. Parse incoming template data for bidirectional mapping awareness.
@@ -21159,11 +21190,15 @@ Description:
 - Estimated effort: High
 - Required outputs: Template service, auto-push on detection, template parse, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:53 EDT - Codex
+- Completion notes:
+  - Added the new `app/services/launch_control_surface/` package with documented Novation Launch Control / Launch Control XL SysEx helpers, MAP2 template manifest generation, template-select push, and inbound template-change parsing for template-awareness state.
+  - Added `LaunchControlSurfaceService` with MIDI Hub subscription plus a startup poll loop that detects newly visible Launch Control-family outputs and auto-selects the reserved MAP2 template slot while publishing template-push and inbound event updates.
+  - Wired the service into FastAPI lifespan startup so template auto-push is active in runtime rather than remaining a dormant library, and surfaced Launch Control runtime state through the enriched physical-surfaces stack.
 
 ID: T937
-Status: [ ] Todo
+Status: [✓] Done
 Title: LED feedback engine — effect-type Carbon color palette default with user-configurable override
 Description:
 - Goal / acceptance criteria: LED colors default to effect-type Carbon palette (delay=blue, drive=green, reverb=purple, modulation=orange, etc. per T650). Operator can override LED color per-mapping in the editor. LEDs set via note-on velocity values per Novation protocol.
@@ -21171,11 +21206,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: LED color engine, Carbon palette mapping, per-mapping override, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 20:53 EDT - Codex
+- Completion notes:
+  - Added `app/services/launch_control_surface/colors.py` with effect-type-to-Carbon-family defaults aligned to `T650`, device-side Novation LED velocity mapping, and a stable override contract supporting direct device-color, Carbon-family, or raw velocity overrides.
+  - Added note-message LED helpers in the Launch Control protocol layer so later mapping/runtime slices can drive feedback through the device’s documented per-control note velocity path instead of only template-level SysEx.
+  - Added focused regressions in `tests/test_launch_control_surface_colors.py` covering effect defaults, override precedence, and the concrete note-message bytes emitted for Launch Control LED feedback.
 
 ID: T938
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-snapshot Launch Control mapping persistence — knob/fader/button assignments pushed on activation
 Description:
 - Goal / acceptance criteria: Launch Control knob/fader/button-to-param/action assignments stored per-snapshot. On activation, mappings and LED states pushed to device.
@@ -21183,11 +21222,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Snapshot schema extension, activation-time push, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 21:15 EDT - Codex
+- Completion notes:
+  - Added a dedicated snapshot activation hook for `extensions.launch_control`, parallel to the existing Ground Control Pro hook, so Launch Control mappings are now recalled from snapshot-owned state rather than an ad hoc runtime-only cache.
+  - Extended `LaunchControlSurfaceService` with `push_snapshot_activation()` so activation reasserts the MAP2 template, stores the active snapshot mapping set, and pushes per-button LED feedback using the effect-type/default-or-override color contract from `T937`.
+  - Added focused regressions covering activation hook order, snapshot-owned Launch Control extension payload forwarding, and concrete LED/template messages emitted during snapshot activation.
 
 ID: T939
-Status: [ ] Todo
+Status: [✓] Done
 Title: Bidirectional Launch Control mapping — knobs/faders to params, buttons to bypass/focus/transport
 Description:
 - Goal / acceptance criteria: Knobs and faders map to plugin parameters. Buttons map to bypass, block focus, and transport actions. All bidirectional — parameter changes from other sources update the device state.
@@ -21195,11 +21238,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Control mapping service, bidirectional sync, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 21:15 EDT - Codex
+- Completion notes:
+  - Extended Launch Control inbound handling so live snapshot mappings from `extensions.launch_control.mappings` now dispatch CC/note events into shared MAP2 runtime services for parameter writes, plugin bypass toggles, block focus, and transport actions.
+  - Added poll-driven/live-dispatch LED feedback refresh so button state is re-pushed from live snapshot/transport/audio-grid state after Launch Control actions and during subsequent device refresh cycles instead of drifting after external changes.
+  - Updated `SnapshotService.update_plugin_parameter_by_position()` to sync the live snapshot payload when the edited snapshot is currently live, which keeps Launch Control parameter writes aligned with the shared live authority payload.
 
 ID: T940
-Status: [ ] Todo
+Status: [✓] Done
 Title: Dedicated /launch-control editor page — Carbon layout with control grid and LED color editor
 Description:
 - Goal / acceptance criteria: New /launch-control Carbon page showing: control grid visualization matching physical layout, LED color editor per button, mapping assignment per control, connection status, template status.
@@ -21207,11 +21254,15 @@ Description:
 - Estimated effort: High
 - Required outputs: web/src/app/pages/LaunchControlPage.tsx, LaunchControlPage.css, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-09 21:22 EDT - Codex
+- Completion notes:
+  - Added the new `/api/launch-control` backend route surface with status, live projection, and mapping-patch endpoints, so the Launch Control runtime is now inspectable and the live snapshot LED override path can be edited without dropping into raw snapshot JSON.
+  - Added the dedicated Carbon route `/launch-control` plus `LaunchControlPage`, a grouped physical-control grid that shows live snapshot assignments by knob/fader/button, current connection/template state, and per-button LED override editors.
+  - Updated routing and enriched physical-surface metadata so Launch Control now has a first-class specialized workspace path instead of only appearing as a generic shared-stack device.
 
 ID: T941
-Status: [ ] Todo
+Status: [✓] Done
 Title: Launch Control auto-reconnect with full state re-push
 Description:
 - Goal / acceptance criteria: On reconnect, re-push SysEx template, LED colors, and current snapshot mappings. Nav-bar notification on reconnect.
@@ -21219,11 +21270,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Reconnect daemon, state re-push, notification, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 05:49 EDT - Codex
+- Completion notes:
+  - Added `app/services/launch_control_surface/daemon.py` with reconnect/disconnect detection, conservative Launch Control port matching, notification state, and automatic state re-push on device return.
+  - Extended `LaunchControlSurfaceService` and the `/api/launch-control/status` route so daemon status, reconnect counts, last re-push timestamps, and notification payloads are surfaced as part of the live runtime contract.
+  - Updated the dedicated `/launch-control` page to show reconnect state inline and publish reconnect/disconnect notifications through the shared toast layer.
+- Validation:
+  - `pytest -q tests/test_launch_control_surface_service.py tests/test_launch_control_surface_daemon.py tests/test_launch_control_surface_routes.py tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import tests/test_state_authority_activation_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/launch_control_surface/__init__.py app/services/launch_control_surface/daemon.py app/services/launch_control_surface/service.py app/routes/launch_control_surface.py tests/test_launch_control_surface_service.py tests/test_launch_control_surface_daemon.py tests/test_launch_control_surface_routes.py` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/pages/LaunchControlPage.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T942
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused Launch Control tests — template push, LED output, mapping round-trip, snapshot integration
 Description:
 - Goal / acceptance criteria: Full test suite covering template auto-push, LED color output per Novation protocol, mapping persistence round-trip, snapshot activation push, and reconnect behavior.
@@ -21231,13 +21292,23 @@ Description:
 - Estimated effort: Medium
 - Required outputs: tests/test_launch_control_surface*.py, passing suite.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 05:49 EDT - Codex
+- Completion notes:
+  - Expanded the Launch Control backend suite across service, route, daemon, snapshot-activation, and state-authority paths so template auto-push, LED output, mapping persistence, activation-time restore, and reconnect behavior are now explicitly covered.
+  - Added focused page regression coverage for the `/launch-control` workspace, including daemon status and reconnect-notification rendering against the typed client contract.
+  - Closed the original validation gap for this workstream by running focused backend tests, Python import/compile validation, React tests, typecheck, and a production web build after the reconnect slice landed.
+- Validation:
+  - `pytest -q tests/test_launch_control_surface_service.py tests/test_launch_control_surface_daemon.py tests/test_launch_control_surface_routes.py tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import tests/test_state_authority_activation_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/launch_control_surface/__init__.py app/services/launch_control_surface/daemon.py app/services/launch_control_surface/service.py app/routes/launch_control_surface.py tests/test_launch_control_surface_service.py tests/test_launch_control_surface_daemon.py tests/test_launch_control_surface_routes.py` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/pages/LaunchControlPage.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ## Control Surfaces Completion — MeloAudio MIDI Commander Deep Integration (Workstream F)
 
 ID: T943
-Status: [ ] Todo
+Status: [✓] Done
 Title: EPIC — MeloAudio MIDI Commander Deep Integration
 Description:
 - Goal / acceptance criteria: Full programming surface with dedicated mapping editor, per-snapshot assignments, snapshot-driven configuration push, and standalone /midi-commander route.
@@ -21245,11 +21316,16 @@ Description:
 - Estimated effort: Medium (6 subtasks)
 - Required outputs: See subtasks T944–T949
 Subtasks: T944–T949
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added the dedicated `app/services/midi_commander_surface/` backend branch with MIDI Commander port detection, button/expression/bank parsing, snapshot-owned mapping recall, reconnect handling, and a standalone `/api/midi-commander` contract.
+  - Wired MIDI Commander snapshot activation into the state-authority hook plan so snapshot-owned button and expression assignments are now recalled alongside the existing controller-display, Ground Control Pro, and Launch Control paths.
+  - Added the dedicated Carbon `/midi-commander` workspace with connection posture, manual setup guidance, per-button assignment editing, expression target editing, and reconnect notifications.
+  - Closed the workstream with focused backend, route, snapshot-hook, page, typecheck, and production-build validation.
 
 ID: T944
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Commander device service — parse button/expression MIDI, detect model variant
 Description:
 - Goal / acceptance criteria: New app/services/midi_commander_surface/ package. Parse MIDI Commander button CC/PC messages and expression pedal CC. Detect device model variant from MIDI descriptors.
@@ -21257,11 +21333,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Device service, MIDI parser, model detection, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added `app/services/midi_commander_surface/protocol.py` with MIDI Commander port-name detection, profile-backed variant detection, button CC/program-change parsing, expression-pedal parsing, and bank up/down parsing.
+  - Added `MidiCommanderSurfaceService` with MIDI Hub subscription, matched-port discovery, inbound event handling, and dedicated runtime state snapshots.
+  - Added focused protocol and service regressions covering device detection, MIDI parsing, manual setup activation payloads, and live dispatch behavior.
 
 ID: T945
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-snapshot MIDI Commander button/expression mapping
 Description:
 - Goal / acceptance criteria: Button-to-action assignments (bypass, PC, block focus, expression target) stored per-snapshot. Expression pedal target configurable per-snapshot.
@@ -21269,11 +21349,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Snapshot schema extension, mapping service, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added snapshot-owned `extensions.midi_commander.mappings` handling with normalized button and expression entries merged onto the physical controller layout.
+  - Added `/api/midi-commander/mapping` so the live snapshot mapping payload can be edited from the dedicated workspace without dropping into raw snapshot JSON.
+  - Extended snapshot activation tests and route tests to prove MIDI Commander mappings round-trip through snapshot update and activation paths.
 
 ID: T946
-Status: [ ] Todo
+Status: [✓] Done
 Title: Snapshot-driven MIDI Commander configuration push
 Description:
 - Goal / acceptance criteria: On activation, push CC/PC assignments to device if device supports SysEx configuration. Otherwise document manual setup procedure in the editor page.
@@ -21281,11 +21365,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Activation-time push (if supported), manual-setup guidance, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added `push_snapshot_midi_commander_assignments()` and wired it into the state-authority activation hook plan directly after Launch Control assignment push.
+  - Because MIDI Commander does not expose a dedicated MAP2 SysEx programming surface in the current stack, snapshot activation now emits a structured `manual_setup` payload instead of pretending a hardware config push exists.
+  - The dedicated workspace renders the manual setup instructions from the live snapshot payload so operators still get deterministic per-snapshot configuration guidance.
 
 ID: T947
-Status: [ ] Todo
+Status: [✓] Done
 Title: Dedicated /midi-commander editor page — Carbon layout with button grid and expression assignment
 Description:
 - Goal / acceptance criteria: New /midi-commander Carbon page showing: button grid matching physical layout, per-button action assignment, expression pedal target editor, connection status, manual setup guidance if device lacks SysEx.
@@ -21293,11 +21381,15 @@ Description:
 - Estimated effort: High
 - Required outputs: web/src/app/pages/MidiCommanderPage.tsx, MidiCommanderPage.css, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added the new dedicated route `/midi-commander` in the web shell and the new backend route family `/api/midi-commander`.
+  - Added `MidiCommanderPage` and `MidiCommanderPage.css` with connection posture, matched-port list, manual setup guidance, button assignment editing, expression target editing, and reconnect/daemon status.
+  - Updated shared routing and the Enriched_MIDI_Physical_Surfaces catalog so MeloAudio now points to the dedicated specialized route instead of the generic `/midi` redirect.
 
 ID: T948
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Commander auto-reconnect with state re-push
 Description:
 - Goal / acceptance criteria: On reconnect, re-push current snapshot's button/expression mappings. Nav-bar notification.
@@ -21305,11 +21397,15 @@ Description:
 - Estimated effort: Low
 - Required outputs: Reconnect logic, state re-push, notification, focused tests.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added `app/services/midi_commander_surface/daemon.py` with reconnect/disconnect detection, notification payloads, and live snapshot state refresh on reconnect.
+  - Surfaced daemon state in `/api/midi-commander/status` and on the dedicated page, including reconnect count, last refresh, and notification details.
+  - Hooked reconnect notifications into the shared toast path in the dedicated page so the operator sees reconnect state immediately.
 
 ID: T949
-Status: [ ] Todo
+Status: [✓] Done
 Title: Focused MIDI Commander tests — button parse, mapping persistence, snapshot push
 Description:
 - Goal / acceptance criteria: Full test suite covering button MIDI parse, mapping round-trip, snapshot activation push, and reconnect behavior.
@@ -21317,8 +21413,12 @@ Description:
 - Estimated effort: Medium
 - Required outputs: tests/test_midi_commander_surface*.py, passing suite.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-08 - Claude
+Assigned to: Codex
+Last updated: 2026-04-10 06:28 EDT - Codex
+- Completion notes:
+  - Added focused backend tests for protocol parsing, reconnect daemon behavior, service dispatch, route projection/editing, and snapshot activation hook ordering.
+  - Added dedicated page and route-level frontend regressions for `/midi-commander` plus app-routing coverage for the new standalone route.
+  - Completed focused validation with backend pytest, Python import/compile checks, React tests, TypeScript typecheck, and a production web build.
 
 ## Control Surfaces Completion — Shared Infrastructure (Workstream G)
 

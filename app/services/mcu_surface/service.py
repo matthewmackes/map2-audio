@@ -7,8 +7,10 @@ from typing import Any, Optional
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 
+from .daemon import McuSurfaceDaemon
 from .protocol import (
     build_device_query,
+    build_fader_pitch_bend,
     build_meter_bridge_sysex,
     build_scribble_strip_sysex,
     is_mcu_port_name,
@@ -33,6 +35,11 @@ class McuSurfaceService:
         self._subscriber_id = f"mcu_surface:{id(self)}"
         self._last_identity: dict[str, Any] | None = None
         self._recent_events: list[dict[str, Any]] = []
+        self._daemon = McuSurfaceDaemon(
+            get_ports=self.list_matching_ports,
+            repush_surface_state=self._repush_surface_state,
+            emit=self._emit,
+        )
         if self._midi_hub is None:
             self._subscribe_to_midi_hub()
         elif hasattr(self._midi_hub, "subscribe"):
@@ -112,6 +119,79 @@ class McuSurfaceService:
         return {
             "identity": dict(self._last_identity) if isinstance(self._last_identity, dict) else None,
             "recent_events": [dict(item) for item in self._recent_events[-16:]],
+            "daemon_status": self._daemon.snapshot(),
+        }
+
+    async def ensure_daemon_started(self) -> None:
+        await self._daemon.ensure_started()
+
+    def list_matching_ports(self) -> list[dict[str, Any]]:
+        midi_hub = self._midi_hub
+        if midi_hub is None or not hasattr(midi_hub, "list_ports"):
+            return []
+        try:
+            ports = midi_hub.list_ports()
+        except Exception:
+            return []
+
+        matches: list[dict[str, Any]] = []
+        for port in ports:
+            name = str(getattr(port, "name", "") or "")
+            if not is_mcu_port_name(name):
+                continue
+            matches.append(
+                {
+                    "port_id": str(getattr(port, "port_id", "") or ""),
+                    "name": name,
+                    "direction": str(getattr(port, "direction", "") or ""),
+                }
+            )
+        return matches
+
+    def list_output_ports(self) -> list[dict[str, Any]]:
+        return [
+            port
+            for port in self.list_matching_ports()
+            if str(port.get("direction") or "").strip().lower() in {"output", "duplex", "bidirectional", "inout", "input/output"}
+        ]
+
+    async def _repush_surface_state(self) -> dict[str, Any]:
+        from app.database import get_session
+        from app.services.transport_service import get_transport_service
+        from .bridge import get_mcu_snapshot_editor_bridge_service
+
+        destination_ports: list[str] = []
+        projection: dict[str, Any] | None = None
+        async with get_session(read_only=True) as session:
+            bridge = get_mcu_snapshot_editor_bridge_service()
+            for port in self.list_output_ports():
+                destination_port = str(port.get("port_id") or port.get("name") or "").strip()
+                if not destination_port:
+                    continue
+                self.query_device(destination_port=destination_port)
+                projection = await bridge.build_projection(session, destination_port=destination_port)
+                destination_ports.append(destination_port)
+
+        transport = get_transport_service().get_state()
+        await self._emit(
+            "mcu_surface:transport_state",
+            {
+                "transport": transport,
+                "destination_ports": destination_ports,
+            },
+        )
+        selected_plugin = projection.get("selected_plugin") if isinstance(projection, dict) else {}
+        plugin_name = str(selected_plugin.get("plugin_name") or "Focused plugin bank").strip()
+        return {
+            "status": "completed",
+            "status_label": (
+                f"{plugin_name} restored to 1 destination."
+                if len(destination_ports) == 1
+                else f"{plugin_name} restored to {len(destination_ports)} destinations."
+            ),
+            "destination_ports": destination_ports,
+            "projection": projection,
+            "transport": transport,
         }
 
     def query_device(self, *, destination_port: str, source_port: str = "map2:mcu_surface", metadata: dict[str, Any] | None = None) -> bool:
@@ -144,6 +224,29 @@ class McuSurfaceService:
                 metadata=metadata or {"profile_id": "mackie_mcu_pro", "message_type": "scribble_strip"},
             )
         )
+
+    def push_fader_positions(
+        self,
+        *,
+        destination_port: str,
+        normalized_values: list[float],
+        source_port: str = "map2:mcu_surface",
+        metadata: dict[str, Any] | None = None,
+    ) -> bool:
+        if self._midi_hub is None:
+            return False
+        sent = False
+        for index, normalized in enumerate(normalized_values[:8]):
+            absolute = max(0, min(0x3FFF, round(float(normalized) * 0x3FFF)))
+            sent = bool(
+                self._midi_hub.send(
+                    source_port=source_port,
+                    destination_port=destination_port,
+                    data=build_fader_pitch_bend(index, absolute),
+                    metadata=metadata or {"profile_id": "mackie_mcu_pro", "message_type": "motor_fader"},
+                )
+            ) or sent
+        return sent
 
     def push_meter_bridge(
         self,

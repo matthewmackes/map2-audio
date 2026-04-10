@@ -112,6 +112,8 @@ SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = "snapshots.default_monitor
 SNAPSHOT_BUNDLE_MANIFEST_FILENAME = "snapshot.json"
 SNAPSHOT_BUNDLE_FORMAT_VERSION = 2
 _GROUND_CONTROL_PRO_EXTENSION_KEY = "ground_control_pro"
+_LAUNCH_CONTROL_EXTENSION_KEY = "launch_control"
+_MIDI_COMMANDER_EXTENSION_KEY = "midi_commander"
 _snapshot_preload_tasks: dict[str, asyncio.Task[None]] = {}
 _TEMPLATE_LINK_NAMESPACE = "state_authority"
 _TEMPLATE_LINK_KEY = "template_link"
@@ -268,6 +270,78 @@ async def push_snapshot_ground_control_pro_assignments(
     from app.services.ground_control_pro import get_ground_control_pro_service
 
     return await get_ground_control_pro_service().push_snapshot_activation(
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+        extension_payload=extension_payload,
+    )
+
+
+async def push_snapshot_launch_control_assignments(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+    detail_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(detail_payload, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_detail_payload",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extensions = detail_payload.get("extensions")
+    if not isinstance(extensions, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_extensions",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extension_payload = extensions.get(_LAUNCH_CONTROL_EXTENSION_KEY)
+    if not isinstance(extension_payload, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_launch_control_extension",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    from app.services.launch_control_surface import get_launch_control_surface_service
+
+    return await get_launch_control_surface_service().push_snapshot_activation(
+        snapshot_id=snapshot_id,
+        snapshot_name=snapshot_name,
+        extension_payload=extension_payload,
+    )
+
+
+async def push_snapshot_midi_commander_assignments(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+    detail_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(detail_payload, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_detail_payload",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extensions = detail_payload.get("extensions")
+    if not isinstance(extensions, dict):
+        return {
+            "status": "skipped",
+            "reason": "missing_extensions",
+            "snapshot_id": int(snapshot_id),
+        }
+
+    extension_payload = extensions.get(_MIDI_COMMANDER_EXTENSION_KEY)
+    if not isinstance(extension_payload, dict):
+        extension_payload = {}
+
+    from app.services.midi_commander_surface import get_midi_commander_surface_service
+
+    return await get_midi_commander_surface_service().push_snapshot_activation(
         snapshot_id=snapshot_id,
         snapshot_name=snapshot_name,
         extension_payload=extension_payload,
@@ -622,6 +696,8 @@ class SnapshotService:
             get_audio_engine=get_audio_engine,
             push_snapshot_footswitch_labels=push_snapshot_footswitch_labels,
             push_snapshot_ground_control_pro_assignments=push_snapshot_ground_control_pro_assignments,
+            push_snapshot_launch_control_assignments=push_snapshot_launch_control_assignments,
+            push_snapshot_midi_commander_assignments=push_snapshot_midi_commander_assignments,
             push_snapshot_controller_display_preview=push_snapshot_controller_display_preview,
             schedule_snapshot_preload_for_live_snapshot=schedule_snapshot_preload_for_live_snapshot,
             get_activation_hook_plan=self.get_activation_hook_plan,
@@ -1007,6 +1083,8 @@ class SnapshotService:
         default_hooks = [
             "push_footswitch_labels",
             "push_ground_control_pro_assignments",
+            "push_launch_control_assignments",
+            "push_midi_commander_assignments",
             "push_controller_display_preview",
             "schedule_preload",
         ]
@@ -1031,6 +1109,27 @@ class SnapshotService:
                 hooks.insert(insert_index, "push_ground_control_pro_assignments")
             else:
                 hooks.insert(0, "push_ground_control_pro_assignments")
+        if "push_launch_control_assignments" not in hooks:
+            if "push_ground_control_pro_assignments" in hooks:
+                insert_index = hooks.index("push_ground_control_pro_assignments") + 1
+                hooks.insert(insert_index, "push_launch_control_assignments")
+            elif "push_footswitch_labels" in hooks:
+                insert_index = hooks.index("push_footswitch_labels") + 1
+                hooks.insert(insert_index, "push_launch_control_assignments")
+            else:
+                hooks.insert(0, "push_launch_control_assignments")
+        if "push_midi_commander_assignments" not in hooks:
+            if "push_launch_control_assignments" in hooks:
+                insert_index = hooks.index("push_launch_control_assignments") + 1
+                hooks.insert(insert_index, "push_midi_commander_assignments")
+            elif "push_ground_control_pro_assignments" in hooks:
+                insert_index = hooks.index("push_ground_control_pro_assignments") + 1
+                hooks.insert(insert_index, "push_midi_commander_assignments")
+            elif "push_footswitch_labels" in hooks:
+                insert_index = hooks.index("push_footswitch_labels") + 1
+                hooks.insert(insert_index, "push_midi_commander_assignments")
+            else:
+                hooks.insert(0, "push_midi_commander_assignments")
         return hooks
 
     def _snapshot_preload_stage_plugins(self, snapshot: Snapshot) -> list[Any]:
@@ -2773,6 +2872,56 @@ class SnapshotService:
         await self.session.flush()
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
+
+    async def update_plugin_parameter_by_position(
+        self,
+        snapshot_id: int,
+        chain_id: int,
+        plugin_position: int,
+        parameter_key: str,
+        value: float,
+    ) -> Optional[dict[str, Any]]:
+        chain = await self._get_chain(snapshot_id, chain_id)
+        if chain is None:
+            return None
+        plugin = next(
+            (
+                item
+                for item in chain.plugins
+                if int(getattr(item, "position", -1)) == int(plugin_position)
+            ),
+            None,
+        )
+        if plugin is None:
+            return None
+        parameters = dict(plugin.parameters or {})
+        parameters[str(parameter_key)] = float(value)
+        plugin.parameters = parameters
+        plugin.updated_at = _utcnow()
+        await self.session.flush()
+        await self._sync_snapshot_document_from_relational_projection(snapshot_id)
+        detail = await self._reload_snapshot_detail(snapshot_id)
+        if detail is None:
+            return None
+
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+            runtime_state_service = SnapshotRuntimeStateService(self.session)
+            current_runtime_payload = await runtime_state_service.get_live_snapshot_payload()
+            is_current_live_snapshot = (
+                isinstance(current_runtime_payload, dict)
+                and int(current_runtime_payload.get("id") or 0) == int(snapshot_id)
+            )
+            if is_current_live_snapshot:
+                await runtime_state_service.sync_live_snapshot_payload(
+                    snapshot_id=snapshot_id,
+                    live_snapshot_payload=detail,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                )
+        except Exception as exc:
+            logger.debug("Snapshot parameter live sync skipped for %s: %s", snapshot_id, exc)
+        return detail
 
     async def update_routing(self, snapshot_id: int, payload: dict[str, Any]) -> Optional[dict[str, Any]]:
         snapshot = await self._get_snapshot_model(snapshot_id)

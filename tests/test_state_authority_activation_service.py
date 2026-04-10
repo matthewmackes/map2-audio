@@ -46,6 +46,9 @@ def _build_service(fake_engine: _FakeAudioEngine, *, owner=None) -> StateAuthori
         midi_service=SimpleNamespace(),
         get_audio_engine=lambda: fake_engine,
         push_snapshot_footswitch_labels=lambda *args, **kwargs: None,
+        push_snapshot_ground_control_pro_assignments=lambda *args, **kwargs: None,
+        push_snapshot_launch_control_assignments=lambda *args, **kwargs: None,
+        push_snapshot_midi_commander_assignments=lambda *args, **kwargs: None,
         push_snapshot_controller_display_preview=lambda *args, **kwargs: None,
         schedule_snapshot_preload_for_live_snapshot=lambda snapshot_id: None,
         get_activation_hook_plan=_default_hook_plan,
@@ -193,11 +196,17 @@ def test_run_activation_hooks_uses_configured_order():
     async def _push_footswitch_labels(**kwargs):
         executed.append("push_footswitch_labels")
 
+    async def _push_launch_control_assignments(**kwargs):
+        executed.append("push_launch_control_assignments")
+
+    async def _push_midi_commander_assignments(**kwargs):
+        executed.append("push_midi_commander_assignments")
+
     async def _push_controller_display_preview(**kwargs):
         executed.append("push_controller_display_preview")
 
     async def _hook_plan():
-        return ["schedule_preload", "push_footswitch_labels", "unknown_hook"]
+        return ["schedule_preload", "push_launch_control_assignments", "push_midi_commander_assignments", "push_footswitch_labels", "unknown_hook"]
 
     service = StateAuthorityActivationService(
         session=_FakeSession(),
@@ -207,6 +216,9 @@ def test_run_activation_hooks_uses_configured_order():
         midi_service=SimpleNamespace(),
         get_audio_engine=lambda: fake_engine,
         push_snapshot_footswitch_labels=_push_footswitch_labels,
+        push_snapshot_ground_control_pro_assignments=lambda *args, **kwargs: None,
+        push_snapshot_launch_control_assignments=_push_launch_control_assignments,
+        push_snapshot_midi_commander_assignments=_push_midi_commander_assignments,
         push_snapshot_controller_display_preview=_push_controller_display_preview,
         schedule_snapshot_preload_for_live_snapshot=lambda snapshot_id: executed.append("schedule_preload"),
         get_activation_hook_plan=_hook_plan,
@@ -230,11 +242,15 @@ def test_run_activation_hooks_uses_configured_order():
         )
     )
 
-    assert executed == ["schedule_preload", "push_footswitch_labels"]
+    assert executed == ["schedule_preload", "push_launch_control_assignments", "push_midi_commander_assignments", "push_footswitch_labels"]
     assert [item["hook"] for item in results] == [
         "schedule_preload",
+        "push_launch_control_assignments",
+        "push_midi_commander_assignments",
         "push_footswitch_labels",
         "unknown_hook",
     ]
     assert results[0]["preload_candidate_count"] == 2
-    assert results[2]["status"] == "skipped"
+    assert results[3]["status"] == "completed"
+    assert results[4]["status"] == "skipped"
+    assert results[4]["reason"] == "unknown_hook"

@@ -9,6 +9,8 @@ import pytest
 
 from app import database as database_module
 import app.services.ground_control_pro as ground_control_pro_module
+import app.services.launch_control_surface as launch_control_surface_module
+import app.services.midi_commander_surface as midi_commander_surface_module
 from app.services import audio_state_authority as audio_state_authority_module
 from app.services import performance_brain_authority_sync as performance_brain_authority_sync_module
 from app.services import performance_metrics as performance_metrics_module
@@ -67,6 +69,8 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
     footswitch_pushes: list[dict[str, object]] = []
     controller_display_pushes: list[dict[str, object]] = []
     gcp_pushes: list[dict[str, object]] = []
+    launch_control_pushes: list[dict[str, object]] = []
+    midi_commander_pushes: list[dict[str, object]] = []
     hook_order: list[str] = []
 
     async def _passthrough(snapshot_data):
@@ -100,6 +104,27 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                 "transport": {"port_index": 0, "port_name": "Ground Control Pro Out"},
             }
 
+    class _FakeLaunchControlService:
+        async def push_snapshot_activation(self, **kwargs):
+            hook_order.append("launch_control")
+            launch_control_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "mapping_count": 2,
+                "destination_ports": ["lc-out"],
+                "led_push_count": 2,
+            }
+
+    class _FakeMidiCommanderService:
+        async def push_snapshot_activation(self, **kwargs):
+            hook_order.append("midi_commander")
+            midi_commander_pushes.append(dict(kwargs))
+            return {
+                "status": "completed",
+                "mapping_count": 10,
+                "configuration_transport": "manual_setup",
+            }
+
     monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
     monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_tempo_to_engine", _fake_apply_tempo)
@@ -110,6 +135,16 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         ground_control_pro_module,
         "get_ground_control_pro_service",
         lambda: _FakeGroundControlProService(),
+    )
+    monkeypatch.setattr(
+        launch_control_surface_module,
+        "get_launch_control_surface_service",
+        lambda: _FakeLaunchControlService(),
+    )
+    monkeypatch.setattr(
+        midi_commander_surface_module,
+        "get_midi_commander_surface_service",
+        lambda: _FakeMidiCommanderService(),
     )
     monkeypatch.setattr(
         runtime_state_service_module,
@@ -202,6 +237,44 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                                     "output_port_index": 0,
                                 },
                             },
+                        },
+                        "launch_control": {
+                            "variant": "launch_control_xl",
+                            "mappings": [
+                                {
+                                    "control_id": "button-1",
+                                    "control_type": "button",
+                                    "note": 73,
+                                    "channel": 1,
+                                    "effect_type": "delay",
+                                    "assignment": {"kind": "parameter", "param_id": "gain"},
+                                },
+                                {
+                                    "control_id": "button-2",
+                                    "control_type": "button",
+                                    "note": 74,
+                                    "channel": 1,
+                                    "led_override": {"device_color": "green_full"},
+                                    "assignment": {"kind": "transport", "action": "play"},
+                                },
+                            ],
+                        },
+                        "midi_commander": {
+                            "mappings": [
+                                {
+                                    "control_id": "1",
+                                    "message_type": "control_change",
+                                    "controller": 80,
+                                    "assignment": {"kind": "transport", "transport_action": "play"},
+                                },
+                                {
+                                    "control_id": "EXP1",
+                                    "control_type": "expression",
+                                    "message_type": "control_change",
+                                    "controller": 7,
+                                    "assignment": {"kind": "expression_target", "param_id": "gain"},
+                                },
+                            ],
                         },
                     },
                     "midi_map": [
@@ -317,7 +390,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     ],
                 }
             ]
-            assert hook_order == ["footswitch", "ground_control_pro", "controller_display"]
+            assert hook_order == ["footswitch", "ground_control_pro", "launch_control", "midi_commander", "controller_display"]
             assert gcp_pushes == [
                 {
                     "snapshot_id": created["id"],
@@ -346,13 +419,65 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
                     },
                 }
             ]
+            assert launch_control_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
+                    "extension_payload": {
+                        "variant": "launch_control_xl",
+                        "mappings": [
+                            {
+                                "control_id": "button-1",
+                                "control_type": "button",
+                                "note": 73,
+                                "channel": 1,
+                                "effect_type": "delay",
+                                "assignment": {"kind": "parameter", "param_id": "gain"},
+                            },
+                            {
+                                "control_id": "button-2",
+                                "control_type": "button",
+                                "note": 74,
+                                "channel": 1,
+                                "led_override": {"device_color": "green_full"},
+                                "assignment": {"kind": "transport", "action": "play"},
+                            },
+                        ],
+                    },
+                }
+            ]
             assert controller_display_pushes[0]["snapshot_id"] == created["id"]
             assert controller_display_pushes[0]["snapshot_name"] == "UnifiedSnapshot"
             assert controller_display_pushes[0]["preview_payload"]["slots"][0]["display_label"] == "Clean"
             assert controller_display_pushes[0]["preview_payload"]["slots"][0]["key_parameter"]["formatted_value"] == "0.5"
-            assert (await service.get_activation_hook_plan())[:3] == [
+            assert midi_commander_pushes == [
+                {
+                    "snapshot_id": created["id"],
+                    "snapshot_name": "UnifiedSnapshot",
+                    "extension_payload": {
+                        "mappings": [
+                            {
+                                "control_id": "1",
+                                "message_type": "control_change",
+                                "controller": 80,
+                                "assignment": {"kind": "transport", "transport_action": "play"},
+                            },
+                            {
+                                "control_id": "EXP1",
+                                "control_type": "expression",
+                                "message_type": "control_change",
+                                "controller": 7,
+                                "assignment": {"kind": "expression_target", "param_id": "gain"},
+                            },
+                        ],
+                    },
+                }
+            ]
+            assert (await service.get_activation_hook_plan())[:5] == [
                 "push_footswitch_labels",
                 "push_ground_control_pro_assignments",
+                "push_launch_control_assignments",
+                "push_midi_commander_assignments",
                 "push_controller_display_preview",
             ]
 

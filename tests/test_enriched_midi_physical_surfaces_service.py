@@ -158,7 +158,7 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
     assert ground_control["surface_lab"]["snapshot"]["active_job_count"] == 1
 
     commander = units["meloaudio-midi-commander"]
-    assert commander["specialized_route"] == "/midi"
+    assert commander["specialized_route"] == "/midi-commander"
     assert commander["status"] == "online"
     assert commander["matched_midi_devices"][0]["profile_id"] == "meloaudio_midi_commander"
     assert commander["surface_lab"]["snapshot"]["current_bank"] == 2
@@ -171,5 +171,6 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
 
     mackie = units["mackie-mcu-pro"]
     assert mackie["status"] == "detected"
+    assert mackie["specialized_route"] == "/mcu"
     assert mackie["view_state"]["current_view_source"] == "midi-hub-profile-detected"
     assert mackie["surface_lab"]["snapshot"]["scribble_strip_transport"] == "mcu_scribble_strip"

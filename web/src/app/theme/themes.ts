@@ -8,6 +8,7 @@ import {
   accentShadeForLight,
   type BaseShell,
 } from './carbonPalette';
+import { PRESET_THEME_MAP, PRESET_THEME_ORDER } from './presetThemes';
 
 const baseWidgets = {
   'border-radius-sm': '0px',
@@ -72,7 +73,7 @@ function createTheme(id: string, name: string, description: string, carbonTheme:
   };
 }
 
-export const themes: Record<string, Theme> = {
+const coreThemes: Record<string, Theme> = {
   default: createTheme(
     'default',
     'Carbon gray 100',
@@ -99,7 +100,16 @@ export const themes: Record<string, Theme> = {
   ),
 };
 
-export const themeOrder = ['default', 'gray-90', 'gray-10', 'white'];
+const coreThemeOrder = ['default', 'gray-90', 'gray-10', 'white'];
+
+/** All built-in themes: 4 core Carbon shells + 50 preset themes. */
+export const themes: Record<string, Theme> = {
+  ...coreThemes,
+  ...PRESET_THEME_MAP,
+};
+
+/** Ordered list of all built-in theme IDs for display. */
+export const themeOrder = [...coreThemeOrder, ...PRESET_THEME_ORDER];
 
 /**
  * Generate a full Theme from a Carbon color family + a base shell (g100/g90/white/g10).

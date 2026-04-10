@@ -67,7 +67,7 @@ type StorefrontOverride = Partial<Pick<
 >>
 
 const AUDIO_INTERFACE_DEVICE_TYPES = new Set(['edirol-ua1000', 'hotone-jogg', 'generic-interface'])
-const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pro', 'maschine-mk1'])
+const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pro', 'maschine-mk1', 'mackie-mcu-pro'])
 const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/brain',
   '/juce-grid',
@@ -76,6 +76,7 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/labs/push-surface',
   '/ground-control-pro',
   '/maschine',
+  '/mcu',
   '/platforms/workspace-catalog',
   '/platforms/audio-engine',
   '/platforms/management',

@@ -19,6 +19,7 @@ from app.services.enriched_surface_runtime import (
 )
 from app.services.enriched_surface_session import get_enriched_surface_session_service
 from app.services.ground_control_pro import get_ground_control_pro_service
+from app.services.launch_control_surface import get_launch_control_surface_service
 from app.services.midi_device_profiles import device_profile_service
 from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.maschine_service import get_maschine_service
@@ -118,7 +119,7 @@ _SURFACE_CATALOG: list[dict[str, Any]] = [
         "display_name": "MeloAudio MIDI Commander",
         "family": "meloaudio",
         "device_type": "midi_controller",
-        "specialized_route": "/midi",
+        "specialized_route": "/midi-commander",
         "detection": {
             "vid_pid": [],
             "name_patterns": ["midi commander", "meloaudio", "tsmidi", "ts midi"],
@@ -141,7 +142,7 @@ _SURFACE_CATALOG: list[dict[str, Any]] = [
         "display_name": "Novation Launch Control Family",
         "family": "launch-control",
         "device_type": "midi_controller",
-        "specialized_route": None,
+        "specialized_route": "/launch-control",
         "detection": {
             "vid_pid": [],
             "name_patterns": ["launch control", "launchcontrol", "launch control xl"],
@@ -165,7 +166,7 @@ _SURFACE_CATALOG: list[dict[str, Any]] = [
         "display_name": "Mackie MCU Pro",
         "family": "mcu-pro",
         "device_type": "mcu_surface",
-        "specialized_route": None,
+        "specialized_route": "/mcu",
         "detection": {
             "vid_pid": [],
             "name_patterns": ["mackie mcu", "mcu pro", "mackie control", "mackie control universal"],
@@ -377,6 +378,7 @@ class EnrichedMidiPhysicalSurfacesService:
         push_health = await self._get_push_health()
         push_snapshot = await self._get_push_snapshot()
         ground_control_state = await self._get_ground_control_state()
+        launch_control_state = await self._get_launch_control_state()
         midi_hub_inventory = await self._get_midi_hub_inventory()
         midi_hub_devices = [
             deepcopy(device)
@@ -436,6 +438,7 @@ class EnrichedMidiPhysicalSurfacesService:
                 matched_midi_devices=matched_midi_devices,
                 midi_hub_profiles=midi_hub_profiles,
                 meloaudio_profile_state=meloaudio_profile_state,
+                launch_control_state=launch_control_state,
             )
             unit["transport_layers"] = self._resolve_transport_layers(
                 unit,
@@ -537,6 +540,13 @@ class EnrichedMidiPhysicalSurfacesService:
                 "job_count": len(service.jobs),
                 "active_job_count": len(active_jobs),
             }
+        except Exception as exc:
+            return {"error": str(exc)}
+
+    async def _get_launch_control_state(self) -> dict[str, Any]:
+        try:
+            service = get_launch_control_surface_service()
+            return service.get_state_snapshot()
         except Exception as exc:
             return {"error": str(exc)}
 
@@ -688,6 +698,7 @@ class EnrichedMidiPhysicalSurfacesService:
         matched_midi_devices: list[dict[str, Any]],
         midi_hub_profiles: list[dict[str, Any]],
         meloaudio_profile_state: dict[str, Any],
+        launch_control_state: dict[str, Any],
     ) -> dict[str, Any]:
         if unit_id == "maschine-mk1":
             return {
@@ -728,7 +739,18 @@ class EnrichedMidiPhysicalSurfacesService:
                 "detected_device_count": len(matched_midi_devices),
                 "detected_devices": deepcopy(matched_midi_devices),
             }
-        if unit_id in {"novation-launch-control", "mackie-mcu-pro"}:
+        if unit_id == "novation-launch-control":
+            profile = _resolve_profile_payload(midi_hub_profiles, matched_midi_devices)
+            return {
+                "profile": profile,
+                "display_capabilities": deepcopy(profile.get("metadata", {}).get("display_capabilities") or {}),
+                "detected_device_count": len(matched_midi_devices),
+                "detected_devices": deepcopy(matched_midi_devices),
+                "template_state_by_port": deepcopy(launch_control_state.get("template_state_by_port") or {}),
+                "push_count": int(launch_control_state.get("push_count") or 0),
+                "last_push": deepcopy(launch_control_state.get("last_push") or {}),
+            }
+        if unit_id == "mackie-mcu-pro":
             profile = _resolve_profile_payload(midi_hub_profiles, matched_midi_devices)
             return {
                 "profile": profile,
