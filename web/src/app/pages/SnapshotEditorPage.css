@@ -5715,10 +5715,8 @@
 
 .juce-grid-page__assignment-section-kicker {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__assignment-grid {
@@ -5776,12 +5774,12 @@
 
 .juce-grid-page__assignment-card-meta {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__assignment-card-heading {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 400;
   line-height: 1.25;
 }
@@ -5882,10 +5880,8 @@
 
 .juce-grid-page__dense-card-kicker {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__dense-section-heading,
@@ -5896,18 +5892,18 @@
 }
 
 .juce-grid-page__dense-section-heading {
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
 }
 
 .juce-grid-page__dense-card-heading {
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   display: block;
 }
 
 .juce-grid-page__midi-copy p,
 .juce-grid-page__midi-tile-copy p {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__midi-tile-header,
@@ -5988,7 +5984,7 @@
 .juce-grid-page__midi-block-focus-preview-label {
   min-width: 0;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.35;
 }
 
@@ -7072,10 +7068,8 @@
 }
 
 .juce-grid-page__port-section-header {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -7155,7 +7149,7 @@
 
 .juce-grid-page__port-card-copy span {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__port-card-link {
@@ -7177,7 +7171,7 @@
 .juce-grid-page__port-summary-meta {
   justify-content: flex-start;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__parameter-editor,
@@ -7248,7 +7242,7 @@
 .juce-grid-page__parameter-editor-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__parameter-editor-panel-heading,
@@ -7257,13 +7251,13 @@
 }
 
 .juce-grid-page__parameter-editor-panel-heading {
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   line-height: 1.25;
   font-weight: 600;
 }
 
 .juce-grid-page__parameter-editor-subheading {
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.25;
   font-weight: 600;
 }
@@ -7276,7 +7270,7 @@
 }
 
 .juce-grid-page__parameter-editor-heading {
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   line-height: 1.25;
 }
 
@@ -7306,7 +7300,7 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.04));
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   word-break: break-all;
 }
 
@@ -7376,7 +7370,7 @@
 .juce-grid-page__parameter-editor-ir-preview-empty p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__parameter-editor-ir-preview-empty {
@@ -7421,7 +7415,7 @@
 .juce-grid-page__parameter-control-copy span {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__parameter-group-grid {
@@ -7445,7 +7439,7 @@
 }
 
 .juce-grid-page__parameter-control-heading {
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__parameter-control .cds--list-box,
@@ -7571,7 +7565,7 @@
 .juce-grid-page__automation-lane-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__automation-meta {
@@ -7579,7 +7573,7 @@
   align-items: center;
   gap: 0.375rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__automation-track {
@@ -8286,10 +8280,8 @@
 
 .audio-nodes-modal__stat-label {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .audio-nodes-modal__stat-value {
@@ -8327,7 +8319,7 @@
 
 .audio-nodes-modal__copy {
   margin: 0 0 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.5;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
@@ -8346,16 +8338,14 @@
 
 .audio-nodes-modal__section-kicker {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .audio-nodes-modal__section-heading,
 .audio-nodes-modal__warn-heading {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   font-weight: 400;
   line-height: 1.2;
 }
@@ -8428,7 +8418,7 @@
 .audio-nodes-modal__warn-list {
   margin: 0.5rem 0 0 1.25rem;
   padding: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.6;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
@@ -8495,7 +8485,7 @@
 }
 
 .audio-nodes-modal__progress-step-label {
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.4;
 }
 
@@ -8552,10 +8542,8 @@
 
 .juce-grid-page__version-history-revision-hash {
   font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary, #c6c6c6);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__version-history-summary,
