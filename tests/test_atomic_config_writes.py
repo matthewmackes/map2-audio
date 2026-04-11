@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from app.config import ConfigManager
 from app.deployment.deployment import DeploymentConfig, DeploymentMode
@@ -53,3 +54,13 @@ def test_deployment_config_save_uses_atomic_replace(tmp_path, monkeypatch):
     assert dst == config.config_file
     payload = json.loads(config.config_file.read_text(encoding="utf-8"))
     assert payload["mode"] == "CONTROL-NODE"
+
+
+def test_deployment_config_uses_utc_metadata_timestamps(tmp_path):
+    config = DeploymentConfig(config_dir=str(tmp_path))
+
+    created_at = datetime.fromisoformat(config.created_at)
+    updated_at = datetime.fromisoformat(config.updated_at)
+
+    assert created_at.tzinfo == timezone.utc
+    assert updated_at.tzinfo == timezone.utc

@@ -15,7 +15,7 @@ from pathlib import Path
 import tempfile
 from typing import Dict, List, Optional, Set
 from enum import Enum
-from datetime import datetime
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +192,7 @@ class DeploymentConfig:
         self.service_policies = SERVICE_POLICIES[self.mode].copy()
         
         # Timestamps
-        now = datetime.utcnow().isoformat()
+        now = utc_now().isoformat()
         self.created_at = now
         self.updated_at = now
         
@@ -215,7 +215,7 @@ class DeploymentConfig:
                 for service, policy in self.service_policies.items()
             },
             'created_at': self.created_at,
-            'updated_at': datetime.utcnow().isoformat(),
+            'updated_at': utc_now().isoformat(),
         }
 
         _atomic_write_json(self.config_file, data)

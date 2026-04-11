@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the outstanding frontend/release stream with one more `T875` shell slice, flattening the remaining restart-overlay shadows and refreshing the generated web version metadata from the validated build.
+Last updated: 2026-04-11 - Continued the active `T845` cleanup stream with another shipped UTC slice: moved deployment-config metadata timestamps onto timezone-aware UTC handling with focused persistence/regression coverage.
 
 ## Performance Brain
 
@@ -19564,6 +19564,8 @@ Last updated: 2026-04-11 13:31 EDT - Codex
   - Landed the next LCD UTC slice by moving LCD event creation, expiration checks, persistence timestamps, and route-created events onto timezone-aware UTC handling while coercing legacy naive serialized event timestamps to UTC on read so existing event payloads remain compatible.
   - Validation for the runtime/LCD UTC slices is green: `pytest -q tests/test_audio_meters.py tests/test_event_publisher.py tests/test_metering_broadcast.py tests/test_runtime_timestamp_surfaces.py tests/test_lcd_system.py tests/test_lcd_events_routes.py` -> PASS (`24 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/audio_meters.py app/services/config_validator.py app/services/event_producers/network_producer.py app/services/event_producers/plugin_producer.py app/services/event_publisher.py app/services/lcd_event_bus.py app/lcd_models/lcd_event.py app/lcd_models/lcd_event_db.py app/routes/lcd_events.py app/services/metering_broadcast.py app/services/resilience_logging.py tests/test_audio_meters.py tests/test_event_publisher.py tests/test_metering_broadcast.py tests/test_runtime_timestamp_surfaces.py tests/test_lcd_system.py tests/test_lcd_events_routes.py` -> PASS.
   - Landed the next persisted-library UTC slice by moving `NAMLibraryService` record defaults and update writes onto `utc_now()` while preserving the existing SQLite schema and persistence contract.
+  - Landed the next deployment-config UTC slice by moving `DeploymentConfig` default/create/save metadata timestamps onto `utc_now()` while preserving the persisted JSON shape and atomic-write behavior.
+  - Validation for the deployment-config UTC slice is green: `pytest -q tests/test_atomic_config_writes.py tests/test_observability_policy.py` -> PASS (`8 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/deployment/deployment.py tests/test_atomic_config_writes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
