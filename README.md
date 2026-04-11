@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1088** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1738** total commits | **3** stars | **0** forks | **0** open issues
+**1093** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1742** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3cd6d167`](https://github.com/matthewmackes/map2-audio/commit/3cd6d1677679e3260f80963882f0ecd90ec6bb01) | Continue UTC and singleton backend cleanup | Map2 Audio | 2026-04-11 |
+| [`d1a98bf6`](https://github.com/matthewmackes/map2-audio/commit/d1a98bf621109e36933846b7aaec4da9bf1a01c0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`66cd946f`](https://github.com/matthewmackes/map2-audio/commit/66cd946f31316ea16651b9722e28e60ad6d43c6d) | Add ship wrapper shortcut | Map2 Audio | 2026-04-11 |
+| [`eb893b62`](https://github.com/matthewmackes/map2-audio/commit/eb893b627a7ca2d381f70ebed49e0dfd7cc53a76) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`f440d1bd`](https://github.com/matthewmackes/map2-audio/commit/f440d1bd9b2b4b92e643602d4dcc94bd951104ed) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`beaef218`](https://github.com/matthewmackes/map2-audio/commit/beaef2189806adcab521ad6ffb7c5999df2a5598) | Add continuous release helper and UTC session status | Map2 Audio | 2026-04-11 |
 | [`66eba264`](https://github.com/matthewmackes/map2-audio/commit/66eba2649abd485ed09717ad30be12305752f71e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`74c55d4b`](https://github.com/matthewmackes/map2-audio/commit/74c55d4b4960d9de44ad673d023e87075d7274ba) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
-| [`87b4f47c`](https://github.com/matthewmackes/map2-audio/commit/87b4f47c4aab9c560c3a8d7586fd84781984aa5c) | Move LCD preset timestamps to UTC | Map2 Audio | 2026-04-11 |
-| [`0cdcfa8d`](https://github.com/matthewmackes/map2-audio/commit/0cdcfa8d7d5ccb92751d38969e0944aadbb45cfa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`0d0a561f`](https://github.com/matthewmackes/map2-audio/commit/0d0a561f026ae950d975c1a03a2bd732d0f1091a) | Move node identity timestamps to UTC | Map2 Audio | 2026-04-11 |
-| [`d110aa62`](https://github.com/matthewmackes/map2-audio/commit/d110aa62976da937311b4ca4564b30212e54bdd4) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
