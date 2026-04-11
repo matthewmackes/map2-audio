@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued T870 with another validated writing cleanup slice across reporting exports and plugin display surfaces while leaving the broader type-scale debt open.
+Last updated: 2026-04-11 - Continued T863/T870 with another validated Carbon type and sentence-case cleanup slice in legacy audio interface controls while leaving the broader frontend debt open.
 
 ## Performance Brain
 
@@ -20149,7 +20149,7 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 19:10 EDT - Codex
+Last updated: 2026-04-11 19:12 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
@@ -20173,6 +20173,9 @@ Last updated: 2026-04-11 19:10 EDT - Codex
   - No additional `T863`-specific type-scale claim in this workspace-shell follow-up; the active type debt remains broad and concentrated in App Shell, Snapshot Editor, legacy map2 controls, and other fit-sensitive route/component surfaces.
   - No additional `T863`-specific type-scale claim in this component follow-up; the active type debt still remains broad and concentrated in App Shell, Snapshot Editor, legacy map2 controls, and other fit-sensitive route/component surfaces.
   - No additional `T863`-specific type-scale claim in this reporting/LCD follow-up; the active type debt still remains broad and concentrated in App Shell, Snapshot Editor, legacy map2 controls, and other fit-sensitive route/component surfaces.
+  - Opened the next bounded legacy-control slice in `web/src/map2/components/AudioInterfaceControl.css`, moving status badges, subtitles, quick-stat labels, panel headings, control labels/buttons, status text, and config-guide copy off literal `px` sizing and onto Carbon label/body/helper tokens while keeping the large hero numerics unchanged for now.
+  - This follow-up removed another low-risk patch of non-token sizing from the legacy audio interface surface, but `T863` remains open because significant type debt still spans App Shell, Snapshot Editor, legacy map2 controls, and several route-local fit-sensitive displays.
+  - Validation for this legacy audio interface type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20289,7 +20292,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 19:10 EDT - Codex
+Last updated: 2026-04-11 19:12 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20323,6 +20326,9 @@ Last updated: 2026-04-11 19:10 EDT - Codex
   - Opened the next low-risk writing slice in `web/src/app/components/ClusterDashboard/ReportingTab.tsx` and `web/src/app/components/PluginCards/components/Visualizations/LCDDisplay.css`, removing forced uppercase/high-tracking treatment from exported HTML table headers and LCD/LED display labels so those touched reporting/display surfaces render sentence-case support copy.
   - Current measured repo-wide inventory after this reporting/LCD pass: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts'` is down to `120` matches, so `T870` remains open with the remaining hotspots concentrated in MPX1, IntelFX, plugin-card shells, legacy map2 controls, and a handful of inline JSX style blocks plus the two residual Snapshot Editor value surfaces.
   - Validation for this reporting/LCD writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Opened the next CSS-only legacy-control slice in `web/src/map2/components/AudioInterfaceControl.css`, removing forced uppercase/high-tracking treatment from the connection badge, device subtitle, quick-stat labels, panel headings, control labels, and action buttons so that surface now renders sentence-case support copy instead of CSS-enforced all caps.
+  - Current measured repo-wide inventory after this legacy audio interface pass: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts'` is down to `114` matches, so `T870` remains open with the remaining hotspots concentrated in MPX1, IntelFX, plugin-card shells, inline JSX style blocks, and the broader legacy map2 control set plus the two residual Snapshot Editor value surfaces.
+  - Validation for this legacy audio interface writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked

@@ -49,9 +49,8 @@
   padding: 8px 16px;
   border-radius: var(--border-radius-lg);
   font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   transition: all 0.3s ease;
 }
 
@@ -168,10 +167,10 @@
 }
 
 .audio-device-subtitle {
-  font-size: 14px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.285);
   color: #4a9eff;
-  text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 0.08em;
   margin-bottom: 20px;
 }
 
@@ -194,10 +193,9 @@
 }
 
 .audio-quick-stat-label {
-  font-size: 10px;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   color: #888;
-  text-transform: uppercase;
-  letter-spacing: 1px;
   margin-top: 4px;
 }
 
@@ -219,11 +217,10 @@
 }
 
 .audio-panel-title {
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
   color: #4a9eff;
-  text-transform: uppercase;
-  letter-spacing: 2px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -263,12 +260,14 @@
 }
 
 .audio-spec-label {
-  font-size: 12px;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   color: #888;
 }
 
 .audio-spec-value {
-  font-size: 14px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.285);
   font-weight: 700;
   color: #4ade80;
 }
@@ -283,10 +282,9 @@
 }
 
 .audio-control-label {
-  font-size: 10px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
   margin-bottom: 6px;
   display: block;
 }
@@ -298,7 +296,8 @@
   color: #fff;
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.285);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -333,11 +332,10 @@
   border-radius: 8px;
   background: linear-gradient(145deg, rgba(13, 71, 161, 0.4), rgba(13, 71, 161, 0.2));
   color: #fff;
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   transition: all 0.2s;
 }
 
@@ -403,7 +401,8 @@
 }
 
 .audio-status-text {
-  font-size: 12px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.285);
   color: #bbb;
 }
 
@@ -438,14 +437,15 @@
 .audio-config-guide h4 {
   margin: 0 0 12px 0;
   color: #fff;
-  font-size: 14px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.285);
   font-weight: 600;
 }
 
 .audio-config-guide p {
   margin: 0 0 8px 0;
   color: #bbb;
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.5;
 }
 
@@ -571,8 +571,9 @@
   }
 
   .audio-device-subtitle {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+    line-height: var(--cds-helper-text-01-line-height, 1rem);
+    letter-spacing: 0.06em;
   }
 
   .audio-quick-stat-value {
