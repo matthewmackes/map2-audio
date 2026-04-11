@@ -5,7 +5,6 @@ Per-plugin CPU performance monitoring endpoints.
 
 import logging
 from collections import defaultdict, deque
-from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +13,7 @@ from sqlalchemy import select, desc
 from app.services.plugin_profiler import get_profiler
 from app.services.juce_engine_service import get_audio_engine
 from app.database import get_db, PluginPerformanceLog
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/profiling", tags=["profiling"])
@@ -297,7 +297,7 @@ async def save_snapshot(
     try:
         plugins = profiler.get_all_stats()
         profiler_info = profiler.get_profiler_stats()
-        timestamp = datetime.utcnow()
+        timestamp = utc_now()
         
         # Save each plugin's stats
         saved_count = 0

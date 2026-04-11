@@ -8,6 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from app.utils.singleton import Singleton
 
 DEFAULT_APPEARANCE_FILE = Path(os.path.expanduser("~/.config/map2/plugin_appearance_overrides.json"))
 MAX_CUSTOM_SVG_BYTES = 32 * 1024
@@ -74,7 +75,7 @@ def _normalize_override_payload(uri: str, payload: Dict[str, Any]) -> Dict[str, 
     return normalized
 
 
-class PluginAppearanceService:
+class PluginAppearanceService(Singleton):
     def __init__(self, storage_path: Path | None = None) -> None:
         self._storage_path = Path(storage_path or os.getenv("MAP2_PLUGIN_APPEARANCES_FILE") or DEFAULT_APPEARANCE_FILE)
         self._lock = threading.RLock()
@@ -150,11 +151,5 @@ class PluginAppearanceService:
             return deepcopy(payload)
 
 
-_service: PluginAppearanceService | None = None
-
-
 def get_plugin_appearance_service() -> PluginAppearanceService:
-    global _service
-    if _service is None:
-        _service = PluginAppearanceService()
-    return _service
+    return PluginAppearanceService.get_instance()

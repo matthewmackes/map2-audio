@@ -24,6 +24,7 @@ from typing import Any, Deque, Dict, List, Optional, Tuple
 from app.database import ExpressionAssignment as ExpressionAssignmentRow
 from app.database import get_db_session, get_session
 from app.services.juce_engine_service import get_audio_engine
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ def _curve(normalized: float, curve_name: str, custom_curve: Optional[List[Dict[
     return t
 
 
-class ExpressionService:
+class ExpressionService(Singleton):
     def __init__(self) -> None:
         self._lock = threading.RLock()
         self._assignments: Dict[str, AssignmentRecord] = {}
@@ -871,18 +872,11 @@ class ExpressionService:
         return False
 
 
-_instance: Optional[ExpressionService] = None
-
-
 def get_expression_service() -> ExpressionService:
-    global _instance
-    if _instance is None:
-        _instance = ExpressionService()
-    return _instance
+    return ExpressionService.get_instance()
 
 
 def reset_expression_service_for_tests() -> None:
-    global _instance
-    if _instance is not None:
-        _instance.shutdown()
-    _instance = None
+    if ExpressionService.has_instance():
+        ExpressionService.get_instance().shutdown()
+    ExpressionService.reset_instance()

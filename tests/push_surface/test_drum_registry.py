@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.push_surface.drum_registry import DrumInstanceRegistry
+from app.services.push_surface.drum_registry import DrumInstanceRegistry, get_drum_instance_registry
+from app.utils.singleton import Singleton
 
 
 @pytest.mark.asyncio
@@ -102,3 +103,13 @@ async def test_registry_skips_local_node_duplicate_in_remote_scan(monkeypatch: p
     assert len(instances) == 1
     assert instances[0].node_id == "node-local"
     assert instances[0].is_live is True
+
+
+def test_get_drum_instance_registry_uses_shared_singleton_registry() -> None:
+    Singleton._instances.pop(DrumInstanceRegistry, None)
+    try:
+        first = get_drum_instance_registry()
+        second = get_drum_instance_registry()
+        assert first is second
+    finally:
+        Singleton._instances.pop(DrumInstanceRegistry, None)

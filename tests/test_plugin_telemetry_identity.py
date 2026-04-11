@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -88,3 +89,34 @@ def test_profiling_route_preserves_http_exceptions(monkeypatch):
         asyncio.run(profiling_routes.get_plugin_stats())
 
     assert exc_info.value.status_code == 503
+
+
+class _FakeSnapshotDb:
+    def __init__(self) -> None:
+        self.rows = []
+        self.committed = False
+        self.rolled_back = False
+
+    def add(self, row) -> None:
+        self.rows.append(row)
+
+    async def commit(self) -> None:
+        self.committed = True
+
+    async def rollback(self) -> None:
+        self.rolled_back = True
+
+
+def test_profiling_snapshot_uses_timezone_aware_timestamp(monkeypatch):
+    monkeypatch.setattr(profiling_routes, "get_profiler", lambda: _FakeProfiler())
+
+    db = _FakeSnapshotDb()
+    payload = asyncio.run(profiling_routes.save_snapshot(chain_id=7, db=db))
+
+    parsed = datetime.fromisoformat(payload["timestamp"])
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+    assert db.committed is True
+    assert db.rolled_back is False
+    assert db.rows
+    assert all(row.timestamp.tzinfo is not None for row in db.rows)

@@ -153,6 +153,16 @@ def test_unsubscribe_remote_is_safe_when_connection_is_missing():
     asyncio.run(_run())
 
 
+def test_get_ws_federator_uses_shared_singleton_registry():
+    ws_federation.WebSocketFederator.reset_instance()
+    try:
+        first = ws_federation.get_ws_federator()
+        second = ws_federation.get_ws_federator()
+        assert first is second
+    finally:
+        ws_federation.WebSocketFederator.reset_instance()
+
+
 def test_run_connection_retries_after_connect_failure_with_backoff(monkeypatch):
     async def _run() -> None:
         federator = WebSocketFederator()

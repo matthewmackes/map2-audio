@@ -28,6 +28,7 @@ from app.services.cluster.network_topology import get_topology_monitor
 from app.services.cluster.config_manager import get_config_manager
 from app.services.cluster.deployment_manager import get_deployment_manager
 from app.services.cluster.node_visibility import get_visible_cluster_summary
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +236,7 @@ async def get_cluster_status() -> Dict:
 
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             **summary,
         }
 
@@ -279,7 +280,7 @@ async def get_node(node_id: str) -> Dict:
 
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "node": node,
         }
 
@@ -328,7 +329,7 @@ async def get_metrics(node_id: Optional[str] = None, limit: int = 500) -> Dict:
         metrics = [dict(row) for row in rows]
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "count": len(metrics),
             "metrics": metrics,
         }
@@ -372,7 +373,7 @@ async def trigger_node_update(node_id: str, dry_run: bool = False) -> Dict:
             "status": result.get("status", "ok"),
             "node_id": node_id,
             "action": "update_triggered" if not dry_run else "dry_run_requested",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "result": result,
         }
 
@@ -459,7 +460,7 @@ async def reboot_node(node_id: str, force: bool = False) -> Dict:
             "node_id": node_id,
             "action": action,
             "force": force,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
         }
 
     except HTTPException:
@@ -489,7 +490,7 @@ async def get_summary() -> Dict:
 
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "cluster_name": get_config_manager().get("cluster_name", "MAP2 Audio Cluster"),
             "total_nodes": cluster_summary.get("total_nodes", 0),
             "online_nodes": cluster_summary.get("online_nodes", 0),
@@ -520,7 +521,7 @@ async def get_discovered_nodes() -> Dict:
 
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             **summary,
         }
 
@@ -717,7 +718,7 @@ async def get_update_history(limit: int = 50) -> Dict:
                         "timestamp": (
                             job.end_time.isoformat()
                             if job.end_time
-                            else (job.start_time.isoformat() if job.start_time else datetime.utcnow().isoformat())
+                            else (job.start_time.isoformat() if job.start_time else utc_now().isoformat())
                         ),
                         "severity": "info" if "success" in job.status.value else "warning",
                         "source_node_id": node,
@@ -859,7 +860,7 @@ async def cluster_ping() -> Dict:
     return {
         "status": "ok",
         "service": "cluster-manager",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": utc_now().isoformat(),
     }
 
 

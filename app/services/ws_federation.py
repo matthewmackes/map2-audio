@@ -13,6 +13,7 @@ import websockets
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery, MDNSNode
 from app.services.websocket_manager import ws_manager
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class FederatedConnection:
     stop_event: asyncio.Event = field(default_factory=asyncio.Event)
 
 
-class WebSocketFederator:
+class WebSocketFederator(Singleton):
     def __init__(self) -> None:
         self.discovery = get_enhanced_mdns_discovery()
         self.local_node_id = get_enhanced_node_identity().get_node_id()
@@ -90,12 +91,5 @@ class WebSocketFederator:
                 backoff = min(backoff * 2, 10)
 
 
-_federator: Optional[WebSocketFederator] = None
-
-
 def get_ws_federator() -> WebSocketFederator:
-    global _federator
-    if _federator is None:
-        _federator = WebSocketFederator()
-    return _federator
-
+    return WebSocketFederator.get_instance()

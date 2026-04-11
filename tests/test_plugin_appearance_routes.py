@@ -6,7 +6,7 @@ import json
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.services.plugin_appearance_service import PluginAppearanceService
+from app.services.plugin_appearance_service import PluginAppearanceService, get_plugin_appearance_service
 
 
 def _make_client(tmp_path, monkeypatch):
@@ -98,3 +98,13 @@ def test_plugin_appearance_rejects_invalid_color_and_non_svg_upload(tmp_path, mo
     )
     assert invalid_upload.status_code == 400
     assert "svg" in invalid_upload.json()["detail"].lower()
+
+
+def test_plugin_appearance_service_getter_uses_shared_singleton_registry():
+    PluginAppearanceService.reset_instance()
+    try:
+        first = get_plugin_appearance_service()
+        second = get_plugin_appearance_service()
+        assert first is second
+    finally:
+        PluginAppearanceService.reset_instance()

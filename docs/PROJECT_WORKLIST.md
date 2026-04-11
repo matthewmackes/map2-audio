@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 14:18 EDT - Codex
+Last updated: 2026-04-11 06:49 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19509,6 +19509,9 @@ Last updated: 2026-04-10 14:18 EDT - Codex
   - Selected the next bounded UTC-only cluster runtime slice: `management_orchestrator`, `onboarding_portal`, and `state_replicator_impl`. These still emitted naive runtime/session timestamps, but unlike certificate-validity and rollback/archive paths they do not depend on preserving naive wall-clock semantics.
   - Landed that runtime UTC slice by moving `management_orchestrator` cadence tracking, `onboarding_portal` session create/update timestamps, and the legacy `state_replicator_impl` heartbeat/log timestamps onto timezone-aware UTC handling.
   - Validation for the runtime UTC slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'management_orchestrator or onboarding_portal or legacy_state_replicator_impl'` -> PASS (`3 passed, 32 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/management_orchestrator.py app/services/cluster/onboarding_portal.py app/services/cluster/state_replicator_impl.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next bounded UTC/API slice: move the remaining naive UTC emitters in `app/routes/cluster_admin.py`, `app/routes/midi.py`, and `app/routes/profiling.py` onto the shared `utc_now()` helper. These endpoints emit runtime/API timestamps only and do not touch compatibility-sensitive persisted local-display semantics.
+  - Landed that UTC/API slice by replacing the remaining `datetime.utcnow()` route payload timestamps in the cluster admin, legacy MIDI, and profiling snapshot endpoints with timezone-aware `utc_now()` handling.
+  - Validation for the UTC/API slice is green: `pytest -q tests/test_cluster_visibility_routes.py tests/test_plugin_telemetry_identity.py tests/test_legacy_midi_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/cluster_admin.py app/routes/midi.py app/routes/profiling.py tests/test_cluster_visibility_routes.py tests/test_plugin_telemetry_identity.py tests/test_legacy_midi_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
@@ -19521,7 +19524,7 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 13:25 EDT - Codex
+Last updated: 2026-04-11 06:49 EDT - Codex
 - Progress notes:
   - Execution policy selected: only true process-wide singletons should use the shared singleton/getter pattern. Keyed constructors and parameterized object producers should be reclassified as explicit caches/managers where appropriate instead of being forced into a singleton shape.
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
@@ -19566,6 +19569,9 @@ Last updated: 2026-04-10 13:25 EDT - Codex
   - Selected the next singleton cleanup slice on remaining cluster coordination entrypoints: `distributed_event_bus`, `hybrid_update_manager`, and `raft_consensus`, plus the dependent `clone_reset` ZTP reset path. The first is a true process-wide singleton, while the latter two preserve explicit initialization semantics by registering initialized instances through the shared singleton registry/lock instead of bespoke globals.
   - Landed that singleton cleanup slice by promoting `DistributedEventBus` onto the shared `Singleton` base/getter pattern, moving `get_hybrid_update_manager()` and `initialize_raft_consensus()` onto the shared singleton registry/lock path while preserving first-call/explicit-init semantics, and updating `clone_reset` to call `ZTPBootstrap.reset_instance()` instead of mutating removed module globals.
   - Validation for the coordination-entrypoint singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'test_distributed_event_bus_singleton_getter_is_stable or test_hybrid_update_manager_preserves_first_config_under_shared_singleton or test_raft_consensus_initialize_and_getter_share_registry or test_clone_reset_resets_ztp_singleton'` -> PASS (`4 passed, 28 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/distributed_event_bus.py app/services/cluster/hybrid_update_manager.py app/services/cluster/raft_consensus.py app/services/cluster/clone_reset.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next safe process-wide singleton bundle outside the cluster core: `ws_federation`, `expression_service`, `plugin_appearance_service`, and `push_surface/drum_registry`. These all expose process-wide service getters; only `drum_registry` keeps its existing per-instance `get_instance(...)` method and therefore uses the shared singleton registry/lock directly instead of inheriting the base class.
+  - Landed that singleton bundle by moving `get_ws_federator()`, `get_expression_service()`, and `get_plugin_appearance_service()` onto the shared `Singleton` base/getter pattern, and by rewiring `get_drum_instance_registry()` through the shared singleton registry/lock while preserving the existing `DrumInstanceRegistry.get_instance(instance_id)` public API.
+  - Validation for the singleton bundle is green: `pytest -q tests/test_ws_federation.py tests/test_expression_service.py tests/test_plugin_appearance_routes.py tests/push_surface/test_drum_registry.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/ws_federation.py app/services/expression_service.py app/services/plugin_appearance_service.py app/services/push_surface/drum_registry.py tests/test_ws_federation.py tests/test_expression_service.py tests/test_plugin_appearance_routes.py tests/push_surface/test_drum_registry.py` -> PASS.
 
 ID: T847
 Status: [✓] Done

@@ -197,6 +197,24 @@ def test_performance_events_emit_for_cc_and_pc(expression_service):
     assert load_slot_events[-1]["payload"]["slot"] == 3
 
 
+def test_get_expression_service_uses_shared_singleton_registry(monkeypatch):
+    monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_import_legacy_json_if_needed", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_ensure_default_performance_mappings", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_subscribe_to_midi_hub", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_save_assignment_to_db", lambda self, record: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_delete_assignment_from_db", lambda self, assignment_id: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_apply_parameter", lambda self, item: True)
+
+    expression_module.reset_expression_service_for_tests()
+    first = expression_module.get_expression_service()
+    second = expression_module.get_expression_service()
+
+    assert first is second
+
+    expression_module.reset_expression_service_for_tests()
+
+
 def test_snapshot_morph_assignment_routes_through_live_snapshot_service(monkeypatch):
     monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_import_legacy_json_if_needed", lambda self: None)

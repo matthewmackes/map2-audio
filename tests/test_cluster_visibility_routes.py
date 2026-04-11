@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.routes import cluster_admin, cluster_health, peer_discovery
 from app.services.cluster.heartbeat_monitor import HeartbeatMonitor, NodeHealthStatus
@@ -291,3 +291,13 @@ def test_heartbeat_monitor_resolves_dict_registry_rows_to_api_urls():
 
     assert node_id == "peer-reg"
     assert node_url == "http://10.0.0.40:8081"
+
+
+def test_cluster_admin_discovered_payload_uses_timezone_aware_timestamp(monkeypatch):
+    monkeypatch.setattr(cluster_admin, "get_visible_cluster_summary", lambda: {"total_nodes": 0, "counts": {}, "nodes": []})
+
+    payload = asyncio.run(cluster_admin.get_discovered_nodes())
+    parsed = datetime.fromisoformat(payload["timestamp"])
+
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)

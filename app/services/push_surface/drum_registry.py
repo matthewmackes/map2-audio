@@ -11,6 +11,7 @@ from typing import Any
 
 import aiohttp
 
+from app.utils.singleton import Singleton
 
 DRUM_PLUGIN_URIS = {"map2://juce/drums", "map2://juce/brain"}
 
@@ -214,11 +215,11 @@ class DrumInstanceRegistry:
         return None
 
 
-_registry: DrumInstanceRegistry | None = None
-
-
 def get_drum_instance_registry() -> DrumInstanceRegistry:
-    global _registry
-    if _registry is None:
-        _registry = DrumInstanceRegistry()
-    return _registry
+    if DrumInstanceRegistry in Singleton._instances:
+        return Singleton._instances[DrumInstanceRegistry]  # type: ignore[return-value]
+
+    with Singleton._lock:
+        if DrumInstanceRegistry not in Singleton._instances:
+            Singleton._instances[DrumInstanceRegistry] = DrumInstanceRegistry()
+        return Singleton._instances[DrumInstanceRegistry]  # type: ignore[return-value]

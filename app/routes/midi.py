@@ -8,8 +8,9 @@ and engine clients. New mapping, device-profile, and automation work should use
 
 import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 from collections import deque
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +213,7 @@ try:
             "output_port": request.output_port,
             "channel": request.channel,
             "enabled": request.enabled,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": utc_now().isoformat(),
         }
         _midi_routes[_midi_route_id] = route
         return {"status": "created", "route": route}
@@ -277,7 +278,7 @@ try:
             "type": msg_type,
             "channel": channel,
             "data": data,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
         })
 
     # ==================== MIDI CLOCK ====================
@@ -330,7 +331,7 @@ try:
             "filters": dict(_midi_filters),
             "clock": dict(_midi_clock_config),
             "mappings": await midi_service.get_mappings(),
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": utc_now().isoformat(),
         }
         _midi_presets[_midi_preset_id] = preset
         return {"status": "saved", "preset": {"id": preset["id"], "name": preset["name"]}}
