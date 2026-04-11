@@ -16,13 +16,13 @@ import json
 import uuid
 import hashlib
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/preset-exchange", tags=["preset-exchange"])
@@ -360,7 +360,7 @@ async def get_cluster_preset_export(preset_id: int) -> ClusterPresetBundle:
             is_default=bool(preset.is_default),
             checksum=_preset_checksum(preset.plugin_uri, parameters),
             source_node_id=get_enhanced_node_identity().get_node_id(),
-            exported_at=datetime.utcnow().isoformat(),
+            exported_at=utc_now().isoformat(),
         )
 
 
@@ -876,7 +876,7 @@ async def rate_community_preset(
             # Update existing rating
             old_rating = existing_rating.rating
             existing_rating.rating = rating
-            existing_rating.updated_at = datetime.utcnow()
+            existing_rating.updated_at = utc_now()
 
             # Update preset aggregate
             preset.rating_sum = (preset.rating_sum or 0) - old_rating + rating

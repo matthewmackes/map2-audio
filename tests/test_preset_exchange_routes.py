@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -93,6 +94,59 @@ async def _read_presets() -> list[dict[str, object]]:
             }
             for preset in presets
         ]
+
+
+async def _seed_community_preset(
+    *,
+    uuid: str,
+    name: str,
+    plugin_uri: str,
+    parameters: dict[str, object] | None = None,
+    rating_sum: int = 0,
+    rating_count: int = 0,
+) -> int:
+    async with database_module.get_session() as session:
+        preset = database_module.CommunityPreset(
+            uuid=uuid,
+            name=name,
+            plugin_uri=plugin_uri,
+            plugin_name="Community Plugin",
+            parameters=json.dumps(parameters or {"gain": 0.5}),
+            author_name="Tester",
+            description="Community preset",
+            category="User",
+            tags=["community"],
+            license="CC-BY-4.0",
+            source_file_hash=f"hash-{uuid}",
+            is_approved=True,
+            rating_sum=rating_sum,
+            rating_count=rating_count,
+        )
+        session.add(preset)
+        await session.flush()
+        return int(preset.id)
+
+
+async def _seed_rating(*, preset_id: int, fingerprint: str, rating: int) -> int:
+    async with database_module.get_session() as session:
+        row = database_module.PresetRating(
+            preset_id=preset_id,
+            user_fingerprint=fingerprint,
+            rating=rating,
+        )
+        session.add(row)
+        await session.flush()
+        return int(row.id)
+
+
+async def _read_rating(rating_id: int) -> dict[str, object]:
+    async with database_module.get_session() as session:
+        row = await session.get(database_module.PresetRating, rating_id)
+        assert row is not None
+        return {
+            "rating": int(row.rating),
+            "updated_at": row.updated_at,
+        }
 
 
 class _FakeConverter:
@@ -223,6 +277,9 @@ def test_cluster_preset_export_and_import_round_trip(tmp_path, monkeypatch):
         "urn:test:cluster-plugin",
         {"gain": 0.65, "mix": 0.35},
     )
+    parsed = datetime.fromisoformat(bundle["exported_at"])
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
 
     bundle["name"] = "Imported Clone"
     bundle["is_default"] = False
@@ -241,6 +298,40 @@ def test_cluster_preset_export_and_import_round_trip(tmp_path, monkeypatch):
     presets = asyncio.run(_read_presets())
     assert [preset["name"] for preset in presets] == ["Source Preset", "Imported Clone"]
     assert presets[1]["parameters"] == {"gain": 0.65, "mix": 0.35}
+
+
+def test_rate_community_preset_updates_existing_rating_with_utc_timestamp(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path, "preset-exchange-rating.db")
+    preset_id = asyncio.run(
+        _seed_community_preset(
+            uuid="community-preset-1",
+            name="Rated Preset",
+            plugin_uri="urn:test:community-plugin",
+            rating_sum=2,
+            rating_count=1,
+        )
+    )
+    rating_id = asyncio.run(_seed_rating(preset_id=preset_id, fingerprint="f" * 32, rating=2))
+    fixed_now = datetime(2026, 4, 11, 12, 5, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(exchange_routes, "utc_now", lambda: fixed_now)
+    client = _build_client()
+
+    response = client.post(
+        "/api/preset-exchange/community/community-preset-1/rate",
+        params={"rating": 5, "fingerprint": "f" * 32},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "success": True,
+        "preset_uuid": "community-preset-1",
+        "new_rating": 5.0,
+        "rating_count": 1,
+    }
+
+    stored = asyncio.run(_read_rating(rating_id))
+    assert stored["rating"] == 5
+    assert stored["updated_at"] == fixed_now.replace(tzinfo=None)
 
 
 def test_cluster_library_file_routes_and_distributor_delegation(tmp_path, monkeypatch):
