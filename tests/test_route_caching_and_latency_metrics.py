@@ -422,7 +422,7 @@ def test_plugins_discover_uses_singleflight_under_concurrency(monkeypatch):
     monkeypatch.setattr(plugins_routes, "_plugin_discovery_lock", None)
     monkeypatch.setattr(plugins_routes, "_get_juce_processors", lambda: [])
     monkeypatch.setattr(plugins_routes, "_get_hardware_plugins", lambda: [])
-    monkeypatch.setattr(plugins_routes.service_manager, "get_plugin_loader", lambda: loader)
+    monkeypatch.setattr(plugins_routes, "get_plugin_loader", lambda: loader)
 
     async def _run_concurrent_discover():
         return await asyncio.gather(
@@ -472,7 +472,7 @@ def test_plugins_discover_excludes_hardware_from_generic_catalog(monkeypatch):
         "_get_hardware_plugins",
         lambda: [{"uri": "hardware://lexicon-mpx1-spdif", "name": "Lexicon MPX-1", "is_hardware": True}],
     )
-    monkeypatch.setattr(plugins_routes.service_manager, "get_plugin_loader", lambda: _Loader())
+    monkeypatch.setattr(plugins_routes, "get_plugin_loader", lambda: _Loader())
 
     payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
 
@@ -498,7 +498,7 @@ def test_plugins_discover_loader_unavailable_fallback_excludes_hardware(monkeypa
         "_get_hardware_plugins",
         lambda: [{"uri": "hardware://lexicon-mpx1-spdif", "name": "Lexicon MPX-1", "is_hardware": True}],
     )
-    monkeypatch.setattr(plugins_routes.service_manager, "get_plugin_loader", lambda: None)
+    monkeypatch.setattr(plugins_routes, "get_plugin_loader", lambda: None)
 
     payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
 

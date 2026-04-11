@@ -253,8 +253,8 @@ try:
     from fastapi import APIRouter, HTTPException, Query, Response, Body
     from pydantic import BaseModel
     from app.services.api_readiness import ensure_plugin_route_ready
-    from app.services import service_manager
     from app.services.event_publisher import event_publisher, EventType
+    from app.services.plugin_loader_unified import get_plugin_loader
 
     router = APIRouter(prefix="/api/plugins", tags=["plugins"])
 
@@ -1096,7 +1096,7 @@ try:
             juce_processors = _get_juce_processors()
             logger.info("Including %s JUCE native processors in generic plugin discovery", len(juce_processors))
 
-            loader = service_manager.get_plugin_loader()
+            loader = get_plugin_loader()
             if not loader:
                 # If loader not available, return JUCE processors only.
                 fallback_plugins = juce_processors
@@ -1545,7 +1545,7 @@ try:
         
         # Try to remove from plugin loader's cache if it has one
         try:
-            loader = service_manager.get_plugin_loader()
+            loader = get_plugin_loader()
             if loader and hasattr(loader, 'plugins') and isinstance(loader.plugins, dict):
                 if uri in loader.plugins:
                     del loader.plugins[uri]

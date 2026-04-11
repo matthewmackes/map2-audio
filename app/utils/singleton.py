@@ -31,7 +31,7 @@ class Singleton:
     """
     
     _instances: Dict[Type, 'Singleton'] = {}
-    _lock = threading.Lock()
+    _lock = threading.RLock()
     
     @classmethod
     def get_instance(cls: Type[T]) -> T:

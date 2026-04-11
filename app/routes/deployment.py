@@ -29,6 +29,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/deployment", tags=["Deployment"])
 
 
+async def _get_audio_engine_status() -> dict:
+    """Read audio-engine status from the JUCE runtime without instantiating legacy audio I/O."""
+    try:
+        from app.services.juce_engine_service import get_audio_engine
+
+        engine = get_audio_engine()
+        if engine is None:
+            return {"running": False, "available": False}
+
+        info = await asyncio.to_thread(engine.get_system_info)
+        status = dict(info or {})
+        status.setdefault("running", bool(status.get("audio_running")))
+        status.setdefault("available", bool(getattr(engine, "is_available", False)))
+        return status
+    except Exception as exc:
+        logger.debug("JUCE audio status lookup failed: %s", exc)
+        return {"running": False, "available": False, "error": str(exc)}
+
+
 class DeploymentModeResponse(BaseModel):
     """Current deployment mode"""
     mode: str
@@ -210,11 +229,10 @@ async def _get_service_status(service: str) -> ServiceStatusResponse:
 
     # 2) Service-specific checks for services not covered by orchestrator aliases.
     try:
-        from app.services import service_manager
         from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
 
         if service in {"juce_engine", "audio_io"}:
-            audio_status = service_manager.get_audio_status()
+            audio_status = await _get_audio_engine_status()
             resolved_status = "running" if audio_status.get("running") else "stopped"
         elif service == "mdns_discovery":
             discovery = get_enhanced_mdns_discovery()
@@ -482,9 +500,7 @@ async def _check_peers_discovered() -> HealthCheckResult:
 async def _check_audio_hardware() -> HealthCheckResult:
     """Check audio hardware availability"""
     try:
-        from app.services import service_manager
-
-        audio_status = service_manager.get_audio_status()
+        audio_status = await _get_audio_engine_status()
         running = bool(audio_status.get("running"))
 
         # Also verify ALSA card presence as hardware-level fallback

@@ -12,6 +12,7 @@ Monitors JUCE audio engine and generates LCD events for:
 
 import asyncio
 import logging
+from typing import Any, Dict
 
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event, create_alert_event
 from app.lcd_models.lcd_event import EventSeverity
@@ -72,9 +73,7 @@ class AudioEventProducer:
     
     async def _check_audio_status(self):
         """Check current audio engine status"""
-        from app.services import service_manager
-
-        status = service_manager.get_audio_status() or {}
+        status = await self._get_audio_status()
         running = bool(status.get("running"))
         sample_rate = int(status.get("sample_rate") or 0)
         buffer_size = int(status.get("buffer_size") or 0)
@@ -98,6 +97,53 @@ class AudioEventProducer:
             await self.on_xrun_detected(xrun_count)
             await self.on_cpu_spike(cpu_percent)
             await self.on_latency_change(latency_ms)
+
+    async def _get_audio_status(self) -> Dict[str, Any]:
+        """Resolve audio status without instantiating the deprecated Python audio backend."""
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+
+            engine = get_audio_engine()
+            info = await asyncio.to_thread(engine.get_system_info)
+            sample_rate = int(info.get("sample_rate") or 0)
+            buffer_size = int(info.get("buffer_size") or 0)
+            latency_ms = float(info.get("latency_ms") or 0.0)
+            if latency_ms <= 0.0 and sample_rate > 0 and buffer_size > 0:
+                latency_ms = (buffer_size / sample_rate) * 1000.0
+
+            xrun_count = 0
+            try:
+                xrun_count = int(await engine.get_xrun_count())
+            except Exception:
+                xrun_count = int(info.get("xrun_count") or 0)
+
+            cpu_load = float(
+                info.get("cpu_load")
+                or info.get("cpu_usage_pct")
+                or info.get("cpu_percent")
+                or 0.0
+            )
+
+            return {
+                "running": bool(info.get("audio_running", info.get("running"))),
+                "sample_rate": sample_rate,
+                "buffer_size": buffer_size,
+                "latency_ms": latency_ms,
+                "cpu_load": cpu_load,
+                "underruns": xrun_count,
+                "overruns": 0,
+            }
+        except Exception as exc:
+            logger.debug("JUCE audio status lookup failed", exc_info=exc)
+            return {
+                "running": False,
+                "sample_rate": 0,
+                "buffer_size": 0,
+                "latency_ms": 0.0,
+                "cpu_load": 0.0,
+                "underruns": 0,
+                "overruns": 0,
+            }
     
     async def on_audio_started(self, device_name: str, sample_rate: int, buffer_size: int, latency_ms: float):
         """Called when audio engine starts"""

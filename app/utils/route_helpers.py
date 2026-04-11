@@ -112,7 +112,7 @@ def require_service(service_name: str, error_message: Optional[str] = None):
     """
     def decorator(func: Callable) -> Callable:
         def _service_available(name: str) -> bool:
-            """Check service availability using orchestrator, then legacy manager fallback."""
+            """Check service availability using the orchestrator and JUCE runtime helpers."""
             try:
                 from app.services.service_orchestrator import get_orchestrator
                 orchestrator = get_orchestrator()
@@ -124,13 +124,13 @@ def require_service(service_name: str, error_message: Optional[str] = None):
                 logger.debug(f"Orchestrator lookup failed for '{name}': {e}")
 
             try:
-                from app.services.service_manager import get_service_manager
-                svc_mgr = get_service_manager()
-                status = svc_mgr.get_service_status()
-                if name in status and isinstance(status[name], bool):
-                    return bool(status[name])
+                if name in {"juce_engine", "audio", "audio_io"}:
+                    from app.services.juce_engine_service import get_audio_engine
+
+                    engine = get_audio_engine()
+                    return bool(engine and engine.is_available)
             except Exception as e:
-                logger.debug(f"ServiceManager lookup failed for '{name}': {e}")
+                logger.debug(f"JUCE runtime lookup failed for '{name}': {e}")
 
             return False
 

@@ -11,10 +11,10 @@ Monitors system health metrics and generates LCD events for:
 
 import asyncio
 import logging
-import psutil
 import shutil
-from datetime import datetime
+from typing import Any, Dict
 
+import psutil
 from app.services.lcd_event_bus import LCDEventBus, create_system_event, create_alert_event
 from app.lcd_models.lcd_event import EventSeverity
 
@@ -80,26 +80,43 @@ class SystemHealthProducer:
     
     async def _check_system_health(self):
         """Check all system health metrics"""
+        snapshot = await asyncio.to_thread(self._collect_system_snapshot)
+
         # CPU
-        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_percent = float(snapshot["cpu_percent"])
         await self._check_cpu(cpu_percent)
-        
+
         # Memory
-        memory = psutil.virtual_memory()
-        await self._check_memory(memory.percent, memory.available)
-        
+        await self._check_memory(float(snapshot["memory_percent"]), int(snapshot["memory_available"]))
+
         # Disk
-        disk = shutil.disk_usage('/')
-        disk_percent = (disk.used / disk.total) * 100
-        await self._check_disk(disk_percent, disk.free)
-        
+        await self._check_disk(float(snapshot["disk_percent"]), int(snapshot["disk_free"]))
+
         # Temperature (if available)
+        temps = snapshot.get("temperatures")
+        if temps:
+            await self._check_temperature(temps)
+
+    def _collect_system_snapshot(self) -> Dict[str, Any]:
+        """Collect health metrics off the event loop thread."""
+        memory = psutil.virtual_memory()
+        disk = shutil.disk_usage("/")
+        disk_percent = (disk.used / disk.total) * 100 if disk.total else 0.0
+
+        temperatures = None
         try:
-            temps = psutil.sensors_temperatures()
-            if temps:
-                await self._check_temperature(temps)
+            temperatures = psutil.sensors_temperatures()
         except AttributeError:
-            pass  # sensors_temperatures not available on all platforms
+            temperatures = None
+
+        return {
+            "cpu_percent": psutil.cpu_percent(interval=0.1),
+            "memory_percent": memory.percent,
+            "memory_available": memory.available,
+            "disk_percent": disk_percent,
+            "disk_free": disk.free,
+            "temperatures": temperatures,
+        }
     
     async def _check_cpu(self, cpu_percent: float):
         """Check CPU usage and alert if needed"""

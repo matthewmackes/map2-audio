@@ -22525,7 +22525,7 @@ Last updated: 2026-04-11 11:29 EDT - Codex
   - Live restart verification: `journalctl -u map2-backend.service` no longer logs `sqlite3.OperationalError: no such column: plugins.tags` during startup
 
 ID: T971
-Status: [ ] Todo
+Status: [x] Done
 Title: Restore backend request servicing so systemd readiness probes succeed after startup completes
 Description:
 - Goal / acceptance criteria: Explain and remediate why `map2-backend.service` reaches `Application startup complete` and binds `0.0.0.0:8080`, yet local HTTP requests such as `/api/live` and `/api/health` still hang long enough for the unit's `ExecStartPost` probe loop to time out and restart the service. Determine which startup service, background task, or runtime gate monopolizes request servicing after bind, then land the required fix with live verification.
@@ -22533,6 +22533,17 @@ Description:
 - Dependencies: T970
 - Estimated effort: Medium
 - Required outputs: Root-cause analysis, runtime/service fix, focused validation, and live `systemctl` / `curl` verification.
+Implementation notes:
+- Root cause was a global non-reentrant singleton lock in `app/utils/singleton.py`; `/api/health` triggered nested singleton initialization (`AudioHealthMonitor` -> `HealthMonitor`), which deadlocked request servicing during the systemd `ExecStartPost` probe window.
+- Replaced the shared `threading.Lock` with `threading.RLock`, added a regression test for nested singleton construction, and confirmed `get_audio_health_monitor()` plus `build_system_health_snapshot()` now return immediately.
+- Removed remaining route-level legacy manager lookups that could still backdoor the deprecated Python audio stack: plugin discovery/cache eviction now use `plugin_loader_unified.get_plugin_loader()`, deployment audio checks read JUCE runtime status directly, and `require_service()` no longer falls back to `ServiceManager`.
+- Kept the earlier event-producer cleanup in the same slice so background LCD/system publishers no longer instantiate the deprecated Python audio manager or block the event loop with synchronous metric collection.
+- Live verification passed: `systemctl status map2-backend.service --no-pager` shows `Active: active (running)` with `ExecStartPost ... status=0/SUCCESS`, and `curl -sv --max-time 5 http://127.0.0.1:8080/api/health` returned `HTTP/1.1 200 OK` with `x-response-time: 164.54ms`.
+- Residual note: the running process still shows `pw-PortAudio` thread names, but the startup readiness failure is resolved and no remaining request-servicing timeout was observed after the fix.
+Validation:
+- `pytest -q tests/test_singleton_runtime.py tests/test_health_routes.py tests/test_event_producers_runtime.py tests/test_route_caching_and_latency_metrics.py` -> PASS (`23 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/utils/singleton.py app/routes/plugins.py app/routes/deployment.py app/utils/route_helpers.py tests/test_singleton_runtime.py` -> PASS
+- Local runtime checks: `python3 - <<'PY' ... get_audio_health_monitor() ... PY` returns immediately with an offline summary when no audio manager is attached; `build_system_health_snapshot()` completes in ~1.16s without dependency errors.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 11:29 EDT - Codex
+Last updated: 2026-04-11 11:36 EDT - Codex
