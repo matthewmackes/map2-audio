@@ -5,14 +5,16 @@ Manages initialization, cleanup, and event handling for plugin presets.
 
 import logging
 import json
+import inspect
 from typing import Dict, Any, Optional, List, Callable
-from datetime import datetime
 from app.database import PluginPreset, get_session
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
 
-class PluginPresetLifecycle:
+class PluginPresetLifecycle(Singleton):
     """
     Manages the lifecycle of plugin presets including:
     - Initialization (loading default presets, caching)
@@ -23,6 +25,7 @@ class PluginPresetLifecycle:
 
     def __init__(self):
         """Initialize the preset lifecycle manager."""
+        super().__init__()
         self.listeners: Dict[str, List[Callable]] = {
             "preset_created": [],
             "preset_loaded": [],
@@ -60,10 +63,9 @@ class PluginPresetLifecycle:
 
         for callback in self.listeners[event]:
             try:
-                if hasattr(callback, "__await__"):
-                    await callback(data)
-                else:
-                    callback(data)
+                result = callback(data)
+                if inspect.isawaitable(result):
+                    await result
             except Exception as e:
                 logger.error(f"Error in {event} listener: {e}")
 
@@ -76,15 +78,16 @@ class PluginPresetLifecycle:
             "name": name,
             "plugin_uri": plugin_uri,
             "parameters": parameters,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": utc_now().isoformat(),
         }
+        emitted_at = utc_now().isoformat()
         await self.emit_event(
             "preset_created",
             {
                 "preset_id": preset_id,
                 "name": name,
                 "plugin_uri": plugin_uri,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": emitted_at,
             },
         )
         logger.info(f"Preset created: {name} (id={preset_id}) for {plugin_uri}")
@@ -95,7 +98,7 @@ class PluginPresetLifecycle:
             "preset_loaded",
             {
                 "preset_id": preset_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
         )
         logger.info(f"Preset loaded: {preset_id}")
@@ -110,7 +113,7 @@ class PluginPresetLifecycle:
             {
                 "preset_id": preset_id,
                 "name": name,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
         )
         logger.info(f"Preset deleted: {name} (id={preset_id})")
@@ -124,7 +127,7 @@ class PluginPresetLifecycle:
             {
                 "preset_id": preset_id,
                 "is_favorite": is_favorite,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
         )
         logger.info(f"Preset {preset_id} favorite toggled: {is_favorite}")
@@ -137,7 +140,7 @@ class PluginPresetLifecycle:
             {
                 "preset_id": preset_id,
                 "plugin_uri": plugin_uri,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
         )
         logger.info(f"Preset {preset_id} set as default for {plugin_uri}")
@@ -256,9 +259,9 @@ class PluginPresetLifecycle:
         """
         try:
             from sqlalchemy import select
-            from datetime import datetime, timedelta
+            from datetime import timedelta
 
-            cutoff_date = datetime.utcnow() - timedelta(days=days_threshold)
+            cutoff_date = utc_now() - timedelta(days=days_threshold)
 
             async with get_session() as session:
                 result = await session.execute(
@@ -356,14 +359,6 @@ class PluginPresetLifecycle:
         except Exception as e:
             logger.error(f"Error during preset lifecycle shutdown: {e}")
 
-
-# Global lifecycle manager instance
-_preset_lifecycle: Optional[PluginPresetLifecycle] = None
-
-
 def get_preset_lifecycle() -> PluginPresetLifecycle:
     """Get or create the global preset lifecycle manager."""
-    global _preset_lifecycle
-    if _preset_lifecycle is None:
-        _preset_lifecycle = PluginPresetLifecycle()
-    return _preset_lifecycle
+    return PluginPresetLifecycle.get_instance()
