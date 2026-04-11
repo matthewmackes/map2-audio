@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1079** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1675** total commits | **3** stars | **0** forks | **0** open issues
+**1079** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1677** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b1937a41`](https://github.com/matthewmackes/map2-audio/commit/b1937a417099f4da382641f3ef7d52d34fa7d5fb) | Simplify theme preset selection workflow | Map2 Audio | 2026-04-10 |
+| [`ba31e8a2`](https://github.com/matthewmackes/map2-audio/commit/ba31e8a2d365dfc745068a996457404682894f39) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`86c11393`](https://github.com/matthewmackes/map2-audio/commit/86c1139358edfa550216e4dfdedda907bf8a1d15) | Rebalance start menu launchers and record theme review | Map2 Audio | 2026-04-10 |
 | [`ebe99017`](https://github.com/matthewmackes/map2-audio/commit/ebe990174fc32169421250e889ec2f3fbc786a37) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`51e61948`](https://github.com/matthewmackes/map2-audio/commit/51e61948792aef23827a56fa812b3e767db5129d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-10 |
 | [`0dfe3b5c`](https://github.com/matthewmackes/map2-audio/commit/0dfe3b5cc424429549f1fe9435c0d22fd0e01f0a) | Advance cluster UTC migration slices | Map2 Audio | 2026-04-10 |
 | [`9c1ca5b4`](https://github.com/matthewmackes/map2-audio/commit/9c1ca5b495bb5205ccf4acf49e906f3c8dc67862) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`610ea7f9`](https://github.com/matthewmackes/map2-audio/commit/610ea7f95d9ea70160df577c524aec6fd7a54333) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-10 |
-| [`84790b62`](https://github.com/matthewmackes/map2-audio/commit/84790b6220ed3384d70271bc6f9ffa797d8d30dd) | Continue backend singleton consistency sweep | Map2 Audio | 2026-04-10 |
-| [`70d2e623`](https://github.com/matthewmackes/map2-audio/commit/70d2e623fc182dcd39d83cec0621070cff6a28ce) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
