@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Opened T969/T970 from live backend ship verification to fix the default-chain startup `json` NameError and track the remaining plugin metadata/schema startup mismatch separately.
+Last updated: 2026-04-11 - Closed T970 after restoring live plugin metadata schema migrations, and opened T971 for the remaining backend request-servicing/start-post timeout that persists after startup completes.
 
 ## Performance Brain
 
@@ -22502,7 +22502,7 @@ Last updated: 2026-04-11 11:13 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/default_effects_loader.py tests/test_default_effects_manifest.py` -> PASS
 
 ID: T970
-Status: [ ] Todo
+Status: [✓] Done
 Title: Investigate backend startup plugin metadata/schema mismatch blocking clean health readiness
 Description:
 - Goal / acceptance criteria: Explain and remediate the live backend startup errors that still log `sqlite3.OperationalError: no such column: plugins.tags` during default plugin initialization and leave `map2-backend.service` stuck in `activating` while `/api/health` times out. Determine whether this is a migration gap, stale DB schema, or health-route behavior issue, then land the required code/schema/service fix with verification.
@@ -22512,4 +22512,27 @@ Description:
 - Required outputs: Root-cause analysis, any required schema/migration/runtime fix, verification against `map2-backend.service` and `/api/health`, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 11:11 EDT - Codex
+Last updated: 2026-04-11 11:29 EDT - Codex
+- Completion notes:
+  - Confirmed the root cause was an additive SQLite migration gap: the `Plugin` ORM model already required `plugins.tags`, `plugins.user_description`, `plugins.is_favorite`, and `plugins.is_hidden`, but existing databases never backfilled those columns.
+  - Added dedicated sync/async plugin-metadata schema migrations in `app/database.py`, preserved the original migration version assignments, and appended the new migration as version `8` so live installs do not silently skip it.
+  - Verified against the live `data/map2.db` that the missing plugin metadata columns now exist and that `schema_migrations` records `8, plugin_metadata_additive_sync`; the previous `sqlite3.OperationalError: no such column: plugins.tags` startup failures stopped appearing after restart.
+  - Separated the remaining backend readiness failure into follow-up task `T971` because the systemd `start-post` timeout now persists without the plugin-schema error, so the platform stall is no longer the same defect as the fixed migration gap.
+- Validation:
+  - `pytest -q tests/test_database_migrations.py tests/test_plugin_tags_routes.py` -> PASS (`5 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/database.py tests/test_database_migrations.py tests/test_plugin_tags_routes.py` -> PASS
+  - Live DB verification: `PRAGMA table_info(plugins)` shows `tags`, `user_description`, `is_favorite`, and `is_hidden`; `SELECT version, name FROM schema_migrations ORDER BY version` now includes `(8, 'plugin_metadata_additive_sync')`
+  - Live restart verification: `journalctl -u map2-backend.service` no longer logs `sqlite3.OperationalError: no such column: plugins.tags` during startup
+
+ID: T971
+Status: [ ] Todo
+Title: Restore backend request servicing so systemd readiness probes succeed after startup completes
+Description:
+- Goal / acceptance criteria: Explain and remediate why `map2-backend.service` reaches `Application startup complete` and binds `0.0.0.0:8080`, yet local HTTP requests such as `/api/live` and `/api/health` still hang long enough for the unit's `ExecStartPost` probe loop to time out and restart the service. Determine which startup service, background task, or runtime gate monopolizes request servicing after bind, then land the required fix with live verification.
+- Why it matters: After T970 removed the plugin-schema crash path, the backend still cannot be considered shippable because systemd kills it for failing its readiness probe. The remaining issue is now request servicing / startup behavior, not database schema.
+- Dependencies: T970
+- Estimated effort: Medium
+- Required outputs: Root-cause analysis, runtime/service fix, focused validation, and live `systemctl` / `curl` verification.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 11:29 EDT - Codex

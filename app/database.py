@@ -564,6 +564,46 @@ def _ensure_chain_plugin_loader_state_schema_sync() -> None:
         )
 
 
+def _ensure_plugin_metadata_schema_sync() -> None:
+    """Apply additive schema upgrades for plugin user metadata on existing SQLite DBs."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        if _add_sqlite_column_if_missing(conn, "plugins", "tags", "JSON"):
+            conn.execute(
+                text(
+                    "UPDATE plugins "
+                    "SET tags = '[]' "
+                    "WHERE tags IS NULL"
+                )
+            )
+        if _add_sqlite_column_if_missing(conn, "plugins", "user_description", "TEXT DEFAULT ''"):
+            conn.execute(
+                text(
+                    "UPDATE plugins "
+                    "SET user_description = '' "
+                    "WHERE user_description IS NULL"
+                )
+            )
+        if _add_sqlite_column_if_missing(conn, "plugins", "is_favorite", "BOOLEAN DEFAULT 0"):
+            conn.execute(
+                text(
+                    "UPDATE plugins "
+                    "SET is_favorite = 0 "
+                    "WHERE is_favorite IS NULL"
+                )
+            )
+        if _add_sqlite_column_if_missing(conn, "plugins", "is_hidden", "BOOLEAN DEFAULT 0"):
+            conn.execute(
+                text(
+                    "UPDATE plugins "
+                    "SET is_hidden = 0 "
+                    "WHERE is_hidden IS NULL"
+                )
+            )
+
+
 def _ensure_snapshot_device_schema_sync() -> None:
     """Apply additive schema upgrades for snapshot-scoped metadata and runtime state."""
     if _engine is None or _engine.dialect.name != "sqlite":
@@ -780,6 +820,45 @@ async def _ensure_chain_plugin_loader_state_schema_async(conn) -> None:
     )
 
 
+async def _ensure_plugin_metadata_schema_async(conn) -> None:
+    """Apply additive async schema upgrades for plugin user metadata."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    if await _add_sqlite_column_if_missing_async(conn, "plugins", "tags", "JSON"):
+        await conn.execute(
+            text(
+                "UPDATE plugins "
+                "SET tags = '[]' "
+                "WHERE tags IS NULL"
+            )
+        )
+    if await _add_sqlite_column_if_missing_async(conn, "plugins", "user_description", "TEXT DEFAULT ''"):
+        await conn.execute(
+            text(
+                "UPDATE plugins "
+                "SET user_description = '' "
+                "WHERE user_description IS NULL"
+            )
+        )
+    if await _add_sqlite_column_if_missing_async(conn, "plugins", "is_favorite", "BOOLEAN DEFAULT 0"):
+        await conn.execute(
+            text(
+                "UPDATE plugins "
+                "SET is_favorite = 0 "
+                "WHERE is_favorite IS NULL"
+            )
+        )
+    if await _add_sqlite_column_if_missing_async(conn, "plugins", "is_hidden", "BOOLEAN DEFAULT 0"):
+        await conn.execute(
+            text(
+                "UPDATE plugins "
+                "SET is_hidden = 0 "
+                "WHERE is_hidden IS NULL"
+            )
+        )
+
+
 async def _ensure_snapshot_device_schema_async(conn) -> None:
     """Apply additive async schema upgrades for snapshot-scoped metadata and runtime state."""
     if conn.dialect.name != "sqlite":
@@ -986,6 +1065,7 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     (4, "snapshot_device_additive_sync", _ensure_snapshot_device_schema_sync, _ensure_snapshot_device_schema_async),
     (5, "snapshot_graph_document_additive_sync", _ensure_snapshot_graph_document_schema_sync, _ensure_snapshot_graph_document_schema_async),
     (6, "preset_uniqueness_enforcement_sync", _ensure_preset_uniqueness_schema_sync, _ensure_preset_uniqueness_schema_async),
+    (8, "plugin_metadata_additive_sync", _ensure_plugin_metadata_schema_sync, _ensure_plugin_metadata_schema_async),
 )
 
 
