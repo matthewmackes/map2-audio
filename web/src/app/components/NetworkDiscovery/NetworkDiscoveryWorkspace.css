@@ -89,9 +89,7 @@
 .network-discovery-workspace__snapshot-head p {
   color: var(--cds-text-secondary);
   font-size: 0.76rem;
-  letter-spacing: 0.04em;
   margin: 0;
-  text-transform: uppercase;
 }
 
 .network-discovery-workspace__snapshot-tile strong {
@@ -172,7 +170,6 @@
   color: var(--cds-text-secondary);
   font-size: 0.72rem;
   margin: 0 0 0.2rem;
-  text-transform: uppercase;
 }
 
 .network-discovery-workspace__detail-list dd {

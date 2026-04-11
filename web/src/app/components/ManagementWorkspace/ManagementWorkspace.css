@@ -106,8 +106,6 @@
   color: var(--cds-text-secondary);
   font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .management-workspace__graph-flow {
@@ -200,8 +198,6 @@
 .management-workspace__graph-node-tone {
   font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .management-workspace__graph-node-eyebrow {
@@ -304,9 +300,7 @@
   color: var(--cds-text-secondary);
   font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
   margin: 0;
-  text-transform: uppercase;
 }
 
 .management-workspace__snapshot-tile strong {
@@ -425,7 +419,6 @@
   color: var(--cds-text-secondary);
   font-size: 0.72rem;
   margin: 0 0 0.2rem;
-  text-transform: uppercase;
 }
 
 .management-workspace__detail-list dd {

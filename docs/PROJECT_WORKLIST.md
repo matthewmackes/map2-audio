@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued T870/T863 with another validated route-level Carbon writing cleanup after shrinking Snapshot Editor’s uppercase debt to value-like affordances.
+Last updated: 2026-04-11 - Continued T870 with two more validated CSS-only writing cleanup batches across routes and shared workspace shells while leaving the broader type-scale debt open.
 
 ## Performance Brain
 
@@ -20149,7 +20149,7 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 17:20 EDT - Codex
+Last updated: 2026-04-11 17:23 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
@@ -20170,6 +20170,7 @@ Last updated: 2026-04-11 17:20 EDT - Codex
   - This pass intentionally prioritized copy correctness over a risky layout-scale change in the tiny signal/plugin/mobile chip affordances, so `T863` remains open with most residual non-token sizing still concentrated in those fit-sensitive subsections.
   - Validation for this signal/mobile label follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Kept the active type work scoped to writing-guideline-adjacent surfaces and left `T863` otherwise unchanged in this route-level batch; the main remaining non-token sizing debt is still concentrated in App Shell, Snapshot Editor, legacy map2 controls, and several route/component-local fit-sensitive surfaces.
+  - No additional `T863`-specific type-scale claim in this workspace-shell follow-up; the active type debt remains broad and concentrated in App Shell, Snapshot Editor, legacy map2 controls, and other fit-sensitive route/component surfaces.
 
 ID: T864
 Status: [✓] Done
@@ -20286,7 +20287,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 17:20 EDT - Codex
+Last updated: 2026-04-11 17:23 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20311,6 +20312,9 @@ Last updated: 2026-04-11 17:20 EDT - Codex
   - Opened the next low-risk route-level writing slice in `web/src/app/pages/ChainsPage.css`, `web/src/app/components/PageHeader.css`, and `web/src/app/pages/PipeWirePage.css`, removing forced uppercase/high-tracking treatment from scope/metric labels, page-header eyebrow/brand text, and PipeWire metric/clock/setting labels so those surfaces render sentence-case support copy.
   - Current measured repo-wide inventory after this route-level pass: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts'` is down to `141` matches, so `T870` remains open with the remaining hotspots concentrated in MPX1, IntelFX, plugin cards, cluster/platform workspaces, and a few residual Snapshot Editor value surfaces.
   - Validation for this route-level writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Opened the next CSS-only workspace-shell slice in `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.css`, `web/src/app/components/AvbRouting/AvbRoutingWorkspace.css`, and `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, removing forced uppercase/high-tracking treatment from snapshot labels, detail-list labels, and management graph chrome so those shared workspace shells render sentence-case support copy.
+  - Current measured repo-wide inventory after this workspace-shell pass: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts'` is down to `131` matches, so `T870` remains open with the remaining hotspots now concentrated in MPX1, IntelFX, plugin cards, legacy map2 controls, inline JSX style blocks, and the two residual Snapshot Editor value surfaces.
+  - Validation for this workspace-shell writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked
