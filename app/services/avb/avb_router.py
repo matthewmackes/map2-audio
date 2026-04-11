@@ -21,7 +21,7 @@ import uuid
 from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 import httpx
@@ -935,7 +935,7 @@ class AvbRouter:
                         node_address=node_address,
                         host=visible.host or self._parse_host(node_address),
                         available=True,
-                        last_seen=datetime.now(),
+                        last_seen=datetime.now(timezone.utc),
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
         except Exception as e:
@@ -1079,7 +1079,7 @@ class AvbRouter:
                         node_address=node_address,
                         host=host_label,
                         available=available,
-                        last_seen=datetime.now()
+                        last_seen=datetime.now(timezone.utc)
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
 
@@ -1121,7 +1121,7 @@ class AvbRouter:
                         node_address=node_address,
                         host=host_label,
                         available=available,
-                        last_seen=datetime.now()
+                        last_seen=datetime.now(timezone.utc)
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
 
@@ -1292,7 +1292,7 @@ class AvbRouter:
             self._cleanup_cycles += 1
 
             try:
-                now = datetime.now()
+                now = datetime.now(timezone.utc)
                 stale_threshold = timedelta(seconds=60)
 
                 stale_endpoints = [
@@ -1762,7 +1762,7 @@ class AvbRouter:
 
         if success:
             connection.state = ConnectionState.CONNECTED
-            connection.established_time = datetime.now()
+            connection.established_time = datetime.now(timezone.utc)
             logger.info(f"Connected: {conn_id}")
             result["success"] = True
             result["connection_id"] = conn_id

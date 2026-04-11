@@ -4,7 +4,7 @@ All 10 LCD improvements, complete with no stubs
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, List
 from collections import defaultdict, deque
 import json
@@ -79,12 +79,12 @@ class AlertPrioritizer:
             context_weight=context_weight,
             final_score=final_score,
             reasoning=reasoning,
-            calculated_at=datetime.now(),
-            expires_at=datetime.now() + timedelta(minutes=5)
+            calculated_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)
         )
         
         self.priority_cache[event.get('event_id')] = priority
-        self.event_history[event_sig].append({'timestamp': event.get('timestamp', datetime.now()), 'event_id': event.get('event_id')})
+        self.event_history[event_sig].append({'timestamp': event.get('timestamp', datetime.now(timezone.utc)), 'event_id': event.get('event_id')})
         
         logger.info(f"Calculated priority {final_score:.2f} for event {event.get('event_id')}")
         return priority
@@ -92,7 +92,7 @@ class AlertPrioritizer:
     def _calculate_escalation(self, event_sig: str) -> float:
         """Escalate if same event repeated"""
         history = self.event_history[event_sig]
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         recent_count = sum(1 for h in history if (now - h['timestamp']).total_seconds() < self.config['escalation_window'])
         
@@ -108,7 +108,7 @@ class AlertPrioritizer:
             return 1.0
         
         history = self.event_history[event_sig]
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         for h in history:
             age = (now - h['timestamp']).total_seconds()
@@ -137,7 +137,7 @@ class AlertPrioritizer:
         """Get cached or None if expired"""
         if event_id in self.priority_cache:
             priority = self.priority_cache[event_id]
-            if datetime.now() < priority.expires_at:
+            if datetime.now(timezone.utc) < priority.expires_at:
                 return priority
         return None
 
@@ -262,7 +262,7 @@ class AlertGroup:
     
     def is_fresh(self, window_seconds: int = 60) -> bool:
         """Check if group is still active"""
-        age = (datetime.now() - self.last_updated).total_seconds()
+        age = (datetime.now(timezone.utc) - self.last_updated).total_seconds()
         return age < window_seconds
 
 class AlertGrouper:
@@ -291,7 +291,7 @@ class AlertGrouper:
         if group:
             group.event_count += 1
             group.node_sources.add(event.get('source_node'))
-            group.last_updated = datetime.now()
+            group.last_updated = datetime.now(timezone.utc)
             group.event_ids.append(event.get('event_id'))
         else:
             group_id = f"group_{self.group_counter}"
@@ -303,8 +303,8 @@ class AlertGrouper:
                 severity=event.get('severity'),
                 event_count=1,
                 node_sources={event.get('source_node')},
-                first_seen=datetime.now(),
-                last_updated=datetime.now(),
+                first_seen=datetime.now(timezone.utc),
+                last_updated=datetime.now(timezone.utc),
                 event_ids=[event.get('event_id')]
             )
             

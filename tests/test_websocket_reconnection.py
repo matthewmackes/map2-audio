@@ -15,7 +15,7 @@ import aiohttp
 
 from app.services.lcd_event_router import LCDEventRouter
 from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_event_queuing_for_offline_peer():
     # Create test event
     event = LCDEvent(
         event_id="test-001",
-        timestamp=datetime.now(),
+        timestamp=datetime.now(timezone.utc),
         source_node="TEST-NODE",
         event_type=EventType.SYSTEM,
         severity=EventSeverity.INFO,

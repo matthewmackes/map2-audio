@@ -15,7 +15,7 @@ import psutil
 import signal
 from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import contextmanager
 
 from app.utils.singleton import Singleton
@@ -196,7 +196,7 @@ class PluginResourceManager(Singleton):
         """Handle plugin timeout."""
         with self._lock:
             usage.timeout_count += 1
-            usage.last_timeout = datetime.now()
+            usage.last_timeout = datetime.now(timezone.utc)
             
             logger.warning(
                 f"⚠️  Plugin {plugin_uri} timeout #{usage.timeout_count} "

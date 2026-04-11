@@ -17,7 +17,7 @@ import asyncio
 import aiohttp
 import os
 from typing import List, Optional, Callable, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin, quote
 
 from .scraper_base import SFScraperBase, SFFileInfo, DownloadStatus, DownloadState
@@ -117,7 +117,7 @@ class MusicalArtifactsScraper(SFScraperBase):
                     self.discovered_files.append(file_info)
 
             self._stats["total_discovered"] = len(self.discovered_files)
-            self._stats["last_discovery"] = datetime.now().isoformat()
+            self._stats["last_discovery"] = datetime.now(timezone.utc).isoformat()
 
             logger.info(f"Discovered {len(self.discovered_files)} SoundFonts from {self.library_name}")
             return self.discovered_files
@@ -352,7 +352,7 @@ class MusicalArtifactsScraper(SFScraperBase):
             status = DownloadStatus(
                 file_info=file_info,
                 state=DownloadState.DOWNLOADING,
-                started_at=datetime.now()
+                started_at=datetime.now(timezone.utc)
             )
             self.download_progress[file_info.filename] = status
 
@@ -375,7 +375,7 @@ class MusicalArtifactsScraper(SFScraperBase):
 
                     total_size = int(response.headers.get('content-length', 0))
                     downloaded = 0
-                    start_time = datetime.now()
+                    start_time = datetime.now(timezone.utc)
 
                     with open(output_path, 'wb') as f:
                         async for chunk in response.content.iter_chunked(8192):
@@ -392,7 +392,7 @@ class MusicalArtifactsScraper(SFScraperBase):
                                 status.progress = progress
                                 status.bytes_downloaded = downloaded
 
-                                elapsed = (datetime.now() - start_time).total_seconds()
+                                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                                 if elapsed > 0:
                                     status.speed_bps = downloaded / elapsed
 
@@ -400,7 +400,7 @@ class MusicalArtifactsScraper(SFScraperBase):
                                     progress_callback(progress)
 
             status.state = DownloadState.COMPLETED
-            status.completed_at = datetime.now()
+            status.completed_at = datetime.now(timezone.utc)
             status.progress = 1.0
 
             logger.info(f"Downloaded: {file_info.filename} ({downloaded} bytes)")

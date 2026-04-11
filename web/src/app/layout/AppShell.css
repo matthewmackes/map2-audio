@@ -275,9 +275,8 @@
   overflow: hidden;
   color: var(--cds-text-primary, var(--text-primary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.88rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
-  letter-spacing: 0.02em;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -314,7 +313,7 @@
   background: color-mix(in srgb, var(--window-shell-surface-strong) 82%, var(--window-shell-titlebar) 18%);
   color: var(--cds-text-primary, var(--text-primary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.92rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -1090,7 +1089,7 @@
 
 .start-menu-panel__header-copy span {
   color: color-mix(in srgb, var(--text-secondary, var(--cds-text-secondary, #525252)) 90%, transparent);
-  font-size: 0.74rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.4;
 }
 
@@ -1100,17 +1099,14 @@
   gap: 0.2rem;
   color: color-mix(in srgb, var(--text-secondary, var(--cds-text-secondary, #525252)) 80%, transparent);
   font-family: 'IBM Plex Mono', 'IBM Plex Sans', monospace;
-  font-size: 0.7rem;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .start-menu-panel__eyebrow {
   margin: 0;
   color: color-mix(in srgb, var(--text-secondary, var(--cds-text-secondary, #525252)) 78%, transparent);
   font-family: 'IBM Plex Mono', 'IBM Plex Sans', monospace;
-  font-size: 0.64rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .start-menu-panel__shell {
@@ -1283,9 +1279,7 @@
   grid-column: 1 / -1;
   color: color-mix(in srgb, var(--text-secondary, var(--cds-text-secondary, #525252)) 88%, transparent);
   font-family: 'IBM Plex Mono', 'IBM Plex Sans', monospace;
-  font-size: 0.56rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .start-menu-card__icon {
@@ -1322,7 +1316,7 @@
   display: -webkit-box;
   overflow: hidden;
   min-width: 0;
-  font-size: 0.9rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
   line-height: 1.18;
   -webkit-box-orient: vertical;
@@ -1338,13 +1332,13 @@
 }
 
 .start-menu-card--featured .start-menu-card__label--tile {
-  font-size: 0.9rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   -webkit-line-clamp: 2;
 }
 
 .start-menu-card__meta {
   color: color-mix(in srgb, var(--text-secondary, var(--cds-text-secondary, #525252)) 92%, transparent);
-  font-size: 0.66rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.2;
 }
 
@@ -1361,10 +1355,8 @@
 .shell-launcher__section-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--cds-text-secondary, var(--text-secondary, #525252));
 }
 
@@ -1532,16 +1524,14 @@
 .shell-power-modal .cds--modal-header__label {
   color: var(--cds-text-secondary, var(--text-secondary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .shell-power-modal .cds--modal-header__heading {
   color: var(--cds-text-primary, var(--text-primary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -1553,7 +1543,7 @@
 .shell-power-modal .cds--modal-content {
   padding-top: 1rem;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.9rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.5;
 }
 
@@ -1600,10 +1590,8 @@
   border-bottom: 1px solid var(--window-shell-titlebar-border);
   background: var(--window-shell-titlebar);
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 .shell-restart-overlay__title,
@@ -1796,14 +1784,12 @@ button.topbar-pro__latency-pressure {
 
 .topbar-pro__latency-pressure-label {
   color: color-mix(in srgb, var(--text-secondary) 88%, transparent);
-  font-size: 0.48rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 .topbar-pro__latency-pressure-digits {
-  font-size: 0.9rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1;
 }
 
@@ -1822,7 +1808,7 @@ button.topbar-pro__latency-pressure {
 
 .window-taskbar__clock-time,
 .window-taskbar__clock-date {
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.1;
   white-space: nowrap;
 }
@@ -1845,22 +1831,20 @@ button.topbar-pro__latency-pressure {
 .window-taskbar__popover-kicker {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .window-taskbar__popover-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.2;
 }
 
 .window-taskbar__popover-copy {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.78rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
 
@@ -2018,10 +2002,8 @@ button.topbar-pro__latency-pressure:focus-visible {
 
 .advanced-menu-control-panel__item-state {
   min-width: 0;
-  font-size: calc(0.5rem * var(--platform-menu-scale));
+  font-size: calc(var(--cds-label-01-font-size, 0.75rem) * var(--platform-menu-scale));
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -2043,9 +2025,8 @@ button.topbar-pro__latency-pressure:focus-visible {
   border: 1px solid transparent;
   background: transparent;
   color: var(--cds-link-primary);
-  font-size: calc(0.52rem * var(--platform-menu-scale));
+  font-size: calc(var(--cds-label-01-font-size, 0.75rem) * var(--platform-menu-scale));
   font-weight: 600;
-  letter-spacing: 0.04em;
   cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
 }
@@ -2099,16 +2080,14 @@ button.topbar-pro__latency-pressure:focus-visible {
 
 .advanced-menu-control-panel__details-section {
   margin: 0 0 0.2rem;
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary);
 }
 
 .advanced-menu-control-panel__details-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--cds-heading-01-font-size, 1rem);
   font-weight: 400;
   line-height: 1.2;
   color: var(--cds-text-primary);
@@ -2125,7 +2104,7 @@ button.topbar-pro__latency-pressure:focus-visible {
 .advanced-menu-control-panel__details-body,
 .advanced-menu-control-panel__details-note {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.5;
   color: var(--cds-text-primary);
 }
@@ -2152,10 +2131,8 @@ button.topbar-pro__latency-pressure:focus-visible {
 
 .advanced-menu-control-panel__details-heading {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary);
 }
 

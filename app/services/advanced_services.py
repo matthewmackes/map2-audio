@@ -4,7 +4,7 @@ Services 4-10 implementation
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, List
 from collections import defaultdict
 import logging
@@ -31,7 +31,7 @@ class Acknowledgment:
         """Check if acknowledgment is still in effect"""
         if self.ack_type == 'ACKNOWLEDGED':
             return True
-        age = (datetime.now() - self.ack_timestamp).total_seconds()
+        age = (datetime.now(timezone.utc) - self.ack_timestamp).total_seconds()
         return age < self.reactivate_seconds
 
 class AlertAcknowledgmentManager:
@@ -52,11 +52,11 @@ class AlertAcknowledgmentManager:
     def acknowledge(self, event_id: str, node_id: str, ack_type: str, user_id: str = None, notes: str = None) -> Acknowledgment:
         """Record acknowledgment"""
         ack = Acknowledgment(
-            acknowledgment_id=f"ack_{datetime.now().timestamp()}",
+            acknowledgment_id=f"ack_{datetime.now(timezone.utc).timestamp()}",
             event_id=event_id,
             node_id=node_id,
             ack_type=ack_type,
-            ack_timestamp=datetime.now(),
+            ack_timestamp=datetime.now(timezone.utc),
             user_id=user_id,
             notes=notes,
             reactivate_seconds=self.config['temporary_duration'] if ack_type == 'TEMPORARY' else self.config['suppression_duration'],
@@ -170,7 +170,7 @@ class EventCorrelationEngine:
     def _find_temporal_correlations(self, event: dict) -> List[EventCorrelation]:
         """Find events close in time"""
         correlations = []
-        now = event.get('timestamp', datetime.now())
+        now = event.get('timestamp', datetime.now(timezone.utc))
         
         for past_event in reversed(self.event_history[-20:]):
             time_diff = (now - past_event['timestamp']).total_seconds()
@@ -185,7 +185,7 @@ class EventCorrelationEngine:
                         correlation_type='TEMPORAL',
                         confidence=confidence,
                         root_cause=f"Temporal proximity ({time_diff:.1f}s)",
-                        detected_at=datetime.now()
+                        detected_at=datetime.now(timezone.utc)
                     )
                     correlations.append(corr)
         
@@ -261,7 +261,7 @@ class EventCorrelationEngine:
         self.event_history.append({
             'event_id': event.get('event_id'),
             'type': event.get('event_type'),
-            'timestamp': event.get('timestamp', datetime.now()),
+            'timestamp': event.get('timestamp', datetime.now(timezone.utc)),
             'severity': event.get('severity')
         })
         
@@ -360,7 +360,7 @@ class AlertRulesEngine:
     def _log_execution(self, event: dict, matched_rules: List[AlertRule], actions: List[Dict]):
         """Log rule execution"""
         self.execution_log.append({
-            'timestamp': datetime.now(),
+            'timestamp': datetime.now(timezone.utc),
             'event_id': event.get('event_id'),
             'matched_rules': [r.rule_id for r in matched_rules],
             'actions': actions
@@ -371,7 +371,7 @@ class AlertRulesEngine:
     
     def create_rule(self, rule_dict: Dict[str, any]) -> AlertRule:
         """Create new rule"""
-        rule_id = f"rule_{datetime.now().timestamp()}"
+        rule_id = f"rule_{datetime.now(timezone.utc).timestamp()}"
         
         rule = AlertRule(
             rule_id=rule_id,
@@ -380,7 +380,7 @@ class AlertRulesEngine:
             priority=rule_dict.get('priority', 50),
             conditions=rule_dict.get('conditions', []),
             actions=rule_dict.get('actions', []),
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
             modified_by=rule_dict.get('created_by', 'system'),
             execution_count=0
         )
@@ -453,14 +453,14 @@ class AlertAnalyticsEngine:
     
     def record_event(self, event: dict):
         """Record event for analytics"""
-        hour_key = event.get('timestamp', datetime.now()).strftime('%Y-%m-%d %H:00:00')
+        hour_key = event.get('timestamp', datetime.now(timezone.utc)).strftime('%Y-%m-%d %H:00:00')
         self.hourly_buckets[hour_key][event.get('event_type')] += 1
         self.hourly_buckets[hour_key][event.get('severity')] += 1
     
     def get_frequency_timeline(self, hours: int = 24) -> List[AnalyticsPoint]:
         """Get alert frequency over time"""
         timeline = []
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         for i in range(hours):
             hour_time = (now - timedelta(hours=hours-i-1)).replace(minute=0, second=0, microsecond=0)
@@ -481,7 +481,7 @@ class AlertAnalyticsEngine:
     def get_alert_distribution(self, days: int = 1) -> Dict[str, int]:
         """Get alert counts by type"""
         distribution = defaultdict(int)
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         for i in range(days * 24):
             hour_time = (now - timedelta(hours=i)).strftime('%Y-%m-%d %H:00:00')
@@ -504,7 +504,7 @@ class AlertAnalyticsEngine:
     def detect_trends(self, days: int = 7) -> List[Trend]:
         """Detect trends in alert data"""
         trends = []
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         event_types = set()
         for hour_data in self.hourly_buckets.values():
@@ -578,10 +578,10 @@ class SmartDismissalManager:
     def dismiss(self, event_id: str, dismissal_type: str, reactivate_config: Dict = None) -> Dismissal:
         """Dismiss alert with smart reactivation"""
         dismissal = Dismissal(
-            dismissal_id=f"dis_{datetime.now().timestamp()}",
+            dismissal_id=f"dis_{datetime.now(timezone.utc).timestamp()}",
             event_id=event_id,
             dismissal_type=dismissal_type,
-            dismissed_at=datetime.now(),
+            dismissed_at=datetime.now(timezone.utc),
             suppress_until=self._calculate_reshow_time(dismissal_type),
             auto_reactivate=self.config['auto_reactivate'],
             reactivate_threshold=reactivate_config.get('threshold', 5) if reactivate_config else 5
@@ -597,7 +597,7 @@ class SmartDismissalManager:
         
         dismissal = self.dismissals[event_id]
         
-        if datetime.now() > dismissal.suppress_until:
+        if datetime.now(timezone.utc) > dismissal.suppress_until:
             del self.dismissals[event_id]
             return True
         
@@ -609,9 +609,9 @@ class SmartDismissalManager:
     def _calculate_reshow_time(self, dismissal_type: str) -> datetime:
         """Calculate when to re-show alert"""
         if dismissal_type == 'TEMPORARY':
-            return datetime.now() + timedelta(seconds=self.config['temp_duration'])
+            return datetime.now(timezone.utc) + timedelta(seconds=self.config['temp_duration'])
         elif dismissal_type == 'SUPPRESSED':
-            return datetime.now() + timedelta(seconds=self.config['suppress_duration'])
+            return datetime.now(timezone.utc) + timedelta(seconds=self.config['suppress_duration'])
         else:
             return datetime.max
     
@@ -640,7 +640,7 @@ class SystemContextTracker:
             'network_latency_ms': context_data.get('network_latency_ms', 0),
             'service_status': context_data.get('service_status', 'unknown'),
             'recording_state': context_data.get('recording_state', 'idle'),
-            'timestamp': datetime.now()
+            'timestamp': datetime.now(timezone.utc)
         }
     
     def get_context(self, node_id: str) -> Dict:
@@ -709,7 +709,7 @@ class PatternDetectionEngine:
             occurrence_hour=most_common_hour,
             occurrence_dow=most_common_dow,
             frequency_per_day=frequency,
-            last_seen=max([e['timestamp'] for e in events if e.get('timestamp')], default=datetime.now()),
+            last_seen=max([e['timestamp'] for e in events if e.get('timestamp')], default=datetime.now(timezone.utc)),
             pattern_strength=min(len(events) / 10.0, 1.0),
             typical_duration_seconds=300
         )

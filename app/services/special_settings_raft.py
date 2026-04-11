@@ -8,7 +8,7 @@ have synchronized special settings.
 
 import logging
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -122,7 +122,7 @@ class SpecialSettingsStateManager:
                 )
                 settings.version = entry_data.get("version", settings.version)
                 settings.updated_by_node = entry_data.get("updated_by_node")
-                settings.last_updated = datetime.utcnow()
+                settings.last_updated = datetime.now(timezone.utc)
                 
                 await session.flush()
                 
@@ -216,7 +216,7 @@ async def replicate_special_settings_to_raft(
             "snapshot_setlist_order": _normalize_snapshot_setlist_order(snapshot_setlist_order),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "version": version,
         }
         

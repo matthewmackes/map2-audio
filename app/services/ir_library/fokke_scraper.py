@@ -21,7 +21,7 @@ from typing import List, Optional, Callable
 from bs4 import BeautifulSoup
 
 from .scraper_base import IRScraperBase, IRFileInfo, DownloadStatus, DownloadState
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +149,7 @@ class FokkeScraper(IRScraperBase):
                 discovered_urls.add(collection["url"])
 
         self._stats["total_discovered"] = len(self.discovered_files)
-        self._stats["last_discovery"] = datetime.now().isoformat()
+        self._stats["last_discovery"] = datetime.now(timezone.utc).isoformat()
 
         logger.info(f"Discovered {len(self.discovered_files)} IRs from {self.library_name}")
         return self.discovered_files
@@ -308,7 +308,7 @@ class FokkeScraper(IRScraperBase):
             status = DownloadStatus(
                 file_info=file_info,
                 state=DownloadState.DOWNLOADING,
-                started_at=datetime.now()
+                started_at=datetime.now(timezone.utc)
             )
             self.download_progress[file_info.filename] = status
 
@@ -326,7 +326,7 @@ class FokkeScraper(IRScraperBase):
 
                     total_size = int(response.headers.get('content-length', 0))
                     downloaded = 0
-                    start_time = datetime.now()
+                    start_time = datetime.now(timezone.utc)
 
                     with open(output_path, 'wb') as f:
                         async for chunk in response.content.iter_chunked(8192):
@@ -343,7 +343,7 @@ class FokkeScraper(IRScraperBase):
                                 status.progress = progress
                                 status.bytes_downloaded = downloaded
 
-                                elapsed = (datetime.now() - start_time).total_seconds()
+                                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                                 if elapsed > 0:
                                     status.speed_bps = downloaded / elapsed
 
@@ -351,7 +351,7 @@ class FokkeScraper(IRScraperBase):
                                     progress_callback(progress)
 
             status.state = DownloadState.COMPLETED
-            status.completed_at = datetime.now()
+            status.completed_at = datetime.now(timezone.utc)
             status.progress = 1.0
 
             logger.info(f"Downloaded: {file_info.filename} ({downloaded} bytes)")

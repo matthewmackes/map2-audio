@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -308,7 +308,7 @@ def generate_platform_version(
 ) -> PlatformVersionInfo:
     """Generate a new digits-only date-time-beta platform version."""
 
-    timestamp = now or datetime.now().astimezone()
+    timestamp = now or datetime.now(timezone.utc).astimezone()
     build_date = timestamp.strftime("%Y%m%d")
     build_time = timestamp.strftime("%H%M%S")
     build_channel = normalize_channel_code(channel_code)

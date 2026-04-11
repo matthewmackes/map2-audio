@@ -15,7 +15,7 @@ import inspect
 import logging
 from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from sqlalchemy import select, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -309,7 +309,7 @@ class MIDIService:
             for key, value in updates.items():
                 if hasattr(mapping, key):
                     setattr(mapping, key, value)
-            mapping.updated_at = datetime.utcnow()
+            mapping.updated_at = datetime.now(timezone.utc)
             await session.flush()
 
             logger.info(f"Updated MIDI mapping {mapping_id}")
@@ -1159,7 +1159,7 @@ class MIDIService:
                     "type": event_type,
                     "topic": "midi",
                     "data": data,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }, topic="midi")
             except Exception as e:
                 logger.debug(f"WebSocket broadcast failed: {e}")

@@ -17,7 +17,7 @@ import aiohttp
 import os
 import json
 from typing import List, Optional, Callable, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .scraper_base import IRScraperBase, IRFileInfo, DownloadStatus, DownloadState
@@ -136,7 +136,7 @@ class Tone3000Scraper(IRScraperBase):
 
         # Check if token is still valid (with 30s buffer)
         if self.access_token and self.token_expires_at:
-            if datetime.now() < self.token_expires_at - timedelta(seconds=30):
+            if datetime.now(timezone.utc) < self.token_expires_at - timedelta(seconds=30):
                 return True
 
             # Try to refresh token
@@ -168,7 +168,7 @@ class Tone3000Scraper(IRScraperBase):
                     self.access_token = data.get('access_token')
                     self.refresh_token = data.get('refresh_token')
                     expires_in = data.get('expires_in', 3600)
-                    self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
+                    self.token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
                     self._save_config()
                     logger.info("TONE3000 tokens obtained successfully")
@@ -202,7 +202,7 @@ class Tone3000Scraper(IRScraperBase):
                     self.access_token = data.get('access_token')
                     self.refresh_token = data.get('refresh_token')
                     expires_in = data.get('expires_in', 3600)
-                    self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
+                    self.token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
                     self._save_config()
                     logger.info("TONE3000 tokens refreshed")
@@ -323,7 +323,7 @@ class Tone3000Scraper(IRScraperBase):
             logger.error(f"Discovery error: {e}")
 
         self._stats["total_discovered"] = len(self.discovered_files)
-        self._stats["last_discovery"] = datetime.now().isoformat()
+        self._stats["last_discovery"] = datetime.now(timezone.utc).isoformat()
 
         logger.info(f"Discovered {len(self.discovered_files)} NAM models from {self.library_name}")
         return self.discovered_files
@@ -348,7 +348,7 @@ class Tone3000Scraper(IRScraperBase):
             status = DownloadStatus(
                 file_info=file_info,
                 state=DownloadState.DOWNLOADING,
-                started_at=datetime.now()
+                started_at=datetime.now(timezone.utc)
             )
             self.download_progress[file_info.filename] = status
 
@@ -365,7 +365,7 @@ class Tone3000Scraper(IRScraperBase):
 
                     total_size = int(response.headers.get('content-length', 0))
                     downloaded = 0
-                    start_time = datetime.now()
+                    start_time = datetime.now(timezone.utc)
 
                     with open(output_path, 'wb') as f:
                         async for chunk in response.content.iter_chunked(8192):
@@ -382,7 +382,7 @@ class Tone3000Scraper(IRScraperBase):
                                 status.progress = progress
                                 status.bytes_downloaded = downloaded
 
-                                elapsed = (datetime.now() - start_time).total_seconds()
+                                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                                 if elapsed > 0:
                                     status.speed_bps = downloaded / elapsed
 
@@ -390,7 +390,7 @@ class Tone3000Scraper(IRScraperBase):
                                     progress_callback(progress)
 
             status.state = DownloadState.COMPLETED
-            status.completed_at = datetime.now()
+            status.completed_at = datetime.now(timezone.utc)
             status.progress = 1.0
 
             logger.info(f"Downloaded: {file_info.filename} ({downloaded} bytes)")

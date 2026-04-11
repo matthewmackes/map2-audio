@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -136,7 +136,7 @@ class ChunkAssembler:
             manifest_path=f"{output_path}.manifest.json",
             checksum=checksum,
             checksum_algorithm=checksum_algorithm,
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
         )
 
         try:
@@ -194,7 +194,7 @@ class ChunkAssembler:
 
             task.state = "COMPLETED"
             task.downloaded_bytes = total_size
-            task.completed_at = datetime.now()
+            task.completed_at = datetime.now(timezone.utc)
             logger.info(f"Successfully downloaded {task.filename}")
 
             return task
@@ -400,7 +400,7 @@ class ChunkAssembler:
                                 await self._run_callback(progress_callback, task)
 
                     task.state = "COMPLETED"
-                    task.completed_at = datetime.now()
+                    task.completed_at = datetime.now(timezone.utc)
                     return task
 
         except Exception as e:
@@ -487,7 +487,7 @@ class ChunkAssembler:
             manifest = {
                 'version': self.MANIFEST_VERSION,
                 'task': task.to_dict(),
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
             }
 
             with open(task.manifest_path, 'w') as f:

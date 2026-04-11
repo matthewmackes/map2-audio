@@ -8,7 +8,7 @@ standalone service/CLI workflows that need to persist secrets on disk.
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import base64
@@ -237,7 +237,7 @@ class SecretsManager:
         try:
             data = {
                 "version": "1.0",
-                "updated_at": datetime.now().isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
                 "secrets": [
                     secret.to_dict(include_value=True)
                     for secret in self.secrets.values()
@@ -281,7 +281,7 @@ class SecretsManager:
         # Encrypt the value
         encrypted_value = self.encryption.encrypt(value)
         
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         expires_at = None
         if expires_days:
             expires_at = (now + timedelta(days=expires_days)).isoformat()
@@ -346,7 +346,7 @@ class SecretsManager:
         # Check expiration
         if secret.expires_at:
             expires = datetime.fromisoformat(secret.expires_at)
-            if datetime.now() > expires:
+            if datetime.now(timezone.utc) > expires:
                 logger.warning(f"Secret expired: {name}")
                 return None
         
@@ -416,7 +416,7 @@ class SecretsManager:
             List of secret metadata
         """
         results = []
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         for secret in self.secrets.values():
             # Filter by type
@@ -452,11 +452,11 @@ class SecretsManager:
         
         # Encrypt new value
         secret.encrypted_value = self.encryption.encrypt(new_value)
-        secret.updated_at = datetime.now().isoformat()
+        secret.updated_at = datetime.now(timezone.utc).isoformat()
         
         # Update expiration if rotation days configured
         if secret.rotation_days:
-            expires = datetime.now() + timedelta(days=secret.rotation_days)
+            expires = datetime.now(timezone.utc) + timedelta(days=secret.rotation_days)
             secret.expires_at = expires.isoformat()
         
         self._save_secrets()
@@ -472,7 +472,7 @@ class SecretsManager:
             List of secret names
         """
         needs_rotation = []
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         for name, secret in self.secrets.items():
             if not secret.rotation_days:
@@ -503,7 +503,7 @@ class SecretsManager:
         # Re-encrypt all secrets with export password
         export_data = {
             "version": "1.0",
-            "exported_at": datetime.now().isoformat(),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
             "secrets": []
         }
         

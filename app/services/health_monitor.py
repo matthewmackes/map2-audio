@@ -13,7 +13,7 @@ import asyncio
 import logging
 import psutil
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -24,6 +24,14 @@ from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _coerce_utc(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
 
 
 class HealthStatus(Enum):
@@ -38,7 +46,7 @@ class HealthStatus(Enum):
 class ServiceMetrics:
     """Metrics snapshot for a service."""
     service_name: str
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=_utc_now)
     status: HealthStatus = HealthStatus.HEALTHY
     response_time_ms: float = 0.0
     error_rate: float = 0.0              # 0.0 to 1.0
@@ -81,7 +89,7 @@ class Alert:
     metric: str
     value: float
     threshold: float
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=_utc_now)
     severity: str = "warning"
     message: str = ""
 
@@ -122,7 +130,7 @@ class HealthMonitor(Singleton):
         self._health_check_functions: Dict[str, Callable] = {}
         self._lock = threading.RLock()
         
-        self._started_at = datetime.now()
+        self._started_at = _utc_now()
         
         # Default alert rules
         self._init_default_alert_rules()
@@ -378,8 +386,8 @@ class HealthMonitor(Singleton):
                 return []
             history = list(self.service_history[service_name])
         
-        cutoff = datetime.now() - timedelta(hours=hours)
-        return [m for m in history if m.timestamp >= cutoff]
+        cutoff = _utc_now() - timedelta(hours=hours)
+        return [m for m in history if _coerce_utc(m.timestamp) >= cutoff]
     
     def get_active_alerts(self, service_name: Optional[str] = None) -> List[Alert]:
         """Get active alerts."""
@@ -413,9 +421,9 @@ class HealthMonitor(Singleton):
         overall = self.get_overall_status()
         
         return {
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': _utc_now().isoformat(),
             'overall_status': overall.value,
-            'uptime_seconds': (datetime.now() - self._started_at).total_seconds(),
+            'uptime_seconds': (_utc_now() - _coerce_utc(self._started_at)).total_seconds(),
             'service_count': len(self.services),
             'healthy_count': sum(1 for m in self.services.values() 
                                 if m.status == HealthStatus.HEALTHY),

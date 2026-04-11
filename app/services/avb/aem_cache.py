@@ -438,7 +438,7 @@ class AemCache:
             Number of entries removed
         """
         with self._lock, self._get_connection() as conn:
-            cutoff_date = datetime.now() - timedelta(days=self.CLEANUP_AGE_DAYS)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.CLEANUP_AGE_DAYS)
 
             cursor = conn.execute(
                 """

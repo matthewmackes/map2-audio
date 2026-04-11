@@ -15,7 +15,7 @@ import logging
 import aiohttp
 import os
 from typing import List, Optional, Callable
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .scraper_base import SFScraperBase, SFFileInfo
 
@@ -89,7 +89,7 @@ class VSCOScraper(SFScraperBase):
             self.discovered_files.append(file_info)
 
         self._stats["total_discovered"] = len(self.discovered_files)
-        self._stats["last_discovery"] = datetime.now().isoformat()
+        self._stats["last_discovery"] = datetime.now(timezone.utc).isoformat()
 
         logger.info(f"Discovered {len(self.discovered_files)} VSCO files")
         return self.discovered_files

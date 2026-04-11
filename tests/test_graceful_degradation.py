@@ -110,11 +110,11 @@ class TestDegradationStrategy:
         assert strategy.should_attempt_recovery(None) is True
         
         # Recent failure
-        recent = datetime.now()
+        recent = datetime.now(timezone.utc)
         assert strategy.should_attempt_recovery(recent) is False
         
         # Old failure (mocked)
-        old = datetime.now()
+        old = datetime.now(timezone.utc)
         # In real test, would need to mock time
 
 

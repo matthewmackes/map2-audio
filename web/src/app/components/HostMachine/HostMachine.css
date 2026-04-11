@@ -293,16 +293,14 @@
 }
 
 .hm-kpi-card__label {
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 8px;
 }
 
 .hm-kpi-card__value {
-  font-size: 22px;
+  font-size: var(--cds-heading-03-font-size, 1.75rem);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.1;
@@ -310,7 +308,7 @@
 }
 
 .hm-kpi-card__sub {
-  font-size: 12px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--text-tertiary);
 }
 
@@ -482,9 +480,8 @@
 .hm-health-badge {
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
 }
 .hm-health-badge--excellent,
 .hm-health-badge--good   { color: var(--success); }
@@ -499,10 +496,8 @@
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  font-size: 10px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .hm-badge--success { background: color-mix(in srgb, var(--success) 15%, var(--surface-2)); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 40%, transparent); }
@@ -516,7 +511,7 @@
   padding: 40px;
   text-align: center;
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 /* ── Cluster table ────────────────────────────────────────────── */
@@ -549,11 +544,9 @@
 
 .hm-cluster-table__hcell {
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .hm-cluster-table__hcell + .hm-cluster-table__hcell,
@@ -583,13 +576,13 @@
   justify-content: center;
   min-height: 4rem;
   padding: 12px 14px;
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--text-primary);
 }
 
 .hm-cluster-table__hostname { font-weight: 600; }
-.hm-cluster-table__nodeid  { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
-.hm-cluster-table__sub     { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.hm-cluster-table__nodeid  { font-size: var(--cds-label-01-font-size, 0.75rem); color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
+.hm-cluster-table__sub     { font-size: var(--cds-label-01-font-size, 0.75rem); color: var(--text-tertiary); margin-top: 2px; }
 
 /* ── Health status block ──────────────────────────────────────── */
 
@@ -598,9 +591,8 @@
   align-items: center;
   justify-content: center;
   padding: var(--cds-spacing-05, 1rem);
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
   border: 1px solid;
 }
 
@@ -638,7 +630,7 @@
 }
 
 .hm-temp-display__value {
-  font-size: 36px;
+  font-size: var(--cds-heading-04-font-size, 2.25rem);
   font-weight: 700;
   line-height: 1;
 }
@@ -648,12 +640,12 @@
 .hm-temp-display__value--danger  { color: var(--danger); }
 
 .hm-temp-display__max {
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--text-tertiary);
 }
 
 .hm-temp-label {
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
 }
 
@@ -680,11 +672,11 @@
 
 .hm-fan-card--warn { border-color: var(--warning); }
 
-.hm-fan-card__name { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-.hm-fan-card__rpm  { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+.hm-fan-card__name { font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.hm-fan-card__rpm  { font-size: var(--cds-label-01-font-size, 0.75rem); color: var(--text-tertiary); margin-bottom: 4px; }
 
-.hm-fan-card__status--ok  { font-size: 11px; font-weight: 700; color: var(--success); }
-.hm-fan-card__status--err { font-size: 11px; font-weight: 700; color: var(--danger); }
+.hm-fan-card__status--ok  { font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 700; color: var(--success); }
+.hm-fan-card__status--err { font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 700; color: var(--danger); }
 
 /* ── Health monitor layout ────────────────────────────────────── */
 
@@ -755,8 +747,8 @@
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
-.hm-disk-metric__label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
-.hm-disk-metric__value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.hm-disk-metric__label { font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 600; color: var(--text-tertiary); margin-bottom: 3px; }
+.hm-disk-metric__value { font-size: var(--cds-heading-01-font-size, 1rem); font-weight: 700; color: var(--text-primary); }
 .hm-disk-metric__value--ok  { color: var(--success); }
 .hm-disk-metric__value--err { color: var(--danger); }
 .hm-disk-metric__value--warn{ color: var(--warning); }
@@ -869,14 +861,13 @@
 }
 
 .hm-branding__mfr {
-  font-size: 10px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.15em;
   margin-bottom: 6px;
 }
 
 .hm-branding__name {
-  font-size: 24px;
+  font-size: var(--cds-heading-03-font-size, 1.75rem);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 8px;
@@ -885,7 +876,7 @@
 
 .hm-branding__model,
 .hm-branding__warranty {
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--text-secondary);
   margin-bottom: 4px;
 }
@@ -894,7 +885,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   color: var(--success);
   margin-top: 8px;
@@ -904,7 +895,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   text-decoration: none;
   margin-top: 12px;
@@ -1079,12 +1070,10 @@
 }
 
 .hm-guidelines__title {
-  font-size: 13px;
+  font-size: var(--cds-heading-01-font-size, 1rem);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .hm-guidelines__grid {
@@ -1105,16 +1094,14 @@
 }
 
 .hm-guideline-item__label {
-  font-size: 10px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 4px;
 }
 
 .hm-guideline-item__value {
-  font-size: 13px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1179,16 +1166,14 @@
 }
 
 .hm-perf-tile__label {
-  font-size: 10px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 6px;
 }
 
 .hm-perf-tile__value {
-  font-size: 28px;
+  font-size: var(--cds-heading-03-font-size, 1.75rem);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
@@ -1284,18 +1269,16 @@
 }
 
 .hm-tips__title {
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 10px;
 }
 
 .hm-tips__list {
   margin: 0;
   padding: 0 0 0 16px;
-  font-size: 12px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--text-secondary);
   line-height: 1.8;
 }

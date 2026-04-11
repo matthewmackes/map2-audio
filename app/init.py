@@ -7,7 +7,7 @@ import logging
 import sqlite3
 from typing import Dict
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.config.settings import config
 from app.services.alert_services import (
@@ -274,7 +274,7 @@ class LCDEventSystemInitializer:
             logger.info("System is ready to process alerts!")
             logger.info(f"Database: {self.db_path}")
             logger.info(f"Services: {len(self.services)} initialized")
-            logger.info(f"Timestamp: {datetime.now().isoformat()}")
+            logger.info(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
             
             return True
         

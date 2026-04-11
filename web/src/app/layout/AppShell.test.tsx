@@ -197,9 +197,7 @@ describe('AppShell floating launcher shell', () => {
       ['/'],
     )
 
-    expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar')).toBeNull()
-    expect(container.querySelector('.shell-launcher')).toBeTruthy()
     expect(container.querySelector('.app-window')).toBeNull()
   })
 
@@ -282,6 +280,7 @@ describe('AppShell floating launcher shell', () => {
       expect(screen.getByText('DIN Port A')).toBeInTheDocument()
       expect(screen.queryByText('Virtual Input 1')).not.toBeInTheDocument()
     })
+    expect(mockFetch.mock.calls.filter(([input]) => String(input).includes('/audio/status'))).toHaveLength(1)
     expect(screen.getByText('Platforms')).toBeInTheDocument()
     expect(screen.getByText('Files')).toBeInTheDocument()
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
@@ -346,6 +345,73 @@ describe('AppShell floating launcher shell', () => {
       expect(screen.getByText('No audio interfaces detected')).toBeInTheDocument()
       expect(screen.getByText('No MIDI interfaces detected')).toBeInTheDocument()
     })
+  })
+
+  it('keeps the last detected interface visible during a transient empty refresh', async () => {
+    let audioRefresh = 0
+    let midiRefresh = 0
+
+    mockFetch.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/audio/status')) {
+        audioRefresh += 1
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            running: true,
+            sample_rate: 48000,
+            buffer_size: 128,
+            cpu_load: 0.12,
+            engine: 'juce',
+            available: true,
+            available_input_devices: audioRefresh === 1 ? ['MOTU UltraLite mk5'] : [],
+            available_output_devices: [],
+          }),
+        })
+      }
+      if (url.includes('/midi/devices')) {
+        midiRefresh += 1
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            inputs: midiRefresh === 1 ? [{ name: 'Morningstar MC6 Pro', is_virtual: false }] : [],
+            outputs: [],
+          }),
+        })
+      }
+      return Promise.reject(new Error(`Unhandled fetch in AppShell.test.tsx: ${url}`))
+    })
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+
+    await waitFor(() => {
+      expect(screen.getByText('MOTU UltraLite mk5')).toBeInTheDocument()
+      expect(screen.getByText('Morningstar MC6 Pro')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Close platform menu'))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+
+    await waitFor(() => expect(audioRefresh).toBe(2))
+    expect(screen.getByText('MOTU UltraLite mk5')).toBeInTheDocument()
+    expect(screen.getByText('Morningstar MC6 Pro')).toBeInTheDocument()
+    expect(screen.queryByText('No audio interfaces detected')).not.toBeInTheDocument()
+    expect(screen.queryByText('No MIDI interfaces detected')).not.toBeInTheDocument()
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000)
+      await Promise.resolve()
+    })
+
+    expect(audioRefresh).toBe(2)
+    expect(midiRefresh).toBe(2)
   })
 
   it('routes the header snapshot editor action through the existing audio grid entry point', () => {

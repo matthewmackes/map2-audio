@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from app.lcd_models.lcd_event import EventSeverity, EventType, LCDEvent
@@ -197,7 +197,7 @@ def _build_lcd_event(snapshot_name: str, label_map: dict[str, str]) -> LCDEvent:
     )
     return LCDEvent(
         event_id=str(uuid.uuid4()),
-        timestamp=datetime.now(),
+        timestamp=datetime.now(timezone.utc),
         source_node="MAP2",
         event_type=EventType.SYSTEM,
         severity=EventSeverity.INFO,

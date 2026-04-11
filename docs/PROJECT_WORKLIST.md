@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Closed T970 after restoring live plugin metadata schema migrations, and opened T971 for the remaining backend request-servicing/start-post timeout that persists after startup completes.
+Last updated: 2026-04-11 - Closed T845 after finishing the repo-wide aware-UTC migration sweep, then continued T863/T870 with deeper Snapshot Editor Carbon type/copy cleanup plus validated frontend rebuilds.
 
 ## Performance Brain
 
@@ -19462,7 +19462,7 @@ Last updated: 2026-04-09 01:19 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/traffic_capture.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_api_observatory.py tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
 
 ID: T845
-Status: [>] In Progress
+Status: [✓] Done
 Title: Migrate all `datetime.utcnow()` and bare `datetime.now()` to `datetime.now(timezone.utc)`
 Description:
 - Goal / acceptance criteria: All 20+ occurrences replaced. Timezone-aware UTC throughout. No deprecation warnings on 3.12+.
@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 11:43 EDT - Codex
+Last updated: 2026-04-11 13:34 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19658,6 +19658,14 @@ Last updated: 2026-04-11 11:39 EDT - Codex
   - Landed the next service-getter singleton bundle by promoting `NodeHealthService` and `GroundControlProService` onto the shared singleton pattern and adding direct reset/identity coverage without altering their operational service logic.
   - Validation for the node/GCP singleton bundle is green: `pytest -q tests/test_node_api.py tests/test_ground_control_pro_service.py -k 'singleton or test_ground_control_pro_service_backup_compile_push_and_verify'` -> PASS (`3 passed, 12 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/node_health_service.py app/services/ground_control_pro/service.py tests/test_node_api.py tests/test_ground_control_pro_service.py` -> PASS.
   - Landed the next low-risk singleton bundle by promoting `IRLoader` and `PluginOutputService` onto the shared singleton base/getter path and adding direct reset/identity regression coverage.
+- Completion notes:
+  - Finished the remaining repo-wide migration by replacing every surviving `datetime.utcnow()` and bare `datetime.now()` match under `app/` and `tests/` with timezone-aware UTC handling, including the compatibility-sensitive long-tail modules in backup/package/plugin/MIDI/LCD/library/scraper surfaces and their related fixtures.
+  - Cleared the final inventory to zero matches, so the backend/test tree no longer depends on deprecated naive UTC emitters under Python 3.12+.
+  - Tightened `app/services/health_monitor.py` after the broad sweep so new metrics and alert timestamps default to aware UTC while legacy in-memory naive history is coerced to UTC during comparisons instead of throwing mixed-aware/naive errors.
+- Validation:
+  - `python3 - <<'PY' ... repo-wide regex inventory for datetime.utcnow()/datetime.now() ... PY` -> PASS (`TOTAL_MATCHES 0`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/init.py app/routes/lcd.py app/utils/platform_version.py app/services/advanced_services.py app/services/alert_services.py app/services/avb/aem_cache.py app/services/avb/avb_router.py app/services/backup_service.py app/services/cluster/certificate_authority.py app/services/cluster/update_rollback.py app/services/command_queue.py app/services/common/scraper_base.py app/services/config_hot_reload.py app/services/db_pool_manager.py app/services/effects_loops.py app/services/event_replay.py app/services/health_monitor.py app/services/ir_library/chunk_assembler.py app/services/ir_library/conners_scraper.py app/services/ir_library/djammincabs_scraper.py app/services/ir_library/download_manager.py app/services/ir_library/echothief_scraper.py app/services/ir_library/fokke_scraper.py app/services/ir_library/lexicon_scraper.py app/services/ir_library/nam_github_scraper.py app/services/ir_library/overdriven_scraper.py app/services/ir_library/samplicity_scraper.py app/services/ir_library/signaltonoize_scraper.py app/services/ir_library/tone3000_scraper.py app/services/ir_library/voxengo_scraper.py app/services/midi_broadcast.py app/services/midi_engine.py app/services/midi_learn.py app/services/midi_service.py app/services/nam_bulk_renamer.py app/services/package_manager.py app/services/plugin_resource_manager.py app/services/plugin_scanner.py app/services/preset_migration.py app/services/secrets_manager.py app/services/snapshot_footswitch_label_service.py app/services/soundfont_library/download_manager.py app/services/soundfont_library/freepats_scraper.py app/services/soundfont_library/internet_archive_scraper.py app/services/soundfont_library/musical_artifacts_scraper.py app/services/soundfont_library/pianobook_scraper.py app/services/soundfont_library/polyphone_scraper.py app/services/soundfont_library/sfzinstruments_scraper.py app/services/soundfont_library/vpo_scraper.py app/services/soundfont_library/vsco_scraper.py app/services/special_settings_raft.py app/services/websocket_manager.py tests/test_connection_pool.py tests/test_graceful_degradation.py tests/test_health_monitor.py tests/test_node_api.py tests/test_timestamp_foundations.py tests/test_websocket_reconnection.py` -> PASS
+  - `pytest -q tests/test_health_monitor.py tests/test_connection_pool.py tests/test_node_api.py tests/test_timestamp_foundations.py tests/test_graceful_degradation.py tests/test_effects_loops_service.py tests/test_effects_loops_routes.py tests/test_runtime_timestamp_surfaces.py tests/test_websocket_manager.py` -> PASS (`114 passed`)
   - Validation for the IR/output singleton bundle is green: `pytest -q tests/test_ir_loader_singleton.py tests/test_plugin_output_service_singleton.py` -> PASS (`2 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/ir_loader.py app/services/plugin_output_service.py tests/test_ir_loader_singleton.py tests/test_plugin_output_service_singleton.py` -> PASS.
   - Landed the next low-risk singleton bundle by promoting `SnapshotTempoService`, `MaschineLCDRenderService`, and `ServiceManager` onto the shared singleton path and by rewiring `NAMLibraryService` getters/initialization through the shared singleton registry so custom-database initialization still works without bespoke module globals.
   - Validation for the singleton bundle is green: `pytest -q tests/test_snapshot_tempo_service.py tests/test_maschine_lcd_service.py tests/test_service_singletons.py tests/test_nam_models_routes.py` -> PASS (`13 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_tempo_service.py app/services/maschine_lcd_service.py app/services/service_manager.py app/services/nam_library.py tests/test_snapshot_tempo_service.py tests/test_maschine_lcd_service.py tests/test_service_singletons.py` -> PASS.
@@ -20141,13 +20149,17 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 12:58 EDT - Codex
+Last updated: 2026-04-11 14:18 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
   - Opened a bounded shared-frontend slice and converted a reusable group of shell/components onto Carbon-backed type sizing: `web/src/index.css`, `Toasts.css`, `Disclosure.css`, `ChainPanel.css`, `ChainManagementCard.css`, `BottomRoutingPanel.css`, `HorizontalSignalChain.css`, `HomePage.css`, `UnifiedWorkspaceSideNav.css`, `ThemeChooserModal.css`, and `ViewportPolicyGate.css`.
   - The legacy `--type-*` root aliases now resolve to Carbon type tokens instead of hard-coded literals, and the touched component files now use direct Carbon `--cds-*` type tokens for the concrete styles that were migrated in this slice. The task remains open because many route-local files still reference the legacy aliases or non-token sizes.
   - Validation for this slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the type-scale sweep with a route-local slice in `web/src/app/pages/LCDPage.tsx` and `web/src/app/components/HostMachine/HostMachine.css`, replacing the touched pixel/rem font sizes with Carbon productive tokens for status labels, pills, KPI labels/values, disk metrics, guideline blocks, filter labels, and LCD inline controls.
+  - Extended the type-scale sweep into `web/src/app/pages/SnapshotEditorPage.css`, converting the live-chain summary, menu-rail headers, setlist menu copy, routing inspector labels, routing SVG labels, flow-card titles/badges/state controls, and snapshot status tempo/reference metadata from ad hoc `rem`/`px` sizes to Carbon label/body/heading tokens.
+  - Current measured inventory after this Snapshot Editor pass: `web/src/app/pages/SnapshotEditorPage.css` is down from `165` to `143` non-token `font-size` declarations, but the repo-wide frontend inventory is still `1137` non-token `font-size` declarations across `web/src`, so the task remains open.
+  - Validation for this Snapshot Editor type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20264,7 +20276,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 13:07 EDT - Codex
+Last updated: 2026-04-11 14:18 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20273,6 +20285,10 @@ Last updated: 2026-04-10 13:07 EDT - Codex
   - Validation for this slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Extended the sentence-case shell pass into `web/src/app/layout/AppShell.css`, removing forced uppercase/high-tracking treatment from the window titlebar eyebrow/meta labels, push-confirmation eyebrow, and shell-launcher device headings while moving those labels onto Carbon label sizing.
   - Validation for this shell slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the writing-guideline pass in the new LCD/Host Machine slice by changing the LCD route’s visible `Virtual Input` label to `Virtual input` and removing forced uppercase treatment from touched filter/table/helper labels in the LCD and Host Machine styles so those surfaces now render sentence-case support copy instead of CSS-enforced all caps.
+  - Extended the sentence-case sweep into `web/src/app/pages/SnapshotEditorPage.css`, removing forced uppercase/high-tracking treatment from live-chain labels, menu-rail eyebrows, setlist-menu eyebrows, routing inspector labels, routing diagram labels, flow-card titles/badges/actions, and snapshot status tempo/reference metadata so those touched sections now render sentence-case-first support copy instead of CSS-enforced all caps.
+  - Current measured inventory after this Snapshot Editor pass: `web/src/app/pages/SnapshotEditorPage.css` is down from `43` to `30` `text-transform: uppercase` declarations, and the repo-wide frontend inventory is down from `197` to `176`, so the task remains open and the remaining hotspots are still concentrated in Snapshot Editor plus several MPX1/platform/card surfaces.
+  - Validation for this Snapshot Editor writing-guideline slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked

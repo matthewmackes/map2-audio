@@ -23,7 +23,7 @@ def test_feature_defaults_and_recovery_accept_timezone_aware_utc():
     strategy = DegradationStrategy(recovery_timeout_seconds=60)
 
     assert feature.created_at.tzinfo == timezone.utc
-    assert strategy.should_attempt_recovery(datetime.now()) is False
+    assert strategy.should_attempt_recovery(datetime.now(timezone.utc)) is False
 
 
 def test_event_bus_history_uses_timezone_aware_utc_timestamps():

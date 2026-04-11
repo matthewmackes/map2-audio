@@ -17,7 +17,7 @@ import queue
 from typing import Dict, Any, Optional, Callable, List, Union
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from sqlalchemy import select, update, delete
@@ -266,13 +266,13 @@ class CommandQueue(Singleton):
                     continue
 
                 # Measure processing time
-                start_time = datetime.now()
+                start_time = datetime.now(timezone.utc)
 
                 # Process command
                 result = await self._execute_command(command)
 
                 # Calculate latency
-                latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+                latency_ms = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 self.total_latency_ms += latency_ms
 
                 # Set result if future provided

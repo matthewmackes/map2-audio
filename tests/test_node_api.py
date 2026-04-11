@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -43,7 +43,7 @@ class _FakeDiscoveryService:
                     xrun_count=0,
                     audio_latency_ms=1.333,
                     services=NodeServices(backend=True, juce_engine=True, pipewire=True),
-                    last_seen=datetime.utcnow(),
+                    last_seen=datetime.now(timezone.utc),
                     is_local=True,
                     is_viewed=True,
                 )
@@ -232,7 +232,7 @@ def test_topology_derives_audio_edges_from_avb_streams(monkeypatch):
         host="10.0.0.22",
         hostname="map2-peer",
         node_mode="AUDIO-NODE",
-        last_seen=datetime.utcnow() - timedelta(seconds=3),
+        last_seen=datetime.now(timezone.utc) - timedelta(seconds=3),
         latency_ms=2.1,
     )
 

@@ -20,7 +20,7 @@ import tempfile
 import subprocess
 import threading
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -1865,13 +1865,13 @@ class BackupService(Singleton):
 
     def _generate_backup_id(self) -> str:
         """Generate unique backup ID based on timestamp."""
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
+        return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     def generate_skip_list(self) -> Dict[str, Any]:
         """Generate documentation of items skipped in backup."""
         return {
             "description": "Items not included in backup - reinstallable via package managers",
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "categories": self.SKIP_LIST,
             "reinstall_instructions": {
                 "dnf_packages": "sudo dnf install <package-name>",
@@ -3201,7 +3201,7 @@ MAP2 Audio Platform - MIT License
         manifest = {
             "version": "1.0",
             "backup_id": backup_id,
-            "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "description": description,
             "hostname": platform.node(),
             "platform": f"{platform.system()} {platform.release()}",
@@ -3410,7 +3410,7 @@ MAP2 Audio Platform - MIT License
 
         results = {
             "backup_id": backup_id,
-            "restored_at": datetime.now().isoformat(),
+            "restored_at": datetime.now(timezone.utc).isoformat(),
             "restored_items": [],
             "skipped_items": [],
             "errors": [],
@@ -3563,7 +3563,7 @@ MAP2 Audio Platform - MIT License
                     results["deleted_backups"].append(backup.id)
 
         # Delete by age
-        cutoff_date = datetime.now() - timedelta(days=self.settings.retention_days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.settings.retention_days)
         backups = await self.list_backups()  # Refresh list
 
         for backup in backups:
@@ -3649,15 +3649,15 @@ MAP2 Audio Platform - MIT License
             if "updates" not in manifest:
                 manifest["updates"] = []
             manifest["updates"].append({
-                "updated_at": datetime.now().isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
                 "updated_components": ["reinstaller", "documentation"],
                 "reason": "On-demand update"
             })
-            manifest["last_updated"] = datetime.now().isoformat()
+            manifest["last_updated"] = datetime.now(timezone.utc).isoformat()
 
             # Generate new reinstaller script with current template
             reinstaller_content = REINSTALLER_SCRIPT.format(
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 backup_id=backup_id,
                 hostname=manifest.get("hostname", platform.node()),
                 map2_version=manifest.get("map2_version", get_platform_version()),
@@ -3678,7 +3678,7 @@ MAP2 Audio Platform - MIT License
             manifest["contents"]["documentation"] = {
                 "path": "docs/",
                 "description": "Complete documentation including installation, troubleshooting, API reference",
-                "updated_at": datetime.now().isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat()
             }
 
             # Update README
@@ -3691,7 +3691,7 @@ MAP2 Audio Platform - MIT License
             manifest["contents"]["reinstaller"] = {
                 "path": "reinstall.sh",
                 "description": "Self-contained reinstaller for Fedora Server",
-                "updated_at": datetime.now().isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat()
             }
 
             # Write updated manifest
@@ -3784,7 +3784,7 @@ MAP2 Audio Platform - MIT License
         Returns:
             Dictionary with script content and path information
         """
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         hostname = platform.node()
         map2_version = get_platform_version()
 

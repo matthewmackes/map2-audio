@@ -7,7 +7,7 @@ Includes event recording, filtering, and replay capabilities.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict, Callable
 import asyncio
@@ -27,7 +27,7 @@ class EventRecorder:
         self.record_dir.mkdir(parents=True, exist_ok=True)
         
         # Current session file
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self.session_file = self.record_dir / f"session_{timestamp}.jsonl"
         
         self.recording = False

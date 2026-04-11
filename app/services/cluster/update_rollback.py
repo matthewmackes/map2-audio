@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 import subprocess
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .post_update_health import HealthCheckResult, HealthCheckPhase
@@ -141,7 +141,7 @@ class UpdateRollbackManager:
         """
         logger.info(f"Creating rollback snapshot for {node_id}")
         
-        snapshot_id = f"{node_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        snapshot_id = f"{node_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         
         # Capture package versions
         packages = self._capture_package_versions()
@@ -158,7 +158,7 @@ class UpdateRollbackManager:
         snapshot = RollbackSnapshot(
             snapshot_id=snapshot_id,
             node_id=node_id,
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             packages=packages,
             config_files=config_files,
             database_backup=database_backup,
@@ -188,7 +188,7 @@ class UpdateRollbackManager:
         Returns:
             Rollback result
         """
-        start_time = datetime.now()
+        start_time = datetime.now(timezone.utc)
         steps_completed = []
         errors = []
         
@@ -249,7 +249,7 @@ class UpdateRollbackManager:
                 except Exception as e:
                     errors.append(f"Validation error: {str(e)}")
             
-            duration = (datetime.now() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             
             success = len(errors) == 0
             
@@ -257,7 +257,7 @@ class UpdateRollbackManager:
                 success=success,
                 node_id=snapshot.node_id,
                 snapshot_id=snapshot_id,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 reason=reason,
                 steps_completed=steps_completed,
                 errors=errors,
@@ -275,14 +275,14 @@ class UpdateRollbackManager:
             return result
             
         except Exception as e:
-            duration = (datetime.now() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             logger.error(f"Rollback failed: {str(e)}")
             
             return RollbackResult(
                 success=False,
                 node_id=snapshot.node_id if 'snapshot' in locals() else "unknown",
                 snapshot_id=snapshot_id,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 reason=reason,
                 steps_completed=steps_completed,
                 errors=errors + [f"Critical error: {str(e)}"],

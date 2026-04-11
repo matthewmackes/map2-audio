@@ -16,7 +16,7 @@ import json
 import logging
 from typing import Optional, Tuple
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 try:
@@ -108,9 +108,9 @@ class ClusterCA:
                 .issuer_name(issuer)
                 .public_key(ca_key.public_key())
                 .serial_number(x509.random_serial_number())
-                .not_valid_before(datetime.utcnow())
+                .not_valid_before(datetime.now(timezone.utc))
                 .not_valid_after(
-                    datetime.utcnow() + timedelta(days=self.ROOT_CA_VALIDITY_DAYS)
+                    datetime.now(timezone.utc) + timedelta(days=self.ROOT_CA_VALIDITY_DAYS)
                 )
                 .add_extension(
                     x509.BasicConstraints(ca=True, path_length=None),
@@ -224,9 +224,9 @@ class ClusterCA:
                 .issuer_name(ca_cert.issuer)
                 .public_key(node_key.public_key())
                 .serial_number(x509.random_serial_number())
-                .not_valid_before(datetime.utcnow())
+                .not_valid_before(datetime.now(timezone.utc))
                 .not_valid_after(
-                    datetime.utcnow() + timedelta(days=self.NODE_CERT_VALIDITY_DAYS)
+                    datetime.now(timezone.utc) + timedelta(days=self.NODE_CERT_VALIDITY_DAYS)
                 )
                 .add_extension(
                     x509.BasicConstraints(ca=False, path_length=None),
@@ -321,7 +321,7 @@ class ClusterCA:
                 cert = x509.load_pem_x509_certificate(f.read(), backend=default_backend())
 
             # Calculate age as percentage of total lifetime
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             issued = cert.not_valid_before
             expires = cert.not_valid_after
             total_lifetime = (expires - issued).total_seconds()

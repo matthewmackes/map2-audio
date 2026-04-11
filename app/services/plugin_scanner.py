@@ -9,7 +9,7 @@ import hashlib
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.plugin_loader_unified import get_plugin_loader
 from app.utils.singleton import Singleton
@@ -141,7 +141,7 @@ class PluginScanner(Singleton):
 
         logger.info("Starting full plugin scan...")
         self._plugin_cache.clear()
-        scan_time = datetime.now().isoformat()
+        scan_time = datetime.now(timezone.utc).isoformat()
 
         try:
             loader = get_plugin_loader()

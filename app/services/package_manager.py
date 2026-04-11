@@ -20,7 +20,7 @@ import hashlib
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import urllib.request
 import shutil
@@ -575,7 +575,7 @@ class PackageManager:
                 pkg_key = f"pip:{package_name}"
                 if pkg_key in self.packages:
                     self.packages[pkg_key].status = PackageStatus.INSTALLED
-                    self.packages[pkg_key].installed_at = datetime.now().isoformat()
+                    self.packages[pkg_key].installed_at = datetime.now(timezone.utc).isoformat()
                 
                 self._save_cache()
                 return True
@@ -604,7 +604,7 @@ class PackageManager:
                 pkg_key = f"dnf:{package_name}"
                 if pkg_key in self.packages:
                     self.packages[pkg_key].status = PackageStatus.INSTALLED
-                    self.packages[pkg_key].installed_at = datetime.now().isoformat()
+                    self.packages[pkg_key].installed_at = datetime.now(timezone.utc).isoformat()
                 
                 self._save_cache()
                 return True
@@ -663,7 +663,7 @@ class PackageManager:
                 status=PackageStatus.INSTALLED,
                 install_path=str(target_path),
                 size_bytes=target_path.stat().st_size,
-                installed_at=datetime.now().isoformat()
+                installed_at=datetime.now(timezone.utc).isoformat()
             )
             self._save_cache()
             return True
@@ -713,7 +713,7 @@ class PackageManager:
                 status=PackageStatus.INSTALLED,
                 install_path=str(target_path),
                 size_bytes=target_path.stat().st_size,
-                installed_at=datetime.now().isoformat(),
+                installed_at=datetime.now(timezone.utc).isoformat(),
                 tags=["nam", "neural-amp", "guitar"]
             )
             self._save_cache()
@@ -804,7 +804,7 @@ class PackageManager:
                 type=PackageType.LV2_PLUGIN,
                 status=PackageStatus.INSTALLED,
                 install_path=str(target_path),
-                installed_at=datetime.now().isoformat(),
+                installed_at=datetime.now(timezone.utc).isoformat(),
                 tags=["lv2", "plugin", "audio"]
             )
             self._save_cache()

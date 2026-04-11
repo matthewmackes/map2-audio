@@ -17,7 +17,7 @@ import hashlib
 import shutil
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from app.paths import StoragePaths
@@ -274,7 +274,7 @@ class NAMBulkRenamer:
             Dict with preview results
         """
         result = BulkRenameResult()
-        result.start_time = datetime.now()
+        result.start_time = datetime.now(timezone.utc)
         result.total_files = len(files_info)
 
         db = get_db_session()
@@ -340,7 +340,7 @@ class NAMBulkRenamer:
         finally:
             db.close()
 
-        result.end_time = datetime.now()
+        result.end_time = datetime.now(timezone.utc)
         
         # Save audit log
         self._save_audit_log(result, dry_run)
@@ -359,11 +359,11 @@ class NAMBulkRenamer:
         """
         try:
             log_filename = f"rename_{'preview' if dry_run else 'execute'}" \
-                          f"_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                          f"_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
             log_path = self.audit_log_dir / log_filename
             
             audit_data = {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'operation_type': 'dry_run' if dry_run else 'execute',
                 'result': result.to_dict()
             }

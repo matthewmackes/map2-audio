@@ -17,7 +17,7 @@ import time
 from typing import List, Dict, Any, Optional, Callable, Awaitable, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.utils.rtmidi_utils import dispose_rtmidi_client
 
@@ -782,7 +782,7 @@ class MIDIEngineService:
                     learn_state.completed = True
                     learn_state.learned_channel = channel
                     learn_state.learned_cc = cc
-                    learn_state.completed_at = datetime.utcnow()
+                    learn_state.completed_at = datetime.now(timezone.utc)
 
         except Exception as e:
             logger.error(f"Error persisting MIDI learn state: {e}")

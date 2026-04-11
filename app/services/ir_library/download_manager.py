@@ -11,7 +11,7 @@ import json
 from typing import List, Dict, Optional, Set, Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .scraper_base import IRScraperBase, IRFileInfo
@@ -189,7 +189,7 @@ class IRDownloadManager:
         try:
             async with self._state_lock:
                 state_dict = asdict(self._download_state)
-                state_dict['last_saved'] = datetime.utcnow().isoformat()
+                state_dict['last_saved'] = datetime.now(timezone.utc).isoformat()
 
             with open(self.state_file_path, 'w') as f:
                 json.dump(state_dict, f, indent=2, default=str)
@@ -209,7 +209,7 @@ class IRDownloadManager:
         async with self._state_lock:
             self.is_paused = True
             self._download_state.manager_state = "PAUSED"
-            self.stats.pause_time = datetime.utcnow()
+            self.stats.pause_time = datetime.now(timezone.utc)
 
         # Tell chunk assembler to stop
         self.chunk_assembler.cancel()
@@ -228,9 +228,9 @@ class IRDownloadManager:
             self.is_paused = False
             self._download_state.manager_state = "DOWNLOADING"
             if self.stats.pause_time:
-                pause_duration = (datetime.utcnow() - self.stats.pause_time).total_seconds()
+                pause_duration = (datetime.now(timezone.utc) - self.stats.pause_time).total_seconds()
                 self.stats.total_pause_duration += pause_duration
-            self.stats.resume_time = datetime.utcnow()
+            self.stats.resume_time = datetime.now(timezone.utc)
 
         # Re-enable chunk assembler
         self.chunk_assembler._cancel_requested = False
@@ -257,7 +257,7 @@ class IRDownloadManager:
         try:
             message = {
                 "event": event_type,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": data
             }
             await ws_manager.broadcast_json(
@@ -349,7 +349,7 @@ class IRDownloadManager:
 
         self.is_downloading = True
         self.is_paused = False
-        self.stats = DownloadStats(start_time=datetime.utcnow())
+        self.stats = DownloadStats(start_time=datetime.now(timezone.utc))
         self.failed_sources = []
 
         # Initialize source stats
@@ -413,7 +413,7 @@ class IRDownloadManager:
                 if self.source_stats[source].state == "downloading":
                     self.source_stats[source].state = "completed"
 
-            self.stats.end_time = datetime.utcnow()
+            self.stats.end_time = datetime.now(timezone.utc)
 
             # Log summary
             duration = (self.stats.end_time - self.stats.start_time).total_seconds()
@@ -624,7 +624,7 @@ class IRDownloadManager:
         # Calculate duration
         duration = 0.0
         if self.stats.start_time:
-            end = self.stats.end_time or datetime.utcnow()
+            end = self.stats.end_time or datetime.now(timezone.utc)
             duration = (end - self.stats.start_time).total_seconds()
 
         # Calculate progress percentage

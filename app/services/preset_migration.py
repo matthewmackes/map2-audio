@@ -15,7 +15,7 @@ import copy
 from typing import Dict, List, Any, Optional, Callable, Tuple
 from dataclasses import dataclass, field
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 
 logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ class PresetMigrationRegistry:
             # Add metadata if missing
             if 'metadata' not in data:
                 data['metadata'] = {}
-            data['metadata']['migrated_at'] = datetime.now().isoformat()
+            data['metadata']['migrated_at'] = datetime.now(timezone.utc).isoformat()
 
             return data
 
@@ -216,8 +216,8 @@ class PresetMigrationRegistry:
                 data = {
                     'schema_version': '2.0.0',
                     'preset_format': 'map2_preset',
-                    'created_at': datetime.now().isoformat(),
-                    'modified_at': datetime.now().isoformat(),
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'modified_at': datetime.now(timezone.utc).isoformat(),
                     'chain': {
                         'name': old_data.get('name', 'Untitled'),
                         'description': old_data.get('description', ''),
@@ -314,7 +314,7 @@ class PresetMigrator:
 
     def create_backup(self, data: Dict[str, Any], preset_name: str) -> str:
         """Create backup of preset before migration."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         content_hash = hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()[:8]
         backup_name = f"{preset_name}_{timestamp}_{content_hash}.json"
         backup_path = self._backup_dir / backup_name
@@ -500,7 +500,7 @@ class PresetManager:
         if 'schema_version' not in data:
             data['schema_version'] = CURRENT_SCHEMA_VERSION
 
-        data['modified_at'] = datetime.now().isoformat()
+        data['modified_at'] = datetime.now(timezone.utc).isoformat()
 
         with open(path, 'w') as f:
             json.dump(data, f, indent=2)
@@ -512,8 +512,8 @@ class PresetManager:
         return {
             'schema_version': CURRENT_SCHEMA_VERSION,
             'preset_format': 'map2_preset',
-            'created_at': datetime.now().isoformat(),
-            'modified_at': datetime.now().isoformat(),
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'modified_at': datetime.now(timezone.utc).isoformat(),
             'chain': {
                 'name': name,
                 'description': '',

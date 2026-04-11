@@ -11,7 +11,7 @@ import time
 import zipfile
 from abc import ABC
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, Set, TypeVar
 
@@ -110,7 +110,7 @@ class DownloadScraperBase(Generic[TFileInfo], ABC):
                 status = DownloadStatus(
                     file_info=file_info,
                     state=DownloadState.DOWNLOADING,
-                    started_at=datetime.now(),
+                    started_at=datetime.now(timezone.utc),
                 )
                 self.download_progress[filename] = status
 
@@ -127,7 +127,7 @@ class DownloadScraperBase(Generic[TFileInfo], ABC):
                         success = False
 
                     status.state = DownloadState.COMPLETED if success else DownloadState.FAILED
-                    status.completed_at = datetime.now()
+                    status.completed_at = datetime.now(timezone.utc)
 
                     if success:
                         self._stats["total_downloaded"] += 1

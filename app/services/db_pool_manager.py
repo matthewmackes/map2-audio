@@ -12,7 +12,7 @@ import time
 from typing import Optional, Any, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 
 from sqlalchemy import text
@@ -125,7 +125,7 @@ class DatabasePoolManager(Singleton):
             except Exception as e:
                 self._stats.total_errors += 1
                 self._stats.last_error = str(e)
-                self._stats.last_error_time = datetime.now()
+                self._stats.last_error_time = datetime.now(timezone.utc)
 
                 # If caller code already ran (we yielded), never retry here.
                 # Retrying after a yielded context causes asynccontextmanager

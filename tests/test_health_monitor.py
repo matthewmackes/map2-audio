@@ -6,7 +6,7 @@ Tests for health monitor, metrics collection, alert rules, and historical data.
 
 import pytest
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.services.health_monitor import (
     HealthMonitor, HealthStatus, ServiceMetrics, AlertRule, Alert
@@ -109,7 +109,7 @@ class TestHealthMonitorHistory:
             metrics = ServiceMetrics(
                 service_name="test-service",
                 response_time_ms=float(i * 10),
-                timestamp=datetime.now()
+                timestamp=datetime.now(timezone.utc)
             )
             monitor.update_service_metrics(metrics)
         
@@ -136,7 +136,7 @@ class TestHealthMonitorHistory:
         """Test history filtering by time range."""
         monitor = HealthMonitor()
         
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         # Add metrics at different times
         for i in range(5):

@@ -6,7 +6,7 @@ Tests for connection pool creation, reuse, health checking, and metrics.
 
 import pytest
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.services.connection_pool import (
     ConnectionPool, ConnectionPoolManager, PoolConnection, 
@@ -48,7 +48,7 @@ class TestPoolMetrics:
         """Test uptime calculation."""
         metrics = PoolMetrics(
             host="http://example.com",
-            created_at=datetime.now() - timedelta(hours=1)
+            created_at=datetime.now(timezone.utc) - timedelta(hours=1)
         )
         
         uptime = metrics.uptime_seconds
@@ -69,7 +69,7 @@ class TestPoolConnection:
         conn = PoolConnection(
             host="http://example.com",
             client=None,  # Mock
-            created_at=datetime.now() - timedelta(minutes=5)
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=5)
         )
         
         age = conn.age_seconds
@@ -77,7 +77,7 @@ class TestPoolConnection:
     
     def test_connection_idle_time(self):
         """Test idle time calculation."""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         conn = PoolConnection(
             host="http://example.com",
             client=None,

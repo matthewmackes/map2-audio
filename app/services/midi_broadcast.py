@@ -15,7 +15,7 @@ Events:
 import asyncio
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Callable
 from queue import Queue, Empty, Full
 import threading
@@ -209,7 +209,7 @@ class MidiBroadcastService:
         event = {
             "type": event_type,
             "data": data,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "topics": list(topics or []),
         }
         try:
@@ -504,7 +504,7 @@ class MidiBroadcastService:
         """Broadcast a MIDI event to WebSocket subscribers"""
         event_type = event.get("type", "")
         data = event.get("data", {})
-        timestamp = event.get("timestamp", datetime.now().isoformat())
+        timestamp = event.get("timestamp", datetime.now(timezone.utc).isoformat())
         topics = [topic for topic in event.get("topics", []) if str(topic).strip()]
 
         # Determine topic based on event type
@@ -533,7 +533,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_learn_started",
             "data": target,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI_LEARN)
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
@@ -543,7 +543,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_learn_stopped",
             "data": {},
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI_LEARN)
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
@@ -553,7 +553,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_mapping_created",
             "data": mapping,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 
@@ -562,7 +562,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_mapping_updated",
             "data": mapping,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 
@@ -571,7 +571,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_mapping_deleted",
             "data": {"id": mapping_id},
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 
@@ -580,7 +580,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_command_created",
             "data": command,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 
@@ -589,7 +589,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_preset_loaded",
             "data": preset,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 
@@ -598,7 +598,7 @@ class MidiBroadcastService:
         message = {
             "type": "midi_status_update",
             "data": status,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
 

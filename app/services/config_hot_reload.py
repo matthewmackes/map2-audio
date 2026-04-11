@@ -8,7 +8,7 @@ rollback support, and change notifications.
 from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import json
 import yaml
@@ -419,7 +419,7 @@ class ConfigurationHotReloader:
             
             # Record change
             change_record = ConfigChange(
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 config_file=str(self.config_file),
                 changes=changes,
                 previous_hash=previous_hash,
@@ -463,7 +463,7 @@ class ConfigurationHotReloader:
             self.config_hash = self._compute_hash(self.current_config)
             
             # Notify callbacks
-            changes = {"rollback": {"action": "rollback", "timestamp": datetime.now().isoformat()}}
+            changes = {"rollback": {"action": "rollback", "timestamp": datetime.now(timezone.utc).isoformat()}}
             self._notify_callbacks(changes)
             
             logger.info("Configuration rolled back successfully")
@@ -596,7 +596,7 @@ class ConfigurationHotReloader:
         }
         self.change_history.append(
             ConfigChange(
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 config_file=str(self.config_file),
                 changes=changes,
                 previous_hash=previous_hash,

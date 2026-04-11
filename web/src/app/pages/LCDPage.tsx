@@ -204,7 +204,7 @@ function InputController({ onInput, disabled }: InputControllerProps) {
     <div className="input-controller">
       <div className="input-title">
         <Keyboard size={16} />
-        <span>Virtual Input</span>
+        <span>Virtual input</span>
       </div>
 
       <div className="input-grid">
@@ -1601,7 +1601,7 @@ export function LCDPage() {
         }
         .lcd-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .lcd-title { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; }
-        .lcd-address { color: #666; font-size: 12px; font-family: var(--font-ui-tight); }
+        .lcd-address { color: #666; font-size: var(--cds-label-01-font-size, 0.75rem); font-family: var(--font-ui-tight); }
         .lcd-status-badges { display: flex; gap: 8px; }
 
         .lcd-display-frame { position: relative; margin: 16px 0; }
@@ -1618,7 +1618,7 @@ export function LCDPage() {
         .lcd-line {
           color: #22c55e;
           text-shadow: 0 0 8px rgba(34,197,94,0.8), 0 0 16px rgba(34,197,94,0.4);
-          font-size: 18px; font-weight: 500; line-height: 1.6; letter-spacing: 2px;
+          font-size: var(--cds-heading-01-font-size, 1rem); font-weight: 500; line-height: 1.6; letter-spacing: 0.08em;
           white-space: pre; min-height: 28px;
         }
         .lcd-reflection {
@@ -1627,7 +1627,7 @@ export function LCDPage() {
           border-radius: 12px 12px 0 0; pointer-events: none;
         }
         .lcd-page-selector { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-        .lcd-page-label { color: #666; font-size: 13px; }
+        .lcd-page-label { color: #666; font-size: var(--cds-label-01-font-size, 0.75rem); }
         .lcd-page-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
         .lcd-page-btn {
           display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
@@ -1655,13 +1655,13 @@ export function LCDPage() {
         .encoder-ring { display: flex; gap: 4px; }
         .encoder-btn {
           display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
-          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 50%; color: #888; font-size: 14px; cursor: pointer; transition: all 0.15s;
+          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 50%; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.15s;
         }
         .encoder-btn:hover { background: #3a3a3a; color: #fff; }
         .encoder-btn.press { background: #333; color: #22c55e; }
-        .encoder-label { color: #666; font-size: 12px; }
+        .encoder-label { color: #666; font-size: var(--cds-label-01-font-size, 0.75rem); }
         .input-function-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .input-btn.func { padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); font-size: 12px; font-weight: 500; }
+        .input-btn.func { padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 500; }
 
         /* Message Composer */
         .message-composer { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
@@ -1707,7 +1707,7 @@ export function LCDPage() {
           background: #111; border: 1px solid #222; border-radius: 10px; margin-bottom: 20px;
         }
         .lcd-filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .lcd-filter-group label { font-size: 11px; color: '#6b7280'; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .lcd-filter-group label { font-size: var(--cds-label-01-font-size, 0.75rem); color: '#6b7280'; font-weight: 600; }
         .lcd-filter-group select {
           background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: 13px;
         }
@@ -1823,7 +1823,7 @@ export function LCDPage() {
         .ft232h-schematic-svg { width: 100%; max-width: 450px; height: auto; background: #0a0a0a; border-radius: 8px; border: 1px solid #222; padding: var(--cds-spacing-04, 0.75rem); }
         .pin-detail-popup { margin-top: var(--cds-spacing-04, 0.75rem); padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: 6px; color: #22c55e; font-size: 13px; text-align: center; }
         .wiring-table { font-size: 13px; }
-        .wiring-header { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; color: #666; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #222; }
+        .wiring-header { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; color: #666; font-size: var(--cds-label-01-font-size, 0.75rem); border-bottom: 1px solid #222; }
         .wiring-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
         .wire-from { font-family: var(--font-ui-tight); color: #22c55e; }
         .wire-arrow { color: #444; }
@@ -1837,14 +1837,14 @@ export function LCDPage() {
         .cli-commands code { display: block; padding: 8px 12px; background: #111; border: 1px solid #222; border-radius: 4px; font-family: var(--font-ui-tight); font-size: 11px; color: #22c55e; word-break: break-all; }
 
         /* ── Settings Tab ── */
-        .setting-hint { font-size: 11px; color: #666; margin: 4px 0 0; }
+        .setting-hint { font-size: var(--cds-label-01-font-size, 0.75rem); color: #666; margin: 4px 0 0; }
         .lcd-slider { width: 100%; accent-color: #22c55e; height: 6px; }
         .lcd-select {
           width: 100%; padding: 8px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 13px;
         }
 
         /* ── Shared ── */
-        .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 500; }
         .pill.success { background: rgba(34,197,94,0.15); color: #22c55e; }
         .pill.warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
         .pill.muted { background: rgba(107,114,128,0.15); color: #9ca3af; }

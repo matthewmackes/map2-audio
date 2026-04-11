@@ -430,7 +430,7 @@ async def test_ft232h_lcd(address: int = 0x27):
         # Write test pattern
         lcd.clear()
         lcd.write_line(0, "MAP2 Audio Platform")
-        lcd.write_line(1, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        lcd.write_line(1, datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
         lcd.write_line(2, f"FT232H LCD @ 0x{address:02X}")
         lcd.write_line(3, "Test Successful!")
         

@@ -6,7 +6,7 @@ Allows click-to-assign MIDI CC to plugin parameters
 import logging
 from typing import Dict, Optional, List, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import RLock
 import json
 
@@ -434,7 +434,7 @@ class MIDILearnManager:
             "name": name,
             "description": description,
             "mappings": self.export_mappings(),
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
     
     def apply_template(self, template: Dict[str, Any], clear_existing: bool = True) -> int:

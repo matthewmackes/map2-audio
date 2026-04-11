@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from sqlalchemy import select
@@ -170,7 +170,7 @@ class EffectsLoopService:
         if "calibration_status" in payload:
             loop.calibration_status = str(payload.get("calibration_status") or loop.calibration_status)
 
-        loop.updated_at = datetime.utcnow()
+        loop.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         await self._sync_engine_loop_definitions()
@@ -189,7 +189,7 @@ class EffectsLoopService:
         await event_publisher.publish(
             "effects_loop_state",
             EventType.EFFECTS_LOOP_STATE,
-            {"event": "deleted", "loop_id": loop_id, "timestamp": datetime.utcnow().isoformat() + "Z"},
+            {"event": "deleted", "loop_id": loop_id, "timestamp": datetime.now(timezone.utc).isoformat() + "Z"},
         )
         return True
 
@@ -211,7 +211,7 @@ class EffectsLoopService:
             loop.state_actual = "inactive"
             loop.health_status = "blocked"
             loop.health_reason = preflight_reason
-            loop.updated_at = datetime.utcnow()
+            loop.updated_at = datetime.now(timezone.utc)
             await self.session.flush()
             await self._publish_loop_state(loop, event="activation_blocked")
             return {
@@ -228,7 +228,7 @@ class EffectsLoopService:
             loop.state_actual = "inactive"
             loop.health_status = "error"
             loop.health_reason = connection_result[1]
-            loop.updated_at = datetime.utcnow()
+            loop.updated_at = datetime.now(timezone.utc)
             await self.session.flush()
             await self._publish_loop_state(loop, event="activation_failed")
             return {
@@ -247,7 +247,7 @@ class EffectsLoopService:
             loop.state_actual = "inactive"
             loop.health_status = "error"
             loop.health_reason = template_reason
-            loop.updated_at = datetime.utcnow()
+            loop.updated_at = datetime.now(timezone.utc)
             await self.session.flush()
             await self._publish_loop_state(loop, event="activation_failed")
             return {
@@ -262,7 +262,7 @@ class EffectsLoopService:
         loop.state_actual = "active"
         loop.health_status = "healthy"
         loop.health_reason = ""
-        loop.updated_at = datetime.utcnow()
+        loop.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         await self._sync_engine_loop_definitions()
@@ -306,7 +306,7 @@ class EffectsLoopService:
         else:
             loop.health_status = "degraded"
             loop.health_reason = "Engine bypass command unavailable"
-        loop.updated_at = datetime.utcnow()
+        loop.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         await self._publish_loop_state(loop, event="bypass_changed")
@@ -327,7 +327,7 @@ class EffectsLoopService:
 
         options = options or {}
         loop.calibration_status = "in_progress"
-        loop.updated_at = datetime.utcnow()
+        loop.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         await event_publisher.publish(
@@ -337,7 +337,7 @@ class EffectsLoopService:
                 "loop_id": loop.loop_id,
                 "status": "in_progress",
                 "progress_pct": 5,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             },
         )
 
@@ -378,7 +378,7 @@ class EffectsLoopService:
         loop.calibration_status = "calibrated" if engine_ok or measured_ms is not None else "failed"
         loop.health_status = "healthy" if loop.calibration_status == "calibrated" else "degraded"
         loop.health_reason = "" if loop.calibration_status == "calibrated" else "Calibration failed"
-        loop.updated_at = datetime.utcnow()
+        loop.updated_at = datetime.now(timezone.utc)
 
         calibration = EffectsLoopCalibration(
             calibration_id=self._new_calibration_id(),
@@ -390,7 +390,7 @@ class EffectsLoopService:
                 "engine_ok": engine_ok,
                 "options": options,
             },
-            measured_at=datetime.utcnow(),
+            measured_at=datetime.now(timezone.utc),
         )
         self.session.add(calibration)
         await self.session.flush()
@@ -404,7 +404,7 @@ class EffectsLoopService:
                 "progress_pct": 100,
                 "measured_added_latency_ms": loop.measured_added_latency_ms,
                 "compensation_samples": loop.compensation_samples,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             },
         )
         await self._publish_loop_metrics(loop)
@@ -499,7 +499,7 @@ class EffectsLoopService:
         valid, reason = self._validate_template_fields(template)
         template.validation_status = "valid" if valid else "invalid"
         template.validation_error = None if valid else reason
-        template.updated_at = datetime.utcnow()
+        template.updated_at = datetime.now(timezone.utc)
 
         await self.session.flush()
         return await self._serialize_template_with_runtime(template)
@@ -515,7 +515,7 @@ class EffectsLoopService:
         valid, reason = self._validate_template_fields(template)
         template.validation_status = "valid" if valid else "invalid"
         template.validation_error = None if valid else reason
-        template.updated_at = datetime.utcnow()
+        template.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         runtime_status = await self._build_template_runtime_status(template)
@@ -660,7 +660,7 @@ class EffectsLoopService:
         if "band_split_hz" in payload:
             insertion.band_split_hz = self._normalize_band_split(payload.get("band_split_hz"))
 
-        insertion.updated_at = datetime.utcnow()
+        insertion.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         await self._sync_engine_insertions_for_chain(chain_id)
@@ -958,7 +958,7 @@ class EffectsLoopService:
         rows = list(result.scalars().all())
         for row in rows:
             row.slot_index += 1
-            row.updated_at = datetime.utcnow()
+            row.updated_at = datetime.now(timezone.utc)
 
     def _serialize_loop(self, loop: EffectsLoop) -> Dict[str, Any]:
         return {
@@ -1052,7 +1052,7 @@ class EffectsLoopService:
 
     async def _build_template_runtime_status(self, template: TesiraLoopTemplate) -> Dict[str, Any]:
         alarms: List[Dict[str, Any]] = []
-        checked_at = datetime.utcnow().isoformat() + "Z"
+        checked_at = datetime.now(timezone.utc).isoformat() + "Z"
 
         validation_status = str(template.validation_status or "unknown")
         if validation_status != "valid":
@@ -1259,7 +1259,7 @@ class EffectsLoopService:
             {
                 "event": event,
                 "loop": self._serialize_loop(loop),
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             },
         )
 
@@ -1274,7 +1274,7 @@ class EffectsLoopService:
                 "compensation_samples": loop.compensation_samples,
                 "health_status": loop.health_status,
                 "health_reason": loop.health_reason,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             },
         )
 

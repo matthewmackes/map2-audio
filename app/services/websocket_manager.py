@@ -8,7 +8,7 @@ import gzip
 import json
 import logging
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Deque, Dict, List, Optional, Set
 
 from fastapi import WebSocket
@@ -82,7 +82,7 @@ class WebSocketManager:
                     started = datetime.fromisoformat(connected_at)
                     duration_ms = max(
                         0.0,
-                        (datetime.now() - started).total_seconds() * 1000.0,
+                        (datetime.now(timezone.utc) - started).total_seconds() * 1000.0,
                     )
                 except ValueError:
                     duration_ms = 0.0
@@ -135,7 +135,7 @@ class WebSocketManager:
         async with self._lock:
             self.active_connections[client_id] = websocket
             self.connection_info[client_id] = {
-                "connected_at": datetime.now().isoformat(),
+                "connected_at": datetime.now(timezone.utc).isoformat(),
                 "subscriptions": set(),
                 "run_id": metadata.get("run_id", ""),
                 "path": metadata.get("path", "/ws"),
