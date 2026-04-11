@@ -8,11 +8,19 @@ from typing import Dict, Any, Optional
 import json
 import os
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/system-tests", tags=["system-tests"])
+
+
+def _parse_test_timestamp(value: str) -> datetime:
+    """Parse test timestamps and treat legacy naive values as UTC."""
+    parsed = datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
 
 
 class SystemTestService:
@@ -63,7 +71,7 @@ class SystemTestService:
     def get_test_summary(self) -> Dict[str, Any]:
         """Get a summary of all system tests."""
         summary = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "tests": {},
             "overall_status": "unknown",
             "recommendations": []
@@ -131,7 +139,7 @@ class SystemTestService:
             test_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
             
             # Process recent files
-            cutoff_time = datetime.now() - timedelta(days=days)
+            cutoff_time = utc_now() - timedelta(days=days)
             
             scores = []
             for test_file in test_files[:20]:  # Limit to 20 most recent
@@ -140,7 +148,7 @@ class SystemTestService:
                         test_data = json.load(f)
                     
                     # Check if within time range
-                    test_time = datetime.fromisoformat(test_data.get("timestamp", ""))
+                    test_time = _parse_test_timestamp(test_data.get("timestamp", ""))
                     if test_time < cutoff_time:
                         continue
                     
@@ -273,12 +281,13 @@ async def get_test_status() -> Dict[str, Any]:
 
     # Check if tests are available from the current JUCE-era layout.
     juce_script = Path.cwd() / "tests" / "test_juce_engine.py"
+    legacy_juce_script = Path.cwd() / "test_juce_engine.py"
     legacy_script = Path.cwd() / "test_pipedal_engine.py"
     juce_boot_script = Path.cwd() / "run_juce_engine_boot_test.sh"
 
     status = {
-        "timestamp": datetime.now().isoformat(),
-        "testing_available": juce_script.exists() or legacy_script.exists(),
+        "timestamp": utc_now().isoformat(),
+        "testing_available": juce_script.exists() or legacy_juce_script.exists() or legacy_script.exists(),
         "boot_testing_configured": juce_boot_script.exists(),
         "last_engine_test": None,
         "system_status": "unknown"

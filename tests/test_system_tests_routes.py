@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -109,6 +111,9 @@ def test_run_and_status_routes_reflect_script_availability_and_latest_score(monk
         "results": latest,
     }
     assert status_response.status_code == 200
+    status_timestamp = datetime.fromisoformat(status_response.json()["timestamp"])
+    assert status_timestamp.tzinfo is not None
+    assert status_timestamp.utcoffset() == timezone.utc.utcoffset(status_timestamp)
     assert status_response.json() == {
         "timestamp": status_response.json()["timestamp"],
         "testing_available": True,
@@ -120,3 +125,30 @@ def test_run_and_status_routes_reflect_script_availability_and_latest_score(monk
         },
         "system_status": "good",
     }
+
+
+def test_system_test_service_history_accepts_legacy_naive_timestamps(tmp_path):
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    (logs_dir / "juce-engine_test_legacy.json").write_text(
+        json.dumps(
+            {
+                "timestamp": "2026-04-11T06:00:00",
+                "score": 91,
+                "overall_status": "passed",
+                "passed_tests": 9,
+                "total_tests": 10,
+                "duration_seconds": 12,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    service = system_test_routes.SystemTestService()
+    service.logs_dir = logs_dir
+
+    history = service.get_test_history("juce-engine", days=30)
+
+    assert len(history["results"]) == 1
+    assert history["results"][0]["timestamp"] == "2026-04-11T06:00:00"
+    assert history["trend_analysis"]["total_runs"] == 1

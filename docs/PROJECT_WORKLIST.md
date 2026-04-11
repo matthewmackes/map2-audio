@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 07:03 EDT - Codex
+Last updated: 2026-04-11 07:13 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19518,6 +19518,9 @@ Last updated: 2026-04-11 07:03 EDT - Codex
   - Selected the next bounded UTC/API slice on web status endpoints: `app/routes/www.py` and the legacy Flask `app/api/endpoints.py` `/api/health` handler. These are response/log timestamps only and do not alter stored local-display or certificate-validity semantics.
   - Landed that web-status UTC slice by moving the `www` startup/health/access-log timestamps and the legacy Flask health payload timestamp onto `utc_now()`, then adding focused tests to assert timezone-aware UTC output for both code paths.
   - Validation for the web-status UTC slice is green: `pytest -q tests/test_www_routes.py tests/test_api_endpoints_health.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/www.py app/api/endpoints.py tests/test_www_routes.py tests/test_api_endpoints_health.py` -> PASS.
+  - Selected the next bounded UTC/API slice on `app/routes/system_tests.py`, covering the summary/status route timestamps and the history cutoff comparison. This surface only reports test metadata, so it fits the active UTC policy if legacy naive JSON timestamps are normalized at read time.
+  - Landed that system-tests UTC slice by switching the summary and status payload timestamps to `utc_now()` and adding a small parser that treats old naive history timestamps as UTC before comparing them against the new aware cutoff time.
+  - Validation for the system-tests UTC slice is green: `pytest -q tests/test_system_tests_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/system_tests.py tests/test_system_tests_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
