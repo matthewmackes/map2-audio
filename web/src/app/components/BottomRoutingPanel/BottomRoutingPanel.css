@@ -19,7 +19,7 @@
 }
 
 .routing-chain-count {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--muted);
   padding: 4px 10px;
   background: var(--surface-2);
@@ -63,7 +63,7 @@
   border: 2px solid var(--border);
   border-radius: var(--border-radius-sm);
   font-weight: 700;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -78,7 +78,7 @@
 }
 
 .routing-chain-arrow {
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   color: var(--muted);
   font-weight: 600;
 }

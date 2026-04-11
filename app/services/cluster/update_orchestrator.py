@@ -24,6 +24,7 @@ from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.fedora_package_manager import get_dnf_manager
 from app.services.cluster.health_aggregator import get_health_aggregator
 from app.services.cluster.update_rollback import UpdateRollbackManager, RollbackReason
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ class UpdateJob:
 class UpdateReport:
     """Report of cluster-wide update operation"""
 
-    start_time: datetime = field(default_factory=datetime.utcnow)
+    start_time: datetime = field(default_factory=utc_now)
     end_time: Optional[datetime] = None
     phase: UpdatePhase = UpdatePhase.IDLE
     total_nodes: int = 0
@@ -194,12 +195,12 @@ class UpdateScheduler:
             self.running = True
             self.logger.info("Starting cluster update cycle...")
             self.current_report = UpdateReport()
-            self.current_report.start_time = datetime.utcnow()
+            self.current_report.start_time = utc_now()
 
             # Step 1: Pre-flight checks
             if not await self._preflight_checks():
                 self.current_report.phase = UpdatePhase.FAILED
-                self.current_report.end_time = datetime.utcnow()
+                self.current_report.end_time = utc_now()
                 return self.current_report
 
             self.current_report.phase = UpdatePhase.PRE_CHECK
@@ -209,7 +210,7 @@ class UpdateScheduler:
                 if not await self._update_node(self.test_node_id):
                     self.logger.error(f"Test node {self.test_node_id} update failed")
                     self.current_report.phase = UpdatePhase.FAILED
-                    self.current_report.end_time = datetime.utcnow()
+                    self.current_report.end_time = utc_now()
                     return self.current_report
                 self.current_report.phase = UpdatePhase.TEST_NODE
 
@@ -228,7 +229,7 @@ class UpdateScheduler:
                 self.logger.warning("Management nodes update had failures")
 
             self.current_report.phase = UpdatePhase.COMPLETE
-            self.current_report.end_time = datetime.utcnow()
+            self.current_report.end_time = utc_now()
 
             self.logger.info(
                 f"Update cycle complete: {self.current_report.updated_nodes}/{self.current_report.total_nodes} successful"
@@ -240,7 +241,7 @@ class UpdateScheduler:
             self.logger.error(f"Update cycle failed: {e}", exc_info=True)
             self.current_report.phase = UpdatePhase.FAILED
             self.current_report.errors.append(str(e))
-            self.current_report.end_time = datetime.utcnow()
+            self.current_report.end_time = utc_now()
             return self.current_report
         finally:
             self.running = False
@@ -351,7 +352,7 @@ class UpdateScheduler:
 
             # Create job
             job = UpdateJob(node_id=node_id)
-            job.start_time = datetime.utcnow()
+            job.start_time = utc_now()
             job.status = NodeUpdateStatus.UPDATING
 
             self.current_report.job_history[node_id] = job
@@ -359,7 +360,7 @@ class UpdateScheduler:
             if self.dry_run:
                 self.logger.info(f"DRY RUN: Would update {node_id}")
                 job.status = NodeUpdateStatus.SUCCESS
-                job.end_time = datetime.utcnow()
+                job.end_time = utc_now()
                 return True
 
             # Get node from registry
@@ -470,11 +471,11 @@ class UpdateScheduler:
                     else:
                         job.status = NodeUpdateStatus.FAILED
 
-                job.end_time = datetime.utcnow()
+                job.end_time = utc_now()
                 return False
 
             job.status = NodeUpdateStatus.SUCCESS
-            job.end_time = datetime.utcnow()
+            job.end_time = utc_now()
 
             self.logger.info(f"Successfully updated {node_id}")
             return True
@@ -675,10 +676,10 @@ class UpdateScheduler:
         try:
             self.running = True
             self.current_report = UpdateReport()
-            self.current_report.start_time = datetime.utcnow()
+            self.current_report.start_time = utc_now()
             self.current_report.total_nodes = 1
             success = await self._update_node(node_id)
-            self.current_report.end_time = datetime.utcnow()
+            self.current_report.end_time = utc_now()
 
             job = self.current_report.job_history.get(node_id)
             return {
@@ -780,7 +781,7 @@ class UpdateScheduler:
                 "nodes_per_hour": self.nodes_per_hour,
                 "estimated_hours": total_time_hours,
                 "estimated_completion": (
-                    datetime.utcnow() + timedelta(hours=total_time_hours)
+                    utc_now() + timedelta(hours=total_time_hours)
                 ).isoformat(),
                 "recommended_schedule": "Sunday 3:00 AM",
                 "recommended_window_hours": total_time_hours + 1,

@@ -21,7 +21,7 @@ export function resolveSnapshotRoutingLiveStatus({
     return {
       tagLabel: 'Draft',
       tagType: 'cool-gray',
-      message: 'Edits change the current draft. Save or Go Live to apply them.',
+      message: 'Edits change the current draft. Save draft or make live to apply them.',
     }
   }
 
@@ -37,7 +37,7 @@ export function resolveSnapshotRoutingLiveStatus({
     return {
       tagLabel: 'Pending live',
       tagType: 'warm-gray',
-      message: 'Saved to the live snapshot. Reactivate to apply the new routing mode.',
+      message: 'Saved to the live snapshot. Make it live again to apply the new routing mode.',
     }
   }
 

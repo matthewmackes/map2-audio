@@ -21,6 +21,8 @@ from datetime import datetime, timedelta
 import json
 
 from app.services.cluster.registry import get_cluster_registry, ClusterRegistry
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class NodeMetrics:
     """Metrics collected from a single node"""
 
     node_id: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=utc_now)
     cpu_percent: float = 0.0
     memory_percent: float = 0.0
     dsp_load_percent: float = 0.0  # Audio DSP load
@@ -116,7 +118,7 @@ class NodeMetrics:
         }
 
 
-class HealthAggregator:
+class HealthAggregator(Singleton):
     """
     Aggregates health metrics from all cluster nodes.
 
@@ -377,14 +379,6 @@ class HealthAggregator:
             self.logger.error(f"Failed to get cluster health: {e}")
             return {}
 
-
-# Global aggregator instance
-_health_aggregator: Optional[HealthAggregator] = None
-
-
 def get_health_aggregator() -> HealthAggregator:
-    """Get or create the health aggregator singleton"""
-    global _health_aggregator
-    if _health_aggregator is None:
-        _health_aggregator = HealthAggregator()
-    return _health_aggregator
+    """Get the process-wide health aggregator singleton."""
+    return HealthAggregator.get_instance()

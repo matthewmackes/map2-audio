@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.event_bus import get_event_bus, EventType
+from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class NodeHealthStatus:
     metadata: Dict = field(default_factory=dict)
 
 
-class HeartbeatMonitor:
+class HeartbeatMonitor(Singleton):
     """
     Monitors cluster node health via periodic heartbeat checks.
     
@@ -304,14 +305,6 @@ class HeartbeatMonitor:
             if node_id not in normalized:
                 del self.node_health[node_id]
 
-
-# Singleton instance
-_heartbeat_monitor: Optional[HeartbeatMonitor] = None
-
-
 def get_heartbeat_monitor() -> HeartbeatMonitor:
-    """Get or create the singleton heartbeat monitor instance."""
-    global _heartbeat_monitor
-    if _heartbeat_monitor is None:
-        _heartbeat_monitor = HeartbeatMonitor()
-    return _heartbeat_monitor
+    """Get the process-wide heartbeat monitor instance."""
+    return HeartbeatMonitor.get_instance()

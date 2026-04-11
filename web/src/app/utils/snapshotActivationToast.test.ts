@@ -6,6 +6,7 @@ import {
   buildSnapshotActivationToastMessage,
   countActiveSnapshotBlocks,
   countActiveSnapshotChannels,
+  extractSnapshotActivationFailureDetail,
   extractSnapshotActivationFailureReason,
 } from './snapshotActivationToast'
 
@@ -151,5 +152,61 @@ describe('snapshotActivationToast', () => {
     expect(buildSnapshotActivationFailureToastMessage('VerseClean', error)).toBe(
       'Failed: VerseClean - Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node. • Cannot go live: Input device Tour Rack is not available on this node.',
     )
+  })
+
+  it('extracts structured validation details and repair actions from preflight errors', () => {
+    const error = new ApiError(422, 'Unprocessable Entity', {
+      detail: {
+        message: 'Cannot go live: Input device Tour Rack is not available on this node.',
+        phase: 'VALIDATING',
+        blocking: true,
+        failures: ['Cannot go live: Input device Tour Rack is not available on this node.'],
+        issues: [
+          {
+            code: 'missing_input_device',
+            category: 'device',
+            device_role: 'input',
+            requested_device: 'Tour Rack',
+            message: 'Cannot go live: Input device Tour Rack is not available on this node.',
+            auto_repair: false,
+          },
+        ],
+        repair_actions: [
+          {
+            action: 'select_available_device',
+            device_role: 'input',
+            requested_device: 'Tour Rack',
+            message: 'Select an available input device instead of Tour Rack.',
+          },
+        ],
+      },
+    })
+
+    expect(extractSnapshotActivationFailureDetail(error)).toEqual({
+      message: 'Cannot go live: Input device Tour Rack is not available on this node.',
+      phase: 'VALIDATING',
+      blocking: true,
+      failures: ['Cannot go live: Input device Tour Rack is not available on this node.'],
+      issues: [
+        {
+          code: 'missing_input_device',
+          category: 'device',
+          message: 'Cannot go live: Input device Tour Rack is not available on this node.',
+          autoRepair: false,
+          assetType: null,
+          deviceRole: 'input',
+        },
+      ],
+      repairActions: [
+        {
+          action: 'select_available_device',
+          message: 'Select an available input device instead of Tour Rack.',
+          assetType: null,
+          requestedDevice: 'Tour Rack',
+          deviceRole: 'input',
+          pluginName: null,
+        },
+      ],
+    })
   })
 })

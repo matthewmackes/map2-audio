@@ -5939,6 +5939,119 @@ def test_t744_live_channel_edit_should_reapply_engine_channel_state(tmp_path, mo
     asyncio.run(_run())
 
 
+def test_snapshot_create_normalizes_multiple_solo_channels_to_single_winner(tmp_path):
+    async def _run():
+        _init_temp_db(tmp_path)
+
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="SoloNormalize",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "channel-a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "chain_id": 1,
+                            "muted": False,
+                            "solo": True,
+                            "dry_wet_mix": 100.0,
+                        },
+                        {
+                            "channel_key": "channel-b",
+                            "label": "B",
+                            "color": "#22c55e",
+                            "chain_id": 2,
+                            "muted": False,
+                            "solo": True,
+                            "dry_wet_mix": 100.0,
+                        },
+                    ],
+                    "chains": [
+                        {"id": 1, "name": "A", "plugins": []},
+                        {"id": 2, "name": "B", "plugins": []},
+                    ],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": "channel-b",
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            solo_by_channel = {
+                channel["channel_key"]: channel["solo"]
+                for channel in created["channels"]
+            }
+            assert solo_by_channel == {
+                "channel-a": False,
+                "channel-b": True,
+            }
+
+    asyncio.run(_run())
+
+
+def test_update_channel_enforces_single_solo_and_reapplies_all_live_channel_state(tmp_path, monkeypatch):
+    async def _run():
+        service, created, activated, engine_stub = await _create_and_activate_open_gap_snapshot(
+            tmp_path,
+            monkeypatch,
+            detail_payload={
+                "channels": [
+                    {
+                        "channel_key": "channel-a",
+                        "label": "A",
+                        "color": "#2563eb",
+                        "chain_id": 1,
+                        "muted": False,
+                        "solo": True,
+                        "dry_wet_mix": 100.0,
+                    },
+                    {
+                        "channel_key": "channel-b",
+                        "label": "B",
+                        "color": "#22c55e",
+                        "chain_id": 2,
+                        "muted": False,
+                        "solo": False,
+                        "dry_wet_mix": 100.0,
+                    },
+                ],
+                "chains": [
+                    {"id": 1, "name": "A", "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {}}]},
+                    {"id": 2, "name": "B", "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {}}]},
+                ],
+                "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a", "channel-b"]},
+                "midi_map": [],
+            },
+        )
+        assert activated is not None
+        target_channel = next(channel for channel in created["channels"] if channel["channel_key"] == "channel-b")
+        before_solo_calls = len(engine_stub.chain_solo_calls)
+
+        updated = await service.update_channel(
+            created["id"],
+            target_channel["id"],
+            {"solo": True},
+        )
+
+        assert updated is not None
+        solo_by_channel = {
+            channel["channel_key"]: channel["solo"]
+            for channel in updated["channels"]
+        }
+        assert solo_by_channel == {
+            "channel-a": False,
+            "channel-b": True,
+        }
+        assert updated["channel_state_apply"]["applied_count"] == 2
+        assert [solo for _, solo in engine_stub.chain_solo_calls[before_solo_calls:]] == [False, True]
+
+    asyncio.run(_run())
+
+
 def test_t742_topology_reuse_should_reapply_routing_and_loop_state(tmp_path, monkeypatch):
     async def _run():
         _init_temp_db(tmp_path)

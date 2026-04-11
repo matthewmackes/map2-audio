@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from pathlib import Path
 
 from app.services.node_identity import NodeIdentity
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -171,8 +172,6 @@ async def generate_ssh_keys(request: GenerateKeyRequest):
 @router.post("/trust/add", response_model=PeerTrustResponse)
 async def add_peer_trust(request: AddTrustRequest):
     """Add peer to trusted list and configure SSH access"""
-    from datetime import datetime
-    
     _ensure_trust_dir()
     
     try:
@@ -212,7 +211,7 @@ async def add_peer_trust(request: AddTrustRequest):
         trusted_peers[request.peer_id] = {
             'fingerprint': fingerprint,
             'public_key': request.peer_public_key,
-            'trusted_at': datetime.utcnow().isoformat(),
+            'trusted_at': utc_now().isoformat(),
         }
         _write_trusted_peers(trusted_peers)
         

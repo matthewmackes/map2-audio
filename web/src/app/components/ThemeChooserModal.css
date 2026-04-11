@@ -95,11 +95,10 @@
 .tcm-section__header h3,
 .tcm-section__header h4 {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-heading-01-font-size, 0.875rem);
   font-weight: 600;
   color: var(--cds-text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  line-height: var(--cds-heading-01-line-height, 1.125rem);
 }
 
 /* ── Dark/Light base toggle ─────────────────────────────────── */

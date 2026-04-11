@@ -29,6 +29,9 @@ from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 from enum import Enum
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,7 +202,7 @@ class NodeAudioPath:
 # Audio Path Service
 # ============================================================================
 
-class AudioPathService:
+class AudioPathService(Singleton):
     """
     Discovers and monitors audio services on the current node.
     
@@ -207,20 +210,11 @@ class AudioPathService:
     Provides REST endpoint for cluster-wide audio path visibility.
     """
     
-    _instance: Optional['AudioPathService'] = None
-    
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self._cache: Optional[NodeAudioPath] = None
         self._cache_valid_until: float = 0
         self._cache_ttl_seconds: float = 2.0  # Refresh every 2 seconds
-    
-    @staticmethod
-    def get_instance() -> 'AudioPathService':
-        """Get or create singleton instance"""
-        if AudioPathService._instance is None:
-            AudioPathService._instance = AudioPathService()
-        return AudioPathService._instance
     
     async def get_node_audio_path(self) -> NodeAudioPath:
         """
@@ -260,11 +254,10 @@ class AudioPathService:
         alerts = self._collect_alerts(services, latency)
         
         # Create audio path object
-        from datetime import datetime
         audio_path = NodeAudioPath(
             node_id=node_id,
             hostname=hostname,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=utc_now().isoformat(),
             services=services,
             overall_health=overall_health,
             pipewire=pipewire_info,

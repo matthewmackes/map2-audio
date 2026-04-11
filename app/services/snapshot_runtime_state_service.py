@@ -28,6 +28,15 @@ from app.database import (
     SnapshotNodeLiveState,
     get_session,
 )
+from app.models.audio_state import (
+    ChannelConfirmationState,
+    NodeConfirmationState,
+    PublishBlocker,
+    PublishBlockerCode,
+    PublishBlockerSeverity,
+    PublishConfirmationStatus,
+    PublishScope,
+)
 from app.services.state_authority_reconciliation_service import (
     RECONCILIATION_TOLERANCE,
     StateAuthorityReconciliationService,
@@ -468,6 +477,226 @@ class SnapshotRuntimeStateService:
         return copy.deepcopy(payload) if isinstance(payload, dict) else None
 
     @staticmethod
+    def _serialize_publish_blockers(items: Any) -> list[dict[str, Any]]:
+        blockers: list[dict[str, Any]] = []
+        for item in items or []:
+            try:
+                blocker = item if isinstance(item, PublishBlocker) else PublishBlocker.model_validate(item)
+            except Exception:
+                continue
+            blockers.append(blocker.model_dump(mode="json"))
+        return blockers
+
+    @staticmethod
+    def _serialize_node_confirmations(items: Any) -> dict[str, dict[str, Any]]:
+        confirmations: dict[str, dict[str, Any]] = {}
+        source = items.items() if isinstance(items, dict) else []
+        for node_id, item in source:
+            try:
+                confirmation = item if isinstance(item, NodeConfirmationState) else NodeConfirmationState.model_validate(item)
+            except Exception:
+                continue
+            confirmations[str(node_id)] = confirmation.model_dump(mode="json")
+        return confirmations
+
+    @staticmethod
+    def _serialize_channel_confirmations(items: Any) -> dict[str, dict[str, Any]]:
+        confirmations: dict[str, dict[str, Any]] = {}
+        source = items.items() if isinstance(items, dict) else []
+        for path_id, item in source:
+            try:
+                confirmation = item if isinstance(item, ChannelConfirmationState) else ChannelConfirmationState.model_validate(item)
+            except Exception:
+                continue
+            confirmations[str(path_id)] = confirmation.model_dump(mode="json")
+        return confirmations
+
+    def _build_initial_node_confirmations(self, normalized_snapshot_payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        node_ids: list[str] = []
+        for path in normalized_snapshot_payload.get("paths", []):
+            if not isinstance(path, dict):
+                continue
+            node_id = str(
+                path.get("owner_node_id")
+                or path.get("node_id")
+                or path.get("assigned_node_id")
+                or self.local_node_id
+            ).strip() or self.local_node_id
+            if node_id and node_id not in node_ids:
+                node_ids.append(node_id)
+        if not node_ids:
+            node_ids.append(self.local_node_id)
+
+        return {
+            node_id: NodeConfirmationState(
+                node_id=node_id,
+                status=PublishConfirmationStatus.PENDING,
+                operator_message=(
+                    "Waiting for the local runtime to confirm this snapshot."
+                    if node_id == self.local_node_id
+                    else f"Waiting for {node_id} to confirm this snapshot."
+                ),
+            ).model_dump(mode="json")
+            for node_id in node_ids
+        }
+
+    def _build_initial_channel_confirmations(
+        self,
+        normalized_snapshot_payload: dict[str, Any],
+    ) -> dict[str, dict[str, Any]]:
+        top_level_paths = {
+            str(path.get("id")): path
+            for path in normalized_snapshot_payload.get("paths", [])
+            if isinstance(path, dict) and path.get("id") is not None
+        }
+        confirmations: dict[str, dict[str, Any]] = {}
+        for definition in self._extract_channel_definitions(normalized_snapshot_payload):
+            path_id = str(definition.get("path_id") or "").strip()
+            if not path_id:
+                continue
+            path = top_level_paths.get(path_id, {})
+            related_node_id = str(
+                path.get("owner_node_id")
+                or path.get("node_id")
+                or path.get("assigned_node_id")
+                or self.local_node_id
+            ).strip() or self.local_node_id
+            label = _normalize_channel_label(definition.get("label"), path_id)
+            confirmations[path_id] = ChannelConfirmationState(
+                path_id=path_id,
+                label=label,
+                status=PublishConfirmationStatus.PENDING,
+                operator_message=f"Waiting to confirm channel {label} live.",
+                related_node_id=related_node_id,
+            ).model_dump(mode="json")
+        return confirmations
+
+    @staticmethod
+    def _set_confirmation_status(
+        confirmation: dict[str, Any],
+        *,
+        status: PublishConfirmationStatus,
+        operator_message: str,
+        technical_detail: Optional[str] = None,
+        observed_at: Optional[str] = None,
+        observed_state_version: Optional[int] = None,
+    ) -> dict[str, Any]:
+        next_confirmation = dict(confirmation)
+        next_confirmation["status"] = status.value
+        next_confirmation["operator_message"] = operator_message
+        next_confirmation["technical_detail"] = technical_detail
+        next_confirmation["observed_at"] = observed_at
+        next_confirmation["observed_state_version"] = observed_state_version
+        return next_confirmation
+
+    def _merge_intent_contract(
+        self,
+        intent: dict[str, Any],
+        *,
+        blockers: Any = None,
+        warnings: Any = None,
+        node_confirmations: Any = None,
+        channel_confirmations: Any = None,
+    ) -> dict[str, Any]:
+        next_intent = dict(intent)
+        if blockers is not None:
+            next_intent["blockers"] = self._serialize_publish_blockers(blockers)
+        else:
+            next_intent["blockers"] = self._serialize_publish_blockers(next_intent.get("blockers"))
+        if warnings is not None:
+            next_intent["warnings"] = self._serialize_publish_blockers(warnings)
+        else:
+            next_intent["warnings"] = self._serialize_publish_blockers(next_intent.get("warnings"))
+        if node_confirmations is not None:
+            next_intent["node_confirmations"] = self._serialize_node_confirmations(node_confirmations)
+        else:
+            next_intent["node_confirmations"] = self._serialize_node_confirmations(next_intent.get("node_confirmations"))
+        if channel_confirmations is not None:
+            next_intent["channel_confirmations"] = self._serialize_channel_confirmations(channel_confirmations)
+        else:
+            next_intent["channel_confirmations"] = self._serialize_channel_confirmations(next_intent.get("channel_confirmations"))
+        return next_intent
+
+    def _apply_phase_to_confirmations(
+        self,
+        intent: dict[str, Any],
+        *,
+        phase: str,
+        status: str,
+    ) -> dict[str, Any]:
+        next_intent = self._merge_intent_contract(intent)
+        if phase not in {"APPLYING", "VERIFYING"} or status not in {"in_progress", "completed"}:
+            return next_intent
+
+        node_confirmations = dict(next_intent.get("node_confirmations") or {})
+        for node_id, confirmation in list(node_confirmations.items()):
+            current_status = str(confirmation.get("status") or "")
+            if current_status in {
+                PublishConfirmationStatus.CONFIRMED.value,
+                PublishConfirmationStatus.FAILED.value,
+                PublishConfirmationStatus.OFFLINE.value,
+            }:
+                continue
+            node_confirmations[node_id] = self._set_confirmation_status(
+                confirmation,
+                status=PublishConfirmationStatus.WAITING,
+                operator_message=(
+                    "Waiting for the local runtime to confirm this snapshot."
+                    if node_id == self.local_node_id
+                    else f"Waiting for {node_id} to confirm this snapshot."
+                ),
+            )
+
+        channel_confirmations = dict(next_intent.get("channel_confirmations") or {})
+        for path_id, confirmation in list(channel_confirmations.items()):
+            current_status = str(confirmation.get("status") or "")
+            if current_status in {
+                PublishConfirmationStatus.CONFIRMED.value,
+                PublishConfirmationStatus.FAILED.value,
+                PublishConfirmationStatus.OFFLINE.value,
+            }:
+                continue
+            label = str(confirmation.get("label") or path_id)
+            channel_confirmations[path_id] = self._set_confirmation_status(
+                confirmation,
+                status=PublishConfirmationStatus.WAITING,
+                operator_message=f"Waiting for confirmation that channel {label} is live.",
+            )
+
+        return self._merge_intent_contract(
+            next_intent,
+            node_confirmations=node_confirmations,
+            channel_confirmations=channel_confirmations,
+        )
+
+    def _build_failure_blockers(self, *, phase: str, failure_reason: str) -> list[dict[str, Any]]:
+        phase_value = _normalize_activation_phase(phase)
+        if phase_value == "VALIDATING":
+            blocker = PublishBlocker(
+                id="snapshot_invalid",
+                code=PublishBlockerCode.SNAPSHOT_INVALID,
+                severity=PublishBlockerSeverity.BLOCKING,
+                scope=PublishScope.DRAFT,
+                title="Snapshot needs attention",
+                operator_message=str(failure_reason or "Snapshot validation failed."),
+                technical_detail=str(failure_reason or "Snapshot validation failed."),
+                recommended_action="Review snapshot issues",
+            )
+        else:
+            blocker = PublishBlocker(
+                id="engine_apply_failed",
+                code=PublishBlockerCode.ENGINE_APPLY_FAILED,
+                severity=PublishBlockerSeverity.BLOCKING,
+                scope=PublishScope.INTENT,
+                title="Publish failed",
+                operator_message=str(failure_reason or "The runtime could not apply this snapshot."),
+                technical_detail=str(failure_reason or "The runtime could not apply this snapshot."),
+                recommended_action="Retry publish",
+                repair_action_id="retry_publish",
+            )
+        return [blocker.model_dump(mode="json")]
+
+    @staticmethod
     def _extract_channel_definitions(snapshot_payload: dict[str, Any]) -> list[dict[str, Any]]:
         top_level_paths = {
             str(path.get("id")): path
@@ -724,6 +953,31 @@ class SnapshotRuntimeStateService:
         requested_at = _utcnow()
         request_id = uuid4().hex
         event_payload: Optional[dict[str, Any]] = None
+        activation_progress = {
+            "current_phase": ACTIVATION_PHASES[0],
+            "status": "requested",
+            "started_at": requested_at.isoformat(),
+            "updated_at": requested_at.isoformat(),
+            "timeout_seconds": ACTIVATION_PROGRESS_TIMEOUT_SECONDS,
+            "phase_history": [],
+            "completed_phases": [],
+        }
+        intent_payload = self._merge_intent_contract(
+            {
+                "request_id": request_id,
+                "node_id": self.local_node_id,
+                "snapshot_id": snapshot_id,
+                "snapshot_revision": snapshot_revision,
+                "triggered_by": triggered_by,
+                "requested_at": requested_at.isoformat(),
+                "normalized_snapshot_payload": copy.deepcopy(normalized_snapshot_payload),
+                "activation_progress": activation_progress,
+            },
+            blockers=[],
+            warnings=[],
+            node_confirmations=self._build_initial_node_confirmations(normalized_snapshot_payload),
+            channel_confirmations=self._build_initial_channel_confirmations(normalized_snapshot_payload),
+        )
 
         async with self._session_scope() as session:
             state_row = await self._get_or_create_local_state_row(session)
@@ -739,7 +993,13 @@ class SnapshotRuntimeStateService:
                 triggered_by=triggered_by,
                 requested_at=requested_at,
                 outcome="requested",
-                runtime_metrics={},
+                runtime_metrics={
+                    "activation_progress": copy.deepcopy(activation_progress),
+                    "blockers": copy.deepcopy(intent_payload["blockers"]),
+                    "warnings": copy.deepcopy(intent_payload["warnings"]),
+                    "node_confirmations": copy.deepcopy(intent_payload["node_confirmations"]),
+                    "channel_confirmations": copy.deepcopy(intent_payload["channel_confirmations"]),
+                },
             )
             session.add(event_row)
             await session.flush()
@@ -751,24 +1011,7 @@ class SnapshotRuntimeStateService:
             cache.appendleft(event_payload)
             await self._broadcast_activation_event(event_payload, emitted_at=requested_at)
 
-        return {
-            "request_id": request_id,
-            "node_id": self.local_node_id,
-            "snapshot_id": snapshot_id,
-            "snapshot_revision": snapshot_revision,
-            "triggered_by": triggered_by,
-            "requested_at": requested_at.isoformat(),
-            "normalized_snapshot_payload": copy.deepcopy(normalized_snapshot_payload),
-            "activation_progress": {
-                "current_phase": ACTIVATION_PHASES[0],
-                "status": "requested",
-                "started_at": requested_at.isoformat(),
-                "updated_at": requested_at.isoformat(),
-                "timeout_seconds": ACTIVATION_PROGRESS_TIMEOUT_SECONDS,
-                "phase_history": [],
-                "completed_phases": [],
-            },
-        }
+        return intent_payload
 
     async def mark_intent_phase(
         self,
@@ -782,6 +1025,18 @@ class SnapshotRuntimeStateService:
         emitted_at = _utcnow()
         activation_payload: Optional[dict[str, Any]] = None
         phase_value = _normalize_activation_phase(phase)
+        next_intent = self._apply_phase_to_confirmations(intent, phase=phase_value, status=status)
+
+        if isinstance(extra, dict):
+            next_intent = self._merge_intent_contract(
+                next_intent,
+                blockers=extra.get("blockers") if "blockers" in extra else None,
+                warnings=extra.get("warnings") if "warnings" in extra else None,
+                node_confirmations=extra.get("node_confirmations") if "node_confirmations" in extra else None,
+                channel_confirmations=(
+                    extra.get("channel_confirmations") if "channel_confirmations" in extra else None
+                ),
+            )
 
         async with self._session_scope() as session:
             result = await session.execute(
@@ -789,9 +1044,18 @@ class SnapshotRuntimeStateService:
             )
             event_row = result.scalar_one_or_none()
             if event_row is None:
-                return intent
+                return next_intent
+            event_metrics = (
+                copy.deepcopy(event_row.runtime_metrics)
+                if isinstance(event_row.runtime_metrics, dict)
+                else {}
+            )
+            event_metrics["blockers"] = copy.deepcopy(next_intent.get("blockers") or [])
+            event_metrics["warnings"] = copy.deepcopy(next_intent.get("warnings") or [])
+            event_metrics["node_confirmations"] = copy.deepcopy(next_intent.get("node_confirmations") or {})
+            event_metrics["channel_confirmations"] = copy.deepcopy(next_intent.get("channel_confirmations") or {})
             event_row.runtime_metrics = self._merge_activation_progress(
-                event_row.runtime_metrics if isinstance(event_row.runtime_metrics, dict) else {},
+                event_metrics,
                 phase=phase_value,
                 status=status,
                 emitted_at=emitted_at,
@@ -806,7 +1070,6 @@ class SnapshotRuntimeStateService:
             cache.appendleft(activation_payload)
             await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
 
-        next_intent = dict(intent)
         next_intent["activation_progress"] = copy.deepcopy(
             (activation_payload or {}).get("runtime_metrics", {}).get("activation_progress")
             or self._merge_activation_progress(
@@ -830,8 +1093,36 @@ class SnapshotRuntimeStateService:
         emitted_at = _utcnow()
         activation_payload: Optional[dict[str, Any]] = None
         merged_runtime_metrics = copy.deepcopy(runtime_metrics) if isinstance(runtime_metrics, dict) else {}
-        if isinstance(intent.get("activation_progress"), dict):
-            merged_runtime_metrics["activation_progress"] = copy.deepcopy(intent["activation_progress"])
+        confirmed_intent = self._merge_intent_contract(intent)
+        if isinstance(confirmed_intent.get("activation_progress"), dict):
+            merged_runtime_metrics["activation_progress"] = copy.deepcopy(confirmed_intent["activation_progress"])
+        emitted_at_iso = emitted_at.isoformat()
+        node_confirmations = {
+            node_id: self._set_confirmation_status(
+                confirmation,
+                status=PublishConfirmationStatus.CONFIRMED,
+                operator_message=(
+                    "The local runtime confirmed this snapshot."
+                    if node_id == self.local_node_id
+                    else f"{node_id} confirmed this snapshot."
+                ),
+                observed_at=emitted_at_iso,
+            )
+            for node_id, confirmation in dict(confirmed_intent.get("node_confirmations") or {}).items()
+        }
+        channel_confirmations = {}
+        for path_id, confirmation in dict(confirmed_intent.get("channel_confirmations") or {}).items():
+            label = str(confirmation.get("label") or path_id)
+            channel_confirmations[path_id] = self._set_confirmation_status(
+                confirmation,
+                status=PublishConfirmationStatus.CONFIRMED,
+                operator_message=f"Channel {label} is confirmed live.",
+                observed_at=emitted_at_iso,
+            )
+        merged_runtime_metrics["blockers"] = []
+        merged_runtime_metrics["warnings"] = copy.deepcopy(confirmed_intent.get("warnings") or [])
+        merged_runtime_metrics["node_confirmations"] = node_confirmations
+        merged_runtime_metrics["channel_confirmations"] = channel_confirmations
         runtime_metrics = self._merge_activation_progress(
             merged_runtime_metrics,
             phase="LIVE",
@@ -891,14 +1182,52 @@ class SnapshotRuntimeStateService:
         emitted_at = _utcnow()
         activation_payload: Optional[dict[str, Any]] = None
         merged_runtime_metrics = copy.deepcopy(runtime_metrics) if isinstance(runtime_metrics, dict) else {}
-        if isinstance(intent.get("activation_progress"), dict):
-            merged_runtime_metrics["activation_progress"] = copy.deepcopy(intent["activation_progress"])
+        failed_intent = self._merge_intent_contract(intent)
+        if isinstance(failed_intent.get("activation_progress"), dict):
+            merged_runtime_metrics["activation_progress"] = copy.deepcopy(failed_intent["activation_progress"])
         activation_progress = intent.get("activation_progress") if isinstance(intent, dict) else {}
         current_phase = (
             activation_progress.get("current_phase")
             if isinstance(activation_progress, dict)
             else ACTIVATION_PHASES[0]
         )
+        emitted_at_iso = emitted_at.isoformat()
+        merged_runtime_metrics["blockers"] = copy.deepcopy(
+            failed_intent.get("blockers") or self._build_failure_blockers(phase=str(current_phase), failure_reason=failure_reason)
+        )
+        merged_runtime_metrics["warnings"] = copy.deepcopy(failed_intent.get("warnings") or [])
+        merged_runtime_metrics["node_confirmations"] = {
+            node_id: (
+                confirmation
+                if str(confirmation.get("status") or "") == PublishConfirmationStatus.CONFIRMED.value
+                else self._set_confirmation_status(
+                    confirmation,
+                    status=PublishConfirmationStatus.FAILED,
+                    operator_message=(
+                        "The local runtime did not confirm this snapshot."
+                        if node_id == self.local_node_id
+                        else f"{node_id} did not confirm this snapshot."
+                    ),
+                    technical_detail=failure_reason,
+                    observed_at=emitted_at_iso,
+                )
+            )
+            for node_id, confirmation in dict(failed_intent.get("node_confirmations") or {}).items()
+        }
+        merged_runtime_metrics["channel_confirmations"] = {
+            path_id: (
+                confirmation
+                if str(confirmation.get("status") or "") == PublishConfirmationStatus.CONFIRMED.value
+                else self._set_confirmation_status(
+                    confirmation,
+                    status=PublishConfirmationStatus.FAILED,
+                    operator_message=f"Channel {str(confirmation.get('label') or path_id)} did not confirm live.",
+                    technical_detail=failure_reason,
+                    observed_at=emitted_at_iso,
+                )
+            )
+            for path_id, confirmation in dict(failed_intent.get("channel_confirmations") or {}).items()
+        }
         runtime_metrics = self._merge_activation_progress(
             merged_runtime_metrics,
             phase=str(current_phase or ACTIVATION_PHASES[0]),

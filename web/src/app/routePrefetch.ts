@@ -3,6 +3,7 @@ let prefetchedRoutes = new Set<string>()
 function prefetchSnapshotEditor() {
   return Promise.allSettled([
     import('./pages/SnapshotEditorPageContent').then((module) => module),
+    import('./pages/SnapshotPublishPage').then((module) => module),
   ])
 }
 
@@ -27,7 +28,7 @@ function prefetchMidiHub() {
 }
 
 function prefetchForRoute(route: string) {
-  if (route === '/snapshot-editor' || route === '/juce-grid' || route === '/grid') {
+  if (route === '/snapshot-editor' || route === '/juce-grid' || route === '/grid' || route.startsWith('/snapshots/')) {
     return prefetchSnapshotEditor()
   }
 

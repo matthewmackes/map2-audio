@@ -1,29 +1,9 @@
-/**
- * RoutingTopologyModal
- *
- * Full signal-path configuration modal for the Audio Grid.
- * Covers all routing topology layers:
- *   - Topology mode (Series / Parallel / A/B / Morph / Sidechain)
- *   - Focus flow selection
- *   - Morph amount (when in parameter_morph mode)
- *   - Live routing diagram visualizer
- *   - Actions: Route ports, Assign flow (open child modals in place)
- *   - MIDI command assignments for every controllable routing target
- *
- * The status strip reflects whether edits are draft-only, applying live,
- * or pending a required reactivation. Close with X or "Done".
- *
- * MIDI section follows the MIDICommand pattern (`action: 'set_routing'`),
- * matching the Native JUCE effect card pattern (MidiMappingDialog / MidiCcBadge).
- */
-
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import {
   Button,
   InlineLoading,
   InlineNotification,
   Layer,
-  Modal,
   NumberInput,
   Select,
   SelectItem,
@@ -38,12 +18,12 @@ import {
 } from '@carbon/react'
 import {
   Branch,
-  Close,
   Flow,
   Launch,
   Music,
 } from '@carbon/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
 import { midiApiV2 } from '../../../map2/api'
 import type { MIDICommand, MIDITriggerType, MIDIActionType, MIDIMappingV2 } from '../../../map2/types'
 import { MidiCcBadge } from '../Controls/MidiCcBadge'
@@ -53,8 +33,6 @@ import {
 } from '../SnapshotEditor/SnapshotEditorRoutingVisualizer'
 import './RoutingTopologyModal.css'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
 type RoutingMode =
   | 'parallel_blend'
   | 'ab_switch'
@@ -62,31 +40,22 @@ type RoutingMode =
   | 'parameter_morph'
   | 'sidechain'
 
-export interface RoutingTopologyModalFlowSlot {
+export interface RoutingTopologyFlowSlot {
   id: string
   label: string
   color: string
   chainId: number | null
 }
 
-export interface RoutingTopologyModalProps {
-  open: boolean
-  onClose: () => void
-  /** Current routing mode — changes are applied live via callbacks */
+export interface RoutingTopologyContentProps {
   routingMode: RoutingMode
-  /** Morph progress 0–1 */
   morphProgress: number
-  /** Index of the currently focused flow */
   activeFlowIndex: number
-  /** All flow slots */
-  flowSlots: RoutingTopologyModalFlowSlot[]
-  /** Flows shaped for the visualizer */
+  flowSlots: RoutingTopologyFlowSlot[]
   routingVisualizerFlows: JuceGridRoutingFlowInfo[]
-  /** Active slot id for visualizer */
   activeSlotId: string | null
   morphSourceSlotId: string | null
   morphTargetSlotId: string | null
-  /** Focus-flow buttons — pre-computed by parent */
   routingFocusButtons: Array<{
     id: string
     title: string
@@ -94,14 +63,11 @@ export interface RoutingTopologyModalProps {
     active: boolean
     color: string
   }>
-  /** Live callbacks — fired immediately, no Apply */
   onSetRoutingMode: (mode: RoutingMode) => void
   onSelectFlowIndex: (index: number) => void
   onSetMorphProgress: (value: number) => void
-  /** Open child modals (they stack on top of this one) */
   onOpenPortRouting: (flowIndex: number) => void
   onOpenAssignFlow: (flowId: string) => void
-  /** Active flow index so Actions panel knows which flow to target */
   activeFlowId: string | null
   liveStatusLabel: 'Draft' | 'Live' | 'Pending live' | 'Applying'
   liveStatusTagType: 'cool-gray' | 'green' | 'warm-gray' | 'blue'
@@ -109,23 +75,19 @@ export interface RoutingTopologyModalProps {
   readOnly?: boolean
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-
 const ROUTING_MODE_OPTIONS: Array<{ id: RoutingMode; label: string; summary: string }> = [
-  { id: 'series',          label: 'Series',    summary: 'Sequentially process each flow before output.' },
-  { id: 'parallel_blend',  label: 'Parallel',  summary: 'Run flows side-by-side and blend them together.' },
-  { id: 'ab_switch',       label: 'A/B',        summary: 'Only one focus flow is active at a time.' },
-  { id: 'parameter_morph', label: 'Morph',      summary: 'Crossfade parameter states between two flows.' },
-  { id: 'sidechain',       label: 'Sidechain',  summary: 'Drive one flow with another as control input.' },
+  { id: 'series', label: 'Series', summary: 'Sequentially process each flow before output.' },
+  { id: 'parallel_blend', label: 'Parallel', summary: 'Run flows side-by-side and blend them together.' },
+  { id: 'ab_switch', label: 'A/B', summary: 'Only one focus flow is active at a time.' },
+  { id: 'parameter_morph', label: 'Morph', summary: 'Crossfade parameter states between two flows.' },
+  { id: 'sidechain', label: 'Sidechain', summary: 'Drive one flow with another as control input.' },
 ]
 
-/** MIDI-controllable routing targets with metadata */
 interface RoutingMidiTarget {
   id: string
   label: string
   description: string
   action: MIDIActionType
-  /** extra action_params merged on create */
   actionParams?: Record<string, unknown>
 }
 
@@ -197,17 +159,15 @@ const ROUTING_MIDI_TARGETS: RoutingMidiTarget[] = [
 
 const TRIGGER_OPTIONS: Array<{ value: MIDITriggerType; label: string }> = [
   { value: 'program_change', label: 'Program Change' },
-  { value: 'note_on',        label: 'Note On' },
-  { value: 'note_off',       label: 'Note Off' },
+  { value: 'note_on', label: 'Note On' },
+  { value: 'note_off', label: 'Note Off' },
   { value: 'control_change', label: 'Control Change' },
 ]
 
 const CHANNEL_OPTIONS = [
-  { value: 0,  label: 'Omni' },
+  { value: 0, label: 'Omni' },
   ...Array.from({ length: 16 }, (_, i) => ({ value: i + 1, label: `Ch ${i + 1}` })),
 ]
-
-// ── MIDI command row draft ─────────────────────────────────────────────────────
 
 interface MidiCommandDraft {
   targetId: string
@@ -235,14 +195,10 @@ function commandMatchesTarget(cmd: MIDICommand, target: RoutingMidiTarget): bool
   if (cmd.action !== target.action) return false
   if (!target.actionParams) return true
   const params = cmd.action_params ?? {}
-  return Object.entries(target.actionParams).every(([k, v]) => params[k] === v)
+  return Object.entries(target.actionParams).every(([key, value]) => params[key] === value)
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
-
-export function RoutingTopologyModal({
-  open,
-  onClose,
+export function RoutingTopologyContent({
   routingMode,
   morphProgress,
   activeFlowIndex,
@@ -262,33 +218,29 @@ export function RoutingTopologyModal({
   liveStatusTagType,
   liveStatusMessage,
   readOnly = false,
-}: RoutingTopologyModalProps) {
+}: RoutingTopologyContentProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState(0)
   const [drafts, setDrafts] = useState<Record<string, MidiCommandDraft>>({})
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
 
-  // ── Load existing MIDI commands ──────────────────────────────────────────────
   const commandsQuery = useQuery({
     queryKey: ['midi', 'commands', 'routing'],
     queryFn: () => midiApiV2.getCommands(),
-    enabled: open,
   })
 
-  // Hydrate drafts from fetched commands whenever the query settles
   useEffect(() => {
     if (!commandsQuery.data) return
-    const cmds = commandsQuery.data.commands
-    setDrafts((prev) => {
+    const commands = commandsQuery.data.commands
+    setDrafts((previous) => {
       const next: Record<string, MidiCommandDraft> = {}
       for (const target of ROUTING_MIDI_TARGETS) {
-        const existing = cmds.find((c) => commandMatchesTarget(c, target))
+        const existing = commands.find((command) => commandMatchesTarget(command, target))
         if (existing) {
-          // Keep dirty edits the user has already made in this session
-          const prevDraft = prev[target.id]
-          next[target.id] = prevDraft?.isDirty
-            ? prevDraft
+          const previousDraft = previous[target.id]
+          next[target.id] = previousDraft?.isDirty
+            ? previousDraft
             : {
                 targetId: target.id,
                 existingId: existing.id,
@@ -299,19 +251,12 @@ export function RoutingTopologyModal({
                 isDirty: false,
               }
         } else {
-          next[target.id] = prev[target.id] ?? blankDraft(target.id)
+          next[target.id] = previous[target.id] ?? blankDraft(target.id)
         }
       }
       return next
     })
   }, [commandsQuery.data])
-
-  // Reset tab on open
-  useEffect(() => {
-    if (open) setActiveTab(0)
-  }, [open])
-
-  // ── Mutations ────────────────────────────────────────────────────────────────
 
   const createMutation = useMutation({
     mutationFn: (command: Partial<MIDICommand>) => midiApiV2.createCommand(command),
@@ -329,21 +274,19 @@ export function RoutingTopologyModal({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi', 'commands', 'routing'] }),
   })
 
-  // ── Draft helpers ────────────────────────────────────────────────────────────
-
   const updateDraft = useCallback((targetId: string, patch: Partial<MidiCommandDraft>) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [targetId]: { ...prev[targetId], ...patch, isDirty: true },
+    setDrafts((previous) => ({
+      ...previous,
+      [targetId]: { ...previous[targetId], ...patch, isDirty: true },
     }))
   }, [])
 
   const saveDraft = useCallback(async (targetId: string) => {
     const draft = drafts[targetId]
-    const target = ROUTING_MIDI_TARGETS.find((t) => t.id === targetId)
+    const target = ROUTING_MIDI_TARGETS.find((entry) => entry.id === targetId)
     if (!draft || !target) return
 
-    setSavingIds((prev) => new Set(prev).add(targetId))
+    setSavingIds((previous) => new Set(previous).add(targetId))
     try {
       const payload: Partial<MIDICommand> = {
         name: target.label,
@@ -364,63 +307,55 @@ export function RoutingTopologyModal({
         await createMutation.mutateAsync(payload)
       }
 
-      setDrafts((prev) => ({
-        ...prev,
-        [targetId]: { ...prev[targetId], isDirty: false },
+      setDrafts((previous) => ({
+        ...previous,
+        [targetId]: { ...previous[targetId], isDirty: false },
       }))
     } finally {
-      setSavingIds((prev) => {
-        const next = new Set(prev)
+      setSavingIds((previous) => {
+        const next = new Set(previous)
         next.delete(targetId)
         return next
       })
     }
-  }, [drafts, createMutation, updateMutation])
+  }, [createMutation, drafts, updateMutation])
 
   const deleteDraft = useCallback(async (targetId: string) => {
     const draft = drafts[targetId]
     if (!draft?.existingId) return
 
-    setDeletingIds((prev) => new Set(prev).add(targetId))
+    setDeletingIds((previous) => new Set(previous).add(targetId))
     try {
       await deleteMutation.mutateAsync(draft.existingId)
-      setDrafts((prev) => ({
-        ...prev,
+      setDrafts((previous) => ({
+        ...previous,
         [targetId]: blankDraft(targetId),
       }))
     } finally {
-      setDeletingIds((prev) => {
-        const next = new Set(prev)
+      setDeletingIds((previous) => {
+        const next = new Set(previous)
         next.delete(targetId)
         return next
       })
     }
-  }, [drafts, deleteMutation])
-
-  // ── Derived ──────────────────────────────────────────────────────────────────
+  }, [deleteMutation, drafts])
 
   const activeMode = useMemo(
-    () => ROUTING_MODE_OPTIONS.find((o) => o.id === routingMode) ?? ROUTING_MODE_OPTIONS[0],
+    () => ROUTING_MODE_OPTIONS.find((option) => option.id === routingMode) ?? ROUTING_MODE_OPTIONS[0],
     [routingMode],
   )
-
-  const activeFlow = flowSlots.find((s) => s.id === activeFlowId) ?? flowSlots[activeFlowIndex] ?? null
+  const activeFlow = flowSlots.find((slot) => slot.id === activeFlowId) ?? flowSlots[activeFlowIndex] ?? null
   const activeFocusButton = routingFocusButtons.find((button) => button.active) ?? null
   const morphSourceFlow = flowSlots.find((slot) => slot.id === morphSourceSlotId) ?? null
   const morphTargetFlow = flowSlots.find((slot) => slot.id === morphTargetSlotId) ?? null
-
   const midiAssignedCount = useMemo(
-    () => Object.values(drafts).filter((d) => d.existingId !== null).length,
+    () => Object.values(drafts).filter((draft) => draft.existingId !== null).length,
     [drafts],
   )
 
-  // ── Render helpers ────────────────────────────────────────────────────────────
-
   const renderTopologyPanel = () => (
     <div className="rtm__panel-grid">
-      {/* LEFT: controls */}
       <div className="rtm__sidebar">
-        {/* Topology tile */}
         <Tile className="rtm__tile">
           <span className="rtm__tile-label">Topology</span>
           <p className="rtm__tile-copy">{activeMode.summary}</p>
@@ -439,32 +374,30 @@ export function RoutingTopologyModal({
           </div>
         </Tile>
 
-        {/* Focus flow tile */}
         <Tile className="rtm__tile">
           <span className="rtm__tile-label">Focus flow</span>
           <p className="rtm__tile-copy">Choose which flow stays primary while editing and routing.</p>
           <div className="rtm__focus-list">
-            {routingFocusButtons.map((btn, index) => (
+            {routingFocusButtons.map((button, index) => (
               <Button
-                key={btn.id}
+                key={button.id}
                 size="sm"
-                kind={btn.active ? 'secondary' : 'ghost'}
+                kind={button.active ? 'secondary' : 'ghost'}
                 className="rtm__focus-button"
-                style={{ '--rtm-flow-color': btn.color } as CSSProperties}
+                style={{ '--rtm-flow-color': button.color } as CSSProperties}
                 onClick={() => onSelectFlowIndex(index)}
                 disabled={readOnly}
               >
                 <span className="rtm__focus-button-copy">
-                  <span className="rtm__focus-button-title">{btn.title}</span>
-                  <span className="rtm__focus-button-caption">{btn.caption}</span>
+                  <span className="rtm__focus-button-title">{button.title}</span>
+                  <span className="rtm__focus-button-caption">{button.caption}</span>
                 </span>
               </Button>
             ))}
           </div>
         </Tile>
 
-        {/* Morph tile — only in morph mode */}
-        {routingMode === 'parameter_morph' && (
+        {routingMode === 'parameter_morph' ? (
           <Tile className="rtm__tile rtm__tile--morph">
             <span className="rtm__tile-label">Morph amount</span>
             <p className="rtm__tile-copy">Set the crossfade position between morph source and target.</p>
@@ -493,16 +426,17 @@ export function RoutingTopologyModal({
               min={0}
               max={100}
               step={1}
-              onChange={(_e, { value }) => {
-                const n = typeof value === 'number' ? value : Number(value)
-                if (!Number.isNaN(n)) onSetMorphProgress(n / 100)
+              onChange={(_event, { value }) => {
+                const nextValue = typeof value === 'number' ? value : Number(value)
+                if (!Number.isNaN(nextValue)) {
+                  onSetMorphProgress(nextValue / 100)
+                }
               }}
               disabled={readOnly}
             />
           </Tile>
-        )}
+        ) : null}
 
-        {/* Actions tile */}
         <Tile className="rtm__tile">
           <span className="rtm__tile-label">Actions</span>
           <p className="rtm__tile-copy">Open port routing or assign the active flow to a cluster node.</p>
@@ -529,7 +463,6 @@ export function RoutingTopologyModal({
         </Tile>
       </div>
 
-      {/* RIGHT: diagram */}
       <div className="rtm__visual">
         <JuceGridRoutingVisualizer
           mode={routingMode}
@@ -551,25 +484,24 @@ export function RoutingTopologyModal({
         <div className="rtm__midi-copy">
           <strong>MIDI command assignments</strong>
           <p>
-            Assign MIDI triggers (Program Change, Note, CC) to routing actions.
-            Changes are saved per-target. Follows the same command model as effect cards.
+            Assign MIDI triggers to routing actions. Changes are saved per target and follow the same command model as effect cards.
           </p>
         </div>
         <div className="rtm__midi-meta">
-          {midiAssignedCount > 0 && (
+          {midiAssignedCount > 0 ? (
             <Tag type="blue">{midiAssignedCount} assigned</Tag>
-          )}
+          ) : null}
           <Tag type="cool-gray">Commands</Tag>
         </div>
       </div>
 
-      {commandsQuery.isLoading && (
+      {commandsQuery.isLoading ? (
         <div className="rtm__midi-loading">
           <InlineLoading description="Loading MIDI commands…" />
         </div>
-      )}
+      ) : null}
 
-      {commandsQuery.isError && (
+      {commandsQuery.isError ? (
         <InlineNotification
           kind="error"
           lowContrast
@@ -577,9 +509,9 @@ export function RoutingTopologyModal({
           title="MIDI commands unavailable"
           subtitle="Could not reach the MIDI API. Reopen the modal after the engine settles."
         />
-      )}
+      ) : null}
 
-      {!commandsQuery.isLoading && (
+      {!commandsQuery.isLoading ? (
         <div className="rtm__midi-table">
           <div className="rtm__midi-table-head" role="row">
             <span role="columnheader">Action</span>
@@ -598,8 +530,6 @@ export function RoutingTopologyModal({
             const isAssigned = draft.existingId !== null
             const isBusy = isSaving || isDeleting
             const controlsDisabled = readOnly || isBusy
-
-            // Build a fake MIDIMappingV2-like object for MidiCcBadge (reuse display)
             const badgeMapping: MIDIMappingV2 | null = isAssigned
               ? {
                   id: draft.existingId!,
@@ -628,22 +558,16 @@ export function RoutingTopologyModal({
                 className={`rtm__midi-row ${isAssigned ? 'is-assigned' : ''} ${draft.isDirty ? 'is-dirty' : ''}`}
                 role="row"
               >
-                {/* Action label */}
                 <div className="rtm__midi-cell rtm__midi-cell--action" role="cell">
                   <div className="rtm__midi-action-copy">
                     <strong>{target.label}</strong>
                     <span>{target.description}</span>
                   </div>
-                  {isAssigned && (
-                    <MidiCcBadge
-                      mapping={badgeMapping}
-                      position="inline"
-                      size="small"
-                    />
-                  )}
+                  {isAssigned && badgeMapping ? (
+                    <MidiCcBadge mapping={badgeMapping} position="inline" size="small" />
+                  ) : null}
                 </div>
 
-                {/* Trigger type */}
                 <div className="rtm__midi-cell" role="cell">
                   <Select
                     id={`rtm-trigger-${target.id}`}
@@ -651,16 +575,15 @@ export function RoutingTopologyModal({
                     hideLabel
                     size="sm"
                     value={draft.triggerType}
-                    onChange={(e) => updateDraft(target.id, { triggerType: e.target.value as MIDITriggerType })}
+                    onChange={(event) => updateDraft(target.id, { triggerType: event.target.value as MIDITriggerType })}
                     disabled={controlsDisabled}
                   >
-                    {TRIGGER_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} text={opt.label} />
+                    {TRIGGER_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} text={option.label} />
                     ))}
                   </Select>
                 </div>
 
-                {/* Channel */}
                 <div className="rtm__midi-cell rtm__midi-cell--narrow" role="cell">
                   <Select
                     id={`rtm-channel-${target.id}`}
@@ -668,16 +591,15 @@ export function RoutingTopologyModal({
                     hideLabel
                     size="sm"
                     value={String(draft.channel)}
-                    onChange={(e) => updateDraft(target.id, { channel: Number(e.target.value) })}
+                    onChange={(event) => updateDraft(target.id, { channel: Number(event.target.value) })}
                     disabled={controlsDisabled}
                   >
-                    {CHANNEL_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)} text={opt.label} />
+                    {CHANNEL_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={String(option.value)} text={option.label} />
                     ))}
                   </Select>
                 </div>
 
-                {/* Data 1 (PC / note / CC number) */}
                 <div className="rtm__midi-cell rtm__midi-cell--narrow" role="cell">
                   <NumberInput
                     id={`rtm-data1-${target.id}`}
@@ -688,15 +610,16 @@ export function RoutingTopologyModal({
                     min={0}
                     max={127}
                     step={1}
-                    onChange={(_e, { value }) => {
-                      const n = typeof value === 'number' ? value : Number(value)
-                      if (!Number.isNaN(n)) updateDraft(target.id, { data1: n })
+                    onChange={(_event, { value }) => {
+                      const nextValue = typeof value === 'number' ? value : Number(value)
+                      if (!Number.isNaN(nextValue)) {
+                        updateDraft(target.id, { data1: nextValue })
+                      }
                     }}
                     disabled={controlsDisabled}
                   />
                 </div>
 
-                {/* Enabled toggle */}
                 <div className="rtm__midi-cell rtm__midi-cell--toggle" role="cell">
                   <Toggle
                     id={`rtm-enabled-${target.id}`}
@@ -709,7 +632,6 @@ export function RoutingTopologyModal({
                   />
                 </div>
 
-                {/* Status badge */}
                 <div className="rtm__midi-cell rtm__midi-cell--status" role="cell">
                   {isSaving || isDeleting ? (
                     <InlineLoading />
@@ -722,7 +644,6 @@ export function RoutingTopologyModal({
                   )}
                 </div>
 
-                {/* Save / Remove actions */}
                 <div className="rtm__midi-cell rtm__midi-cell--actions" role="cell">
                   <Button
                     size="sm"
@@ -732,7 +653,7 @@ export function RoutingTopologyModal({
                   >
                     Save
                   </Button>
-                  {isAssigned && (
+                  {isAssigned ? (
                     <Button
                       size="sm"
                       kind="danger--ghost"
@@ -741,111 +662,88 @@ export function RoutingTopologyModal({
                     >
                       Remove
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )
           })}
         </div>
-      )}
+      ) : null}
 
       <div className="rtm__midi-footer">
         <p className="rtm__midi-footer-copy">
-          MIDI commands trigger routing actions globally. For per-chain program-change
-          recall, use the chain MIDI config in the Chain Assignment modal.
+          MIDI commands trigger routing actions globally. For per-chain program-change recall, use the chain MIDI config in the Chain Assignment modal.
         </p>
       </div>
     </div>
   )
 
-  // ── Render ────────────────────────────────────────────────────────────────────
-
   return (
-    <Modal
-      open={open}
-      size="lg"
-      modalHeading="Set your Signal Path between Flows/Chains"
-      modalLabel={activeMode.label}
-      primaryButtonText="Done"
-      hasScrollingContent
-      onRequestClose={onClose}
-      onRequestSubmit={onClose}
-      secondaryButtons={[]}
-      aria-label="Routing topology"
-    >
-      <div className="rtm__body">
-        {/* Live/draft status strip */}
-        <div className="rtm__live-strip">
-          <Tag type={liveStatusTagType}>{liveStatusLabel}</Tag>
-          <span className="rtm__live-strip-copy">
-            {liveStatusMessage}
-          </span>
-          <div className="rtm__live-strip-meta">
-            <Tag type="blue">{activeMode.label}</Tag>
-            <span
-              className="rtm__live-focus-chip"
-              style={{ '--rtm-flow-color': activeFocusButton?.color ?? 'var(--cds-border-strong, #6f6f6f)' } as CSSProperties}
-            >
-              Focus {activeFocusButton?.title ?? '—'}
-            </span>
-            {routingMode === 'parameter_morph' && (
-              <span className="rtm__morph-chip-row">
-                <span className="rtm__morph-chip">Morph {Math.round(morphProgress * 100)}%</span>
-                {morphSourceFlow ? (
-                  <span
-                    className="rtm__morph-endpoint"
-                    style={{ '--rtm-flow-color': morphSourceFlow.color } as CSSProperties}
-                  >
-                    {morphSourceFlow.label} source
-                  </span>
-                ) : null}
-                {morphTargetFlow ? (
-                  <span
-                    className="rtm__morph-endpoint"
-                    style={{ '--rtm-flow-color': morphTargetFlow.color } as CSSProperties}
-                  >
-                    {morphTargetFlow.label} target
-                  </span>
-                ) : null}
-              </span>
-            )}
-            {midiAssignedCount > 0 && (
-              <Tag type="teal">
-                <Music size={12} style={{ marginRight: 4 }} />
-                {midiAssignedCount} MIDI
-              </Tag>
-            )}
-          </div>
-        </div>
-
-        {/* Tabs: Topology | MIDI */}
-        <Layer>
-          <Tabs
-            selectedIndex={activeTab}
-            onChange={({ selectedIndex }) => setActiveTab(selectedIndex)}
+    <div className="rtm__body">
+      <div className="rtm__live-strip">
+        <Tag type={liveStatusTagType}>{liveStatusLabel}</Tag>
+        <span className="rtm__live-strip-copy">{liveStatusMessage}</span>
+        <div className="rtm__live-strip-meta">
+          <Tag type="blue">{activeMode.label}</Tag>
+          <span
+            className="rtm__live-focus-chip"
+            style={{ '--rtm-flow-color': activeFocusButton?.color ?? 'var(--cds-border-strong, #6f6f6f)' } as CSSProperties}
           >
-            <TabList aria-label="Routing topology sections" contained>
-              <Tab>
-                <Flow size={14} style={{ marginRight: 6 }} />
-                Topology
-              </Tab>
-              <Tab>
-                <Music size={14} style={{ marginRight: 6 }} />
-                MIDI Control
-                {midiAssignedCount > 0 && (
-                  <span className="rtm__tab-badge">{midiAssignedCount}</span>
-                )}
-              </Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>{renderTopologyPanel()}</TabPanel>
-              <TabPanel>{renderMidiPanel()}</TabPanel>
-            </TabPanels>
-          </Tabs>
-        </Layer>
+            Focus {activeFocusButton?.title ?? '—'}
+          </span>
+          {routingMode === 'parameter_morph' ? (
+            <span className="rtm__morph-chip-row">
+              <span className="rtm__morph-chip">Morph {Math.round(morphProgress * 100)}%</span>
+              {morphSourceFlow ? (
+                <span
+                  className="rtm__morph-endpoint"
+                  style={{ '--rtm-flow-color': morphSourceFlow.color } as CSSProperties}
+                >
+                  {morphSourceFlow.label} source
+                </span>
+              ) : null}
+              {morphTargetFlow ? (
+                <span
+                  className="rtm__morph-endpoint"
+                  style={{ '--rtm-flow-color': morphTargetFlow.color } as CSSProperties}
+                >
+                  {morphTargetFlow.label} target
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+          {midiAssignedCount > 0 ? (
+            <Tag type="teal">
+              <Music size={12} style={{ marginRight: 4 }} />
+              {midiAssignedCount} MIDI
+            </Tag>
+          ) : null}
+        </div>
       </div>
-    </Modal>
+
+      <Layer>
+        <Tabs selectedIndex={activeTab} onChange={({ selectedIndex }) => setActiveTab(selectedIndex)}>
+          <TabList aria-label="Routing topology sections" contained>
+            <Tab>
+              <Flow size={14} style={{ marginRight: 6 }} />
+              Topology
+            </Tab>
+            <Tab>
+              <Music size={14} style={{ marginRight: 6 }} />
+              MIDI Control
+              {midiAssignedCount > 0 ? (
+                <span className="rtm__tab-badge">{midiAssignedCount}</span>
+              ) : null}
+            </Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel>{renderTopologyPanel()}</TabPanel>
+            <TabPanel>{renderMidiPanel()}</TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Layer>
+    </div>
   )
 }
 
-export default RoutingTopologyModal
+export default RoutingTopologyContent

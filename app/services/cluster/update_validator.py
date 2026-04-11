@@ -10,7 +10,7 @@ from enum import Enum
 from typing import List, Dict, Tuple, Optional
 import subprocess
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import logging
 
@@ -18,6 +18,7 @@ from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.health_aggregator import get_health_aggregator
 from app.services.cluster.fedora_package_manager import get_dnf_manager
 from app.services.cluster.integration_helpers import HybridNodeClient
+from app.utils.time import utc_now
 
 
 class ValidationLevel(Enum):
@@ -39,7 +40,7 @@ class ValidationResult:
     
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.now().isoformat()
+            self.timestamp = utc_now().isoformat()
     
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
@@ -588,7 +589,9 @@ class UpdateValidator:
                 return
 
             latest = backups[0]
-            age_hours = (datetime.now() - datetime.fromtimestamp(latest.stat().st_mtime)).total_seconds() / 3600
+            age_hours = (
+                utc_now() - datetime.fromtimestamp(latest.stat().st_mtime, tz=timezone.utc)
+            ).total_seconds() / 3600
 
             if age_hours <= max_age_hours:
                 self.results.append(ValidationResult(
@@ -1020,7 +1023,7 @@ class UpdateValidator:
         
         return ValidationReport(
             check_type=check_type,
-            timestamp=datetime.now().isoformat(),
+            timestamp=utc_now().isoformat(),
             total_checks=len(self.results),
             passed_checks=passed,
             failed_critical=failed_critical,

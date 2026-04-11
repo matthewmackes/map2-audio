@@ -20,6 +20,7 @@ import httpx
 
 from app.services.cluster.registry import ClusterRegistry
 from app.services.node_identity import NodeIdentity
+from app.utils.singleton import Singleton
 
 
 class BootstrapClaimError(RuntimeError):
@@ -57,7 +58,7 @@ def _normalize_text(value: Any) -> Optional[str]:
     return normalized or None
 
 
-class AdoptionBootstrapService:
+class AdoptionBootstrapService(Singleton):
     """Manage pairing-code issuance and short-lived claim tokens."""
 
     SECRET_PATH = ClusterRegistry.DB_PATH.parent / "bootstrap-token-secret"
@@ -395,19 +396,13 @@ class AdoptionBootstrapService:
             }
 
 
-_bootstrap_service: Optional[AdoptionBootstrapService] = None
-_bootstrap_service_lock = threading.Lock()
-
-
 def set_adoption_bootstrap_service(service: Optional[AdoptionBootstrapService]) -> None:
-    global _bootstrap_service
-    _bootstrap_service = service
+    with AdoptionBootstrapService._lock:
+        if service is None:
+            AdoptionBootstrapService._instances.pop(AdoptionBootstrapService, None)
+            return
+        AdoptionBootstrapService._instances[AdoptionBootstrapService] = service
 
 
 def get_adoption_bootstrap_service() -> AdoptionBootstrapService:
-    global _bootstrap_service
-    if _bootstrap_service is None:
-        with _bootstrap_service_lock:
-            if _bootstrap_service is None:
-                _bootstrap_service = AdoptionBootstrapService()
-    return _bootstrap_service
+    return AdoptionBootstrapService.get_instance()

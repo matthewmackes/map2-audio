@@ -19,6 +19,9 @@ from datetime import datetime
 import json
 from pathlib import Path
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +58,7 @@ class PackageUpdate:
 class PackageVersionSnapshot:
     """Snapshot of installed packages at a point in time"""
 
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=utc_now)
     node_id: str = ""
     packages: Dict[str, str] = field(default_factory=dict)  # name -> version
 
@@ -69,7 +72,7 @@ class PackageVersionSnapshot:
         }
 
 
-class FedoraDNFManager:
+class FedoraDNFManager(Singleton):
     """
     DNF package manager integration for Fedora systems.
 
@@ -441,7 +444,7 @@ class FedoraDNFManager:
             disk_ok = self.verify_disk_space(disk_required + 500)  # Add buffer
 
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "updates_available": len(updates),
                 "updates": [u.to_dict() for u in updates],
                 "disk_required_mb": disk_required,
@@ -454,18 +457,11 @@ class FedoraDNFManager:
         except Exception as e:
             self.logger.error(f"Failed to get update info: {e}")
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "error": str(e),
             }
 
 
-# Global DNF manager instance
-_dnf_manager: Optional[FedoraDNFManager] = None
-
-
 def get_dnf_manager() -> FedoraDNFManager:
-    """Get or create the DNF manager singleton"""
-    global _dnf_manager
-    if _dnf_manager is None:
-        _dnf_manager = FedoraDNFManager()
-    return _dnf_manager
+    """Get the process-wide DNF manager singleton."""
+    return FedoraDNFManager.get_instance()

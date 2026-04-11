@@ -25,6 +25,9 @@ from datetime import datetime
 from pathlib import Path
 import aiohttp
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +43,7 @@ class ConfigVersion:
     config_data: Dict
 
 
-class ConfigSync:
+class ConfigSync(Singleton):
     """
     Manages configuration distribution across cluster.
     
@@ -306,7 +309,7 @@ class ConfigSync:
                 try:
                     ts = datetime.fromisoformat(commit_date.replace(" ", "T", 1))
                 except Exception:
-                    ts = datetime.utcnow()
+                    ts = utc_now()
 
                 versions.append(
                     ConfigVersion(
@@ -463,13 +466,6 @@ class ConfigSync:
             return False
 
 
-# Global instance
-_config_sync: Optional[ConfigSync] = None
-
-
 def get_config_sync() -> ConfigSync:
     """Get or create the config sync instance"""
-    global _config_sync
-    if _config_sync is None:
-        _config_sync = ConfigSync()
-    return _config_sync
+    return ConfigSync.get_instance()

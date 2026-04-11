@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 
 import httpx
 
+from app.utils.singleton import Singleton
+
 
 @dataclass
 class ClusterPlugin:
@@ -20,7 +22,7 @@ class ClusterPlugin:
     format: Optional[str] = None
 
 
-class ClusterPluginInventory:
+class ClusterPluginInventory(Singleton):
     def __init__(self) -> None:
         self._cache: List[ClusterPlugin] = []
         self._by_node: Dict[str, List[Dict]] = {}
@@ -93,13 +95,5 @@ class ClusterPluginInventory:
                 unique.setdefault(node_id, []).append(plugin)
         return unique
 
-
-_inventory: Optional[ClusterPluginInventory] = None
-
-
 def get_cluster_plugin_inventory() -> ClusterPluginInventory:
-    global _inventory
-    if _inventory is None:
-        _inventory = ClusterPluginInventory()
-    return _inventory
-
+    return ClusterPluginInventory.get_instance()

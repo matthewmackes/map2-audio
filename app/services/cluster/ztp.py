@@ -22,11 +22,13 @@ from app.services.cluster.enhanced_node_identity import (
     get_enhanced_node_identity,
     EnhancedNodeIdentity,
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
 
-class ZTPBootstrap:
+class ZTPBootstrap(Singleton):
     """
     Zero-Touch Provisioning bootstrap service.
 
@@ -224,7 +226,7 @@ class ZTPBootstrap:
 
             # Write marker with timestamp
             with open(self.marker_file, "w") as f:
-                f.write(f"ZTP completed: {datetime.utcnow().isoformat()}\n")
+                f.write(f"ZTP completed: {utc_now().isoformat()}\n")
                 f.write(f"Node ID: {self.node_identity.get_node_id()}\n")
                 f.write(f"Role: {self.node_identity.get_role()}\n")
 
@@ -292,7 +294,7 @@ class ZTPBootstrap:
                         midi_devices=sorted(set(caps.midi_input_ports + caps.midi_output_ports)),
                         storage_gb=caps.storage_gb,
                         status="online",
-                        metadata={"ztp_registered_at": datetime.utcnow().isoformat()},
+                        metadata={"ztp_registered_at": utc_now().isoformat()},
                     )
                     self.logger.info(f"ZTP: Registered {node_id} in cluster registry")
                 except Exception as e:
@@ -380,16 +382,9 @@ class ZTPBootstrap:
                 pass
 
 
-# Global ZTP instance
-_ztp_instance: Optional[ZTPBootstrap] = None
-
-
 def get_ztp_bootstrap() -> ZTPBootstrap:
     """Get or create the ZTP bootstrap singleton"""
-    global _ztp_instance
-    if _ztp_instance is None:
-        _ztp_instance = ZTPBootstrap()
-    return _ztp_instance
+    return ZTPBootstrap.get_instance()
 
 
 async def run_ztp_on_boot() -> bool:

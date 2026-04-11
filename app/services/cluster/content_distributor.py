@@ -16,6 +16,7 @@ from app.services.cluster.mdns_discovery_enhanced import (
     EnhancedMDNSDiscovery,
     get_enhanced_mdns_discovery,
 )
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class SyncResult:
         return asdict(self)
 
 
-class ContentDistributor:
+class ContentDistributor(Singleton):
     def __init__(
         self,
         *,
@@ -272,12 +273,5 @@ class ContentDistributor:
     def _infer_ir_asset_type(path: Path) -> str:
         return "reverb_ir" if "reverb" in path.as_posix().lower() else "cabinet_ir"
 
-
-_content_distributor: Optional[ContentDistributor] = None
-
-
 def get_content_distributor() -> ContentDistributor:
-    global _content_distributor
-    if _content_distributor is None:
-        _content_distributor = ContentDistributor()
-    return _content_distributor
+    return ContentDistributor.get_instance()

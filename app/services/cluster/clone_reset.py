@@ -195,9 +195,9 @@ def _clear_mdns_cache(snapshot: IdentitySnapshot) -> None:
 
 def _reset_identity_singletons() -> None:
     try:
-        from app.services.cluster import enhanced_node_identity as enhanced_identity_module
+        from app.services.cluster.enhanced_node_identity import EnhancedNodeIdentity
 
-        enhanced_identity_module._enhanced_node_identity = None
+        EnhancedNodeIdentity.reset_instance()
     except Exception as exc:
         logger.debug("Failed to reset enhanced identity singleton: %s", exc)
 

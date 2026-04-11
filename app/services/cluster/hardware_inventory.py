@@ -20,6 +20,7 @@ from app.services.cluster.mdns_discovery_enhanced import (
     get_enhanced_mdns_discovery,
 )
 from app.services.cluster.registry import ClusterRegistry, get_cluster_registry
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class NodeHardware:
         return asdict(self)
 
 
-class ClusterHardwareInventory:
+class ClusterHardwareInventory(Singleton):
     def __init__(
         self,
         *,
@@ -377,12 +378,5 @@ class ClusterHardwareInventory:
             )
         return cls._normalize_string_list(merged)
 
-
-_inventory: Optional[ClusterHardwareInventory] = None
-
-
 def get_cluster_hardware_inventory() -> ClusterHardwareInventory:
-    global _inventory
-    if _inventory is None:
-        _inventory = ClusterHardwareInventory()
-    return _inventory
+    return ClusterHardwareInventory.get_instance()

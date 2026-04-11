@@ -9,7 +9,7 @@
   border: 1px solid var(--border);
   background: var(--surface-3);
   color: var(--muted);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -88,7 +88,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
 }
 
 .disclosure-label {
@@ -105,7 +105,7 @@
 
 .disclosure-value.uri {
   font-family: var(--font-ui-tight);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   background: rgba(0, 0, 0, 0.2);
   padding: 2px 6px;
   border-radius: 4px;

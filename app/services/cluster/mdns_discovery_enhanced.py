@@ -22,6 +22,8 @@ from datetime import datetime, timedelta, timezone
 import socket
 import asyncio
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,7 +87,7 @@ class MDNSNode:
         return result
 
 
-class EnhancedMDNSDiscovery:
+class EnhancedMDNSDiscovery(Singleton):
     """
     Enhanced mDNS discovery with capability broadcasting.
 
@@ -303,14 +305,6 @@ class EnhancedMDNSDiscovery:
         """Compatibility lifecycle hook for older cluster bootstrap code."""
         self._running = False
 
-
-# Global discovery instance
-_enhanced_mdns_discovery: Optional[EnhancedMDNSDiscovery] = None
-
-
 def get_enhanced_mdns_discovery() -> EnhancedMDNSDiscovery:
-    """Get or create the enhanced mDNS discovery singleton"""
-    global _enhanced_mdns_discovery
-    if _enhanced_mdns_discovery is None:
-        _enhanced_mdns_discovery = EnhancedMDNSDiscovery()
-    return _enhanced_mdns_discovery
+    """Get the process-wide enhanced mDNS discovery singleton."""
+    return EnhancedMDNSDiscovery.get_instance()

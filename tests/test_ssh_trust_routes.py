@@ -91,6 +91,7 @@ def test_add_and_remove_peer_trust_updates_files_and_registry(monkeypatch, tmp_p
     )
 
     assert add_response.status_code == 200
+    assert add_response.json()["trusted_at"].endswith("+00:00")
     assert add_response.json() == {
         "peer_id": "node-b",
         "trusted": True,
@@ -100,6 +101,7 @@ def test_add_and_remove_peer_trust_updates_files_and_registry(monkeypatch, tmp_p
     assert ssh_trust_routes.AUTHORIZED_KEYS_FILE.read_text(encoding="utf-8") == "ssh-ed25519 AAAAPEER node-b\n"
     stored_peers = json.loads((ssh_trust_routes.TRUST_DIR / "trusted_peers.json").read_text(encoding="utf-8"))
     assert stored_peers["node-b"]["fingerprint"] == "SHA256:peer-fingerprint"
+    assert stored_peers["node-b"]["trusted_at"].endswith("+00:00")
 
     remove_response = client.post("/api/ssh/trust/remove", json={"peer_id": "node-b"})
 

@@ -64,7 +64,7 @@ export function useAppShellPresentation({
           description: item.description,
           color: item.color,
           maturity: item.maturity,
-          featured: item.route === '/platforms/overview' || item.route === '/artifacts',
+          featured: item.storefrontCollections.includes('featured'),
         })),
     [],
   )

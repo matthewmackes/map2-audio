@@ -28,6 +28,8 @@ from app.models.node import (
     NodeTopology,
 )
 from app.services.node_health_service import NodeHealthService, get_node_health_service
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ def _parse_datetime(value: Any) -> datetime:
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
         except Exception:
             pass
-    return datetime.utcnow()
+    return utc_now()
 
 
 @dataclass(frozen=True)
@@ -63,7 +65,7 @@ class PeerRecord:
     api_url: Optional[str] = None
 
 
-class NodeDiscoveryService:
+class NodeDiscoveryService(Singleton):
     CACHE_TTL_S = 4.0
     REMOTE_TIMEOUT_S = 2.0
     DISPLAY_LABEL_KEY = "node.display_label"
@@ -140,7 +142,7 @@ class NodeDiscoveryService:
         local_summary = self._summary_from_identity_health(
             identity=local_identity,
             health=local_health,
-            last_seen=datetime.utcnow(),
+            last_seen=utc_now(),
             is_local=True,
             is_viewed=True,
         )
@@ -445,11 +447,5 @@ class NodeDiscoveryService:
         return str(os.getenv(name) or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-_node_discovery_service: Optional[NodeDiscoveryService] = None
-
-
 def get_node_discovery_service() -> NodeDiscoveryService:
-    global _node_discovery_service
-    if _node_discovery_service is None:
-        _node_discovery_service = NodeDiscoveryService()
-    return _node_discovery_service
+    return NodeDiscoveryService.get_instance()

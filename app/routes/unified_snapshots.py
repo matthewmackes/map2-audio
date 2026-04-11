@@ -12,6 +12,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.database import get_session
+from app.services.publish_readiness_service import PublishReadinessService
 from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService, UNSET
 
 logger = logging.getLogger(__name__)
@@ -216,6 +217,10 @@ class SnapshotTempoTapRequest(BaseModel):
     timestamp_ms: Optional[float] = None
 
 
+class PublishRetryRequest(BaseModel):
+    session_id: Optional[str] = None
+
+
 def _detail_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
     if request.snapshot_data is not None:
         return request.snapshot_data
@@ -317,6 +322,37 @@ def _activation_error_detail(exc: ValueError) -> Any:
     if isinstance(exc, SnapshotActivationPreflightError):
         return exc.detail_payload
     return str(exc)
+
+
+async def _run_publish_repair_action(
+    *,
+    snapshot_id: int,
+    repair_action_id: str,
+    session: Any,
+) -> dict[str, Any]:
+    normalized_action = str(repair_action_id or "").strip()
+    if not normalized_action:
+        raise HTTPException(status_code=400, detail="repair_action_id is required")
+
+    if normalized_action == "retry_publish":
+        service = SnapshotService(session)
+        payload = await service.state_authority_activation.activate_snapshot(
+            snapshot_id,
+            triggered_by="publish_retry",
+        )
+        if payload is None:
+            _raise_not_found("Snapshot")
+        return {
+            "status": "success",
+            "snapshot_id": snapshot_id,
+            "repair_action_id": normalized_action,
+            "result": payload,
+        }
+
+    raise HTTPException(
+        status_code=400,
+        detail=f"Repair action '{normalized_action}' is not implemented yet",
+    )
 
 
 def _normalize_optional_query_string(value: Any) -> Optional[str]:
@@ -874,6 +910,79 @@ async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.error("Error activating snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api/snapshots/{snapshot_id}/publish-readiness")
+async def get_snapshot_publish_readiness(snapshot_id: int) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            readiness = await PublishReadinessService(session).get_publish_readiness(snapshot_id)
+            return readiness.model_dump(mode="json")
+    except ValueError as exc:
+        if "not found" in str(exc).lower():
+            _raise_not_found("Snapshot")
+        _translate_value_error(exc)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error building publish readiness for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/publish-retry")
+async def retry_snapshot_publish(
+    snapshot_id: int,
+    request: Optional[PublishRetryRequest] = Body(default=None),
+) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            payload = await _run_publish_repair_action(
+                snapshot_id=snapshot_id,
+                repair_action_id="retry_publish",
+                session=session,
+            )
+            if request is not None and request.session_id:
+                payload["session_id"] = request.session_id
+        from app.routes.chains import _invalidate_chain_list_cache
+        _invalidate_chain_list_cache()
+        return payload
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error retrying publish for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/repair/{repair_action_id}")
+async def repair_snapshot_publish(
+    snapshot_id: int,
+    repair_action_id: str,
+) -> dict[str, Any]:
+    try:
+        async with get_session() as session:
+            payload = await _run_publish_repair_action(
+                snapshot_id=snapshot_id,
+                repair_action_id=repair_action_id,
+                session=session,
+            )
+        if repair_action_id == "retry_publish":
+            from app.routes.chains import _invalidate_chain_list_cache
+            _invalidate_chain_list_cache()
+        return payload
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(
+            "Error running repair action %s for snapshot %s: %s",
+            repair_action_id,
+            snapshot_id,
+            exc,
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

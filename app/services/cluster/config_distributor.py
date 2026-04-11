@@ -13,18 +13,19 @@ Uses Raft to ensure consistent state across all management nodes.
 import asyncio
 import logging
 import json
-import hashlib
 from pathlib import Path
 from typing import Dict, Optional, List, Any
-from datetime import datetime
 import subprocess
 import httpx
 import yaml
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
-class ConfigDistributor:
+class ConfigDistributor(Singleton):
     """
     Distributes cluster configuration to all nodes via Git.
     
@@ -154,7 +155,7 @@ class ConfigDistributor:
                     
                     if success:
                         self.current_commit = new_commit
-                        self.last_sync = datetime.utcnow().isoformat()
+                        self.last_sync = utc_now().isoformat()
                         self.logger.info(f"Configuration synchronized to all nodes")
                     else:
                         self.logger.error("Distribution failed, rolling back")
@@ -324,21 +325,15 @@ class ConfigDistributor:
             self.logger.error(f"Failed to read config: {e}")
             return None
 
-
-# Singleton instance
-_config_distributor: Optional[ConfigDistributor] = None
-
-
 def get_config_distributor() -> ConfigDistributor:
-    """Get or create config distributor instance."""
-    global _config_distributor
-    if _config_distributor is None:
+    """Get the initialized config distributor instance."""
+    if not ConfigDistributor.has_instance():
         raise RuntimeError("ConfigDistributor not initialized")
-    return _config_distributor
+    return ConfigDistributor._instances[ConfigDistributor]  # type: ignore[return-value]
 
 
 def initialize_config_distributor(git_repo: str) -> ConfigDistributor:
     """Initialize config distributor."""
-    global _config_distributor
-    _config_distributor = ConfigDistributor(git_repo)
-    return _config_distributor
+    with ConfigDistributor._lock:
+        ConfigDistributor._instances[ConfigDistributor] = ConfigDistributor(git_repo)
+        return ConfigDistributor._instances[ConfigDistributor]  # type: ignore[return-value]

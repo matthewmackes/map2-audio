@@ -7,6 +7,33 @@ interface ExtractSnapshotActivationFailureReasonOptions {
   separator?: string
 }
 
+export interface SnapshotActivationFailureIssue {
+  code?: string | null
+  category?: string | null
+  message: string
+  autoRepair: boolean
+  assetType?: string | null
+  deviceRole?: string | null
+}
+
+export interface SnapshotActivationRepairAction {
+  action: string
+  message: string
+  assetType?: string | null
+  requestedDevice?: string | null
+  deviceRole?: string | null
+  pluginName?: string | null
+}
+
+export interface SnapshotActivationFailureDetail {
+  message: string
+  phase: string | null
+  blocking: boolean
+  failures: string[]
+  issues: SnapshotActivationFailureIssue[]
+  repairActions: SnapshotActivationRepairAction[]
+}
+
 type SnapshotActivationToastSource = Pick<
   SnapshotDetail,
   'name' | 'channel_count' | 'channels' | 'chains' | 'paths' | 'live_state'
@@ -76,6 +103,74 @@ function countPluginsInPaths(paths: PathLike[]): number {
   return paths.reduce((total, path) => total + countNonBypassedPlugins(path.plugins), 0)
 }
 
+function readApiErrorDetail(error: ApiError): unknown {
+  return typeof error.body === 'object' && error.body !== null && 'detail' in error.body
+    ? (error.body as { detail?: unknown }).detail
+    : undefined
+}
+
+function normalizeFailureText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+}
+
+export function extractSnapshotActivationFailureDetail(error: unknown): SnapshotActivationFailureDetail | null {
+  if (!(error instanceof ApiError)) {
+    return null
+  }
+
+  const detail = readApiErrorDetail(error)
+  if (typeof detail !== 'object' || detail === null || Array.isArray(detail)) {
+    return null
+  }
+
+  const payload = detail as Record<string, unknown>
+  const failures = Array.isArray(payload.failures)
+    ? payload.failures
+      .map((entry) => normalizeFailureText(entry))
+      .filter((entry): entry is string => entry !== null)
+    : []
+  const issues = Array.isArray(payload.issues)
+    ? payload.issues
+      .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+      .map((entry) => ({
+        code: normalizeFailureText(entry.code),
+        category: normalizeFailureText(entry.category),
+        message: normalizeFailureText(entry.message) ?? 'Live check failed.',
+        autoRepair: Boolean(entry.auto_repair),
+        assetType: normalizeFailureText(entry.asset_type),
+        deviceRole: normalizeFailureText(entry.device_role),
+      }))
+    : []
+  const repairActions = Array.isArray(payload.repair_actions)
+    ? payload.repair_actions
+      .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+      .map((entry) => ({
+        action: normalizeFailureText(entry.action) ?? 'review_issue',
+        message: normalizeFailureText(entry.message) ?? 'Review the live check issue.',
+        assetType: normalizeFailureText(entry.asset_type),
+        requestedDevice: normalizeFailureText(entry.requested_device),
+        deviceRole: normalizeFailureText(entry.device_role),
+        pluginName: normalizeFailureText(entry.plugin_name),
+      }))
+    : []
+  const message = normalizeFailureText(payload.message)
+    ?? failures[0]
+    ?? issues[0]?.message
+
+  if (!message) {
+    return null
+  }
+
+  return {
+    message,
+    phase: normalizeFailureText(payload.phase),
+    blocking: Boolean(payload.blocking),
+    failures,
+    issues,
+    repairActions,
+  }
+}
+
 export function extractSnapshotActivationFailureReason(
   error: unknown,
   options: ExtractSnapshotActivationFailureReasonOptions = {},
@@ -83,10 +178,13 @@ export function extractSnapshotActivationFailureReason(
   const separator = options.separator ?? ' '
 
   if (error instanceof ApiError) {
-    const detail =
-      typeof error.body === 'object' && error.body !== null && 'detail' in error.body
-        ? (error.body as { detail?: unknown }).detail
-        : undefined
+    const detail = readApiErrorDetail(error)
+    const structuredDetail = extractSnapshotActivationFailureDetail(error)
+    if (structuredDetail) {
+      return structuredDetail.failures.length > 0
+        ? structuredDetail.failures.join(separator)
+        : structuredDetail.message
+    }
 
     if (typeof detail === 'string' && detail.trim().length > 0) {
       return detail.trim()

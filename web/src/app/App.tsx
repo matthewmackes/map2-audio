@@ -43,6 +43,7 @@ const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcess
 const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
+const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
@@ -138,6 +139,7 @@ function PageLoader() {
 
   const variant: 'default' | 'snapshot' | 'midi-hub' | 'metrics' | 'audio-engine' =
     pathname.startsWith('/snapshot-editor')
+      || pathname.startsWith('/snapshots/')
       ? 'snapshot'
       : pathname.startsWith('/midi-hub')
         ? 'midi-hub'
@@ -343,6 +345,7 @@ export function App() {
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />
+                                <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/dsp" element={<RouteBoundary title="DSP view crashed" actionLabel="Reload DSP view"><DSPPage /></RouteBoundary>} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />

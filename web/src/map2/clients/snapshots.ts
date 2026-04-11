@@ -16,6 +16,7 @@ import type {
   SnapshotExport,
   SnapshotActivationEventsResponse,
   SnapshotActivationIntent,
+  SnapshotPublishReadiness,
   SnapshotIOBindings,
   SnapshotPath,
   SnapshotLoadedEvent,
@@ -98,6 +99,10 @@ export interface SnapshotActivationResponse {
   runtime_live_state?: SnapshotRuntimeLiveState
   params_applied: number
   bypass_applied: number
+}
+
+export interface SnapshotPublishMutationResponse extends SnapshotActivationResponse {
+  session_id?: string
 }
 
 export interface SnapshotCreateResponse {
@@ -533,6 +538,22 @@ export const snapshotsApi = {
 
   activate: (snapshotId: number) =>
     fetchJson<SnapshotActivationResponse>(`${API_BASE}/snapshots/${snapshotId}/activate`, {
+      method: 'POST',
+    }),
+
+  getPublishReadiness: (snapshotId: number) =>
+    fetchJson<SnapshotPublishReadiness>(`${API_BASE}/snapshots/${snapshotId}/publish-readiness`, {
+      cache: 'no-store',
+    }),
+
+  retryPublish: (snapshotId: number, sessionId?: string) =>
+    fetchJson<SnapshotPublishMutationResponse>(`${API_BASE}/snapshots/${snapshotId}/publish-retry`, {
+      method: 'POST',
+      body: JSON.stringify(sessionId ? { session_id: sessionId } : {}),
+    }),
+
+  runPublishRepairAction: (snapshotId: number, repairActionId: string) =>
+    fetchJson<SnapshotPublishMutationResponse>(`${API_BASE}/snapshots/${snapshotId}/repair/${encodeURIComponent(repairActionId)}`, {
       method: 'POST',
     }),
 

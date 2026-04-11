@@ -28,12 +28,14 @@
 .notification-panel-header h3 {
   margin: 0;
   color: var(--text-primary);
-  font-size: var(--type-subheading);
+  font-size: var(--cds-heading-01-font-size, 0.875rem);
+  font-weight: 600;
+  line-height: var(--cds-heading-01-line-height, 1.125rem);
 }
 
 .notification-panel-header .cds--btn {
   padding: 6px 10px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .notification-panel-content {

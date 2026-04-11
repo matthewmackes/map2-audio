@@ -110,7 +110,7 @@ import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
-import { useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
+import { useSnapshotActivationEvents, useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
 import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
@@ -157,6 +157,7 @@ import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
   buildSnapshotActivationFailureToastMessage,
   buildSnapshotActivationToastMessage,
+  extractSnapshotActivationFailureDetail,
   extractSnapshotActivationFailureReason,
 } from '../utils/snapshotActivationToast'
 import {
@@ -215,7 +216,6 @@ import { SnapshotEditorMenuRail } from '../components/SnapshotEditor/SnapshotEdi
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
-import { RoutingTopologyModal } from '../components/modals/RoutingTopologyModal'
 import { AudioNodesModal } from '../components/modals/AudioNodesModal'
 import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
@@ -1011,6 +1011,39 @@ function loadInitialPluginPersistence(): {
 // Main Component
 // ============================================================================
 
+const LIVE_ACTIVATION_PHASES = ['VALIDATING', 'STAGING', 'APPLYING', 'VERIFYING'] as const
+
+function extractActivationProgressMetrics(event: { runtime_metrics?: Record<string, unknown> } | null | undefined): {
+  currentPhase: string | null
+  status: string | null
+  note: string | null
+  completedPhases: string[]
+} | null {
+  const runtimeMetrics = event?.runtime_metrics
+  if (!runtimeMetrics || typeof runtimeMetrics !== 'object') {
+    return null
+  }
+
+  const activationProgress = runtimeMetrics.activation_progress
+  if (!activationProgress || typeof activationProgress !== 'object' || Array.isArray(activationProgress)) {
+    return null
+  }
+
+  const payload = activationProgress as Record<string, unknown>
+  const completedPhases = Array.isArray(payload.completed_phases)
+    ? payload.completed_phases
+      .map((entry) => (typeof entry === 'string' ? entry.toUpperCase() : null))
+      .filter((entry): entry is string => entry !== null)
+    : []
+
+  return {
+    currentPhase: typeof payload.current_phase === 'string' ? payload.current_phase.toUpperCase() : null,
+    status: typeof payload.status === 'string' ? payload.status.toLowerCase() : null,
+    note: typeof payload.note === 'string' && payload.note.trim().length > 0 ? payload.note.trim() : null,
+    completedPhases,
+  }
+}
+
 export function SnapshotEditorPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -1082,12 +1115,10 @@ export function SnapshotEditorPage() {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
-  const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [progressModalInitialTab, setProgressModalInitialTab] = useState<'guided' | 'advanced'>('guided')
+  const [progressModalInitialSection, setProgressModalInitialSection] = useState<'overview' | 'routing' | 'devices' | 'runtime' | 'cleanup'>('overview')
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
-  const [showControlCenterModal, setShowControlCenterModal] = useState(false)
-  const [showSnapshotIoModal, setShowSnapshotIoModal] = useState(false)
-  const [showOutputReferenceModal, setShowOutputReferenceModal] = useState(false)
-  const [showNoiseGateDefaultsModal, setShowNoiseGateDefaultsModal] = useState(false)
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
   const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
   const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
@@ -1142,8 +1173,11 @@ export function SnapshotEditorPage() {
   const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
   const [editorSnapshotContext, setEditorSnapshotContext] = useState<SnapshotDetail | null>(null)
   const [pendingGoLiveSnapshotId, setPendingGoLiveSnapshotId] = useState<number | null>(null)
+  const [pendingGoLiveRequestedAt, setPendingGoLiveRequestedAt] = useState<number | null>(null)
+  const [confirmedGoLiveSnapshotId, setConfirmedGoLiveSnapshotId] = useState<number | null>(null)
   const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
   const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
+  const [goLiveFailureDetail, setGoLiveFailureDetail] = useState<ReturnType<typeof extractSnapshotActivationFailureDetail> | null>(null)
   const [goLiveDiffExpanded, setGoLiveDiffExpanded] = useState(false)
   const [dismissedGoLiveDiffKey, setDismissedGoLiveDiffKey] = useState<string | null>(null)
   const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
@@ -1415,6 +1449,10 @@ export function SnapshotEditorPage() {
   const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
     refetchInterval: snapshotStandardCadence,
   })
+  const activationEventsQuery = useSnapshotActivationEvents(undefined, {
+    limit: 20,
+    refetchInterval: snapshotStandardCadence,
+  })
   const snapshotsSummaryQuery = useQuery({
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),
@@ -1518,6 +1556,9 @@ export function SnapshotEditorPage() {
 
   const openArtifactsSnapshots = useCallback(() => {
     navigate('/artifacts?category=snapshots')
+  }, [navigate])
+  const openArtifactsCategory = useCallback((category: string) => {
+    navigate(`/artifacts?category=${encodeURIComponent(category)}`)
   }, [navigate])
 
   const reopenSnapshotEntryPoint = useCallback(() => {
@@ -1962,9 +2003,180 @@ export function SnapshotEditorPage() {
       pendingSnapshotId: pendingGoLiveSnapshotId,
       failedSnapshotId: failedGoLiveSnapshotId,
       failureReason: goLiveFailureReason,
+      confirmedSnapshotId: confirmedGoLiveSnapshotId,
+      hasDraftChanges: snapshotsDirty,
     }),
-    [activeSnapshot, authoritativeAudioState, failedGoLiveSnapshotId, goLiveFailureReason, pendingGoLiveSnapshotId],
+    [
+      activeSnapshot,
+      authoritativeAudioState,
+      confirmedGoLiveSnapshotId,
+      failedGoLiveSnapshotId,
+      goLiveFailureReason,
+      pendingGoLiveSnapshotId,
+      snapshotsDirty,
+    ],
   )
+  const pendingGoLiveEvent = useMemo(
+    () => {
+      if (!activeSnapshot || pendingGoLiveSnapshotId !== activeSnapshot.id) {
+        return null
+      }
+
+      return activationEventsQuery.data?.events.find((event) => {
+        if (event.snapshot_id !== activeSnapshot.id) {
+          return false
+        }
+        if (pendingGoLiveRequestedAt == null) {
+          return true
+        }
+        const requestedAt = Date.parse(event.requested_at ?? '')
+        return Number.isFinite(requestedAt) && requestedAt >= pendingGoLiveRequestedAt - 1_000
+      }) ?? null
+    },
+    [activeSnapshot, activationEventsQuery.data?.events, pendingGoLiveRequestedAt, pendingGoLiveSnapshotId],
+  )
+  const latestGoLiveEvent = useMemo(
+    () => activeSnapshot
+      ? activationEventsQuery.data?.events.find((event) => event.snapshot_id === activeSnapshot.id) ?? null
+      : null,
+    [activeSnapshot, activationEventsQuery.data?.events],
+  )
+  const goLiveProgressEvent = pendingGoLiveEvent ?? latestGoLiveEvent
+  const goLiveActionLabel = useMemo(() => {
+    if (snapshotGoLiveState.phase === 'activating') {
+      return snapshotGoLiveState.label
+    }
+    if (snapshotsDirty && snapshotGoLiveState.phase !== 'live') {
+      return 'Save and publish'
+    }
+    return snapshotGoLiveState.label
+  }, [snapshotGoLiveState.label, snapshotGoLiveState.phase, snapshotsDirty])
+  const goLiveHelperText = useMemo(() => {
+    if (!activeSnapshot) {
+      return null
+    }
+    if (snapshotsDirty) {
+      return 'Save draft stores your latest edits. Publish to live runs checks and then sends this snapshot to the live system.'
+    }
+    return 'Publish to live runs checks first, sends this snapshot to the live system, and waits for confirmation.'
+  }, [activeSnapshot, snapshotsDirty])
+  const goLiveReadinessItems = useMemo<Array<{
+    id: string
+    label: string
+    status: 'ready' | 'needs_attention' | 'pending_check'
+    detail: string
+  }>>(() => {
+    if (!activeSnapshot) {
+      return []
+    }
+
+    const failureDetail = goLiveFailureDetail
+    const pluginIssues = failureDetail?.issues.filter((issue) => issue.category === 'plugin') ?? []
+    const assetIssues = failureDetail?.issues.filter((issue) => issue.category === 'asset') ?? []
+    const deviceIssues = failureDetail?.issues.filter((issue) => issue.category === 'device') ?? []
+    const liveConfirmed = snapshotGoLiveState.phase === 'live'
+
+    return [
+      {
+        id: 'draft',
+        label: 'Snapshot draft',
+        status: snapshotsDirty ? 'needs_attention' : 'ready',
+        detail: snapshotsDirty
+          ? 'Unsaved edits are still in the editor. Save draft first so make live uses the latest version.'
+          : 'The current snapshot is saved and ready for live activation.',
+      },
+      {
+        id: 'plugins',
+        label: 'Plugins on this node',
+        status: pluginIssues.length > 0 ? 'needs_attention' : (liveConfirmed || failureDetail ? 'ready' : 'pending_check'),
+        detail: pluginIssues[0]?.message
+          ?? (liveConfirmed || failureDetail
+            ? 'The last live check found every required plugin on this node.'
+            : 'Checked automatically when you make this snapshot live.'),
+      },
+      {
+        id: 'assets',
+        label: 'Models and IR files',
+        status: assetIssues.length > 0 ? 'needs_attention' : (liveConfirmed || failureDetail ? 'ready' : 'pending_check'),
+        detail: assetIssues[0]?.message
+          ?? (liveConfirmed || failureDetail
+            ? 'The last live check found every required NAM model and IR file.'
+            : 'Checked automatically when you make this snapshot live.'),
+      },
+      {
+        id: 'devices',
+        label: 'Audio devices',
+        status: deviceIssues.length > 0 ? 'needs_attention' : (liveConfirmed || failureDetail ? 'ready' : 'pending_check'),
+        detail: deviceIssues[0]?.message
+          ?? (liveConfirmed || failureDetail
+            ? 'The last live check confirmed the requested input and output devices.'
+            : 'Checked automatically when you make this snapshot live.'),
+      },
+    ]
+  }, [activeSnapshot, goLiveFailureDetail, snapshotGoLiveState.phase, snapshotsDirty])
+  const goLiveProgress = useMemo(() => {
+    const activationProgress = extractActivationProgressMetrics(goLiveProgressEvent)
+    const activeChannelCount = authoritativeAudioState?.derived.active_channel_count ?? activeSnapshot?.live_state?.paths.length ?? 0
+    const totalChannelCount = authoritativeAudioState?.derived.total_channel_count ?? activeSnapshot?.channels.length ?? activeSnapshot?.paths.length ?? 0
+    const liveSummary = totalChannelCount > 0
+      ? `${activeChannelCount} of ${totalChannelCount} channels live.`
+      : 'Snapshot is live.'
+
+    const steps = LIVE_ACTIVATION_PHASES.map((phase) => {
+      let status: 'pending' | 'active' | 'complete' | 'failed' = 'pending'
+      if (snapshotGoLiveState.phase === 'live') {
+        status = 'complete'
+      } else if (activationProgress?.completedPhases.includes(phase)) {
+        status = 'complete'
+      } else if (snapshotGoLiveState.phase === 'error' && (goLiveFailureDetail?.phase?.toUpperCase() === phase || activationProgress?.currentPhase === phase)) {
+        status = 'failed'
+      } else if (snapshotGoLiveState.phase === 'activating' && (activationProgress?.currentPhase === phase || (!activationProgress && phase === 'VALIDATING'))) {
+        status = 'active'
+      }
+      return {
+        id: phase.toLowerCase(),
+        label: phase === 'VALIDATING'
+          ? 'Validate'
+          : phase === 'STAGING'
+            ? 'Stage'
+            : phase === 'APPLYING'
+              ? 'Apply'
+              : 'Verify',
+        status,
+      }
+    })
+
+    if (snapshotGoLiveState.phase === 'live') {
+      return {
+        summary: liveSummary,
+        note: 'The engine confirmed the latest live activation.',
+        steps,
+      }
+    }
+    if (snapshotGoLiveState.phase === 'activating') {
+      return {
+        summary: 'Making this snapshot live…',
+        note: activationProgress?.note ?? 'Running validation, engine apply, and final verification.',
+        steps,
+      }
+    }
+    if (snapshotGoLiveState.phase === 'error') {
+      return {
+        summary: 'Publish stopped before completion.',
+        note: goLiveFailureDetail?.message ?? goLiveFailureReason ?? 'Fix the reported issue and retry.',
+        steps,
+      }
+    }
+    return {
+      summary: snapshotsDirty
+        ? 'Unsaved edits are waiting to be written into the draft before live activation.'
+        : 'Ready to make this snapshot live when you are.',
+      note: snapshotsDirty
+        ? 'Use Save draft or Save + make live to push the latest editor changes.'
+        : 'The live check will validate plugins, files, and devices before activation.',
+      steps,
+    }
+  }, [activeSnapshot, authoritativeAudioState, goLiveFailureDetail, goLiveFailureReason, goLiveProgressEvent, snapshotGoLiveState.phase, snapshotsDirty])
   const snapshotMidiEntries = useMemo(
     () => collectSnapshotMidiMapEntries(activeSnapshot),
     [activeSnapshot],
@@ -2163,49 +2375,30 @@ export function SnapshotEditorPage() {
   ])
 
   useEffect(() => {
-    if (showSnapshotIoModal) {
+    if (showProgressModal && progressModalInitialTab === 'advanced' && progressModalInitialSection === 'devices') {
       return
     }
     setSnapshotIoModalState(buildSnapshotIoModalState(activeSnapshot, snapshotIoDefaultsQuery.data))
   }, [
     activeSnapshot,
-    showSnapshotIoModal,
+    progressModalInitialSection,
+    progressModalInitialTab,
+    showProgressModal,
     snapshotIoDefaultsQuery.data,
   ])
 
   useEffect(() => {
-    if (pendingGoLiveSnapshotId == null) {
-      if (
-        failedGoLiveSnapshotId != null
-        && committedAudioState
-        && (committedAudioState.engine.display_state === 'live' || committedAudioState.engine.display_state === 'live_warning')
-        && committedAudioState.source_snapshot?.snapshot_id === failedGoLiveSnapshotId
-      ) {
-        setFailedGoLiveSnapshotId(null)
-        setGoLiveFailureReason(null)
-      }
-      return
-    }
-
     if (
-      committedAudioState
-      && (committedAudioState.engine.display_state === 'live' || committedAudioState.engine.display_state === 'live_warning')
-      && committedAudioState.source_snapshot?.snapshot_id === pendingGoLiveSnapshotId
+      confirmedGoLiveSnapshotId != null
+      && activeSnapshot
+      && activeSnapshot.id !== confirmedGoLiveSnapshotId
     ) {
-      setPendingGoLiveSnapshotId(null)
-      setFailedGoLiveSnapshotId(null)
-      setGoLiveFailureReason(null)
-      return
+      setConfirmedGoLiveSnapshotId(null)
     }
-
-    const authorityFailureReason = committedAudioState?.derived.inactive_messages.find((message) => message.trim().length > 0)?.trim()
-      ?? null
-    if (authorityFailureReason) {
-      setPendingGoLiveSnapshotId(null)
-      setFailedGoLiveSnapshotId(pendingGoLiveSnapshotId)
-      setGoLiveFailureReason(authorityFailureReason)
+    if (snapshotsDirty && confirmedGoLiveSnapshotId != null) {
+      setConfirmedGoLiveSnapshotId(null)
     }
-  }, [committedAudioState, failedGoLiveSnapshotId, pendingGoLiveSnapshotId])
+  }, [activeSnapshot, confirmedGoLiveSnapshotId, snapshotsDirty])
 
   useEffect(() => {
     if (
@@ -2216,6 +2409,7 @@ export function SnapshotEditorPage() {
     ) {
       setFailedGoLiveSnapshotId(null)
       setGoLiveFailureReason(null)
+      setGoLiveFailureDetail(null)
     }
   }, [activeSnapshot, authoritativeAudioState, failedGoLiveSnapshotId])
 
@@ -2314,7 +2508,7 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     setRoutingLiveApplyState('idle')
-  }, [activeSnapshot?.id, isAuthorityLiveSnapshot, showRoutingTopologyModal])
+  }, [activeSnapshot?.id, isAuthorityLiveSnapshot, showProgressModal])
 
   const createSnapshotFromEditorMutation = useMutation({
     mutationFn: async ({
@@ -2332,17 +2526,16 @@ export function SnapshotEditorPage() {
         tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
         ...flowSnapshotDataToSnapshotPayload(sourceDraft),
       })
-      const activated = await audioStateApi.activateSnapshot(created.snapshot_id, {
-        triggered_by: 'snapshot_editor',
-      })
-      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? created.snapshot_id
-      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      const activated = await snapshotsApi.activate(created.snapshot_id)
+      const activatedSnapshotId = activated.snapshot_id ?? created.snapshot_id
+      const snapshotData = activated.snapshot_data
       return {
         snapshot_id: activatedSnapshotId,
         snapshot_data: snapshotData,
       }
     },
     onSuccess: (response, variables) => {
+      setConfirmedGoLiveSnapshotId(response.snapshot_id)
       setEditorSnapshotOverride(null)
       setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
@@ -2417,25 +2610,34 @@ export function SnapshotEditorPage() {
 
   const activateCurrentSnapshotMutation = useMutation({
     mutationFn: async (snapshotId: number) => {
-      const activated = await audioStateApi.activateSnapshot(snapshotId, {
-        triggered_by: 'snapshot_editor',
-      })
-      const activatedSnapshotId = activated.value.source_snapshot?.snapshot_id ?? activated.value.desired.snapshot_id ?? snapshotId
-      const snapshotData = await snapshotsApi.get(activatedSnapshotId)
+      const activated = await snapshotsApi.activate(snapshotId)
+      const activatedSnapshotId = activated.snapshot_id ?? snapshotId
+      const snapshotData = activated.snapshot_data
       return {
         snapshot_id: activatedSnapshotId,
         snapshot_data: snapshotData,
+        activation_intent: activated.activation_intent ?? null,
       }
     },
     onMutate: (snapshotId) => {
       setPendingGoLiveSnapshotId(snapshotId)
+      setPendingGoLiveRequestedAt(Date.now())
+      setConfirmedGoLiveSnapshotId(null)
       setFailedGoLiveSnapshotId(null)
       setGoLiveFailureReason(null)
+      setGoLiveFailureDetail(null)
     },
     onSuccess: (response) => {
+      setPendingGoLiveSnapshotId(null)
+      setPendingGoLiveRequestedAt(null)
+      setConfirmedGoLiveSnapshotId(response.snapshot_id)
+      setFailedGoLiveSnapshotId(null)
+      setGoLiveFailureReason(null)
+      setGoLiveFailureDetail(null)
       setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
       void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local'] })
       invalidateControlPlaneSnapshotCaches({ includeDesired: true })
       setEditorSnapshotOverride(null)
       hydrateEditorFromSnapshot(response.snapshot_data, {
@@ -2446,13 +2648,16 @@ export function SnapshotEditorPage() {
       })
     },
     onError: (error, snapshotId) => {
+      const failureDetail = extractSnapshotActivationFailureDetail(error)
       const failureReason = extractSnapshotActivationFailureReason(error, { separator: '\n' }) ?? 'Activation failed.'
       const snapshotName = activeSnapshot?.id === snapshotId
         ? activeSnapshot.name
         : snapshotsSummaryQuery.data?.snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
       setPendingGoLiveSnapshotId((current) => (current === snapshotId ? null : current))
+      setPendingGoLiveRequestedAt(null)
       setFailedGoLiveSnapshotId(snapshotId)
       setGoLiveFailureReason(failureReason)
+      setGoLiveFailureDetail(failureDetail)
       pushToast(
         buildSnapshotActivationFailureToastMessage(snapshotName, error),
         'warn',
@@ -2599,7 +2804,6 @@ export function SnapshotEditorPage() {
         releaseMs,
       })
       queryClient.invalidateQueries({ queryKey: ['config', 'snapshot-noise-gate-defaults'] })
-      setShowNoiseGateDefaultsModal(false)
       pushToast('Noise gate defaults updated', 'success')
     },
     onError: (error) => {
@@ -2673,7 +2877,6 @@ export function SnapshotEditorPage() {
         syncSnapshotDetailCaches(snapshot)
         queryClient.invalidateQueries({ queryKey: ['snapshots'] })
       }
-      setShowSnapshotIoModal(false)
       pushToast(snapshot ? 'Snapshot I/O devices updated' : 'Default I/O devices updated', 'success')
     },
     onError: (error) => {
@@ -2920,10 +3123,9 @@ export function SnapshotEditorPage() {
       setEffectModalOpen(false)
       setShowPluginBrowser(false)
       setPendingTabletDeletePlugin(null)
-      setShowRoutingTopologyModal(false)
+      setShowProgressModal(false)
       setPortSelectorFlowIndex(null)
       setShowAudioNodesModal(false)
-      setShowSnapshotIoModal(false)
       setLanePickerOpen(false)
       setAutomationTimelineExpanded(false)
       return
@@ -5860,54 +6062,139 @@ export function SnapshotEditorPage() {
   const goToNextSnapshot = useCallback(() => {
     loadEditorSnapshot(nextEditorSnapshot)
   }, [loadEditorSnapshot, nextEditorSnapshot])
-  const handleGoLive = useCallback(() => {
+  const handleSaveDraft = useCallback(() => {
+    if (!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending) {
+      return
+    }
+
+    updateActiveSnapshotMutation.mutate()
+  }, [activeSnapshot, snapshotEditingLocked, updateActiveSnapshotMutation])
+  const handleGoLive = useCallback(async () => {
     if (!activeSnapshot || snapshotGoLiveState.disabled || snapshotGoLiveState.phase === 'live') {
       return
     }
 
-    activateCurrentSnapshotMutation.mutate(activeSnapshot.id)
-  }, [activateCurrentSnapshotMutation, activeSnapshot, snapshotGoLiveState.disabled, snapshotGoLiveState.phase])
-  const closeControlCenter = useCallback(() => {
-    setShowControlCenterModal(false)
-  }, [])
+    try {
+      let snapshotId = activeSnapshot.id
+      if (snapshotsDirty) {
+        const updated = await updateActiveSnapshotMutation.mutateAsync()
+        snapshotId = updated.snapshot.id
+      }
+
+      activateCurrentSnapshotMutation.mutate(snapshotId)
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Failed to save draft before live activation', 'error')
+    }
+  }, [
+    activateCurrentSnapshotMutation,
+    activeSnapshot,
+    pushToast,
+    snapshotGoLiveState.disabled,
+    snapshotGoLiveState.phase,
+    snapshotsDirty,
+    updateActiveSnapshotMutation,
+  ])
+  const openSnapshotProgressModal = useCallback((
+    tab: 'guided' | 'advanced' = 'guided',
+    section: 'overview' | 'routing' | 'devices' | 'runtime' | 'cleanup' = 'overview',
+  ) => {
+    if (!activeSnapshot?.id) {
+      pushToast('Load or create a snapshot before opening the publish workspace.', 'error')
+      return
+    }
+    const params = new URLSearchParams()
+    params.set('mode', tab)
+    params.set('section', section)
+    navigate(`/snapshots/${activeSnapshot.id}/publish?${params.toString()}`)
+  }, [activeSnapshot?.id, navigate, pushToast])
   const openAudioRoutingWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
+    setShowProgressModal(false)
     setShowAudioNodesModal(true)
   }, [])
-  const openLocalRoutingWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
-    setShowRoutingTopologyModal(true)
-  }, [])
   const openSnapshotIoWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
-    setShowSnapshotIoModal(true)
-  }, [])
-  const openOutputReferenceWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
-    setShowOutputReferenceModal(true)
-  }, [])
-  const openNoiseGateDefaultsWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
-    setShowNoiseGateDefaultsModal(true)
-  }, [])
+    openSnapshotProgressModal('advanced', 'devices')
+  }, [openSnapshotProgressModal])
   const openMidiMappingsWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
+    setShowProgressModal(false)
     setMidiModalOpen(true)
   }, [])
   const openLiveRuntimeWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
+    setShowProgressModal(false)
     setShowLiveRuntimeModal(true)
   }, [])
   const openPerformWorkspace = useCallback(() => {
-    setShowControlCenterModal(false)
+    setShowProgressModal(false)
     setShowPerformModal(true)
   }, [])
   const openVersionHistoryWorkspace = useCallback(() => {
     setShowVersionHistoryModal(true)
   }, [])
   const openControlCenter = useCallback(() => {
-    setShowControlCenterModal(true)
-  }, [])
+    openSnapshotProgressModal('advanced', 'overview')
+  }, [openSnapshotProgressModal])
+  const openGuidedProgress = useCallback(() => {
+    openSnapshotProgressModal('guided', 'overview')
+  }, [openSnapshotProgressModal])
+  const goLiveFixActions = useMemo(() => {
+    if (!goLiveFailureDetail?.repairActions.length) {
+      return []
+    }
+
+    const actions: Array<{ id: string; label: string; detail: string; onSelect: () => void }> = []
+    const seen = new Set<string>()
+
+    goLiveFailureDetail.repairActions.forEach((repairAction) => {
+      let destination:
+        | { id: string; label: string; detail: string; onSelect: () => void }
+        | null = null
+
+      if (repairAction.action === 'select_available_device') {
+        destination = {
+          id: 'audio-devices',
+          label: 'Choose audio devices',
+          detail: repairAction.message,
+          onSelect: openSnapshotIoWorkspace,
+        }
+      } else if (repairAction.action === 'install_plugin') {
+        destination = {
+          id: 'plugin-library',
+          label: 'Open plugin library',
+          detail: repairAction.message,
+          onSelect: () => openArtifactsCategory('lv2-plugins'),
+        }
+      } else if (repairAction.action === 'restore_asset') {
+        const assetCategory = repairAction.assetType === 'nam_model'
+          ? 'nam-models'
+          : repairAction.assetType === 'cabinet_ir'
+            ? 'cabinet-irs'
+            : repairAction.assetType === 'reverb_ir'
+              ? 'reverb-irs'
+              : 'snapshots'
+        const assetLabel = repairAction.assetType === 'nam_model'
+          ? 'Open NAM library'
+          : repairAction.assetType === 'cabinet_ir'
+            ? 'Open cabinet IR library'
+            : repairAction.assetType === 'reverb_ir'
+              ? 'Open reverb IR library'
+              : 'Open artifacts library'
+        destination = {
+          id: `asset-${assetCategory}`,
+          label: assetLabel,
+          detail: repairAction.message,
+          onSelect: () => openArtifactsCategory(assetCategory),
+        }
+      }
+
+      if (!destination || seen.has(destination.id)) {
+        return
+      }
+
+      seen.add(destination.id)
+      actions.push(destination)
+    })
+
+    return actions
+  }, [goLiveFailureDetail, openArtifactsCategory, openSnapshotIoWorkspace])
   const midiLearning = midiLearnActive || midiLearnInProgress
   const addFlowDisabled = snapshotEditingLocked || flowSlots.length >= MAX_FLOWS
   const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
@@ -5989,7 +6276,7 @@ export function SnapshotEditorPage() {
       renderIcon={Settings}
       onClick={openControlCenter}
     >
-      Control center
+      Progress
     </Button>
   ) : undefined
 
@@ -6659,11 +6946,8 @@ export function SnapshotEditorPage() {
             else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
             else if (presetPendingDelete) setPresetPendingDelete(null)
             else if (showClearFlowsModal) setShowClearFlowsModal(false)
-            else if (showControlCenterModal) setShowControlCenterModal(false)
+            else if (showProgressModal) setShowProgressModal(false)
             else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
-            else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
-            else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
-            else if (showNoiseGateDefaultsModal) setShowNoiseGateDefaultsModal(false)
             else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
             else if (midiModalOpen) setMidiModalOpen(false)
             else if (routingInspectorId) setRoutingInspectorId(null)
@@ -6819,11 +7103,8 @@ export function SnapshotEditorPage() {
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
-        else if (showControlCenterModal) setShowControlCenterModal(false)
+        else if (showProgressModal) setShowProgressModal(false)
         else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
-        else if (showSnapshotIoModal) setShowSnapshotIoModal(false)
-        else if (showOutputReferenceModal) setShowOutputReferenceModal(false)
-        else if (showNoiseGateDefaultsModal) setShowNoiseGateDefaultsModal(false)
         else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
         else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
@@ -6844,7 +7125,7 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
     deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showControlCenterModal, showLiveRuntimeModal, showSnapshotIoModal, showOutputReferenceModal, showNoiseGateDefaultsModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showProgressModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot, createCapturedSnapshot,
@@ -7554,25 +7835,6 @@ export function SnapshotEditorPage() {
     authoritativeAudioState,
   })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
-  const liveRuntimeButtonLabel = liveRuntimeDisplayState === 'live_warning'
-    ? 'Live Warning'
-    : liveRuntimeDisplayState === 'offline'
-      ? 'Offline'
-      : liveRuntimeActive
-        ? 'Live'
-        : 'Live State'
-  const snapshotInputLabel = activeSnapshot?.io_bindings?.input_device
-    || activeSnapshot?.input_device
-    || snapshotIoDefaultsQuery.data?.input_device
-    || 'Default'
-  const snapshotOutputLabel = activeSnapshot?.io_bindings?.output_device
-    || activeSnapshot?.output_device
-    || snapshotIoDefaultsQuery.data?.output_device
-    || 'Default'
-  const monitoringOutputSummary = monitoringOutputOptions.find(
-    (option) => option.value === String(resolvedMonitoringOutputIndex),
-  )?.label ?? (resolvedMonitoringOutputIndex != null ? monitoringOutputLabel : 'Default')
-
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
@@ -7615,7 +7877,6 @@ export function SnapshotEditorPage() {
             editorSnapshotDraft={currentSnapshotDraft}
             runtimeLiveState={runtimeLiveState}
             authoritativeAudioState={authoritativeAudioState}
-            detailsAction={tabletDetailsAction}
             onRenameSnapshot={handleRenameSnapshot}
             snapshotNameEditing={editingSnapshotName}
             snapshotNameDraft={renameSnapshotName}
@@ -7624,31 +7885,16 @@ export function SnapshotEditorPage() {
             onSubmitSnapshotName={submitRenameSnapshot}
             onCancelSnapshotRename={cancelRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
-            onLoadPreviousSnapshot={goToPreviousSnapshot}
-            onLoadNextSnapshot={goToNextSnapshot}
-            previousSnapshotDisabled={snapshotNavigationPending || !previousEditorSnapshot}
-            nextSnapshotDisabled={snapshotNavigationPending || !nextEditorSnapshot}
-            previousSnapshotDisabledReason={previousSnapshotDisabledReason}
-            nextSnapshotDisabledReason={nextSnapshotDisabledReason}
-            onToggleSnapshotFavorite={() => {
-              if (!activeSnapshot) {
-                return
-              }
-              toggleActiveSnapshotFavoriteMutation.mutate({
-                snapshotId: activeSnapshot.id,
-                isFavorite: !activeSnapshot.is_favorite,
-              })
-            }}
-            snapshotFavoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
-            onToggleSnapshotLock={() => {
-              if (!activeSnapshot) {
-                return
-              }
-              toggleActiveSnapshotLockMutation.mutate()
-            }}
-            snapshotLockPending={toggleActiveSnapshotLockMutation.isPending}
+            onSaveDraft={handleSaveDraft}
+            saveDraftPending={updateActiveSnapshotMutation.isPending}
+            saveDraftDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending || !snapshotsDirty}
             onGoLive={handleGoLive}
             goLiveState={snapshotGoLiveState}
+            goLiveActionLabel={goLiveActionLabel}
+            goLiveHelperText={goLiveHelperText}
+            liveReadinessItems={goLiveReadinessItems}
+            liveActivationProgress={goLiveProgress}
+            goLiveFixActions={goLiveFixActions}
             goLiveDiffItems={visibleGoLiveDiff?.items ?? null}
             goLiveDiffExpanded={goLiveDiffExpanded}
             onToggleGoLiveDiff={() => setGoLiveDiffExpanded((current) => !current)}
@@ -7682,6 +7928,7 @@ export function SnapshotEditorPage() {
             monitoringStatusLabel={monitoringStatusLabel}
             monitoringStatusWarning={monitoringStatusWarning}
             outputLevelWarningMessage={outputLevelWarningMessage}
+            onOpenProgressModal={openGuidedProgress}
           />
         </div>
       </section>
@@ -7828,7 +8075,7 @@ export function SnapshotEditorPage() {
                     size="sm"
                     kind="tertiary"
                     renderIcon={Flow}
-                    onClick={() => setShowRoutingTopologyModal(true)}
+                    onClick={() => openSnapshotProgressModal('advanced', 'routing')}
                     disabled={snapshotEditorMutationDisabled}
                   >
                     Configure routing
@@ -8205,433 +8452,6 @@ export function SnapshotEditorPage() {
         </Modal>
       )}
 
-      {showOutputReferenceModal && activeSnapshot && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Output Reference"
-          modalLabel={activeSnapshot.name || 'Live snapshot'}
-          primaryButtonText="Close"
-          onRequestClose={() => setShowOutputReferenceModal(false)}
-          onRequestSubmit={() => setShowOutputReferenceModal(false)}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Set the live output reading as the snapshot reference level and adjust the warning window shown in the details grid.
-            </p>
-            <div className="juce-grid-page__compact-tags">
-              <Tag type="cool-gray">
-                Current {currentOutputLevelDbfs != null ? `${currentOutputLevelDbfs.toFixed(1)} dBFS` : 'Unavailable'}
-              </Tag>
-              <Tag type="warm-gray">
-                Reference {activeSnapshot.output_level_reference_dbfs != null ? `${activeSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS` : 'Unset'}
-              </Tag>
-            </div>
-            <Button
-              size="sm"
-              kind="secondary"
-              onClick={() => {
-                if (currentOutputLevelDbfs == null) {
-                  return
-                }
-                updateActiveSnapshotOutputReferenceMutation.mutate({
-                  snapshotId: activeSnapshot.id,
-                  outputLevelReferenceDbfs: currentOutputLevelDbfs,
-                  outputLevelWarningThresholdDb: outputReferenceThresholdDraft,
-                })
-              }}
-              disabled={updateActiveSnapshotOutputReferenceMutation.isPending || currentOutputLevelDbfs == null}
-            >
-              {updateActiveSnapshotOutputReferenceMutation.isPending ? 'Saving…' : 'Set Reference Level'}
-            </Button>
-            <NumberInput
-              label="Warning threshold"
-              value={outputReferenceThresholdDraft}
-              min={0.1}
-              max={24}
-              step={0.1}
-              precision={1}
-              unit="dB"
-              defaultValue={activeSnapshot.output_level_warning_threshold_db ?? 3}
-              valueFormatter={(value) => value.toFixed(1)}
-              onChange={setOutputReferenceThresholdDraft}
-              onChangeCommitted={(thresholdDb) => {
-                updateActiveSnapshotOutputReferenceMutation.mutate({
-                  snapshotId: activeSnapshot.id,
-                  outputLevelReferenceDbfs: activeSnapshot.output_level_reference_dbfs ?? null,
-                  outputLevelWarningThresholdDb: thresholdDb,
-                })
-              }}
-              disabled={updateActiveSnapshotOutputReferenceMutation.isPending}
-              showBounds={false}
-              accentColor="#f1c21b"
-              className="juce-grid-page__snapshot-output-reference-threshold-input"
-            />
-            {outputLevelWarningMessage ? (
-              <Tag type="warm-gray" className="juce-grid-page__snapshot-status-output-warning">
-                {outputLevelWarningMessage}
-              </Tag>
-            ) : null}
-          </div>
-        </Modal>
-      )}
-
-      {showControlCenterModal && (
-        <Modal
-          open
-          size="md"
-          modalHeading="Control Center"
-          modalLabel={activeSnapshot?.name || 'Snapshot workspace'}
-          primaryButtonText="Close"
-          onRequestClose={closeControlCenter}
-          onRequestSubmit={closeControlCenter}
-        >
-          <div className="juce-grid-page__form-modal-body juce-grid-page__control-center-modal">
-            <p className="juce-grid-page__modal-copy">
-              Unified routing, device defaults, runtime, and cleanup controls for the active snapshot workspace.
-            </p>
-
-            <div className="juce-grid-page__control-center-grid">
-              <section className="juce-grid-page__control-center-card">
-                <div className="juce-grid-page__control-center-card-copy">
-                  <p className="juce-grid-page__assignment-section-kicker">Routing</p>
-                  <h3>Signal routing workspaces</h3>
-                  <p>Open cluster audio routing or local topology editing from one place.</p>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="cool-gray">{flowSlots.length} paths</Tag>
-                  <Tag type="blue">{routing.mode.replace(/_/g, ' ')}</Tag>
-                </div>
-                <div className="juce-grid-page__control-center-card-actions">
-                  <Button size="sm" kind="secondary" renderIcon={Network_3} onClick={openAudioRoutingWorkspace} disabled={snapshotEditingLocked}>
-                    Cluster routing
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={Flow} onClick={openLocalRoutingWorkspace} disabled={snapshotEditingLocked}>
-                    Local topology
-                  </Button>
-                </div>
-              </section>
-
-              <section className="juce-grid-page__control-center-card">
-                <div className="juce-grid-page__control-center-card-copy">
-                  <p className="juce-grid-page__assignment-section-kicker">Interfaces</p>
-                  <h3>Devices and defaults</h3>
-                  <p>Cleaned-up access to snapshot I/O bindings, monitoring outputs, reference level, and default gate behavior.</p>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="cool-gray">In {snapshotInputLabel}</Tag>
-                  <Tag type="cool-gray">Out {snapshotOutputLabel}</Tag>
-                  <Tag type="warm-gray">Mon {monitoringOutputSummary}</Tag>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="blue">
-                    Ref {activeSnapshot?.output_level_reference_dbfs != null ? `${activeSnapshot.output_level_reference_dbfs.toFixed(1)} dBFS` : 'Unset'}
-                  </Tag>
-                  <Tag type="green">
-                    Gate {effectiveSystemNoiseGateDefaults.thresholdDb.toFixed(1)} dB / {effectiveSystemNoiseGateDefaults.releaseMs.toFixed(0)} ms
-                  </Tag>
-                </div>
-                <div className="juce-grid-page__control-center-card-actions">
-                  <Button size="sm" kind="secondary" renderIcon={Headphones} onClick={openSnapshotIoWorkspace}>
-                    I/O devices
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={Meter} onClick={openOutputReferenceWorkspace} disabled={!activeSnapshot}>
-                    Output reference
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={SettingsAdjust} onClick={openNoiseGateDefaultsWorkspace}>
-                    Noise gate defaults
-                  </Button>
-                </div>
-              </section>
-
-              <section className="juce-grid-page__control-center-card">
-                <div className="juce-grid-page__control-center-card-copy">
-                  <p className="juce-grid-page__assignment-section-kicker">Runtime</p>
-                  <h3>Live and perform tools</h3>
-                  <p>Inspect the live runtime state, MIDI mapping surface, and performance mode without leaving the editor.</p>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type={liveRuntimeActive ? 'green' : 'cool-gray'}>{liveRuntimeButtonLabel}</Tag>
-                  <Tag type={midiLearning ? 'magenta' : 'cool-gray'}>{midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`}</Tag>
-                  <Tag type="blue">Perform</Tag>
-                </div>
-                <div className="juce-grid-page__control-center-card-actions">
-                  <Button size="sm" kind="secondary" renderIcon={Launch} onClick={openLiveRuntimeWorkspace}>
-                    Live state
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={MachineLearningModel} onClick={openMidiMappingsWorkspace} disabled={snapshotEditingLocked}>
-                    MIDI mappings
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={Music} onClick={openPerformWorkspace}>
-                    Performance view
-                  </Button>
-                </div>
-              </section>
-
-              <section className="juce-grid-page__control-center-card juce-grid-page__control-center-card--danger">
-                <div className="juce-grid-page__control-center-card-copy">
-                  <p className="juce-grid-page__assignment-section-kicker">Cleanup</p>
-                  <h3>Reset the active layout</h3>
-                  <p>Remove all signal paths from the current editor snapshot when you need to rebuild the routing from scratch.</p>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="red">{flowSlots.length} configured paths</Tag>
-                  <Tag type="warm-gray">{clearFlowsDisabled ? 'Clear unavailable' : 'Destructive action'}</Tag>
-                </div>
-                <div className="juce-grid-page__control-center-card-actions">
-                  <Button
-                    size="sm"
-                    kind="danger"
-                    renderIcon={TrashCan}
-                    onClick={() => {
-                      setShowControlCenterModal(false)
-                      setShowClearFlowsModal(true)
-                    }}
-                    disabled={clearFlowsDisabled}
-                  >
-                    Clear signal paths
-                  </Button>
-                </div>
-              </section>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {showSnapshotIoModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="I/O Devices"
-          modalLabel={activeSnapshot?.name || 'Global defaults'}
-          primaryButtonText={updateSnapshotIoBindingsMutation.isPending ? 'Saving…' : 'Save devices'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={
-            updateSnapshotIoBindingsMutation.isPending
-            || snapshotIoDefaultsQuery.isPending
-            || snapshotIoDefaultsQuery.isError
-          }
-          onRequestClose={() => setShowSnapshotIoModal(false)}
-          onSecondarySubmit={() => setShowSnapshotIoModal(false)}
-          onRequestSubmit={() => {
-            updateSnapshotIoBindingsMutation.mutate({
-              snapshotId: activeSnapshot?.id ?? null,
-              state: snapshotIoModalState,
-              currentDefaults: snapshotIoDefaultsQuery.data,
-            })
-          }}
-          selectorPrimaryFocus={activeSnapshot ? '#juce-grid-snapshot-io-input' : '#juce-grid-default-io-input'}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Store per-snapshot interface overrides and the cluster-wide defaults inherited by new snapshots. Snapshot overrides fall back to the global default when set to <span className="juce-grid-page__modal-copy-emphasis">Use global default</span>.
-            </p>
-            <div className="juce-grid-page__compact-tags">
-              <Tag type="cool-gray">Runtime input {audioQuery.data?.input_device ?? 'Unavailable'}</Tag>
-              <Tag type="cool-gray">Runtime output {audioQuery.data?.output_device ?? 'Unavailable'}</Tag>
-              {!snapshotIoDeviceOptions.inputOptions.length || !snapshotIoDeviceOptions.outputOptions.length ? (
-                <Tag type="warm-gray">Device inventory unavailable</Tag>
-              ) : null}
-            </div>
-            {snapshotIoDefaultsQuery.isPending ? (
-              <InlineLoading description="Loading I/O defaults" status="active" />
-            ) : null}
-            <div className="juce-grid-page__snapshot-io-grid">
-              <div className="juce-grid-page__snapshot-io-section">
-                <p className="juce-grid-page__assignment-section-kicker">This snapshot</p>
-                {activeSnapshot ? (
-                  <>
-                    <Select
-                      id="juce-grid-snapshot-io-input"
-                      labelText="Input device"
-                      value={snapshotIoModalState.snapshotInputValue}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setSnapshotIoModalState((current) => ({ ...current, snapshotInputValue: value }))
-                      }}
-                      disabled={updateSnapshotIoBindingsMutation.isPending}
-                    >
-                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default input" />
-                      {snapshotIoDeviceOptions.inputOptions.map((deviceName) => (
-                        <SelectItem key={`snapshot-io-input-${deviceName}`} value={deviceName} text={deviceName} />
-                      ))}
-                    </Select>
-                    <Select
-                      id="juce-grid-snapshot-io-output"
-                      labelText="Output device"
-                      value={snapshotIoModalState.snapshotOutputValue}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setSnapshotIoModalState((current) => ({ ...current, snapshotOutputValue: value }))
-                      }}
-                      disabled={updateSnapshotIoBindingsMutation.isPending}
-                    >
-                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default output" />
-                      {snapshotIoDeviceOptions.outputOptions.map((deviceName) => (
-                        <SelectItem key={`snapshot-io-output-${deviceName}`} value={deviceName} text={deviceName} />
-                      ))}
-                    </Select>
-                    <Select
-                      id="juce-grid-snapshot-monitoring-output"
-                      labelText="Monitoring output"
-                      value={snapshotIoModalState.snapshotMonitoringOutputValue}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setSnapshotIoModalState((current) => ({ ...current, snapshotMonitoringOutputValue: value }))
-                      }}
-                      disabled={updateSnapshotIoBindingsMutation.isPending}
-                    >
-                      <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use global default monitoring output" />
-                      {monitoringOutputOptions.map((option) => (
-                        <SelectItem
-                          key={`snapshot-monitoring-output-${option.value}`}
-                          value={option.value}
-                          text={option.label}
-                        />
-                      ))}
-                    </Select>
-                    <p className="juce-grid-page__modal-copy">
-                      Stored in this snapshot, checked during go-live preflight, and used when a channel is soloed for monitoring.
-                    </p>
-                  </>
-                ) : (
-                  <p className="juce-grid-page__modal-copy">
-                    Load or create a snapshot to store a per-snapshot I/O override. Global defaults stay editable below.
-                  </p>
-                )}
-              </div>
-
-              <div className="juce-grid-page__snapshot-io-section">
-                <p className="juce-grid-page__assignment-section-kicker">Global defaults</p>
-                <Select
-                  id="juce-grid-default-io-input"
-                  labelText="Default input device"
-                  value={snapshotIoDefaultInputSelectValue}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    setSnapshotIoModalState((current) => ({
-                      ...current,
-                      defaultInputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
-                    }))
-                  }}
-                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
-                >
-                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default input" />
-                  {snapshotIoDeviceOptions.inputOptions.map((deviceName) => (
-                    <SelectItem key={`default-io-input-${deviceName}`} value={deviceName} text={deviceName} />
-                  ))}
-                </Select>
-                <Select
-                  id="juce-grid-default-io-output"
-                  labelText="Default output device"
-                  value={snapshotIoDefaultOutputSelectValue}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    setSnapshotIoModalState((current) => ({
-                      ...current,
-                      defaultOutputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
-                    }))
-                  }}
-                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
-                >
-                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default output" />
-                  {snapshotIoDeviceOptions.outputOptions.map((deviceName) => (
-                    <SelectItem key={`default-io-output-${deviceName}`} value={deviceName} text={deviceName} />
-                  ))}
-                </Select>
-                <Select
-                  id="juce-grid-default-monitoring-output"
-                  labelText="Default monitoring output"
-                  value={snapshotIoDefaultMonitoringOutputSelectValue}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    setSnapshotIoModalState((current) => ({
-                      ...current,
-                      defaultMonitoringOutputValue: value === SNAPSHOT_IO_USE_DEFAULT_OPTION ? '' : value,
-                    }))
-                  }}
-                  disabled={updateSnapshotIoBindingsMutation.isPending || snapshotIoDefaultsQuery.isPending}
-                >
-                  <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="No global default monitoring output" />
-                  {monitoringOutputOptions.map((option) => (
-                    <SelectItem
-                      key={`default-monitoring-output-${option.value}`}
-                      value={option.value}
-                      text={option.label}
-                    />
-                  ))}
-                </Select>
-                <p className="juce-grid-page__modal-copy">
-                  New snapshots inherit these bindings until a snapshot-specific override is saved.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {showNoiseGateDefaultsModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Noise Gate Defaults"
-          modalLabel="Global chain defaults"
-          primaryButtonText={updateSystemNoiseGateDefaultsMutation.isPending ? 'Saving…' : 'Save defaults'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={updateSystemNoiseGateDefaultsMutation.isPending}
-          onRequestClose={() => setShowNoiseGateDefaultsModal(false)}
-          onSecondarySubmit={() => setShowNoiseGateDefaultsModal(false)}
-          onRequestSubmit={() => {
-            updateSystemNoiseGateDefaultsMutation.mutate({
-              thresholdDb: noiseGateThresholdDraft,
-              releaseMs: noiseGateReleaseDraft,
-            })
-          }}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Set the cluster-wide noise gate defaults applied when MAP2 creates a new snapshot chain. Existing snapshots keep their own per-snapshot gate values.
-            </p>
-            <div className="juce-grid-page__compact-tags">
-              <Tag type="green">Applied to new chains</Tag>
-              <Tag type="cool-gray">Per-snapshot overrides stay editable</Tag>
-            </div>
-            {systemNoiseGateDefaultsQuery.isPending ? (
-              <InlineLoading description="Loading noise gate defaults" status="active" />
-            ) : null}
-            <NumberInput
-              label="Threshold"
-              value={noiseGateThresholdDraft}
-              min={-96}
-              max={0}
-              step={0.5}
-              precision={1}
-              unit="dB"
-              defaultValue={DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb}
-              valueFormatter={(value) => value.toFixed(1)}
-              onChange={setNoiseGateThresholdDraft}
-              disabled={updateSystemNoiseGateDefaultsMutation.isPending}
-              showBounds={false}
-              accentColor="#24a148"
-            />
-            <NumberInput
-              label="Release"
-              value={noiseGateReleaseDraft}
-              min={1}
-              max={1000}
-              step={1}
-              precision={0}
-              unit="ms"
-              defaultValue={DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs}
-              valueFormatter={(value) => value.toFixed(0)}
-              onChange={setNoiseGateReleaseDraft}
-              disabled={updateSystemNoiseGateDefaultsMutation.isPending}
-              showBounds={false}
-              accentColor="#24a148"
-            />
-          </div>
-        </Modal>
-      )}
 
       {presetPendingDelete && (
         <Modal
@@ -9414,36 +9234,6 @@ export function SnapshotEditorPage() {
           killPending={updateAuthorityLiveChainsMutation.isPending}
         />
       ) : null}
-
-      {/* Routing Topology Modal */}
-      <RoutingTopologyModal
-        open={showRoutingTopologyModal}
-        onClose={() => setShowRoutingTopologyModal(false)}
-        readOnly={snapshotEditorMutationDisabled}
-        routingMode={routing.mode}
-        morphProgress={routing.morphProgress}
-        activeFlowIndex={activeFlowIndex}
-        flowSlots={flowSlots}
-        routingVisualizerFlows={routingVisualizerFlows}
-        activeSlotId={routing.activeSlotId}
-        morphSourceSlotId={routing.morphSourceSlotId}
-        morphTargetSlotId={routing.morphTargetSlotId}
-        routingFocusButtons={routingFocusButtons}
-        onSetRoutingMode={setRoutingMode}
-        onSelectFlowIndex={selectFlowIndex}
-        onSetMorphProgress={setMorphProgress}
-        onOpenPortRouting={(flowIndex) => {
-          setPortSelectorFlowIndex(flowIndex)
-        }}
-        onOpenAssignFlow={(flowId) => {
-          const flow = flowSlots.find((s) => s.id === flowId)
-          if (flow) openAssignmentDialog(flow)
-        }}
-        activeFlowId={routing.activeSlotId}
-        liveStatusLabel={routingLiveStatus.tagLabel}
-        liveStatusTagType={routingLiveStatus.tagType}
-        liveStatusMessage={routingLiveStatus.message}
-      />
 
     </div>
   )

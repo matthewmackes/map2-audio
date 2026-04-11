@@ -21,6 +21,131 @@ class AudioStateEngineState(str, Enum):
     OFFLINE = "offline"
 
 
+class PublishBlockerCode(str, Enum):
+    UNSAVED_DRAFT = "unsaved_draft"
+    SNAPSHOT_INVALID = "snapshot_invalid"
+    PLUGIN_MISSING = "plugin_missing"
+    ASSET_MISSING = "asset_missing"
+    AUDIO_INPUT_MISSING = "audio_input_missing"
+    AUDIO_OUTPUT_MISSING = "audio_output_missing"
+    MONITORING_OUTPUT_INVALID = "monitoring_output_invalid"
+    LOCAL_ROUTING_INVALID = "local_routing_invalid"
+    NETWORK_ROUTING_INVALID = "network_routing_invalid"
+    NODE_OFFLINE = "node_offline"
+    NODE_ASSIGNMENT_MISSING = "node_assignment_missing"
+    NODE_SYNC_PENDING = "node_sync_pending"
+    ENGINE_UNAVAILABLE = "engine_unavailable"
+    ENGINE_APPLY_FAILED = "engine_apply_failed"
+    CHANNEL_UNCONFIRMED = "channel_unconfirmed"
+    OBSERVATION_STALE = "observation_stale"
+    AUTHORITY_DIVERGED = "authority_diverged"
+
+
+class PublishBlockerSeverity(str, Enum):
+    BLOCKING = "blocking"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class PublishScope(str, Enum):
+    DRAFT = "draft"
+    INTENT = "intent"
+    NODE = "node"
+    CHANNEL = "channel"
+    CLUSTER = "cluster"
+
+
+class PublishRequirementStatus(str, Enum):
+    READY = "ready"
+    NEEDS_ATTENTION = "needs_attention"
+    WAITING_FOR_CONFIRMATION = "waiting_for_confirmation"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class SnapshotPublishStatus(str, Enum):
+    READY = "ready"
+    BLOCKED = "blocked"
+    WAITING_FOR_CONFIRMATION = "waiting_for_confirmation"
+    LIVE_CONFIRMED = "live_confirmed"
+    DIVERGED = "diverged"
+
+
+class PublishConfirmationStatus(str, Enum):
+    PENDING = "pending"
+    WAITING = "waiting"
+    CONFIRMED = "confirmed"
+    FAILED = "failed"
+    OFFLINE = "offline"
+
+
+class PublishRepairAction(BaseModel):
+    id: str
+    label: str
+    operator_message: Optional[str] = None
+    technical_detail: Optional[str] = None
+    scope: Optional[PublishScope] = None
+    related_path_ids: list[str] = Field(default_factory=list)
+    related_node_ids: list[str] = Field(default_factory=list)
+
+
+class PublishBlocker(BaseModel):
+    id: str
+    code: PublishBlockerCode
+    severity: PublishBlockerSeverity
+    scope: PublishScope
+    title: str
+    operator_message: str
+    technical_detail: Optional[str] = None
+    recommended_action: str
+    repair_action_id: Optional[str] = None
+    prerequisite_of: list[PublishBlockerCode] = Field(default_factory=list)
+    related_path_ids: list[str] = Field(default_factory=list)
+    related_node_ids: list[str] = Field(default_factory=list)
+
+
+class PublishRequirement(BaseModel):
+    id: str
+    label: str
+    status: PublishRequirementStatus
+    scope: PublishScope
+    operator_message: str
+    technical_detail: Optional[str] = None
+    repair_actions: list[PublishRepairAction] = Field(default_factory=list)
+
+
+class NodeConfirmationState(BaseModel):
+    node_id: str
+    status: PublishConfirmationStatus = PublishConfirmationStatus.PENDING
+    operator_message: str
+    technical_detail: Optional[str] = None
+    observed_state_version: Optional[int] = None
+    observed_at: Optional[str] = None
+
+
+class ChannelConfirmationState(BaseModel):
+    path_id: str
+    label: Optional[str] = None
+    status: PublishConfirmationStatus = PublishConfirmationStatus.PENDING
+    operator_message: str
+    technical_detail: Optional[str] = None
+    related_node_id: Optional[str] = None
+    observed_state_version: Optional[int] = None
+    observed_at: Optional[str] = None
+
+
+class SnapshotPublishReadiness(BaseModel):
+    snapshot_id: int
+    draft_revision_id: Optional[int] = None
+    requested_revision_id: Optional[int] = None
+    confirmed_revision_id: Optional[int] = None
+    status: SnapshotPublishStatus
+    requirements: list[PublishRequirement] = Field(default_factory=list)
+    blockers: list[PublishBlocker] = Field(default_factory=list)
+    warnings: list[PublishBlocker] = Field(default_factory=list)
+    available_repairs: list[PublishRepairAction] = Field(default_factory=list)
+    applicable_steps: list[str] = Field(default_factory=list)
+
+
 class AudioStateDesiredIO(BaseModel):
     requested_input_device: Optional[str] = None
     requested_output_device: Optional[str] = None

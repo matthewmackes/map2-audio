@@ -12,13 +12,15 @@ import logging
 import json
 import hashlib
 from typing import Dict, Any, Optional
-from datetime import datetime
 from pathlib import Path
+
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
 
-class ConfigManager:
+class ConfigManager(Singleton):
     """Manages cluster configuration with persistence."""
 
     def __init__(self):
@@ -119,7 +121,7 @@ class ConfigManager:
             "message": "Rollback complete",
             "rolled_back_to": target.get("version"),
             "current_version": new_version,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
         }
 
     def _load_history(self) -> list:
@@ -144,12 +146,12 @@ class ConfigManager:
         """Create and persist a new config version snapshot."""
         payload = json.dumps(self._config, sort_keys=True)
         version = hashlib.sha1(
-            f"{datetime.utcnow().isoformat()}::{payload}".encode("utf-8")
+            f"{utc_now().isoformat()}::{payload}".encode("utf-8")
         ).hexdigest()[:12]
         self._history.append(
             {
                 "version": version,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "message": message,
                 "config": dict(self._config),
             }
@@ -159,14 +161,6 @@ class ConfigManager:
         self._save_history()
         return version
 
-
-# Singleton
-_config_manager: Optional[ConfigManager] = None
-
-
 def get_config_manager() -> ConfigManager:
-    """Get or create the config manager singleton."""
-    global _config_manager
-    if _config_manager is None:
-        _config_manager = ConfigManager()
-    return _config_manager
+    """Get the process-wide config manager singleton."""
+    return ConfigManager.get_instance()

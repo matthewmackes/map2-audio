@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Option 1: Contained List</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Comic Sans MS', 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .panel { background: #fff; border: 2px solid #999; border-radius: 6px; max-width: 420px; padding: 0; overflow: hidden; }
+  .panel-header { padding: 14px 16px; border-bottom: 2px solid #ccc; display: flex; align-items: center; gap: 10px; }
+  .panel-header .logo { width: 28px; height: 28px; background: #ccc; border-radius: 4px; }
+  .panel-header .title { font-size: 14px; font-weight: bold; }
+  .panel-header .meta { font-size: 11px; color: #666; }
+  .section { border-bottom: 1px solid #e0e0e0; }
+  .section:last-child { border-bottom: none; }
+  .section-header { padding: 10px 16px 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; color: #666; background: #f9f9f9; }
+  .list-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
+  .list-item:hover { background: #f5f5f5; }
+  .list-item:last-child { border-bottom: none; }
+  .list-icon { width: 32px; height: 32px; background: #e0e0e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #666; flex-shrink: 0; }
+  .list-label { font-size: 13px; font-weight: 600; }
+  .list-desc { font-size: 11px; color: #888; margin-top: 1px; }
+  .list-arrow { margin-left: auto; color: #999; font-size: 14px; }
+  .list-meta { font-size: 10px; color: #c00; margin-top: 2px; }
+  .badge { position: absolute; top: 4px; right: 4px; background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: Arial, sans-serif; font-weight: bold; z-index: 10; }
+  .badge-new { background: #FF9800; }
+  .note { margin-top: 16px; font-size: 12px; color: #666; line-height: 1.5; max-width: 420px; }
+</style>
+</head>
+<body>
+<h1>Option 1: Contained List</h1>
+<p class="subtitle">Vertical grouped list using Carbon's ContainedList — compact, scannable, light-theme friendly</p>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="logo"></div>
+    <div>
+      <div class="title">MAP2</div>
+      <div class="meta">v3.0 • 2 nodes online</div>
+    </div>
+  </div>
+
+  <!-- REUSABLE: ContainedList from @carbon/react -->
+  <div class="section">
+    <div class="section-header">Audio Grid</div>
+    <div style="position:relative">
+      <span class="badge" title="@carbon/react ContainedList">[REUSE] ContainedList</span>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">⬚</div>
+      <div><div class="list-label">Platforms</div><div class="list-desc">System overview & config</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">📁</div>
+      <div><div class="list-label">Audio Artifacts</div><div class="list-desc">Plugins, IRs, NAMs</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">🎵</div>
+      <div><div class="list-label">Stage Mode</div><div class="list-desc">Full-screen performance</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">MIDI</div>
+    <div class="list-item">
+      <div class="list-icon">♪</div>
+      <div><div class="list-label">MIDI Hub</div><div class="list-desc">Controllers & routing</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">♪</div>
+      <div><div class="list-label">Launch Control</div><div class="list-desc">Novation mappings</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">⊞</div>
+      <div><div class="list-label">MPX1 Rack</div><div class="list-desc">Lexicon MPX-1</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">⊞</div>
+      <div><div class="list-label">IntelFX Rack</div><div class="list-desc">Rocktron Intellifex</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">♪</div>
+      <div><div class="list-label">MIDI Commander</div><div class="list-desc">MeloAudio foot control</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">Hardware</div>
+    <div class="list-item">
+      <div class="list-icon">🖥</div>
+      <div><div class="list-label">LCD Console</div><div class="list-meta">Hardware Not Detected</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">⎍</div>
+      <div><div class="list-label">Edirol UA-1000</div><div class="list-desc">Audio interface</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+    <div class="list-item">
+      <div class="list-icon">∿</div>
+      <div><div class="list-label">HoTone JoGG</div><div class="list-desc">Interface profile</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">AVB</div>
+    <div class="list-item">
+      <div class="list-icon">⊞</div>
+      <div><div class="list-label">Tesira AVB</div><div class="list-desc">Biamp fleet management</div></div>
+      <div class="list-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="list-item" style="background: #f9f9f9; border-top: 2px solid #ccc;">
+    <div class="list-icon" style="background: #ccc;">⏻</div>
+    <div><div class="list-label">Power</div></div>
+  </div>
+</div>
+
+<p class="note"><strong>Key idea:</strong> Replace the icon grid with a vertical contained list grouped by category. Each item shows icon + label + short description + navigation arrow. Categories have sticky section headers. Extremely light-theme friendly because it uses Carbon's ContainedList surface tokens instead of custom icon frames. Compact and scannable — ideal for menus with 10+ items.</p>
+</body>
+</html>

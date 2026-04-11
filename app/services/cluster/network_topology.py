@@ -29,6 +29,8 @@ from app.services.cluster.distributed_event_bus import (
     EventSeverity,
     ClusterEvent,
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class NetworkLink:
         }
 
 
-class NetworkTopologyMonitor:
+class NetworkTopologyMonitor(Singleton):
     """
     Monitors network topology and performance between cluster nodes.
     
@@ -241,7 +243,7 @@ class NetworkTopologyMonitor:
                     latency_ms=0.0,
                     packet_loss_percent=100.0,
                     jitter_ms=0.0,
-                    last_updated=datetime.utcnow(),
+                    last_updated=utc_now(),
                     status="failed",
                 )
             
@@ -283,7 +285,7 @@ class NetworkTopologyMonitor:
                 latency_ms=latency,
                 packet_loss_percent=packet_loss,
                 jitter_ms=jitter,
-                last_updated=datetime.utcnow(),
+                last_updated=utc_now(),
                 status=status,
             )
             
@@ -295,7 +297,7 @@ class NetworkTopologyMonitor:
                 latency_ms=0.0,
                 packet_loss_percent=100.0,
                 jitter_ms=0.0,
-                last_updated=datetime.utcnow(),
+                last_updated=utc_now(),
                 status="failed",
             )
         except Exception as e:
@@ -471,7 +473,7 @@ class NetworkTopologyMonitor:
             days: Days to retain
         """
         try:
-            cutoff = datetime.utcnow() - timedelta(days=days)
+            cutoff = utc_now() - timedelta(days=days)
             
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
@@ -487,14 +489,6 @@ class NetworkTopologyMonitor:
         except Exception as e:
             self.logger.error(f"Cleanup failed: {e}")
 
-
-# Global instance
-_topology_monitor: Optional[NetworkTopologyMonitor] = None
-
-
 def get_topology_monitor() -> NetworkTopologyMonitor:
-    """Get or create the topology monitor"""
-    global _topology_monitor
-    if _topology_monitor is None:
-        _topology_monitor = NetworkTopologyMonitor()
-    return _topology_monitor
+    """Get the process-wide topology monitor."""
+    return NetworkTopologyMonitor.get_instance()

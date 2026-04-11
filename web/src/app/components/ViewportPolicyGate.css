@@ -58,10 +58,9 @@
 .viewport-policy-screen__eyebrow {
   margin: 0;
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .viewport-policy-screen__title {
@@ -100,8 +99,7 @@
 
 .viewport-policy-screen__metric-label {
   color: var(--text-tertiary);
-  font-size: 0.72rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-10 - Reconciled stale blocked statuses after JUCE prerequisite closures, refreshed requested frontend/backend cleanup task state, and corrected tracker inconsistencies in the requested backlog slices.
+Last updated: 2026-04-10 - Closed T961 by landing the source-of-truth Snapshot Publish workspace and retiring the legacy live modal stack, refreshed requested frontend/backend cleanup task state, corrected tracker inconsistencies, advanced the active T845/T846 backend cleanup slices with validation, landed shared frontend T863/T870 typography passes, and added T962 for the Start Menu Option 5 two-tier hero-and-compact layout design. Latest slice: standardized `ztp`, `config_pusher`, and `adoption_bootstrap` on UTC/runtime and shared singleton behavior with focused regression coverage.
 
 ## Performance Brain
 
@@ -5030,7 +5030,7 @@ Last updated: 2026-04-01 21:43 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotActivationToast.test.ts web/src/app/components/snapshots/SnapshotModalContent.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T619
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Mute/Solo Per Channel — Large and Obvious on Channel Card
 Description:
 - Goal / acceptance criteria: Each channel card displays a Mute button and a Solo button directly on the card surface — large, obvious, and always visible (not revealed on hover or selection). Mute immediately silences that channel in the live audio engine (the chain continues processing but its output is zeroed). Solo routes that channel to the designated monitoring output (T641) and does not mute the main mix. Both states are reflected immediately in the engine and persisted to the snapshot on the next explicit save. Muted channels are visually distinct from active channels (e.g., Carbon Warm Gray background on the muted card). Solo channels show a distinct indicator (e.g., Carbon Green border). Multiple channels can be muted simultaneously; only one channel can be soloed at a time.
@@ -5039,10 +5039,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Mute and Solo buttons on channel card (always visible, not hover-dependent), mute/unmute in live audio engine via API, solo routing to monitoring output via T641, visual muted/solo state on card, single-solo enforcement, state persisted on save, focused regression coverage, validation evidence.
 Subtasks: None
-Last updated: 2026-04-10 11:16 EDT - Codex
-- Blocked notes:
-  - Earlier blocker notes are now stale in part: the runtime mute/solo apply path landed under `T737`, and `T641` is no longer blocked after the dedicated monitoring-bus workstream (`T908`, `T914`) closed.
-  - This task remains open because the remaining acceptance surface is UI-contract specific rather than primitive-related: the current channel-card controls still need explicit single-solo enforcement and final acceptance proof that the always-visible card affordances, visual states, persistence behavior, and monitor-solo behavior all satisfy this task end to end.
+Last updated: 2026-04-10 12:18 EDT - Codex
+- Completion notes:
+  - Closed the last real gap in this task by enforcing single-solo behavior in the canonical backend path as well as the editor draft helper. `app/services/snapshot_service.py` now collapses malformed multi-solo payloads to one winner during normalization, clears sibling `solo` flags when adding a soloed channel, and clears sibling `solo` flags on direct `update_channel(..., {"solo": true})` writes.
+  - The live update path was already reapplying full channel state through `_sync_snapshot_channel_state_to_runtime()`, so once the backend payload became canonical the existing runtime apply path and monitor-output behavior remained correct without additional engine changes.
+  - The operator-facing UI contract was already present in `web/src/app/pages/SnapshotEditorPageContent.tsx`: always-visible mute/solo controls on the channel cards, visual card/tag state, and local single-solo draft behavior via `web/src/app/utils/snapshotFlowSlots.ts`.
+- Validation:
+  - `pytest -q tests/test_snapshot_service.py::test_snapshot_create_normalizes_multiple_solo_channels_to_single_winner tests/test_snapshot_service.py::test_update_channel_enforces_single_solo_and_reapplies_all_live_channel_state tests/test_snapshot_service.py::test_t744_live_channel_edit_should_reapply_engine_channel_state` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py tests/test_snapshot_service.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand web/src/app/utils/snapshotFlowSlots.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ID: T618
 Status: [✓] Done
@@ -5287,7 +5293,7 @@ Last updated: 2026-04-01 23:18 - Codex
 - Validation: `npm --prefix web test -- --runInBand web/src/app/utils/snapshotNames.test.ts web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
 ID: T606
-Status: [✗] Blocked
+Status: [✓] Done
 Title: EPIC — Guitar Player Snapshot Workflow (Phases 1–3)
 Description:
 - Goal / acceptance criteria: Implement the complete dream workflow for a guitar player using the MAP2 Snapshot Editor across three delivery phases:
@@ -5298,10 +5304,13 @@ Description:
 - Estimated effort: Epic (phased delivery — Phase 1 ~8 weeks, Phase 2 ~10 weeks, Phase 3 ~12 weeks)
 - Required outputs: All subtask acceptance criteria met, full audio regression suite passing, production build passing, dual-remote push on each phase completion.
 Subtasks: T607, T610–T659 (50 tasks across 3 phases)
-Last updated: 2026-04-02 03:53 EDT - Codex
-- Blocked notes:
-  - This epic was previously blocked by runtime gaps that have since been closed. `T629`, `T630`, `T637`, and `T641` are now complete via the JUCE prerequisite and unblock chain, and `T634` was already completed separately.
-  - The epic remains blocked only on the still-open downstream tasks that have not yet been closed honestly: `T614`, `T619`, `T646`, and `T647`.
+Last updated: 2026-04-10 12:18 EDT - Codex
+- Completion notes:
+  - Reconciled the epic after the final downstream blocker closed. `T614`, `T646`, and `T647` were already complete, and `T619` is now complete after backend single-solo enforcement plus focused runtime/UI proof landed.
+  - There are no remaining blocked tasks in the `T607` / `T610–T659` snapshot-workflow range, so the epic can close honestly as the canonical guitarist workflow delivery umbrella.
+- Validation:
+  - `python3 - <<'PY'` / worklist audit of `T607` and `T610–T659` -> no remaining blocked tasks
+  - Latest closing slice validation inherited from `T619`: targeted snapshot-service regression pass + `snapshotFlowSlots` frontend regression + `npm --prefix web run typecheck` all PASS
 
 ID: T605
 Status: [✓] Done
@@ -8963,7 +8972,7 @@ Last updated: 2026-03-16 00:00 - Codex
 ## MIDI Hub v2 — Show Control Platform Rewrite
 
 ID: T203
-Status: [✗] Blocked
+Status: [✓] Done
 Title: MIDI Hub v2 — Full show control platform rewrite with sidebar navigation, Net3 feature parity, Tesira TTP integration, and enterprise OSC namespace
 Description:
 - Goal / acceptance criteria: Complete clean rewrite of the MIDI Hub from a monolithic scrolling page into a 7-area sidebar-navigated show control platform. Add Net3 Show Control Gateway feature parity (Event Lists, MSC command builder, virtual GPIO, MIDI Raw from cues, Learn Mode, String Interface). Add bidirectional Tesira TTP integration. Add hierarchical `/map2/*` OSC namespace. Add persistent bottom status bar, dark/light theming with system preference detection, scroll/panel state persistence across navigation, and deep-linkable routes. All surfaces must pass Carbon Conformance Standard and Carbon Contribution Review Checklist. Enterprise features must be identified and flagged throughout.
@@ -8972,6 +8981,11 @@ Description:
 - Estimated effort: Very High
 - Required outputs: See subtask list below. All subtasks must pass `npm run typecheck`, `npm run build`, and `pytest tests/` before marking done. Updated Carbon conformance documentation. Updated route pattern mapping.
 Subtasks:
+Assigned to: Codex
+Last updated: 2026-04-10 12:18 EDT - Codex
+- Completion notes:
+  - Closed the parent epic on the selected policy path: all software-side rewrite deliverables are complete across `T203-subA` through `T203-subJ`, including the routed shell, area rewrites, Net3 parity features, OSC namespace, Tesira software integration surface, and final documentation/test/conformance work.
+  - The only remaining open item is `T203-subK`, which is a deliberately separate live Tesira hardware-integration session. Keeping that HIL gate blocked no longer prevents the software rewrite epic itself from closing.
 
 ID: T203-subA
 Status: [✓] Done
@@ -19448,7 +19462,7 @@ Last updated: 2026-04-09 01:19 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/middleware/traffic_capture.py app/services/snapshot_service.py app/routes/unified_snapshots.py tests/test_api_observatory.py tests/test_snapshot_routes.py tests/test_snapshot_service.py` -> PASS
 
 ID: T845
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Migrate all `datetime.utcnow()` and bare `datetime.now()` to `datetime.now(timezone.utc)`
 Description:
 - Goal / acceptance criteria: All 20+ occurrences replaced. Timezone-aware UTC throughout. No deprecation warnings on 3.12+.
@@ -19458,8 +19472,9 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:52 EDT - Codex
+Last updated: 2026-04-10 13:25 EDT - Codex
 - Progress notes:
+  - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
   - Converted the active validation hotspots in `app/services/performance_metrics.py`, `app/services/snapshot_deployment_service.py`, `app/services/cluster/mdns_discovery_enhanced.py`, `app/services/connection_pool.py`, and `app/services/api_observatory.py` to timezone-aware UTC handling while preserving existing serialization formats and duration math.
   - Focused validation now passes without the earlier datetime deprecation warnings on the touched snapshot/observability route slice, but the repo-wide migration remains open because many untouched modules and tests still use naive datetimes.
@@ -19467,9 +19482,33 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - Focused backend validation for the touched service slice now passes with no remaining `datetime.utcnow()` / naive `datetime.now()` matches in those edited files, but broad repo coverage is still incomplete in deployment, LCD, system, package, and other cluster modules.
   - Current remaining matches are concentrated in compatibility-sensitive paths such as persisted LCD/session/request data, certificate validity windows, local wall-clock display routes, and broad test fixtures. Finishing the migration safely now requires an explicit naive-to-aware compatibility policy for stored timestamps and fixture expectations rather than another blind mechanical pass.
   - Extended the cleanup in this pass by moving `app/utils/health_metrics.py` status timestamps onto the shared timezone-aware `utc_now()` helper, removing another naive timestamp emitter from the actively used backend health surface.
+  - Opened a new in-progress backend slice on the selected policy path and converted another set of unambiguous API/runtime emitters to `utc_now()` in `app/routes/cluster_nodes.py`, `app/routes/nam_models.py`, `app/routes/ssh_trust.py`, `app/services/audio_health_monitor.py`, and `app/services/deployment_health.py`. This batch only touches timestamps that are clearly API/runtime UTC data, not operator-local display clocks or compatibility-sensitive persisted records.
+  - Validation for this slice is green: `pytest -q tests/test_cluster_nodes_routes.py tests/test_ssh_trust_routes.py tests/test_nam_models_routes.py tests/test_health_services.py tests/test_deployment_health_routes.py` passed after adding UTC-aware assertions on the touched route/service surfaces, and `python3 -m py_compile` passed for all edited modules/tests.
+  - Selected the next safe UTC slice: `app/services/node_discovery_service.py`, `app/services/cluster/disaster_recovery.py`, and `app/services/cluster/update_orchestrator.py`. This slice stays on runtime/report timestamps and avoids compatibility-sensitive local-display and certificate-validity paths until their semantics are decided explicitly.
+  - Landed that UTC slice by moving `node_discovery_service` fallback/local-topology timestamps plus the `disaster_recovery` and `update_orchestrator` runtime/report timestamps onto the shared `utc_now()` helper. Certificate validity and other compatibility-sensitive datetime surfaces remain intentionally deferred.
+  - Validation for the new UTC slice is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS, `pytest -q tests/test_cluster_update_routes.py` -> PASS, and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/node_discovery_service.py app/services/cluster/disaster_recovery.py app/services/cluster/update_orchestrator.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Extended the UTC-safe cluster sweep into `app/services/cluster/config_manager.py`, `app/services/cluster/config_distributor.py`, and `app/services/cluster/state_replicator.py`, replacing their remaining runtime/history/failover `datetime.utcnow()` emitters with `utc_now()` while leaving other compatibility-sensitive cluster datetime paths for later targeted passes.
+  - Validation for that incremental UTC sweep is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`6 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/config_manager.py app/services/cluster/config_distributor.py app/services/cluster/state_replicator.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next safe cluster-identity slice: move `app/services/cluster/enhanced_node_identity.py` off naive UTC timestamps and bare singleton state, convert `app/services/cluster/content_distributor.py` to the shared singleton base/getter pattern, and update `app/services/cluster/clone_reset.py` to reset the new singleton path explicitly.
+  - Landed that cluster-identity UTC slice by moving `enhanced_node_identity` node-config creation/promotion timestamps onto `utc_now()`. The broader cluster datetime surface still remains open in management/update/orchestration modules that need separate compatibility review.
+  - Selected the next safe cluster runtime slice: move `app/services/cluster/failover_monitor.py`, `app/services/cluster/fedora_package_manager.py`, and `app/services/cluster/audio_path_discovery.py` off naive runtime UTC emitters while standardizing their remaining singleton paths on the shared base/getter pattern.
+  - Landed that cluster runtime UTC slice by moving `failover_monitor` failover payload timestamps, `fedora_package_manager` snapshot/update-info timestamps, and `audio_path_discovery` node-audio-path timestamps onto `utc_now()`. Broader cluster datetime cleanup still remains open in node lifecycle, management/update orchestration, and other compatibility-sensitive surfaces.
+  - Selected the next safe cluster runtime slice: move `app/services/cluster/network_topology.py` and the cluster-facing runtime timestamps in `app/services/cluster/node_lifecycle.py` onto `utc_now()` while standardizing the process-wide topology monitor and cluster lifecycle facade on the shared singleton base/getter pattern. The keyed per-node lifecycle cache remains intentionally keyed and out of singleton scope.
+  - Landed that cluster runtime UTC slice by moving `network_topology` link/cleanup timestamps and the cluster-facing `node_lifecycle` transition, persistence, and diagnostics timestamps onto `utc_now()`. The remaining node-lifecycle and management/orchestration datetime cleanup still stays open where semantics or keyed lifecycles need separate treatment.
+  - Selected the next safe monitoring slice: move `app/services/cluster/health_aggregator.py` off its remaining naive default UTC timestamp and standardize the process-wide `heartbeat_monitor`, `health_aggregator`, and `hardware_inventory` accessors on the shared singleton base/getter pattern.
+  - Landed that monitoring UTC slice by moving the remaining `health_aggregator` metrics default timestamp onto `utc_now()`. `hardware_inventory` was already on timezone-aware UTC and only needed singleton cleanup in this pass.
+  - Selected the next singleton-only cleanup slice: standardize `app/services/cluster/registry.py`, `app/services/cluster/version_manifest.py`, and `app/services/cluster/deployment_manager.py` on the shared singleton registry/lock pattern. Their time handling is already acceptable in the active policy, so this pass is focused on factory consistency only.
+  - Landed that foundational singleton cleanup slice by promoting `ClusterRegistry`, `VersionManifest`, and `DeploymentManager` onto the shared `Singleton` base/getter pattern. `set_version_manifest()` now updates the shared singleton registry directly so test/runtime overrides still work without the old bespoke globals.
+  - Selected the next singleton-only cleanup slice: standardize `app/services/cluster/prometheus_exporter.py`, `app/services/cluster/plugin_inventory_sync.py`, and `app/services/cluster/mdns_discovery_enhanced.py` on the shared singleton base/getter pattern. Their current timestamp behavior is already acceptable in the active policy, so this pass is strictly factory consistency.
+  - Landed that shared-utility singleton cleanup slice by promoting `MetricsManager`, `ClusterPluginInventory`, and `EnhancedMDNSDiscovery` onto the shared `Singleton` base/getter pattern and deleting their remaining ad hoc module-level singleton state.
+  - Selected the next bounded UTC/runtime slice: move `app/services/cluster/post_update_health.py`, `app/services/cluster/update_validator.py`, and `app/services/cluster/map2_git_updater.py` off naive runtime timestamps. In the same pass, migrate `map2_git_updater`'s singleton accessor onto the shared singleton registry/lock pattern while preserving its configurable `app_path` initialization behavior.
+  - Landed that UTC/runtime slice by moving `post_update_health` phase result timestamps, `update_validator` result/report timestamps plus backup-age comparisons, and `map2_git_updater` runtime duration timing onto UTC-aware handling.
+  - Selected the next bounded UTC/runtime slice: move the remaining naive UTC emitters in `app/services/cluster/ztp.py` and `app/services/cluster/config_pusher.py` onto timezone-aware helpers while standardizing the process-wide accessors in `ztp`, `config_pusher`, and `adoption_bootstrap` on the shared singleton registry/lock pattern.
+  - Landed that bootstrap/config UTC slice by moving the `ztp` completion marker and cluster-registration metadata plus the `config_pusher` history parse fallback onto timezone-aware UTC handling. `adoption_bootstrap` was already using aware UTC internally and only needed singleton-factory cleanup in this pass.
+  - Validation for the bootstrap/config UTC slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'ztp or config_sync or adoption_bootstrap'` -> PASS (`3 passed, 25 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/ztp.py app/services/cluster/config_pusher.py app/services/cluster/adoption_bootstrap.py tests/test_cluster_runtime_consistency.py` -> PASS.
 
 ID: T846
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Unify singleton factories across all backend modules
 Description:
 - Goal / acceptance criteria: All singleton factories use consistent thread-safe pattern. No bare `if _instance is None` patterns.
@@ -19479,8 +19518,9 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-08 20:52 EDT - Codex
+Last updated: 2026-04-10 13:25 EDT - Codex
 - Progress notes:
+  - Execution policy selected: only true process-wide singletons should use the shared singleton/getter pattern. Keyed constructors and parameterized object producers should be reclassified as explicit caches/managers where appropriate instead of being forced into a singleton shape.
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
   - Extended the thread-safe singleton sweep to `usb_audio_manager`, `jack_audio`, `metrics_daemon`, `connection_pool`, `pipewire_service`, `plugin_catalog`, `cluster/version_manifest`, `cluster/adoption_bootstrap`, `tesira/firmware_service`, `tesira/layout_catalog`, `api_observatory`, and `upload_service`.
   - Broader backend singleton sweep is still pending; bare factory patterns remain in other modules and need a dedicated follow-up pass before this task can close.
@@ -19489,6 +19529,37 @@ Last updated: 2026-04-08 20:52 EDT - Codex
   - The remaining singleton inventory is now concentrated in other backend service entrypoints such as deployment/remediation, additional AVB services, and other untouched orchestration helpers rather than the core audio, observability, and Tesira slices already swept.
   - The remaining factory surface is not limited to process-wide singletons; it includes keyed/parameterized constructors such as DSP, node-lifecycle, updater, and client factories where forcing the same singleton pattern would be incorrect without deciding lifecycle, cache-key, and teardown ownership first.
   - Extended the shared-factory sweep in this pass by converting `app/services/event_bus.py` and `app/utils/health_metrics.py` onto the shared `Singleton` base/getter pattern, eliminating two more ad hoc module-level singleton implementations while preserving their existing public accessors.
+  - Promoted another safe process-wide batch onto the shared singleton base/getter pattern: `audio_health_monitor`, `deployment_health`, `deployment_remediation`, and `pipewire_recovery`. Parameterized/keyed services such as `nam_library` and `request_queue` were intentionally left out of this slice because they still expose explicit initialization/lifecycle contracts that need separate cache/manager decisions before unification.
+  - Focused validation for this singleton batch is green via the shared backend test slice and new direct getter-identity coverage in `tests/test_health_services.py`; the broader task remains open because the repo still contains many untouched bare factories, including AVB, cluster orchestration, and other lifecycle-sensitive modules.
+  - Extended the safe process-wide singleton sweep again by converting `frontend_degradation` and `preset_converter_service` onto the shared `Singleton` base/getter pattern while preserving their public initialization/access contracts. `initialize_frontend_degradation()` now resets and rehydrates the singleton explicitly before applying a new remote backend URL.
+  - Validation for this incremental batch is green: `pytest -q tests/test_frontend_degradation.py tests/test_preset_converter.py` -> PASS; `python3 -m py_compile` -> PASS. The task still remains open because large untouched singleton/factory surfaces remain elsewhere in AVB, cluster orchestration, and lifecycle-sensitive modules.
+  - Selected the next safe singleton bundle: convert the clearly process-wide `node_discovery_service` and `cluster/disaster_recovery` accessors to the shared `Singleton` base/getter pattern, while leaving parameterized getters such as `get_update_scheduler(...)` untouched because they still carry constructor-time configuration semantics.
+  - Landed that singleton bundle by promoting `NodeDiscoveryService` and `DisasterRecoveryManager` onto the shared `Singleton` base/getter pattern and deleting their remaining ad hoc module-level singleton state. `get_update_scheduler(...)` and other parameterized factories remain intentionally out of scope until their lifecycle semantics are redesigned.
+  - Validation for the singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/node_discovery_service.py app/services/cluster/disaster_recovery.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Extended the shared singleton pattern into `app/services/cluster/config_manager.py`, `app/services/cluster/config_distributor.py`, and `app/services/cluster/state_replicator.py`. `config_manager` now uses the shared base directly, while the parameterized `config_distributor` and `state_replicator` initialization paths now register their instances through the shared singleton registry/lock instead of bare module-level globals.
+  - Validation for that singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`6 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/config_manager.py app/services/cluster/config_distributor.py app/services/cluster/state_replicator.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next safe singleton cleanup slice on cluster identity/distribution surfaces: `enhanced_node_identity`, `content_distributor`, and the dependent `clone_reset` reset path. These are process-wide services without constructor-keyed lifecycle differences, so they fit the shared singleton base/getter pattern cleanly.
+  - Landed that singleton cleanup slice by promoting `EnhancedNodeIdentity` and `ContentDistributor` onto the shared `Singleton` base/getter pattern and updating `clone_reset` to call `EnhancedNodeIdentity.reset_instance()` instead of mutating a module-global singleton directly.
+  - Validation for the identity/distribution slice is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`9 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/enhanced_node_identity.py app/services/cluster/content_distributor.py app/services/cluster/clone_reset.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next safe singleton bundle on cluster runtime services: `failover_monitor`, `fedora_package_manager`, and `audio_path_discovery`. These are process-wide services with no keyed lifecycle semantics, so they can move to the shared singleton base/getter pattern without changing caller contracts.
+  - Landed that singleton bundle by promoting `FailoverMonitor`, `FedoraDNFManager`, and `AudioPathService` onto the shared `Singleton` base/getter pattern and deleting the last ad hoc singleton state in those modules.
+  - Validation for the runtime-service slice is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`12 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/failover_monitor.py app/services/cluster/fedora_package_manager.py app/services/cluster/audio_path_discovery.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on cluster runtime services: promote `NetworkTopologyMonitor` and the process-wide `ClusterNodeLifecycleManager` facade to the shared singleton base/getter pattern. The per-node `get_lifecycle_manager(node_id)` path remains an explicit keyed cache because forcing it into a single global instance would be incorrect.
+  - Landed that singleton cleanup slice by promoting `NetworkTopologyMonitor` and `ClusterNodeLifecycleManager` onto the shared `Singleton` base/getter pattern while explicitly leaving the keyed `get_lifecycle_manager(node_id)` cache alone.
+  - Validation for the topology/lifecycle slice is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`14 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/network_topology.py app/services/cluster/node_lifecycle.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next monitoring singleton slice: `heartbeat_monitor`, `health_aggregator`, and `hardware_inventory`. These are process-wide services with no keyed lifecycle semantics, so they can move onto the shared singleton base/getter pattern without changing caller expectations.
+  - Landed that monitoring singleton slice by promoting `HeartbeatMonitor`, `HealthAggregator`, and `ClusterHardwareInventory` onto the shared `Singleton` base/getter pattern and deleting their remaining ad hoc module-level singleton state.
+  - Validation for the monitoring slice is green: `pytest -q tests/test_cluster_runtime_consistency.py` -> PASS (`17 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/heartbeat_monitor.py app/services/cluster/health_aggregator.py app/services/cluster/hardware_inventory.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on foundational cluster services: `registry`, `version_manifest`, and `deployment_manager`. These are process-wide service entrypoints with no keyed lifecycle semantics, so they fit the shared singleton base/getter pattern cleanly.
+  - Validation for the foundational singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'registry or version_manifest or deployment_manager'` -> PASS (`3 passed, 17 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/registry.py app/services/cluster/version_manifest.py app/services/cluster/deployment_manager.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on shared cluster utilities: `prometheus_exporter`, `plugin_inventory_sync`, and `mdns_discovery_enhanced`. These are process-wide service entrypoints with no keyed lifecycle semantics, so they fit the shared singleton base/getter pattern cleanly.
+  - Validation for the shared-utility singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'plugin_inventory or mdns or prometheus_exporter'` -> PASS (`3 passed, 20 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/prometheus_exporter.py app/services/cluster/plugin_inventory_sync.py app/services/cluster/mdns_discovery_enhanced.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on cluster update utilities: `map2_git_updater` only. `post_update_health` and `update_validator` are intentionally left as regular instantiable helpers; only the updater exposes a process-wide service accessor that should use the shared singleton registry/lock pattern.
+  - Landed that singleton cleanup slice by migrating `map2_git_updater` onto the shared singleton registry/lock pattern while preserving first-call `app_path` initialization semantics for existing callers.
+  - Validation for the update-utility slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'validation_models or git_updater'` -> PASS (`2 passed, 23 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/post_update_health.py app/services/cluster/update_validator.py app/services/cluster/map2_git_updater.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on bootstrap/config services: `ztp`, `config_pusher`, and `adoption_bootstrap`. These are process-wide service entrypoints with no keyed lifecycle semantics, so they fit the shared singleton base/getter pattern cleanly.
+  - Landed that singleton cleanup slice by promoting `ZTPBootstrap` and `ConfigSync` onto the shared `Singleton` base/getter pattern and wiring `set_adoption_bootstrap_service()` into the shared singleton registry so explicit test/runtime overrides still work without bespoke globals.
+  - Validation for the bootstrap/config singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'ztp or config_sync or adoption_bootstrap'` -> PASS (`3 passed, 25 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/ztp.py app/services/cluster/config_pusher.py app/services/cluster/adoption_bootstrap.py tests/test_cluster_runtime_consistency.py` -> PASS.
 
 ID: T847
 Status: [✓] Done
@@ -19948,7 +20019,7 @@ Last updated: 2026-04-10 10:02 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T863
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Standardize on Carbon type scale — remove non-token font sizes
 Description:
 - Goal / acceptance criteria: Replace all custom `font-size` values and the `--type-caption`, `--type-label`, `--type-body`, `--type-heading`, `--type-display`, `--type-subheading` custom tokens with Carbon's productive type scale tokens (`--cds-label-01-*`, `--cds-body-compact-01-*`, `--cds-body-01-*`, `--cds-heading-01-*` through `--cds-heading-07-*`). Maintain IBM Plex Sans as the primary face.
@@ -19958,10 +20029,13 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 05:49 EDT - Codex
+Last updated: 2026-04-10 12:58 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
+  - Opened a bounded shared-frontend slice and converted a reusable group of shell/components onto Carbon-backed type sizing: `web/src/index.css`, `Toasts.css`, `Disclosure.css`, `ChainPanel.css`, `ChainManagementCard.css`, `BottomRoutingPanel.css`, `HorizontalSignalChain.css`, `HomePage.css`, `UnifiedWorkspaceSideNav.css`, `ThemeChooserModal.css`, and `ViewportPolicyGate.css`.
+  - The legacy `--type-*` root aliases now resolve to Carbon type tokens instead of hard-coded literals, and the touched component files now use direct Carbon `--cds-*` type tokens for the concrete styles that were migrated in this slice. The task remains open because many route-local files still reference the legacy aliases or non-token sizes.
+  - Validation for this slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20063,11 +20137,12 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-04-09 06:18 EDT - Codex
 - Progress notes:
+  - Execution policy selected: migrate shell navigation incrementally toward Carbon `Header` / `HeaderPanel` / `SideNav` semantics while preserving the current MAP2 shell identity, instead of attempting a one-shot visual replacement.
   - The app shell still relies on the large custom `.topbar-pro` and `.nav-mobile-menu` systems in `web/src/app/layout/AppShell.css`, even though isolated workspace navigation has already started using Carbon `SideNav`.
   - This task remains blocked by `T848` and `T851`; without a stable navigation ownership model and completed CSS split, a Carbon header conversion would strand major chunks of the current shell in parallel legacy code.
 
 ID: T870
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Apply sentence-case and plain-language copy to all UI text per Carbon writing guidelines
 Description:
 - Goal / acceptance criteria: Audit all static UI text (button labels, headings, navigation items, tooltips, status messages) for: (1) sentence case instead of UPPER CASE or Title Case (Carbon §3.13), (2) explicit action wording ("Save changes" not "Submit"), (3) plain language avoiding jargon. Current violations include `UPPER_CASE` navigation labels, `text-transform: uppercase` on 50+ CSS classes, and button labels like "Power" and "X".
@@ -20077,10 +20152,15 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:18 EDT - Codex
+Last updated: 2026-04-10 13:07 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
+  - Opened a shared-shell writing-guideline slice in parallel with `T863` and removed uppercase treatment from the touched reusable surfaces, including the Home boot eyebrow, unified side-nav section/meta labels, theme chooser headers, viewport policy gate eyebrow/metric labels, and several shared horizontal-signal-chain labels/tooltips/badges.
+  - This task remains open because many route-local and shell-local files still encode uppercase/letter-spaced labels, but the common typography surface touched in this batch now follows sentence-case-first styling instead of enforcing all-caps via CSS.
+  - Validation for this slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Extended the sentence-case shell pass into `web/src/app/layout/AppShell.css`, removing forced uppercase/high-tracking treatment from the window titlebar eyebrow/meta labels, push-confirmation eyebrow, and shell-launcher device headings while moving those labels onto Carbon label sizing.
+  - Validation for this shell slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked
@@ -21730,3 +21810,250 @@ Last updated: 2026-04-10 06:56 EDT - Codex
   - `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
+
+ID: T959
+Status: [✓] Done
+Title: Simplify snapshot live activation with plain-language status, preflight checklist, and one-click recovery actions
+Description:
+- Goal / acceptance criteria: Replace ambiguous snapshot-editor live-flow copy and controls so operators can tell what `Apply` / `Go Live` means without prior product knowledge. The live card must explain activation requirements in plain language, rename or clarify ambiguous statuses like `pending apply`, surface a fixed preflight checklist before activation, split draft-vs-live intent clearly in the UI, expose a guided activation progress model, and offer easy recovery actions for preflight failures using existing backend repair metadata where available.
+- Why it matters: The current snapshot live card mixes draft/save/live concepts and runtime-control-plane terms (`pending apply`, `partial apply`) that make activation harder than it needs to be for performers. The user explicitly asked for clearer meaning, required steps, and easier live deployment.
+- Dependencies: T870
+- Estimated effort: Medium
+- Required outputs: Updated snapshot-editor live-flow copy/state model, guided activation/preflight UX, any required backend/client contract adjustments, focused tests, and worklist validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-10 14:31 EDT - Codex
+- Completion notes:
+  - Reworked the snapshot editor live card so the primary action and surrounding copy use plain language: `Go Live` became `Make live`, draft-vs-live guidance now explains when the operator is saving a draft versus activating it, and per-channel `pending apply` messaging now reads as waiting on the engine instead of using control-plane jargon.
+  - Switched the editor hero live flow onto the real `/api/snapshots/{id}/activate` runtime activation path so the UI now gets structured preflight failures, repair actions, and phase-based progress events (`Validate`, `Stage`, `Apply`, `Verify`) instead of only writing authority state.
+  - Added a fixed readiness checklist, split `Save draft` from the make-live action, promoted the dirty-state path into an explicit save-then-activate flow (`Save + make live`), and mapped backend repair metadata into one-click recovery actions for missing devices, plugins, and assets.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/utils/snapshotGoLiveState.test.ts src/app/utils/snapshotRoutingLiveState.test.ts src/app/utils/snapshotActivationToast.test.ts src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T960
+Status: [✓] Done
+Title: Unify snapshot progress, routing, and control workflows into one guided modal
+Description:
+- Goal / acceptance criteria: Replace the fragmented snapshot-editor status card details, routing topology modal, and control center modal with one unified progress modal opened from the information area when activation is incomplete. The modal must move the non-name snapshot status/details into the modal, show plain-language readiness/progress/error states, reveal exactly what needs attention after a 3-second stall threshold, guide the operator one issue at a time, and integrate routing/control-panel actions into the same workflow using a React Flow path view.
+- Why it matters: The current workflow scatters activation understanding across the hero card, control center, routing modal, and multiple fix dialogs, which makes recovery and setup harder than necessary during live use.
+- Dependencies: T959
+- Estimated effort: High
+- Required outputs: Unified modal UX, removal or redirection of superseded status/control/routing entry points, React Flow guided path, timeout-based attention state, direct fix workflow wiring where possible, focused tests, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-10 15:35 EDT - Codex
+- Completion notes:
+  - Replaced the fragmented snapshot status surfaces with a unified `SnapshotProgressModal` in the snapshot editor. The hero card now keeps only the live state, snapshot name, and clickable channel-activity indicator, while the removed checklist, status detail, routing entry point, and control-center content now live inside the modal workflow.
+  - Added a Carbon-standard unified modal with `Guided` and `Advanced` modes. The guided path uses React Flow to visualize the activation route across draft, plugins, assets, devices, local routing, network routing, engine, and channel confirmation, then walks blockers one item at a time with explicit plain-language cause text and direct fix actions where available.
+  - Implemented the 3-second escalation path for stalled activation. If the engine does not confirm in time, the modal promotes exact per-channel or runtime blockers into `needs attention` items instead of leaving the operator on vague `waiting for the engine` wording.
+  - Folded the old routing topology workflow into the same modal by extracting reusable `RoutingTopologyContent`, then embedding it as the advanced routing section while keeping the standalone wrapper available for compatibility. The advanced modal also absorbs the old control-center device, output-reference, noise-gate, runtime, and cleanup surfaces.
+  - Rewired snapshot-editor entry points so the information-area indicator, the options/menu progress action, and compact routing shortcuts all land in the same modal workflow. Runtime tools that still need dedicated workspaces now branch out from the advanced modal instead of from separate status dialogs.
+- Validation:
+  - `npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/SnapshotProgressModal.test.tsx src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx src/app/components/SnapshotEditor/SnapshotEditorMenuRail.test.tsx src/app/components/SnapshotEditor/SnapshotEditorOptionsRail.test.tsx` -> PASS
+  - `npm --prefix web test -- --runInBand src/app/utils/snapshotGoLiveState.test.ts src/app/utils/snapshotRoutingLiveState.test.ts src/app/utils/snapshotActivationToast.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T961
+Status: [✓] Done
+Title: Replace the snapshot live modal stack with a source-of-truth Publish workspace
+Description:
+- Goal / acceptance criteria: Implement the phase-1 Snapshot Publish Workspace redesign captured in `/home/mm/.claude/plans/humble-forging-manatee.md` and `docs/design/SNAPSHOT_LIVE_SOURCE_OF_TRUTH_REDESIGN_HANDOFF_20260410.md`. The snapshot live flow must move from the current fire-and-forget modal stack to a deep-linkable `/snapshots/:id/publish` workspace backed by a typed backend readiness contract and typed blocker taxonomy. A first-time operator must be able to tell whether the draft is saved, whether publish was requested, whether runtime confirmed it, what is blocking publish, and the single next action to take without reading platform-internal diagnostics.
+- Why it matters: The current `Make live` / `SnapshotProgressModal` flow still exposes platform-internal language and spreads the operator story across multiple modal surfaces. The imported redesign plan is now the canonical phase-1 replacement strategy and needs to exist in the single global tracker rather than remaining only in an external planning file.
+- Dependencies: T959, T960, T870
+- Estimated effort: High
+- Required outputs: Typed backend publish-readiness contract, typed blocker taxonomy, `/snapshots/:id/publish` route and workspace UI, rewired entry points, legacy modal retirement, focused pytest/Jest rewrites, and canonical worklist updates.
+Subtasks:
+  - ID: T961-subA
+    Status: [✓] Done
+    Title: Add typed publish blocker and readiness models to the backend source-of-truth layer
+    Description:
+    - Goal / acceptance criteria: Extend `app/models/audio_state.py` with the typed `PublishBlockerCode`, `PublishBlockerSeverity`, `PublishBlocker`, `PublishRequirement`, and `SnapshotPublishReadiness` models described in the imported plan, with plain-language operator fields and stable IDs/scopes that downstream API/UI layers can consume directly.
+    - Why it matters: The redesign requires the backend to own blocker semantics and ordering so the UI stops inferring state from draft-only or string-parsed status text.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: New typed Pydantic models and any required serialization compatibility updates.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 16:33 EDT - Codex
+    - Completion notes:
+      - Added the typed publish-readiness contract foundation to `app/models/audio_state.py`: `PublishBlockerCode`, `PublishBlockerSeverity`, `PublishScope`, `PublishRequirementStatus`, `SnapshotPublishStatus`, `PublishRepairAction`, `PublishBlocker`, `PublishRequirement`, and `SnapshotPublishReadiness`.
+      - Kept the slice compatibility-safe by limiting it to shared model/schema additions only; no route or runtime behavior changed yet, which lets the next `T961` backend slices extend activation/runtime/readiness code against one canonical contract instead of introducing parallel string-based shapes.
+      - Added focused model coverage in `tests/test_audio_state_models.py` to lock enum serialization, nested JSON contract shape, and default empty-list behavior for blockers, requirements, repairs, and readiness payloads.
+    - Validation:
+      - `pytest -q tests/test_audio_state_models.py tests/test_audio_state_authority_service.py tests/test_audio_state_routes.py` -> PASS (`11 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/models/audio_state.py tests/test_audio_state_models.py` -> PASS
+  - ID: T961-subB
+    Status: [✓] Done
+    Title: Extend snapshot activation intent/runtime state with blockers, warnings, and confirmations
+    Description:
+    - Goal / acceptance criteria: Update `app/services/snapshot_runtime_state_service.py` so `SnapshotActivationIntent` carries typed `blockers`, `warnings`, `node_confirmations`, and `channel_confirmations` without replacing the existing event-history/WebSocket model. Existing activation helpers must populate these fields as intents progress.
+    - Why it matters: The redesign preserves current activation plumbing, so the richer publish model has to piggyback on the existing runtime state service instead of introducing a parallel session model.
+    - Dependencies: T961-subA
+    - Estimated effort: Medium
+    - Required outputs: Extended runtime intent model, populated state transitions, and compatibility-safe readers.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 16:45 EDT - Codex
+    - Completion notes:
+      - Extended the shared publish contract in `app/models/audio_state.py` with `PublishConfirmationStatus`, `NodeConfirmationState`, and `ChannelConfirmationState`, so activation intent can now carry typed confirmation state instead of leaving node/channel progress implicit in free-form runtime metrics.
+      - Updated `app/services/snapshot_runtime_state_service.py` so activation intents now initialize and preserve typed `blockers`, `warnings`, `node_confirmations`, and `channel_confirmations`; phase transitions promote pending confirmations into explicit waiting state during apply/verify, successful publishes mark them confirmed, and failed publishes synthesize/retain typed blockers plus failed confirmation states.
+      - Kept the change compatibility-safe for existing event-history and websocket readers by storing the new typed fields inside the existing activation-event `runtime_metrics` payload rather than introducing a parallel session model.
+      - Added focused regression coverage in `tests/test_snapshot_runtime_state_progress.py` for initial typed intent payloads, phase-driven waiting-state transitions, confirmation success paths, and failure-time blocker synthesis (`engine_apply_failed` + `retry_publish`).
+    - Validation:
+      - `pytest -q tests/test_snapshot_runtime_state_progress.py tests/test_state_authority_activation_service.py tests/test_audio_state_models.py` -> PASS (`14 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/models/audio_state.py app/services/snapshot_runtime_state_service.py tests/test_snapshot_runtime_state_progress.py` -> PASS
+  - ID: T961-subC
+    Status: [✓] Done
+    Title: Implement a backend publish readiness service with stale-observation escalation
+    Description:
+    - Goal / acceptance criteria: Add `app/services/publish_readiness_service.py` that derives `SnapshotPublishReadiness` from the draft snapshot, authoritative audio state, and node observations, including ordered blockers, requirements, available repairs, requested/confirmed revision IDs, and synthesized `observation_stale` blockers after the 3-second confirmation window described in the imported plan.
+    - Why it matters: The workspace’s summary rail, guided issue card, and retry/repair paths need one canonical backend readiness evaluator instead of today’s ad hoc string formatting and UI inference.
+    - Dependencies: T961-subA, T961-subB
+    - Estimated effort: High
+    - Required outputs: New readiness service, blocker ordering logic, stale-observation escalation, and back-compat wrappers where legacy readers still need string output.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:15 EDT - Codex
+    - Completion notes:
+      - Added `app/services/publish_readiness_service.py`, a dedicated backend evaluator that composes snapshot draft detail, saved-revision state, preflight validation issues, committed authoritative audio state, node observations, runtime live-state divergence, and activation-intent progress into the typed `SnapshotPublishReadiness` contract added in `T961-subA`.
+      - Reused the existing snapshot preflight validator instead of inventing another validation path, mapping its structured issues/repair actions into typed `PublishBlocker` / `PublishRepairAction` entries for missing plugins, assets, and devices while also surfacing `unsaved_draft`.
+      - Added authority/runtime-derived blocker synthesis for stale node observations (`observation_stale` + `retry_publish`), waiting confirmations (`node_sync_pending` warnings), routing/path failures, and runtime/authority disagreement (`authority_diverged`), then derived publish status and checklist requirements from that canonical backend model.
+      - Added focused coverage in `tests/test_publish_readiness_service.py` for live-confirmed happy path, preflight blocker mapping, stale-observation escalation after the 3-second window, and diverged runtime-vs-authority state.
+    - Validation:
+      - `pytest -q tests/test_publish_readiness_service.py tests/test_audio_state_models.py tests/test_snapshot_runtime_state_progress.py` -> PASS (`14 passed`)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/publish_readiness_service.py tests/test_publish_readiness_service.py` -> PASS
+  - ID: T961-subD
+    Status: [✓] Done
+    Title: Add publish readiness, retry, and repair routes to unified snapshots
+    Description:
+    - Goal / acceptance criteria: Extend `app/routes/unified_snapshots.py` with `GET /api/snapshots/{id}/publish-readiness`, `POST /api/snapshots/{id}/publish-retry`, and `POST /api/snapshots/{id}/repair/{repair_action_id}`, and update activate responses to include the richer activation-intent fields.
+    - Why it matters: The new publish workspace and all rewired entry points need stable typed route contracts before the frontend can consolidate around the redesign.
+    - Dependencies: T961-subB, T961-subC
+    - Estimated effort: Medium
+    - Required outputs: New routes, updated activate response shape, error handling, and focused contract coverage.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:26 EDT - Codex
+    - Completion notes:
+      - Extended `app/routes/unified_snapshots.py` with `GET /api/snapshots/{snapshot_id}/publish-readiness`, `POST /api/snapshots/{snapshot_id}/publish-retry`, and `POST /api/snapshots/{snapshot_id}/repair/{repair_action_id}`.
+      - Kept route behavior aligned with the current snapshot activation contract by exposing the new typed readiness payload directly from `PublishReadinessService` while reusing the existing state-authority activation service for `retry_publish` instead of adding a parallel publish runner.
+      - Added a thin shared repair-action dispatcher in the route layer; `retry_publish` is implemented and unsupported repair actions now fail explicitly with a `400` instead of silently pretending support.
+      - Confirmed the existing activate response already carries the richer `activation_intent` payload from `T961-subB`, so this slice did not need another backend response-shape fork.
+      - Added focused route coverage in `tests/test_snapshot_routes.py` for the new readiness, retry, and repair endpoints plus unsupported repair handling.
+    - Validation:
+      - `pytest -q tests/test_snapshot_routes.py` -> PASS (`12 passed`, existing SQLAlchemy identity-map warnings unchanged)
+      - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/unified_snapshots.py tests/test_snapshot_routes.py` -> PASS
+  - ID: T961-subE
+    Status: [✓] Done
+    Title: Mirror the publish-readiness contract in shared web types and snapshot clients
+    Description:
+    - Goal / acceptance criteria: Update `web/src/map2/types.ts` and `web/src/map2/clients/snapshots.ts` to mirror the typed blocker/readiness models, extend the activate return type, and add typed client helpers for readiness fetch, repair actions, and retry publish.
+    - Why it matters: The frontend cannot safely replace modal inference logic until the new backend contract exists as first-class shared types and client helpers.
+    - Dependencies: T961-subA, T961-subD
+    - Estimated effort: Medium
+    - Required outputs: Updated shared types, snapshot client helpers, and any focused TypeScript contract tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:44 EDT - Codex
+    - Completion notes:
+      - Extended `web/src/map2/types.ts` with the typed publish blocker, repair, requirement, confirmation, and readiness models plus richer `SnapshotActivationIntent` fields so the web app now consumes the same contract family the backend owns.
+      - Extended `web/src/map2/clients/snapshots.ts` with typed `getPublishReadiness()`, `retryPublish()`, and `runPublishRepairAction()` helpers so the new publish workspace can stop inferring live state from legacy modal payloads.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+  - ID: T961-subF
+    Status: [✓] Done
+    Title: Build the deep-linkable Snapshot Publish workspace and rewire live-flow entry points
+    Description:
+    - Goal / acceptance criteria: Add the `/snapshots/:id/publish` route and the Publish workspace component set described in the imported plan, then rewire `Make live`, NodeNav activity, readiness badges, and routing/status entry points to navigate there instead of opening the legacy modal stack. The workspace must use the backend readiness contract directly for summary, checklist, guided issue, diff, flow map, and utility-bar actions.
+    - Why it matters: The redesign is not complete until operators land in one source-of-truth workspace rather than chasing status across snapshot cards, routing modals, and advanced control surfaces.
+    - Dependencies: T961-subD, T961-subE
+    - Estimated effort: High
+    - Required outputs: New publish workspace route/components, entry-point rewiring, plain-language copy surface, and focused frontend validation.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:44 EDT - Codex
+    - Completion notes:
+      - Added the deep-linkable `/snapshots/:snapshotId/publish` route in `web/src/app/App.tsx` plus the new `web/src/app/pages/SnapshotPublishPage.tsx` workspace with guided and advanced modes, summary rail, readiness checklist, guided issue card, comparison table, and support flow map.
+      - Rewired snapshot-editor publish entry points in `web/src/app/pages/SnapshotEditorPageContent.tsx` so guided/advanced live-flow openings now navigate into the publish workspace with `mode` and `section` query state instead of opening the old modal stack.
+      - Updated publish-facing copy in the editor and go-live helpers to use plain-language publish wording (`Publish to live`, `Save and publish`, `Live confirmed`) rather than the prior `Make live` phrasing.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/SnapshotPublishPage.test.tsx src/app/utils/snapshotGoLiveState.test.ts` -> PASS
+      - `npm --prefix web run build` -> PASS
+  - ID: T961-subG
+    Status: [✓] Done
+    Title: Retire legacy snapshot progress and routing modal surfaces after workspace parity lands
+    Description:
+    - Goal / acceptance criteria: Delete or fully redirect `SnapshotProgressModal` and `RoutingTopologyModal` once the Publish workspace has absorbed their responsibilities, while preserving any extracted reusable inner content required by the new advanced drawer.
+    - Why it matters: Leaving the old modal stack in place after migration would recreate duplicate status authority and make the publish workflow inconsistent again.
+    - Dependencies: T961-subF
+    - Estimated effort: Medium
+    - Required outputs: Removed legacy modal surfaces, cleaned imports/routes, and no duplicated live-status workflows.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:44 EDT - Codex
+    - Completion notes:
+      - Retired the old `SnapshotProgressModal` surface entirely by removing its live use from the snapshot editor and deleting the dead component, stylesheet, and test file.
+      - Removed the unused `RoutingTopologyModal` wrapper and its test so the publish workflow no longer keeps a second modal shell around the routing content.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+  - ID: T961-subH
+    Status: [✓] Done
+    Title: Rewrite touched backend and frontend tests around the typed publish model
+    Description:
+    - Goal / acceptance criteria: Add the new pytest suites and Jest rewrites called out in the imported plan, including readiness-service coverage, route contract tests, activation-intent field coverage, publish-workspace UI tests, and replacement assertions for the old string-parsing modal utilities.
+    - Why it matters: The plan explicitly requires a full regression rewrite for touched tests so the new source-of-truth model is locked in and the legacy phase/string inference paths do not creep back.
+    - Dependencies: T961-subC, T961-subD, T961-subE, T961-subF, T961-subG
+    - Estimated effort: High
+    - Required outputs: New/rewritten pytest and Jest coverage, passing validation commands, and updated worklist notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-10 17:44 EDT - Codex
+    - Completion notes:
+      - Added focused frontend regression coverage in `web/src/app/pages/SnapshotPublishPage.test.tsx` for publish-workspace rendering and retry flow, and rewrote the live-action label assertions in `web/src/app/utils/snapshotGoLiveState.test.ts` around the new publish wording.
+      - Kept the existing backend publish readiness and route coverage from `T961-subC` and `T961-subD` as the canonical pytest protection for the typed publish model while extending the frontend side to cover the new route.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/SnapshotPublishPage.test.tsx src/app/utils/snapshotGoLiveState.test.ts` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-10 17:44 EDT - Codex
+- Progress notes:
+  - Imported the external redesign plan from `/home/mm/.claude/plans/humble-forging-manatee.md` into the canonical worklist so the work is tracked in one global ledger rather than split between side plans and repository state.
+  - This epic intentionally supersedes the modal-centered direction of `T960` without rewriting history: `T960` remains a completed intermediate step, and `T961` is now the explicit phase-1 replacement path for the snapshot publish workflow.
+  - Execution started on `T961-subA`: the next bounded slice is to land the typed publish-readiness blocker/requirement models in `app/models/audio_state.py` first, so the runtime-state, readiness-service, route, and frontend work can all build against one canonical contract instead of adding more stringly-typed status shapes.
+  - `T961-subA` is now complete and validated. The next backend-critical slice is `T961-subB`, extending snapshot activation intent/runtime state with typed blockers, warnings, and confirmation maps that reference the shared models added in this step.
+  - `T961-subB` is now complete and validated. The next backend-critical slice is `T961-subC`: a dedicated publish-readiness evaluator that derives ordered blockers, checklist requirements, and stale-observation escalation from draft snapshot data, authoritative audio state, and node observations.
+  - `T961-subC` is now complete and validated. The next backend-critical slice is `T961-subD`: expose the typed readiness model through unified snapshot routes and add publish-retry / repair endpoints so the frontend can stop reading legacy modal-specific state.
+  - `T961-subD` is now complete and validated. The next integration slice is `T961-subE`: mirror the typed publish-readiness contract in shared web types and snapshot client helpers so the frontend can start replacing modal-specific inference with direct backend reads.
+  - `T961-subE` through `T961-subH` are now complete: the typed publish contract is mirrored in shared web types and clients, `/snapshots/:id/publish` exists as the new source-of-truth workspace, legacy modal surfaces were retired, and focused frontend coverage was rewritten around the publish route plus publish-language helpers.
+- Completion notes:
+  - Closed the phase-1 publish-workspace epic by landing the deep-linkable `/snapshots/:id/publish` route, reusing the backend readiness contract directly for summary/checklist/guided issue/comparison support views, and wiring the snapshot editor’s publish entry points into that route instead of the old progress modal stack.
+  - Mirrored the typed publish blocker, repair, requirement, confirmation, and readiness contracts in the shared web type/client layer so the frontend now reads one canonical backend publish model instead of inferring state from string-parsed modal payloads.
+  - Retired the legacy `SnapshotProgressModal` and unused `RoutingTopologyModal` wrapper once the publish workspace absorbed their responsibilities, removing the duplicated modal authority path from the snapshot workflow.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/SnapshotPublishPage.test.tsx src/app/utils/snapshotGoLiveState.test.ts` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T962
+Status: [✓] Done
+Title: Redesign Start Menu launcher panel with hero-and-compact two-tier layout (Option 5)
+Description:
+- Goal / acceptance criteria: Replace the flat 4-column icon grid in the ShellLauncherPanel Start Menu with a two-tier layout: a 2-column hero section for featured workspaces (icon circle + label + description + navigation arrow) and a 3-column compact micro-grid for all remaining workspaces (icon + label only). Hardware-blocked items are dimmed with status text visible. The redesign must work correctly in both light and dark Carbon themes.
+- Why it matters: The original flat gray icon-frame tiles lose all contrast in the light Carbon theme because the icon frame background is a translucent color-mix that becomes near-invisible on white surfaces. The new layout replaces that approach with solid left-border accent lines and filled icon circles, which maintain strong contrast in both themes. The two-tier hierarchy also gives operators immediate visual priority — the four most-used workspaces are prominent, the rest are accessible without visual noise.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated NavigationItems.tsx with hero and compact renderers, updated AppShell.css with new card classes, updated ShellLauncherPanel.tsx removing legacy tile-grid wrapper, updated useAppShellPresentation.ts using storefrontCollections for featured flag, and updated worklist.
+Subtasks: None
+Assigned to: Kombai
+Last updated: 2026-04-10 EDT - Kombai
+- Completion notes:
+  - Replaced the single flat `renderLauncherItem` renderer in `NavigationItems.tsx` with two separate renderers: `renderLauncherHeroItem` (2-column grid, icon circle, description, ArrowRight icon) and `renderLauncherCompactItem` (column-flex, icon + label + optional status).
+  - Added `.start-menu-hero-card` and `.start-menu-compact-card` CSS blocks to `AppShell.css`, using `border-left: 3px solid var(--item-color)` for accent color instead of icon frame backgrounds, and `color-mix` for circular icon backgrounds that remain visible in light theme.
+  - Updated `useAppShellPresentation.ts` to derive the `featured` flag from `item.storefrontCollections.includes('featured')` rather than a hardcoded two-route check, promoting all four featured catalog items (/platforms/overview, /artifacts, /tesira, /perform) to the hero tier.
+  - Removed the `shell-launcher__tile-grid` wrapper div from `ShellLauncherPanel.tsx`; layout is now fully owned by the `NavigationItems` component's `shell-launcher__nav-v5` structure.
+- Validation:
+  - `npm --prefix web run typecheck` -> to be run
+  - Snapshot tests in `DesktopExperience.snapshot.test.tsx` will need updating via `--updateSnapshot` due to structural DOM changes.

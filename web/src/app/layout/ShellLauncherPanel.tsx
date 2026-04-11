@@ -7,6 +7,7 @@ import {
   MAP2_PLATFORM_NAME,
   Map2BrandMark,
 } from '../components/branding/map2Branding'
+import { SpinningCubeLauncher } from './SpinningCubeLauncher'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
 import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
@@ -128,18 +129,11 @@ export function ShellLauncherPanel({
   return (
     <div className="shell-launcher" ref={launcherRef} style={{ '--window-shell-accent': accentColor } as CSSProperties}>
       <div className="shell-launcher__button-wrap">
-        <button
-          ref={launcherButtonRef}
-          type="button"
-          className={`shell-launcher__button${navOpen ? ' is-active' : ''}`}
+        <SpinningCubeLauncher
+          isActive={navOpen}
+          buttonRef={launcherButtonRef}
           onClick={onToggleMenu}
-          aria-label={navOpen ? 'Close platform menu' : 'Open platform menu'}
-          aria-haspopup="menu"
-          aria-expanded={navOpen}
-          aria-controls="shell-launcher-panel"
-        >
-          <Map2BrandMark className="shell-launcher__button-icon" />
-        </button>
+        />
 
         {navOpen ? (
           <Layer
@@ -226,9 +220,7 @@ export function ShellLauncherPanel({
             </div>
 
             <div className="shell-launcher__body">
-              <div className="shell-launcher__tile-grid">
-                <NavigationItems items={startMenuTileItems} onNavigate={onCloseMenus} variant="launcher" />
-              </div>
+              <NavigationItems items={startMenuTileItems} onNavigate={onCloseMenus} variant="launcher" />
             </div>
 
             <div className="shell-launcher__footer">

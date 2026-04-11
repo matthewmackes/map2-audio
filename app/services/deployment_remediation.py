@@ -14,6 +14,8 @@ import asyncio
 from typing import Dict, Optional, Callable, Any
 from enum import Enum
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,7 +56,7 @@ class RemediationResult:
         }
 
 
-class DeploymentRemediationService:
+class DeploymentRemediationService(Singleton):
     """
     Provides one-click remediation actions for deployment issues.
     """
@@ -344,14 +346,6 @@ class DeploymentRemediationService:
                 message=f"Error executing remediation: {e}",
             )
 
-
-# Global instance
-_remediation_service: Optional[DeploymentRemediationService] = None
-
-
 def get_remediation_service() -> DeploymentRemediationService:
     """Get or create global remediation service"""
-    global _remediation_service
-    if _remediation_service is None:
-        _remediation_service = DeploymentRemediationService()
-    return _remediation_service
+    return DeploymentRemediationService.get_instance()

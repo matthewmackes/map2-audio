@@ -10,10 +10,10 @@ from enum import Enum
 from typing import List, Dict, Optional, Callable
 import time
 import asyncio
-from datetime import datetime
 import logging
 
 from .update_validator import UpdateValidator, ValidationReport, ValidationLevel
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +192,7 @@ class PostUpdateHealthMonitor:
         
         return HealthCheckResult(
             phase=HealthCheckPhase.IMMEDIATE,
-            timestamp=datetime.now().isoformat(),
+            timestamp=utc_now().isoformat(),
             node_id=node_id,
             passed=not should_rollback,
             health_score=health_score,
@@ -235,7 +235,7 @@ class PostUpdateHealthMonitor:
         
         return HealthCheckResult(
             phase=HealthCheckPhase.SHORT_TERM,
-            timestamp=datetime.now().isoformat(),
+            timestamp=utc_now().isoformat(),
             node_id=node_id,
             passed=not should_rollback,
             health_score=health_score,
@@ -279,7 +279,7 @@ class PostUpdateHealthMonitor:
         
         return HealthCheckResult(
             phase=HealthCheckPhase.MEDIUM_TERM,
-            timestamp=datetime.now().isoformat(),
+            timestamp=utc_now().isoformat(),
             node_id=node_id,
             passed=not should_rollback,
             health_score=health_score,
@@ -319,7 +319,7 @@ class PostUpdateHealthMonitor:
         
         return HealthCheckResult(
             phase=HealthCheckPhase.LONG_TERM,
-            timestamp=datetime.now().isoformat(),
+            timestamp=utc_now().isoformat(),
             node_id=node_id,
             passed=not should_rollback,
             health_score=health_score,

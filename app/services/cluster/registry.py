@@ -20,6 +20,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
 from app.services.cluster.mdns_discovery_enhanced import MDNSNode
@@ -27,7 +28,7 @@ from app.services.cluster.mdns_discovery_enhanced import MDNSNode
 logger = logging.getLogger(__name__)
 
 
-class ClusterRegistry:
+class ClusterRegistry(Singleton):
     """
     Cluster Registry (CMDB) for storing and managing node inventory.
 
@@ -524,14 +525,6 @@ class ClusterRegistry:
             self.logger.error(f"Failed to cleanup metrics: {e}")
             return 0
 
-
-# Global registry instance
-_cluster_registry: Optional[ClusterRegistry] = None
-
-
 def get_cluster_registry() -> ClusterRegistry:
-    """Get or create the cluster registry singleton"""
-    global _cluster_registry
-    if _cluster_registry is None:
-        _cluster_registry = ClusterRegistry()
-    return _cluster_registry
+    """Get the process-wide cluster registry singleton."""
+    return ClusterRegistry.get_instance()

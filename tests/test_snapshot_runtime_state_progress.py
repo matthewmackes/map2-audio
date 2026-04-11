@@ -116,6 +116,120 @@ def test_runtime_state_service_marks_current_phase_failed(tmp_path):
     assert events[0]["runtime_metrics"]["activation_progress"]["current_phase"] == "APPLYING"
 
 
+def test_activation_intent_includes_typed_blockers_and_confirmation_maps(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    monkeypatch.setattr(runtime_state_module, "resolve_local_node_id", lambda: "node-local")
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=16, name="Publish Test"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=16,
+            snapshot_name="Publish Test",
+            snapshot_revision="rev-16",
+            normalized_snapshot_payload={
+                "paths": [
+                    {"id": "ch_a", "label": "A", "owner_node_id": "rack-1"},
+                    {"id": "ch_b", "label": "B"},
+                ]
+            },
+            triggered_by="ui",
+        )
+        intent = await service.mark_intent_phase(
+            intent=intent,
+            phase="APPLYING",
+            status="in_progress",
+            extra={
+                "warnings": [
+                    {
+                        "id": "node_sync_pending:rack-1",
+                        "code": "node_sync_pending",
+                        "severity": "warning",
+                        "scope": "node",
+                        "title": "Waiting for confirmation",
+                        "operator_message": "Rack-1 has not confirmed this snapshot yet.",
+                        "recommended_action": "Wait for confirmation",
+                        "related_node_ids": ["rack-1"],
+                    }
+                ]
+            },
+        )
+        events = await service.list_activation_events(limit=1)
+        return intent, events
+
+    intent, events = asyncio.run(_run())
+
+    assert intent["blockers"] == []
+    assert intent["warnings"][0]["code"] == "node_sync_pending"
+    assert sorted(intent["node_confirmations"]) == ["node-local", "rack-1"]
+    assert intent["node_confirmations"]["rack-1"]["status"] == "waiting"
+    assert intent["channel_confirmations"]["ch_a"]["status"] == "waiting"
+    assert intent["channel_confirmations"]["ch_a"]["related_node_id"] == "rack-1"
+    assert events[0]["runtime_metrics"]["warnings"][0]["code"] == "node_sync_pending"
+
+
+def test_confirm_and_fail_intents_update_confirmation_contracts(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    monkeypatch.setattr(runtime_state_module, "resolve_local_node_id", lambda: "node-local")
+
+    async def _run_success():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=17, name="Success"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=17,
+            snapshot_name="Success",
+            snapshot_revision="rev-17",
+            normalized_snapshot_payload={"paths": [{"id": "ch_a", "label": "A"}]},
+            triggered_by="ui",
+        )
+        intent = await service.mark_intent_phase(intent=intent, phase="VERIFYING", status="in_progress")
+        live_state = await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 17, "name": "Success", "live_state": {"paths": []}},
+            runtime_metrics={},
+        )
+        success_events = await service.list_activation_events(limit=1)
+        return live_state, success_events
+
+    async def _run_failure():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=18, name="Failure"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=18,
+            snapshot_name="Failure",
+            snapshot_revision="rev-18",
+            normalized_snapshot_payload={"paths": [{"id": "ch_z", "label": "Z"}]},
+            triggered_by="ui",
+        )
+        intent = await service.mark_intent_phase(intent=intent, phase="APPLYING", status="in_progress")
+        failed_state = await service.fail_intent(
+            intent=intent,
+            failure_reason="Engine rejected the publish request.",
+            runtime_metrics={},
+        )
+        failure_events = await service.list_activation_events(limit=1)
+        return failed_state, failure_events
+
+    live_state, success_events = asyncio.run(_run_success())
+    failed_state, failure_events = asyncio.run(_run_failure())
+
+    assert live_state["runtime_metrics"]["node_confirmations"]["node-local"]["status"] == "confirmed"
+    assert live_state["runtime_metrics"]["channel_confirmations"]["ch_a"]["status"] == "confirmed"
+    assert success_events[0]["runtime_metrics"]["blockers"] == []
+
+    assert failed_state["runtime_metrics"]["blockers"][0]["code"] == "engine_apply_failed"
+    assert failed_state["runtime_metrics"]["blockers"][0]["repair_action_id"] == "retry_publish"
+    assert failed_state["runtime_metrics"]["node_confirmations"]["node-local"]["status"] == "failed"
+    assert failed_state["runtime_metrics"]["channel_confirmations"]["ch_z"]["status"] == "failed"
+    assert failure_events[0]["runtime_metrics"]["blockers"][0]["code"] == "engine_apply_failed"
+
+
 def test_refresh_live_snapshot_health_records_reconciliation_metrics(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

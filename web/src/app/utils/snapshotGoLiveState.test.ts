@@ -79,7 +79,7 @@ describe('snapshotGoLiveState', () => {
   it('returns a disabled idle state when no snapshot is selected', () => {
     expect(resolveSnapshotGoLiveState({ snapshot: null })).toEqual({
       phase: 'idle',
-      label: 'Go Live',
+      label: 'Publish to live',
       disabled: true,
       errorMessage: null,
     })
@@ -94,7 +94,7 @@ describe('snapshotGoLiveState', () => {
       authoritativeAudioState: buildAuthoritativeAudioState(),
     })).toEqual({
       phase: 'activating',
-      label: 'Activating…',
+      label: 'Publishing…',
       disabled: true,
       errorMessage: null,
     })
@@ -117,7 +117,7 @@ describe('snapshotGoLiveState', () => {
       authoritativeAudioState,
     })).toEqual({
       phase: 'live',
-      label: 'LIVE',
+      label: 'Live confirmed',
       disabled: true,
       errorMessage: null,
     })
@@ -132,7 +132,7 @@ describe('snapshotGoLiveState', () => {
       failureReason: 'Channel Lead not loaded.',
     })).toEqual({
       phase: 'error',
-      label: 'Activation failed — retry',
+      label: 'Retry publish',
       disabled: false,
       errorMessage: 'Channel Lead not loaded.',
     })
@@ -150,8 +150,44 @@ describe('snapshotGoLiveState', () => {
 
     expect(resolveSnapshotGoLiveState({ snapshot })).toEqual({
       phase: 'idle',
-      label: 'Go Live',
+      label: 'Publish to live',
       disabled: false,
+      errorMessage: null,
+    })
+  })
+
+  it('keeps the action available when the saved snapshot is live but the editor has unsaved draft changes', () => {
+    const snapshot = buildSnapshot()
+    const authoritativeAudioState = buildAuthoritativeAudioState({
+      engine: {
+        display_state: 'live',
+        is_warning: false,
+        is_offline: false,
+      },
+    })
+
+    expect(resolveSnapshotGoLiveState({
+      snapshot,
+      authoritativeAudioState,
+      hasDraftChanges: true,
+    })).toEqual({
+      phase: 'idle',
+      label: 'Publish to live',
+      disabled: false,
+      errorMessage: null,
+    })
+  })
+
+  it('treats a confirmed activation as live until authority catches up', () => {
+    const snapshot = buildSnapshot()
+
+    expect(resolveSnapshotGoLiveState({
+      snapshot,
+      confirmedSnapshotId: snapshot.id,
+    })).toEqual({
+      phase: 'live',
+      label: 'Live confirmed',
+      disabled: true,
       errorMessage: null,
     })
   })

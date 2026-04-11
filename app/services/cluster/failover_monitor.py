@@ -8,7 +8,6 @@ Listens to NODE_OFFLINE events and either:
 
 import asyncio
 import logging
-from datetime import datetime
 from typing import Optional
 
 from app.database import get_session
@@ -16,11 +15,13 @@ from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
 from app.services.cluster.registry import get_cluster_registry
 from app.services.event_bus import EventType, get_event_bus
 from app.services.snapshot_deployment_service import SnapshotDeploymentService
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
 
-class FailoverMonitor:
+class FailoverMonitor(Singleton):
     """Automatic failover for cluster snapshot deployments."""
 
     def __init__(self):
@@ -75,7 +76,7 @@ class FailoverMonitor:
 
             payload = {
                 "failed_node": node_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "snapshots_total": len(deployments),
                 "snapshots_succeeded": successful,
                 "snapshots_failed": failed,
@@ -177,16 +178,9 @@ class FailoverMonitor:
             "new_node_id": best_node,
         }
 
-
-_failover_monitor: Optional[FailoverMonitor] = None
-
-
 def get_failover_monitor() -> FailoverMonitor:
-    """Get or create the singleton failover monitor instance."""
-    global _failover_monitor
-    if _failover_monitor is None:
-        _failover_monitor = FailoverMonitor()
-    return _failover_monitor
+    """Get the process-wide failover monitor instance."""
+    return FailoverMonitor.get_instance()
 
 
 async def main():

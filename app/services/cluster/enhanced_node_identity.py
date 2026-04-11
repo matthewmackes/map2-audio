@@ -16,9 +16,11 @@ import subprocess
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from dataclasses import dataclass, asdict, field
-from datetime import datetime
 import uuid
 import socket
+
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -399,7 +401,7 @@ class NodeHardwareDetector:
         )
 
 
-class EnhancedNodeIdentity:
+class EnhancedNodeIdentity(Singleton):
     """
     Enhanced node identity with cluster awareness.
     
@@ -510,8 +512,8 @@ class EnhancedNodeIdentity:
             role=role,
             deployment_mode=deployment_mode,
             capabilities=capabilities,
-            created_at=datetime.utcnow().isoformat(),
-            updated_at=datetime.utcnow().isoformat(),
+            created_at=utc_now().isoformat(),
+            updated_at=utc_now().isoformat(),
             ssh_public_key=ssh_pub_key,
             ssh_fingerprint=ssh_fingerprint,
             mac_addresses=NodeHardwareDetector.get_mac_addresses(),
@@ -556,7 +558,7 @@ class EnhancedNodeIdentity:
         
         if self.config.role == "AUDIO-NODE":
             self.config.role = "MANAGEMENT-NODE"
-            self.config.updated_at = datetime.utcnow().isoformat()
+            self.config.updated_at = utc_now().isoformat()
             self._save_config()
             logger.info(f"Promoted node to MANAGEMENT-NODE")
     
@@ -567,7 +569,7 @@ class EnhancedNodeIdentity:
         
         if self.config.role == "MANAGEMENT-NODE":
             self.config.role = "STANDBY-MANAGEMENT"
-            self.config.updated_at = datetime.utcnow().isoformat()
+            self.config.updated_at = utc_now().isoformat()
             self._save_config()
             logger.info(f"Marked node as STANDBY-MANAGEMENT")
     
@@ -579,13 +581,6 @@ class EnhancedNodeIdentity:
         os.chmod(self.CONFIG_PATH, 0o644)
         logger.info(f"Saved node config to {self.CONFIG_PATH}")
 
-
-# Singleton instance
-_enhanced_node_identity: Optional[EnhancedNodeIdentity] = None
-
 def get_enhanced_node_identity() -> EnhancedNodeIdentity:
-    """Get or create the enhanced node identity singleton"""
-    global _enhanced_node_identity
-    if _enhanced_node_identity is None:
-        _enhanced_node_identity = EnhancedNodeIdentity()
-    return _enhanced_node_identity
+    """Get the process-wide enhanced node identity singleton."""
+    return EnhancedNodeIdentity.get_instance()

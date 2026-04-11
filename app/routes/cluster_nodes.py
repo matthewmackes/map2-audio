@@ -8,9 +8,9 @@ Provides endpoints for monitoring node health and managing failover.
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-from datetime import datetime
 
 from app.services.cluster.node_lifecycle import get_node_lifecycle_manager
+from app.utils.time import utc_now
 
 router = APIRouter(prefix="/api/cluster/nodes", tags=["cluster-nodes"])
 
@@ -247,7 +247,7 @@ async def get_cluster_health_summary():
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "cluster_health": int(avg_health),
             "total_nodes": len(node_health),
             "healthy_nodes": sum(1 for nh in node_health if nh['status'] == 'healthy'),

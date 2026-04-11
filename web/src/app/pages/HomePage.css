@@ -42,9 +42,9 @@
   margin: 0;
   color: var(--cds-text-helper, #6f6f6f);
   font-family: 'IBM Plex Mono', 'IBM Plex Sans', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .hp2-boot__title {

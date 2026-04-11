@@ -11,11 +11,12 @@ When deployed in FRONTEND-ONLY mode:
 import logging
 from typing import Optional, Dict, Any
 from app.deployment.deployment import get_deployment_config, DeploymentMode, ServicePolicy
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
 
-class FrontendOnlyGracefulDegradation:
+class FrontendOnlyGracefulDegradation(Singleton):
     """
     Manages graceful degradation in frontend-only mode.
     Provides proxy responses and disables heavy services.
@@ -127,24 +128,16 @@ class FrontendOnlyGracefulDegradation:
         }
 
 
-# Global instance
-_frontend_degradation: Optional[FrontendOnlyGracefulDegradation] = None
-
-
 def get_frontend_degradation() -> FrontendOnlyGracefulDegradation:
     """Get or create global frontend degradation manager"""
-    global _frontend_degradation
-    if _frontend_degradation is None:
-        _frontend_degradation = FrontendOnlyGracefulDegradation()
-    return _frontend_degradation
+    return FrontendOnlyGracefulDegradation.get_instance()
 
 
 def initialize_frontend_degradation(remote_backend_url: Optional[str] = None):
     """Initialize frontend-only degradation"""
-    global _frontend_degradation
-    _frontend_degradation = FrontendOnlyGracefulDegradation()
-    
+    FrontendOnlyGracefulDegradation.reset_instance()
+    manager = FrontendOnlyGracefulDegradation.get_instance()
     if remote_backend_url:
-        _frontend_degradation.set_remote_backend(remote_backend_url)
+        manager.set_remote_backend(remote_backend_url)
     
     logger.info("Frontend-only graceful degradation initialized")

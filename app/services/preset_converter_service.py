@@ -27,6 +27,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -728,7 +730,7 @@ class JUCEPresetConverter(BasePresetConverter):
 # UNIVERSAL CONVERTER (ORCHESTRATOR)
 # =============================================================================
 
-class UniversalPresetConverter:
+class UniversalPresetConverter(Singleton):
     """Main converter orchestrating all format converters.
 
     Usage:
@@ -878,12 +880,6 @@ class UniversalPresetConverter:
 # SINGLETON INSTANCE
 # =============================================================================
 
-_converter_instance: Optional[UniversalPresetConverter] = None
-
-
 def get_preset_converter() -> UniversalPresetConverter:
     """Get singleton preset converter instance."""
-    global _converter_instance
-    if _converter_instance is None:
-        _converter_instance = UniversalPresetConverter()
-    return _converter_instance
+    return UniversalPresetConverter.get_instance()

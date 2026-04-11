@@ -208,7 +208,7 @@ export function SnapshotEditorMenuRail({
     const items: MenuItemConfig[] = [
       {
         id: 'control-center',
-        label: 'Open the control center?',
+        label: 'Open snapshot progress?',
         className: 'snapshot-menu-rail__item--control-center',
         onClick: onOpenControlCenter,
         disabled: controlCenterDisabled,

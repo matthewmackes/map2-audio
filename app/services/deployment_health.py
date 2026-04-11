@@ -14,6 +14,8 @@ from enum import Enum
 from datetime import datetime
 
 from app.deployment.deployment import get_deployment_config, DeploymentMode
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +37,14 @@ class HealthCheckResult:
     command: Optional[str] = None
 
 
-class DeploymentModeHealthChecker:
+class DeploymentModeHealthChecker(Singleton):
     """
     Performs mode-specific health checks and provides remediation actions.
     """
     
     def __init__(self):
         self.config = get_deployment_config()
-        self.last_check_time: Optional[datetime] = datetime.now()  # Initialize to current time
+        self.last_check_time: Optional[datetime] = utc_now()  # Initialize to current time
     
     async def check_network_connectivity(self) -> HealthCheckResult:
         """Check basic network connectivity"""
@@ -355,7 +357,7 @@ class DeploymentModeHealthChecker:
     async def run_all_checks(self) -> List[HealthCheckResult]:
         """Run all relevant health checks for current mode"""
         # Record check start time
-        self.last_check_time = datetime.now()
+        self.last_check_time = utc_now()
         
         checks = [
             self.check_network_connectivity(),
@@ -399,7 +401,7 @@ class DeploymentModeHealthChecker:
         # Format last check time
         last_checked = "Never"
         if self.last_check_time:
-            delta = (datetime.now() - self.last_check_time).total_seconds()
+            delta = (utc_now() - self.last_check_time).total_seconds()
             if delta < 60:
                 last_checked = f"{int(delta)}s ago"
             elif delta < 3600:
@@ -436,14 +438,6 @@ class DeploymentModeHealthChecker:
             ],
         }
 
-
-# Global instance
-_health_checker: Optional[DeploymentModeHealthChecker] = None
-
-
 def get_deployment_health_checker() -> DeploymentModeHealthChecker:
     """Get or create global health checker"""
-    global _health_checker
-    if _health_checker is None:
-        _health_checker = DeploymentModeHealthChecker()
-    return _health_checker
+    return DeploymentModeHealthChecker.get_instance()

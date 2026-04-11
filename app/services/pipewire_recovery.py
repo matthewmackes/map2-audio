@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger("map2.pipewire_recovery")
 
 
@@ -61,7 +63,7 @@ class PipeWireHealth:
     sample_rate: int = 0
 
 
-class PipeWireRecoveryService:
+class PipeWireRecoveryService(Singleton):
     """
     Active watchdog that monitors PipeWire health and performs
     automatic recovery when issues are detected.
@@ -736,14 +738,6 @@ class PipeWireRecoveryService:
             "state": self._state.value,
         }
 
-
-# Singleton
-_recovery_service: Optional[PipeWireRecoveryService] = None
-
-
 def get_pipewire_recovery_service() -> PipeWireRecoveryService:
     """Get or create the PipeWire recovery service singleton."""
-    global _recovery_service
-    if _recovery_service is None:
-        _recovery_service = PipeWireRecoveryService()
-    return _recovery_service
+    return PipeWireRecoveryService.get_instance()

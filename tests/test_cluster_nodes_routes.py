@@ -128,9 +128,11 @@ def test_cluster_health_summary_reports_unreachable_nodes(monkeypatch):
     response = client.get("/api/cluster/nodes/health/summary")
 
     assert response.status_code == 200
-    assert response.json() == {
+    payload = response.json()
+    assert payload["timestamp"].endswith("+00:00")
+    assert payload == {
         "status": "ok",
-        "timestamp": response.json()["timestamp"],
+        "timestamp": payload["timestamp"],
         "cluster_health": 42,
         "total_nodes": 2,
         "healthy_nodes": 1,

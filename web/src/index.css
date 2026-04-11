@@ -132,12 +132,12 @@ input[type="range"]:focus::-webkit-slider-thumb {
   --cds-code-01-font-family: var(--font-mono);
   --cds-code-02-font-family: var(--font-mono);
 
-  --type-display: 2rem;
-  --type-heading: 1.5rem;
-  --type-subheading: 1rem;
-  --type-body: 0.875rem;
-  --type-label: 0.75rem;
-  --type-caption: 0.6875rem;
+  --type-display: var(--cds-heading-05-font-size, 2rem);
+  --type-heading: var(--cds-heading-03-font-size, 1.5rem);
+  --type-subheading: var(--cds-body-02-font-size, 1rem);
+  --type-body: var(--cds-body-01-font-size, 0.875rem);
+  --type-label: var(--cds-label-01-font-size, 0.75rem);
+  --type-caption: var(--cds-label-01-font-size, 0.6875rem);
 
   --space-0: 0;
   --space-1: 0.125rem;
@@ -215,7 +215,7 @@ body {
   background: var(--bg);
   color: var(--text-primary);
   font-family: var(--font-ui);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -247,17 +247,17 @@ h3 {
 }
 
 h1 {
-  font-size: var(--type-heading);
+  font-size: var(--cds-heading-03-font-size, 1.5rem);
   line-height: 1.15;
 }
 
 h2 {
-  font-size: var(--type-subheading);
+  font-size: var(--cds-body-02-font-size, 1rem);
   line-height: 1.2;
 }
 
 h3 {
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   line-height: 1.3;
 }
 

@@ -116,9 +116,13 @@ class TestUniversalPresetConverter:
 
     def test_singleton(self):
         """Test singleton pattern."""
-        c1 = get_preset_converter()
-        c2 = get_preset_converter()
-        assert c1 is c2
+        UniversalPresetConverter.reset_instance()
+        try:
+            c1 = get_preset_converter()
+            c2 = get_preset_converter()
+            assert c1 is c2
+        finally:
+            UniversalPresetConverter.reset_instance()
 
     def test_supported_formats(self, converter):
         """Test supported_formats property."""

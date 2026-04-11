@@ -23,6 +23,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_APP_PATH = Path(__file__).resolve().parents[3]
@@ -41,7 +44,7 @@ class UpdateResult:
     stderr: str = ""
 
 
-class MAP2GitUpdater:
+class MAP2GitUpdater(Singleton):
     """
     Git-based updater for MAP2 application code.
     
@@ -101,7 +104,7 @@ class MAP2GitUpdater:
         Returns:
             UpdateResult with success status and details
         """
-        start_time = datetime.now()
+        start_time = utc_now()
         
         try:
             # Get current state
@@ -125,7 +128,7 @@ class MAP2GitUpdater:
                     success=False,
                     commit_before=commit_before,
                     error="Repository validation failed",
-                    duration_seconds=(datetime.now() - start_time).total_seconds()
+                    duration_seconds=(utc_now() - start_time).total_seconds()
                 )
             progress_callback and progress_callback(
                 "validate-source",
@@ -150,7 +153,7 @@ class MAP2GitUpdater:
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to stash changes: {stash_result[1]}",
-                    duration_seconds=(datetime.now() - start_time).total_seconds()
+                    duration_seconds=(utc_now() - start_time).total_seconds()
                 )
             progress_callback and progress_callback(
                 "prepare-local-state",
@@ -178,7 +181,7 @@ class MAP2GitUpdater:
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to fetch from remote: {fetch_result.stderr}",
-                    duration_seconds=(datetime.now() - start_time).total_seconds()
+                    duration_seconds=(utc_now() - start_time).total_seconds()
                 )
             progress_callback and progress_callback(
                 "fetch-update-payload",
@@ -206,7 +209,7 @@ class MAP2GitUpdater:
                     success=False,
                     commit_before=commit_before,
                     error=f"Failed to checkout branch: {checkout_result.stderr}",
-                    duration_seconds=(datetime.now() - start_time).total_seconds()
+                    duration_seconds=(utc_now() - start_time).total_seconds()
                 )
             progress_callback and progress_callback(
                 "apply-target-version",
@@ -263,7 +266,7 @@ class MAP2GitUpdater:
                     "Validation disabled for this update run",
                 )
 
-            duration = (datetime.now() - start_time).total_seconds()
+            duration = (utc_now() - start_time).total_seconds()
 
             if validation_ok:
                 progress_callback and progress_callback(
@@ -301,7 +304,7 @@ class MAP2GitUpdater:
                 success=False,
                 commit_before=commit_before if 'commit_before' in locals() else "unknown",
                 error=str(e),
-                duration_seconds=(datetime.now() - start_time).total_seconds()
+                duration_seconds=(utc_now() - start_time).total_seconds()
             )
 
     async def rollback_to_commit(
@@ -549,8 +552,11 @@ class MAP2GitUpdater:
 
 
 def get_git_updater(app_path: str = str(DEFAULT_APP_PATH)) -> MAP2GitUpdater:
-    """Get singleton instance of git updater."""
-    global _git_updater_instance
-    if "_git_updater_instance" not in globals():
-        _git_updater_instance = MAP2GitUpdater(app_path)
-    return _git_updater_instance
+    """Get the process-wide git updater singleton."""
+    if MAP2GitUpdater.has_instance():
+        return MAP2GitUpdater.get_instance()
+
+    with MAP2GitUpdater._lock:
+        if not MAP2GitUpdater.has_instance():
+            MAP2GitUpdater._instances[MAP2GitUpdater] = MAP2GitUpdater(app_path)
+        return MAP2GitUpdater._instances[MAP2GitUpdater]  # type: ignore[return-value]

@@ -13,6 +13,8 @@ import logging
 import threading
 from datetime import datetime, timedelta
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -664,7 +666,7 @@ class ClusterMetricsCollector:
 # Metrics Manager
 # ============================================================================
 
-class MetricsManager:
+class MetricsManager(Singleton):
     """Central manager for Prometheus metrics."""
     
     _instance: Optional['MetricsManager'] = None
@@ -733,13 +735,6 @@ class MetricsManager:
         """Return known scrape targets."""
         return self.exporter.get_targets()
 
-
-_metrics_manager: Optional[MetricsManager] = None
-
-
 def get_prometheus_exporter() -> MetricsManager:
-    """Get or create the shared MAP2 Prometheus metrics manager."""
-    global _metrics_manager
-    if _metrics_manager is None:
-        _metrics_manager = MetricsManager()
-    return _metrics_manager
+    """Get the shared MAP2 Prometheus metrics manager."""
+    return MetricsManager.get_instance()

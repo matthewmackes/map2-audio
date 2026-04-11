@@ -159,7 +159,7 @@
   --window-taskbar-height: 0rem;
   --window-taskbar-control-height: 2rem;
   --window-taskbar-latency-height: calc(var(--window-taskbar-height) - 0.25rem);
-  --window-shell-launcher-size: 3rem;
+  --window-shell-launcher-size: 2.55rem; /* 15% smaller than the prior 3 rem size */
   --window-shell-launcher-offset: clamp(1rem, 2vw, 1.5rem);
   --window-shell-launcher-clearance: calc(var(--window-shell-launcher-size) + var(--window-shell-launcher-offset));
   --app-window-titlebar-height: 2.3rem;
@@ -260,11 +260,10 @@
 
 .window-titlebar__eyebrow {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.56rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   line-height: 1.1;
-  text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -292,12 +291,11 @@
   overflow: hidden;
   color: var(--cds-text-secondary, var(--text-secondary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   line-height: 1.15;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -414,13 +412,54 @@
 
 .shell-launcher {
   position: fixed;
-  left: var(--window-shell-launcher-offset);
-  bottom: calc(var(--window-shell-usable-height) / 5);
+  right: var(--window-shell-launcher-offset);
+  bottom: var(--window-shell-launcher-offset);
   z-index: 40;
 }
 
 .shell-launcher__button-wrap {
   position: relative;
+}
+
+/* ── Spinning Cube Launcher ─────────────────────────────────────── */
+.shell-launcher__cube-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--window-shell-launcher-size);
+  height: var(--window-shell-launcher-size);
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--cds-border-strong-01, var(--window-shell-border)) 36%, transparent);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.shell-launcher__cube-btn:hover,
+.shell-launcher__cube-btn.is-active {
+  border-color: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 52%, transparent);
+  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 5%, transparent);
+}
+
+.shell-launcher__cube-btn:active {
+  transform: scale(0.97);
+}
+
+.shell-launcher__cube-btn:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+/* The canvas wrapper inside the button — no pointer events so the
+   WebGL canvas doesn't swallow the button click. */
+.shell-launcher__cube-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
 }
 
 .shell-launcher__button {
@@ -461,7 +500,7 @@
 
 .shell-launcher__panel {
   position: absolute;
-  left: 0;
+  right: 0;
   bottom: calc(100% + 0.85rem);
   display: grid;
   grid-template-rows: auto auto auto auto;
@@ -471,7 +510,7 @@
   background: var(--cds-layer-01, #ffffff);
   box-shadow: 0 24px 48px color-mix(in srgb, black 22%, transparent);
   animation: shell-launcher-panel-enter 140ms cubic-bezier(0.2, 0.84, 0.32, 1) both;
-  transform-origin: bottom left;
+  transform-origin: bottom right;
 }
 
 .shell-launcher__header {
@@ -604,11 +643,10 @@
 
 .push-confirmation-pill__eyebrow {
   color: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 70%, var(--cds-text-primary, var(--text-primary)));
-  font-size: 0.54rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .push-confirmation-pill__body {
@@ -663,10 +701,9 @@
 
 .shell-launcher__device-heading {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.68rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .shell-launcher__device-list {
@@ -1328,6 +1365,174 @@
   line-height: 1.2;
 }
 
+/* ============================================================
+   Start Menu v5: Hero Cards + Compact List (Option 5)
+   ============================================================ */
+
+.shell-launcher__nav-v5 {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shell-launcher__section-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cds-text-secondary, var(--text-secondary, #525252));
+}
+
+.shell-launcher__hero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.shell-launcher__compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+/* Hero card — featured workspaces */
+
+.start-menu-hero-card,
+.start-menu-hero-card:visited {
+  --item-color: var(--cds-link-primary, #0f62fe);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  padding: 0.875rem 0.75rem 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, black 12%, var(--border, var(--window-shell-border)));
+  border-left: 3px solid var(--item-color);
+  background: var(--cds-layer-01, var(--surface, #ffffff));
+  color: var(--cds-text-primary, var(--text-primary, #161616));
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.start-menu-hero-card:hover,
+.start-menu-hero-card.is-active {
+  background: var(--cds-layer-02, var(--surface-2, #e8e8e8));
+  border-color: color-mix(in srgb, var(--item-color) 60%, var(--border, var(--window-shell-border)));
+}
+
+.start-menu-hero-card:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+.start-menu-hero-card__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--item-color) 16%, var(--cds-layer-02, var(--surface-2, #e8e8e8)));
+  color: var(--item-color);
+  flex-shrink: 0;
+}
+
+.start-menu-hero-card__body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  align-content: center;
+}
+
+.start-menu-hero-card__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.start-menu-hero-card__desc {
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary, var(--text-secondary, #525252));
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.start-menu-hero-card__arrow {
+  color: var(--cds-text-secondary, var(--text-secondary, #525252));
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.start-menu-hero-card:hover .start-menu-hero-card__arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Compact card — remaining workspaces */
+
+.start-menu-compact-card,
+.start-menu-compact-card:visited {
+  --item-color: var(--cds-link-primary, #0f62fe);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.625rem 0.5rem;
+  border: 1px solid color-mix(in srgb, black 12%, var(--border, var(--window-shell-border)));
+  background: var(--cds-layer-01, var(--surface, #ffffff));
+  color: var(--cds-text-primary, var(--text-primary, #161616));
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.start-menu-compact-card:hover,
+.start-menu-compact-card.is-active {
+  background: var(--cds-layer-02, var(--surface-2, #e8e8e8));
+  border-color: color-mix(in srgb, var(--item-color) 50%, var(--border, var(--window-shell-border)));
+}
+
+.start-menu-compact-card:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+.start-menu-compact-card--blocked {
+  opacity: 0.6;
+}
+
+.start-menu-compact-card__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--item-color);
+}
+
+.start-menu-compact-card__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.start-menu-compact-card__status {
+  font-size: 0.62rem;
+  color: var(--cds-support-error, #da1e28);
+  line-height: 1.2;
+}
+
 .shell-power-modal .cds--modal-container {
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 94%, transparent);
   border-radius: 0;
@@ -1509,6 +1714,14 @@
   }
 
   .shell-launcher__tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shell-launcher__hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shell-launcher__compact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

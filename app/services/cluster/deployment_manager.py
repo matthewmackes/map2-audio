@@ -10,10 +10,12 @@ Manages deployment mode and node role orchestration:
 import logging
 from typing import Dict, Any, Optional
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
-class DeploymentManager:
+class DeploymentManager(Singleton):
     """Manages cluster deployment mode and transitions."""
 
     def __init__(self):
@@ -40,14 +42,6 @@ class DeploymentManager:
             "transitioning": self._transitioning,
         }
 
-
-# Singleton
-_deployment_manager: Optional[DeploymentManager] = None
-
-
 def get_deployment_manager() -> DeploymentManager:
-    """Get or create the deployment manager singleton."""
-    global _deployment_manager
-    if _deployment_manager is None:
-        _deployment_manager = DeploymentManager()
-    return _deployment_manager
+    """Get the process-wide deployment manager singleton."""
+    return DeploymentManager.get_instance()

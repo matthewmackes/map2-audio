@@ -104,9 +104,9 @@ export function SnapshotEditorOptionsRail({
                     kind="secondary"
                     className="snapshot-toolbar__button snapshot-toolbar__button--control-center"
                     renderIcon={Settings}
-                    iconDescription="Open control center"
-                    aria-label="Open control center"
-                    title="Open control center"
+                    iconDescription="Open snapshot progress"
+                    aria-label="Open snapshot progress"
+                    title="Open snapshot progress"
                     onClick={onOpenControlCenter}
                     disabled={controlCenterDisabled}
                   />

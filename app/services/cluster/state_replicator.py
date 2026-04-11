@@ -22,10 +22,13 @@ from pathlib import Path
 from urllib.request import urlopen
 from urllib.error import URLError
 
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
-class StateReplicator:
+class StateReplicator(Singleton):
     """
     Manages state replication from primary to standby management node.
     """
@@ -54,7 +57,7 @@ class StateReplicator:
         self.logger = logging.getLogger(__name__)
         self.last_replication: Optional[datetime] = None
         self.is_primary = True
-        self.last_primary_heartbeat = datetime.utcnow()
+        self.last_primary_heartbeat = utc_now()
     
     async def start_replication_loop(self):
         """Start continuous replication loop"""
@@ -118,7 +121,7 @@ class StateReplicator:
                     self.logger.error("Remote standby checksum mismatch")
                     return False
 
-            self.last_replication = datetime.utcnow()
+            self.last_replication = utc_now()
             return True
             
         except Exception as e:
@@ -136,11 +139,11 @@ class StateReplicator:
             if self.primary_host:
                 reachable = await asyncio.to_thread(self._probe_host, self.primary_host)
                 if reachable:
-                    self.last_primary_heartbeat = datetime.utcnow()
+                    self.last_primary_heartbeat = utc_now()
                     return True
 
             time_since_heartbeat = (
-                datetime.utcnow() - self.last_primary_heartbeat
+                utc_now() - self.last_primary_heartbeat
             ).total_seconds()
             
             if time_since_heartbeat > 30:
@@ -300,7 +303,7 @@ class StateReplicator:
     async def _publish_failover_event(self) -> None:
         """Publish failover completion on local and distributed buses."""
         payload = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "standby_host": self.standby_host,
             "primary_host": self.primary_host,
         }
@@ -346,20 +349,18 @@ class StateReplicator:
             self.logger.error(f"Failed to hash {path}: {e}")
             return None
 
-
-# Global instance
-_state_replicator: Optional[StateReplicator] = None
-
-
 def get_state_replicator(
     standby_host: Optional[str] = None,
     primary_host: Optional[str] = None,
 ) -> StateReplicator:
-    """Get or create the state replicator instance"""
-    global _state_replicator
-    if _state_replicator is None:
-        _state_replicator = StateReplicator(
-            standby_host=standby_host,
-            primary_host=primary_host,
-        )
-    return _state_replicator
+    """Get the process-wide state replicator instance."""
+    if StateReplicator.has_instance():
+        return StateReplicator.get_instance()
+
+    with StateReplicator._lock:
+        if not StateReplicator.has_instance():
+            StateReplicator._instances[StateReplicator] = StateReplicator(
+                standby_host=standby_host,
+                primary_host=primary_host,
+            )
+        return StateReplicator._instances[StateReplicator]  # type: ignore[return-value]

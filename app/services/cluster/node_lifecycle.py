@@ -29,6 +29,8 @@ from app.services.cluster.distributed_event_bus import (
     EventSeverity,
     ClusterEvent,
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +161,7 @@ class NodeLifecycleManager:
                 from_state=old_state,
                 to_state=new_state,
                 event=event,
-                timestamp=datetime.utcnow(),
+                timestamp=utc_now(),
                 message=message,
                 details=details or {},
             )
@@ -421,7 +423,7 @@ class NodeLifecycleManager:
             snapshot = {
                 "node_id": self.node_id,
                 "state": self.current_state.value,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "transition_count": len(self.transition_history),
             }
             with open(persist_file, "w", encoding="utf-8") as f:
@@ -709,7 +711,7 @@ class DiagnosticsReport:
     recommendations: List[str]
 
 
-class ClusterNodeLifecycleManager:
+class ClusterNodeLifecycleManager(Singleton):
     """
     Backward-compatible lifecycle facade used by cluster routes.
 
@@ -788,7 +790,7 @@ class ClusterNodeLifecycleManager:
 
         return DiagnosticsReport(
             node_id=node_id,
-            timestamp=datetime.utcnow(),
+            timestamp=utc_now(),
             overall_health=overall_health,
             checks=checks,
             services_status={"map2-audio": service_state},
@@ -867,13 +869,6 @@ class ClusterNodeLifecycleManager:
             "flows_drained": 0,
         }
 
-
-_cluster_node_lifecycle_manager: Optional[ClusterNodeLifecycleManager] = None
-
-
 def get_node_lifecycle_manager() -> ClusterNodeLifecycleManager:
     """Backward-compatible cluster lifecycle manager singleton."""
-    global _cluster_node_lifecycle_manager
-    if _cluster_node_lifecycle_manager is None:
-        _cluster_node_lifecycle_manager = ClusterNodeLifecycleManager()
-    return _cluster_node_lifecycle_manager
+    return ClusterNodeLifecycleManager.get_instance()

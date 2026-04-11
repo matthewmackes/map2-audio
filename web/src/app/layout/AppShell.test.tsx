@@ -214,7 +214,7 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar__title')).toHaveTextContent('IntelFX Rack')
-    expect(container.querySelector('.shell-launcher__button-icon')).toBeTruthy()
+    expect(container.querySelector('.shell-launcher__cube-btn')).toBeTruthy()
   })
 
   it('closes the current app window back to the desktop route', async () => {

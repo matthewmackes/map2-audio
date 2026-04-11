@@ -22,6 +22,8 @@ from app.services.health_monitor import (
 from app.services.audio_io_v2 import (
     RealAudioIOManager, AudioHealthMetrics, AudioThreadState, SignalState, XRunEvent
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ class AudioAlert:
     details: Dict[str, Any]
 
 
-class AudioHealthMonitor:
+class AudioHealthMonitor(Singleton):
     """Monitors audio system health and generates alerts.
 
     Integrates with the main health monitoring system and provides
@@ -224,7 +226,7 @@ class AudioHealthMonitor:
                      message: str, details: Dict[str, Any]) -> None:
         """Create and dispatch an audio alert."""
         # Check cooldown
-        now = datetime.now().timestamp()
+        now = utc_now().timestamp()
         last_time = self._last_alert_time.get(alert_type, 0)
         if now - last_time < self._alert_cooldown_sec:
             return
@@ -235,7 +237,7 @@ class AudioHealthMonitor:
             alert_type=alert_type,
             severity=severity,
             message=message,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             details=details,
         )
 
@@ -385,17 +387,9 @@ class AudioHealthMonitor:
             except Exception as e:
                 logger.error(f"Monitoring error: {e}")
 
-
-# Global singleton
-_audio_health_monitor: Optional[AudioHealthMonitor] = None
-
-
 def get_audio_health_monitor() -> AudioHealthMonitor:
     """Get global audio health monitor instance."""
-    global _audio_health_monitor
-    if _audio_health_monitor is None:
-        _audio_health_monitor = AudioHealthMonitor()
-    return _audio_health_monitor
+    return AudioHealthMonitor.get_instance()
 
 
 def init_audio_health_monitor(audio_manager: RealAudioIOManager) -> AudioHealthMonitor:

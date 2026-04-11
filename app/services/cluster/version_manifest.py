@@ -13,10 +13,10 @@ import json
 import logging
 import os
 import subprocess
-import threading
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.integration_helpers import HybridNodeClient
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 _READ_ONLY_STATVFS_FLAG = getattr(os, "ST_RDONLY", 1)
@@ -106,7 +106,7 @@ def _build_storage_status(target_path: Path) -> ManifestStorageStatus:
     )
 
 
-class VersionManifest:
+class VersionManifest(Singleton):
     """Golden package manifest manager."""
 
     def __init__(self, manifest_path: str = "/var/lib/map2/version_manifest.json"):
@@ -297,22 +297,15 @@ class VersionManifest:
             "changes": packages,
         }
 
-
-_manifest_manager: Optional[VersionManifest] = None
-_manifest_manager_lock = threading.Lock()
-
-
 def get_version_manifest() -> VersionManifest:
-    """Get or create singleton."""
-    global _manifest_manager
-    if _manifest_manager is None:
-        with _manifest_manager_lock:
-            if _manifest_manager is None:
-                _manifest_manager = VersionManifest()
-    return _manifest_manager
+    """Get the process-wide version manifest singleton."""
+    return VersionManifest.get_instance()
 
 
 def set_version_manifest(manager: Optional[VersionManifest]) -> None:
     """Override the singleton for tests or explicit runtime wiring."""
-    global _manifest_manager
-    _manifest_manager = manager
+    with VersionManifest._lock:
+        if manager is None:
+            VersionManifest._instances.pop(VersionManifest, None)
+        else:
+            VersionManifest._instances[VersionManifest] = manager

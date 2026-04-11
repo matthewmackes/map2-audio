@@ -6,10 +6,12 @@ from types import SimpleNamespace
 from app.models.node import NodeHealth, NodeServices
 from app.routes import cluster_health
 from app.services import system_health_summary
-from app.services.audio_health_monitor import AudioHealthMonitor
+from app.services.audio_health_monitor import AudioHealthMonitor, get_audio_health_monitor
 from app.services.audio_io_v2 import AudioHealthMetrics, AudioThreadState, SignalState
 from app.services.cluster.heartbeat_monitor import NodeHealthStatus
-from app.services.deployment_health import CheckStatus, DeploymentModeHealthChecker, HealthCheckResult
+from app.services.deployment_health import CheckStatus, DeploymentModeHealthChecker, HealthCheckResult, get_deployment_health_checker
+from app.services.deployment_remediation import DeploymentRemediationService, get_remediation_service
+from app.services.pipewire_recovery import PipeWireRecoveryService, get_pipewire_recovery_service
 
 
 class _FakeMetricsCollector:
@@ -202,7 +204,7 @@ def test_audio_health_monitor_summary_reports_warning_state(monkeypatch):
 
 def test_deployment_health_checker_overall_status_summarizes_failures(monkeypatch):
     checker = DeploymentModeHealthChecker()
-    checker.last_check_time = datetime.now() - timedelta(seconds=30)
+    checker.last_check_time = datetime.now(UTC) - timedelta(seconds=30)
 
     async def _fake_run_all_checks():
         return [
@@ -221,6 +223,30 @@ def test_deployment_health_checker_overall_status_summarizes_failures(monkeypatc
     assert payload["checks_failed"] == 1
     assert payload["failed_checks"] == [{"name": "ssh_keys", "message": "missing", "remediation": "generate", "command": None}]
     assert payload["all_checks"][1]["status"] == "warn"
+
+
+def test_process_wide_service_getters_use_shared_singleton_pattern(monkeypatch):
+    fake_health_monitor = _FakeHealthMonitor()
+    fake_config = SimpleNamespace(mode=SimpleNamespace(value="audio-node"))
+
+    monkeypatch.setattr("app.services.audio_health_monitor.get_health_monitor", lambda: fake_health_monitor)
+    monkeypatch.setattr("app.services.deployment_health.get_deployment_config", lambda: fake_config)
+
+    AudioHealthMonitor.reset_instance()
+    DeploymentModeHealthChecker.reset_instance()
+    DeploymentRemediationService.reset_instance()
+    PipeWireRecoveryService.reset_instance()
+
+    try:
+        assert get_audio_health_monitor() is get_audio_health_monitor()
+        assert get_deployment_health_checker() is get_deployment_health_checker()
+        assert get_remediation_service() is get_remediation_service()
+        assert get_pipewire_recovery_service() is get_pipewire_recovery_service()
+    finally:
+        AudioHealthMonitor.reset_instance()
+        DeploymentModeHealthChecker.reset_instance()
+        DeploymentRemediationService.reset_instance()
+        PipeWireRecoveryService.reset_instance()
 
 
 @dataclass

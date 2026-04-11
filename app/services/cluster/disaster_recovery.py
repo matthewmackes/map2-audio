@@ -31,6 +31,8 @@ from app.services.cluster.distributed_event_bus import (
     EventSeverity,
     ClusterEvent,
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class BackupManifest:
         }
 
 
-class DisasterRecoveryManager:
+class DisasterRecoveryManager(Singleton):
     """
     Manages automated backups and disaster recovery.
     
@@ -124,7 +126,7 @@ class DisasterRecoveryManager:
             BackupManifest if successful, None otherwise
         """
         try:
-            timestamp = datetime.utcnow()
+            timestamp = utc_now()
             backup_id = f"full_{timestamp.strftime('%Y%m%d_%H%M%S')}"
             
             self.logger.info(f"Creating full backup: {backup_id}")
@@ -510,7 +512,7 @@ class DisasterRecoveryManager:
             Number of backups deleted
         """
         try:
-            cutoff = datetime.utcnow() - timedelta(days=self.retention_days)
+            cutoff = utc_now() - timedelta(days=self.retention_days)
             deleted = 0
             
             # Check all backup types
@@ -597,13 +599,6 @@ class DisasterRecoveryManager:
             return []
 
 
-# Global instance
-_disaster_recovery: Optional[DisasterRecoveryManager] = None
-
-
 def get_disaster_recovery() -> DisasterRecoveryManager:
-    """Get or create the disaster recovery manager"""
-    global _disaster_recovery
-    if _disaster_recovery is None:
-        _disaster_recovery = DisasterRecoveryManager()
-    return _disaster_recovery
+    """Get the process-wide disaster recovery manager."""
+    return DisasterRecoveryManager.get_instance()

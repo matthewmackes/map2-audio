@@ -204,6 +204,32 @@ def _normalize_bool(value: Any, fallback: bool = False) -> bool:
     return fallback
 
 
+def _enforce_single_solo_channel(
+    channels: list[dict[str, Any]],
+    *,
+    preferred_channel_key: str | None = None,
+) -> list[dict[str, Any]]:
+    """Ensure at most one channel is marked solo within a snapshot payload."""
+    solo_indices = [
+        index
+        for index, channel in enumerate(channels)
+        if isinstance(channel, dict) and _normalize_bool(channel.get("solo"), False)
+    ]
+    if len(solo_indices) <= 1:
+        return channels
+
+    winning_index = solo_indices[-1]
+    if preferred_channel_key:
+        for index in solo_indices:
+            if str(channels[index].get("channel_key")) == preferred_channel_key:
+                winning_index = index
+                break
+
+    for index in solo_indices:
+        channels[index]["solo"] = index == winning_index
+    return channels
+
+
 def _clamp_int(value: Any, fallback: int, minimum: int, maximum: int) -> int:
     parsed = _safe_int(value)
     if parsed is None:
@@ -2807,6 +2833,9 @@ class SnapshotService:
 
         next_index = len(snapshot.channels)
         payload = payload or {}
+        solo_enabled = _normalize_bool(payload.get("solo"), False)
+        if solo_enabled:
+            await self._clear_snapshot_solo_flags(snapshot_id)
         channel = SnapshotChannel(
             snapshot_id=snapshot.id,
             chain_id=_safe_int(payload.get("chain_id", payload.get("chainId"))),
@@ -2814,7 +2843,7 @@ class SnapshotService:
             label=str(payload.get("label") or _stable_channel_label(next_index)),
             color=str(payload.get("color") or DEFAULT_CHANNEL_COLOR),
             muted=_normalize_bool(payload.get("muted"), False),
-            solo=_normalize_bool(payload.get("solo"), False),
+            solo=solo_enabled,
             dry_wet_mix=_safe_float(payload.get("dry_wet_mix", payload.get("dryWetMix")), DEFAULT_DRY_WET_MIX),
             order_index=next_index,
         )
@@ -2845,6 +2874,8 @@ class SnapshotService:
             channel.muted = _normalize_bool(payload.get("muted"), channel.muted)
         if "solo" in payload:
             channel.solo = _normalize_bool(payload.get("solo"), channel.solo)
+            if channel.solo:
+                await self._clear_snapshot_solo_flags(snapshot_id, keep_channel_id=channel.id)
         if "dry_wet_mix" in payload or "dryWetMix" in payload:
             channel.dry_wet_mix = _safe_float(payload.get("dry_wet_mix", payload.get("dryWetMix")), channel.dry_wet_mix)
         if "order_index" in payload or "order" in payload:
@@ -2878,6 +2909,24 @@ class SnapshotService:
             logger.debug("Snapshot channel live-state/authority sync skipped for %s: %s", snapshot_id, exc)
 
         return detail
+
+    async def _clear_snapshot_solo_flags(
+        self,
+        snapshot_id: int,
+        *,
+        keep_channel_id: Optional[int] = None,
+    ) -> None:
+        statement = (
+            update(SnapshotChannel)
+            .where(
+                SnapshotChannel.snapshot_id == snapshot_id,
+                SnapshotChannel.solo.is_(True),
+            )
+            .values(solo=False, updated_at=_utcnow())
+        )
+        if keep_channel_id is not None:
+            statement = statement.where(SnapshotChannel.id != keep_channel_id)
+        await self.session.execute(statement)
 
     async def remove_channel(self, snapshot_id: int, channel_id: int) -> Optional[dict[str, Any]]:
         channel = await self._get_channel(snapshot_id, channel_id)
@@ -4384,6 +4433,15 @@ class SnapshotService:
             )
 
         raw_routing = payload.get("routing") if isinstance(payload.get("routing"), dict) else {}
+        preferred_solo_channel_key = (
+            raw_routing.get("active_channel_key")
+            or raw_routing.get("activeChannelId")
+            or raw_routing.get("activeSlotId")
+        )
+        normalized_channels = _enforce_single_solo_channel(
+            normalized_channels,
+            preferred_channel_key=str(preferred_solo_channel_key) if preferred_solo_channel_key else None,
+        )
         active_channel_key = (
             raw_routing.get("active_channel_key")
             or raw_routing.get("activeChannelId")

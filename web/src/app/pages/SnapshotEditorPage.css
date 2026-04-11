@@ -2006,6 +2006,17 @@
   display: inline-flex;
 }
 
+.juce-grid-page__snapshot-status-channel-badge-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.juce-grid-page__snapshot-status-top-tools:empty {
+  display: none;
+}
+
 .juce-grid-page__snapshot-status-state-label.is-current,
 .juce-grid-page__snapshot-status-state-label.is-stopped {
   color: var(--cds-support-error, #da1e28);
@@ -2224,6 +2235,45 @@
   max-width: 34rem;
 }
 
+.juce-grid-page__snapshot-status-go-live-copy {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font: var(--cds-body-01, inherit);
+}
+
+.juce-grid-page__snapshot-status-go-live-checklist {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.juce-grid-page__snapshot-status-go-live-checklist-item {
+  width: 100%;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.16));
+  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, black 8%);
+}
+
+.juce-grid-page__snapshot-status-go-live-checklist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__snapshot-status-go-live-checklist-item p {
+  margin: 0.4rem 0 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.juce-grid-page__snapshot-status-go-live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .juce-grid-page__snapshot-status-go-live-button.cds--btn {
   min-block-size: 2.75rem;
   padding-inline: 1rem 1.25rem;
@@ -2240,6 +2290,75 @@
   font-size: 0.8125rem;
   line-height: 1.45;
   white-space: pre-line;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-summary,
+.juce-grid-page__snapshot-status-go-live-progress-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-summary {
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-note {
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.75rem;
+  width: 100%;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-step.is-active {
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-step.is-complete {
+  color: var(--cds-support-success, #24a148);
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-step.is-failed {
+  color: var(--cds-support-error, #fa4d56);
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.juce-grid-page__snapshot-status-go-live-progress-step.is-active .juce-grid-page__snapshot-status-go-live-progress-dot,
+.juce-grid-page__snapshot-status-go-live-progress-step.is-complete .juce-grid-page__snapshot-status-go-live-progress-dot,
+.juce-grid-page__snapshot-status-go-live-progress-step.is-failed .juce-grid-page__snapshot-status-go-live-progress-dot {
+  opacity: 1;
+}
+
+.juce-grid-page__snapshot-status-go-live-fix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .juce-grid-page__snapshot-status-go-live-diff {

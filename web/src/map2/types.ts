@@ -2453,6 +2453,108 @@ export interface SnapshotRuntimeClusterLiveStateResponse {
   nodes: SnapshotRuntimeLiveState[];
 }
 
+export type PublishBlockerCode =
+  | 'unsaved_draft'
+  | 'snapshot_invalid'
+  | 'plugin_missing'
+  | 'asset_missing'
+  | 'audio_input_missing'
+  | 'audio_output_missing'
+  | 'monitoring_output_invalid'
+  | 'local_routing_invalid'
+  | 'network_routing_invalid'
+  | 'node_offline'
+  | 'node_assignment_missing'
+  | 'node_sync_pending'
+  | 'engine_unavailable'
+  | 'engine_apply_failed'
+  | 'channel_unconfirmed'
+  | 'observation_stale'
+  | 'authority_diverged';
+
+export type PublishBlockerSeverity = 'blocking' | 'warning' | 'info';
+export type PublishScope = 'draft' | 'intent' | 'node' | 'channel' | 'cluster';
+export type PublishRequirementStatus =
+  | 'ready'
+  | 'needs_attention'
+  | 'waiting_for_confirmation'
+  | 'not_applicable';
+export type SnapshotPublishStatus =
+  | 'ready'
+  | 'blocked'
+  | 'waiting_for_confirmation'
+  | 'live_confirmed'
+  | 'diverged';
+export type PublishConfirmationStatus = 'pending' | 'waiting' | 'confirmed' | 'failed' | 'offline';
+
+export interface PublishRepairAction {
+  id: string;
+  label: string;
+  operator_message?: string | null;
+  technical_detail?: string | null;
+  scope?: PublishScope | null;
+  related_path_ids: string[];
+  related_node_ids: string[];
+}
+
+export interface PublishBlocker {
+  id: string;
+  code: PublishBlockerCode;
+  severity: PublishBlockerSeverity;
+  scope: PublishScope;
+  title: string;
+  operator_message: string;
+  technical_detail?: string | null;
+  recommended_action: string;
+  repair_action_id?: string | null;
+  prerequisite_of: PublishBlockerCode[];
+  related_path_ids: string[];
+  related_node_ids: string[];
+}
+
+export interface PublishRequirement {
+  id: string;
+  label: string;
+  status: PublishRequirementStatus;
+  scope: PublishScope;
+  operator_message: string;
+  technical_detail?: string | null;
+  repair_actions: PublishRepairAction[];
+}
+
+export interface NodeConfirmationState {
+  node_id: string;
+  status: PublishConfirmationStatus;
+  operator_message: string;
+  technical_detail?: string | null;
+  observed_state_version?: number | null;
+  observed_at?: string | null;
+}
+
+export interface ChannelConfirmationState {
+  path_id: string;
+  label?: string | null;
+  status: PublishConfirmationStatus;
+  operator_message: string;
+  technical_detail?: string | null;
+  related_node_id?: string | null;
+  observed_state_version?: number | null;
+  observed_at?: string | null;
+}
+
+export interface SnapshotPublishReadiness {
+  snapshot_id: number;
+  draft_revision_id?: number | null;
+  requested_revision_id?: number | null;
+  confirmed_revision_id?: number | null;
+  status: SnapshotPublishStatus;
+  requirements: PublishRequirement[];
+  blockers: PublishBlocker[];
+  warnings: PublishBlocker[];
+  available_repairs: PublishRepairAction[];
+  applicable_steps: string[];
+}
+
 export type AudioStatePathStatus = 'pending' | 'active' | 'not_loaded' | 'offline' | 'degraded';
 export type AudioStateEngineStatus = 'live' | 'live_warning' | 'stopped' | 'offline';
 
@@ -2634,6 +2736,10 @@ export interface SnapshotActivationIntent {
   triggered_by: string;
   requested_at: string;
   normalized_snapshot_payload: Record<string, unknown>;
+  blockers?: PublishBlocker[];
+  warnings?: PublishBlocker[];
+  node_confirmations?: Record<string, NodeConfirmationState>;
+  channel_confirmations?: Record<string, ChannelConfirmationState>;
 }
 
 export interface SnapshotAssetRef {

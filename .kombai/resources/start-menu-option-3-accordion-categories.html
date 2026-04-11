@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Option 3: Category Accordion</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Comic Sans MS', 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .panel { background: #fff; border: 2px solid #999; border-radius: 6px; max-width: 440px; overflow: hidden; }
+  .panel-header { padding: 14px 16px; border-bottom: 2px solid #ccc; display: flex; align-items: center; gap: 10px; }
+  .panel-header .logo { width: 28px; height: 28px; background: #ccc; border-radius: 4px; }
+  .panel-header .title { font-size: 14px; font-weight: bold; }
+
+  .accordion-section { border-bottom: 1px solid #e0e0e0; }
+  .accordion-section:last-child { border-bottom: none; }
+  .accordion-header { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; background: #fafafa; font-size: 13px; font-weight: 700; gap: 8px; }
+  .accordion-header:hover { background: #f0f0f0; }
+  .accordion-chevron { margin-left: auto; font-size: 12px; color: #666; transition: transform 0.2s; }
+  .accordion-header.open .accordion-chevron { transform: rotate(90deg); }
+  .accordion-count { font-size: 11px; color: #888; font-weight: 400; background: #e8e8e8; padding: 1px 7px; border-radius: 10px; }
+  .accordion-dot { width: 8px; height: 8px; border-radius: 50%; background: #999; flex-shrink: 0; }
+
+  .accordion-body { padding: 0; }
+  .accordion-body.collapsed { display: none; }
+
+  .acc-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 40px; border-top: 1px solid #f0f0f0; cursor: pointer; }
+  .acc-item:hover { background: #f5f5f5; }
+  .acc-icon { width: 28px; height: 28px; background: #e8e8e8; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #555; flex-shrink: 0; }
+  .acc-label { font-size: 12px; font-weight: 600; }
+  .acc-desc { font-size: 10px; color: #888; }
+  .acc-arrow { margin-left: auto; color: #aaa; font-size: 13px; }
+  .acc-status { font-size: 9px; color: #c00; }
+
+  .badge { position: absolute; top: -6px; right: -6px; background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: Arial, sans-serif; font-weight: bold; z-index: 10; }
+  .note { margin-top: 16px; font-size: 12px; color: #666; line-height: 1.5; max-width: 440px; }
+</style>
+</head>
+<body>
+<h1>Option 3: Category Accordion</h1>
+<p class="subtitle">Expandable sections per category using Carbon Accordion — compact + organized</p>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="logo"></div>
+    <div class="title">MAP2</div>
+  </div>
+
+  <!-- REUSABLE: Accordion from @carbon/react -->
+  <div style="position:relative">
+    <span style="position: absolute; top: 4px; right: 4px; background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: Arial, sans-serif; font-weight: bold; z-index: 10;" title="@carbon/react Accordion">[REUSE] Accordion</span>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header open">
+      <div class="accordion-dot" style="background:#666"></div>
+      Audio Grid
+      <span class="accordion-count">3</span>
+      <span class="accordion-chevron">▶</span>
+    </div>
+    <div class="accordion-body">
+      <div class="acc-item">
+        <div class="acc-icon">⬚</div>
+        <div><div class="acc-label">Platforms</div><div class="acc-desc">Overview, engine, management</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">📁</div>
+        <div><div class="acc-label">Audio Artifacts</div><div class="acc-desc">Plugins, IRs, NAMs, SoundFonts</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">🎵</div>
+        <div><div class="acc-label">Stage Mode</div><div class="acc-desc">Full-screen live performance</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header open">
+      <div class="accordion-dot" style="background:#888"></div>
+      MIDI
+      <span class="accordion-count">5</span>
+      <span class="accordion-chevron">▶</span>
+    </div>
+    <div class="accordion-body">
+      <div class="acc-item">
+        <div class="acc-icon">♪</div>
+        <div><div class="acc-label">MIDI Hub</div><div class="acc-desc">Controller setup & routing</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">♪</div>
+        <div><div class="acc-label">Launch Control</div><div class="acc-desc">Novation editor</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">♪</div>
+        <div><div class="acc-label">MIDI Commander</div><div class="acc-desc">MeloAudio foot controller</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">⊞</div>
+        <div><div class="acc-label">MPX1 Rack</div><div class="acc-desc">Lexicon MPX-1</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">⊞</div>
+        <div><div class="acc-label">IntelFX Rack</div><div class="acc-desc">Rocktron Intellifex</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header">
+      <div class="accordion-dot" style="background:#aaa"></div>
+      Hardware
+      <span class="accordion-count">3</span>
+      <span class="accordion-chevron">▶</span>
+    </div>
+    <div class="accordion-body collapsed">
+      <div class="acc-item">
+        <div class="acc-icon">🖥</div>
+        <div><div class="acc-label">LCD Console</div><div class="acc-status">Hardware Not Detected</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">⎍</div>
+        <div><div class="acc-label">Edirol UA-1000</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-icon">∿</div>
+        <div><div class="acc-label">HoTone JoGG</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header">
+      <div class="accordion-dot" style="background:#555"></div>
+      AVB
+      <span class="accordion-count">1</span>
+      <span class="accordion-chevron">▶</span>
+    </div>
+    <div class="accordion-body collapsed">
+      <div class="acc-item">
+        <div class="acc-icon">⊞</div>
+        <div><div class="acc-label">Tesira AVB</div><div class="acc-desc">Biamp fleet management</div></div>
+        <div class="acc-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note"><strong>Key idea:</strong> Group items into collapsible accordion sections by category (Audio Grid, MIDI, Hardware, AVB). Each section header shows item count. Categories like Hardware and AVB can default to collapsed since they're less frequently used. This reduces visual noise, makes the menu shorter, and adds clear information hierarchy. Uses Carbon's Accordion component directly. Works well as the item count grows.</p>
+</body>
+</html>

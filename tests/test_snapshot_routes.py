@@ -3,6 +3,7 @@ import io
 import json
 import zipfile
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
 
 import pytest
 from app import database as database_module
@@ -897,6 +898,91 @@ def test_activation_routes_call_state_authority_activation_service_directly(monk
         assert activated_pc["snapshot_id"] == 19
         assert activation_calls == [(11, "ui"), (19, "midi_pc")]
         assert cache_invalidations == ["chains", "chains"]
+
+    asyncio.run(_run())
+
+
+def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypatch):
+    activation_calls: list[tuple[int, str]] = []
+    readiness_calls: list[int] = []
+    cache_invalidations: list[str] = []
+
+    class _FakeActivationService:
+        async def activate_snapshot(self, snapshot_id: int, *, triggered_by: str = "ui"):
+            activation_calls.append((snapshot_id, triggered_by))
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "triggered_by": triggered_by,
+                "activation_intent": {"request_id": "req-1", "blockers": [], "warnings": []},
+            }
+
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_activation = _FakeActivationService()
+
+    class _FakePublishReadinessService:
+        def __init__(self, _session):
+            pass
+
+        async def get_publish_readiness(self, snapshot_id: int):
+            readiness_calls.append(snapshot_id)
+            return SimpleNamespace(
+                model_dump=lambda mode="json": {
+                    "snapshot_id": snapshot_id,
+                    "status": "ready",
+                    "draft_revision_id": 4,
+                    "requested_revision_id": None,
+                    "confirmed_revision_id": None,
+                    "requirements": [],
+                    "blockers": [],
+                    "warnings": [],
+                    "available_repairs": [{"id": "retry_publish", "label": "Retry publish"}],
+                    "applicable_steps": ["draft_saved"],
+                }
+            )
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "PublishReadinessService", _FakePublishReadinessService)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
+
+    async def _run():
+        readiness = await routes.get_snapshot_publish_readiness(31)
+        retried = await routes.retry_snapshot_publish(31, routes.PublishRetryRequest(session_id="sess-9"))
+        repaired = await routes.repair_snapshot_publish(31, "retry_publish")
+        assert readiness["snapshot_id"] == 31
+        assert readiness["available_repairs"][0]["id"] == "retry_publish"
+        assert retried["session_id"] == "sess-9"
+        assert repaired["repair_action_id"] == "retry_publish"
+        assert activation_calls == [(31, "publish_retry"), (31, "publish_retry")]
+        assert readiness_calls == [31]
+        assert cache_invalidations == ["chains", "chains"]
+
+    asyncio.run(_run())
+
+
+def test_publish_repair_route_rejects_unknown_action(monkeypatch):
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_activation = object()
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+
+    async def _run():
+        with pytest.raises(HTTPException) as exc:
+            await routes.repair_snapshot_publish(9, "install_plugin")
+        assert exc.value.status_code == 400
+        assert "not implemented" in str(exc.value.detail)
 
     asyncio.run(_run())
 

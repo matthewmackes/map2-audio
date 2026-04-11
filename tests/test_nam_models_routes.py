@@ -58,6 +58,22 @@ class _FakeLibraryService:
     def delete_model(self, model_name):
         self.deleted.append(model_name)
 
+    def get_stats(self):
+        return {
+            "total_models": 1,
+            "total_size_mb": 1.5,
+            "architectures": {"lstm": 1},
+            "unique_authors": 1,
+            "sample_rates": [48000],
+        }
+
+    def verify_library_integrity(self):
+        return {
+            "missing_files": [],
+            "orphaned_records": [],
+            "valid_records": 1,
+        }
+
 
 class _FakeProcessor:
     def __init__(self) -> None:
@@ -165,3 +181,37 @@ def test_delete_nam_model_removes_file_and_record(monkeypatch):
     assert response.json() == {"status": "ok", "message": "NAM model 'Edge' deleted"}
     assert library_service.deleted == ["Edge"]
     assert not model_path.exists()
+
+
+def test_nam_stats_summary_uses_utc_timestamp(monkeypatch):
+    client = _build_client(monkeypatch, library_service=_FakeLibraryService())
+
+    response = client.get("/api/nam/library/stats/summary")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["timestamp"].endswith("+00:00")
+    assert payload["statistics"] == {
+        "total_models": 1,
+        "total_size_mb": 1.5,
+        "architectures": {"lstm": 1},
+        "unique_authors": 1,
+        "supported_sample_rates": [48000],
+    }
+
+
+def test_verify_library_uses_utc_timestamp(monkeypatch):
+    client = _build_client(monkeypatch, library_service=_FakeLibraryService())
+
+    response = client.post("/api/nam/library/verify")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["timestamp"].endswith("+00:00")
+    assert payload["integrity"] == {
+        "missing_files": [],
+        "orphaned_records": [],
+        "valid_records": 1,
+    }

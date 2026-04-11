@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Option 4: Structured List</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Comic Sans MS', 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .panel { background: #fff; border: 2px solid #999; border-radius: 6px; max-width: 560px; overflow: hidden; }
+  .panel-header { padding: 14px 16px; border-bottom: 2px solid #ccc; display: flex; align-items: center; gap: 10px; }
+  .panel-header .logo { width: 28px; height: 28px; background: #ccc; border-radius: 4px; }
+  .panel-header .title { font-size: 14px; font-weight: bold; }
+
+  .search-bar { margin: 12px 16px; padding: 8px 12px; border: 1.5px solid #ccc; border-radius: 4px; font-size: 12px; width: calc(100% - 32px); background: #fafafa; }
+
+  .table-head { display: grid; grid-template-columns: 40px 1fr 120px 80px; padding: 8px 16px; border-bottom: 2px solid #ccc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #666; background: #f9f9f9; }
+  .table-row { display: grid; grid-template-columns: 40px 1fr 120px 80px; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; align-items: center; cursor: pointer; font-size: 12px; }
+  .table-row:hover { background: #f5f5f5; }
+  .table-row:last-child { border-bottom: none; }
+  .row-icon { width: 26px; height: 26px; background: #e8e8e8; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #555; }
+  .row-name { font-weight: 600; }
+  .row-category { font-size: 11px; color: #888; }
+  .row-status { font-size: 10px; }
+  .status-ok { color: #666; }
+  .status-warn { color: #c00; }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .dot-ok { background: #888; }
+  .dot-warn { background: #c00; }
+  .dot-beta { background: #aaa; }
+
+  .badge { position: absolute; top: 4px; right: 4px; background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: Arial, sans-serif; font-weight: bold; z-index: 10; }
+  .note { margin-top: 16px; font-size: 12px; color: #666; line-height: 1.5; max-width: 560px; }
+</style>
+</head>
+<body>
+<h1>Option 4: Structured List</h1>
+<p class="subtitle">Tabular view using Carbon StructuredList with search, category, and status columns</p>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="logo"></div>
+    <div class="title">MAP2</div>
+  </div>
+
+  <!-- REUSABLE: Search from @carbon/react -->
+  <input class="search-bar" type="text" placeholder="🔍  Filter workspaces..." />
+
+  <!-- REUSABLE: StructuredList from @carbon/react -->
+  <div style="position:relative">
+    <span style="position: absolute; top: 4px; right: 4px; background: #4CAF50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: Arial, sans-serif; font-weight: bold; z-index: 10;" title="@carbon/react StructuredList">[REUSE] StructuredList</span>
+  </div>
+
+  <div class="table-head">
+    <div></div>
+    <div>Workspace</div>
+    <div>Category</div>
+    <div>Status</div>
+  </div>
+
+  <div class="table-row">
+    <div class="row-icon">⬚</div>
+    <div class="row-name">Platforms</div>
+    <div class="row-category">System</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">📁</div>
+    <div class="row-name">Audio Artifacts</div>
+    <div class="row-category">Audio Grid</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">🎵</div>
+    <div class="row-name">Stage Mode</div>
+    <div class="row-category">Audio Grid</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">⊞</div>
+    <div class="row-name">Tesira AVB</div>
+    <div class="row-category">AVB</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">⎍</div>
+    <div class="row-name">Edirol UA-1000</div>
+    <div class="row-category">Hardware</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">∿</div>
+    <div class="row-name">HoTone JoGG</div>
+    <div class="row-category">Hardware</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">⊞</div>
+    <div class="row-name">IntelFX Rack</div>
+    <div class="row-category">MIDI</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">♪</div>
+    <div class="row-name">Launch Control</div>
+    <div class="row-category">MIDI</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">🖥</div>
+    <div class="row-name">LCD Console</div>
+    <div class="row-category">Hardware</div>
+    <div class="row-status status-warn"><span class="status-dot dot-warn"></span>Blocked</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">♪</div>
+    <div class="row-name">MIDI Commander</div>
+    <div class="row-category">MIDI</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">♪</div>
+    <div class="row-name">MIDI Hub</div>
+    <div class="row-category">MIDI</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+  <div class="table-row">
+    <div class="row-icon">⊞</div>
+    <div class="row-name">MPX1 Rack</div>
+    <div class="row-category">MIDI</div>
+    <div class="row-status status-ok"><span class="status-dot dot-beta"></span>Beta</div>
+  </div>
+</div>
+
+<p class="note"><strong>Key idea:</strong> Replace the grid with a searchable structured list. Each row shows icon, name, category tag, and maturity status. Adds a search/filter bar at the top for quick access when the list grows long. Status column surfaces blocked/hardware-dependent items clearly. Uses Carbon StructuredList and Search components. Most information-dense option — suited for power users who prefer keyboard-driven navigation.</p>
+</body>
+</html>

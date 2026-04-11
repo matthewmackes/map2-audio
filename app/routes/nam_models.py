@@ -11,10 +11,10 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import tempfile
 import shutil
-from datetime import datetime
 
 from app.services.nam_processor import get_nam_processor, NAMModel
 from app.services.nam_library import get_nam_library_service
+from app.utils.time import utc_now
 
 router = APIRouter(prefix="/api/nam/library", tags=["nam"])
 
@@ -297,7 +297,7 @@ async def get_nam_stats():
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "statistics": {
                 "total_models": stats['total_models'],
                 "total_size_mb": round(stats['total_size_mb'], 2),
@@ -324,7 +324,7 @@ async def verify_library():
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "integrity": results
         }
     

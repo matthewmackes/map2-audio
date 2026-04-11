@@ -17,6 +17,8 @@ interface ResolveSnapshotGoLiveStateOptions {
   pendingSnapshotId?: number | null
   failedSnapshotId?: number | null
   failureReason?: string | null
+  confirmedSnapshotId?: number | null
+  hasDraftChanges?: boolean
 }
 
 export function isSnapshotCurrentAuthorityLive(
@@ -42,20 +44,25 @@ export function resolveSnapshotGoLiveState({
   pendingSnapshotId = null,
   failedSnapshotId = null,
   failureReason = null,
+  confirmedSnapshotId = null,
+  hasDraftChanges = false,
 }: ResolveSnapshotGoLiveStateOptions): SnapshotGoLiveState {
   if (!snapshot) {
     return {
       phase: 'idle',
-      label: 'Go Live',
+      label: 'Publish to live',
       disabled: true,
       errorMessage: null,
     }
   }
 
-  if (isSnapshotCurrentAuthorityLive(snapshot, authoritativeAudioState)) {
+  if (
+    !hasDraftChanges
+    && (isSnapshotCurrentAuthorityLive(snapshot, authoritativeAudioState) || confirmedSnapshotId === snapshot.id)
+  ) {
     return {
       phase: 'live',
-      label: 'LIVE',
+      label: 'Live confirmed',
       disabled: true,
       errorMessage: null,
     }
@@ -64,7 +71,7 @@ export function resolveSnapshotGoLiveState({
   if (pendingSnapshotId === snapshot.id) {
     return {
       phase: 'activating',
-      label: 'Activating…',
+      label: 'Publishing…',
       disabled: true,
       errorMessage: null,
     }
@@ -74,7 +81,7 @@ export function resolveSnapshotGoLiveState({
   if (failedSnapshotId === snapshot.id && normalizedFailureReason) {
     return {
       phase: 'error',
-      label: 'Activation failed — retry',
+      label: 'Retry publish',
       disabled: false,
       errorMessage: normalizedFailureReason,
     }
@@ -82,7 +89,7 @@ export function resolveSnapshotGoLiveState({
 
   return {
     phase: 'idle',
-    label: 'Go Live',
+    label: 'Publish to live',
     disabled: false,
     errorMessage: null,
   }
