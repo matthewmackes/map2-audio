@@ -294,6 +294,36 @@ describe('ThemePage', () => {
     })
   })
 
+  it('cancels theme switching when unsaved token overrides exist', async () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
+    fireEvent.click(screen.getByRole('button', { name: /windows 95/i }))
+
+    expect(screen.getByText('Discard unsaved token edits?')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.getByText('1 overrides')).toBeTruthy()
+    expect(screen.queryByText(/^Preview of Windows 95$/i)).toBeNull()
+  })
+
+  it('discards token overrides only after explicit confirmation during theme switching', async () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
+    fireEvent.click(screen.getByRole('button', { name: /windows 95/i }))
+    fireEvent.click(screen.getByRole('button', { name: /discard and switch/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Preview of Windows 95')).toBeTruthy()
+      expect(screen.getByText('No overrides')).toBeTruthy()
+    })
+  })
+
   it('exposes radio semantics for the custom token palette picker', () => {
     renderThemePage()
 

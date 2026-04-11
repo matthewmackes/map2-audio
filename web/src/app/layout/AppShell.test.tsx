@@ -294,8 +294,13 @@ describe('AppShell floating launcher shell', () => {
     expect(heroSection).toBeTruthy()
     expect(compactSection).toBeTruthy()
     expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Advanced MIDI/ })).toBeInTheDocument()
+    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Physical Surfaces/ })).toBeInTheDocument()
+    expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Stage Mode/ })).not.toBeInTheDocument()
     expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Tesira AVB/ })).not.toBeInTheDocument()
+    expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Stage Mode/ })).toBeInTheDocument()
     expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Tesira AVB/ })).toBeInTheDocument()
+    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Launch Control/ })).not.toBeInTheDocument()
+    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /MIDI Commander/ })).not.toBeInTheDocument()
   })
 
   it('shows empty interface copy when no physical audio or MIDI interfaces are detected', async () => {

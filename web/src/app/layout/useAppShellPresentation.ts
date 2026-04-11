@@ -8,6 +8,8 @@ import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
 
+const START_MENU_EXCLUDED_ROUTES = new Set(['/launch-control', '/midi-commander'])
+
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(`${to}/`))
 }
@@ -46,6 +48,7 @@ export function useAppShellPresentation({
     () => {
       const launcherItems = launcherCatalogDisplayItems
         .filter((item) => item.route !== '/')
+        .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(item.route))
         .map((item) => ({
           route: item.route,
           label:
@@ -68,22 +71,43 @@ export function useAppShellPresentation({
         }))
 
       const advancedMidiItem = allRouteNavigationItems.find((item) => item.to === '/midi-hub')
-      if (!advancedMidiItem || launcherItems.some((item) => item.route === '/midi-hub')) {
-        return launcherItems
+      const nextItems
+        = !advancedMidiItem || launcherItems.some((item) => item.route === '/midi-hub')
+          ? launcherItems
+          : [
+              {
+                route: '/midi-hub',
+                label: 'Advanced MIDI',
+                shortLabel: 'Advanced MIDI',
+                icon: advancedMidiItem.icon,
+                description: advancedMidiItem.description,
+                color: advancedMidiItem.color,
+                maturity: advancedMidiItem.maturity,
+                featured: true,
+              } satisfies StartMenuTileItem,
+              ...launcherItems,
+            ]
+
+      const stageModeIndex = nextItems.findIndex((item) => item.route === '/perform')
+      const physicalSurfacesIndex = nextItems.findIndex((item) => item.route === '/physical-surfaces')
+      if (stageModeIndex === -1 || physicalSurfacesIndex === -1) {
+        return nextItems
       }
 
-      const advancedMidiTile: StartMenuTileItem = {
-        route: '/midi-hub',
-        label: 'Advanced MIDI',
-        shortLabel: 'Advanced MIDI',
-        icon: advancedMidiItem.icon,
-        description: advancedMidiItem.description,
-        color: advancedMidiItem.color,
-        maturity: advancedMidiItem.maturity,
-        featured: true,
+      const swappedItems = [...nextItems]
+      const currentStageMode = swappedItems[stageModeIndex]
+      const currentPhysicalSurfaces = swappedItems[physicalSurfacesIndex]
+
+      swappedItems[stageModeIndex] = {
+        ...currentPhysicalSurfaces,
+        featured: currentStageMode.featured,
+      }
+      swappedItems[physicalSurfacesIndex] = {
+        ...currentStageMode,
+        featured: currentPhysicalSurfaces.featured,
       }
 
-      return [advancedMidiTile, ...launcherItems]
+      return swappedItems
     },
     [],
   )

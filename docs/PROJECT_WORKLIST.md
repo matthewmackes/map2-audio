@@ -22113,7 +22113,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/desktopWallpaper.test.ts src/app/pages/ThemePage.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
   - ID: T963-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Guard against silent draft-override loss on theme switch
     Description:
     - Goal / acceptance criteria: When `draftDirty` is `true` and `draftOverrideCount > 0`, switching theme (via catalog click or any other path) must display a confirmation dialog before discarding draft overrides. Use React Router v6's `unstable_useBlocker` or an inline Carbon `Modal` confirmation. Accepted choices: "Discard and switch", "Cancel". If the user confirms, discard the draft and proceed with the theme switch. If the user cancels, leave the current theme and draft state unchanged. The `setDraftDirty(false)` call inside the theme-switch handler must be moved to the confirmed-discard branch only.
@@ -22123,7 +22123,14 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — add `useBlocker` or modal state, wrap `setTheme()` call in confirmation flow, move `setDraftDirty(false)` into the confirmed branch. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 00:26 EDT - Codex
+    - Completion notes:
+      - Added a guarded theme-switch flow in `web/src/app/pages/ThemePage.tsx` so preset and custom-theme catalog clicks now open a discard-confirmation modal whenever unsaved token overrides exist.
+      - Centralized theme application behind a shared helper, ensuring `setDraftDirty(false)` only runs on the actual switch path and never on a cancelled discard prompt.
+      - Added regression coverage in `web/src/app/pages/ThemePage.test.tsx` for both cancel and confirm branches, proving token edits persist across a cancelled switch and are only discarded after explicit confirmation.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subD
     Status: [ ] Todo
     Title: Disable "Save and apply" and "Reset draft" when no draft changes exist; surface persistent draft banner

@@ -2,6 +2,7 @@ import { Accessibility, Checkmark, PaintBrush, Reset, Search, Settings } from '@
 import {
   Button,
   InlineNotification,
+  Modal,
   RadioTile,
   Search as CarbonSearch,
   Tag,
@@ -403,6 +404,7 @@ export function ThemePage() {
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [desktopWallpaper, setDesktopWallpaper] = useState<DesktopWallpaperState>(() => readDesktopWallpaperState())
   const [wallpaperUploadError, setWallpaperUploadError] = useState<string | null>(null)
+  const [pendingThemeSwitchId, setPendingThemeSwitchId] = useState<string | null>(null)
   const wallpaperUploadInputRef = useRef<HTMLInputElement | null>(null)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
@@ -575,6 +577,30 @@ export function ThemePage() {
   const applyDesktopWallpaper = (nextState: DesktopWallpaperState) => {
     setDesktopWallpaper(writeDesktopWallpaperState(nextState))
     setWallpaperUploadError(null)
+  }
+
+  const applyThemeSelection = (nextThemeId: string) => {
+    setActiveSlot(null)
+    setTheme(nextThemeId)
+    setDraftDirty(false)
+  }
+
+  const requestThemeSelection = (nextThemeId: string) => {
+    if (draftDirty && draftOverrideCount > 0) {
+      setPendingThemeSwitchId(nextThemeId)
+      return
+    }
+
+    applyThemeSelection(nextThemeId)
+  }
+
+  const handleConfirmThemeSwitch = () => {
+    if (!pendingThemeSwitchId) {
+      return
+    }
+
+    applyThemeSelection(pendingThemeSwitchId)
+    setPendingThemeSwitchId(null)
   }
 
   const selectDesktopWallpaperMode = (mode: DesktopWallpaperState['mode']) => {
@@ -777,10 +803,7 @@ export function ThemePage() {
                           key={coreId}
                           type="button"
                           className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                          onClick={() => {
-                            setTheme(coreId)
-                            setDraftDirty(false)
-                          }}
+                          onClick={() => requestThemeSelection(coreId)}
                           aria-pressed={active}
                         >
                           <span className="theme-page__catalog-item-copy">
@@ -816,10 +839,7 @@ export function ThemePage() {
                             key={pid}
                             type="button"
                             className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                            onClick={() => {
-                              setTheme(pid)
-                              setDraftDirty(false)
-                            }}
+                            onClick={() => requestThemeSelection(pid)}
                             aria-pressed={active}
                           >
                             <span className="theme-page__catalog-item-copy">
@@ -897,10 +917,7 @@ export function ThemePage() {
                             <button
                               type="button"
                               className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                              onClick={() => {
-                                setTheme(customTheme.id)
-                                setDraftDirty(false)
-                              }}
+                              onClick={() => requestThemeSelection(customTheme.id)}
                               aria-pressed={active}
                             >
                               <span className="theme-page__catalog-item-copy">
@@ -1704,6 +1721,21 @@ export function ThemePage() {
         currentHiddenPlugins={specialSettingsHiddenPlugins}
         onSave={handleSpecialSettingsSave}
       />
+
+      <Modal
+        open={pendingThemeSwitchId !== null}
+        size="sm"
+        modalHeading="Discard unsaved token edits?"
+        primaryButtonText="Discard and switch"
+        secondaryButtonText="Cancel"
+        onRequestClose={() => setPendingThemeSwitchId(null)}
+        onSecondarySubmit={() => setPendingThemeSwitchId(null)}
+        onRequestSubmit={handleConfirmThemeSwitch}
+      >
+        <p>
+          Switching themes will discard the current draft token overrides. Save the draft first if you want to keep those edits.
+        </p>
+      </Modal>
 
       {selectedPlugin ? (
         <IconPickerModal

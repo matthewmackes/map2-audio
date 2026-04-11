@@ -240,14 +240,13 @@ describe('Desktop experience integration', () => {
       jest.advanceTimersByTime(4000)
     })
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(await screen.findByRole('link', { name: /Audio Artifacts/i }))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Files/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
     expect(screen.getByTestId('artifacts-page')).toBeInTheDocument()
     expect(screen.getByText('Program object')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close Artifacts' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Taskbar close Audio Artifacts' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Artifacts' }))
@@ -264,49 +263,49 @@ describe('Desktop experience integration', () => {
   it('opens the Start Menu, navigates through it, and closes after routing', async () => {
     renderDesktopExperience(['/artifacts'])
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Stage Mode/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Stage Mode/i })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('link', { name: /Stage Mode/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Stage Mode/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/perform')
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Desktop' })).toBeNull()
+    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {
     renderDesktopExperience(['/artifacts'])
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
 
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Refresh Desktop' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Refresh Desktop' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Log Out' }))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('button', { name: 'Restart Backend' }))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Restart Backend' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))
 
     await waitFor(() => expect(mockRestartBackend).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.getByText('Restarting backend')).toBeInTheDocument())
   })
 
-  it('starts Perform in fullscreen and restores the taskbar after Escape', async () => {
+  it('starts Perform in fullscreen and restores the launcher after Escape', async () => {
     const { container } = renderDesktopExperience(['/perform'])
 
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
-    expect(container.querySelector('.window-taskbar')).toBeNull()
+    expect(container.querySelector('.shell-launcher')).toBeNull()
 
     fireEvent.keyDown(window, { key: 'Escape' })
 
-    await waitFor(() => expect(container.querySelector('.window-taskbar')).toBeTruthy())
+    await waitFor(() => expect(container.querySelector('.shell-launcher')).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
   })
 })
