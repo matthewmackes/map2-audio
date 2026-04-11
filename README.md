@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1074** Python | **1147** TypeScript | **136** C++/H | **143** Docs | **1664** total commits | **3** stars | **0** forks | **0** open issues
+**1079** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1667** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7e6cdfaa`](https://github.com/matthewmackes/map2-audio/commit/7e6cdfaae48c6eea3c12337c96b03197b1359a65) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-10 |
+| [`d047c2a7`](https://github.com/matthewmackes/map2-audio/commit/d047c2a7a5ad5579ced100164712a5653e971211) | Land publish workspace and active cleanup slices | Map2 Audio | 2026-04-10 |
+| [`2475ab55`](https://github.com/matthewmackes/map2-audio/commit/2475ab55261aa3a3cfd2f476749b61e473dbd200) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`1750109a`](https://github.com/matthewmackes/map2-audio/commit/1750109a615cca423348dcd196de6ab174637a7e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-10 |
 | [`373f3c56`](https://github.com/matthewmackes/map2-audio/commit/373f3c561ad37e8ed8fc3b75cde36e5bbc2d8e46) | feat: improve page loading states and backend singleton c... | Map2 Audio | 2026-04-10 |
 | [`910fd315`](https://github.com/matthewmackes/map2-audio/commit/910fd315e533a508c26d4f2976197f2473d52299) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`8a6c1ef0`](https://github.com/matthewmackes/map2-audio/commit/8a6c1ef02cf5f3e20f8dbd46d244dabb6ab562fd) | Complete control-surface engine prerequisites and Carbon ... | Map2 Audio | 2026-04-10 |
 | [`d20b5d2e`](https://github.com/matthewmackes/map2-audio/commit/d20b5d2e8cd321f2f9a99a2cc1e44168ea934717) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
-| [`836fb291`](https://github.com/matthewmackes/map2-audio/commit/836fb291ed4254dd0917abac249a8ac3199d4e90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
-| [`1b9b4e42`](https://github.com/matthewmackes/map2-audio/commit/1b9b4e4238bf74e786ab8ac6acd68a974f9e133d) | Complete controller surface integrations through MIDI Com... | Map2 Audio | 2026-04-10 |
-| [`4f7288c6`](https://github.com/matthewmackes/map2-audio/commit/4f7288c64d80a4c148be24f1d19e411395759bef) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-04-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
