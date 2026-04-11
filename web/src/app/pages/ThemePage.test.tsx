@@ -200,13 +200,27 @@ describe('ThemePage', () => {
     expect(window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)).toContain('"mode":"solid-theme"')
   })
 
-  it('opens the hidden wallpaper upload input from the personalization section', () => {
+  it('selects uploaded wallpaper mode without auto-opening the file picker', () => {
     renderThemePage()
 
     const uploadInput = screen.getByLabelText('Upload desktop wallpaper')
     const clickSpy = jest.spyOn(uploadInput, 'click')
 
     fireEvent.click(screen.getByRole('radio', { name: /uploaded image/i }))
+
+    expect(window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)).toContain('"mode":"uploaded-image"')
+    expect(clickSpy).not.toHaveBeenCalled()
+    expect(screen.getByText('No file chosen.')).toBeTruthy()
+  })
+
+  it('opens the hidden wallpaper upload input from the explicit choose-file action', async () => {
+    renderThemePage()
+
+    const uploadInput = screen.getByLabelText('Upload desktop wallpaper')
+    const clickSpy = jest.spyOn(uploadInput, 'click')
+
+    fireEvent.click(screen.getByRole('radio', { name: /uploaded image/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /choose file/i }))
 
     expect(clickSpy).toHaveBeenCalled()
   })

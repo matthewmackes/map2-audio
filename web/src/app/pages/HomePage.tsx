@@ -188,7 +188,7 @@ export function HomePage() {
         onContextMenu={openWallpaperMenu}
         tabIndex={-1}
       >
-        {wallpaper.mode === 'uploaded-image' ? (
+        {wallpaper.mode === 'uploaded-image' && wallpaper.imageDataUrl ? (
           <img
             src={wallpaper.imageDataUrl}
             alt=""

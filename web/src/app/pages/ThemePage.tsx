@@ -577,6 +577,23 @@ export function ThemePage() {
     setWallpaperUploadError(null)
   }
 
+  const selectDesktopWallpaperMode = (mode: DesktopWallpaperState['mode']) => {
+    if (mode === 'uploaded-image') {
+      applyDesktopWallpaper({
+        version: 1,
+        mode,
+        imageDataUrl: desktopWallpaper.imageDataUrl,
+      })
+      return
+    }
+
+    applyDesktopWallpaper({ version: 1, mode })
+  }
+
+  const openWallpaperUploadPicker = () => {
+    wallpaperUploadInputRef.current?.click()
+  }
+
   const handleWallpaperUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) {
@@ -1488,28 +1505,35 @@ export function ThemePage() {
                   const active = desktopWallpaper.mode === id
 
                   return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
-                      onClick={() => {
-                        if (id === 'uploaded-image') {
-                          wallpaperUploadInputRef.current?.click()
-                          return
-                        }
-                        applyDesktopWallpaper({ version: 1, mode: id })
-                      }}
-                    >
-                      <span className="theme-page__option-copy">
-                        <strong>{label}</strong>
-                        <span>{description}</span>
-                      </span>
-                      <span className="theme-page__option-status">
-                        {active ? 'Selected' : 'Available'}
-                      </span>
-                    </button>
+                    <div key={id} className="theme-page__option-stack">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
+                        onClick={() => selectDesktopWallpaperMode(id)}
+                      >
+                        <span className="theme-page__option-copy">
+                          <strong>{label}</strong>
+                          <span>{description}</span>
+                        </span>
+                        <span className="theme-page__option-status">
+                          {active ? 'Selected' : 'Available'}
+                        </span>
+                      </button>
+                      {id === 'uploaded-image' && active ? (
+                        <div className="theme-page__option-detail" aria-live="polite">
+                          <Button kind="secondary" size="sm" onClick={openWallpaperUploadPicker}>
+                            Choose file...
+                          </Button>
+                          <span className="theme-page__option-detail-copy">
+                            {desktopWallpaper.imageDataUrl
+                              ? 'Custom wallpaper loaded from local browser storage.'
+                              : 'No file chosen.'}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
                   )
                 })}
               </div>

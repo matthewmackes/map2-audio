@@ -365,6 +365,11 @@
   gap: 0.5rem;
 }
 
+.theme-page__option-stack {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .theme-page__option-item {
   display: grid;
   gap: 0.5rem;
@@ -384,6 +389,21 @@
 .theme-page__option-item--active {
   border-color: color-mix(in srgb, var(--primary) 38%, var(--cds-border-subtle));
   background: color-mix(in srgb, var(--cds-layer-02) 90%, var(--primary) 10%);
+}
+
+.theme-page__option-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, #ffffff 8%);
+}
+
+.theme-page__option-detail-copy {
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
 }
 
 .theme-page__font-inline-sample {
