@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1794** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1796** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`81b77c38`](https://github.com/matthewmackes/map2-audio/commit/81b77c382b4cebe5a6ba8b1cb8152143734830b1) | Advance workspace shell sentence-case cleanup | Map2 Audio | 2026-04-11 |
+| [`63acd165`](https://github.com/matthewmackes/map2-audio/commit/63acd1652e4c97bae810da5dddae32d56bcf0cd2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`28ebe623`](https://github.com/matthewmackes/map2-audio/commit/28ebe623dddf9e0174ce0d25f9a0351ac3a7f4a7) | Advance route-level Carbon writing cleanup | Map2 Audio | 2026-04-11 |
 | [`5babe46c`](https://github.com/matthewmackes/map2-audio/commit/5babe46c6193c61e0bb5145aaf6c7077c672a203) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`b5bb4f53`](https://github.com/matthewmackes/map2-audio/commit/b5bb4f53043d51bc345125114bff9abdc89fa7cf) | Reduce remaining snapshot editor uppercase chrome | Map2 Audio | 2026-04-11 |
 | [`86bf8702`](https://github.com/matthewmackes/map2-audio/commit/86bf870293ec0f57288a247766a4fdd4cc031e5d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`06cb279e`](https://github.com/matthewmackes/map2-audio/commit/06cb279e348696e4254ea8e9f51629668002a664) | Advance snapshot editor sentence-case cleanup | Map2 Audio | 2026-04-11 |
 | [`184f1f72`](https://github.com/matthewmackes/map2-audio/commit/184f1f72c560883b1e3c6309a422e10ec96defa8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`9ae90d03`](https://github.com/matthewmackes/map2-audio/commit/9ae90d0318654bf5b57598593ac40829c28480f5) | Advance snapshot editor Carbon typography cleanup | Map2 Audio | 2026-04-11 |
-| [`d83e4fe7`](https://github.com/matthewmackes/map2-audio/commit/d83e4fe797a70dbfd098c50bb51f7eec7bf1310a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
