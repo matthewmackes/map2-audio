@@ -16,6 +16,12 @@ const mockPutPluginAppearance = jest.fn()
 const mockRemovePluginAppearance = jest.fn()
 const mockUploadPluginAppearance = jest.fn()
 
+jest.mock('react-virtualized-auto-sizer', () => ({
+  __esModule: true,
+  default: ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) =>
+    children({ width: 480, height: 320 }),
+}))
+
 jest.mock('@/map2/api', () => ({
   pluginsApi: {
     discover: (...args: unknown[]) => mockDiscover(...args),
@@ -83,6 +89,11 @@ describe('ThemePage', () => {
 
     ;(globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver =
       ResizeObserverMock as unknown as typeof ResizeObserver
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: jest.fn(),
+    })
   })
 
   beforeEach(() => {
@@ -243,14 +254,29 @@ describe('ThemePage', () => {
     expect(screen.getByTestId('special-settings-dialog')).toBeTruthy()
   })
 
-  it('persists category color overrides from the appearance assets section', async () => {
+  it('moves focus into the token palette picker and restores it to the slot trigger on close', () => {
     renderThemePage()
 
-    const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
-    fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
+    const primarySlot = screen.getByRole('button', { name: /^Primary\s+#/i })
+    fireEvent.click(primarySlot)
 
-    expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toContain('#112233')
-    expect(screen.getByText('#112233')).toBeTruthy()
+    const firstFamilyButton = screen.getByRole('radio', { name: /select blue family/i })
+    expect(firstFamilyButton).toHaveFocus()
+
+    fireEvent.click(within(firstFamilyButton.closest('.theme-page__picker') as HTMLElement).getByRole('button', { name: /^close$/i }))
+    expect(primarySlot).toHaveFocus()
+  })
+
+  it('persists category color overrides from the appearance assets section with the constrained palette picker', async () => {
+    renderThemePage()
+
+    expect(screen.queryByDisplayValue('#112233')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Dynamics color' }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
+
+    expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toContain('#1192e8')
+    expect(screen.getByText('#1192e8')).toBeTruthy()
   })
 
   it('persists reduced-effects mode and GUI font changes', () => {
@@ -394,6 +420,32 @@ describe('ThemePage', () => {
     expect(screen.getByRole('button', { name: /^Toob Amp$/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Hardware$/i })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^toobamp$/i })).toBeNull()
+  })
+
+  it('shows the small-screen section navigation rail and uses jump links', () => {
+    renderThemePage()
+
+    const previewSection = document.getElementById('theme-preview')
+    const scrollSpy = jest.spyOn(previewSection as HTMLElement, 'scrollIntoView')
+
+    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }))
+
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+  })
+
+  it('uses footer status counters as jump links into token and appearance sections', () => {
+    renderThemePage()
+
+    const tokenSection = document.getElementById('theme-token-studio')
+    const appearanceSection = document.getElementById('theme-appearance-assets')
+    const tokenScrollSpy = jest.spyOn(tokenSection as HTMLElement, 'scrollIntoView')
+    const appearanceScrollSpy = jest.spyOn(appearanceSection as HTMLElement, 'scrollIntoView')
+
+    fireEvent.click(screen.getByRole('button', { name: /0 token edits/i }))
+    fireEvent.click(screen.getByRole('button', { name: /0 appearance overrides/i }))
+
+    expect(tokenScrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+    expect(appearanceScrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
   })
 
   it('falls back to the lightweight plugin catalog when discovery fails', async () => {

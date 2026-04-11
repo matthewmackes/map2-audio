@@ -22065,7 +22065,7 @@ Last updated: 2026-04-10 EDT - Kombai
   - Snapshot tests in `DesktopExperience.snapshot.test.tsx` will need updating via `--updateSnapshot` due to structural DOM changes.
 
 ID: T963
-Status: [>] In Progress
+Status: [✓] Done
 Title: Fix Theme Page UX/Usability issues (from design review 2026-04-11)
 Description:
 - Goal / acceptance criteria: Resolve the 18 UX/usability issues identified in the static code review of `/platforms/theme` (see `.kombai/resources/design-review-platforms-theme.md`). Three critical issues (dual theme controls, broken radio+file-upload flow, silent draft loss) must be addressed before any other subtask ships. All remaining High and Medium issues should be resolved in subsequent subtasks. The page must pass `npm --prefix web run typecheck` and the existing theme-page test suite after every subtask lands.
@@ -22170,7 +22170,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subF
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Shift focus into SlotPalettePicker when it opens inline
     Description:
     - Goal / acceptance criteria: When a token slot button is activated and `SlotPalettePicker` renders, programmatically move focus to the first interactive element inside the picker (the first color-family button in `.theme-page__picker-families`). Use a `useEffect` on a `ref` attached to the picker root, triggered by an `isOpen` state that flips `true` when the picker mounts. When the picker closes, return focus to the originating slot button. This must not cause scroll jitter; use `focus({ preventScroll: true })` where needed.
@@ -22180,9 +22180,16 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — `useEffect`/`useRef` focus management inside `SlotPalettePicker` (or its call site). Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:40 EDT - Codex
+    - Completion notes:
+      - Added focus-management wiring in `web/src/app/pages/ThemePage.tsx` so opening `SlotPalettePicker` moves focus into the first family swatch immediately and closing the picker restores focus to the originating token button with `preventScroll`.
+      - Reused the same close-and-return-focus path for color picks and explicit close actions, which removes the prior keyboard trap where Tab skipped past the inline picker entirely.
+      - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving the picker takes focus on open and returns it to the original slot trigger on close.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subG
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Add responsive section navigation for sub-82rem collapsed layout
     Description:
     - Goal / acceptance criteria: Below 82 rem, the three-column layout collapses into a single long-scroll page. Add a sticky tab bar or anchor-link rail (Carbon `Tabs` or a custom sticky `<nav>`) that provides jump-links to each major section: Library, Preview, Color Scheme, Font, Token Studio, Appearance Assets, Personalization, and Behavior. Each section must receive a matching `id` attribute. The tab bar / nav must be hidden at ≥ 82 rem (it is redundant when the three-column layout is visible). Smooth scroll behavior via `scroll-behavior: smooth` on the scroll container or `element.scrollIntoView({ behavior: 'smooth' })`.
@@ -22192,9 +22199,16 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — section `id` attributes, sticky nav component (inline or extracted). `ThemePage.css` — sticky nav styles, `@media (min-width: 82rem) { display: none }` guard. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:40 EDT - Codex
+    - Completion notes:
+      - Added a compact sticky section rail at the top of the Theme workspace that appears only below `82rem`, with jump links for Library, Preview, Color Scheme, Font, Token Studio, Appearance Assets, Personalization, and Behavior.
+      - Added stable `id` anchors to the matching fieldsets in `web/src/app/pages/ThemePage.tsx` and wired the rail to smooth `scrollIntoView` navigation so the collapsed single-column layout no longer requires manual long-form scrolling.
+      - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving the responsive rail triggers the expected section jump behavior.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subH
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Replace native category color picker with constrained palette picker
     Description:
     - Goal / acceptance criteria: Replace the raw `<input type="color">` elements in the category-accent controls with the existing `SlotPalettePicker` (or a lightweight inline equivalent) constrained to the Carbon color palette families, matching the token-override color-picking experience. The category accent value must still be stored and applied as a CSS custom property. A "Reset to default" action per category must remain available.
@@ -22204,9 +22218,16 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — replace `<input type="color">` in the category-card controls with palette picker. `ThemePage.css` — remove `.theme-page__category-picker` rule if it becomes unused. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:40 EDT - Codex
+    - Completion notes:
+      - Replaced the native category-accent `<input type="color">` control in `web/src/app/pages/ThemePage.tsx` with the shared Carbon-constrained `SlotPalettePicker` flow so category accents now follow the same curated palette model as token overrides.
+      - Added per-category trigger buttons and restored-focus behavior for the inline picker while preserving the existing Reset action and CSS custom-property persistence path.
+      - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving category accents persist through the constrained palette picker rather than the removed native browser control.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subI
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove dead code (ThemeDeckPreview, desktopThemeWorkspace), virtualize preset catalog, and polish medium/low issues
     Description:
     - Goal / acceptance criteria: (1) Delete the `ThemeDeckPreview` component (~lines 1943–2015 in `ThemePage.tsx`) — it is defined but never rendered. (2) Remove the `desktopThemeWorkspace = null` dead variable (line 1741) and its JSX reference (line 1745). (3) Wrap the preset theme catalog (`PRESET_THEME_GROUPS` rendering loop) in a `react-window` `FixedSizeList` or equivalent, using `react-virtualized-auto-sizer` for width — both are already in `package.json`. (4) Update "Preview target" option descriptions to describe the actual content area they represent rather than restating the interaction verb. (5) Make the footer status counters ("N token edits", "N appearance overrides") into anchor-scroll links that jump to Token Studio and Appearance Assets sections respectively. (6) Replace the `PaintBrush` icon on the "Page transition style" motion-head with a semantically appropriate motion icon (e.g. Carbon's `Loop` or `PlayOutline`). (7) Increase `<legend>` prominence for `theme-page__dialog-group` elements to `var(--cds-text-primary)` weight while keeping the small `0.75rem` size, or switch to `font-weight: 700` to improve scan-ability as group labels.
@@ -22216,9 +22237,25 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — `ThemeDeckPreview` and `desktopThemeWorkspace` removed, virtualized catalog, updated option descriptions, linked footer counters, corrected motion icon, updated legend styles. `ThemePage.css` — any orphaned CSS rules removed. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:40 EDT - Codex
+    - Completion notes:
+      - Removed the dead `ThemeDeckPreview` component and `desktopThemeWorkspace = null` path from `web/src/app/pages/ThemePage.tsx`, eliminating unused maintenance surface in the Theme workspace.
+      - Virtualized each preset-theme group with `react-window` `FixedSizeList` plus `react-virtualized-auto-sizer`, which keeps the preset catalog responsive on lower-power hardware while preserving the existing grouped layout and active-theme affordances.
+      - Polished the remaining medium/low issues by rewriting the preview-target descriptions to describe actual preview content, turning the footer counts into section jump links, replacing the motion-row `PaintBrush` icon with `Loop`, and increasing legend prominence in `web/src/app/pages/ThemePage.css`.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Kombai
-Last updated: 2026-04-10 22:08 EDT - Codex
+Last updated: 2026-04-11 06:40 EDT - Codex
+- Completion notes:
+  - Closed the remaining Theme Page UX review work by landing keyboard focus restoration for inline token/category pickers, a mobile-only sticky section rail, and a Carbon-constrained category accent picker path that replaces the native browser color input.
+  - Removed dead Theme page code, virtualized the grouped preset catalog with `react-window`/`react-virtualized-auto-sizer`, and finished the remaining polish items covering preview-target copy, footer jump links, motion icon semantics, and more prominent group legends.
+  - Kept the work self-contained to `web/src/app/pages/ThemePage.tsx`, `web/src/app/pages/ThemePage.css`, and `web/src/app/pages/ThemePage.test.tsx`, with no installer or dependency artifact updates required because the virtualization packages were already present in `web/package.json`.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T964
 Status: [✓] Done
