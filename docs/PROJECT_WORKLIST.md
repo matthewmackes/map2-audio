@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 09:07 EDT - Codex
+Last updated: 2026-04-11 09:27 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19539,6 +19539,9 @@ Last updated: 2026-04-11 09:07 EDT - Codex
   - Selected the next bounded UTC/service slice on `app/services/maschine_service.py`, covering the persisted snapshot `updated_at` write in the encoder-map update path. This surface persists runtime metadata for active snapshots, so the safe migration path is a direct switch to timezone-aware UTC plus explicit regression coverage.
   - Landed that Maschine UTC slice by moving the encoder-map snapshot write from `datetime.utcnow()` to `utc_now()`, while leaving the existing `Z`-formatted daemon status payload contract intact.
   - Validation for the Maschine UTC slice is green: `pytest -q tests/test_maschine_routes.py tests/test_maschine_mk1.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine_service.py tests/test_maschine_routes.py` -> PASS.
+  - Selected the next bounded UTC/service slice on `app/services/node_identity.py`, covering the persisted node `created_at` value and trusted-peer `added_at` metadata. These records are internal cluster/runtime identity metadata, so they fit the active policy of timezone-aware UTC without changing any operator-local display semantics.
+  - Landed that node-identity UTC slice by moving new identity/trust timestamps onto `utc_now()`, populating the in-memory `created_at` field during fresh identity creation so the route contract matches the newly persisted value immediately, and adding focused service coverage for both persisted UTC fields.
+  - Validation for the node-identity UTC slice is green: `pytest -q tests/test_node_identity_service.py tests/test_ssh_trust_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/node_identity.py tests/test_node_identity_service.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress

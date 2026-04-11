@@ -17,6 +17,8 @@ from typing import Dict, List, Optional
 import socket
 import hashlib
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -94,13 +96,13 @@ class NodeIdentity:
         self.ssh_fingerprint = result.stdout.strip().split()[1]
         
         # Save identity
-        from datetime import datetime
+        self.created_at = utc_now().isoformat()
         identity_data = {
             'node_id': self.node_id,
             'mode': self.mode,
             'ssh_public_key': self.ssh_public_key,
             'ssh_fingerprint': self.ssh_fingerprint,
-            'created_at': datetime.utcnow().isoformat()
+            'created_at': self.created_at
         }
         
         with open(self.identity_file, 'w') as f:
@@ -156,7 +158,7 @@ class SSHTrustManager:
         self.trusted_nodes[node_id] = {
             'ssh_public_key': ssh_public_key,
             'ssh_fingerprint': ssh_fingerprint,
-            'added_at': __import__('datetime').datetime.utcnow().isoformat()
+            'added_at': utc_now().isoformat()
         }
         
         # Add to authorized_keys
