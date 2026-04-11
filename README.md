@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1082** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1704** total commits | **3** stars | **0** forks | **0** open issues
+**1082** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1707** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d6d16065`](https://github.com/matthewmackes/map2-audio/commit/d6d160654dce483167fe0ceca1e41acc50cf095e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`f4b46d7e`](https://github.com/matthewmackes/map2-audio/commit/f4b46d7e7a6a7ff62c23b1ba5b091213e1005a6a) | Move system test route timestamps to UTC | Map2 Audio | 2026-04-11 |
+| [`4ae80211`](https://github.com/matthewmackes/map2-audio/commit/4ae802110403ea118aeb79e2602bf995ad56c7f3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`74057310`](https://github.com/matthewmackes/map2-audio/commit/74057310c030ad7dc9695bfb2c38357f1cd0c37d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`d254894f`](https://github.com/matthewmackes/map2-audio/commit/d254894ffaea1e7ddb017434d091a4f7bc0dd46f) | Move web status timestamps to UTC | Map2 Audio | 2026-04-11 |
 | [`233c6e67`](https://github.com/matthewmackes/map2-audio/commit/233c6e67bde2e92d639baf4c4dddd18f8828a307) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`f62cb9e0`](https://github.com/matthewmackes/map2-audio/commit/f62cb9e03b74f7cab7a066a50773fc20fc764898) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`74d56fe4`](https://github.com/matthewmackes/map2-audio/commit/74d56fe40c675ed1cef62e51f53f9fd5bd702462) | Move dashboard timestamps to UTC | Map2 Audio | 2026-04-11 |
-| [`6861122e`](https://github.com/matthewmackes/map2-audio/commit/6861122e4f52a303bf7d454a173ee18d454c3fa3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`0a30bfbb`](https://github.com/matthewmackes/map2-audio/commit/0a30bfbb980bee0b09a54ce3fb442d67c988c11b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
-| [`e7742288`](https://github.com/matthewmackes/map2-audio/commit/e7742288c47974ca8b004cf35e8ee844cee07c04) | Clean up UTC warnings in cluster visibility tests | Map2 Audio | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
