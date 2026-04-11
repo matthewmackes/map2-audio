@@ -13,7 +13,7 @@ import subprocess
 import threading
 import time
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import timezone
 
 try:
     from fastapi import APIRouter, HTTPException, Query
@@ -21,6 +21,7 @@ try:
     from app.services.api_readiness import ensure_audio_route_ready
     from app.services.engine_runtime_facade import get_engine_service
     from app.services.juce_engine_service import get_audio_engine as _get_audio_engine
+    from app.utils.time import utc_now
 
     logger = logging.getLogger(__name__)
 
@@ -97,6 +98,9 @@ try:
         if actual is not None:
             payload["actual"] = actual
         issues.append(payload)
+
+    def _elapsed_ms(start_time: float) -> float:
+        return (time.perf_counter() - start_time) * 1000.0
 
     _AUDIO_LEVELS_CACHE_TTL_SECONDS = _coerce_float(
         os.getenv("MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS", "0.20"),
@@ -528,7 +532,7 @@ try:
         status = "aligned" if highest == 0 else "warning" if highest == 1 else "error"
 
         return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": utc_now().isoformat(),
             "status": status,
             "profile": {
                 "selected_profile": selected_profile,
@@ -1468,21 +1472,19 @@ try:
     @router.post("/diagnostics/full")
     async def run_full_diagnostic() -> Dict[str, Any]:
         """Run full diagnostic suite."""
-        from datetime import datetime
-
         tests = []
         recommendations = []
         overall_status = "pass"
-        start_time = datetime.now()
+        started_at = utc_now()
         service = get_engine_service()
 
         # Test 1: Engine availability
-        t1 = datetime.now()
+        t1 = time.perf_counter()
         engine_available = service.is_available
         tests.append({
             "success": engine_available,
             "test_name": "Engine Availability",
-            "duration_ms": (datetime.now() - t1).total_seconds() * 1000,
+            "duration_ms": _elapsed_ms(t1),
             "xruns_detected": 0,
             "message": "JUCE audio engine is available" if engine_available else "JUCE audio engine not available"
         })
@@ -1491,12 +1493,12 @@ try:
             recommendations.append("Check that the JUCE audio engine is properly compiled and installed")
 
         # Test 2: Audio running state
-        t2 = datetime.now()
+        t2 = time.perf_counter()
         is_running = service.is_audio_running() if engine_available else False
         tests.append({
             "success": is_running,
             "test_name": "Audio Running",
-            "duration_ms": (datetime.now() - t2).total_seconds() * 1000,
+            "duration_ms": _elapsed_ms(t2),
             "xruns_detected": 0,
             "message": "Audio processing is active" if is_running else "Audio processing is stopped"
         })
@@ -1506,7 +1508,7 @@ try:
             recommendations.append("Start the audio engine to enable processing")
 
         # Test 3: Latency measurement
-        t3 = datetime.now()
+        t3 = time.perf_counter()
         info = service.get_system_info() if engine_available else {}
         buffer_size = info.get("buffer_size", 256)
         sample_rate = info.get("sample_rate", 48000)
@@ -1515,7 +1517,7 @@ try:
         tests.append({
             "success": latency_ok,
             "test_name": "Latency Check",
-            "duration_ms": (datetime.now() - t3).total_seconds() * 1000,
+            "duration_ms": _elapsed_ms(t3),
             "latency_ms": round(latency_ms, 2),
             "xruns_detected": 0,
             "message": f"Latency is {latency_ms:.2f}ms" + (" (acceptable)" if latency_ok else " (high)")
@@ -1526,7 +1528,7 @@ try:
             recommendations.append(f"Consider reducing buffer size (current: {buffer_size} samples)")
 
         # Test 4: CPU load check
-        t4 = datetime.now()
+        t4 = time.perf_counter()
         cpu_load = info.get("cpu_load", 0)
         if isinstance(cpu_load, str):
             try:
@@ -1537,7 +1539,7 @@ try:
         tests.append({
             "success": cpu_ok,
             "test_name": "CPU Load",
-            "duration_ms": (datetime.now() - t4).total_seconds() * 1000,
+            "duration_ms": _elapsed_ms(t4),
             "quality_score": 1.0 - (cpu_load / 100),
             "xruns_detected": 0,
             "message": f"CPU load is {cpu_load:.1f}%" + (" (healthy)" if cpu_ok else " (high)")
@@ -1548,14 +1550,14 @@ try:
             recommendations.append("High CPU load - consider disabling some plugins or increasing buffer size")
 
         # Test 5: XRun check
-        t5 = datetime.now()
+        t5 = time.perf_counter()
         underruns = info.get("underruns", 0)
         xruns = info.get("xruns", underruns)
         xrun_ok = xruns < 10
         tests.append({
             "success": xrun_ok,
             "test_name": "XRun Detection",
-            "duration_ms": (datetime.now() - t5).total_seconds() * 1000,
+            "duration_ms": _elapsed_ms(t5),
             "xruns_detected": xruns,
             "message": f"{xruns} XRuns detected" + (" (acceptable)" if xrun_ok else " (excessive)")
         })
@@ -1567,7 +1569,7 @@ try:
             recommendations.append("All diagnostics passed - system is operating normally")
 
         return {
-            "timestamp": start_time.isoformat(),
+            "timestamp": started_at.isoformat(),
             "overall_status": overall_status,
             "tests": tests,
             "recommendations": recommendations
@@ -1596,23 +1598,22 @@ try:
     @router.post("/test/sample-rate")
     async def test_sample_rate(rate: int = Query(..., description="Sample rate to test")) -> Dict[str, Any]:
         """Test a specific sample rate."""
-        from datetime import datetime
         service = get_engine_service()
-        test_start = datetime.now()
+        test_started = time.perf_counter()
 
         if not service.is_available:
             return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": 0, "xruns_detected": 0, "message": "Audio engine not available"}
 
         supported_rates = [44100, 48000, 88200, 96000, 192000]
         if rate not in supported_rates:
-            return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": (datetime.now() - test_start).total_seconds() * 1000, "xruns_detected": 0, "message": f"Unsupported sample rate. Supported: {supported_rates}"}
+            return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": _elapsed_ms(test_started), "xruns_detected": 0, "message": f"Unsupported sample rate. Supported: {supported_rates}"}
 
         info = service.get_system_info()
         original_rate = info.get("sample_rate", 48000)
 
         try:
             success = await service.set_sample_rate(rate)
-            duration_ms = (datetime.now() - test_start).total_seconds() * 1000
+            duration_ms = _elapsed_ms(test_started)
             if success:
                 await service.set_sample_rate(original_rate)
                 return {"success": True, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": duration_ms, "xruns_detected": 0, "message": f"Sample rate {rate} Hz is supported"}
@@ -1622,7 +1623,7 @@ try:
                 await service.set_sample_rate(original_rate)
             except Exception:
                 pass
-            return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": (datetime.now() - test_start).total_seconds() * 1000, "xruns_detected": 0, "message": f"Error: {str(e)}"}
+            return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": _elapsed_ms(test_started), "xruns_detected": 0, "message": f"Error: {str(e)}"}
 
     @router.post("/test/buffer-stability")
     async def test_buffer_stability(

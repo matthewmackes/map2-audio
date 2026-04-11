@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 08:11 EDT - Codex
+Last updated: 2026-04-11 08:20 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19527,6 +19527,9 @@ Last updated: 2026-04-11 08:11 EDT - Codex
   - Selected the next bounded UTC/API slice on `app/routes/preset_exchange.py`, covering the cluster preset export timestamp and the community rating-update timestamp. This surface only emits runtime/export metadata and updates a row timestamp; it does not touch local display clocks or compatibility-sensitive certificate/session logic.
   - Landed that preset-exchange UTC slice by moving the cluster `exported_at` payload and the existing-rating `updated_at` assignment onto the shared `utc_now()` helper, and by extending focused route tests to assert timezone-aware UTC export output plus stable rating-update behavior.
   - Validation for the preset-exchange UTC slice is green: `pytest -q tests/test_preset_exchange_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/preset_exchange.py tests/test_preset_exchange_routes.py` -> PASS.
+  - Selected the next bounded UTC/runtime slice on `app/routes/audio.py`, covering the full-diagnostics timestamp plus the remaining stopwatch-style `datetime.now()` calls in the full-diagnostic and sample-rate test endpoints. This surface does not persist timestamps and is safer as monotonic elapsed timing rather than naive wall-clock arithmetic.
+  - Landed that audio-runtime slice by moving the emitted diagnostic timestamp onto `utc_now()` and replacing the diagnostic/sample-rate elapsed-time math with `time.perf_counter()`-backed duration measurement.
+  - Validation for the audio-runtime slice is green: `pytest -q tests/test_audio_runtime_diagnostic_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio.py tests/test_audio_runtime_diagnostic_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
