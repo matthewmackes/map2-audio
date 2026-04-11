@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1079** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1687** total commits | **3** stars | **0** forks | **0** open issues
+**1079** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1688** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`77d144b1`](https://github.com/matthewmackes/map2-audio/commit/77d144b13f677df1149a881bd8d38fce1446809a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`da42dbfd`](https://github.com/matthewmackes/map2-audio/commit/da42dbfdd4fb10e10685fb8c275b854cdd2b0c3a) | Normalize theme plugin source labels | Map2 Audio | 2026-04-11 |
 | [`4c098cd0`](https://github.com/matthewmackes/map2-audio/commit/4c098cd0cd8e803a5af9cdba0062da0af373ba2e) | Merge remote-tracking branch 'gitlab/master' | Map2 Audio | 2026-04-11 |
 | [`33c9aa3a`](https://github.com/matthewmackes/map2-audio/commit/33c9aa3aa8e7e184468a5517f8005f14dc0fdd4a) | Clarify theme draft save state | Map2 Audio | 2026-04-11 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`f8f8c860`](https://github.com/matthewmackes/map2-audio/commit/f8f8c8605c335fe1bc2e4266e09f554bdf4db73a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`8a84ea79`](https://github.com/matthewmackes/map2-audio/commit/8a84ea7997a8ba3fcf3999964fd22515303c0057) | Protect theme draft switches and refresh launcher menu | Map2 Audio | 2026-04-11 |
 | [`5c48e1f2`](https://github.com/matthewmackes/map2-audio/commit/5c48e1f27fa7d6d4aa14daac76959bd49a26f891) | Merge remote-tracking branch 'gitlab/master' | Map2 Audio | 2026-04-10 |
-| [`bc00d16e`](https://github.com/matthewmackes/map2-audio/commit/bc00d16e3d3454c945bc19db6033a9fbb4134eca) | Fix theme wallpaper upload selection flow | Map2 Audio | 2026-04-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
