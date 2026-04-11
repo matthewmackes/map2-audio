@@ -22151,7 +22151,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Replace native `<select>` remnants with Carbon `<Dropdown>` and fix plugin source filter labels
     Description:
     - Goal / acceptance criteria: (1) Confirm no remaining native `<select>` elements exist in `ThemePage.tsx` after T963-subA. If any remain (e.g. a shell-theme base selector), replace with Carbon's `<Dropdown>` from `@carbon/react`. Remove the `.theme-page__dialog-select` CSS rule. (2) Replace raw plugin source filter button labels (`lv2`, `juce`, `toobamp`, `hardware`) with display-friendly strings: `{ lv2: 'LV2', juce: 'JUCE', toobamp: 'Toob Amp', hardware: 'Hardware' }`. Define the mapping as a typed constant above the component. The "All sources" label is already correct and must not change.
@@ -22161,7 +22161,14 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — any remaining `<select>` → Carbon `<Dropdown>`, plugin source label map constant. `ThemePage.css` — remove `.theme-page__dialog-select`. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:24 EDT - Codex
+    - Completion notes:
+      - Confirmed `web/src/app/pages/ThemePage.tsx` no longer contains any native `<select>` elements after `T963-subA`, so no additional Carbon `<Dropdown>` replacement work was required in this slice.
+      - Added a typed `PLUGIN_SOURCE_FILTER_LABELS` map in `web/src/app/pages/ThemePage.tsx` so the plugin-source filters now render `LV2`, `JUCE`, `Toob Amp`, and `Hardware` instead of raw internal identifiers.
+      - Added regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving the operator-facing source-filter labels render and the old raw `toobamp` label no longer appears.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subF
     Status: [ ] Todo
     Title: Shift focus into SlotPalettePicker when it opens inline

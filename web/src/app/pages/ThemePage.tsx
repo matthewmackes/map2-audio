@@ -312,6 +312,13 @@ type PluginAppearanceEditorMode = 'categories' | 'plugins'
 type PluginSourceFilter = 'all' | 'lv2' | 'juce' | 'toobamp' | 'hardware'
 type ThemePreviewFocus = 'desktop' | 'inactive-window' | 'active-window' | 'message-box'
 
+const PLUGIN_SOURCE_FILTER_LABELS: Record<Exclude<PluginSourceFilter, 'all'>, string> = {
+  lv2: 'LV2',
+  juce: 'JUCE',
+  toobamp: 'Toob Amp',
+  hardware: 'Hardware',
+}
+
 function inferPluginSource(plugin: Plugin): PluginSourceFilter {
   if (plugin.is_hardware || plugin.format === 'Hardware') {
     return 'hardware'
@@ -1372,7 +1379,7 @@ export function ThemePage() {
                         size="sm"
                         onClick={() => setPluginSourceFilter(filter)}
                       >
-                        {filter === 'all' ? 'All sources' : filter}
+                        {filter === 'all' ? 'All sources' : PLUGIN_SOURCE_FILTER_LABELS[filter]}
                       </Button>
                     ))}
                   </div>

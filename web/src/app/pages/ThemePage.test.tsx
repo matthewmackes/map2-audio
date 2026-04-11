@@ -380,6 +380,22 @@ describe('ThemePage', () => {
     expect(within(modeGroup).getByRole('button', { name: /category accents/i })).toBeTruthy()
   })
 
+  it('uses display-friendly labels for plugin source filters', async () => {
+    renderThemePage()
+    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
+
+    await waitFor(() => {
+      expect(mockDiscover).toHaveBeenCalled()
+    })
+
+    expect(screen.getByRole('button', { name: /^All sources$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^LV2$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^JUCE$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Toob Amp$/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Hardware$/i })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^toobamp$/i })).toBeNull()
+  })
+
   it('falls back to the lightweight plugin catalog when discovery fails', async () => {
     mockDiscover.mockRejectedValueOnce(new Error('Plugin inventory warming'))
 
