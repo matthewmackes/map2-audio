@@ -1,7 +1,8 @@
 import type { KeyboardEvent, MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ProgressBar } from '@carbon/react'
+import { Maximize, Minimize } from '@carbon/icons-react'
+import { Button, ProgressBar } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -24,9 +25,11 @@ export function HomePage() {
   const { shouldReduceEffects } = useReducedEffectsPreference()
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
   const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement))
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const contextMenuItemRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const fullscreenAvailable = typeof document.documentElement.requestFullscreen === 'function'
 
   useEffect(() => {
     if (!showBootSplash) {
@@ -82,6 +85,17 @@ export function HomePage() {
     }
   }, [contextMenu])
 
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', syncFullscreenState)
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreenState)
+    }
+  }, [])
+
   const openWallpaperMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault()
     restoreFocusRef.current = event.currentTarget
@@ -99,6 +113,19 @@ export function HomePage() {
   const handleOpenDesktopRoute = (route: string) => {
     setContextMenu(null)
     navigate(route)
+  }
+
+  const handleToggleFullscreen = async () => {
+    if (!fullscreenAvailable) {
+      return
+    }
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+      return
+    }
+
+    await document.documentElement.requestFullscreen()
   }
 
   const handleContextMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -188,6 +215,23 @@ export function HomePage() {
         onContextMenu={openWallpaperMenu}
         tabIndex={-1}
       >
+        <div className="hp2-desktop__controls">
+          <Button
+            type="button"
+            kind="ghost"
+            size="sm"
+            hasIconOnly
+            className="hp2-desktop__fullscreen-toggle"
+            renderIcon={isFullscreen ? Minimize : Maximize}
+            iconDescription={isFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
+            tooltipPosition="left"
+            tooltipAlignment="center"
+            disabled={!fullscreenAvailable}
+            onClick={() => {
+              void handleToggleFullscreen()
+            }}
+          />
+        </div>
         {wallpaper.mode === 'uploaded-image' && wallpaper.imageDataUrl ? (
           <img
             src={wallpaper.imageDataUrl}

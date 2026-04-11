@@ -8,6 +8,9 @@ import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 
 const originalFetch = global.fetch
+const originalFullscreenElementDescriptor = Object.getOwnPropertyDescriptor(document, 'fullscreenElement')
+const originalExitFullscreenDescriptor = Object.getOwnPropertyDescriptor(document, 'exitFullscreen')
+const originalRequestFullscreenDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'requestFullscreen')
 const mockSpecialSettingsState = {
   settings: {
     enabled: true,
@@ -172,6 +175,10 @@ function finishBootSplash() {
 }
 
 describe('HomePage landing', () => {
+  let mockFullscreenElement: Element | null
+  let exitFullscreenMock: jest.Mock<Promise<void>, []>
+  let requestFullscreenMock: jest.Mock<Promise<void>, []>
+
   beforeEach(() => {
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserverMock }).ResizeObserver = ResizeObserverMock
@@ -190,6 +197,28 @@ describe('HomePage landing', () => {
     mockSpecialSettingsState.updateSettings.mockReset()
     mockReducedEffectsPreference.prefersReducedMotion = false
     mockReducedEffectsPreference.shouldReduceEffects = false
+    mockFullscreenElement = null
+    exitFullscreenMock = jest.fn(async () => {
+      mockFullscreenElement = null
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+    requestFullscreenMock = jest.fn(async function requestFullscreen(this: Element) {
+      mockFullscreenElement = this
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => mockFullscreenElement,
+    })
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: exitFullscreenMock,
+    })
+    Object.defineProperty(Element.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreenMock,
+    })
   })
 
   afterEach(() => {
@@ -197,6 +226,21 @@ describe('HomePage landing', () => {
     jest.clearAllTimers()
     jest.useRealTimers()
     ;(globalThis as { fetch?: typeof fetch }).fetch = originalFetch
+    if (originalFullscreenElementDescriptor) {
+      Object.defineProperty(document, 'fullscreenElement', originalFullscreenElementDescriptor)
+    } else {
+      delete (document as Document & { fullscreenElement?: Element | null }).fullscreenElement
+    }
+    if (originalExitFullscreenDescriptor) {
+      Object.defineProperty(document, 'exitFullscreen', originalExitFullscreenDescriptor)
+    } else {
+      delete (document as Document & { exitFullscreen?: () => Promise<void> }).exitFullscreen
+    }
+    if (originalRequestFullscreenDescriptor) {
+      Object.defineProperty(Element.prototype, 'requestFullscreen', originalRequestFullscreenDescriptor)
+    } else {
+      delete (Element.prototype as Element & { requestFullscreen?: () => Promise<void> }).requestFullscreen
+    }
   })
 
   it('shows the boot splash on first visit, then persists desktop session state', async () => {
@@ -289,6 +333,27 @@ describe('HomePage landing', () => {
     finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
+  })
+
+  it('renders a fullscreen toggle button on the desktop surface', async () => {
+    renderHome()
+    finishBootSplash()
+
+    expect(await screen.findByRole('button', { name: 'Enter browser fullscreen' })).toBeInTheDocument()
+  })
+
+  it('toggles browser fullscreen from the home desktop control', async () => {
+    renderHome()
+    finishBootSplash()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Enter browser fullscreen' }))
+    expect(requestFullscreenMock).toHaveBeenCalledTimes(1)
+    expect(requestFullscreenMock.mock.instances[0]).toBe(document.documentElement)
+    expect(await screen.findByRole('button', { name: 'Exit browser fullscreen' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exit browser fullscreen' }))
+    expect(exitFullscreenMock).toHaveBeenCalledTimes(1)
+    expect(await screen.findByRole('button', { name: 'Enter browser fullscreen' })).toBeInTheDocument()
   })
 
   it('opens the wallpaper context menu and routes its actions', async () => {

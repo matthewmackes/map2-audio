@@ -84,6 +84,36 @@
   background: #000;
 }
 
+.hp2-desktop__controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 70%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 78%, transparent);
+  color: var(--cds-icon-primary, #161616);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 24px color-mix(in srgb, black 22%, transparent);
+}
+
+.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:hover,
+.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
+  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 92%, var(--cds-link-primary, #0f62fe) 8%);
+}
+
+.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
 .hp2-desktop__wallpaper {
   position: absolute;
   inset: 0;
