@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Closed T845 after finishing the repo-wide aware-UTC migration sweep, then continued T863/T870 with deeper Snapshot Editor Carbon type/copy cleanup plus validated frontend rebuilds.
+Last updated: 2026-04-11 - Closed T845 after finishing the repo-wide aware-UTC migration sweep, then continued T863/T870 with another validated Snapshot Editor Carbon type/copy cleanup pass.
 
 ## Performance Brain
 
@@ -20149,7 +20149,7 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 14:18 EDT - Codex
+Last updated: 2026-04-11 16:55 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
@@ -20160,6 +20160,9 @@ Last updated: 2026-04-11 14:18 EDT - Codex
   - Extended the type-scale sweep into `web/src/app/pages/SnapshotEditorPage.css`, converting the live-chain summary, menu-rail headers, setlist menu copy, routing inspector labels, routing SVG labels, flow-card titles/badges/state controls, and snapshot status tempo/reference metadata from ad hoc `rem`/`px` sizes to Carbon label/body/heading tokens.
   - Current measured inventory after this Snapshot Editor pass: `web/src/app/pages/SnapshotEditorPage.css` is down from `165` to `143` non-token `font-size` declarations, but the repo-wide frontend inventory is still `1137` non-token `font-size` declarations across `web/src`, so the task remains open.
   - Validation for this Snapshot Editor type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the Snapshot Editor type sweep in the compact/mobile editor, selected MIDI inspector, browser plugin header, and snapshot summary surfaces by moving toolbar labels, section kickers, editor headings, MIDI metadata labels, tablet flow status pills, browser metadata, and snapshot action copy onto Carbon label/body/heading tokens.
+  - This follow-up removed another route-local patch of bespoke type sizing from `web/src/app/pages/SnapshotEditorPage.css`, but the task remains open because large parts of Snapshot Editor and several other frontend routes still use non-Carbon numeric `font-size` declarations.
+  - Validation for this follow-up Snapshot Editor type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20276,7 +20279,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 14:18 EDT - Codex
+Last updated: 2026-04-11 16:55 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20289,6 +20292,9 @@ Last updated: 2026-04-11 14:18 EDT - Codex
   - Extended the sentence-case sweep into `web/src/app/pages/SnapshotEditorPage.css`, removing forced uppercase/high-tracking treatment from live-chain labels, menu-rail eyebrows, setlist-menu eyebrows, routing inspector labels, routing diagram labels, flow-card titles/badges/actions, and snapshot status tempo/reference metadata so those touched sections now render sentence-case-first support copy instead of CSS-enforced all caps.
   - Current measured inventory after this Snapshot Editor pass: `web/src/app/pages/SnapshotEditorPage.css` is down from `43` to `30` `text-transform: uppercase` declarations, and the repo-wide frontend inventory is down from `197` to `176`, so the task remains open and the remaining hotspots are still concentrated in Snapshot Editor plus several MPX1/platform/card surfaces.
   - Validation for this Snapshot Editor writing-guideline slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the Snapshot Editor sentence-case sweep through the compact/mobile editor labels, selected MIDI panel headings/grid headers/field labels, tablet flow pills, browser plugin metadata, and snapshot action labels so those touched sections now stop forcing all-caps support copy through CSS.
+  - This follow-up reduced `web/src/app/pages/SnapshotEditorPage.css` from `30` to `19` `text-transform: uppercase` declarations, but the task remains open because uppercase styling is still concentrated in the remaining Snapshot Editor subsections and other route-local/frontend shell hotspots.
+  - Validation for this follow-up Snapshot Editor writing-guideline slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked

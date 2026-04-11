@@ -4117,10 +4117,8 @@
 }
 
 .juce-grid-page__toolbar-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -4157,14 +4155,12 @@
 .juce-grid-page__compact-section-kicker {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
-  letter-spacing: 0.16px;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__compact-section-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   line-height: 1.25;
 }
 
@@ -4291,16 +4287,14 @@
 
 .juce-grid-page__bottom-editor-kicker {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
-  letter-spacing: 0.16px;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__bottom-editor-heading,
 .juce-grid-page__tablet-editor-heading,
 .juce-grid-page__selected-block-placeholder-heading {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   line-height: 1.25;
   font-weight: 600;
 }
@@ -4313,7 +4307,7 @@
 
 .juce-grid-page__bottom-editor-subtitle {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__selected-block-nav {
@@ -4501,7 +4495,7 @@
 .juce-grid-page__selected-midi-empty p {
   margin: 0;
   color: var(--cds-text-secondary, #a8a8a8);
-  font-size: 0.75rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
 
@@ -4511,10 +4505,8 @@
   gap: 0.5rem;
   margin: 0;
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 0.75rem;
-  letter-spacing: 0.16px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__selected-midi-panel-title svg {
@@ -4550,9 +4542,7 @@
   padding: 0.75rem 0.875rem;
   background: var(--cds-layer, #161616);
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 0.75rem;
-  letter-spacing: 0.16px;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__selected-midi-grid-row {
@@ -4608,9 +4598,7 @@
 
 .juce-grid-page__selected-midi-eyebrow {
   color: var(--cds-text-helper, #8d8d8d);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__selected-midi-action-row,
@@ -4668,9 +4656,7 @@
 
 .juce-grid-page__selected-midi-form-grid span {
   color: var(--cds-text-helper, #8d8d8d);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .juce-grid-page__selected-midi-form-grid .cds--text-input,
@@ -4686,7 +4672,7 @@
 .juce-grid-page__selected-midi-feedback-note {
   align-items: flex-start;
   color: var(--cds-text-secondary, #a8a8a8);
-  font-size: 0.82rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
 
@@ -4886,10 +4872,8 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer-01, var(--surface-secondary));
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.6875rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__tablet-flow-status {
@@ -4900,10 +4884,8 @@
   padding: 0.25rem 0.7rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer-01, var(--surface-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -5317,16 +5299,14 @@
 
 .juce-grid-page__browser-plugin-kicker {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__browser-plugin-heading {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -5334,7 +5314,7 @@
 
 .juce-grid-page__browser-plugin-header p {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.4;
 }
 
@@ -5358,7 +5338,7 @@
 
 .juce-grid-page__empty-state-copy {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__snapshot-panel,
@@ -5392,7 +5372,7 @@
 .juce-grid-page__snapshot-copy span,
 .juce-grid-page__snapshot-description {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .juce-grid-page__snapshot-active-display {
@@ -5441,10 +5421,8 @@
 }
 
 .juce-grid-page__snapshot-action-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -5475,7 +5453,7 @@
   margin: 0;
   max-width: 48rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.925rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
 }
 
 .juce-grid-page__snapshot-compare-line {
