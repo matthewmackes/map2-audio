@@ -22094,7 +22094,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Fix wallpaper radio group — separate option selection from file picker trigger
     Description:
     - Goal / acceptance criteria: The "Uploaded image" radio option must follow the standard two-step pattern: (1) clicking the radio marks it `aria-checked="true"` and reveals a configuration area; (2) an explicit "Choose file…" button inside that area opens the file picker. The `wallpaperUploadInputRef.current?.click()` call must be removed from the radio's `onChange`/`onClick` handler. A user who selects the option and then cancels the file dialog must remain in the selected state with a "No file chosen" placeholder visible.
@@ -22104,7 +22104,14 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — restructure the wallpaper section radio handling so file-picker open is triggered by a button inside the selected option's expanded area, not by the radio change event. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-10 23:06 EDT - Codex
+    - Completion notes:
+      - Reworked the desktop wallpaper source selector in `web/src/app/pages/ThemePage.tsx` so choosing `Uploaded image` now selects the radio state first and reveals a separate `Choose file...` action, instead of firing the hidden file input directly from the radio click.
+      - Updated the wallpaper persistence layer in `web/src/app/pages/desktopWallpaper.ts` to preserve `uploaded-image` mode even before an image is chosen, which prevents the UI from silently snapping back to `default-image` after a cancelled file dialog.
+      - Added regression coverage in `web/src/app/pages/ThemePage.test.tsx` and `web/src/app/pages/desktopWallpaper.test.ts`, and guarded `web/src/app/pages/HomePage.tsx` so the desktop only renders an uploaded wallpaper `<img>` when a stored data URL actually exists.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/desktopWallpaper.test.ts src/app/pages/ThemePage.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
   - ID: T963-subC
     Status: [ ] Todo
     Title: Guard against silent draft-override loss on theme switch

@@ -18,8 +18,11 @@ export function normalizeDesktopWallpaperState(value: unknown): DesktopWallpaper
     if (mode === 'solid-theme') {
       return { version: 1, mode }
     }
-    if (mode === 'uploaded-image' && typeof value.imageDataUrl === 'string' && value.imageDataUrl.length > 0) {
-      return { version: 1, mode, imageDataUrl: value.imageDataUrl }
+    if (mode === 'uploaded-image') {
+      if (typeof value.imageDataUrl === 'string' && value.imageDataUrl.length > 0) {
+        return { version: 1, mode, imageDataUrl: value.imageDataUrl }
+      }
+      return { version: 1, mode }
     }
     if (mode === 'default-image') {
       return { version: 1, mode }

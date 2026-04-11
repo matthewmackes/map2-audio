@@ -60,22 +60,22 @@ describe('desktopWallpaper', () => {
       })
     })
 
-    it('falls back to default-image when uploaded-image has empty data URL', () => {
+    it('preserves uploaded-image mode when data URL is empty', () => {
       expect(normalizeDesktopWallpaperState({
         mode: 'uploaded-image',
         imageDataUrl: '',
       })).toEqual({
         version: 1,
-        mode: 'default-image',
+        mode: 'uploaded-image',
       })
     })
 
-    it('falls back to default-image when uploaded-image has no data URL', () => {
+    it('preserves uploaded-image mode when no data URL exists yet', () => {
       expect(normalizeDesktopWallpaperState({
         mode: 'uploaded-image',
       })).toEqual({
         version: 1,
-        mode: 'default-image',
+        mode: 'uploaded-image',
       })
     })
   })
@@ -118,6 +118,17 @@ describe('desktopWallpaper', () => {
         imageDataUrl: 'data:image/png;base64,abc',
       })
     })
+
+    it('reads uploaded-image selection without a stored file', () => {
+      window.localStorage.setItem(
+        HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
+        JSON.stringify({ version: 1, mode: 'uploaded-image' }),
+      )
+      expect(readDesktopWallpaperState()).toEqual({
+        version: 1,
+        mode: 'uploaded-image',
+      })
+    })
   })
 
   describe('writeDesktopWallpaperState', () => {
@@ -129,9 +140,9 @@ describe('desktopWallpaper', () => {
       expect(JSON.parse(raw)).toEqual({ version: 1, mode: 'solid-theme' })
     })
 
-    it('normalizes invalid uploaded-image on write', () => {
+    it('preserves uploaded-image mode on write before a file is chosen', () => {
       const result = writeDesktopWallpaperState({ version: 1, mode: 'uploaded-image' })
-      expect(result.mode).toBe('default-image')
+      expect(result).toEqual({ version: 1, mode: 'uploaded-image' })
     })
   })
 })
