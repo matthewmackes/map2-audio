@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1097** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1759** total commits | **3** stars | **0** forks | **0** open issues
+**1097** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1763** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dd85ac96`](https://github.com/matthewmackes/map2-audio/commit/dd85ac96fe459441b2243cc1e4cc3177e0e95073) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`c5d44a76`](https://github.com/matthewmackes/map2-audio/commit/c5d44a767d9dc6bfadb4d8d5a292e21ad87f1a85) | Refresh generated web version metadata | Map2 Audio | 2026-04-11 |
+| [`90e6e387`](https://github.com/matthewmackes/map2-audio/commit/90e6e387dd2cd129435f394b7bbc5bce23e27aff) | Advance flat radius token cleanup | Map2 Audio | 2026-04-11 |
+| [`140db0ac`](https://github.com/matthewmackes/map2-audio/commit/140db0ac8f796e61812582a29fd65c53b2089cd1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`c13edcca`](https://github.com/matthewmackes/map2-audio/commit/c13edccafb13f2d8d1820e5655bb048d7126a73d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`35984232`](https://github.com/matthewmackes/map2-audio/commit/35984232cdf4418a01a32c1c2d1273c3bd5c7be2) | Continue deployment UTC cleanup | Map2 Audio | 2026-04-11 |
 | [`d0c72575`](https://github.com/matthewmackes/map2-audio/commit/d0c72575a8d3250877ec3991b308d1568d244b45) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`4aece031`](https://github.com/matthewmackes/map2-audio/commit/4aece0310ce16cd682e35ac6c8f0cf71e4c155fb) | Finish flat shell overlay cleanup | Map2 Audio | 2026-04-11 |
-| [`e812102a`](https://github.com/matthewmackes/map2-audio/commit/e812102af4766119ffaf81e4e60377ba5c5a8f58) | Refresh generated web version metadata | Map2 Audio | 2026-04-11 |
-| [`de0e3b38`](https://github.com/matthewmackes/map2-audio/commit/de0e3b389e889e3fef0d23271cdffb319f72af02) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
-| [`893cb6ba`](https://github.com/matthewmackes/map2-audio/commit/893cb6bab074f896e5e448d82cad5f167ffd540f) | Restore Brain to workspace catalog | Map2 Audio | 2026-04-11 |
-| [`0d282361`](https://github.com/matthewmackes/map2-audio/commit/0d282361770afedff6d757ad61001234c33459cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
