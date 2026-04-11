@@ -1,17 +1,17 @@
-import { Accessibility, Checkmark, PaintBrush, Reset, Search, Settings } from '@carbon/icons-react'
+import { Accessibility, Checkmark, Loop, PaintBrush, Reset, Search, Settings } from '@carbon/icons-react'
 import {
   Button,
   InlineNotification,
   Modal,
-  RadioTile,
   Search as CarbonSearch,
   Tag,
   TextInput,
-  TileGroup,
   Toggle,
 } from '@carbon/react'
 import { type ChangeEvent, type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import AutoSizer from 'react-virtualized-auto-sizer'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { FixedSizeList, type ListChildComponentProps } from 'react-window'
 
 import { pluginsApi } from '@/map2/api'
 import type { Plugin, PluginAppearanceOverride } from '@/map2/types'
@@ -308,6 +308,31 @@ const PRESET_THEME_GROUPS: Array<{ label: string; tag: string; ids: string[] }> 
   },
 ]
 
+const PRESET_THEME_ROW_HEIGHT = 88
+const PRESET_THEME_LIST_MAX_HEIGHT = 352
+
+const THEME_PAGE_SECTION_IDS = {
+  library: 'theme-library',
+  preview: 'theme-preview',
+  colorScheme: 'theme-color-scheme',
+  font: 'theme-font',
+  tokenStudio: 'theme-token-studio',
+  appearanceAssets: 'theme-appearance-assets',
+  personalization: 'theme-personalization',
+  behavior: 'theme-behavior',
+} as const
+
+const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
+  { id: THEME_PAGE_SECTION_IDS.library, label: 'Library' },
+  { id: THEME_PAGE_SECTION_IDS.preview, label: 'Preview' },
+  { id: THEME_PAGE_SECTION_IDS.colorScheme, label: 'Color Scheme' },
+  { id: THEME_PAGE_SECTION_IDS.font, label: 'Font' },
+  { id: THEME_PAGE_SECTION_IDS.tokenStudio, label: 'Token Studio' },
+  { id: THEME_PAGE_SECTION_IDS.appearanceAssets, label: 'Appearance Assets' },
+  { id: THEME_PAGE_SECTION_IDS.personalization, label: 'Personalization' },
+  { id: THEME_PAGE_SECTION_IDS.behavior, label: 'Behavior' },
+]
+
 type PluginAppearanceEditorMode = 'categories' | 'plugins'
 type PluginSourceFilter = 'all' | 'lv2' | 'juce' | 'toobamp' | 'hardware'
 type ThemePreviewFocus = 'desktop' | 'inactive-window' | 'active-window' | 'message-box'
@@ -412,7 +437,10 @@ export function ThemePage() {
   const [desktopWallpaper, setDesktopWallpaper] = useState<DesktopWallpaperState>(() => readDesktopWallpaperState())
   const [wallpaperUploadError, setWallpaperUploadError] = useState<string | null>(null)
   const [pendingThemeSwitchId, setPendingThemeSwitchId] = useState<string | null>(null)
+  const [activeCategoryPicker, setActiveCategoryPicker] = useState<string | null>(null)
   const wallpaperUploadInputRef = useRef<HTMLInputElement | null>(null)
+  const activeSlotTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const activeCategoryTriggerRef = useRef<HTMLButtonElement | null>(null)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
     getCategoryColorOverrideSnapshot,
@@ -737,6 +765,20 @@ export function ThemePage() {
     setShowSpecialSettings(false)
   }
 
+  const closeActiveSlot = () => {
+    setActiveSlot(null)
+    activeSlotTriggerRef.current?.focus({ preventScroll: true })
+  }
+
+  const closeActiveCategoryPicker = () => {
+    setActiveCategoryPicker(null)
+    activeCategoryTriggerRef.current?.focus({ preventScroll: true })
+  }
+
+  const scrollToSection = (sectionId: string) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const activeThemeLabel = draftDirty ? draftName.trim() || draftTheme.name : theme.name
   const previewFocusLabel = (() => {
     switch (previewFocus) {
@@ -768,6 +810,19 @@ export function ThemePage() {
       </header>
 
       <section className="theme-page__desktop-dialog">
+        <nav className="theme-page__section-nav" aria-label="Theme sections">
+          {THEME_PAGE_SECTION_LINKS.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              className="theme-page__section-nav-link"
+              onClick={() => scrollToSection(section.id)}
+            >
+              {section.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="theme-page__desktop-titlebar">
           <div className="theme-page__desktop-titlecopy">
             <strong>Desktop Themes</strong>
@@ -792,7 +847,7 @@ export function ThemePage() {
 
         <div className="theme-page__desktop-main">
           <div className="theme-page__desktop-column theme-page__desktop-column--library">
-            <fieldset className="theme-page__dialog-group">
+            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.library}>
               <legend>Theme selection</legend>
               <div className="theme-page__catalog-grid">
                 <section className="theme-page__catalog-block">
@@ -836,33 +891,12 @@ export function ThemePage() {
                       <Tag type="teal" size="sm">{group.tag}</Tag>
                       <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
                     </div>
-                    <div className="theme-page__catalog-list">
-                      {group.ids.filter((pid) => builtInThemes[pid]).map((pid) => {
-                        const presetTheme = builtInThemes[pid]
-                        const active = !draftDirty && themeId === pid
-
-                        return (
-                          <button
-                            key={pid}
-                            type="button"
-                            className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                            onClick={() => requestThemeSelection(pid)}
-                            aria-pressed={active}
-                          >
-                            <span className="theme-page__catalog-item-copy">
-                              <strong>{presetTheme.name}</strong>
-                              <span>{presetTheme.description}</span>
-                            </span>
-                            <span className="theme-page__catalog-item-meta">
-                              <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
-                                {active ? 'Active' : carbonThemeLabel(presetTheme.carbonTheme)}
-                              </Tag>
-                              <ThemeSwatchStrip theme={presetTheme} />
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                    <ThemeCatalogVirtualList
+                      ids={group.ids.filter((pid) => builtInThemes[pid])}
+                      themeId={themeId}
+                      draftDirty={draftDirty}
+                      onSelect={requestThemeSelection}
+                    />
                   </section>
                 ))}
 
@@ -992,7 +1026,7 @@ export function ThemePage() {
           </div>
 
           <div className="theme-page__desktop-column theme-page__desktop-column--preview">
-            <fieldset className="theme-page__dialog-group theme-page__dialog-group--stretch">
+            <fieldset className="theme-page__dialog-group theme-page__dialog-group--stretch" id={THEME_PAGE_SECTION_IDS.preview}>
               <legend>Preview</legend>
               <div className="theme-page__dialog-head">
                 <div>
@@ -1023,7 +1057,7 @@ export function ThemePage() {
           </div>
 
           <div className="theme-page__desktop-column theme-page__desktop-column--options">
-            <fieldset className="theme-page__dialog-group">
+            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.colorScheme}>
               <legend>Color scheme</legend>
               <h2 className="theme-page__section-title">Scheme</h2>
               <p className="theme-page__section-copy">Choose the Carbon shell baseline used for the preview windows and routed chrome.</p>
@@ -1050,7 +1084,7 @@ export function ThemePage() {
               </div>
             </fieldset>
 
-            <fieldset className="theme-page__dialog-group">
+            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.font}>
               <legend>Accent family</legend>
               <h2 className="theme-page__section-title">Accent family</h2>
               <p className="theme-page__section-copy">Retain token-based color editing, but group the family choices like a dialog palette instead of launcher cards.</p>
@@ -1123,11 +1157,11 @@ export function ThemePage() {
               <p className="theme-page__section-copy">Focus the classic preview on the desktop scene, active window, inactive window, or message box.</p>
               <div className="theme-page__option-list" role="radiogroup" aria-label="Preview target">
                 {([
-                  ['desktop', 'Desktop'],
-                  ['inactive-window', 'Inactive window'],
-                  ['active-window', 'Active window'],
-                  ['message-box', 'Message box'],
-                ] as const).map(([id, label]) => {
+                  ['desktop', 'Desktop', 'Highlights the wallpaper scene, desktop icons, and overall shell backdrop.'],
+                  ['inactive-window', 'Inactive window', 'Shows the passive title bar and background window chrome.'],
+                  ['active-window', 'Active window', 'Focuses the primary route window, live title bar, and content panels.'],
+                  ['message-box', 'Message box', 'Targets alerts and confirmation prompts layered above the desktop.'],
+                ] as const).map(([id, label, description]) => {
                   const active = previewFocus === id
 
                   return (
@@ -1141,7 +1175,7 @@ export function ThemePage() {
                     >
                       <span className="theme-page__option-copy">
                         <strong>{label}</strong>
-                        <span>{active ? 'Highlighted in the preview pane.' : 'Click to highlight this area in the preview.'}</span>
+                        <span>{description}</span>
                       </span>
                       <span className="theme-page__option-status">
                         {active ? 'Selected' : 'Available'}
@@ -1178,7 +1212,7 @@ export function ThemePage() {
         </div>
 
         <div className="theme-page__desktop-lower-grid">
-          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.tokenStudio}>
             <legend>Theme tokens</legend>
             <div className="theme-page__dialog-head">
               <div>
@@ -1213,7 +1247,10 @@ export function ThemePage() {
                           <button
                             type="button"
                             className="theme-page__slot-button"
-                            onClick={() => setActiveSlot(open ? null : slot)}
+                            onClick={(event) => {
+                              activeSlotTriggerRef.current = event.currentTarget
+                              setActiveSlot(open ? null : slot)
+                            }}
                           >
                             <span
                               className="theme-page__slot-swatch"
@@ -1258,9 +1295,9 @@ export function ThemePage() {
                               onPick={(color) => {
                                 setDraftOverrides((current) => ({ ...current, [slot]: color }))
                                 setDraftDirty(true)
-                                setActiveSlot(null)
+                                closeActiveSlot()
                               }}
-                              onClose={() => setActiveSlot(null)}
+                              onClose={closeActiveSlot}
                             />
                           ) : null}
                         </div>
@@ -1272,7 +1309,7 @@ export function ThemePage() {
             </div>
           </fieldset>
 
-          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.appearanceAssets}>
             <legend>Appearance assets</legend>
             <div className="theme-page__dialog-head">
               <div>
@@ -1343,19 +1380,37 @@ export function ThemePage() {
                         </div>
 
                         <div className="theme-page__category-controls">
-                          <input
+                          <button
+                            type="button"
+                            className="theme-page__category-picker-button"
+                            aria-expanded={activeCategoryPicker === key}
                             aria-label={`${label} color`}
-                            className="theme-page__category-picker"
-                            type="color"
-                            value={config.color}
-                            onChange={(event) => {
-                              setCategoryColorOverride(key, event.target.value)
+                            onClick={(event) => {
+                              activeCategoryTriggerRef.current = event.currentTarget
+                              setActiveCategoryPicker(activeCategoryPicker === key ? null : key)
                             }}
-                          />
+                          >
+                            <span
+                              className="theme-page__category-picker-swatch"
+                              style={{ background: config.color }}
+                              aria-hidden="true"
+                            />
+                            <span className="theme-page__category-picker-copy">Choose from Carbon palette</span>
+                          </button>
                           <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
                             Reset
                           </Button>
                         </div>
+                        {activeCategoryPicker === key ? (
+                          <SlotPalettePicker
+                            currentValue={config.color}
+                            onPick={(color) => {
+                              setCategoryColorOverride(key, color)
+                              closeActiveCategoryPicker()
+                            }}
+                            onClose={closeActiveCategoryPicker}
+                          />
+                        ) : null}
                       </div>
                     )
                   })}
@@ -1504,7 +1559,7 @@ export function ThemePage() {
           </fieldset>
         </div>
 
-        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
+        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.personalization}>
           <legend>Desktop personalization</legend>
           <div className="theme-page__dialog-head">
             <div>
@@ -1614,7 +1669,7 @@ export function ThemePage() {
           </div>
         </fieldset>
 
-        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide">
+        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.behavior}>
           <legend>Behavior and accessibility</legend>
           <div className="theme-page__dialog-head">
             <div>
@@ -1652,7 +1707,7 @@ export function ThemePage() {
 
             <div className="theme-page__settings-row theme-page__settings-row--stacked">
               <div className="theme-page__motion-head">
-                <PaintBrush size={20} aria-hidden />
+                <Loop size={20} aria-hidden />
                 <div>
                   <strong>Page transition style</strong>
                   <p>Choose how supported shell routes animate. Reduced motion still forces the minimal fade.</p>
@@ -1723,18 +1778,20 @@ export function ThemePage() {
         <div className="theme-page__dialog-footer" role="status" aria-live="polite">
           <span>Auto-save active for presets, fonts, appearance assets, and behavior preferences.</span>
           <span>Preview target: {previewFocusLabel}</span>
-          <span>{draftOverrideCount} token edit{draftOverrideCount === 1 ? '' : 's'}</span>
-          <span>{overriddenCategoryCount + pluginOverrideCount} appearance override{overriddenCategoryCount + pluginOverrideCount === 1 ? '' : 's'}</span>
+          <button type="button" className="theme-page__footer-link" onClick={() => scrollToSection(THEME_PAGE_SECTION_IDS.tokenStudio)}>
+            {draftOverrideCount} token edit{draftOverrideCount === 1 ? '' : 's'}
+          </button>
+          <button type="button" className="theme-page__footer-link" onClick={() => scrollToSection(THEME_PAGE_SECTION_IDS.appearanceAssets)}>
+            {overriddenCategoryCount + pluginOverrideCount} appearance override{overriddenCategoryCount + pluginOverrideCount === 1 ? '' : 's'}
+          </button>
         </div>
       </section>
     </>
   )
-  const desktopThemeWorkspace = null
 
   return (
     <section className="theme-page">
       {desktopThemeDialog}
-      {desktopThemeWorkspace}
 
       <SpecialSettingsDialog
         isOpen={showSpecialSettings}
@@ -1946,80 +2003,6 @@ function ThemeDesktopPreview({
   )
 }
 
-function ThemeDeckPreview({ theme, compact = false }: { theme: Theme; compact?: boolean }) {
-  return (
-    <div
-      className={`theme-page__preview-window ${compact ? 'theme-page__preview-window--compact' : ''}`}
-      style={{
-        background: theme.colors.bg,
-        borderColor: theme.colors.border,
-        boxShadow: `0 18px 44px ${theme.colors['shadow-soft']}`,
-      }}
-    >
-      <div
-        className="theme-page__preview-bar"
-        style={{
-          background: theme.colors.surface,
-          borderBottomColor: theme.colors.border,
-        }}
-      >
-        <span className="theme-page__preview-dot" style={{ background: theme.colors.primary }} />
-        <span className="theme-page__preview-dot" style={{ background: theme.colors.accent }} />
-        <span className="theme-page__preview-dot" style={{ background: theme.colors.success }} />
-      </div>
-
-      <div className="theme-page__preview-body">
-        <div className="theme-page__preview-stack">
-          <div
-            className="theme-page__preview-block theme-page__preview-block--primary"
-            style={{
-              background: theme.colors.surface,
-              borderColor: theme.colors.border,
-            }}
-          />
-          <div
-            className="theme-page__preview-block"
-            style={{
-              background: theme.colors['surface-2'],
-              borderColor: theme.colors.border,
-            }}
-          />
-        </div>
-
-        <div
-          className="theme-page__preview-accent"
-          style={{
-            background: `linear-gradient(135deg, ${theme.colors.primary}26 0%, ${theme.colors.accent}24 100%)`,
-            borderColor: theme.colors.border,
-          }}
-        >
-          <span style={{ color: theme.colors['text-primary'] }}>Signal path</span>
-          <div className="theme-page__preview-pill-row">
-            <span
-              className="theme-page__preview-pill"
-              style={{
-                background: theme.colors.primary,
-                color: theme.colors['text-inverse'],
-              }}
-            >
-              Live
-            </span>
-            <span
-              className="theme-page__preview-pill theme-page__preview-pill--ghost"
-              style={{
-                borderColor: theme.colors['border-strong'],
-                color: theme.colors.accent,
-              }}
-            >
-              Preview
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 interface SlotPalettePickerProps {
   currentValue: string
   onPick: (color: string) => void
@@ -2027,6 +2010,7 @@ interface SlotPalettePickerProps {
 }
 
 function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerProps) {
+  const pickerRef = useRef<HTMLDivElement | null>(null)
   const [selectedFamilyId, setSelectedFamilyId] = useState(() => {
     for (const family of CARBON_COLOR_FAMILIES) {
       if (Object.values(family.shades).includes(currentValue)) {
@@ -2039,8 +2023,13 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
 
   const family = CARBON_FAMILY_BY_ID[selectedFamilyId]
 
+  useEffect(() => {
+    const firstFamilyButton = pickerRef.current?.querySelector<HTMLButtonElement>('.theme-page__picker-family')
+    firstFamilyButton?.focus({ preventScroll: true })
+  }, [])
+
   return (
-    <div className="theme-page__picker">
+    <div ref={pickerRef} className="theme-page__picker">
       <div className="theme-page__picker-families" role="radiogroup" aria-label="Color family">
         {CARBON_COLOR_FAMILIES.map((entry) => (
           <button
@@ -2092,6 +2081,76 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
           Close
         </Button>
       </div>
+    </div>
+  )
+}
+
+function ThemeCatalogVirtualList({
+  ids,
+  themeId,
+  draftDirty,
+  onSelect,
+}: {
+  ids: string[]
+  themeId: string
+  draftDirty: boolean
+  onSelect: (themeId: string) => void
+}) {
+  const height = Math.min(ids.length * PRESET_THEME_ROW_HEIGHT, PRESET_THEME_LIST_MAX_HEIGHT)
+
+  return (
+    <div className="theme-page__catalog-list theme-page__catalog-list--virtualized" style={{ height }}>
+      <AutoSizer defaultWidth={320} defaultHeight={height}>
+        {({ width, height: autoHeight }) => (
+          <FixedSizeList
+            width={width || 320}
+            height={autoHeight || height}
+            itemCount={ids.length}
+            itemSize={PRESET_THEME_ROW_HEIGHT}
+            overscanCount={4}
+            itemData={{ ids, themeId, draftDirty, onSelect }}
+          >
+            {PresetThemeRow}
+          </FixedSizeList>
+        )}
+      </AutoSizer>
+    </div>
+  )
+}
+
+function PresetThemeRow({
+  index,
+  style,
+  data,
+}: ListChildComponentProps<{
+  ids: string[]
+  themeId: string
+  draftDirty: boolean
+  onSelect: (themeId: string) => void
+}>) {
+  const presetThemeId = data.ids[index]
+  const presetTheme = builtInThemes[presetThemeId]
+  const active = !data.draftDirty && data.themeId === presetThemeId
+
+  return (
+    <div style={style} className="theme-page__catalog-row-virtual">
+      <button
+        type="button"
+        className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+        onClick={() => data.onSelect(presetThemeId)}
+        aria-pressed={active}
+      >
+        <span className="theme-page__catalog-item-copy">
+          <strong>{presetTheme.name}</strong>
+          <span>{presetTheme.description}</span>
+        </span>
+        <span className="theme-page__catalog-item-meta">
+          <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
+            {active ? 'Active' : carbonThemeLabel(presetTheme.carbonTheme)}
+          </Tag>
+          <ThemeSwatchStrip theme={presetTheme} />
+        </span>
+      </button>
     </div>
   )
 }
