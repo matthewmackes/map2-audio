@@ -668,15 +668,18 @@ class ClusterMetricsCollector:
 
 class MetricsManager(Singleton):
     """Central manager for Prometheus metrics."""
-    
-    _instance: Optional['MetricsManager'] = None
-    
+
     def __new__(cls):
-        """Singleton pattern."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
+        """Singleton pattern wired through the shared registry/lock."""
+        if cls in Singleton._instances:
+            return Singleton._instances[cls]
+
+        with Singleton._lock:
+            if cls not in Singleton._instances:
+                instance = super().__new__(cls)
+                instance._initialized = False
+                Singleton._instances[cls] = instance
+            return Singleton._instances[cls]
     
     def __init__(self):
         """Initialize metrics manager."""

@@ -28,6 +28,8 @@ import logging
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +47,7 @@ class ServiceStatus:
             self.metrics = {}
 
 
-class UnifiedServices:
+class UnifiedServices(Singleton):
     """
     Unified access point for all MAP2 services.
 
@@ -58,19 +60,10 @@ class UnifiedServices:
     Delegates to ServiceOrchestrator for lifecycle and ServiceManager for instances.
     """
 
-    _instance: Optional['UnifiedServices'] = None
-
     def __init__(self):
         self._initialized = False
         self._service_manager = None
         self._orchestrator = None
-
-    @classmethod
-    def get_instance(cls) -> 'UnifiedServices':
-        """Get singleton instance."""
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
 
     def _ensure_initialized(self):
         """Lazy initialization of underlying services."""

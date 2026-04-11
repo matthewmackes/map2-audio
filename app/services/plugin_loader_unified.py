@@ -28,6 +28,8 @@ from enum import Enum
 from pathlib import Path
 import os
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 # Try to import lilv
@@ -293,9 +295,6 @@ class UnifiedPluginLoader:
     - Full LV2 spec compliance
     """
 
-    # Singleton instance
-    _instance: Optional['UnifiedPluginLoader'] = None
-
     # Cache configuration
     CACHE_DIR = Path.home() / ".cache" / "map2"
     CACHE_FILE = Path.home() / ".cache" / "map2" / "plugins_unified.json"
@@ -334,10 +333,14 @@ class UnifiedPluginLoader:
 
     @classmethod
     def get_instance(cls) -> 'UnifiedPluginLoader':
-        """Get singleton instance."""
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+        """Get singleton instance using the shared registry/lock pattern."""
+        if cls in Singleton._instances:
+            return Singleton._instances[cls]  # type: ignore[return-value]
+
+        with Singleton._lock:
+            if cls not in Singleton._instances:
+                Singleton._instances[cls] = cls()
+            return Singleton._instances[cls]  # type: ignore[return-value]
 
     def refresh_lilv_world(self):
         """Refresh the lilv world to detect newly installed/removed plugins."""

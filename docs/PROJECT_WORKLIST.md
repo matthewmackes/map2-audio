@@ -19568,7 +19568,7 @@ Last updated: 2026-04-11 13:31 EDT - Codex
   - Validation for the deployment-config UTC slice is green: `pytest -q tests/test_atomic_config_writes.py tests/test_observability_policy.py` -> PASS (`8 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/deployment/deployment.py tests/test_atomic_config_writes.py` -> PASS.
 
 ID: T846
-Status: [>] In Progress
+Status: [✓] Done
 Title: Unify singleton factories across all backend modules
 Description:
 - Goal / acceptance criteria: All singleton factories use consistent thread-safe pattern. No bare `if _instance is None` patterns.
@@ -19578,7 +19578,7 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 13:31 EDT - Codex
+Last updated: 2026-04-11 11:39 EDT - Codex
 - Progress notes:
   - Execution policy selected: only true process-wide singletons should use the shared singleton/getter pattern. Keyed constructors and parameterized object producers should be reclassified as explicit caches/managers where appropriate instead of being forced into a singleton shape.
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
@@ -19661,6 +19661,15 @@ Last updated: 2026-04-11 13:31 EDT - Codex
   - Validation for the singleton bundle is green: `pytest -q tests/test_snapshot_tempo_service.py tests/test_maschine_lcd_service.py tests/test_service_singletons.py tests/test_nam_models_routes.py` -> PASS (`13 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_tempo_service.py app/services/maschine_lcd_service.py app/services/service_manager.py app/services/nam_library.py tests/test_snapshot_tempo_service.py tests/test_maschine_lcd_service.py tests/test_service_singletons.py` -> PASS.
   - Landed the next low-risk singleton bundle by promoting `ApiObservatoryService`, `OpenApiSchemaSyncService`, and `TesiraDesignWorkspaceService` onto the shared singleton path and replacing the remaining direct singleton-global resets with reset helpers plus focused identity coverage.
   - Validation for the singleton bundle is green enough to ship: `pytest -q tests/test_backend_singletons_round2.py tests/test_openapi_schema_sync.py tests/tesira/test_design_workspace_service.py tests/test_api_observatory.py -k 'not websocket_events_are_captured_with_run_id'` -> PASS (`15 passed, 1 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/api_observatory.py app/services/openapi_schema_sync.py app/services/tesira/tesira_design_workspace.py tests/test_backend_singletons_round2.py tests/test_api_observatory.py` -> PASS. The isolated websocket observatory integration test currently hangs in this environment and remains a separate validation caveat rather than a known failure in the touched singleton code.
+  - Closed the remaining bespoke core-factory gap in this slice by moving `UnifiedServices`, `ServiceOrchestrator`, and `UnifiedPluginLoader` onto the shared singleton registry/lock path and by rewriting `MetricsManager.__new__()` to use the same registry while preserving direct `MetricsManager()` call semantics.
+  - Added focused regression coverage in `tests/test_singleton_factory_consistency.py` and updated `tests/test_observability_policy.py` to reset `MetricsManager` through the shared singleton registry instead of the removed class-local `_instance`.
+- Completion notes:
+  - Core backend singleton factories now use one consistent shared registry/lock pattern across the active process-wide service inventory, including the remaining façade/orchestrator/plugin-loader/metrics manager outliers.
+  - Keyed and parameterized constructors remain intentionally outside this task’s scope under the documented policy; they are explicit caches/managers rather than singleton bugs.
+- Validation:
+  - `pytest -q tests/test_singleton_factory_consistency.py tests/test_service_singletons.py tests/test_observability_policy.py` -> PASS (`8 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/unified_services.py app/services/service_orchestrator.py app/services/plugin_loader_unified.py app/services/cluster/prometheus_exporter.py tests/test_singleton_factory_consistency.py tests/test_observability_policy.py` -> PASS
+  - `rg -n "if cls\\._instance is None|_instance: Optional\\['(UnifiedServices|ServiceOrchestrator|UnifiedPluginLoader|MetricsManager)'\\]|cls\\._instance = cls\\(|_instance = None" app/services/unified_services.py app/services/service_orchestrator.py app/services/plugin_loader_unified.py app/services/cluster/prometheus_exporter.py` -> PASS (no matches)
 
 ID: T847
 Status: [✓] Done

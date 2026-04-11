@@ -22,6 +22,7 @@ from pathlib import Path
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.platform_checks import validate_platform, get_platform_status
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -91,14 +92,13 @@ class ServiceStatus:
     pid: Optional[int] = None
 
 
-class ServiceOrchestrator:
+class ServiceOrchestrator(Singleton):
     """
     Centralized service orchestrator for MAP2 Audio Platform.
 
     Manages lifecycle, dependencies, and health of all platform services.
     """
 
-    _instance: Optional['ServiceOrchestrator'] = None
     _TRAFFIC_GATE_SERVICES = ("database", "command_queue", "websocket_manager")
     _JUCE_HEALTH_TIMEOUT_SECONDS = 0.05
 
@@ -117,13 +117,6 @@ class ServiceOrchestrator:
 
         # Register all services
         self._register_all_services()
-
-    @classmethod
-    def get_instance(cls) -> 'ServiceOrchestrator':
-        """Get singleton instance."""
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
 
     def _register_all_services(self):
         """Register all platform services with their definitions."""

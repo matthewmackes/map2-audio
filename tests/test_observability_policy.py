@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.deployment.deployment import DeploymentConfig, DeploymentMode
 from app.routes import metrics as metrics_routes
 from app.services.cluster.prometheus_exporter import MetricsManager
+from app.utils.singleton import Singleton
 
 
 class _FakeCollector:
@@ -53,7 +54,7 @@ def test_prometheus_route_returns_text_plain_payload(monkeypatch):
 
 
 def test_cluster_metrics_manager_exports_collected_metrics():
-    MetricsManager._instance = None
+    Singleton._instances.pop(MetricsManager, None)
     manager = MetricsManager()
     manager.set_data_providers(
         get_node_data=lambda: [
