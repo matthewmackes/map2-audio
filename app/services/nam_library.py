@@ -8,12 +8,13 @@ Provides persistence layer for model metadata and library operations.
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from sqlalchemy import Column, String, Integer, JSON, DateTime, create_engine, inspect
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
 from app.database import RetryingSession
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,8 @@ class NAMModelRecord(Base):
     file_hash = Column(String(64), unique=True, nullable=True)
     file_size_bytes = Column(Integer, default=0)
     model_metadata = Column(JSON, default={})  # Renamed from 'metadata' to avoid SQLAlchemy reserved name
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    uploaded_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -255,7 +256,7 @@ class NAMLibraryService:
                     if hasattr(record, key):
                         setattr(record, key, value)
                 
-                record.updated_at = datetime.utcnow()
+                record.updated_at = utc_now()
                 session.commit()
                 session.refresh(record)
                 
@@ -373,24 +374,27 @@ class NAMLibraryService:
             session.close()
 
 
-# Singleton instance
-_nam_library_service: Optional[NAMLibraryService] = None
-
-
 def get_nam_library_service() -> NAMLibraryService:
     """Get or create NAM library service instance."""
-    global _nam_library_service
-    if _nam_library_service is None:
-        # Create library directory
-        lib_dir = Path("/var/lib/map2")
-        lib_dir.mkdir(parents=True, exist_ok=True)
-        
-        _nam_library_service = NAMLibraryService()
-    return _nam_library_service
+    if NAMLibraryService in Singleton._instances:
+        return Singleton._instances[NAMLibraryService]  # type: ignore[return-value]
+
+    with Singleton._lock:
+        if NAMLibraryService not in Singleton._instances:
+            lib_dir = Path("/var/lib/map2")
+            lib_dir.mkdir(parents=True, exist_ok=True)
+            Singleton._instances[NAMLibraryService] = NAMLibraryService()
+        return Singleton._instances[NAMLibraryService]  # type: ignore[return-value]
 
 
 def initialize_nam_library(database_url: str = "sqlite:////var/lib/map2/nam.db") -> NAMLibraryService:
     """Initialize NAM library service."""
-    global _nam_library_service
-    _nam_library_service = NAMLibraryService(database_url)
-    return _nam_library_service
+    with Singleton._lock:
+        Singleton._instances[NAMLibraryService] = NAMLibraryService(database_url)
+        return Singleton._instances[NAMLibraryService]  # type: ignore[return-value]
+
+
+def reset_nam_library_service() -> None:
+    """Reset the NAM library singleton."""
+    with Singleton._lock:
+        Singleton._instances.pop(NAMLibraryService, None)

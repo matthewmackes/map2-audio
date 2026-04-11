@@ -29,6 +29,7 @@ from typing import Optional, Dict, List
 from pathlib import Path
 from .audio_io_v2 import AudioIOFactory, RealAudioIOManager
 from .plugin_loader_unified import get_plugin_loader, UnifiedPluginLoader
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +41,9 @@ warnings.warn(
 )
 
 
-class ServiceManager:
+class ServiceManager(Singleton):
     """Singleton manager for all MAP2 services."""
 
-    _instance: Optional['ServiceManager'] = None
     _initialized = False
 
     def __init__(self):
@@ -59,10 +59,15 @@ class ServiceManager:
     @classmethod
     def get_instance(cls) -> 'ServiceManager':
         """Get singleton instance of service manager."""
-        if cls._instance is None:
-            cls._instance = cls()
-            cls._instance._initialize()
-        return cls._instance
+        if cls in cls._instances:
+            return cls._instances[cls]  # type: ignore[return-value]
+
+        with cls._lock:
+            if cls not in cls._instances:
+                instance = cls()
+                instance._initialize()
+                cls._instances[cls] = instance
+            return cls._instances[cls]  # type: ignore[return-value]
 
     def _initialize(self):
         """Initialize all services."""
@@ -368,16 +373,14 @@ class ServiceManager:
             return {"success": False, "error": str(e)}
 
 
-# Global singleton instance
-_service_manager: Optional[ServiceManager] = None
-
-
 def get_service_manager() -> ServiceManager:
     """Get global service manager instance."""
-    global _service_manager
-    if _service_manager is None:
-        _service_manager = ServiceManager.get_instance()
-    return _service_manager
+    return ServiceManager.get_instance()
+
+
+def reset_service_manager() -> None:
+    """Reset the global service manager singleton."""
+    ServiceManager.reset_instance()
 
 
 # Convenience functions
