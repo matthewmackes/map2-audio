@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the outstanding frontend/release stream by refreshing the generated web build version metadata after the shipped shell/catalog frontend slices, leaving the worktree clean for the next pass.
+Last updated: 2026-04-11 - Continued the outstanding frontend/release stream with one more `T875` shell slice, flattening the remaining restart-overlay shadows and refreshing the generated web version metadata from the validated build.
 
 ## Performance Brain
 
@@ -20347,6 +20347,7 @@ Last updated: 2026-04-11 10:59 EDT - Codex
   - This task depends on blocked `T856`, and completion is blocked because the remaining shadows are not just cosmetic leftovers: they are bound up with unresolved legacy shell chrome, route-specific visual systems, and custom widget affordances that still need broader Carbon migration decisions.
   - Opened a bounded shell-only slice and removed the remaining non-focus `box-shadow` treatments from `web/src/app/layout/AppShell.css`, flattening the window chrome, taskbar, launcher panel, Start Menu, power menu, and shell modal wrappers without changing route wiring or interaction logic.
   - Validation for the shell shadow-removal slice is green: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS (`13 tests`) and `npm --prefix web run build` -> PASS.
+  - Followed the main shell sweep with a final restart-overlay slice in `web/src/app/layout/AppShell.css`, removing the remaining non-focus `box-shadow` treatments from the reconnect/restart overlay card, steps, and marker affordances so the overlay no longer reintroduces legacy shell elevation.
 
 ## TUI Carbon Compliance
 
@@ -22422,8 +22423,9 @@ Description:
 - Required outputs: Updated `VERSION`, updated `version.json`, and worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 11:11 EDT - Codex
+Last updated: 2026-04-11 11:14 EDT - Codex
 - Completion notes:
   - Persisted the generated build version files from the validated frontend ship path so the repository version metadata now reflects the current web build timestamp emitted by `scripts/generate_platform_version.py`.
+  - Refreshed the generated version metadata once more after the final shell-overlay shadow slice so the committed repo state matches the latest validated frontend build timestamp.
 - Validation:
   - Generated during `npm --prefix web run build` -> PASS
