@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued T863/T870 with another validated Snapshot Editor Carbon copy/type cleanup pass after the repo-wide UTC migration closure.
+Last updated: 2026-04-11 - Continued T870/T863 with two more validated Snapshot Editor copy/type cleanup passes, leaving only value-like uppercase affordances in the touched file.
 
 ## Performance Brain
 
@@ -20149,7 +20149,7 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 17:08 EDT - Codex
+Last updated: 2026-04-11 17:11 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
@@ -20166,6 +20166,9 @@ Last updated: 2026-04-11 17:08 EDT - Codex
   - Continued the Snapshot Editor type normalization through assignment cards, dense MIDI sections, port summaries, parameter-editor metadata, and audio-nodes modal support copy by moving another bounded set of headings/body labels onto Carbon label/body/heading tokens.
   - This follow-up kept the route on Carbon-backed tokens in another support-copy slice, but the measurable non-token `font-size` inventory still remains concentrated in fit-sensitive signal-canvas, parameter, and mobile status surfaces, so the task stays open.
   - Validation for this support-copy type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the same file with a narrow signal/mobile label normalization pass, moving the touched routing-panel label onto a Carbon label token while keeping the remaining fit-sensitive signal-canvas sizing unchanged.
+  - This pass intentionally prioritized copy correctness over a risky layout-scale change in the tiny signal/plugin/mobile chip affordances, so `T863` remains open with most residual non-token sizing still concentrated in those fit-sensitive subsections.
+  - Validation for this signal/mobile label follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20282,7 +20285,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 17:08 EDT - Codex
+Last updated: 2026-04-11 17:11 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20301,6 +20304,9 @@ Last updated: 2026-04-11 17:08 EDT - Codex
   - Continued the Snapshot Editor sentence-case pass through assignment cards, dense MIDI section headers, port/parameter support labels, audio-nodes modal section copy, and version-history metadata so those touched support-copy surfaces stop forcing all-caps through CSS.
   - This follow-up reduced `web/src/app/pages/SnapshotEditorPage.css` from `19` to `13` `text-transform: uppercase` declarations, but the task remains open because the remaining uppercase styling is now concentrated in fit-sensitive signal-canvas, plugin-card, and mobile chip subsections.
   - Validation for this support-copy writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the Snapshot Editor sentence-case pass through the remaining routing-panel, signal-rail, signal-terminal, signal-plugin, parameter-channel-pill, and live-path-mobile chip labels, removing forced all-caps/high-tracking treatment from the touched signal/mobile copy while preserving the two value-like uppercase affordances that still convey MIDI note/plugin action state.
+  - This follow-up reduced `web/src/app/pages/SnapshotEditorPage.css` from `13` to `2` `text-transform: uppercase` declarations; the task remains open because uppercase styling still exists elsewhere in the repo and the two remaining declarations in this file are intentionally left on value-like surfaces for now.
+  - Validation for this signal/mobile writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
 Status: [✗] Blocked

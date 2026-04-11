@@ -1429,10 +1429,8 @@
 }
 
 .juce-grid-page__routing-panel-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -6131,8 +6129,6 @@
 .juce-grid-page__signal-rail-label {
   font-size: 0.675rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: var(--cds-text-primary, var(--text));
   white-space: nowrap;
 }
@@ -6193,8 +6189,6 @@
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -6260,8 +6254,6 @@
 .juce-grid-page__signal-rail-group-heading {
   font-size: 0.55rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__signal-rail-group-summary {
@@ -6336,8 +6328,6 @@
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.6rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__signal-endpoint-copy p,
@@ -6477,9 +6467,7 @@
 .juce-grid-page__signal-terminal-heading {
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
   line-height: 1;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -6557,8 +6545,6 @@
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__signal-flow-line--vertical {
@@ -6795,9 +6781,7 @@
   color: color-mix(in srgb, var(--juce-grid-signal-accent) 74%, var(--cds-text-primary, #f4f4f4));
   font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__signal-plugin-title {
@@ -6828,9 +6812,7 @@
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__signal-plugin-actions {
@@ -7211,8 +7193,6 @@
   color: var(--cds-text-on-color, #ffffff);
   font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .juce-grid-page__parameter-editor-groups {
@@ -8120,9 +8100,7 @@
     color: var(--cds-text-primary, var(--text));
     font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
     text-align: center;
-    text-transform: uppercase;
   }
 
   .juce-grid-page__live-path-mobile-chip.is-live {
