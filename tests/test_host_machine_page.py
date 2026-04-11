@@ -5,6 +5,7 @@ Tests the 4 main endpoints: host-machine-info, disk-health, health-overview, bra
 
 import pytest
 import asyncio
+from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock, AsyncMock
 from app.routes.system import (
     router,
@@ -95,6 +96,9 @@ class TestDiskHealthEndpoint:
         assert 'total_storage_gb' in result
         assert 'total_used_gb' in result
         assert 'overall_health' in result
+        parsed = datetime.fromisoformat(result["last_updated"])
+        assert parsed.tzinfo is not None
+        assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
         
         # Health status should be valid
         assert result['overall_health'] in ['excellent', 'good', 'warning', 'critical']
@@ -178,6 +182,9 @@ class TestHealthOverviewEndpoint:
         assert 'power' in result
         assert 'overall_health' in result
         assert 'health_details' in result
+        parsed = datetime.fromisoformat(result["last_updated"])
+        assert parsed.tzinfo is not None
+        assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
         
         # Health should be valid
         assert result['overall_health'] in ['excellent', 'good', 'warning', 'critical']

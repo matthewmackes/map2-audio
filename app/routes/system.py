@@ -15,11 +15,13 @@ import time
 import multiprocessing
 import re
 import json
+import copy
 from pathlib import Path
 from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException
 
 from app.middleware.rate_limiting import get_rate_limiting_enabled, set_rate_limiting_enabled
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,10 @@ _core_config_loaded = False
 _core_config_file = os.getenv("MAP2_CORE_CONFIG_FILE", "/tmp/map2_core_config_state.json")
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DOCS_ROOT = _REPO_ROOT / "docs"
+_HOST_MACHINE_INFO_CACHE: Dict[str, Any] | None = None
+_HOST_MACHINE_INFO_CACHE_AT = 0.0
+_HOST_MACHINE_INFO_CACHE_TTL_SECONDS = 300.0
+_BRANDING_ASSETS_CACHE: Dict[str, Any] | None = None
 
 
 def _humanize_doc_token(token: str) -> str:
@@ -1847,6 +1853,15 @@ async def get_host_machine_info():
               CPU, RAM, motherboard, and system identifiers
     """
     try:
+        global _HOST_MACHINE_INFO_CACHE
+        global _HOST_MACHINE_INFO_CACHE_AT
+
+        if (
+            _HOST_MACHINE_INFO_CACHE is not None
+            and (time.time() - _HOST_MACHINE_INFO_CACHE_AT) < _HOST_MACHINE_INFO_CACHE_TTL_SECONDS
+        ):
+            return copy.deepcopy(_HOST_MACHINE_INFO_CACHE)
+
         import platform
         import socket
 
@@ -1974,7 +1989,7 @@ async def get_host_machine_info():
         kernel_version = platform.release()
         os_version = _read_os_version()
         
-        return {
+        result = {
             "manufacturer": manufacturer,
             "product_name": product_name.strip(),
             "serial_number": serial_number.strip(),
@@ -1993,6 +2008,9 @@ async def get_host_machine_info():
             "kernel_version": kernel_version,
             "os_version": os_version,
         }
+        _HOST_MACHINE_INFO_CACHE = copy.deepcopy(result)
+        _HOST_MACHINE_INFO_CACHE_AT = time.time()
+        return result
         
     except Exception as e:
         logger.error(f"Error getting host machine info: {e}")
@@ -2009,8 +2027,6 @@ async def get_disk_health():
               SMART status, and estimated lifespan
     """
     try:
-        from datetime import datetime
-        
         disks = []
         smart_data = []
         total_storage_gb = 0.0
@@ -2051,6 +2067,8 @@ async def get_disk_health():
                     temp_match = re.search(r'(\d+)\s*°?C?', temp_output)
                     if temp_match:
                         temperature_c = int(temp_match.group(1))
+                        if temperature_c < 0 or temperature_c > 120:
+                            temperature_c = None
             except Exception:
                 pass
             
@@ -2165,7 +2183,7 @@ async def get_disk_health():
             "total_storage_gb": round(total_storage_gb, 1),
             "total_used_gb": round(total_used_gb, 1),
             "overall_health": overall_health,
-            "last_updated": datetime.now().isoformat(),
+            "last_updated": utc_now().isoformat(),
         }
         
     except Exception as e:
@@ -2182,8 +2200,6 @@ async def get_health_overview():
         dict: Overall health status with temperature, fan, and power info
     """
     try:
-        from datetime import datetime
-        
         # Get system temperatures using lm-sensors or fallback
         cpu_temp = None
         max_temp = None
@@ -2237,11 +2253,11 @@ async def get_health_overview():
                                 fans.append({
                                     "name": name,
                                     "rpm": rpm,
-                                    "status": "ok" if rpm > 0 else "error",
+                                    "status": "normal" if rpm > 500 else ("slow" if rpm > 0 else "stopped"),
                                 })
         except Exception:
             # Default fan status
-            fans = [{"name": "System Fan", "rpm": 2000, "status": "ok"}]
+            fans = [{"name": "System Fan", "rpm": 2000, "status": "normal"}]
         
         # Get power status
         power_voltage = None
@@ -2259,6 +2275,7 @@ async def get_health_overview():
         # Default power values
         if power_voltage is None:
             power_voltage = 12.0  # Typical PSU voltage
+        power_status = "connected" if power_voltage > 0 else "unknown"
         
         # Get CPU and memory usage
         import psutil
@@ -2274,13 +2291,29 @@ async def get_health_overview():
         else:
             overall_health = "excellent" if max_temp < 60 else "good"
 
+        fan_status = "unknown"
+        if fans:
+            if any(fan.get("status") == "stopped" for fan in fans):
+                fan_status = "stopped"
+            elif any(fan.get("status") == "slow" for fan in fans):
+                fan_status = "slow"
+            elif all(fan.get("status") == "normal" for fan in fans):
+                fan_status = "normal"
+
+        if max_temp >= 80:
+            temperature_status = "critical"
+        elif max_temp >= 70:
+            temperature_status = "warning"
+        else:
+            temperature_status = "normal"
+
         return {
             "overall_health": overall_health,
             "cpu_temp_celsius": round(cpu_temp, 1),
             "max_temp_celsius": round(max_temp, 1),
             "cpu_usage_percent": round(cpu_usage, 1),
             "memory_usage_percent": round(memory_usage, 1),
-            "last_updated": datetime.now().isoformat(),
+            "last_updated": utc_now().isoformat(),
             "temperature": {
                 "cpu_c": round(cpu_temp, 1),
                 "max_c": round(max_temp, 1),
@@ -2288,9 +2321,15 @@ async def get_health_overview():
             },
             "power": {
                 "input_voltage": round(power_voltage, 1),
+                "power_status": power_status,
                 "current_load_percent": power_load if power_load else 50,
             },
             "fans": fans,
+            "health_details": {
+                "temperature_status": temperature_status,
+                "fan_status": fan_status,
+                "power_status": power_status,
+            },
         }
         
     except Exception as e:
@@ -2310,6 +2349,11 @@ async def get_branding_assets():
         dict: Branding assets including logo URL, product image, and support info
     """
     try:
+        global _BRANDING_ASSETS_CACHE
+
+        if _BRANDING_ASSETS_CACHE is not None:
+            return copy.deepcopy(_BRANDING_ASSETS_CACHE)
+
         # Get machine info first to determine manufacturer
         info_response = await get_host_machine_info()
         manufacturer = info_response.get("manufacturer", "other")
@@ -2409,7 +2453,7 @@ async def get_branding_assets():
         except Exception:
             pass
         
-        return {
+        result = {
             "manufacturer": manufacturer,
             "logo_url": branding["logo_fallback"],
             "logo_fallback": branding["logo_fallback"],
@@ -2421,6 +2465,8 @@ async def get_branding_assets():
             "brand_color": branding["brand_color"],
             "sff_optimized": True,  # This page focuses on SFF hardware
         }
+        _BRANDING_ASSETS_CACHE = copy.deepcopy(result)
+        return result
         
     except Exception as e:
         logger.error(f"Error getting branding assets: {e}")
