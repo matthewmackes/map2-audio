@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from fastapi import FastAPI
@@ -179,6 +179,9 @@ def test_overview_dashboard_aggregates_breakers_health_queue_and_optional_sectio
 
     assert response.status_code == 200
     payload = response.json()
+    overview_timestamp = datetime.fromisoformat(payload["timestamp"])
+    assert overview_timestamp.tzinfo is not None
+    assert overview_timestamp.utcoffset() == timezone.utc.utcoffset(overview_timestamp)
     assert payload["system_status"] == "DEGRADED"
     assert payload["circuit_breakers"]["total_circuits"] == 2
     assert payload["circuit_breakers"]["open_circuits"] == 1
@@ -245,6 +248,9 @@ def test_performance_and_reliability_dashboards_use_queue_and_recovery_metrics(m
     reliability_response = client.get("/api/dashboard/reliability")
 
     assert performance_response.status_code == 200
+    performance_timestamp = datetime.fromisoformat(performance_response.json()["timestamp"])
+    assert performance_timestamp.tzinfo is not None
+    assert performance_timestamp.utcoffset() == timezone.utc.utcoffset(performance_timestamp)
     assert performance_response.json()["throughput"] == {
         "requests_queued": 5,
         "success_rate": "100.0%",
@@ -252,6 +258,9 @@ def test_performance_and_reliability_dashboards_use_queue_and_recovery_metrics(m
     }
 
     assert reliability_response.status_code == 200
+    reliability_timestamp = datetime.fromisoformat(reliability_response.json()["timestamp"])
+    assert reliability_timestamp.tzinfo is not None
+    assert reliability_timestamp.utcoffset() == timezone.utc.utcoffset(reliability_timestamp)
     assert reliability_response.json() == {
         "timestamp": reliability_response.json()["timestamp"],
         "availability": {

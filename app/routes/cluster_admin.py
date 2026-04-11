@@ -561,7 +561,7 @@ async def get_certificate_status() -> Dict:
 
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "ca_certificate": "configured" if ca.has_root_ca() else "not_configured",
             "certificates": cert_status,
         }

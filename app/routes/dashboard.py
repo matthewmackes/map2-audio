@@ -14,6 +14,7 @@ from app.services.health_monitor import get_health_monitor
 from app.services.connection_pool import get_pool_manager
 from app.services.request_queue import get_request_queue
 from app.services.graceful_degradation import get_feature_manager
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,7 @@ async def get_overview() -> Dict[str, Any]:
     all_breakers_healthy = all(b.get("healthy", True) for b in breaker_status.values()) if breaker_status else True
 
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": utc_now().isoformat(),
         "system_status": "HEALTHY" if all([
             health_summary.get("status") == "healthy" if health_summary else True,
             system_health.get("system_healthy", True),
@@ -360,7 +361,7 @@ async def get_performance_dashboard() -> Dict[str, Any]:
     queue_status = _get_queue_status(rq)
 
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": utc_now().isoformat(),
         "latency": {
             "circuit_breaker_failfast": "<1ms",
             "connection_pool_reuse": "30-40% improvement",
@@ -403,7 +404,7 @@ async def get_reliability_dashboard() -> Dict[str, Any]:
         logger.debug("Failed to count dashboard recovery attempts", exc_info=exc)
 
     return {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": utc_now().isoformat(),
         "availability": {
             "target": "99.5%",
             "core_features_available": f"{system_health.get('core_available', 0)}/{system_health.get('core_features', 0)}",

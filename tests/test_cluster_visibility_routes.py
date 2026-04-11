@@ -301,3 +301,31 @@ def test_cluster_admin_discovered_payload_uses_timezone_aware_timestamp(monkeypa
 
     assert parsed.tzinfo is not None
     assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+
+
+def test_cluster_admin_certificate_status_uses_timezone_aware_timestamp(monkeypatch):
+    monkeypatch.setattr(
+        cluster_admin,
+        "get_cluster_ca",
+        lambda: type(
+            "_FakeCA",
+            (),
+            {
+                "get_certificate_expiry": lambda self, node_id: datetime(2026, 4, 12, 12, 0, tzinfo=timezone.utc),
+                "should_renew_certificate": lambda self, node_id: node_id == "peer-a",
+                "has_root_ca": lambda self: True,
+            },
+        )(),
+    )
+    monkeypatch.setattr(
+        cluster_admin,
+        "get_cluster_registry",
+        lambda: type("_FakeRegistry", (), {"get_all_nodes": lambda self: [{"id": "peer-a"}]})(),
+    )
+
+    payload = asyncio.run(cluster_admin.get_certificate_status())
+    parsed = datetime.fromisoformat(payload["timestamp"])
+
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+    assert payload["certificates"]["peer-a"]["expiry"].endswith("+00:00")

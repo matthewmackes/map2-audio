@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 06:54 EDT - Codex
+Last updated: 2026-04-11 06:57 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19512,6 +19512,9 @@ Last updated: 2026-04-11 06:54 EDT - Codex
   - Selected the next bounded UTC/API slice: move the remaining naive UTC emitters in `app/routes/cluster_admin.py`, `app/routes/midi.py`, and `app/routes/profiling.py` onto the shared `utc_now()` helper. These endpoints emit runtime/API timestamps only and do not touch compatibility-sensitive persisted local-display semantics.
   - Landed that UTC/API slice by replacing the remaining `datetime.utcnow()` route payload timestamps in the cluster admin, legacy MIDI, and profiling snapshot endpoints with timezone-aware `utc_now()` handling.
   - Validation for the UTC/API slice is green: `pytest -q tests/test_cluster_visibility_routes.py tests/test_plugin_telemetry_identity.py tests/test_legacy_midi_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/cluster_admin.py app/routes/midi.py app/routes/profiling.py tests/test_cluster_visibility_routes.py tests/test_plugin_telemetry_identity.py tests/test_legacy_midi_routes.py` -> PASS.
+  - Selected the next bounded UTC/API slice on operator dashboards and certificate reporting: `app/routes/dashboard.py` and the remaining `/api/cluster/certificates/status` timestamp in `app/routes/cluster_admin.py`. These are response-only runtime surfaces and do not alter persisted compatibility-sensitive records.
+  - Landed that dashboard/certificate UTC slice by moving the dashboard overview/performance/reliability payload timestamps plus the certificate-status route timestamp onto `utc_now()`, and by extending focused route tests to assert timezone-aware UTC payloads.
+  - Validation for the dashboard/certificate UTC slice is green: `pytest -q tests/test_dashboard_routes.py tests/test_cluster_visibility_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/dashboard.py app/routes/cluster_admin.py tests/test_dashboard_routes.py tests/test_cluster_visibility_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
