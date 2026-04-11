@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1074** Python | **1147** TypeScript | **136** C++/H | **143** Docs | **1661** total commits | **3** stars | **0** forks | **0** open issues
+**1074** Python | **1147** TypeScript | **136** C++/H | **143** Docs | **1664** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1750109a`](https://github.com/matthewmackes/map2-audio/commit/1750109a615cca423348dcd196de6ab174637a7e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-10 |
+| [`373f3c56`](https://github.com/matthewmackes/map2-audio/commit/373f3c561ad37e8ed8fc3b75cde36e5bbc2d8e46) | feat: improve page loading states and backend singleton c... | Map2 Audio | 2026-04-10 |
+| [`910fd315`](https://github.com/matthewmackes/map2-audio/commit/910fd315e533a508c26d4f2976197f2473d52299) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`8a6c1ef0`](https://github.com/matthewmackes/map2-audio/commit/8a6c1ef02cf5f3e20f8dbd46d244dabb6ab562fd) | Complete control-surface engine prerequisites and Carbon ... | Map2 Audio | 2026-04-10 |
 | [`d20b5d2e`](https://github.com/matthewmackes/map2-audio/commit/d20b5d2e8cd321f2f9a99a2cc1e44168ea934717) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`836fb291`](https://github.com/matthewmackes/map2-audio/commit/836fb291ed4254dd0917abac249a8ac3199d4e90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-10 |
 | [`1b9b4e42`](https://github.com/matthewmackes/map2-audio/commit/1b9b4e4238bf74e786ab8ac6acd68a974f9e133d) | Complete controller surface integrations through MIDI Com... | Map2 Audio | 2026-04-10 |
 | [`4f7288c6`](https://github.com/matthewmackes/map2-audio/commit/4f7288c64d80a4c148be24f1d19e411395759bef) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-04-10 |
-| [`8800ebbd`](https://github.com/matthewmackes/map2-audio/commit/8800ebbd2877aa82dd0711365bd9a38b58df5609) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
-| [`760b8282`](https://github.com/matthewmackes/map2-audio/commit/760b82829c726b720731d9e35684b5ccd0e38771) | Finish Push, snapshot, GCP, and MCU integration slices | Map2 Audio | 2026-04-09 |
-| [`25e4296d`](https://github.com/matthewmackes/map2-audio/commit/25e4296de53858cf1442806bc39606d81319d2d1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
