@@ -14,6 +14,8 @@ from pydantic import BaseModel
 import asyncio
 import logging
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -189,7 +191,7 @@ class NodeOnboardingPortal:
         import uuid
         
         session_id = str(uuid.uuid4())
-        now = datetime.now().isoformat()
+        now = utc_now().isoformat()
         
         session = OnboardingSession(
             session_id=session_id,
@@ -266,7 +268,7 @@ class NodeOnboardingPortal:
             else:
                 session.status = OnboardingStatus.COMPLETED
             
-            session.updated_at = datetime.now().isoformat()
+            session.updated_at = utc_now().isoformat()
             
             logger.info(f"Session {session_id} completed step {step.value}")
             

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-10 - Closed T961 by landing the source-of-truth Snapshot Publish workspace and retiring the legacy live modal stack, refreshed requested frontend/backend cleanup task state, corrected tracker inconsistencies, advanced the active T845/T846 backend cleanup slices with validation, landed shared frontend T863/T870 typography passes, and added T962 for the Start Menu Option 5 two-tier hero-and-compact layout design. Latest slices: standardized `ztp`, `config_pusher`, and `adoption_bootstrap` on UTC/runtime and shared singleton behavior, then promoted `distributed_event_bus`, `hybrid_update_manager`, and `raft_consensus` onto the shared singleton registry path with focused regression coverage.
+Last updated: 2026-04-10 - Closed T961 by landing the source-of-truth Snapshot Publish workspace and retiring the legacy live modal stack, refreshed requested frontend/backend cleanup task state, corrected tracker inconsistencies, advanced the active T845/T846 backend cleanup slices with validation, landed shared frontend T863/T870 typography passes, and added T962 for the Start Menu Option 5 two-tier hero-and-compact layout design. Latest slices: standardized `ztp`, `config_pusher`, and `adoption_bootstrap` on UTC/runtime and shared singleton behavior, promoted `distributed_event_bus`, `hybrid_update_manager`, and `raft_consensus` onto the shared singleton registry path, and moved the remaining bounded UTC cluster runtime surfaces in `management_orchestrator`, `onboarding_portal`, and `state_replicator_impl` onto timezone-aware handling.
 
 ## Performance Brain
 
@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 14:03 EDT - Codex
+Last updated: 2026-04-10 14:18 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19506,6 +19506,9 @@ Last updated: 2026-04-10 14:03 EDT - Codex
   - Selected the next bounded UTC/runtime slice: move the remaining naive UTC emitters in `app/services/cluster/ztp.py` and `app/services/cluster/config_pusher.py` onto timezone-aware helpers while standardizing the process-wide accessors in `ztp`, `config_pusher`, and `adoption_bootstrap` on the shared singleton registry/lock pattern.
   - Landed that bootstrap/config UTC slice by moving the `ztp` completion marker and cluster-registration metadata plus the `config_pusher` history parse fallback onto timezone-aware UTC handling. `adoption_bootstrap` was already using aware UTC internally and only needed singleton-factory cleanup in this pass.
   - Validation for the bootstrap/config UTC slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'ztp or config_sync or adoption_bootstrap'` -> PASS (`3 passed, 25 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/ztp.py app/services/cluster/config_pusher.py app/services/cluster/adoption_bootstrap.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next bounded UTC-only cluster runtime slice: `management_orchestrator`, `onboarding_portal`, and `state_replicator_impl`. These still emitted naive runtime/session timestamps, but unlike certificate-validity and rollback/archive paths they do not depend on preserving naive wall-clock semantics.
+  - Landed that runtime UTC slice by moving `management_orchestrator` cadence tracking, `onboarding_portal` session create/update timestamps, and the legacy `state_replicator_impl` heartbeat/log timestamps onto timezone-aware UTC handling.
+  - Validation for the runtime UTC slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'management_orchestrator or onboarding_portal or legacy_state_replicator_impl'` -> PASS (`3 passed, 32 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/management_orchestrator.py app/services/cluster/onboarding_portal.py app/services/cluster/state_replicator_impl.py tests/test_cluster_runtime_consistency.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress

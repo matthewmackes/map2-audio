@@ -14,6 +14,8 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 import hashlib
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,7 @@ class LogEntry:
     index: int
     command: str  # e.g., "register_node", "update_node", "delete_node"
     data: Dict
-    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    timestamp: str = field(default_factory=lambda: utc_now().isoformat())
 
 
 @dataclass
@@ -65,7 +67,7 @@ class StateReplicator:
         self.heartbeat_interval = 1.0  # seconds
         self.election_timeout_min = 2.0
         self.election_timeout_max = 4.0
-        self.last_heartbeat = datetime.now()
+        self.last_heartbeat = utc_now()
         
         # Replication state
         self.next_index: Dict[str, int] = {}  # For each follower
@@ -104,7 +106,7 @@ class StateReplicator:
         while True:
             try:
                 # Check if we should start election
-                time_since_heartbeat = (datetime.now() - self.last_heartbeat).total_seconds()
+                time_since_heartbeat = (utc_now() - self.last_heartbeat).total_seconds()
                 election_timeout = __import__('random').uniform(
                     self.election_timeout_min,
                     self.election_timeout_max
@@ -144,7 +146,7 @@ class StateReplicator:
             logger.info(f"Elected as leader (term {self.state.current_term})")
             self.role = NodeRole.LEADER
             self.state.leader_id = self.node_id
-            self.last_heartbeat = datetime.now()
+            self.last_heartbeat = utc_now()
             
             # Initialize replication indices
             for peer in self.peers:
@@ -331,7 +333,7 @@ class StateReplicator:
             return False
         
         # If no heartbeat for longer than election timeout, leader might be down
-        time_since_heartbeat = (datetime.now() - self.last_heartbeat).total_seconds()
+        time_since_heartbeat = (utc_now() - self.last_heartbeat).total_seconds()
         return time_since_heartbeat > (self.election_timeout_max * 2)
     
     async def handle_leader_failure(self):

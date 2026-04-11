@@ -39,8 +39,11 @@ from app.services.cluster.map2_git_updater import MAP2GitUpdater, get_git_update
 from app.services.cluster.deployment_manager import DeploymentManager, get_deployment_manager
 from app.services.cluster.distributed_event_bus import DistributedEventBus, get_event_bus as get_distributed_event_bus
 from app.services.cluster.hybrid_update_manager import HybridUpdateConfig, HybridUpdateManager, get_hybrid_update_manager
+from app.services.cluster.management_orchestrator import ManagementOrchestrator
+from app.services.cluster.onboarding_portal import NodeOnboardingPortal, OnboardingStep
 from app.services.cluster.registry import ClusterRegistry, get_cluster_registry
 from app.services.cluster.raft_consensus import RaftConsensus, get_raft_consensus, initialize_raft_consensus
+from app.services.cluster.state_replicator_impl import LogEntry as LegacyReplicatedLogEntry, StateReplicator as LegacyStateReplicator
 from app.services.cluster.state_replicator import StateReplicator, get_state_replicator
 from app.services.cluster.update_orchestrator import UpdateScheduler, UpdateReport
 from app.services.cluster.audio_path_discovery import AudioPathService, get_audio_path_service
@@ -920,3 +923,41 @@ def test_clone_reset_resets_ztp_singleton(monkeypatch, tmp_path):
     finally:
         ZTPBootstrap.reset_instance()
         monkeypatch.setattr(ZTPBootstrap, "__init__", original_init)
+
+
+def test_management_orchestrator_records_utc_aware_run_timestamps():
+    orchestrator = ManagementOrchestrator()
+
+    import asyncio
+
+    async def _noop():
+        return None
+
+    asyncio.run(orchestrator._run_if_due("health_checks", utc_now(), _noop))
+
+    assert orchestrator._last_run["health_checks"].tzinfo == timezone.utc
+
+
+def test_onboarding_portal_session_timestamps_are_utc_aware():
+    portal = NodeOnboardingPortal()
+    session = portal.create_session("node-a", "audio")
+    created = datetime.fromisoformat(session["created_at"])
+
+    assert created.tzinfo == timezone.utc
+
+    import asyncio
+
+    success, _message = asyncio.run(
+        portal.submit_step_data(session["session_id"], OnboardingStep.WELCOME, {"acknowledged": True})
+    )
+
+    assert success is True
+    updated = datetime.fromisoformat(portal.get_session(session["session_id"]).updated_at)
+    assert updated.tzinfo == timezone.utc
+
+
+def test_legacy_state_replicator_impl_uses_utc_aware_timestamps():
+    replicator = LegacyStateReplicator(node_id="node-a", registry=object())
+
+    assert replicator.last_heartbeat.tzinfo == timezone.utc
+    assert datetime.fromisoformat(LegacyReplicatedLogEntry(term=1, index=1, command="set", data={}).timestamp).tzinfo == timezone.utc

@@ -18,6 +18,8 @@ import os
 from datetime import datetime, timedelta
 from typing import Awaitable, Callable, Dict
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +69,7 @@ class ManagementOrchestrator:
         await self._stop_failover_monitor()
 
     async def _run_due_tasks(self):
-        now = datetime.utcnow()
+        now = utc_now()
         await self._run_if_due("health_checks", now, self._run_health_checks)
         await self._run_if_due("metrics_aggregation", now, self._run_metrics_aggregation)
         await self._run_if_due("update_scheduling", now, self._run_update_scheduling)
