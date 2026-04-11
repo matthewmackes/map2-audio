@@ -7,7 +7,7 @@ import {
 } from './launcherCatalog'
 
 describe('launcherCatalog', () => {
-  it('keeps the remaining standalone routed workspaces in the catalog and removes the fixed Start Menu routes', () => {
+  it('keeps standalone routed workspaces in the catalog and removes the migrated fixed Start Menu routes', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
     expect(getLauncherCatalogItem('/artifacts')).toMatchObject({
       heroTitle: 'Audio Artifacts',
@@ -18,11 +18,19 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ label: 'Launch path', value: '/artifacts' }),
       ]),
     })
+    expect(getLauncherCatalogItem('/brain')).toMatchObject({
+      heroTitle: 'Brain',
+      landingEligible: true,
+      navEligible: false,
+      directory: 'core',
+      technicalSpecs: expect.arrayContaining([
+        expect.objectContaining({ label: 'Launch path', value: '/brain' }),
+      ]),
+    })
     expect(getLauncherCatalogItem('/audio-table')).toBeNull()
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
     for (const route of [
-      '/brain',
       '/juce-grid',
       '/midi-hub',
       '/hardware-interfaces',
@@ -60,6 +68,7 @@ describe('launcherCatalog', () => {
       { route: '/platforms/workspace-catalog', size: 'medium' },
       { route: '/platforms/about', size: 'large' },
     ])).toEqual([
+      { route: '/brain', size: 'large' },
       { route: '/platforms/overview', size: 'medium' },
       { route: '/artifacts', size: 'large' },
     ])

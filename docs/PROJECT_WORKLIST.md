@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the outstanding cleanup stream by advancing `T875` with a bounded AppShell shadow-removal slice, replacing the remaining shell-elevation box shadows with flat styling while keeping the current Start Menu/window/taskbar behaviors green.
+Last updated: 2026-04-11 - Continued the outstanding frontend stream by re-exposing `Brain` in the shared Workspace Catalog while keeping its fixed Start Menu tile, with focused launcher-catalog validation.
 
 ## Performance Brain
 
@@ -22391,3 +22391,22 @@ Last updated: 2026-04-11 09:40 EDT - Codex
 - Validation:
   - `python3 scripts/continuous_release.py --help` -> PASS
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/continuous_release.py` -> PASS
+
+ID: T966
+Status: [✓] Done
+Title: Re-expose `Brain` in the shared Workspace Catalog while keeping the fixed Start Menu tile
+Description:
+- Goal / acceptance criteria: Restore `/brain` as a discoverable Workspace Catalog entry without removing the fixed `Brain` Start Menu tile, keep the catalog normalization logic deterministic, and add focused frontend validation so the catalog and shell stay aligned.
+- Why it matters: `Brain` is now a first-class routed product surface and should remain discoverable in the shared program-directory catalog even though the shell also promotes it as a fixed launcher tile.
+- Dependencies: T951
+- Estimated effort: Low
+- Required outputs: Updated launcher catalog source/tests, validation evidence, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 11:05 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/data/launcherCatalog.tsx` so `/brain` is no longer excluded from the shared Workspace Catalog inventory, while leaving the fixed Start Menu tile behavior from T951 untouched.
+  - Refreshed `web/src/app/data/launcherCatalog.test.tsx` to prove `Brain` is once again catalog-backed, remains landing-eligible, and participates in launcher-tile normalization alongside the existing catalog routes.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/launcherCatalog.test.tsx` -> PASS (`5 tests`)
