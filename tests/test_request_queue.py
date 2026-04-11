@@ -6,7 +6,7 @@ Tests for request queuing, backoff strategy, and zero-loss guarantees.
 
 import pytest
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 pytest.importorskip("aiofiles", reason="aiofiles is required by request queue module")
 
@@ -14,6 +14,7 @@ from app.services.request_queue import (
     RequestQueue, QueuedRequest, ExponentialBackoffStrategy,
     RequestStatus, RequestPriority, QueueMetrics
 )
+from app.utils.singleton import Singleton
 
 
 class TestRequestStatus:
@@ -69,7 +70,8 @@ class TestQueuedRequest:
         assert data["payload"] == {"key": "value"}
         assert isinstance(data["created_at"], str)
         assert data["status"] == "pending"
-    
+        assert datetime.fromisoformat(data["created_at"]).tzinfo == timezone.utc
+
     def test_from_dict_deserialization(self):
         """Test creating request from dict."""
         data = {
@@ -81,7 +83,7 @@ class TestQueuedRequest:
             "headers": {},
             "priority": "HIGH",
             "status": "pending",
-            "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "first_attempt_at": None,
             "last_attempt_at": None,
             "next_retry_at": None,
@@ -96,6 +98,35 @@ class TestQueuedRequest:
         assert request.request_id == "test-id"
         assert request.service_name == "test_service"
         assert request.priority == RequestPriority.HIGH
+        assert request.created_at.tzinfo == timezone.utc
+
+    def test_from_dict_coerces_legacy_naive_timestamps_to_utc(self):
+        """Legacy queue files without offsets should be treated as UTC."""
+        request = QueuedRequest.from_dict(
+            {
+                "request_id": "legacy-id",
+                "service_name": "test_service",
+                "method": "POST",
+                "endpoint": "/test",
+                "payload": {"key": "value"},
+                "headers": {},
+                "priority": "MEDIUM",
+                "status": "pending",
+                "created_at": "2026-04-11T12:00:00",
+                "first_attempt_at": "2026-04-11T12:00:01",
+                "last_attempt_at": "2026-04-11T12:00:02",
+                "next_retry_at": "2026-04-11T12:00:03",
+                "attempt_count": 1,
+                "max_attempts": 5,
+                "last_error": None,
+                "response_data": None,
+            }
+        )
+
+        assert request.created_at.tzinfo == timezone.utc
+        assert request.first_attempt_at is not None and request.first_attempt_at.tzinfo == timezone.utc
+        assert request.last_attempt_at is not None and request.last_attempt_at.tzinfo == timezone.utc
+        assert request.next_retry_at is not None and request.next_retry_at.tzinfo == timezone.utc
 
 
 class TestExponentialBackoffStrategy:
@@ -151,12 +182,13 @@ class TestExponentialBackoffStrategy:
             jitter_factor=0.0
         )
         
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         retry_time = strategy.calculate_next_retry_time(0)
         
         # Should be approximately 1 second from now
         diff = (retry_time - now).total_seconds()
         assert 0.9 < diff < 1.1
+        assert retry_time.tzinfo == timezone.utc
 
 
 class TestQueueMetrics:
@@ -219,6 +251,7 @@ class TestRequestQueue:
         
         assert request_id == request.request_id
         assert queue.pending_queue.qsize() == 1
+        assert request.created_at.tzinfo == timezone.utc
     
     @pytest.mark.asyncio
     async def test_dequeue_request(self):
@@ -257,6 +290,22 @@ class TestRequestQueue:
         completed = queue.completed[dequeued.request_id]
         assert completed.status == RequestStatus.SUCCESS
         assert completed.response_data == {"result": "ok"}
+
+
+def test_get_request_queue_uses_shared_singleton_registry():
+    """Default queue accessor should use the shared singleton registry."""
+    from app.services.request_queue import get_request_queue
+
+    Singleton._instances.pop(RequestQueue, None)
+
+    try:
+        first = get_request_queue()
+        second = get_request_queue()
+
+        assert first is second
+        assert Singleton._instances[RequestQueue] is first
+    finally:
+        Singleton._instances.pop(RequestQueue, None)
     
     @pytest.mark.asyncio
     async def test_mark_failure_retry(self):

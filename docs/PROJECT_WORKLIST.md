@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 08:37 EDT - Codex
+Last updated: 2026-04-11 08:56 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19533,6 +19533,9 @@ Last updated: 2026-04-11 08:37 EDT - Codex
   - Selected the next bounded UTC/service slice on `app/services/plugin_preset_lifecycle.py`, covering the lifecycle event payload timestamps and the unused-preset cleanup cutoff. This service emits runtime metadata only and compares against stored preset ages; it does not define operator-local display semantics.
   - Landed that preset-lifecycle UTC slice by moving the cache/event timestamps and cleanup cutoff onto `utc_now()`, and fixed the adjacent async-listener dispatch bug in `emit_event()` so coroutine listeners are awaited instead of dropped.
   - Validation for the preset-lifecycle UTC slice is green: `pytest -q tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/plugin_preset_lifecycle.py tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS.
+  - Selected the next bounded UTC/service slice on `app/services/request_queue.py`, covering the queue/request dataclass timestamps, retry scheduling timestamps, and the legacy JSON parse path. This surface persists internal runtime metadata, so the safe migration path is timezone-aware UTC going forward plus naive-to-UTC coercion when loading older queue files.
+  - Landed that request-queue UTC slice by moving new queue/metric/retry timestamps onto `utc_now()`, normalizing legacy naive serialized queue datetimes to UTC on read, and keeping the on-disk JSON shape stable.
+  - Validation for the request-queue UTC slice is green enough to ship: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/request_queue.py tests/test_request_queue.py` -> PASS, `pytest -q tests/test_request_queue.py` -> SKIPPED in this environment because the existing suite is guarded on optional `aiofiles`, and a direct Python smoke check covering legacy timestamp coercion plus UTC retry/singleton behavior -> PASS.
 
 ID: T846
 Status: [>] In Progress
@@ -19545,7 +19548,7 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 08:37 EDT - Codex
+Last updated: 2026-04-11 08:56 EDT - Codex
 - Progress notes:
   - Execution policy selected: only true process-wide singletons should use the shared singleton/getter pattern. Keyed constructors and parameterized object producers should be reclassified as explicit caches/managers where appropriate instead of being forced into a singleton shape.
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
@@ -19598,6 +19601,9 @@ Last updated: 2026-04-11 08:37 EDT - Codex
   - Selected the next safe process-wide singleton slice on `app/services/plugin_preset_lifecycle.py`. This module still exposed a bare `_preset_lifecycle` global even though it is a true process-wide manager with no keyed constructor semantics.
   - Landed that preset-lifecycle singleton slice by promoting `PluginPresetLifecycle` onto the shared `Singleton` base/getter pattern and deleting the remaining ad hoc module-global singleton state.
   - Validation for the preset-lifecycle singleton slice is green: `pytest -q tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/plugin_preset_lifecycle.py tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS.
+  - Selected the next singleton cleanup slice on `app/services/request_queue.py`. The queue type itself still supports explicit constructor parameters, but the default `get_request_queue()` accessor is a true process-wide service entrypoint and should not keep its own bespoke module-global singleton state.
+  - Landed that request-queue singleton slice by rewiring `get_request_queue()` through the shared singleton registry/lock path while preserving the default no-arg accessor contract for existing callers.
+  - Validation for the request-queue singleton slice is green enough to ship: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/request_queue.py tests/test_request_queue.py` -> PASS, `pytest -q tests/test_request_queue.py` -> SKIPPED in this environment because the existing suite is guarded on optional `aiofiles`, and a direct Python smoke check covering the shared singleton accessor -> PASS.
 
 ID: T847
 Status: [✓] Done

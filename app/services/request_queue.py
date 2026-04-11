@@ -17,10 +17,13 @@ import time
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 import os
 from pathlib import Path
+
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 try:
     import aiofiles
@@ -28,6 +31,11 @@ except ModuleNotFoundError:  # Optional dependency in minimal environments
     aiofiles = None
 
 logger = logging.getLogger(__name__)
+
+
+def _coerce_utc(value: datetime) -> datetime:
+    """Treat legacy naive queue timestamps as UTC for safe comparisons."""
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
 
 
 class RequestStatus(Enum):
@@ -59,7 +67,7 @@ class QueuedRequest:
     priority: RequestPriority = RequestPriority.MEDIUM
     status: RequestStatus = RequestStatus.PENDING
     
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
     first_attempt_at: Optional[datetime] = None
     last_attempt_at: Optional[datetime] = None
     next_retry_at: Optional[datetime] = None
@@ -85,13 +93,13 @@ class QueuedRequest:
     def from_dict(data: Dict[str, Any]) -> 'QueuedRequest':
         """Create QueuedRequest from dictionary."""
         if isinstance(data['created_at'], str):
-            data['created_at'] = datetime.fromisoformat(data['created_at'])
+            data['created_at'] = _coerce_utc(datetime.fromisoformat(data['created_at']))
         if data.get('first_attempt_at') and isinstance(data['first_attempt_at'], str):
-            data['first_attempt_at'] = datetime.fromisoformat(data['first_attempt_at'])
+            data['first_attempt_at'] = _coerce_utc(datetime.fromisoformat(data['first_attempt_at']))
         if data.get('last_attempt_at') and isinstance(data['last_attempt_at'], str):
-            data['last_attempt_at'] = datetime.fromisoformat(data['last_attempt_at'])
+            data['last_attempt_at'] = _coerce_utc(datetime.fromisoformat(data['last_attempt_at']))
         if data.get('next_retry_at') and isinstance(data['next_retry_at'], str):
-            data['next_retry_at'] = datetime.fromisoformat(data['next_retry_at'])
+            data['next_retry_at'] = _coerce_utc(datetime.fromisoformat(data['next_retry_at']))
         if isinstance(data['priority'], str):
             data['priority'] = RequestPriority[data['priority']]
         if isinstance(data['status'], str):
@@ -114,8 +122,8 @@ class QueueMetrics:
     total_errors: int = 0
     avg_attempts_per_request: float = 0.0
     
-    created_at: datetime = field(default_factory=datetime.now)
-    last_update: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
+    last_update: datetime = field(default_factory=utc_now)
     
     @property
     def success_rate(self) -> float:
@@ -179,7 +187,7 @@ class ExponentialBackoffStrategy:
     def calculate_next_retry_time(self, attempt_number: int) -> datetime:
         """Calculate when next retry should occur."""
         delay = self.calculate_delay(attempt_number)
-        return datetime.now() + timedelta(seconds=delay)
+        return utc_now() + timedelta(seconds=delay)
 
 
 class RequestQueue:
@@ -236,7 +244,7 @@ class RequestQueue:
             if len(self.pending_queue._queue) >= self.max_queue_size:
                 raise RuntimeError("Queue at maximum capacity")
             
-            request.created_at = datetime.now()
+            request.created_at = utc_now()
             request.status = RequestStatus.PENDING
             
             # Priority queue: use negative priority so high priority is dequeued first
@@ -260,7 +268,7 @@ class RequestQueue:
             
             async with self._lock:
                 request.status = RequestStatus.IN_PROGRESS
-                request.last_attempt_at = datetime.now()
+                request.last_attempt_at = utc_now()
                 if not request.first_attempt_at:
                     request.first_attempt_at = request.last_attempt_at
                 
@@ -315,7 +323,7 @@ class RequestQueue:
                 self._metrics.pending = self.pending_queue.qsize()
                 
                 logger.info(f"Request {request_id} rescheduled after attempt {request.attempt_count}, "
-                           f"retry in {(request.next_retry_at - datetime.now()).total_seconds():.1f}s")
+                           f"retry in {(request.next_retry_at - utc_now()).total_seconds():.1f}s")
             else:
                 # Move to dead letter queue
                 request.status = RequestStatus.DEAD_LETTER
@@ -357,7 +365,7 @@ class RequestQueue:
                     if request:
                         try:
                             # Check if ready to retry
-                            if request.next_retry_at and datetime.now() < request.next_retry_at:
+                            if request.next_retry_at and utc_now() < request.next_retry_at:
                                 # Not ready yet, put back in queue
                                 await self.enqueue(request)
                                 await asyncio.sleep(0.1)
@@ -466,7 +474,7 @@ class RequestQueue:
                 self._metrics.total_attempts / self._metrics.total_queued
             )
         
-        self._metrics.last_update = datetime.now()
+        self._metrics.last_update = utc_now()
         return self._metrics
     
     def get_request_status(self, request_id: str) -> Optional[QueuedRequest]:
@@ -497,13 +505,12 @@ class RequestQueue:
         logger.info("Request queue shutdown complete")
 
 
-# Global queue instance
-_request_queue: Optional[RequestQueue] = None
-
-
 def get_request_queue() -> RequestQueue:
     """Get global request queue (singleton)."""
-    global _request_queue
-    if _request_queue is None:
-        _request_queue = RequestQueue()
-    return _request_queue
+    if RequestQueue in Singleton._instances:
+        return Singleton._instances[RequestQueue]  # type: ignore[return-value]
+
+    with Singleton._lock:
+        if RequestQueue not in Singleton._instances:
+            Singleton._instances[RequestQueue] = RequestQueue()
+        return Singleton._instances[RequestQueue]  # type: ignore[return-value]
