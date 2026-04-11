@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1080** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1698** total commits | **3** stars | **0** forks | **0** open issues
+**1080** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1701** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f62cb9e0`](https://github.com/matthewmackes/map2-audio/commit/f62cb9e03b74f7cab7a066a50773fc20fc764898) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`74d56fe4`](https://github.com/matthewmackes/map2-audio/commit/74d56fe40c675ed1cef62e51f53f9fd5bd702462) | Move dashboard timestamps to UTC | Map2 Audio | 2026-04-11 |
+| [`6861122e`](https://github.com/matthewmackes/map2-audio/commit/6861122e4f52a303bf7d454a173ee18d454c3fa3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`0a30bfbb`](https://github.com/matthewmackes/map2-audio/commit/0a30bfbb980bee0b09a54ce3fb442d67c988c11b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`e7742288`](https://github.com/matthewmackes/map2-audio/commit/e7742288c47974ca8b004cf35e8ee844cee07c04) | Clean up UTC warnings in cluster visibility tests | Map2 Audio | 2026-04-11 |
 | [`e2c6668d`](https://github.com/matthewmackes/map2-audio/commit/e2c6668de8aeee9b06a90080853e18afb6ff411e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`0888beea`](https://github.com/matthewmackes/map2-audio/commit/0888beeacb78d7f8e35b322abed6d31cc84aa175) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`b123c2dc`](https://github.com/matthewmackes/map2-audio/commit/b123c2dcde0ef16ec2cbf700356162a53f10c7ef) | Advance UTC route timestamps and singleton getters | Map2 Audio | 2026-04-11 |
-| [`13c52e25`](https://github.com/matthewmackes/map2-audio/commit/13c52e2547b994425ae132c18dd7e58c9ffe14ab) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`e2127275`](https://github.com/matthewmackes/map2-audio/commit/e21272752abadbf41269d3345c26fa9e12b97fad) | Merge remote-tracking branch 'gitlab/master' | Map2 Audio | 2026-04-11 |
-| [`7480d469`](https://github.com/matthewmackes/map2-audio/commit/7480d469878ffab48237642eb1c58626a520a7b5) | Finish Theme page UX review fixes | Map2 Audio | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
