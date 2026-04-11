@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
-  border-radius: 10px;
+  border-radius: var(--border-radius-lg);
   border: 1px solid var(--border);
   background: var(--surface-2);
   gap: 12px;

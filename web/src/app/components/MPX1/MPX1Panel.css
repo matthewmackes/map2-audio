@@ -577,7 +577,7 @@
 .mpx1-panel-popover {
   position: absolute;
   width: 200px;
-  border-radius: 10px;
+  border-radius: var(--border-radius-lg);
   border: 1px solid rgba(34, 238, 85, 0.3);
   background: rgba(4, 8, 6, 0.97);
   box-shadow:

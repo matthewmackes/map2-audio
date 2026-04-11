@@ -47,7 +47,7 @@
 /* Connection Status Badge */
 .status-badge {
   padding: 8px 16px;
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -495,7 +495,7 @@
 
 @media (max-width: 768px) {
   .audio-interface-section {
-    border-radius: 12px;
+    border-radius: var(--border-radius-lg);
     margin: 16px 0;
   }
 

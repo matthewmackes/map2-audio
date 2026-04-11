@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the active `T845` cleanup stream with another shipped UTC slice: moved deployment-config metadata timestamps onto timezone-aware UTC handling with focused persistence/regression coverage.
+Last updated: 2026-04-11 - Continued the outstanding frontend cleanup stream by advancing `T874` with a bounded radius-token slice, replacing several hard-coded 10-14px rounded corners with the shared flat radius token and validating the affected frontend surfaces.
 
 ## Performance Brain
 
@@ -20317,7 +20317,7 @@ Last updated: 2026-04-10 09:57 EDT - Codex
   - Validation: `rg -n 'outline:\\s*none|outline\\s*:\\s*0\\b' web/src` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T874
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Remove `border-radius` values that conflict with FLAT design intent
 Description:
 - Goal / acceptance criteria: The theme system defines `border-radius-sm: 0px`, `border-radius-md: 0px`, `border-radius-lg: 4px` which is correct for the FLAT/Monochrome design. However, `index.css` contains 30+ occurrences of `border-radius: 10px`, `12px`, `14px`, `16px`, `18px`, and `999px` (pill shapes) that override the theme intent. Audit all border-radius values: (1) Replace `999px` pill shapes with `0` for true FLAT or retain only on Carbon `Tag` where Carbon itself uses pill shapes. (2) Replace `10px–18px` rounded corners with `0` or the `--border-radius-lg: 4px` token. (3) Ensure Carbon component border-radius is not overridden.
@@ -20327,10 +20327,12 @@ Description:
 - Required outputs: Consistent border-radius treatment, FLAT design validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:31 EDT - Codex
+Last updated: 2026-04-11 11:24 EDT - Codex
 - Progress notes:
   - Conflicting rounded-corner values remain widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, `SnapshotEditorPage.css`, Host Machine, NodeNav, Push Surface, MPX1, and other route/component-local styles.
   - This task depends on blocked `T856`, and a clean FLAT-radius sweep is blocked until the underlying primitive migration settles; otherwise the repo would keep mixing Carbon shapes with route-specific exceptions and legacy pill treatments.
+  - Opened a bounded radius-token slice across `Disclosure.css`, `ModelList.css`, `GlobalPrimitives.css`, `AudioInterfaceControl.css`, `PlatformModal.css`, and `MPX1Panel.css`, replacing the remaining hard-coded 10-14px rounded corners in those surfaces with `var(--border-radius-lg)` so the flat shell/token contract applies consistently there without changing layout structure.
+  - Validation for the radius-token slice is green: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx` -> PASS (`9 tests`) and `npm --prefix web run build` -> PASS.
 
 ID: T875
 Status: [>] In Progress
