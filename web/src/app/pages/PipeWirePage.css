@@ -106,8 +106,6 @@
 .pipewire-page__metric-label {
   color: var(--cds-text-helper);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .pipewire-page__metric-icon {
@@ -331,8 +329,6 @@
 .pipewire-page__clock-label {
   color: var(--cds-text-helper);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   margin-bottom: var(--cds-spacing-02);
 }
 
@@ -379,8 +375,6 @@
 .pipewire-page__setting-label {
   color: var(--cds-text-helper);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .pipewire-page__setting-value {

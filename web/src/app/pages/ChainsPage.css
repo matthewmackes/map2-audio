@@ -81,8 +81,6 @@
 .chains-page__scope-label {
   color: var(--cds-text-helper);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .chains-page__scope-title {
@@ -118,8 +116,6 @@
 .chains-page__metric-label {
   color: var(--cds-text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .chains-page__metric-value {

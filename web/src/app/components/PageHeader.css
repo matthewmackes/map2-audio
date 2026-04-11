@@ -121,8 +121,6 @@
   color: var(--cds-text-helper, var(--text-secondary));
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .page-header__aside {
@@ -176,8 +174,6 @@
   color: var(--cds-text-primary, var(--text-primary));
   font-size: var(--cds-label-01-font-size, var(--type-label));
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .page-header__brand-secondary {
