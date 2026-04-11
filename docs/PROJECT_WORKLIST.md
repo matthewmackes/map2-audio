@@ -22132,7 +22132,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Disable "Save and apply" and "Reset draft" when no draft changes exist; surface persistent draft banner
     Description:
     - Goal / acceptance criteria: (1) Add `disabled={!draftDirty}` to both the "Save and apply custom theme" button and the "Reset draft" button. (2) Replace the 1-line footnote that explains the mixed save model with a persistent Carbon `InlineNotification` (kind="warning") that renders whenever `draftDirty && draftOverrideCount > 0`, stating clearly that token overrides are not yet saved. The notification should include a secondary action "Save now" that calls the same save handler. The footnote note may remain as a supplementary explanation.
@@ -22142,7 +22142,14 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — add `disabled` props, add `InlineNotification` block conditioned on `draftDirty`. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-11 06:20 EDT - Codex
+    - Completion notes:
+      - Disabled the `Reset draft` and `Save and apply custom theme` buttons in `web/src/app/pages/ThemePage.tsx` whenever the draft is clean, removing the previous no-op interaction state.
+      - Replaced the hidden save-model footnote with a persistent warning notification that appears whenever unsaved token overrides exist, plus a direct `Save now` action wired to the same draft-save handler.
+      - Added regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving the draft buttons stay disabled until the draft becomes dirty and that the warning banner’s `Save now` action persists the custom theme.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subE
     Status: [ ] Todo
     Title: Replace native `<select>` remnants with Carbon `<Dropdown>` and fix plugin source filter labels
