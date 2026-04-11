@@ -159,7 +159,7 @@
   --window-taskbar-height: 0rem;
   --window-taskbar-control-height: 2rem;
   --window-taskbar-latency-height: calc(var(--window-taskbar-height) - 0.25rem);
-  --window-shell-launcher-size: 2.55rem; /* 15% smaller than the prior 3 rem size */
+  --window-shell-launcher-size: 7.65rem; /* 200% larger than the current 2.55 rem size */
   --window-shell-launcher-offset: clamp(1rem, 2vw, 1.5rem);
   --window-shell-launcher-clearance: calc(var(--window-shell-launcher-size) + var(--window-shell-launcher-offset));
   --app-window-titlebar-height: 2.3rem;
@@ -412,7 +412,7 @@
 
 .shell-launcher {
   position: fixed;
-  right: var(--window-shell-launcher-offset);
+  left: var(--window-shell-launcher-offset);
   bottom: var(--window-shell-launcher-offset);
   z-index: 40;
 }
@@ -500,7 +500,7 @@
 
 .shell-launcher__panel {
   position: absolute;
-  right: 0;
+  left: 0;
   bottom: calc(100% + 0.85rem);
   display: grid;
   grid-template-rows: auto auto auto auto;
@@ -510,7 +510,7 @@
   background: var(--cds-layer-01, #ffffff);
   box-shadow: 0 24px 48px color-mix(in srgb, black 22%, transparent);
   animation: shell-launcher-panel-enter 140ms cubic-bezier(0.2, 0.84, 0.32, 1) both;
-  transform-origin: bottom right;
+  transform-origin: bottom left;
 }
 
 .shell-launcher__header {

@@ -43,8 +43,8 @@ export function useAppShellPresentation({
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(pathname)
 
   const startMenuTileItems = useMemo<StartMenuTileItem[]>(
-    () =>
-      launcherCatalogDisplayItems
+    () => {
+      const launcherItems = launcherCatalogDisplayItems
         .filter((item) => item.route !== '/')
         .map((item) => ({
           route: item.route,
@@ -64,8 +64,27 @@ export function useAppShellPresentation({
           description: item.description,
           color: item.color,
           maturity: item.maturity,
-          featured: item.storefrontCollections.includes('featured'),
-        })),
+          featured: item.route === '/tesira' ? false : item.storefrontCollections.includes('featured'),
+        }))
+
+      const advancedMidiItem = allRouteNavigationItems.find((item) => item.to === '/midi-hub')
+      if (!advancedMidiItem || launcherItems.some((item) => item.route === '/midi-hub')) {
+        return launcherItems
+      }
+
+      const advancedMidiTile: StartMenuTileItem = {
+        route: '/midi-hub',
+        label: 'Advanced MIDI',
+        shortLabel: 'Advanced MIDI',
+        icon: advancedMidiItem.icon,
+        description: advancedMidiItem.description,
+        color: advancedMidiItem.color,
+        maturity: advancedMidiItem.maturity,
+        featured: true,
+      }
+
+      return [advancedMidiTile, ...launcherItems]
+    },
     [],
   )
 

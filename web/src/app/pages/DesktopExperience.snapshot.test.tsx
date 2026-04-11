@@ -240,9 +240,9 @@ describe('Desktop experience visual snapshots', () => {
 
   it('matches the taskbar and Start Menu shell', () => {
     const { container } = renderSnapshotHarness(['/artifacts'])
-    fireEvent.click(screen.getByLabelText('Open desktop menu'))
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
 
-    expect(screen.getByRole('button', { name: 'Desktop' })).toBeInTheDocument()
+    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 })

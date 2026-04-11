@@ -22063,3 +22063,146 @@ Last updated: 2026-04-10 EDT - Kombai
 - Validation:
   - `npm --prefix web run typecheck` -> to be run
   - Snapshot tests in `DesktopExperience.snapshot.test.tsx` will need updating via `--updateSnapshot` due to structural DOM changes.
+
+ID: T963
+Status: [ ] Todo
+Title: Fix Theme Page UX/Usability issues (from design review 2026-04-11)
+Description:
+- Goal / acceptance criteria: Resolve the 18 UX/usability issues identified in the static code review of `/platforms/theme` (see `.kombai/resources/design-review-platforms-theme.md`). Three critical issues (dual theme controls, broken radio+file-upload flow, silent draft loss) must be addressed before any other subtask ships. All remaining High and Medium issues should be resolved in subsequent subtasks. The page must pass `npm --prefix web run typecheck` and the existing theme-page test suite after every subtask lands.
+- Why it matters: The Theme page is the primary user-facing tool for personalising the MAP2 desktop experience. Currently a user can silently lose all custom token overrides with a single accidental theme click, the wallpaper radio interaction is broken by design, and two parallel controls for the same theme-selection action create immediate confusion. Fixing these prevents data loss and brings the page up to the interaction standards established elsewhere in the platform.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Updated ThemePage.tsx, ThemePage.css, and any supporting hooks/utilities. Typecheck and test-suite green on each subtask. Worklist entries updated.
+Subtasks:
+  - ID: T963-subA
+    Status: [ ] Todo
+    Title: Eliminate dual theme-selection controls — remove native `<select>`, make catalog the single source of truth
+    Description:
+    - Goal / acceptance criteria: Remove the native `<select>` element (`theme-page__dialog-select`) and the "Draft preview" sentinel option. The visual preset catalog (`theme-page__catalog-grid`) becomes the sole control for `setTheme()`. A search/jump input (Carbon `Search`) may be added alongside the catalog header to give keyboard users a fast-path to a named preset without reintroducing a parallel selection authority. The active theme must be clearly indicated in the catalog (existing `theme-page__catalog-item--active` class) without any secondary dropdown state.
+    - Why it matters: Issue #1 (Critical): Two controls writing to the same `setTheme()` call created two sources of truth. The `<select>` showed a stale "Draft preview" option that never updated when a catalog item was clicked, leaving the UI in an internally contradictory state that confused users about which theme was actually active.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: `ThemePage.tsx` — remove the `<select>` block (lines 752–815), update the catalog-header area, optionally add Carbon `Search` for preset filtering. `ThemePage.css` — remove `.theme-page__dialog-select` rule. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subB
+    Status: [ ] Todo
+    Title: Fix wallpaper radio group — separate option selection from file picker trigger
+    Description:
+    - Goal / acceptance criteria: The "Uploaded image" radio option must follow the standard two-step pattern: (1) clicking the radio marks it `aria-checked="true"` and reveals a configuration area; (2) an explicit "Choose file…" button inside that area opens the file picker. The `wallpaperUploadInputRef.current?.click()` call must be removed from the radio's `onChange`/`onClick` handler. A user who selects the option and then cancels the file dialog must remain in the selected state with a "No file chosen" placeholder visible.
+    - Why it matters: Issue #2 (Critical): The radio option immediately fired the file picker on click, bypassing the expected selection-first-then-configure interaction contract, leaving the radio in an unselected state when the user cancelled, and making keyboard navigation through the wallpaper group unpredictable.
+    - Dependencies: T963-subA
+    - Estimated effort: Low
+    - Required outputs: `ThemePage.tsx` — restructure the wallpaper section radio handling so file-picker open is triggered by a button inside the selected option's expanded area, not by the radio change event. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subC
+    Status: [ ] Todo
+    Title: Guard against silent draft-override loss on theme switch
+    Description:
+    - Goal / acceptance criteria: When `draftDirty` is `true` and `draftOverrideCount > 0`, switching theme (via catalog click or any other path) must display a confirmation dialog before discarding draft overrides. Use React Router v6's `unstable_useBlocker` or an inline Carbon `Modal` confirmation. Accepted choices: "Discard and switch", "Cancel". If the user confirms, discard the draft and proceed with the theme switch. If the user cancels, leave the current theme and draft state unchanged. The `setDraftDirty(false)` call inside the theme-switch handler must be moved to the confirmed-discard branch only.
+    - Why it matters: Issue #3 (Critical): A single accidental click on any theme in the catalog silently wiped all token overrides with no warning and no undo path. For a settings page that expects careful deliberate work, this represents a data-loss risk that is unacceptable.
+    - Dependencies: T963-subA
+    - Estimated effort: Medium
+    - Required outputs: `ThemePage.tsx` — add `useBlocker` or modal state, wrap `setTheme()` call in confirmation flow, move `setDraftDirty(false)` into the confirmed branch. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subD
+    Status: [ ] Todo
+    Title: Disable "Save and apply" and "Reset draft" when no draft changes exist; surface persistent draft banner
+    Description:
+    - Goal / acceptance criteria: (1) Add `disabled={!draftDirty}` to both the "Save and apply custom theme" button and the "Reset draft" button. (2) Replace the 1-line footnote that explains the mixed save model with a persistent Carbon `InlineNotification` (kind="warning") that renders whenever `draftDirty && draftOverrideCount > 0`, stating clearly that token overrides are not yet saved. The notification should include a secondary action "Save now" that calls the same save handler. The footnote note may remain as a supplementary explanation.
+    - Why it matters: Issues #4 (High) and #5 (High): Clickable buttons with no effect when nothing is dirty are confusing no-ops. The hidden footnote meant users could not discover that token changes require an explicit save while other settings auto-save.
+    - Dependencies: T963-subC
+    - Estimated effort: Low
+    - Required outputs: `ThemePage.tsx` — add `disabled` props, add `InlineNotification` block conditioned on `draftDirty`. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subE
+    Status: [ ] Todo
+    Title: Replace native `<select>` remnants with Carbon `<Dropdown>` and fix plugin source filter labels
+    Description:
+    - Goal / acceptance criteria: (1) Confirm no remaining native `<select>` elements exist in `ThemePage.tsx` after T963-subA. If any remain (e.g. a shell-theme base selector), replace with Carbon's `<Dropdown>` from `@carbon/react`. Remove the `.theme-page__dialog-select` CSS rule. (2) Replace raw plugin source filter button labels (`lv2`, `juce`, `toobamp`, `hardware`) with display-friendly strings: `{ lv2: 'LV2', juce: 'JUCE', toobamp: 'Toob Amp', hardware: 'Hardware' }`. Define the mapping as a typed constant above the component. The "All sources" label is already correct and must not change.
+    - Why it matters: Issue #6 (High): Native `<select>` renders inconsistently across OS themes and breaks Carbon visual coherence. Issue #7 (High): `toobamp` is an opaque internal identifier that will be unrecognisable to operators.
+    - Dependencies: T963-subA
+    - Estimated effort: Low
+    - Required outputs: `ThemePage.tsx` — any remaining `<select>` → Carbon `<Dropdown>`, plugin source label map constant. `ThemePage.css` — remove `.theme-page__dialog-select`. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subF
+    Status: [ ] Todo
+    Title: Shift focus into SlotPalettePicker when it opens inline
+    Description:
+    - Goal / acceptance criteria: When a token slot button is activated and `SlotPalettePicker` renders, programmatically move focus to the first interactive element inside the picker (the first color-family button in `.theme-page__picker-families`). Use a `useEffect` on a `ref` attached to the picker root, triggered by an `isOpen` state that flips `true` when the picker mounts. When the picker closes, return focus to the originating slot button. This must not cause scroll jitter; use `focus({ preventScroll: true })` where needed.
+    - Why it matters: Issue #8 (High): After clicking a token slot, keyboard users pressing Tab advanced to the next slot rather than entering the color picker. The inline picker was effectively inaccessible without a mouse.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: `ThemePage.tsx` — `useEffect`/`useRef` focus management inside `SlotPalettePicker` (or its call site). Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subG
+    Status: [ ] Todo
+    Title: Add responsive section navigation for sub-82rem collapsed layout
+    Description:
+    - Goal / acceptance criteria: Below 82 rem, the three-column layout collapses into a single long-scroll page. Add a sticky tab bar or anchor-link rail (Carbon `Tabs` or a custom sticky `<nav>`) that provides jump-links to each major section: Library, Preview, Color Scheme, Font, Token Studio, Appearance Assets, Personalization, and Behavior. Each section must receive a matching `id` attribute. The tab bar / nav must be hidden at ≥ 82 rem (it is redundant when the three-column layout is visible). Smooth scroll behavior via `scroll-behavior: smooth` on the scroll container or `element.scrollIntoView({ behavior: 'smooth' })`.
+    - Why it matters: Issue #9 (High): Without navigation, the collapsed single-column layout required users to manually scroll through an enormous page — effectively hiding settings that sit below the fold in sections the user cannot jump to directly.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: `ThemePage.tsx` — section `id` attributes, sticky nav component (inline or extracted). `ThemePage.css` — sticky nav styles, `@media (min-width: 82rem) { display: none }` guard. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subH
+    Status: [ ] Todo
+    Title: Replace native category color picker with constrained palette picker
+    Description:
+    - Goal / acceptance criteria: Replace the raw `<input type="color">` elements in the category-accent controls with the existing `SlotPalettePicker` (or a lightweight inline equivalent) constrained to the Carbon color palette families, matching the token-override color-picking experience. The category accent value must still be stored and applied as a CSS custom property. A "Reset to default" action per category must remain available.
+    - Why it matters: Issue #10 (High): The native browser color picker allowed off-palette colors that could violate the Carbon design system's contrast guarantees, and its OS-native appearance was jarring inside the styled ThemePage dialog. Token overrides used a constrained palette picker while category accents used an unconstrained native picker — two different UX patterns for the same conceptual action.
+    - Dependencies: T963-subF
+    - Estimated effort: Medium
+    - Required outputs: `ThemePage.tsx` — replace `<input type="color">` in the category-card controls with palette picker. `ThemePage.css` — remove `.theme-page__category-picker` rule if it becomes unused. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+  - ID: T963-subI
+    Status: [ ] Todo
+    Title: Remove dead code (ThemeDeckPreview, desktopThemeWorkspace), virtualize preset catalog, and polish medium/low issues
+    Description:
+    - Goal / acceptance criteria: (1) Delete the `ThemeDeckPreview` component (~lines 1943–2015 in `ThemePage.tsx`) — it is defined but never rendered. (2) Remove the `desktopThemeWorkspace = null` dead variable (line 1741) and its JSX reference (line 1745). (3) Wrap the preset theme catalog (`PRESET_THEME_GROUPS` rendering loop) in a `react-window` `FixedSizeList` or equivalent, using `react-virtualized-auto-sizer` for width — both are already in `package.json`. (4) Update "Preview target" option descriptions to describe the actual content area they represent rather than restating the interaction verb. (5) Make the footer status counters ("N token edits", "N appearance overrides") into anchor-scroll links that jump to Token Studio and Appearance Assets sections respectively. (6) Replace the `PaintBrush` icon on the "Page transition style" motion-head with a semantically appropriate motion icon (e.g. Carbon's `Loop` or `PlayOutline`). (7) Increase `<legend>` prominence for `theme-page__dialog-group` elements to `var(--cds-text-primary)` weight while keeping the small `0.75rem` size, or switch to `font-weight: 700` to improve scan-ability as group labels.
+    - Why it matters: Issues #11, #12 (Medium): Dead code adds maintenance surface. Issue #15 (Medium): 60+ eagerly-rendered `<button>` elements can block the main thread on lower-power audio-processing hardware. Issues #13, #14, #16, #17, #18 (Medium/Low): Polish and semantic correctness that improve keyboard navigation, information density, and visual consistency.
+    - Dependencies: T963-subG
+    - Estimated effort: Medium
+    - Required outputs: `ThemePage.tsx` — `ThemeDeckPreview` and `desktopThemeWorkspace` removed, virtualized catalog, updated option descriptions, linked footer counters, corrected motion icon, updated legend styles. `ThemePage.css` — any orphaned CSS rules removed. Typecheck pass.
+    Subtasks: None
+    Assigned to: Kombai
+    Last updated: 2026-04-11 UTC - Kombai
+Assigned to: Kombai
+Last updated: 2026-04-11 UTC - Kombai
+
+ID: T964
+Status: [✓] Done
+Title: Rebalance Start Menu hero and compact launcher placement for Advanced MIDI and Tesira AVB
+Description:
+- Goal / acceptance criteria: Update the Start Menu launcher panel so `Advanced MIDI` occupies the featured hero-tier slot currently used by `Tesira AVB`, while `Tesira AVB` remains available in the normal compact launcher listings. Preserve the existing launcher behavior, Carbon two-tier layout, and route wiring. Add focused frontend validation covering the hero/compact placement so the menu does not regress on later launcher catalog changes.
+- Why it matters: The current Start Menu emphasizes `Tesira AVB` in the hero tier while `Advanced MIDI` is demoted to a fallback compact insertion, which no longer matches the intended operator priority for the desktop launcher surface.
+- Dependencies: T962
+- Estimated effort: Low
+- Required outputs: Updated Start Menu launcher placement logic, focused AppShell or presentation tests, validation evidence, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-10 22:01 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/useAppShellPresentation.ts` so the Start Menu hero tier now promotes `Advanced MIDI` while explicitly demoting `Tesira AVB` to the compact launcher grid, preserving route wiring and the existing two-tier shell layout.
+  - Added focused placement coverage in `web/src/app/layout/AppShell.test.tsx` proving `Advanced MIDI` renders in the hero section and `Tesira AVB` remains available in the normal launcher listings.
+  - Refreshed `web/src/app/pages/DesktopExperience.snapshot.test.tsx` and its stored snapshot after correcting stale shell-label assertions so the visual regression harness matches the current `Platform menu` wording and new launcher arrangement.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand -u src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS

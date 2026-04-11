@@ -254,7 +254,7 @@ describe('AppShell floating launcher shell', () => {
   })
 
   it('shows the merged floating menu with header, system summary, and launcher tiles', async () => {
-    renderInRouter(
+    const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
@@ -288,6 +288,14 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
     expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(6)
+
+    const heroSection = container.querySelector('.shell-launcher__hero-section')
+    const compactSection = container.querySelector('.shell-launcher__compact-section')
+    expect(heroSection).toBeTruthy()
+    expect(compactSection).toBeTruthy()
+    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Advanced MIDI/ })).toBeInTheDocument()
+    expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Tesira AVB/ })).not.toBeInTheDocument()
+    expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Tesira AVB/ })).toBeInTheDocument()
   })
 
   it('shows empty interface copy when no physical audio or MIDI interfaces are detected', async () => {
