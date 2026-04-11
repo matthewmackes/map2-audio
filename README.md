@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1786** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1788** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9ae90d03`](https://github.com/matthewmackes/map2-audio/commit/9ae90d0318654bf5b57598593ac40829c28480f5) | Advance snapshot editor Carbon typography cleanup | Map2 Audio | 2026-04-11 |
+| [`d83e4fe7`](https://github.com/matthewmackes/map2-audio/commit/d83e4fe797a70dbfd098c50bb51f7eec7bf1310a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`2a4fb440`](https://github.com/matthewmackes/map2-audio/commit/2a4fb440d802169ee5e00c27d1bc87651c685fed) | Complete UTC migration sweep and advance Carbon cleanup | Map2 Audio | 2026-04-11 |
 | [`7b18a925`](https://github.com/matthewmackes/map2-audio/commit/7b18a925b32bc5a02f042ed4ba385c9dcc2da900) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`957c5183`](https://github.com/matthewmackes/map2-audio/commit/957c5183ac72e1ec52e36bffc71e6dbffefdc73e) | Advance UTC migration for service orchestrator | Map2 Audio | 2026-04-11 |
 | [`72abe9bd`](https://github.com/matthewmackes/map2-audio/commit/72abe9bd32d917becbf886814ccdf4c0817dfca9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`ac766a91`](https://github.com/matthewmackes/map2-audio/commit/ac766a91018341c7ee7fab15b40fdda995885d2e) | Unify remaining core singleton factories | Map2 Audio | 2026-04-11 |
 | [`f1108b2e`](https://github.com/matthewmackes/map2-audio/commit/f1108b2e41f14e56b5350a3d68f5f3f3d9ce8f14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`91601e62`](https://github.com/matthewmackes/map2-audio/commit/91601e6297083bfdab1ef31620872533b366f440) | Fix backend readiness deadlock and remove legacy route fa... | Map2 Audio | 2026-04-11 |
-| [`2dbf6be1`](https://github.com/matthewmackes/map2-audio/commit/2dbf6be1901d0c1b74d438672e4b042f980eb1c3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
