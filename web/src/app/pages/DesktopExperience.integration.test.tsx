@@ -258,6 +258,7 @@ describe('Desktop experience integration', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
     expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(container.querySelector('.shell-launcher')).toBeNull()
   })
 
   it('opens the Start Menu, navigates through it, and closes after routing', async () => {

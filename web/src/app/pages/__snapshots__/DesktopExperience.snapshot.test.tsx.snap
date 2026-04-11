@@ -2,7 +2,7 @@
 
 exports[`Desktop experience visual snapshots matches the boot splash shell 1`] = `
 <div
-  class="app-shell app-shell--windowed app-shell--landing"
+  class="app-shell app-shell--landing"
 >
   <main
     class="app-content app-content--full"
@@ -81,40 +81,6 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
     </section>
   </main>
   <div
-    class="shell-launcher"
-    style="--window-shell-accent: var(--cds-support-warning);"
-  >
-    <div
-      class="shell-launcher__button-wrap"
-    >
-      <button
-        aria-controls="shell-launcher-panel"
-        aria-expanded="false"
-        aria-haspopup="menu"
-        aria-label="Open platform menu"
-        class="shell-launcher__cube-btn"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="shell-launcher__cube-scene"
-        >
-          <div
-            style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
-          >
-            <div
-              style="width: 100%; height: 100%;"
-            >
-              <canvas
-                style="display: block;"
-              />
-            </div>
-          </div>
-        </span>
-      </button>
-    </div>
-  </div>
-  <div
     aria-hidden="true"
     class="cds--layer-one cds--modal shell-power-modal"
     role="presentation"
@@ -158,7 +124,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_7_"
+                  aria-labelledby="tooltip-_r_5_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -182,7 +148,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_7_"
+                id="tooltip-_r_5_"
                 role="tooltip"
               >
                 <span
@@ -233,7 +199,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
 
 exports[`Desktop experience visual snapshots matches the desktop shell after boot completes 1`] = `
 <div
-  class="app-shell app-shell--windowed app-shell--landing"
+  class="app-shell app-shell--landing"
 >
   <main
     class="app-content app-content--full"
@@ -247,6 +213,57 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
         data-wallpaper-mode="default-image"
         tabindex="-1"
       >
+        <div
+          class="hp2-desktop__controls"
+        >
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip cds--icon-tooltip--disabled"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-labelledby="tooltip-_r_l_"
+                class="hp2-desktop__fullscreen-toggle cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost cds--btn--disabled cds--btn--icon-only"
+                disabled=""
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="16"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M6 15 6 14 2.7 14 7 9.7 6.3 9 2 13.3 2 10 1 10 1 15z"
+                  />
+                  <path
+                    d="M10 1 10 2 13.3 2 9 6.3 9.7 7 14 2.7 14 6 15 6 15 1z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_l_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Enter browser fullscreen
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+        </div>
         <div
           aria-hidden="true"
           class="hp2-desktop__hero-wallpaper"
@@ -262,43 +279,38 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           aria-hidden="true"
           class="hp2-desktop__underlay"
         />
+        <div
+          class="hp2-desktop__cube-launcher"
+        >
+          <button
+            aria-controls="shell-launcher-panel"
+            aria-expanded="false"
+            aria-haspopup="menu"
+            aria-label="Open platform menu"
+            class="shell-launcher__cube-btn"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="shell-launcher__cube-scene"
+            >
+              <div
+                style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
+              >
+                <div
+                  style="width: 100%; height: 100%;"
+                >
+                  <canvas
+                    style="display: block;"
+                  />
+                </div>
+              </div>
+            </span>
+          </button>
+        </div>
       </section>
     </div>
   </main>
-  <div
-    class="shell-launcher"
-    style="--window-shell-accent: var(--cds-support-warning);"
-  >
-    <div
-      class="shell-launcher__button-wrap"
-    >
-      <button
-        aria-controls="shell-launcher-panel"
-        aria-expanded="false"
-        aria-haspopup="menu"
-        aria-label="Open platform menu"
-        class="shell-launcher__cube-btn"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="shell-launcher__cube-scene"
-        >
-          <div
-            style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
-          >
-            <div
-              style="width: 100%; height: 100%;"
-            >
-              <canvas
-                style="display: block;"
-              />
-            </div>
-          </div>
-        </span>
-      </button>
-    </div>
-  </div>
   <div
     aria-hidden="true"
     class="cds--layer-one cds--modal shell-power-modal"
@@ -343,7 +355,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_j_"
+                  aria-labelledby="tooltip-_r_f_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -367,7 +379,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_j_"
+                id="tooltip-_r_f_"
                 role="tooltip"
               >
                 <span
@@ -418,7 +430,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
 
 exports[`Desktop experience visual snapshots matches the desktop wallpaper context menu 1`] = `
 <div
-  class="app-shell app-shell--windowed app-shell--landing"
+  class="app-shell app-shell--landing"
 >
   <main
     class="app-content app-content--full"
@@ -432,6 +444,57 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
         data-wallpaper-mode="default-image"
         tabindex="-1"
       >
+        <div
+          class="hp2-desktop__controls"
+        >
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--left cds--tooltip cds--icon-tooltip cds--icon-tooltip--disabled"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-labelledby="tooltip-_r_r_"
+                class="hp2-desktop__fullscreen-toggle cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost cds--btn--disabled cds--btn--icon-only"
+                disabled=""
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="16"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M6 15 6 14 2.7 14 7 9.7 6.3 9 2 13.3 2 10 1 10 1 15z"
+                  />
+                  <path
+                    d="M10 1 10 2 13.3 2 9 6.3 9.7 7 14 2.7 14 6 15 6 15 1z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_r_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Enter browser fullscreen
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+        </div>
         <div
           aria-hidden="true"
           class="hp2-desktop__hero-wallpaper"
@@ -447,6 +510,35 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
           aria-hidden="true"
           class="hp2-desktop__underlay"
         />
+        <div
+          class="hp2-desktop__cube-launcher"
+        >
+          <button
+            aria-controls="shell-launcher-panel"
+            aria-expanded="false"
+            aria-haspopup="menu"
+            aria-label="Open platform menu"
+            class="shell-launcher__cube-btn"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="shell-launcher__cube-scene"
+            >
+              <div
+                style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
+              >
+                <div
+                  style="width: 100%; height: 100%;"
+                >
+                  <canvas
+                    style="display: block;"
+                  />
+                </div>
+              </div>
+            </span>
+          </button>
+        </div>
         <div
           aria-label="Desktop context menu"
           class="hp2-desktop__context-menu"
@@ -478,40 +570,6 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
       </section>
     </div>
   </main>
-  <div
-    class="shell-launcher"
-    style="--window-shell-accent: var(--cds-support-warning);"
-  >
-    <div
-      class="shell-launcher__button-wrap"
-    >
-      <button
-        aria-controls="shell-launcher-panel"
-        aria-expanded="false"
-        aria-haspopup="menu"
-        aria-label="Open platform menu"
-        class="shell-launcher__cube-btn"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="shell-launcher__cube-scene"
-        >
-          <div
-            style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
-          >
-            <div
-              style="width: 100%; height: 100%;"
-            >
-              <canvas
-                style="display: block;"
-              />
-            </div>
-          </div>
-        </span>
-      </button>
-    </div>
-  </div>
   <div
     aria-hidden="true"
     class="cds--layer-one cds--modal shell-power-modal"
@@ -556,7 +614,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_s_"
+                  aria-labelledby="tooltip-_r_12_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -580,7 +638,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_s_"
+                id="tooltip-_r_12_"
                 role="tooltip"
               >
                 <span
@@ -1445,10 +1503,10 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 </a>
                 <a
                   class="start-menu-hero-card"
-                  href="/perform"
+                  href="/physical-surfaces"
                   role="menuitem"
-                  style="--item-color: var(--cds-support-warning);"
-                  title="Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation. • Beta"
+                  style="--item-color: var(--cds-support-info);"
+                  title="Open the Enriched_MIDI_Physical_Surfaces shell for shared controller-family discovery, capability posture, and per-device subpages. • Beta"
                 >
                   <span
                     aria-hidden="true"
@@ -1456,79 +1514,16 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                   >
                     <svg
                       aria-hidden="true"
+                      fill="currentColor"
                       focusable="false"
                       height="20"
+                      preserveAspectRatio="xMidYMid meet"
                       viewBox="0 0 32 32"
                       width="20"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M8 7h16"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M12 7l-2 6"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M20 7l2 6"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M10 20h12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M12 24h8"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M16 10v10"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <path
-                        d="M16 10c0-2.4 1.8-4 4-4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        vector-effect="non-scaling-stroke"
-                      />
-                      <circle
-                        cx="20"
-                        cy="6"
-                        fill="currentColor"
-                        r="1.5"
+                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
                       />
                     </svg>
                   </span>
@@ -1538,12 +1533,12 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                     <span
                       class="start-menu-hero-card__label"
                     >
-                      Stage Mode
+                      Physical Surfaces
                     </span>
                     <span
                       class="start-menu-hero-card__desc"
                     >
-                      Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation.
+                      Open the Enriched_MIDI_Physical_Surfaces shell for shared controller-family discovery, capability posture, and per-device subpages.
                     </span>
                   </span>
                   <svg
@@ -1834,38 +1829,6 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                   </span>
                 </a>
                 <a
-                  class="start-menu-compact-card"
-                  href="/launch-control"
-                  role="menuitem"
-                  style="--item-color: var(--cds-support-success);"
-                  title="Open the dedicated Novation Launch Control editor for connection posture, template status, live mapping review, and LED override editing. • Beta"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="start-menu-compact-card__icon"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      fill="currentColor"
-                      focusable="false"
-                      height="16"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="16"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="start-menu-compact-card__label"
-                  >
-                    Launch Control
-                  </span>
-                </a>
-                <a
                   class="start-menu-compact-card start-menu-compact-card--blocked"
                   href="/lcd"
                   role="menuitem"
@@ -1903,38 +1866,6 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                     class="start-menu-compact-card__status"
                   >
                     Hardware Not Detected
-                  </span>
-                </a>
-                <a
-                  class="start-menu-compact-card"
-                  href="/midi-commander"
-                  role="menuitem"
-                  style="--item-color: var(--cds-support-warning);"
-                  title="Open the dedicated MeloAudio MIDI Commander editor for connection posture, manual setup guidance, and per-button or expression assignment editing. • Beta"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="start-menu-compact-card__icon"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      fill="currentColor"
-                      focusable="false"
-                      height="16"
-                      preserveAspectRatio="xMidYMid meet"
-                      viewBox="0 0 32 32"
-                      width="16"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="start-menu-compact-card__label"
-                  >
-                    MIDI Commander
                   </span>
                 </a>
                 <a
@@ -2023,10 +1954,105 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                 </a>
                 <a
                   class="start-menu-compact-card"
-                  href="/physical-surfaces"
+                  href="/perform"
                   role="menuitem"
-                  style="--item-color: var(--cds-support-info);"
-                  title="Open the Enriched_MIDI_Physical_Surfaces shell for shared controller-family discovery, capability posture, and per-device subpages. • Beta"
+                  style="--item-color: var(--cds-support-warning);"
+                  title="Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation. • Beta"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="start-menu-compact-card__icon"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      height="16"
+                      viewBox="0 0 32 32"
+                      width="16"
+                    >
+                      <path
+                        d="M8 7h16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M12 7l-2 6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M20 7l2 6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M10 20h12"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M12 24h8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M16 10v10"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <path
+                        d="M16 10c0-2.4 1.8-4 4-4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        vector-effect="non-scaling-stroke"
+                      />
+                      <circle
+                        cx="20"
+                        cy="6"
+                        fill="currentColor"
+                        r="1.5"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="start-menu-compact-card__label"
+                  >
+                    Stage Mode
+                  </span>
+                </a>
+                <a
+                  class="start-menu-compact-card"
+                  href="/brain"
+                  role="menuitem"
+                  style="--item-color: var(--cds-link-primary);"
+                  title="Open the Performance Brain workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics. • Beta"
                 >
                   <span
                     aria-hidden="true"
@@ -2050,7 +2076,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
                   <span
                     class="start-menu-compact-card__label"
                   >
-                    Physical Surfaces
+                    Brain
                   </span>
                 </a>
               </div>
@@ -2122,7 +2148,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_15_"
+                  aria-labelledby="tooltip-_r_1b_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -2146,7 +2172,7 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_15_"
+                id="tooltip-_r_1b_"
                 role="tooltip"
               >
                 <span

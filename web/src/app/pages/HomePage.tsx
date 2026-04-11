@@ -11,6 +11,8 @@ import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.pn
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
+import { SpinningCubeLauncher } from '../layout/SpinningCubeLauncher'
+import { HomeStartMenuOverlay } from './HomeStartMenuOverlay'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
@@ -26,9 +28,11 @@ export function HomePage() {
   const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
   const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement))
+  const [menuOpen, setMenuOpen] = useState(false)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const contextMenuItemRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const cubeButtonRef = useRef<HTMLButtonElement | null>(null)
   const fullscreenAvailable = typeof document.documentElement.requestFullscreen === 'function'
 
   useEffect(() => {
@@ -184,6 +188,16 @@ export function HomePage() {
     }
   }
 
+  const handleToggleCubeMenu = () => {
+    setMenuOpen((prev) => !prev)
+  }
+
+  const handleCloseMenu = () => {
+    setMenuOpen(false)
+    // Return focus to the cube button after closing
+    cubeButtonRef.current?.focus()
+  }
+
   if (showBootSplash) {
     return (
       <section className="hp2-boot" aria-label="MAP2 boot splash">
@@ -252,6 +266,16 @@ export function HomePage() {
           </div>
         ) : null}
         <div className="hp2-desktop__underlay" aria-hidden="true" />
+
+        {/* Centered Spinning Cube Launcher */}
+        <div className="hp2-desktop__cube-launcher">
+          <SpinningCubeLauncher
+            isActive={menuOpen}
+            buttonRef={cubeButtonRef}
+            onClick={handleToggleCubeMenu}
+          />
+        </div>
+
         {contextMenu ? (
           <div
             className="hp2-desktop__context-menu"
@@ -290,6 +314,9 @@ export function HomePage() {
           </div>
         ) : null}
       </section>
+
+      {/* Centered Start Menu Overlay */}
+      <HomeStartMenuOverlay open={menuOpen} onClose={handleCloseMenu} />
     </div>
   )
 }

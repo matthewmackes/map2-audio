@@ -90,6 +90,26 @@ jest.mock('../hooks/useReducedEffectsPreference', () => ({
   useReducedEffectsPreference: () => mockReducedEffectsPreference,
 }))
 
+jest.mock('../hooks/useHomePlatformStatus', () => ({
+  useHomePlatformStatus: () => ({
+    avb: { label: 'AVB: operational', state: 'ok' },
+    avdecc: { label: 'AVDECC: 1 entity', state: 'ok' },
+    nodes: { label: 'Nodes: 1 active', state: 'ok' },
+  }),
+}))
+
+jest.mock('../components/NodeNav/NodeNavBar', () => ({
+  NodeNavBar: () => <div data-testid="node-nav-bar" />,
+}))
+
+jest.mock('../components/LatencyPressureShellReadout', () => ({
+  LatencyPressureShellReadout: () => <div data-testid="shell-latency-pressure-readout">09</div>,
+}))
+
+jest.mock('../components/TaskbarClock', () => ({
+  TaskbarClock: () => <div data-testid="taskbar-clock">9:41 AM</div>,
+}))
+
 function makeJsonResponse(body: unknown, ok = true): Response {
   return {
     ok,
@@ -257,6 +277,23 @@ describe('HomePage landing', () => {
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
     expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
+  })
+
+  it('opens the centered platform menu on the desktop and restores focus when closed', async () => {
+    renderHome()
+
+    finishBootSplash()
+
+    const launcherButton = await screen.findByRole('button', { name: 'Open platform menu' })
+    fireEvent.click(launcherButton)
+
+    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Power' })).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open platform menu' })).toHaveFocus()
   })
 
   it('skips the boot splash when desktop session state already exists', async () => {

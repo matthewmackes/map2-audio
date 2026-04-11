@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Shipped T875 (remove decorative box-shadow from AppShell) and T874 (normalize border-radius to var(--border-radius-lg) token across 6 CSS files), advancing Carbon FLAT design conformance. T868–T867 remain unblocked and ready for implementation (6 tasks, 29 file changes estimated).
+Last updated: 2026-04-11 - Shipped T968, finishing the centered Home desktop launcher/start-menu overlay with shared shell restart wiring, single-launcher desktop chrome, refreshed desktop snapshots, and a validated production web build.
 
 ## Performance Brain
 
@@ -22456,3 +22456,26 @@ Last updated: 2026-04-11 11:27 EDT - Codex
   - Refreshed the generated version metadata again after the flat-radius frontend build so the committed repo state still matches the most recent validated frontend build timestamp.
 - Validation:
   - Generated during `npm --prefix web run build` -> PASS
+
+ID: T968
+Status: [✓] Done
+Title: Ship the centered Home desktop launcher and Start Menu overlay
+Description:
+- Goal / acceptance criteria: Finish the new Home desktop-centered cube launcher and centered Start Menu overlay so the desktop uses a single launcher path, the overlay preserves the existing restart-confirmation shell behavior, and focused frontend validation covers the shipped interaction model.
+- Why it matters: The new Home desktop shell is currently only partially integrated. Leaving it untracked or behaviorally inconsistent would ship duplicate launcher affordances and break the expected backend restart flow from the desktop Start Menu.
+- Dependencies: T964, T965, T967
+- Estimated effort: Medium
+- Required outputs: Updated Home desktop/start-menu frontend wiring, any supporting shell integration needed for consistent restart behavior, focused tests/snapshots/build evidence, version metadata if regenerated, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 12:18 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/pages/HomeStartMenuOverlay.tsx` and extended `web/src/app/pages/HomePage.tsx` / `web/src/app/pages/HomePage.css` so the landing desktop now opens a centered Start Menu overlay from the centered cube launcher instead of relying on the windowed shell launcher chrome.
+  - Added `web/src/app/layout/shellEvents.ts` and updated `web/src/app/layout/AppShell.tsx` so the Home overlay reuses the existing shell restart-confirmation modal path rather than shadowing backend restart behavior with a no-op action.
+  - Hid the legacy `ShellLauncherPanel` on the `/` desktop route while preserving it on routed workspaces, then refreshed `web/src/app/pages/HomePage.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/pages/DesktopExperience.snapshot.test.tsx` plus its stored snapshot so the new desktop interaction model is covered.
+  - Regenerated `VERSION` and `version.json` during the validated frontend build so the committed repository metadata matches the shipped web bundle.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`20 tests`)
+  - `CI=1 npm --prefix web test -- --runInBand -u --runTestsByPath src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`4 snapshots updated`)
+  - `npm --prefix web run build` -> PASS

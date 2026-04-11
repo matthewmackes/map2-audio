@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
@@ -15,6 +16,7 @@ import { useRunningRoutes } from './useRunningRoutes'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useLauncherInterfaceSummary } from './useLauncherInterfaceSummary'
+import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 const APP_WINDOW_CLOSE_DURATION_MS = 180
@@ -58,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   })
   const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
   const isFullBleedRoute = isFullBleedBaseRoute || showPerformFullscreen
-  const showLauncherShell = !showPerformFullscreen
+  const showLauncherShell = !showPerformFullscreen && !isDesktopRoute
   const { closingAppRoute, handleCloseCurrentApp } = useRunningRoutes({
     pathname: location.pathname,
     isDesktopRoute,
@@ -88,6 +90,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     setPowerMenuOpen,
     setRestartConfirmOpen,
   })
+
+  useEffect(() => {
+    const handleOpenRestartConfirm = () => {
+      closeShellMenus()
+      setRestartConfirmOpen(true)
+    }
+
+    window.addEventListener(SHELL_OPEN_RESTART_CONFIRM_EVENT, handleOpenRestartConfirm)
+    return () => {
+      window.removeEventListener(SHELL_OPEN_RESTART_CONFIRM_EVENT, handleOpenRestartConfirm)
+    }
+  }, [closeShellMenus, setRestartConfirmOpen])
+
   return (
     <div className={`${showLauncherShell ? shellClassName : shellClassName.replace(' app-shell--windowed', '')}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}`}>
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
