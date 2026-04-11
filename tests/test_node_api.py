@@ -15,7 +15,11 @@ from app.models.node import (
 )
 from app.routes import nodes as node_routes
 from app.services.node_discovery_service import NodeDiscoveryService, PeerRecord
-from app.services.node_health_service import NodeHealthService
+from app.services.node_health_service import (
+    NodeHealthService,
+    get_node_health_service,
+    reset_node_health_service,
+)
 
 
 class _FakeDiscoveryService:
@@ -256,3 +260,14 @@ def test_topology_derives_audio_edges_from_avb_streams(monkeypatch):
     assert len(topology.audio_edges) == 1
     assert topology.audio_edges[0].source_node_id == "node-local"
     assert topology.audio_edges[0].dest_node_id == "node-peer"
+
+
+def test_node_health_service_singleton_reset():
+    reset_node_health_service()
+    first = get_node_health_service()
+    second = get_node_health_service()
+    assert first is second
+
+    reset_node_health_service()
+    replacement = get_node_health_service()
+    assert replacement is not first

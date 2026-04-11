@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from app.utils.singleton import Singleton
+
 
 PushDeviceRole = Literal[
     "push_drum_machine",
@@ -47,7 +49,7 @@ class PushDeviceAssignment:
         return asdict(self)
 
 
-class PushDeviceAssignmentService:
+class PushDeviceAssignmentService(Singleton):
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or _DEFAULT_ASSIGNMENTS_PATH
         self._assignments = self._load()
@@ -128,11 +130,9 @@ class PushDeviceAssignmentService:
         return {"fingerprint": fingerprint, "status": "assigned", "assignment": assignment.to_dict()}
 
 
-_assignment_service: PushDeviceAssignmentService | None = None
-
-
 def get_push_device_assignment_service() -> PushDeviceAssignmentService:
-    global _assignment_service
-    if _assignment_service is None:
-        _assignment_service = PushDeviceAssignmentService()
-    return _assignment_service
+    return PushDeviceAssignmentService.get_instance()
+
+
+def reset_push_device_assignment_service() -> None:
+    PushDeviceAssignmentService.reset_instance()

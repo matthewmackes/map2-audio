@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import threading
 from typing import Any, Optional
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
+from app.utils.singleton import Singleton
 
 from .daemon import McuSurfaceDaemon
 from .protocol import (
@@ -18,11 +18,9 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
-_mcu_surface_service_lock = threading.Lock()
-_mcu_surface_service: Optional["McuSurfaceService"] = None
 
 
-class McuSurfaceService:
+class McuSurfaceService(Singleton):
     def __init__(
         self,
         *,
@@ -282,9 +280,8 @@ class McuSurfaceService:
 
 
 def get_mcu_surface_service() -> McuSurfaceService:
-    global _mcu_surface_service
-    if _mcu_surface_service is None:
-        with _mcu_surface_service_lock:
-            if _mcu_surface_service is None:
-                _mcu_surface_service = McuSurfaceService()
-    return _mcu_surface_service
+    return McuSurfaceService.get_instance()
+
+
+def reset_mcu_surface_service() -> None:
+    McuSurfaceService.reset_instance()

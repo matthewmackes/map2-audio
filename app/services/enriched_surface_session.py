@@ -7,12 +7,14 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
+from app.utils.singleton import Singleton
+
 
 def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-class EnrichedSurfaceSessionService:
+class EnrichedSurfaceSessionService(Singleton):
     def __init__(self) -> None:
         self._lock = asyncio.Lock()
         self._sessions: dict[str, dict[str, Any]] = {}
@@ -87,11 +89,9 @@ class EnrichedSurfaceSessionService:
         }
 
 
-_enriched_surface_session_service: EnrichedSurfaceSessionService | None = None
-
-
 def get_enriched_surface_session_service() -> EnrichedSurfaceSessionService:
-    global _enriched_surface_session_service
-    if _enriched_surface_session_service is None:
-        _enriched_surface_session_service = EnrichedSurfaceSessionService()
-    return _enriched_surface_session_service
+    return EnrichedSurfaceSessionService.get_instance()
+
+
+def reset_enriched_surface_session_service() -> None:
+    EnrichedSurfaceSessionService.reset_instance()

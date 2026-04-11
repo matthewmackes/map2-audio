@@ -9,6 +9,7 @@ from typing import Any, Literal
 from app.routes.audio import get_audio_status_route
 from app.routes.health import build_system_health_snapshot
 from app.routes.midi_hub import get_hub_status
+from app.utils.singleton import Singleton
 
 LCD_WIDTH = 128
 LCD_HEIGHT = 64
@@ -139,7 +140,7 @@ class _MetricSnapshot:
     source: str
 
 
-class MaschineLCDRenderService:
+class MaschineLCDRenderService(Singleton):
     def __init__(self) -> None:
         self._metric_history: dict[str, list[float]] = {}
 
@@ -343,16 +344,9 @@ class MaschineLCDRenderService:
         }
 
 
-_maschine_lcd_render_service: MaschineLCDRenderService | None = None
-
-
 def get_maschine_lcd_render_service() -> MaschineLCDRenderService:
-    global _maschine_lcd_render_service
-    if _maschine_lcd_render_service is None:
-        _maschine_lcd_render_service = MaschineLCDRenderService()
-    return _maschine_lcd_render_service
+    return MaschineLCDRenderService.get_instance()
 
 
 def reset_maschine_lcd_render_service() -> None:
-    global _maschine_lcd_render_service
-    _maschine_lcd_render_service = None
+    MaschineLCDRenderService.reset_instance()

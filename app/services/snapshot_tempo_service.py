@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from app.services import snapshot_runtime_service
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-class SnapshotTempoService:
+class SnapshotTempoService(Singleton):
     """Tracks stored snapshot tempo plus a session-only live tap override."""
 
     def __init__(self) -> None:
@@ -206,16 +207,9 @@ class SnapshotTempoService:
             logger.debug("Failed to apply snapshot tempo to runtime plugins: %s", exc)
 
 
-_snapshot_tempo_service_singleton: Optional[SnapshotTempoService] = None
-
-
 def get_snapshot_tempo_service() -> SnapshotTempoService:
-    global _snapshot_tempo_service_singleton
-    if _snapshot_tempo_service_singleton is None:
-        _snapshot_tempo_service_singleton = SnapshotTempoService()
-    return _snapshot_tempo_service_singleton
+    return SnapshotTempoService.get_instance()
 
 
 def reset_snapshot_tempo_service() -> None:
-    global _snapshot_tempo_service_singleton
-    _snapshot_tempo_service_singleton = None
+    SnapshotTempoService.reset_instance()

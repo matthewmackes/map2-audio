@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from app.services.drum_kit_service import get_drum_kit_service
+from app.utils.singleton import Singleton
 
 
-class PushDrumBrowserService:
+class PushDrumBrowserService(Singleton):
     def __init__(self) -> None:
         self._kit_service = get_drum_kit_service
         self._favorite_item_ids: set[str] = set()
@@ -223,11 +224,9 @@ class PushDrumBrowserService:
         return sample_paths
 
 
-_push_drum_browser_service: PushDrumBrowserService | None = None
-
-
 def get_push_drum_browser_service() -> PushDrumBrowserService:
-    global _push_drum_browser_service
-    if _push_drum_browser_service is None:
-        _push_drum_browser_service = PushDrumBrowserService()
-    return _push_drum_browser_service
+    return PushDrumBrowserService.get_instance()
+
+
+def reset_push_drum_browser_service() -> None:
+    PushDrumBrowserService.reset_instance()

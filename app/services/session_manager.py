@@ -7,8 +7,9 @@ import logging
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
 import shutil
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +102,10 @@ class SessionManager:
         self.current_session_path: Optional[Path] = None
         
         logger.info(f"Session manager initialized (sessions: {self.sessions_dir})")
+
+    @staticmethod
+    def _utc_now_iso() -> str:
+        return utc_now().isoformat()
     
     def create_session(
         self,
@@ -126,8 +131,8 @@ class SessionManager:
         
         metadata = SessionMetadata(
             name=name,
-            created_at=datetime.now().isoformat(),
-            modified_at=datetime.now().isoformat(),
+            created_at=self._utc_now_iso(),
+            modified_at=self._utc_now_iso(),
             description=description,
             author=author,
             tags=tags
@@ -172,7 +177,7 @@ class SessionManager:
             self._create_backup(path)
         
         # Update modified time
-        session.metadata.modified_at = datetime.now().isoformat()
+        session.metadata.modified_at = self._utc_now_iso()
         
         # Save to disk
         try:
@@ -345,7 +350,7 @@ class SessionManager:
         backup_dir = self.sessions_dir / "backups"
         backup_dir.mkdir(exist_ok=True)
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = utc_now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"{path.stem}_{timestamp}.map2"
         backup_path = backup_dir / backup_name
         

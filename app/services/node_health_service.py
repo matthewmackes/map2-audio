@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import subprocess
-import threading
 from dataclasses import dataclass
 from typing import Optional
 
@@ -16,6 +15,7 @@ import psutil
 
 from app.config import config_get
 from app.models.node import NodeHealth, NodeServices
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class RemoteNodeHealthTarget:
     host: str
 
 
-class NodeHealthService:
+class NodeHealthService(Singleton):
     REMOTE_TIMEOUT_S = 2.0
 
     async def get_local_health(self) -> NodeHealth:
@@ -150,14 +150,9 @@ class NodeHealthService:
         )
 
 
-_node_health_service: Optional[NodeHealthService] = None
-_node_health_service_lock = threading.Lock()
-
-
 def get_node_health_service() -> NodeHealthService:
-    global _node_health_service
-    if _node_health_service is None:
-        with _node_health_service_lock:
-            if _node_health_service is None:
-                _node_health_service = NodeHealthService()
-    return _node_health_service
+    return NodeHealthService.get_instance()
+
+
+def reset_node_health_service() -> None:
+    NodeHealthService.reset_instance()

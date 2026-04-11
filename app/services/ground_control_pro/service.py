@@ -19,6 +19,7 @@ import yaml
 from app.database import get_session
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+from app.utils.singleton import Singleton
 
 from .constants import PROFILE_ID
 from .daemon import GroundControlProDaemon
@@ -30,11 +31,10 @@ from .serializer import compile_model
 from .sysex_container import GroundControlSysexContainer
 from .validator import validate_model, validate_sysex_bytes
 
-_ground_control_pro_service_lock = threading.Lock()
 logger = logging.getLogger(__name__)
 
 
-class GroundControlProService:
+class GroundControlProService(Singleton):
     def __init__(
         self,
         base_dir: Optional[Path] = None,
@@ -1392,9 +1392,8 @@ _ground_control_pro_service: Optional[GroundControlProService] = None
 
 
 def get_ground_control_pro_service() -> GroundControlProService:
-    global _ground_control_pro_service
-    if _ground_control_pro_service is None:
-        with _ground_control_pro_service_lock:
-            if _ground_control_pro_service is None:
-                _ground_control_pro_service = GroundControlProService()
-    return _ground_control_pro_service
+    return GroundControlProService.get_instance()
+
+
+def reset_ground_control_pro_service() -> None:
+    GroundControlProService.reset_instance()

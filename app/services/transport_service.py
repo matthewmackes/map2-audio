@@ -8,6 +8,7 @@ from typing import Any
 
 from app.services.midi_hub.recorder import MidiRecorder, get_midi_recorder
 from app.services.transport_owner import TransportOwner
+from app.utils.singleton import Singleton
 
 
 def _session_id(prefix: str) -> str:
@@ -92,7 +93,7 @@ class _OwnerRegistration:
     priority: int = 0
 
 
-class TransportService:
+class TransportService(Singleton):
     def __init__(self) -> None:
         self._owners: dict[str, _OwnerRegistration] = {}
         self._active_owner_name: str | None = None
@@ -150,16 +151,9 @@ class TransportService:
         }
 
 
-_transport_service_singleton: TransportService | None = None
-
-
 def get_transport_service() -> TransportService:
-    global _transport_service_singleton
-    if _transport_service_singleton is None:
-        _transport_service_singleton = TransportService()
-    return _transport_service_singleton
+    return TransportService.get_instance()
 
 
 def reset_transport_service() -> None:
-    global _transport_service_singleton
-    _transport_service_singleton = None
+    TransportService.reset_instance()

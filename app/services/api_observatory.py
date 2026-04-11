@@ -13,10 +13,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 import re
-import threading
 from statistics import mean
 from typing import Any, Deque, Dict, Iterable, List, Optional
 from uuid import uuid4
+
+from app.utils.singleton import Singleton
 
 
 def _utc_now_iso() -> str:
@@ -45,7 +46,7 @@ class TrafficSession:
     events: list[dict[str, Any]]
 
 
-class ApiObservatoryService:
+class ApiObservatoryService(Singleton):
     def __init__(self, max_events: int = 1000) -> None:
         self._events: Deque[dict[str, Any]] = deque(maxlen=max(1, max_events))
         self._sessions: dict[str, TrafficSession] = {}
@@ -453,14 +454,9 @@ class ApiObservatoryService:
         return self._recording_session_id
 
 
-_api_observatory_service: Optional[ApiObservatoryService] = None
-_api_observatory_service_lock = threading.Lock()
-
-
 def get_api_observatory_service() -> ApiObservatoryService:
-    global _api_observatory_service
-    if _api_observatory_service is None:
-        with _api_observatory_service_lock:
-            if _api_observatory_service is None:
-                _api_observatory_service = ApiObservatoryService()
-    return _api_observatory_service
+    return ApiObservatoryService.get_instance()
+
+
+def reset_api_observatory_service() -> None:
+    ApiObservatoryService.reset_instance()

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import transport as transport_routes
-from app.services.transport_service import reset_transport_service
+from app.services.transport_service import get_transport_service, reset_transport_service
 
 
 class _FakeOwner:
@@ -89,3 +89,14 @@ def test_transport_routes_dispatch_and_owner_transfer(monkeypatch):
 
     invalid = client.post("/api/transport/warp")
     assert invalid.status_code == 400
+
+
+def test_transport_service_singleton_reset():
+    reset_transport_service()
+    first = get_transport_service()
+    second = get_transport_service()
+    assert first is second
+
+    reset_transport_service()
+    replacement = get_transport_service()
+    assert replacement is not first

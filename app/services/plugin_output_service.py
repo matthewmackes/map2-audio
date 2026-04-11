@@ -22,6 +22,8 @@ from typing import Dict, List, Optional, Callable, Any
 from collections import defaultdict
 import math
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -226,7 +228,7 @@ class PeakMeter:
         self._rms_count = 0
 
 
-class PluginOutputService:
+class PluginOutputService(Singleton):
     """
     Service for managing plugin output data streams.
     
@@ -527,16 +529,13 @@ class PluginOutputService:
                 logger.error(f"Error in output service subscriber: {e}")
 
 
-# Singleton instance
-_output_service: Optional[PluginOutputService] = None
-
-
 def get_output_service() -> PluginOutputService:
     """Get the global plugin output service instance."""
-    global _output_service
-    if _output_service is None:
-        _output_service = PluginOutputService()
-    return _output_service
+    return PluginOutputService.get_instance()
+
+
+def reset_output_service() -> None:
+    PluginOutputService.reset_instance()
 
 
 def detect_output_designation(name: str, symbol: str) -> OutputDesignation:

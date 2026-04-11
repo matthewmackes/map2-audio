@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 from sqlalchemy import select
 
 from app.services.tesira.tesira_block_registry import list_blocks as list_registry_blocks
+from app.utils.singleton import Singleton
 
 
 def _iso(dt: Optional[datetime]) -> Optional[str]:
@@ -78,7 +79,7 @@ def _has_cycle(graph: Dict[str, Set[str]]) -> bool:
     return any(visit(node) for node in graph.keys())
 
 
-class TesiraDesignWorkspaceService:
+class TesiraDesignWorkspaceService(Singleton):
     """CRUD + validation service for Tesira design workspaces."""
 
     @staticmethod
@@ -342,11 +343,9 @@ class TesiraDesignWorkspaceService:
         }
 
 
-_tesira_design_workspace_service: Optional[TesiraDesignWorkspaceService] = None
-
-
 def get_tesira_design_workspace_service() -> TesiraDesignWorkspaceService:
-    global _tesira_design_workspace_service
-    if _tesira_design_workspace_service is None:
-        _tesira_design_workspace_service = TesiraDesignWorkspaceService()
-    return _tesira_design_workspace_service
+    return TesiraDesignWorkspaceService.get_instance()
+
+
+def reset_tesira_design_workspace_service() -> None:
+    TesiraDesignWorkspaceService.reset_instance()

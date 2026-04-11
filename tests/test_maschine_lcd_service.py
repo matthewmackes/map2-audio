@@ -4,6 +4,7 @@ import pytest
 
 from app.services.maschine_lcd_service import (
     MaschineLCDRenderService,
+    get_maschine_lcd_render_service,
     reset_maschine_lcd_render_service,
 )
 
@@ -83,3 +84,14 @@ async def test_render_stats_tracks_metric_history(monkeypatch):
     assert second["meta"]["history_points"] >= 1
     assert second["stats"]["metric_count"] >= 4
     assert len(second["right"]["data"]) > 100
+
+
+def test_maschine_lcd_render_service_singleton_reset():
+    reset_maschine_lcd_render_service()
+    first = get_maschine_lcd_render_service()
+    second = get_maschine_lcd_render_service()
+    assert first is second
+
+    reset_maschine_lcd_render_service()
+    replacement = get_maschine_lcd_render_service()
+    assert replacement is not first

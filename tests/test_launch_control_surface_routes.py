@@ -6,6 +6,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import launch_control_surface as launch_control_routes
+from app.services.launch_control_surface.service import (
+    get_launch_control_surface_service,
+    reset_launch_control_surface_service,
+)
 
 
 class _FakeLaunchControlService:
@@ -110,3 +114,14 @@ def test_launch_control_routes_status_projection_and_mapping_patch(monkeypatch):
     )
     assert mapping.status_code == 200
     assert mapping.json()["projection"]["snapshot"]["id"] == 11
+
+
+def test_launch_control_surface_singleton_reset():
+    reset_launch_control_surface_service()
+    first = get_launch_control_surface_service()
+    second = get_launch_control_surface_service()
+    assert first is second
+
+    reset_launch_control_surface_service()
+    replacement = get_launch_control_surface_service()
+    assert replacement is not first

@@ -4,6 +4,10 @@ import asyncio
 from types import SimpleNamespace
 
 from app.services import enriched_midi_physical_surfaces as enriched_module
+from app.services.enriched_midi_physical_surfaces import (
+    get_enriched_midi_physical_surfaces_service,
+    reset_enriched_midi_physical_surfaces_service,
+)
 
 
 class _FakeMaschineService:
@@ -261,3 +265,14 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
         "meloaudio-midi-commander",
         "mackie-mcu-pro",
     }
+
+
+def test_enriched_midi_physical_surfaces_singleton_reset():
+    reset_enriched_midi_physical_surfaces_service()
+    first = get_enriched_midi_physical_surfaces_service()
+    second = get_enriched_midi_physical_surfaces_service()
+    assert first is second
+
+    reset_enriched_midi_physical_surfaces_service()
+    replacement = get_enriched_midi_physical_surfaces_service()
+    assert replacement is not first

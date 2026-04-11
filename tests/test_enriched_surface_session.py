@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.enriched_surface_session import EnrichedSurfaceSessionService
+from app.services.enriched_surface_session import (
+    EnrichedSurfaceSessionService,
+    get_enriched_surface_session_service,
+    reset_enriched_surface_session_service,
+)
 
 
 @pytest.mark.asyncio
@@ -46,3 +50,14 @@ async def test_session_service_prefers_derived_recent_target_when_present():
 
     assert resolved["recent_target"]["target_id"] == "runtime-node"
     assert resolved["recent_target"]["source"] == "maschine-audio-grid-selection"
+
+
+def test_enriched_surface_session_singleton_reset():
+    reset_enriched_surface_session_service()
+    first = get_enriched_surface_session_service()
+    second = get_enriched_surface_session_service()
+    assert first is second
+
+    reset_enriched_surface_session_service()
+    replacement = get_enriched_surface_session_service()
+    assert replacement is not first

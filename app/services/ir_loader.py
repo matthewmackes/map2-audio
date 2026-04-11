@@ -15,10 +15,12 @@ except ImportError:
     sf = None
 import hashlib
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
-class IRLoader:
+class IRLoader(Singleton):
     """Load and validate impulse response files."""
     
     SUPPORTED_FORMATS = ['.wav', '.flac', '.aiff', '.aif']
@@ -270,13 +272,10 @@ class IRLoader:
         logger.debug("IR cache cleared")
 
 
-# Global instance
-_ir_loader: Optional[IRLoader] = None
-
-
 def get_ir_loader() -> IRLoader:
     """Get or create global IR loader instance."""
-    global _ir_loader
-    if _ir_loader is None:
-        _ir_loader = IRLoader()
-    return _ir_loader
+    return IRLoader.get_instance()
+
+
+def reset_ir_loader() -> None:
+    IRLoader.reset_instance()

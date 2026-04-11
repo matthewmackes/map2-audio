@@ -21,6 +21,7 @@ from app.services.push_surface.drum_registry import (
 )
 from app.services.transport_service import get_transport_service
 from app.services.websocket_manager import ws_manager
+from app.utils.singleton import Singleton
 
 
 PUSH_PENDING_CONFIRMATION_TOPIC = "push_surface:pending_confirmation"
@@ -356,7 +357,7 @@ class DrumMachineRuntimeFacade:
         raise ValueError(f"unsupported drum command: {command}")
 
 
-class PushDrumSessionService:
+class PushDrumSessionService(Singleton):
     _confirmation_timeout_ms = 15_000
 
     def __init__(self) -> None:
@@ -1280,11 +1281,9 @@ class PushDrumSessionService:
         return {"status": "ok", "command_result": result, **surface_state}
 
 
-_push_drum_session_service: PushDrumSessionService | None = None
-
-
 def get_push_drum_session_service() -> PushDrumSessionService:
-    global _push_drum_session_service
-    if _push_drum_session_service is None:
-        _push_drum_session_service = PushDrumSessionService()
-    return _push_drum_session_service
+    return PushDrumSessionService.get_instance()
+
+
+def reset_push_drum_session_service() -> None:
+    PushDrumSessionService.reset_instance()

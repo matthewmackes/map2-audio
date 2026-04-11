@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import threading
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any, Optional
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.snapshot_controller_display_preview_service import build_controller_display_plugin_catalog
+from app.utils.singleton import Singleton
 
 from .param_grouping import build_parameter_banks
 
@@ -29,10 +29,6 @@ _TRANSPORT_ACTIONS_BY_NOTE = {
     MCU_PLAY_NOTE: "play",
     MCU_RECORD_NOTE: "record",
 }
-
-_mcu_snapshot_editor_bridge_lock = threading.Lock()
-_mcu_snapshot_editor_bridge: Optional["McuSnapshotEditorBridgeService"] = None
-
 
 def _safe_int(value: Any, fallback: int | None = None) -> int | None:
     try:
@@ -74,7 +70,7 @@ def _truncate_scribble_label(name: str, symbol: str) -> str:
     return compact[:7]
 
 
-class McuSnapshotEditorBridgeService:
+class McuSnapshotEditorBridgeService(Singleton):
     def __init__(
         self,
         *,
@@ -595,9 +591,8 @@ class McuSnapshotEditorBridgeService:
 
 
 def get_mcu_snapshot_editor_bridge_service() -> McuSnapshotEditorBridgeService:
-    global _mcu_snapshot_editor_bridge
-    if _mcu_snapshot_editor_bridge is None:
-        with _mcu_snapshot_editor_bridge_lock:
-            if _mcu_snapshot_editor_bridge is None:
-                _mcu_snapshot_editor_bridge = McuSnapshotEditorBridgeService()
-    return _mcu_snapshot_editor_bridge
+    return McuSnapshotEditorBridgeService.get_instance()
+
+
+def reset_mcu_snapshot_editor_bridge_service() -> None:
+    McuSnapshotEditorBridgeService.reset_instance()

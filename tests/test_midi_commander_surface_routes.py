@@ -6,6 +6,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import midi_commander_surface as midi_commander_routes
+from app.services.midi_commander_surface.service import (
+    get_midi_commander_surface_service,
+    reset_midi_commander_surface_service,
+)
 
 
 class _FakeMidiCommanderService:
@@ -119,3 +123,14 @@ def test_midi_commander_routes_status_projection_and_mapping_patch(monkeypatch):
     )
     assert mapping.status_code == 200
     assert mapping.json()["projection"]["snapshot"]["id"] == 11
+
+
+def test_midi_commander_surface_singleton_reset():
+    reset_midi_commander_surface_service()
+    first = get_midi_commander_surface_service()
+    second = get_midi_commander_surface_service()
+    assert first is second
+
+    reset_midi_commander_surface_service()
+    replacement = get_midi_commander_surface_service()
+    assert replacement is not first

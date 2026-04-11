@@ -98,8 +98,18 @@ def _build_browser(tmp_path, monkeypatch):
     monkeypatch.setattr(drum_kit_service_module, "_ACTIVE_KIT_STATE_PATH", active_kit_state_path)
     monkeypatch.setattr(drum_kit_service_module, "get_audio_engine", lambda: fake_engine_service)
     drum_kit_service_module.DrumKitService.reset_instance()
-    drum_browser_module._push_drum_browser_service = None
+    drum_browser_module.reset_push_drum_browser_service()
     return drum_browser_module.get_push_drum_browser_service(), drum_kit_service_module.get_drum_kit_service(), factory_dir, user_dir
+
+
+def test_push_drum_browser_singleton_getter_resets_between_runs(tmp_path, monkeypatch):
+    first, *_ = _build_browser(tmp_path, monkeypatch)
+    second = drum_browser_module.get_push_drum_browser_service()
+    assert first is second
+
+    drum_browser_module.reset_push_drum_browser_service()
+    replacement = drum_browser_module.get_push_drum_browser_service()
+    assert replacement is not first
 
 
 def test_push_drum_browser_lists_kits_and_kit_instruments(tmp_path, monkeypatch):

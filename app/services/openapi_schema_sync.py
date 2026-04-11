@@ -4,7 +4,6 @@ import asyncio
 import hashlib
 import json
 import logging
-import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -13,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
 from app.services.websocket_manager import ws_manager
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class SchemaSnapshot:
     schema_hash: str
 
 
-class OpenApiSchemaSyncService:
+class OpenApiSchemaSyncService(Singleton):
     def __init__(self, poll_interval_seconds: float = 5.0) -> None:
         self.poll_interval_seconds = max(0.05, poll_interval_seconds)
         self._app: Optional[FastAPI] = None
@@ -181,14 +181,9 @@ class OpenApiSchemaSyncService:
                 continue
 
 
-_schema_sync_service: Optional[OpenApiSchemaSyncService] = None
-_schema_sync_service_lock = threading.Lock()
-
-
 def get_openapi_schema_sync_service() -> OpenApiSchemaSyncService:
-    global _schema_sync_service
-    if _schema_sync_service is None:
-        with _schema_sync_service_lock:
-            if _schema_sync_service is None:
-                _schema_sync_service = OpenApiSchemaSyncService()
-    return _schema_sync_service
+    return OpenApiSchemaSyncService.get_instance()
+
+
+def reset_openapi_schema_sync_service() -> None:
+    OpenApiSchemaSyncService.reset_instance()

@@ -173,3 +173,14 @@ async def test_apply_snapshot_tempo_to_engine_updates_only_synced_or_dedicated_b
         ("map2://juce/delay", "tempo", 136.0, 0),
         ("urn:test:free-bpm", "bpm", 136.0, 2),
     ]
+
+
+def test_snapshot_tempo_service_singleton_reset():
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    first = snapshot_tempo_service.get_snapshot_tempo_service()
+    second = snapshot_tempo_service.get_snapshot_tempo_service()
+    assert first is second
+
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    replacement = snapshot_tempo_service.get_snapshot_tempo_service()
+    assert replacement is not first

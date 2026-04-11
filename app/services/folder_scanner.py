@@ -8,7 +8,6 @@ import os
 import hashlib
 from typing import Dict, List, Set, Optional
 from pathlib import Path
-from datetime import datetime
 import asyncio
 
 from app.services.ir_loader import get_ir_loader
@@ -16,6 +15,7 @@ from app.database import get_session, ImpulseResponse, NAMModel, Plugin
 from app.paths import StoragePaths
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
+from app.utils.time import utc_now
 from sqlalchemy import delete
 
 logger = get_logger(__name__)
@@ -395,13 +395,13 @@ class FolderScanner(Singleton):
         """
         logger.info("Starting full folder scan...")
         
-        start_time = datetime.utcnow()
+        start_time = utc_now()
         
         results = {
             'nams': await self.scan_nams(),
             'irs': await self.scan_irs(),
             'lv2': await self.scan_lv2(),
-            'scan_time': (datetime.utcnow() - start_time).total_seconds()
+            'scan_time': (utc_now() - start_time).total_seconds()
         }
         
         # Calculate totals

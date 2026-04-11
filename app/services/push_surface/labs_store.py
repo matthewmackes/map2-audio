@@ -8,6 +8,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from app.utils.singleton import Singleton
+
 
 def _default_store_path() -> Path:
     return Path(os.getenv("MAP2_PUSH_SURFACE_LABS_STORE", Path.home() / ".map2" / "push_surface_labs.json"))
@@ -343,7 +345,7 @@ def _default_editor_state() -> dict[str, Any]:
     }
 
 
-class PushSurfaceLabsStore:
+class PushSurfaceLabsStore(Singleton):
     """File-backed persistence for the Labs Push editor."""
 
     def __init__(self, path: Path | None = None) -> None:
@@ -413,11 +415,9 @@ class PushSurfaceLabsStore:
         return None
 
 
-_push_surface_labs_store: PushSurfaceLabsStore | None = None
-
-
 def get_push_surface_labs_store() -> PushSurfaceLabsStore:
-    global _push_surface_labs_store
-    if _push_surface_labs_store is None:
-        _push_surface_labs_store = PushSurfaceLabsStore()
-    return _push_surface_labs_store
+    return PushSurfaceLabsStore.get_instance()
+
+
+def reset_push_surface_labs_store() -> None:
+    PushSurfaceLabsStore.reset_instance()

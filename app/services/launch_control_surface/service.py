@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import threading
 from typing import Any, Optional
 
 from app.database import get_session
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.transport_service import get_transport_service
+from app.utils.singleton import Singleton
 
 from .daemon import LaunchControlSurfaceDaemon
 from .colors import resolve_led_feedback
@@ -23,8 +23,6 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
-_launch_control_surface_service_lock = threading.Lock()
-_launch_control_surface_service: Optional["LaunchControlSurfaceService"] = None
 
 
 def _coerce_int(value: Any, *, minimum: int, maximum: int) -> int | None:
@@ -35,7 +33,7 @@ def _coerce_int(value: Any, *, minimum: int, maximum: int) -> int | None:
     return max(minimum, min(maximum, parsed))
 
 
-class LaunchControlSurfaceService:
+class LaunchControlSurfaceService(Singleton):
     def __init__(
         self,
         *,
@@ -812,9 +810,8 @@ class LaunchControlSurfaceService:
 
 
 def get_launch_control_surface_service() -> LaunchControlSurfaceService:
-    global _launch_control_surface_service
-    if _launch_control_surface_service is None:
-        with _launch_control_surface_service_lock:
-            if _launch_control_surface_service is None:
-                _launch_control_surface_service = LaunchControlSurfaceService()
-    return _launch_control_surface_service
+    return LaunchControlSurfaceService.get_instance()
+
+
+def reset_launch_control_surface_service() -> None:
+    LaunchControlSurfaceService.reset_instance()

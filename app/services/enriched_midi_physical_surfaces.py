@@ -27,6 +27,7 @@ from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.midi_commander_surface import get_midi_commander_surface_service
 from app.services.maschine_service import get_maschine_service
 from app.services.push_surface import get_push_surface_manager
+from app.utils.singleton import Singleton
 
 
 STACK_NAME = "Enriched_MIDI_Physical_Surfaces"
@@ -370,7 +371,7 @@ def _has_python_module(module_name: str) -> bool:
     return importlib.util.find_spec(module_name) is not None
 
 
-class EnrichedMidiPhysicalSurfacesService:
+class EnrichedMidiPhysicalSurfacesService(Singleton):
     """Unifies host detection, runtime state, and capability metadata."""
 
     async def get_summary(self) -> dict[str, Any]:
@@ -1001,11 +1002,9 @@ class EnrichedMidiPhysicalSurfacesService:
         }
 
 
-_enriched_midi_physical_surfaces_service: EnrichedMidiPhysicalSurfacesService | None = None
-
-
 def get_enriched_midi_physical_surfaces_service() -> EnrichedMidiPhysicalSurfacesService:
-    global _enriched_midi_physical_surfaces_service
-    if _enriched_midi_physical_surfaces_service is None:
-        _enriched_midi_physical_surfaces_service = EnrichedMidiPhysicalSurfacesService()
-    return _enriched_midi_physical_surfaces_service
+    return EnrichedMidiPhysicalSurfacesService.get_instance()
+
+
+def reset_enriched_midi_physical_surfaces_service() -> None:
+    EnrichedMidiPhysicalSurfacesService.reset_instance()

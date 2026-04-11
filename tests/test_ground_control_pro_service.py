@@ -12,7 +12,11 @@ from app.services import snapshot_service as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services.chain_service import ChainService
 from app.services.ground_control_pro.model import GroundControlTransportOptions
-from app.services.ground_control_pro.service import GroundControlProService
+from app.services.ground_control_pro.service import (
+    GroundControlProService,
+    get_ground_control_pro_service,
+    reset_ground_control_pro_service,
+)
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.snapshot_service import SnapshotService
 from sqlalchemy import select
@@ -124,6 +128,17 @@ def test_ground_control_pro_service_backup_compile_push_and_verify(tmp_path: Pat
     assert "compiled_syx" in artifact_kinds
     assert "transmit_syx" in artifact_kinds
     assert "verify_redump_syx" in artifact_kinds
+
+
+def test_ground_control_pro_singleton_reset() -> None:
+    reset_ground_control_pro_service()
+    first = get_ground_control_pro_service()
+    second = get_ground_control_pro_service()
+    assert first is second
+
+    reset_ground_control_pro_service()
+    replacement = get_ground_control_pro_service()
+    assert replacement is not first
 
 
 def test_ground_control_pro_service_requires_backup_before_push(tmp_path: Path) -> None:

@@ -119,7 +119,7 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
     monkeypatch.setattr(dev_proxy_route, "config_get", lambda key, default=None: True)
 
     # Reset singleton state for deterministic assertions.
-    monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    observatory_service_module.reset_api_observatory_service()
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache", None)
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache_at", 0.0)
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_run_cache", {})
@@ -176,7 +176,7 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
 
 
 def test_traffic_capture_skips_streaming_body_and_preserves_background(monkeypatch):
-    monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    observatory_service_module.reset_api_observatory_service()
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache", None)
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_cache_at", 0.0)
     monkeypatch.setattr("app.middleware.traffic_capture._dependency_snapshot_run_cache", {})
@@ -218,7 +218,7 @@ def test_traffic_capture_skips_streaming_body_and_preserves_background(monkeypat
 
 
 def test_websocket_events_are_captured_with_run_id(monkeypatch):
-    monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    observatory_service_module.reset_api_observatory_service()
     ws_manager.active_connections.clear()
     ws_manager.subscriptions.clear()
     ws_manager.connection_info.clear()
@@ -235,13 +235,13 @@ def test_websocket_events_are_captured_with_run_id(monkeypatch):
             subscribed = websocket.receive_json()
             assert subscribed["type"] == "subscribed"
 
-    traffic = client.get(
-        "/api/observatory/traffic",
-        params={"event_type": "websocket", "run_id": "ws-qual-1"},
-    )
-    assert traffic.status_code == 200
-    payload = traffic.json()
-    actions = [event["meta"]["action"] for event in payload["events"]]
-    assert "connect" in actions
-    assert "subscribe" in actions
-    assert "disconnect" in actions
+        traffic = client.get(
+            "/api/observatory/traffic",
+            params={"event_type": "websocket", "run_id": "ws-qual-1"},
+        )
+        assert traffic.status_code == 200
+        payload = traffic.json()
+        actions = [event["meta"]["action"] for event in payload["events"]]
+        assert "connect" in actions
+        assert "subscribe" in actions
+        assert "disconnect" in actions

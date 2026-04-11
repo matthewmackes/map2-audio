@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import threading
 from typing import Any, Optional
 
 from app.database import get_session
@@ -10,6 +9,7 @@ from app.services.event_publisher import RealtimeMessagePublisher, event_publish
 from app.services.midi_device_profiles import device_profile_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 from app.services.transport_service import get_transport_service
+from app.utils.singleton import Singleton
 
 from .daemon import MidiCommanderSurfaceDaemon
 from .protocol import (
@@ -21,8 +21,6 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
-_midi_commander_surface_service_lock = threading.Lock()
-_midi_commander_surface_service: Optional["MidiCommanderSurfaceService"] = None
 
 
 def _coerce_int(value: Any, *, minimum: int, maximum: int) -> int | None:
@@ -56,7 +54,7 @@ def _normalize_control_entry(entry: dict[str, Any], *, fallback: dict[str, Any])
     }
 
 
-class MidiCommanderSurfaceService:
+class MidiCommanderSurfaceService(Singleton):
     def __init__(
         self,
         *,
@@ -549,9 +547,8 @@ class MidiCommanderSurfaceService:
 
 
 def get_midi_commander_surface_service() -> MidiCommanderSurfaceService:
-    global _midi_commander_surface_service
-    if _midi_commander_surface_service is None:
-        with _midi_commander_surface_service_lock:
-            if _midi_commander_surface_service is None:
-                _midi_commander_surface_service = MidiCommanderSurfaceService()
-    return _midi_commander_surface_service
+    return MidiCommanderSurfaceService.get_instance()
+
+
+def reset_midi_commander_surface_service() -> None:
+    MidiCommanderSurfaceService.reset_instance()

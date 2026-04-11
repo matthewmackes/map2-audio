@@ -6,6 +6,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import mcu_surface as mcu_routes
+from app.services.mcu_surface.bridge import (
+    get_mcu_snapshot_editor_bridge_service,
+    reset_mcu_snapshot_editor_bridge_service,
+)
+from app.services.mcu_surface.service import get_mcu_surface_service, reset_mcu_surface_service
 
 
 class _FakeMcuSurfaceService:
@@ -87,3 +92,25 @@ def test_mcu_routes_status_projection_and_event(monkeypatch):
     assert event.status_code == 200
     assert event.json()["result"]["status"] == "completed"
     assert event.json()["result"]["destination_port"] == "MCU Out"
+
+
+def test_mcu_surface_singleton_reset():
+    reset_mcu_surface_service()
+    first = get_mcu_surface_service()
+    second = get_mcu_surface_service()
+    assert first is second
+
+    reset_mcu_surface_service()
+    replacement = get_mcu_surface_service()
+    assert replacement is not first
+
+
+def test_mcu_bridge_singleton_reset():
+    reset_mcu_snapshot_editor_bridge_service()
+    first = get_mcu_snapshot_editor_bridge_service()
+    second = get_mcu_snapshot_editor_bridge_service()
+    assert first is second
+
+    reset_mcu_snapshot_editor_bridge_service()
+    replacement = get_mcu_snapshot_editor_bridge_service()
+    assert replacement is not first
