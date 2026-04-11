@@ -64,7 +64,7 @@ class _FakeEnhancedNode:
         self.role = role
         self.health_score = health_score
         self.capabilities = capabilities
-        self.last_seen = datetime.utcnow()
+        self.last_seen = datetime.now(timezone.utc)
         self._online = online
 
     def is_online(self, timeout_seconds=60):
@@ -137,7 +137,7 @@ def test_peer_discovery_status_merges_mdns_registry_and_enhanced_sources(monkeyp
             "peer-b": NodeHealthStatus(
                 node_id="peer-b",
                 is_online=True,
-                last_seen=datetime.utcnow(),
+                last_seen=datetime.now(timezone.utc),
                 response_time_ms=3.5,
                 metadata={"source": "heartbeat"},
             )
@@ -230,14 +230,14 @@ def test_cluster_visibility_routes_return_union_of_discovery_and_heartbeat_sourc
             "peer-heartbeat": NodeHealthStatus(
                 node_id="peer-heartbeat",
                 is_online=True,
-                last_seen=datetime.utcnow(),
+                last_seen=datetime.now(timezone.utc),
                 response_time_ms=5.0,
                 metadata={},
             ),
             "peer-offline": NodeHealthStatus(
                 node_id="peer-offline",
                 is_online=False,
-                last_seen=datetime.utcnow() - timedelta(seconds=30),
+                last_seen=datetime.now(timezone.utc) - timedelta(seconds=30),
                 consecutive_failures=3,
                 metadata={},
             ),

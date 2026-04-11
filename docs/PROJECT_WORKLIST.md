@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 06:49 EDT - Codex
+Last updated: 2026-04-11 06:54 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19572,6 +19572,8 @@ Last updated: 2026-04-11 06:49 EDT - Codex
   - Selected the next safe process-wide singleton bundle outside the cluster core: `ws_federation`, `expression_service`, `plugin_appearance_service`, and `push_surface/drum_registry`. These all expose process-wide service getters; only `drum_registry` keeps its existing per-instance `get_instance(...)` method and therefore uses the shared singleton registry/lock directly instead of inheriting the base class.
   - Landed that singleton bundle by moving `get_ws_federator()`, `get_expression_service()`, and `get_plugin_appearance_service()` onto the shared `Singleton` base/getter pattern, and by rewiring `get_drum_instance_registry()` through the shared singleton registry/lock while preserving the existing `DrumInstanceRegistry.get_instance(instance_id)` public API.
   - Validation for the singleton bundle is green: `pytest -q tests/test_ws_federation.py tests/test_expression_service.py tests/test_plugin_appearance_routes.py tests/push_surface/test_drum_registry.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/ws_federation.py app/services/expression_service.py app/services/plugin_appearance_service.py app/services/push_surface/drum_registry.py tests/test_ws_federation.py tests/test_expression_service.py tests/test_plugin_appearance_routes.py tests/push_surface/test_drum_registry.py` -> PASS.
+  - Followed that route/API UTC pass with a warning-cleanup slice in `tests/test_cluster_visibility_routes.py`, replacing the remaining fixture-side `datetime.utcnow()` calls with aware UTC timestamps so the focused cluster-visibility regression run no longer emits those deprecation warnings from test scaffolding.
+  - Validation for the warning-cleanup slice is green: `pytest -q tests/test_cluster_visibility_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_cluster_visibility_routes.py` -> PASS.
 
 ID: T847
 Status: [✓] Done
