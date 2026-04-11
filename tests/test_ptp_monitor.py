@@ -89,3 +89,16 @@ async def test_query_pmc_skips_invocation_when_no_writable_runtime_socket_is_ava
     status = await monitor._query_pmc()
 
     assert status is None
+
+
+def test_get_ptp_monitor_uses_shared_singleton_getter():
+    ptp_monitor.PTPMonitor.reset_instance()
+
+    try:
+        first = ptp_monitor.get_ptp_monitor()
+        second = ptp_monitor.get_ptp_monitor()
+
+        assert first is second
+        assert ptp_monitor.PTPMonitor.has_instance() is True
+    finally:
+        ptp_monitor.PTPMonitor.reset_instance()

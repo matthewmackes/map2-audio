@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 08:56 EDT - Codex
+Last updated: 2026-04-11 09:00 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19604,6 +19604,9 @@ Last updated: 2026-04-11 08:56 EDT - Codex
   - Selected the next singleton cleanup slice on `app/services/request_queue.py`. The queue type itself still supports explicit constructor parameters, but the default `get_request_queue()` accessor is a true process-wide service entrypoint and should not keep its own bespoke module-global singleton state.
   - Landed that request-queue singleton slice by rewiring `get_request_queue()` through the shared singleton registry/lock path while preserving the default no-arg accessor contract for existing callers.
   - Validation for the request-queue singleton slice is green enough to ship: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/request_queue.py tests/test_request_queue.py` -> PASS, `pytest -q tests/test_request_queue.py` -> SKIPPED in this environment because the existing suite is guarded on optional `aiofiles`, and a direct Python smoke check covering the shared singleton accessor -> PASS.
+  - Selected the next singleton cleanup slice on `app/services/avb/ptp_monitor.py`. This monitor is a true process-wide service with no constructor parameters, so the remaining module-global `_ptp_monitor` accessor was safe to replace directly with the shared singleton base/getter pattern.
+  - Landed that PTP-monitor singleton slice by promoting `PTPMonitor` onto the shared `Singleton` base/getter path and deleting the remaining ad hoc module-global singleton state.
+  - Validation for the PTP-monitor singleton slice is green: `pytest -q tests/test_ptp_monitor.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/avb/ptp_monitor.py tests/test_ptp_monitor.py` -> PASS.
 
 ID: T847
 Status: [✓] Done

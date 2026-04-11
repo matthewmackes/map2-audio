@@ -17,6 +17,8 @@ from typing import Optional
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 _PMC_RUNTIME_DIR = Path("/run/map2-audio")
 
@@ -45,7 +47,7 @@ class PTPStatus:
         return asdict(self)
 
 
-class PTPMonitor:
+class PTPMonitor(Singleton):
     """
     Monitors ptp4l daemon for gPTP synchronization status.
 
@@ -294,14 +296,6 @@ class PTPMonitor:
 
         logger.info("PTP monitoring stopped")
 
-
-# Singleton instance
-_ptp_monitor: Optional[PTPMonitor] = None
-
-
 def get_ptp_monitor() -> PTPMonitor:
     """Get singleton PTP monitor instance"""
-    global _ptp_monitor
-    if _ptp_monitor is None:
-        _ptp_monitor = PTPMonitor()
-    return _ptp_monitor
+    return PTPMonitor.get_instance()
