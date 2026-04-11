@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the outstanding frontend stream by re-exposing `Brain` in the shared Workspace Catalog while keeping its fixed Start Menu tile, with focused launcher-catalog validation.
+Last updated: 2026-04-11 - Continued the outstanding frontend/release stream by refreshing the generated web build version metadata after the shipped shell/catalog frontend slices, leaving the worktree clean for the next pass.
 
 ## Performance Brain
 
@@ -22410,3 +22410,20 @@ Last updated: 2026-04-11 11:05 EDT - Codex
 - Validation:
   - `npm --prefix web run typecheck` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/launcherCatalog.test.tsx` -> PASS (`5 tests`)
+
+ID: T967
+Status: [✓] Done
+Title: Refresh generated web version metadata after the shipped frontend slices
+Description:
+- Goal / acceptance criteria: Persist the generated `VERSION` and `version.json` metadata emitted by the validated frontend build so the repository state matches the shipped build artifact version.
+- Why it matters: The frontend build updates the repo-local version metadata, and leaving those generated files dirty would make the next restart/resume cycle ambiguous about what was actually shipped.
+- Dependencies: T875, T966
+- Estimated effort: Low
+- Required outputs: Updated `VERSION`, updated `version.json`, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 11:11 EDT - Codex
+- Completion notes:
+  - Persisted the generated build version files from the validated frontend ship path so the repository version metadata now reflects the current web build timestamp emitted by `scripts/generate_platform_version.py`.
+- Validation:
+  - Generated during `npm --prefix web run build` -> PASS
