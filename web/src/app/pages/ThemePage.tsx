@@ -688,11 +688,6 @@ export function ThemePage() {
   }
 
   const activeThemeLabel = draftDirty ? draftName.trim() || draftTheme.name : theme.name
-  const themePickerValue = draftDirty
-    ? '__draft__'
-    : themeId in builtInThemes
-      ? `builtin:${themeId}`
-      : `custom:${themeId}`
   const previewFocusLabel = (() => {
     switch (previewFocus) {
       case 'desktop':
@@ -749,72 +744,6 @@ export function ThemePage() {
           <div className="theme-page__desktop-column theme-page__desktop-column--library">
             <fieldset className="theme-page__dialog-group">
               <legend>Theme selection</legend>
-              <label className="theme-page__dialog-label" htmlFor="theme-page-dialog-selector">Theme</label>
-              <select
-                id="theme-page-dialog-selector"
-                className="theme-page__dialog-select"
-                value={themePickerValue}
-                onChange={(event) => {
-                  const value = event.currentTarget.value
-                  if (value === '__draft__') {
-                    return
-                  }
-
-                  if (value.startsWith('builtin:')) {
-                    setTheme(value.replace('builtin:', ''))
-                    setDraftDirty(false)
-                    return
-                  }
-
-                  if (value.startsWith('custom:')) {
-                    setTheme(value.replace('custom:', ''))
-                    setDraftDirty(false)
-                    return
-                  }
-
-                  if (value.startsWith('suggestion:')) {
-                    const suggestion = SUGGESTED_DIRECTIONS.find((entry) => `suggestion:${entry.id}` === value)
-                    if (suggestion) {
-                      handleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)
-                    }
-                  }
-                }}
-              >
-                {draftDirty ? <option value="__draft__">Draft preview</option> : null}
-                <optgroup label="Core Carbon themes">
-                  {CORE_THEME_IDS.map((coreId) => (
-                    <option key={coreId} value={`builtin:${coreId}`}>
-                      {builtInThemes[coreId].name}
-                    </option>
-                  ))}
-                </optgroup>
-                {PRESET_THEME_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.ids.filter((pid) => builtInThemes[pid]).map((pid) => (
-                      <option key={pid} value={`builtin:${pid}`}>
-                        {builtInThemes[pid].name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-                {customThemeEntries.length > 0 ? (
-                  <optgroup label="Custom themes">
-                    {customThemeEntries.map((customTheme) => (
-                      <option key={customTheme.id} value={`custom:${customTheme.id}`}>
-                        {customTheme.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : null}
-                <optgroup label="Suggested directions">
-                  {SUGGESTED_DIRECTIONS.map((suggestion) => (
-                    <option key={suggestion.id} value={`suggestion:${suggestion.id}`}>
-                      {suggestion.name}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-
               <div className="theme-page__catalog-grid">
                 <section className="theme-page__catalog-block">
                   <div className="theme-page__dialog-subhead">

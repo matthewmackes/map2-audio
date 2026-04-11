@@ -183,6 +183,15 @@ describe('ThemePage', () => {
     expect(screen.queryByRole('button', { name: /open launcher organizer/i })).toBeNull()
   })
 
+  it('uses the preset catalog as the only theme-selection control', () => {
+    renderThemePage()
+
+    expect(screen.queryByRole('combobox', { name: /^theme$/i })).toBeNull()
+    expect(screen.getAllByRole('button', { name: /Carbon gray 10/i }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /Windows 95/i })).toBeTruthy()
+    expect(screen.getByText('Suggested directions')).toBeTruthy()
+  })
+
   it('persists desktop wallpaper mode selections from the personalization section', () => {
     renderThemePage()
 

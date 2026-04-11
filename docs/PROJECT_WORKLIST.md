@@ -22065,7 +22065,7 @@ Last updated: 2026-04-10 EDT - Kombai
   - Snapshot tests in `DesktopExperience.snapshot.test.tsx` will need updating via `--updateSnapshot` due to structural DOM changes.
 
 ID: T963
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Fix Theme Page UX/Usability issues (from design review 2026-04-11)
 Description:
 - Goal / acceptance criteria: Resolve the 18 UX/usability issues identified in the static code review of `/platforms/theme` (see `.kombai/resources/design-review-platforms-theme.md`). Three critical issues (dual theme controls, broken radio+file-upload flow, silent draft loss) must be addressed before any other subtask ships. All remaining High and Medium issues should be resolved in subsequent subtasks. The page must pass `npm --prefix web run typecheck` and the existing theme-page test suite after every subtask lands.
@@ -22075,7 +22075,7 @@ Description:
 - Required outputs: Updated ThemePage.tsx, ThemePage.css, and any supporting hooks/utilities. Typecheck and test-suite green on each subtask. Worklist entries updated.
 Subtasks:
   - ID: T963-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Eliminate dual theme-selection controls — remove native `<select>`, make catalog the single source of truth
     Description:
     - Goal / acceptance criteria: Remove the native `<select>` element (`theme-page__dialog-select`) and the "Draft preview" sentinel option. The visual preset catalog (`theme-page__catalog-grid`) becomes the sole control for `setTheme()`. A search/jump input (Carbon `Search`) may be added alongside the catalog header to give keyboard users a fast-path to a named preset without reintroducing a parallel selection authority. The active theme must be clearly indicated in the catalog (existing `theme-page__catalog-item--active` class) without any secondary dropdown state.
@@ -22085,7 +22085,14 @@ Subtasks:
     - Required outputs: `ThemePage.tsx` — remove the `<select>` block (lines 752–815), update the catalog-header area, optionally add Carbon `Search` for preset filtering. `ThemePage.css` — remove `.theme-page__dialog-select` rule. Typecheck pass.
     Subtasks: None
     Assigned to: Kombai
-    Last updated: 2026-04-11 UTC - Kombai
+    Last updated: 2026-04-10 22:18 EDT - Codex
+    - Completion notes:
+      - Removed the native `theme-page__dialog-select` `<select>` control and its `Draft preview` sentinel path from `web/src/app/pages/ThemePage.tsx`, leaving the visual preset catalog as the only theme-selection authority in the Theme workspace.
+      - Removed the now-unused `.theme-page__dialog-select` styling from `web/src/app/pages/ThemePage.css` and dropped the dead `themePickerValue` view state that only existed to drive the removed selector.
+      - Added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx` proving the Theme page no longer exposes a theme combobox and still presents the preset catalog categories/operators expected after the selector removal.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS
   - ID: T963-subB
     Status: [ ] Todo
     Title: Fix wallpaper radio group — separate option selection from file picker trigger
@@ -22183,7 +22190,7 @@ Subtasks:
     Assigned to: Kombai
     Last updated: 2026-04-11 UTC - Kombai
 Assigned to: Kombai
-Last updated: 2026-04-11 UTC - Kombai
+Last updated: 2026-04-10 22:08 EDT - Codex
 
 ID: T964
 Status: [✓] Done

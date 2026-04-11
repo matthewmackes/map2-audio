@@ -143,16 +143,6 @@
   font-weight: 600;
 }
 
-.theme-page__dialog-select {
-  inline-size: 100%;
-  min-block-size: 2.5rem;
-  padding: 0 0.75rem;
-  border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
-  color: var(--cds-text-primary);
-  box-shadow: inset 1px 1px 0 color-mix(in srgb, #ffffff 62%, transparent);
-}
-
 .theme-page__catalog-grid,
 .theme-page__catalog-block,
 .theme-page__catalog-list,
