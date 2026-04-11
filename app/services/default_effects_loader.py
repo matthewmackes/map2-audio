@@ -4,6 +4,7 @@ Default Effects Loader
 Loads and manages the declared default LV2 deployment inventory and preset chains.
 """
 
+import json
 import logging
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session

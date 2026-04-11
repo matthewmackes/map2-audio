@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Shipped T968, finishing the centered Home desktop launcher/start-menu overlay with shared shell restart wiring, single-launcher desktop chrome, refreshed desktop snapshots, and a validated production web build.
+Last updated: 2026-04-11 - Opened T969/T970 from live backend ship verification to fix the default-chain startup `json` NameError and track the remaining plugin metadata/schema startup mismatch separately.
 
 ## Performance Brain
 
@@ -22481,3 +22481,35 @@ Last updated: 2026-04-11 12:18 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`20 tests`)
   - `CI=1 npm --prefix web test -- --runInBand -u --runTestsByPath src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS (`4 snapshots updated`)
   - `npm --prefix web run build` -> PASS
+
+ID: T969
+Status: [✓] Done
+Title: Fix backend startup default-chain loader failure caused by missing `json` import
+Description:
+- Goal / acceptance criteria: Restore clean default-chain creation during backend startup by fixing the `app/services/default_effects_loader.py` runtime path that logs `Failed to create chain ... name 'json' is not defined`, and add focused validation so the loader keeps working on future startup sweeps.
+- Why it matters: The failure was discovered during live `map2-backend.service` restart verification after a shipped slice. Backend startup is not complete if the declared default chain inventory cannot materialize because of a trivial runtime import error.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Loader fix, focused regression coverage, backend restart verification notes, and worklist updates.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 11:13 EDT - Codex
+- Completion notes:
+  - Added the missing `json` import in `app/services/default_effects_loader.py`, restoring the default-chain creation path that was logging `Failed to create chain ... name 'json' is not defined` during live backend startup.
+  - Kept the fix scoped to the startup loader path and explicitly tracked the separate plugin metadata/schema readiness problem in follow-up task `T970` instead of conflating the two runtime issues.
+- Validation:
+  - `pytest -q tests/test_default_effects_manifest.py` -> PASS (`4 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/default_effects_loader.py tests/test_default_effects_manifest.py` -> PASS
+
+ID: T970
+Status: [ ] Todo
+Title: Investigate backend startup plugin metadata/schema mismatch blocking clean health readiness
+Description:
+- Goal / acceptance criteria: Explain and remediate the live backend startup errors that still log `sqlite3.OperationalError: no such column: plugins.tags` during default plugin initialization and leave `map2-backend.service` stuck in `activating` while `/api/health` times out. Determine whether this is a migration gap, stale DB schema, or health-route behavior issue, then land the required code/schema/service fix with verification.
+- Why it matters: Ship verification on April 11, 2026 showed that the backend can reach `Application startup complete` while still failing health readiness because plugin metadata queries expect columns the live database does not expose. That is a platform inconsistency and needs a tracked fix rather than tribal memory.
+- Dependencies: T969
+- Estimated effort: Medium
+- Required outputs: Root-cause analysis, any required schema/migration/runtime fix, verification against `map2-backend.service` and `/api/health`, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 11:11 EDT - Codex
