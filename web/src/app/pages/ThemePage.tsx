@@ -956,11 +956,25 @@ export function ThemePage() {
                 }}
                 maxLength={60}
               />
+              {draftDirty && draftOverrideCount > 0 ? (
+                <div className="theme-page__draft-warning">
+                  <InlineNotification
+                    lowContrast
+                    hideCloseButton
+                    kind="warning"
+                    title="Token overrides are still in draft."
+                    subtitle="These token changes are not saved yet. Presets, fonts, appearance assets, and behavior settings still apply immediately."
+                  />
+                  <Button kind="secondary" size="sm" onClick={handleSaveDraftTheme}>
+                    Save now
+                  </Button>
+                </div>
+              ) : null}
               <div className="theme-page__dialog-actions">
-                <Button kind="ghost" renderIcon={Reset} onClick={handleResetDraft}>
+                <Button kind="ghost" renderIcon={Reset} onClick={handleResetDraft} disabled={!draftDirty}>
                   Reset draft
                 </Button>
-                <Button kind="primary" renderIcon={PaintBrush} onClick={handleSaveDraftTheme}>
+                <Button kind="primary" renderIcon={PaintBrush} onClick={handleSaveDraftTheme} disabled={!draftDirty}>
                   Save and apply custom theme
                 </Button>
               </div>

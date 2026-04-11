@@ -324,6 +324,36 @@ describe('ThemePage', () => {
     })
   })
 
+  it('disables draft actions until the draft becomes dirty', () => {
+    renderThemePage()
+
+    expect(screen.getByRole('button', { name: /reset draft/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /save and apply custom theme/i })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
+
+    expect(screen.getByRole('button', { name: /reset draft/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /save and apply custom theme/i })).toBeEnabled()
+  })
+
+  it('shows a persistent draft warning with a save-now action for token overrides', async () => {
+    renderThemePage()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
+
+    expect(screen.getByText('Token overrides are still in draft.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /save now/i }))
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('custom-themes')).toContain('Blue / Gray 10')
+      expect(window.localStorage.getItem('theme')).toContain('custom-')
+    })
+  })
+
   it('exposes radio semantics for the custom token palette picker', () => {
     renderThemePage()
 
