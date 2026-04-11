@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the active T845/T846 backend cleanup stream with another shipped backend slice: moved `nam_library` timestamps onto timezone-aware UTC handling and promoted `ServiceManager` plus `NAMLibraryService` onto the shared singleton path with direct reset coverage.
+Last updated: 2026-04-11 - Continued the outstanding cleanup stream by advancing `T875` with a bounded AppShell shadow-removal slice, replacing the remaining shell-elevation box shadows with flat styling while keeping the current Start Menu/window/taskbar behaviors green.
 
 ## Performance Brain
 
@@ -20331,7 +20331,7 @@ Last updated: 2026-04-09 06:31 EDT - Codex
   - This task depends on blocked `T856`, and a clean FLAT-radius sweep is blocked until the underlying primitive migration settles; otherwise the repo would keep mixing Carbon shapes with route-specific exceptions and legacy pill treatments.
 
 ID: T875
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Remove `box-shadow` and `backdrop-filter` remnants for true FLAT monochrome
 Description:
 - Goal / acceptance criteria: The theme system sets `shadow-strong: none` and `shadow-soft: none`, and the FLAT design intent is zero elevation shadows. However, `index.css` and `AppShell.css` still contain `box-shadow` declarations in 40+ places (including `inset` shadows for the Windows-style beveled button effect, `drop-shadow` filters on signal arrows, and overlay shadows). Audit all shadow declarations: (1) Remove `box-shadow` from buttons, cards, panels, and menus. (2) Remove `backdrop-filter: blur()` from overlay backgrounds. (3) Retain only `box-shadow` used for Carbon's focus ring system or explicit `inset` borders used as visual indicators (not elevation). The result should be a truly flat, monochrome, zero-elevation UI.
@@ -20341,10 +20341,12 @@ Description:
 - Required outputs: Zero non-functional shadows, FLAT visual validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:31 EDT - Codex
+Last updated: 2026-04-11 10:59 EDT - Codex
 - Progress notes:
   - Non-flat shadow and blur treatments are still spread through `web/src/index.css`, `web/src/app/layout/AppShell.css`, Snapshot Editor, Platform, Host Machine, Home, NodeGraph, MPX1, Push Surface, and several other workspace-specific files.
   - This task depends on blocked `T856`, and completion is blocked because the remaining shadows are not just cosmetic leftovers: they are bound up with unresolved legacy shell chrome, route-specific visual systems, and custom widget affordances that still need broader Carbon migration decisions.
+  - Opened a bounded shell-only slice and removed the remaining non-focus `box-shadow` treatments from `web/src/app/layout/AppShell.css`, flattening the window chrome, taskbar, launcher panel, Start Menu, power menu, and shell modal wrappers without changing route wiring or interaction logic.
+  - Validation for the shell shadow-removal slice is green: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS (`13 tests`) and `npm --prefix web run build` -> PASS.
 
 ## TUI Carbon Compliance
 
