@@ -23,6 +23,7 @@ from pathlib import Path
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.platform_checks import validate_platform, get_platform_status
 from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -436,7 +437,7 @@ class ServiceOrchestrator(Singleton):
         """
         async with self._lock:
             self._running = True
-            self._startup_time = datetime.now()
+            self._startup_time = utc_now()
             results = {}
 
             logger.info("=" * 60)
@@ -586,7 +587,7 @@ class ServiceOrchestrator(Singleton):
                         await asyncio.to_thread(service.definition.start_func)
 
                 service.state = ServiceState.RUNNING
-                service.started_at = datetime.now()
+                service.started_at = utc_now()
                 elapsed = (time.time() - start_time) * 1000
                 logger.info(f"[OK] {service.definition.display_name} started ({elapsed:.1f}ms)")
 
@@ -634,7 +635,7 @@ class ServiceOrchestrator(Singleton):
                     await asyncio.to_thread(service.definition.stop_func)
 
             service.state = ServiceState.STOPPED
-            service.stopped_at = datetime.now()
+            service.stopped_at = utc_now()
             logger.info(f"[OK] {service.definition.display_name} stopped")
 
             return True
@@ -738,7 +739,7 @@ class ServiceOrchestrator(Singleton):
                 health = await asyncio.to_thread(service.definition.health_check)
 
             health.response_time_ms = (time.time() - start) * 1000
-            health.last_check = datetime.now()
+            health.last_check = utc_now()
             service.health = health
 
             if health.healthy:
@@ -772,7 +773,7 @@ class ServiceOrchestrator(Singleton):
             "orchestrator": {
                 "running": self._running,
                 "startup_time": self._startup_time.isoformat() if self._startup_time else None,
-                "uptime_seconds": (datetime.now() - self._startup_time).total_seconds() if self._startup_time else 0,
+                "uptime_seconds": (utc_now() - self._startup_time).total_seconds() if self._startup_time else 0,
             },
             "services": {
                 name: self._serialize_status(status)
@@ -966,7 +967,7 @@ class ServiceOrchestrator(Singleton):
             "accepting_traffic": accepting_traffic,
             "orchestrator_running": self._running,
             "startup_time": self._startup_time.isoformat() if self._startup_time else None,
-            "uptime_seconds": (datetime.now() - self._startup_time).total_seconds() if self._startup_time else 0,
+            "uptime_seconds": (utc_now() - self._startup_time).total_seconds() if self._startup_time else 0,
             "critical_services": critical_services,
             "traffic_gate_services": traffic_gate_services,
             "dependency_levels": startup_map["dependency_levels"],
@@ -1018,7 +1019,7 @@ class ServiceOrchestrator(Singleton):
         """Emit a service event."""
         event = {
             "type": event_type,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "data": data
         }
 
@@ -1093,7 +1094,7 @@ class ServiceOrchestrator(Singleton):
         self._services["plugin_loader"].health.metrics = {
             "plugin_count": cached_count,
             "scan_state": "warming",
-            "scan_started_at": datetime.now().isoformat(),
+            "scan_started_at": utc_now().isoformat(),
         }
 
         if self._plugin_loader_warm_task and not self._plugin_loader_warm_task.done():
@@ -1108,7 +1109,7 @@ class ServiceOrchestrator(Singleton):
                     "plugin_count": len(plugins),
                     "scan_state": "ready",
                     "scan_elapsed_ms": round(elapsed_ms, 2),
-                    "scan_completed_at": datetime.now().isoformat(),
+                    "scan_completed_at": utc_now().isoformat(),
                 }
                 logger.info(
                     "Plugin loader background warm complete: %s plugins in %.1fms",
@@ -1671,7 +1672,7 @@ class ServiceOrchestrator(Singleton):
         platform_info = get_platform_status()
         
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "platform_checks": platform_info
         }
 

@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import time
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from app.services.event_publisher import EventPublisher
@@ -95,6 +96,23 @@ def test_emit_event_uses_publish_abstraction_for_service_status_topic():
     assert message["type"] == "service_started"
     assert message["data"] == {"service": "database"}
     assert "timestamp" in message
+    assert datetime.fromisoformat(message["timestamp"]).tzinfo == timezone.utc
+
+
+def test_orchestrator_status_payloads_use_aware_utc_timestamps():
+    orchestrator = ServiceOrchestrator()
+    orchestrator._running = True
+    orchestrator._startup_time = datetime.now(timezone.utc)
+    orchestrator._services["database"].started_at = datetime.now(timezone.utc)
+    orchestrator._services["database"].health.last_check = datetime.now(timezone.utc)
+
+    all_status = orchestrator.get_all_status()
+    ready_status = orchestrator.get_ready_status()
+
+    assert datetime.fromisoformat(all_status["orchestrator"]["startup_time"]).tzinfo == timezone.utc
+    assert datetime.fromisoformat(ready_status["startup_time"]).tzinfo == timezone.utc
+    assert datetime.fromisoformat(all_status["services"]["database"]["started_at"]).tzinfo == timezone.utc
+    assert datetime.fromisoformat(all_status["services"]["database"]["health"]["last_check"]).tzinfo == timezone.utc
 
 
 def test_stop_juce_engine_calls_stop_audio_then_shutdown(monkeypatch):

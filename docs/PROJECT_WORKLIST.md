@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 13:31 EDT - Codex
+Last updated: 2026-04-11 11:43 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19530,6 +19530,8 @@ Last updated: 2026-04-11 13:31 EDT - Codex
   - Selected the next bounded UTC/runtime slice on `app/routes/audio.py`, covering the full-diagnostics timestamp plus the remaining stopwatch-style `datetime.now()` calls in the full-diagnostic and sample-rate test endpoints. This surface does not persist timestamps and is safer as monotonic elapsed timing rather than naive wall-clock arithmetic.
   - Landed that audio-runtime slice by moving the emitted diagnostic timestamp onto `utc_now()` and replacing the diagnostic/sample-rate elapsed-time math with `time.perf_counter()`-backed duration measurement.
   - Validation for the audio-runtime slice is green: `pytest -q tests/test_audio_runtime_diagnostic_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio.py tests/test_audio_runtime_diagnostic_routes.py` -> PASS.
+  - Landed the next bounded UTC/runtime slice on `app/services/service_orchestrator.py`, converting orchestrator startup/service lifecycle/health-check/event/platform-status timestamps plus plugin-loader warmup metadata onto `utc_now()` because this surface only reports process runtime state and does not persist local-display semantics.
+  - Validation for the orchestrator UTC slice is green: `pytest -q tests/test_service_orchestrator_health.py tests/test_health_routes.py tests/test_api_route_readiness.py` -> PASS (`18 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/service_orchestrator.py tests/test_service_orchestrator_health.py` -> PASS.
   - Selected the next bounded UTC/service slice on `app/services/plugin_preset_lifecycle.py`, covering the lifecycle event payload timestamps and the unused-preset cleanup cutoff. This service emits runtime metadata only and compares against stored preset ages; it does not define operator-local display semantics.
   - Landed that preset-lifecycle UTC slice by moving the cache/event timestamps and cleanup cutoff onto `utc_now()`, and fixed the adjacent async-listener dispatch bug in `emit_event()` so coroutine listeners are awaited instead of dropped.
   - Validation for the preset-lifecycle UTC slice is green: `pytest -q tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/plugin_preset_lifecycle.py tests/test_plugin_preset_lifecycle.py tests/test_plugin_presets_routes.py` -> PASS.
