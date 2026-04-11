@@ -18,7 +18,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.main import _resolve_cors_settings
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/www", tags=["www"])
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api/www", tags=["www"])
 # Access logs are kept in memory and appended to disk for restart persistence.
 _access_logs: List[Dict[str, Any]] = []
 _max_logs = 1000
-_startup_time = datetime.now()
+_startup_time = utc_now()
 _request_count = 0
 _api_key: Optional[str] = None
 _access_log_lock = threading.RLock()
@@ -160,6 +160,8 @@ async def get_www_status() -> Dict[str, Any]:
     project_root = Path(__file__).resolve().parents[2]
     web_root = project_root / "web" / "dist"
 
+    from app.main import _resolve_cors_settings
+
     cors_origins, cors_allow_credentials = _resolve_cors_settings()
 
     status = {
@@ -208,7 +210,7 @@ async def get_www_status() -> Dict[str, Any]:
                     logger.debug(f"Failed to get backend process stats: {e}")
 
         # Calculate uptime
-        uptime_seconds = (datetime.now() - _startup_time).total_seconds()
+        uptime_seconds = (utc_now() - _startup_time).total_seconds()
         hours = int(uptime_seconds // 3600)
         minutes = int((uptime_seconds % 3600) // 60)
         status["uptime"] = f"{hours}h {minutes}m"
@@ -390,7 +392,7 @@ async def health_check() -> Dict[str, Any]:
         "status": "healthy",
         "backend": check_port_listening(8080),
         "frontend": check_port_listening(3000),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": utc_now().isoformat()
     }
 
 
@@ -401,7 +403,7 @@ def log_request(method: str, path: str, status_code: int, response_time: float, 
     global _access_logs, _request_count
 
     log_entry = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": utc_now().isoformat(),
         "method": method,
         "path": path,
         "status_code": status_code,

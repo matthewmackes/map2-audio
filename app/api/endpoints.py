@@ -9,6 +9,8 @@ from datetime import datetime
 import logging
 import json
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 class AlertAPIEndpoints:
@@ -523,7 +525,7 @@ class AlertAPIEndpoints:
             """System health check"""
             return jsonify({
                 'status': 'healthy',
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': utc_now().isoformat(),
                 'services': list(self.services.keys())
             }), 200
         
