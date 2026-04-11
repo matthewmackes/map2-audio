@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 7, 2026 (Maschine daemon hardening documented)
+> **Last Updated**: April 11, 2026 (continuous release helper documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1016,6 +1016,13 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_maschine_mk1_daemon.py tests/test_midi_engine_event_driven.py tests/midi_hub/test_ports.py tests/test_ground_control_pro_service.py tests/midi_hub/test_device_registry.py`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_mk1_daemon.py`; `env PYTHONPATH=/usr/local/lib/python3.14/site-packages:/home/mm/map2-audio MAP2_MASCHINE_TRANSPORT=pyusb-bulk MAP2_MASCHINE_ALLOW_KERNEL_DETACH=1 timeout 6s python3 app/services/maschine/maschine_mk1_daemon.py --backend-url http://127.0.0.1:8080 --log-level INFO > /tmp/maschine-t811.log 2>&1`; `rg -n "Loaded config from|Configuration reloaded" /tmp/maschine-t811.log`
 - **Lesson**: File-backed runtime config does not belong on a hot polling path without change detection. In daemon loops, prefer cached reads plus explicit file-signature checks over unconditional reloads.
 
+**88. Use A Single Ship Helper To Remove Commit Push Restart Pauses**
+- **Problem**: The repeated manual loop of commit, fetch, merge remote README drift, push to both remotes, rebuild, restart port `3000`, and verify health adds avoidable pauses and increases the chance of skipping one step.
+- **Root Cause**: The repository had deploy helpers, but no single command that wrapped the full user-preferred release loop end to end.
+- **Fix**: Use `python3 scripts/continuous_release.py --commit-message "..."` to run the no-pause ship cycle. The helper auto-commits when needed, fetches `origin` and `gitlab`, merges `origin/master` drift when required, pushes both remotes, then deploys and verifies the production web service.
+- **Verification**: `python3 scripts/continuous_release.py --help`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/continuous_release.py`
+- **Lesson**: When a user keeps asking for the same end-of-slice release loop, promote it into a first-class repo command instead of retyping the workflow every time.
+
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
 - **Problem**: `sleep 5 && curl` blocks terminal, causes `^C` interrupts
@@ -2019,6 +2026,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-04-11] - Continuous Release Helper
+- **Section**: Gotchas & Learned Fixes (#88), Quick Reference Commands, Update Log
+- **Change**: Documented the new `scripts/continuous_release.py` helper and added the one-command no-pause ship workflow to the quick reference section.
+- **Reason**: The repeated end-of-slice workflow was still being replayed manually even though it is deterministic: commit all, sync both remotes, deploy/restart port `3000`, and verify health.
+- **Impact**: Future assistant work can ship slices with less pause time and lower risk of skipping the GitHub/GitLab sync or production verification steps.
+- **Files**: `.github/copilot-instructions.md`, `scripts/continuous_release.py`, `docs/PROJECT_WORKLIST.md`
+
 ### [2026-04-07] - Maschine Runtime Override Reload Gating
 - **Section**: Gotchas & Learned Fixes (#87), Update Log
 - **Change**: Documented the `T811` fix that caches the Maschine daemon runtime-config file signature and reloads the shared config manager only when the backing file changes, while keeping reconnect-time transport policy refresh intact.
@@ -2694,6 +2708,17 @@ cd /home/mm/map2-audio/web && npm run build
 
 # 4. Verify changes
 curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js'
+```
+
+### No-Pause Ship Loop
+
+```bash
+# Commit all current changes, sync both remotes, deploy/restart port 3000, verify
+cd /home/mm/map2-audio
+python3 scripts/continuous_release.py --commit-message "Your commit message"
+
+# Faster path when web/dist is already built and only restart/verification is needed
+python3 scripts/continuous_release.py --commit-message "Your commit message" --skip-build
 ```
 
 ### Server Restart (Clean Start)

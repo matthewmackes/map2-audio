@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 09:31 EDT - Codex
+Last updated: 2026-04-11 09:35 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19545,6 +19545,9 @@ Last updated: 2026-04-11 09:31 EDT - Codex
   - Selected the next bounded UTC/API slice on `app/routes/lcd.py`, covering the LCD preset-save `created_at` metadata only. The operator-facing live clock line stays intentionally local-display scoped and out of this pass.
   - Landed that LCD preset UTC slice by moving saved preset metadata onto `utc_now()` while leaving the preset JSON shape and the rest of the LCD route surface unchanged.
   - Validation for the LCD preset UTC slice is green: `pytest -q tests/test_lcd_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/lcd.py tests/test_lcd_routes.py` -> PASS.
+  - Selected the next bounded UTC/API slice on `app/routes/sessions.py`, covering the in-memory `last_saved` status metadata only. This helper feeds the UI status route and does not alter persisted session-file semantics, so it fits the active UTC policy safely.
+  - Landed that sessions-status UTC slice by moving `mark_session_saved()` onto `utc_now()` and adding focused route coverage proving `/api/sessions/current/status` emits a timezone-aware UTC `last_saved` value after the helper runs.
+  - Validation for the sessions-status UTC slice is green: `pytest -q tests/test_sessions_routes.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/sessions.py tests/test_sessions_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
@@ -22331,3 +22334,23 @@ Last updated: 2026-04-10 22:01 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand -u src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS
   - `npm --prefix web run build` -> PASS
+
+ID: T965
+Status: [✓] Done
+Title: Add a no-pause release helper for the repeated commit-push-restart loop
+Description:
+- Goal / acceptance criteria: Add a repo-local helper command that can run the repeated end-of-slice workflow without manual pauses: commit all pending changes, fetch both remotes, merge `origin/master` drift when needed, push `master` to both `origin` and `gitlab`, rebuild or restart the frontend deployment on port `3000`, and verify production health. Document the command in the repo guidance used by AI assistants.
+- Why it matters: The current repeated release loop is mechanical and interruption-prone. A single helper reduces pause time between slices and lowers the chance of missing a required sync or restart step.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: New helper under `scripts/`, documentation updates, focused validation, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-11 09:40 EDT - Codex
+- Completion notes:
+  - Added `scripts/continuous_release.py`, a no-pause release helper that auto-commits the current worktree when given `--commit-message`, fetches both remotes, merges `origin/master` drift when required, pushes `master` to `origin` and `gitlab`, then deploys and verifies the production web service.
+  - Documented the helper in `.github/copilot-instructions.md` under both `Gotchas & Learned Fixes` and `Quick Reference Commands`, so future assistant cycles can use one command instead of manually replaying the full release loop.
+  - Kept the helper dependency-free and aligned with the existing MAP2 deploy scripts by delegating the deploy/restart step to the current npm commands rather than inventing a second deployment path.
+- Validation:
+  - `python3 scripts/continuous_release.py --help` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/continuous_release.py` -> PASS

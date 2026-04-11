@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from app.services.session_manager import session_manager, SessionState, SessionMetadata
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -482,7 +483,5 @@ def mark_session_changed():
 
 def mark_session_saved():
     """Helper function to mark session as saved"""
-    from datetime import datetime
     _session_state["has_unsaved_changes"] = False
-    _session_state["last_saved"] = datetime.now().isoformat()
-
+    _session_state["last_saved"] = utc_now().isoformat()
