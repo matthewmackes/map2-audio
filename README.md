@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1100** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1780** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1782** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ac766a91`](https://github.com/matthewmackes/map2-audio/commit/ac766a91018341c7ee7fab15b40fdda995885d2e) | Unify remaining core singleton factories | Map2 Audio | 2026-04-11 |
+| [`f1108b2e`](https://github.com/matthewmackes/map2-audio/commit/f1108b2e41f14e56b5350a3d68f5f3f3d9ce8f14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`91601e62`](https://github.com/matthewmackes/map2-audio/commit/91601e6297083bfdab1ef31620872533b366f440) | Fix backend readiness deadlock and remove legacy route fa... | Map2 Audio | 2026-04-11 |
 | [`2dbf6be1`](https://github.com/matthewmackes/map2-audio/commit/2dbf6be1901d0c1b74d438672e4b042f980eb1c3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`1a5b24d4`](https://github.com/matthewmackes/map2-audio/commit/1a5b24d486c283681c4a1fb71059990890395835) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`2e43bbae`](https://github.com/matthewmackes/map2-audio/commit/2e43bbae3eaab14281cb497bf00a4317bc27209f) | Add additive plugin metadata schema migration | Map2 Audio | 2026-04-11 |
 | [`474d9ec2`](https://github.com/matthewmackes/map2-audio/commit/474d9ec2c3fd8e60d244a151af41f3a3206faa53) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`0f35557c`](https://github.com/matthewmackes/map2-audio/commit/0f35557c87f0c04e09e9a38decdff0124533ae2b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
-| [`aa9d0e9d`](https://github.com/matthewmackes/map2-audio/commit/aa9d0e9d3f5644f596084cab634717fbdae22b82) | Fix default chain startup loader import | Map2 Audio | 2026-04-11 |
-| [`29c0da75`](https://github.com/matthewmackes/map2-audio/commit/29c0da7572dbd6fa0f39454f12f69a1d7332d509) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
