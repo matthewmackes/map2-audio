@@ -399,6 +399,12 @@
   letter-spacing: 0.01em;
 }
 
+/* Hide the bottom-left shell launcher on the landing/home page —
+   the HomePage renders its own centered cube launcher instead. */
+.app-shell--landing .shell-launcher {
+  display: none;
+}
+
 .shell-launcher {
   position: fixed;
   left: var(--window-shell-launcher-offset);
