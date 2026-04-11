@@ -178,7 +178,7 @@ export function ReportingTab() {
       .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
       table { width: 100%; border-collapse: collapse; background: #111827; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
       th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: 13px; }
-      th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+      th { color: #94a3b8; font-weight: 600; font-size: 11px; }
     </style>
   </head>
   <body>
@@ -234,7 +234,7 @@ export function ReportingTab() {
       .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
       th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
-      th { font-size: 11px; text-transform: uppercase; color: #6b7280; }
+      th { font-size: 11px; color: #6b7280; }
     </style>
   </head>
   <body>

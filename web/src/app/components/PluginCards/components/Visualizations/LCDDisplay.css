@@ -28,10 +28,8 @@
 .lcd-label {
   font-size: var(--type-caption);
   font-weight: 700;
-  letter-spacing: 1px;
   color: var(--lcd-color);
   opacity: 0.7;
-  text-transform: uppercase;
 }
 
 .lcd-value {
@@ -170,10 +168,8 @@
 .led-name {
   font-size: var(--type-body);
   font-weight: 700;
-  letter-spacing: 2px;
   color: var(--led-color);
   text-shadow: none;
-  text-transform: uppercase;
 }
 
 .led-description {
