@@ -603,10 +603,13 @@ def _conditions_match(conditions: Dict[str, Any], context: Dict[str, Any]) -> bo
 
 
 _midi_hub_preset_service_singleton: Optional[MidiHubPresetService] = None
+_midi_hub_preset_service_singleton_lock = threading.Lock()
 
 
 def get_midi_hub_preset_service() -> MidiHubPresetService:
     global _midi_hub_preset_service_singleton
     if _midi_hub_preset_service_singleton is None:
-        _midi_hub_preset_service_singleton = MidiHubPresetService()
+        with _midi_hub_preset_service_singleton_lock:
+            if _midi_hub_preset_service_singleton is None:
+                _midi_hub_preset_service_singleton = MidiHubPresetService()
     return _midi_hub_preset_service_singleton

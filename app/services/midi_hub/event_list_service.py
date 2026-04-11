@@ -592,10 +592,13 @@ class MidiHubEventListService:
 
 
 _midi_hub_event_list_service_singleton: Optional[MidiHubEventListService] = None
+_midi_hub_event_list_service_singleton_lock = threading.Lock()
 
 
 def get_midi_hub_event_list_service() -> MidiHubEventListService:
     global _midi_hub_event_list_service_singleton
     if _midi_hub_event_list_service_singleton is None:
-        _midi_hub_event_list_service_singleton = MidiHubEventListService()
+        with _midi_hub_event_list_service_singleton_lock:
+            if _midi_hub_event_list_service_singleton is None:
+                _midi_hub_event_list_service_singleton = MidiHubEventListService()
     return _midi_hub_event_list_service_singleton

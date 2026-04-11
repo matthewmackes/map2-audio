@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -1006,10 +1007,13 @@ def _collect_drift_mismatches(actual: Dict[str, Any], shadow: Dict[str, Any]) ->
 
 
 _midi_device_registry_singleton: Optional[MidiDeviceRegistry] = None
+_midi_device_registry_singleton_lock = threading.Lock()
 
 
 def get_midi_device_registry() -> MidiDeviceRegistry:
     global _midi_device_registry_singleton
     if _midi_device_registry_singleton is None:
-        _midi_device_registry_singleton = MidiDeviceRegistry()
+        with _midi_device_registry_singleton_lock:
+            if _midi_device_registry_singleton is None:
+                _midi_device_registry_singleton = MidiDeviceRegistry()
     return _midi_device_registry_singleton

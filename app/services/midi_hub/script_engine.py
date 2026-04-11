@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -441,10 +442,13 @@ class MidiScriptEngine:
 
 
 _midi_script_engine_singleton: Optional[MidiScriptEngine] = None
+_midi_script_engine_singleton_lock = threading.Lock()
 
 
 def get_midi_script_engine() -> MidiScriptEngine:
     global _midi_script_engine_singleton
     if _midi_script_engine_singleton is None:
-        _midi_script_engine_singleton = MidiScriptEngine()
+        with _midi_script_engine_singleton_lock:
+            if _midi_script_engine_singleton is None:
+                _midi_script_engine_singleton = MidiScriptEngine()
     return _midi_script_engine_singleton

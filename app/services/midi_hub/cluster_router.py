@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -1029,10 +1030,13 @@ class MidiClusterRouter:
 
 
 _midi_cluster_router_singleton: Optional[MidiClusterRouter] = None
+_midi_cluster_router_singleton_lock = threading.Lock()
 
 
 def get_midi_cluster_router() -> MidiClusterRouter:
     global _midi_cluster_router_singleton
     if _midi_cluster_router_singleton is None:
-        _midi_cluster_router_singleton = MidiClusterRouter()
+        with _midi_cluster_router_singleton_lock:
+            if _midi_cluster_router_singleton is None:
+                _midi_cluster_router_singleton = MidiClusterRouter()
     return _midi_cluster_router_singleton

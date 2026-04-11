@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -184,10 +185,13 @@ class MidiTrafficMonitor:
 
 
 _midi_traffic_monitor_singleton: Optional[MidiTrafficMonitor] = None
+_midi_traffic_monitor_singleton_lock = threading.Lock()
 
 
 def get_midi_traffic_monitor() -> MidiTrafficMonitor:
     global _midi_traffic_monitor_singleton
     if _midi_traffic_monitor_singleton is None:
-        _midi_traffic_monitor_singleton = MidiTrafficMonitor()
+        with _midi_traffic_monitor_singleton_lock:
+            if _midi_traffic_monitor_singleton is None:
+                _midi_traffic_monitor_singleton = MidiTrafficMonitor()
     return _midi_traffic_monitor_singleton

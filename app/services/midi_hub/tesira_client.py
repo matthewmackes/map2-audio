@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -300,10 +301,13 @@ class TesiraClient:
 
 
 _tesira_client_singleton: Optional[TesiraClient] = None
+_tesira_client_singleton_lock = threading.Lock()
 
 
 def get_tesira_client() -> TesiraClient:
     global _tesira_client_singleton
     if _tesira_client_singleton is None:
-        _tesira_client_singleton = TesiraClient()
+        with _tesira_client_singleton_lock:
+            if _tesira_client_singleton is None:
+                _tesira_client_singleton = TesiraClient()
     return _tesira_client_singleton

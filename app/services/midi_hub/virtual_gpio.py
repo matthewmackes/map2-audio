@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -91,10 +92,13 @@ class VirtualGpioService:
 
 
 _virtual_gpio_singleton: Optional[VirtualGpioService] = None
+_virtual_gpio_singleton_lock = threading.Lock()
 
 
 def get_virtual_gpio_service() -> VirtualGpioService:
     global _virtual_gpio_singleton
     if _virtual_gpio_singleton is None:
-        _virtual_gpio_singleton = VirtualGpioService()
+        with _virtual_gpio_singleton_lock:
+            if _virtual_gpio_singleton is None:
+                _virtual_gpio_singleton = VirtualGpioService()
     return _virtual_gpio_singleton

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -224,10 +225,13 @@ class MidiMessageScheduler:
 
 
 _midi_scheduler_singleton: Optional[MidiMessageScheduler] = None
+_midi_scheduler_singleton_lock = threading.Lock()
 
 
 def get_midi_scheduler() -> MidiMessageScheduler:
     global _midi_scheduler_singleton
     if _midi_scheduler_singleton is None:
-        _midi_scheduler_singleton = MidiMessageScheduler()
+        with _midi_scheduler_singleton_lock:
+            if _midi_scheduler_singleton is None:
+                _midi_scheduler_singleton = MidiMessageScheduler()
     return _midi_scheduler_singleton

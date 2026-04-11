@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -211,10 +212,13 @@ def _match_trigger(trigger: Dict[str, Any], event: Dict[str, Any]) -> bool:
 
 
 _midi_macro_service_singleton: Optional[MidiMacroService] = None
+_midi_macro_service_singleton_lock = threading.Lock()
 
 
 def get_midi_macro_service() -> MidiMacroService:
     global _midi_macro_service_singleton
     if _midi_macro_service_singleton is None:
-        _midi_macro_service_singleton = MidiMacroService()
+        with _midi_macro_service_singleton_lock:
+            if _midi_macro_service_singleton is None:
+                _midi_macro_service_singleton = MidiMacroService()
     return _midi_macro_service_singleton

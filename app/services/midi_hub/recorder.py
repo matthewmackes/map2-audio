@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -329,10 +330,13 @@ class MidiRecorder:
 
 
 _midi_recorder_singleton: Optional[MidiRecorder] = None
+_midi_recorder_singleton_lock = threading.Lock()
 
 
 def get_midi_recorder() -> MidiRecorder:
     global _midi_recorder_singleton
     if _midi_recorder_singleton is None:
-        _midi_recorder_singleton = MidiRecorder()
+        with _midi_recorder_singleton_lock:
+            if _midi_recorder_singleton is None:
+                _midi_recorder_singleton = MidiRecorder()
     return _midi_recorder_singleton

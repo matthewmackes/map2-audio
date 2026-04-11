@@ -739,10 +739,13 @@ class MidiRouter:
 
 
 _midi_router_singleton: Optional[MidiRouter] = None
+_midi_router_singleton_lock = threading.Lock()
 
 
 def get_midi_router() -> MidiRouter:
     global _midi_router_singleton
     if _midi_router_singleton is None:
-        _midi_router_singleton = MidiRouter()
+        with _midi_router_singleton_lock:
+            if _midi_router_singleton is None:
+                _midi_router_singleton = MidiRouter()
     return _midi_router_singleton

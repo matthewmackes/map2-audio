@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
@@ -1853,17 +1854,20 @@ class Midi2Manager:
 
 
 _midi2_manager_singleton: Optional[Midi2Manager] = None
+_midi2_manager_singleton_lock = threading.Lock()
 
 
 def get_midi2_manager() -> Midi2Manager:
     global _midi2_manager_singleton
     if _midi2_manager_singleton is None:
-        from app.services.midi_hub.network import get_midi_network_bridge
+        with _midi2_manager_singleton_lock:
+            if _midi2_manager_singleton is None:
+                from app.services.midi_hub.network import get_midi_network_bridge
 
-        _midi2_manager_singleton = Midi2Manager(
-            hub=get_midi_hub(),
-            network_bridge=get_midi_network_bridge(),
-        )
+                _midi2_manager_singleton = Midi2Manager(
+                    hub=get_midi_hub(),
+                    network_bridge=get_midi_network_bridge(),
+                )
     else:
         from app.services.midi_hub.network import get_midi_network_bridge
 
