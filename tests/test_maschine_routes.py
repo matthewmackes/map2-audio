@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+from datetime import timezone
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app import database as database_module
 from app.routes import maschine as maschine_routes
 from app.services.maschine_lcd_service import reset_maschine_lcd_render_service
-from app.services.maschine_service import reset_maschine_service
+from app.services.maschine_service import MaschineService, get_maschine_service, reset_maschine_service
 
 
 class _FakeRuntimeConfigManager:
@@ -70,6 +73,54 @@ def test_maschine_transport_config_routes(tmp_path):
     assert fake_runtime_config.saved == 1
 
     monkeypatch.undo()
+
+
+def test_maschine_service_getter_uses_shared_singleton():
+    reset_maschine_service()
+
+    try:
+        first = get_maschine_service()
+        second = get_maschine_service()
+
+        assert first is second
+        assert MaschineService.has_instance() is True
+    finally:
+        reset_maschine_service()
+
+
+def test_update_encoder_map_persists_snapshot_timestamp_as_utc():
+    reset_maschine_service()
+    service = get_maschine_service()
+
+    class _Snapshot:
+        def __init__(self) -> None:
+            self.controls_payload = {}
+            self.updated_at = None
+
+    class _Session:
+        def __init__(self) -> None:
+            self.flush_calls = 0
+
+        async def flush(self) -> None:
+            self.flush_calls += 1
+
+    snapshot = _Snapshot()
+    session = _Session()
+
+    async def _run() -> None:
+        service._get_active_snapshot = lambda _session: asyncio.sleep(0, result=snapshot)  # type: ignore[method-assign]
+        normalized = await service.update_encoder_map(
+            session,
+            {"enc2": {"block_id": "block-1", "param_id": "mix", "label": "Mix"}},
+        )
+        assert normalized["enc2"]["param_id"] == "mix"
+
+    asyncio.run(_run())
+
+    assert snapshot.updated_at is not None
+    assert snapshot.updated_at.tzinfo == timezone.utc
+    assert session.flush_calls == 1
+    reset_maschine_service()
 
 
 def test_maschine_routes_rest_and_websocket(tmp_path):

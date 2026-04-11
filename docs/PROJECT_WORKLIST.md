@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 09:00 EDT - Codex
+Last updated: 2026-04-11 09:07 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19536,6 +19536,9 @@ Last updated: 2026-04-11 09:00 EDT - Codex
   - Selected the next bounded UTC/service slice on `app/services/request_queue.py`, covering the queue/request dataclass timestamps, retry scheduling timestamps, and the legacy JSON parse path. This surface persists internal runtime metadata, so the safe migration path is timezone-aware UTC going forward plus naive-to-UTC coercion when loading older queue files.
   - Landed that request-queue UTC slice by moving new queue/metric/retry timestamps onto `utc_now()`, normalizing legacy naive serialized queue datetimes to UTC on read, and keeping the on-disk JSON shape stable.
   - Validation for the request-queue UTC slice is green enough to ship: `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/request_queue.py tests/test_request_queue.py` -> PASS, `pytest -q tests/test_request_queue.py` -> SKIPPED in this environment because the existing suite is guarded on optional `aiofiles`, and a direct Python smoke check covering legacy timestamp coercion plus UTC retry/singleton behavior -> PASS.
+  - Selected the next bounded UTC/service slice on `app/services/maschine_service.py`, covering the persisted snapshot `updated_at` write in the encoder-map update path. This surface persists runtime metadata for active snapshots, so the safe migration path is a direct switch to timezone-aware UTC plus explicit regression coverage.
+  - Landed that Maschine UTC slice by moving the encoder-map snapshot write from `datetime.utcnow()` to `utc_now()`, while leaving the existing `Z`-formatted daemon status payload contract intact.
+  - Validation for the Maschine UTC slice is green: `pytest -q tests/test_maschine_routes.py tests/test_maschine_mk1.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine_service.py tests/test_maschine_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress
@@ -19548,7 +19551,7 @@ Description:
 - Required outputs: Consistent pattern across all modules.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 08:56 EDT - Codex
+Last updated: 2026-04-11 09:07 EDT - Codex
 - Progress notes:
   - Execution policy selected: only true process-wide singletons should use the shared singleton/getter pattern. Keyed constructors and parameterized object producers should be reclassified as explicit caches/managers where appropriate instead of being forced into a singleton shape.
   - Hardened the process-wide singleton getters in `app/services/push_surface/manager.py` and `app/services/ground_control_pro/service.py` to use the shared double-checked lock pattern while touching adjacent work.
@@ -19607,6 +19610,9 @@ Last updated: 2026-04-11 08:56 EDT - Codex
   - Selected the next singleton cleanup slice on `app/services/avb/ptp_monitor.py`. This monitor is a true process-wide service with no constructor parameters, so the remaining module-global `_ptp_monitor` accessor was safe to replace directly with the shared singleton base/getter pattern.
   - Landed that PTP-monitor singleton slice by promoting `PTPMonitor` onto the shared `Singleton` base/getter path and deleting the remaining ad hoc module-global singleton state.
   - Validation for the PTP-monitor singleton slice is green: `pytest -q tests/test_ptp_monitor.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/avb/ptp_monitor.py tests/test_ptp_monitor.py` -> PASS.
+  - Selected the next singleton cleanup slice on `app/services/maschine_service.py`. This daemon/state service is a true process-wide backend entrypoint with no constructor parameters, so the remaining `_maschine_service_singleton` global was safe to replace with the shared singleton base/getter path.
+  - Landed that Maschine singleton slice by promoting `MaschineService` onto the shared `Singleton` base/getter pattern and rewriting `reset_maschine_service()` to clear the shared singleton registry before closing any connected websocket clients.
+  - Validation for the Maschine singleton slice is green: `pytest -q tests/test_maschine_routes.py tests/test_maschine_mk1.py` -> PASS and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine_service.py tests/test_maschine_routes.py` -> PASS.
 
 ID: T847
 Status: [✓] Done

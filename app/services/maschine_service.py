@@ -20,6 +20,8 @@ from app.services.maschine_encoder_map_service import (
     default_maschine_encoder_map,
     normalize_maschine_encoder_map,
 )
+from app.utils.singleton import Singleton
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ _DEFAULT_LCD_BITMAP = {
     "data": "",
 }
 def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return utc_now().isoformat().replace("+00:00", "Z")
 
 
 @dataclass
@@ -101,7 +103,7 @@ class MaschineDaemonState:
         }
 
 
-class MaschineService:
+class MaschineService(Singleton):
     def __init__(self) -> None:
         self._state = MaschineDaemonState()
         self._encoder_map_fallback = default_maschine_encoder_map()
@@ -188,7 +190,7 @@ class MaschineService:
             controls_payload = dict(snapshot.controls_payload or {})
             controls_payload["maschine_encoder_map"] = copy.deepcopy(normalized)
             snapshot.controls_payload = controls_payload
-            snapshot.updated_at = datetime.utcnow()
+            snapshot.updated_at = utc_now()
             await session.flush()
         async with self._lock:
             payload = self._status_event_payload_locked(
@@ -588,20 +590,13 @@ class MaschineService:
         return result.scalar_one_or_none()
 
 
-_maschine_service_singleton: MaschineService | None = None
-
-
 def get_maschine_service() -> MaschineService:
-    global _maschine_service_singleton
-    if _maschine_service_singleton is None:
-        _maschine_service_singleton = MaschineService()
-    return _maschine_service_singleton
+    return MaschineService.get_instance()
 
 
 def reset_maschine_service() -> None:
-    global _maschine_service_singleton
-    service = _maschine_service_singleton
-    _maschine_service_singleton = None
+    service = MaschineService._instances.get(MaschineService)
+    MaschineService.reset_instance()
     if service is None:
         return
     for websocket in list(service._clients):
