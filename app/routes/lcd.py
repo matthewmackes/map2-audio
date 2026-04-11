@@ -9,6 +9,8 @@ from pydantic import BaseModel
 import logging
 import asyncio
 
+from app.utils.time import utc_now
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/lcd", tags=["LCD Display"])
@@ -1026,7 +1028,6 @@ async def save_lcd_preset(request: LCDPresetRequest):
     try:
         from pathlib import Path
         import json
-        from datetime import datetime
         
         presets_dir = Path.home() / ".config" / "map2" / "lcd_presets"
         presets_dir.mkdir(parents=True, exist_ok=True)
@@ -1042,7 +1043,7 @@ async def save_lcd_preset(request: LCDPresetRequest):
         preset_data = {
             "name": request.name,
             "description": request.description,
-            "created_at": datetime.now().isoformat(),
+            "created_at": utc_now().isoformat(),
             "config": config
         }
         
