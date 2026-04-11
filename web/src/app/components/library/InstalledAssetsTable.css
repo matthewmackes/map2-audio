@@ -61,9 +61,7 @@
   color: var(--cds-text-secondary);
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
   margin: 0;
-  text-transform: uppercase;
 }
 
 .installed-assets-table__cluster-node {

@@ -16,8 +16,6 @@
   background: color-mix(in srgb, currentColor 10%, transparent);
   font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-weight: 600;
-  letter-spacing: 0.06em;
   line-height: 1;
-  text-transform: uppercase;
   box-sizing: border-box;
 }

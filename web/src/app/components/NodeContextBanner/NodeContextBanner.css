@@ -32,8 +32,6 @@
   color: color-mix(in srgb, var(--interactive) 76%, var(--text-primary));
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
 .node-context-banner__headline strong {
