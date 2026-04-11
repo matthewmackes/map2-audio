@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1082** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1710** total commits | **3** stars | **0** forks | **0** open issues
+**1082** Python | **1149** TypeScript | **136** C++/H | **143** Docs | **1713** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`74381660`](https://github.com/matthewmackes/map2-audio/commit/74381660502fd068bffa2dd289b95b3951c98c9c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`30ee7433`](https://github.com/matthewmackes/map2-audio/commit/30ee743391d0dba65bc9d5a5fabecf1b7690cb41) | Move preset exchange timestamps to UTC | Map2 Audio | 2026-04-11 |
+| [`4e1d4ef3`](https://github.com/matthewmackes/map2-audio/commit/4e1d4ef390cceb074e658b7675c3eb3ec1480448) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`d8c03b5c`](https://github.com/matthewmackes/map2-audio/commit/d8c03b5c39c7530513b6ef2a972be33923af49fc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`5f1e1f3d`](https://github.com/matthewmackes/map2-audio/commit/5f1e1f3d8abd509a77611f414d81c2c37be18d5e) | Stabilize host machine system endpoints | Map2 Audio | 2026-04-11 |
 | [`bc90b617`](https://github.com/matthewmackes/map2-audio/commit/bc90b6171b554bb0551bc85d5eabd60f97284274) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`d6d16065`](https://github.com/matthewmackes/map2-audio/commit/d6d160654dce483167fe0ceca1e41acc50cf095e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`f4b46d7e`](https://github.com/matthewmackes/map2-audio/commit/f4b46d7e7a6a7ff62c23b1ba5b091213e1005a6a) | Move system test route timestamps to UTC | Map2 Audio | 2026-04-11 |
-| [`4ae80211`](https://github.com/matthewmackes/map2-audio/commit/4ae802110403ea118aeb79e2602bf995ad56c7f3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`74057310`](https://github.com/matthewmackes/map2-audio/commit/74057310c030ad7dc9695bfb2c38357f1cd0c37d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
-| [`d254894f`](https://github.com/matthewmackes/map2-audio/commit/d254894ffaea1e7ddb017434d091a4f7bc0dd46f) | Move web status timestamps to UTC | Map2 Audio | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
