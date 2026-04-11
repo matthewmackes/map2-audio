@@ -202,9 +202,9 @@ def _reset_identity_singletons() -> None:
         logger.debug("Failed to reset enhanced identity singleton: %s", exc)
 
     try:
-        from app.services.cluster import ztp as ztp_module
+        from app.services.cluster.ztp import ZTPBootstrap
 
-        ztp_module._ztp_instance = None
+        ZTPBootstrap.reset_instance()
     except Exception as exc:
         logger.debug("Failed to reset ZTP singleton: %s", exc)
 

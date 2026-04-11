@@ -37,7 +37,10 @@ from app.services.cluster.prometheus_exporter import MetricsManager, get_prometh
 from app.services.cluster.post_update_health import HealthCheckPhase, HealthCheckResult
 from app.services.cluster.map2_git_updater import MAP2GitUpdater, get_git_updater
 from app.services.cluster.deployment_manager import DeploymentManager, get_deployment_manager
+from app.services.cluster.distributed_event_bus import DistributedEventBus, get_event_bus as get_distributed_event_bus
+from app.services.cluster.hybrid_update_manager import HybridUpdateConfig, HybridUpdateManager, get_hybrid_update_manager
 from app.services.cluster.registry import ClusterRegistry, get_cluster_registry
+from app.services.cluster.raft_consensus import RaftConsensus, get_raft_consensus, initialize_raft_consensus
 from app.services.cluster.state_replicator import StateReplicator, get_state_replicator
 from app.services.cluster.update_orchestrator import UpdateScheduler, UpdateReport
 from app.services.cluster.audio_path_discovery import AudioPathService, get_audio_path_service
@@ -816,3 +819,104 @@ def test_adoption_bootstrap_override_uses_shared_singleton_registry(tmp_path):
         assert recreated is not override
     finally:
         AdoptionBootstrapService.reset_instance()
+
+
+def test_distributed_event_bus_singleton_getter_is_stable(monkeypatch, tmp_path):
+    DistributedEventBus.reset_instance()
+    original_init = DistributedEventBus.__init__
+
+    def _fake_init(self, db_path="/var/lib/map2/cluster-events.db"):
+        self.db_path = tmp_path / "cluster-events.db"
+        self.logger = None
+        self.event_queue = None
+        self._subscribers = {}
+        self._subscribers_lock = None
+
+    monkeypatch.setattr(DistributedEventBus, "__init__", _fake_init)
+    try:
+        first = get_distributed_event_bus()
+        second = get_distributed_event_bus()
+        assert first is second
+    finally:
+        DistributedEventBus.reset_instance()
+        monkeypatch.setattr(DistributedEventBus, "__init__", original_init)
+
+
+def test_hybrid_update_manager_preserves_first_config_under_shared_singleton(monkeypatch, tmp_path):
+    HybridUpdateManager.reset_instance()
+    original_init = HybridUpdateManager.__init__
+
+    def _fake_init(self, config=None):
+        self.config = config or HybridUpdateConfig()
+        self.git_updater = object()
+        self.rpm_updater = object()
+        self.mode = "git"
+        self.application_progress = None
+
+    monkeypatch.setattr(HybridUpdateManager, "__init__", _fake_init)
+    try:
+        first = get_hybrid_update_manager(HybridUpdateConfig(app_path=str(tmp_path / "one")))
+        second = get_hybrid_update_manager(HybridUpdateConfig(app_path=str(tmp_path / "two")))
+
+        assert first is second
+        assert first.config.app_path == str(tmp_path / "one")
+    finally:
+        HybridUpdateManager.reset_instance()
+        monkeypatch.setattr(HybridUpdateManager, "__init__", original_init)
+
+
+def test_raft_consensus_initialize_and_getter_share_registry(tmp_path):
+    RaftConsensus.reset_instance()
+    original_default_state_path = RaftConsensus._default_state_path
+
+    try:
+        try:
+            get_raft_consensus()
+        except RuntimeError as exc:
+            assert "not initialized" in str(exc)
+        else:
+            raise AssertionError("Expected get_raft_consensus() to require initialization")
+
+        RaftConsensus._default_state_path = staticmethod(lambda node_id: tmp_path / f"{node_id}.sqlite3")
+        first = initialize_raft_consensus("node-a", {"node-a": "http://node-a"})
+        second = get_raft_consensus()
+
+        assert first is second
+        assert first._state_path == tmp_path / "node-a.sqlite3"
+    finally:
+        RaftConsensus._default_state_path = original_default_state_path
+        RaftConsensus.reset_instance()
+
+
+def test_clone_reset_resets_ztp_singleton(monkeypatch, tmp_path):
+    from app.services.cluster.clone_reset import _reset_identity_singletons
+
+    ZTPBootstrap.reset_instance()
+    original_init = ZTPBootstrap.__init__
+
+    def _fake_init(self):
+        self.node_identity = None
+        self.config_file = tmp_path / "node.conf"
+        self.marker_file = tmp_path / ".ztp-complete"
+        self.logger = type(
+            "_Logger",
+            (),
+            {
+                "info": lambda *args, **kwargs: None,
+                "warning": lambda *args, **kwargs: None,
+                "error": lambda *args, **kwargs: None,
+                "debug": lambda *args, **kwargs: None,
+            },
+        )()
+
+    monkeypatch.setattr(ZTPBootstrap, "__init__", _fake_init)
+    try:
+        get_ztp_bootstrap()
+        assert ZTPBootstrap.has_instance() is True
+
+        _reset_identity_singletons()
+
+        assert ZTPBootstrap.has_instance() is False
+    finally:
+        ZTPBootstrap.reset_instance()
+        monkeypatch.setattr(ZTPBootstrap, "__init__", original_init)

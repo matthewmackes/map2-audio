@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
+from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -131,7 +132,7 @@ class RaftStateMachine:
         return self.state.copy()
 
 
-class RaftConsensus:
+class RaftConsensus(Singleton):
     """
     Raft consensus engine for cluster state replication.
     
@@ -656,20 +657,15 @@ class RaftConsensus:
         }
 
 
-# Singleton instance per node
-_raft_consensus: Optional[RaftConsensus] = None
-
-
 def get_raft_consensus() -> RaftConsensus:
     """Get or create Raft consensus instance."""
-    global _raft_consensus
-    if _raft_consensus is None:
+    if not RaftConsensus.has_instance():
         raise RuntimeError("Raft consensus not initialized")
-    return _raft_consensus
+    return RaftConsensus._instances[RaftConsensus]  # type: ignore[return-value]
 
 
 def initialize_raft_consensus(node_id: str, cluster_nodes: Dict[str, str]) -> RaftConsensus:
     """Initialize Raft consensus."""
-    global _raft_consensus
-    _raft_consensus = RaftConsensus(node_id, cluster_nodes)
-    return _raft_consensus
+    with RaftConsensus._lock:
+        RaftConsensus._instances[RaftConsensus] = RaftConsensus(node_id, cluster_nodes)
+        return RaftConsensus._instances[RaftConsensus]  # type: ignore[return-value]

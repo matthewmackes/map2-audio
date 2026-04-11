@@ -24,6 +24,8 @@ from enum import Enum
 from pathlib import Path
 import queue
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -135,7 +137,7 @@ class ClusterEvent:
         return ClusterEvent(**data_copy)
 
 
-class DistributedEventBus:
+class DistributedEventBus(Singleton):
     """
     Manages cluster-wide event bus.
 
@@ -589,13 +591,6 @@ class DistributedEventBus:
             return {}
 
 
-# Global instance
-_event_bus: Optional[DistributedEventBus] = None
-
-
 def get_event_bus() -> DistributedEventBus:
     """Get or create the event bus"""
-    global _event_bus
-    if _event_bus is None:
-        _event_bus = DistributedEventBus()
-    return _event_bus
+    return DistributedEventBus.get_instance()

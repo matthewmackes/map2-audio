@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 
 from app.services.cluster.map2_git_updater import get_git_updater
 from app.services.cluster.fedora_package_manager import FedoraDNFManager
+from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class HybridApplicationProgress:
     steps: List[HybridApplicationStep] = field(default_factory=list)
 
 
-class HybridUpdateManager:
+class HybridUpdateManager(Singleton):
     """
     Manages both RPM and Git-based updates.
     
@@ -679,7 +680,10 @@ def get_hybrid_update_manager(
     config: Optional[HybridUpdateConfig] = None
 ) -> HybridUpdateManager:
     """Get singleton instance of hybrid update manager."""
-    global _hybrid_manager_instance
-    if "_hybrid_manager_instance" not in globals():
-        _hybrid_manager_instance = HybridUpdateManager(config)
-    return _hybrid_manager_instance
+    if HybridUpdateManager.has_instance():
+        return HybridUpdateManager._instances[HybridUpdateManager]  # type: ignore[return-value]
+
+    with HybridUpdateManager._lock:
+        if not HybridUpdateManager.has_instance():
+            HybridUpdateManager._instances[HybridUpdateManager] = HybridUpdateManager(config)
+        return HybridUpdateManager._instances[HybridUpdateManager]  # type: ignore[return-value]

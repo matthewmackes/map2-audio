@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-10 - Closed T961 by landing the source-of-truth Snapshot Publish workspace and retiring the legacy live modal stack, refreshed requested frontend/backend cleanup task state, corrected tracker inconsistencies, advanced the active T845/T846 backend cleanup slices with validation, landed shared frontend T863/T870 typography passes, and added T962 for the Start Menu Option 5 two-tier hero-and-compact layout design. Latest slice: standardized `ztp`, `config_pusher`, and `adoption_bootstrap` on UTC/runtime and shared singleton behavior with focused regression coverage.
+Last updated: 2026-04-10 - Closed T961 by landing the source-of-truth Snapshot Publish workspace and retiring the legacy live modal stack, refreshed requested frontend/backend cleanup task state, corrected tracker inconsistencies, advanced the active T845/T846 backend cleanup slices with validation, landed shared frontend T863/T870 typography passes, and added T962 for the Start Menu Option 5 two-tier hero-and-compact layout design. Latest slices: standardized `ztp`, `config_pusher`, and `adoption_bootstrap` on UTC/runtime and shared singleton behavior, then promoted `distributed_event_bus`, `hybrid_update_manager`, and `raft_consensus` onto the shared singleton registry path with focused regression coverage.
 
 ## Performance Brain
 
@@ -19472,7 +19472,7 @@ Description:
 - Required outputs: Global replacement, consistent timestamps.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-10 13:25 EDT - Codex
+Last updated: 2026-04-10 14:03 EDT - Codex
 - Progress notes:
   - Execution policy selected: persisted data, runtime state, and API timestamps should be timezone-aware UTC by default; local-aware timestamps are allowed only at operator-facing display boundaries. The remaining migration work will follow that policy rather than attempting a context-free global rewrite.
   - Fresh inventory shows the repo currently has far more than the original estimate: hundreds of `datetime.utcnow()` / naive `datetime.now()` call sites across `app/` and `tests/`, not 20-ish. The task is now being treated as a broad mechanical migration plus targeted compatibility verification instead of a small warning cleanup.
@@ -19560,6 +19560,9 @@ Last updated: 2026-04-10 13:25 EDT - Codex
   - Selected the next singleton cleanup slice on bootstrap/config services: `ztp`, `config_pusher`, and `adoption_bootstrap`. These are process-wide service entrypoints with no keyed lifecycle semantics, so they fit the shared singleton base/getter pattern cleanly.
   - Landed that singleton cleanup slice by promoting `ZTPBootstrap` and `ConfigSync` onto the shared `Singleton` base/getter pattern and wiring `set_adoption_bootstrap_service()` into the shared singleton registry so explicit test/runtime overrides still work without bespoke globals.
   - Validation for the bootstrap/config singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'ztp or config_sync or adoption_bootstrap'` -> PASS (`3 passed, 25 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/ztp.py app/services/cluster/config_pusher.py app/services/cluster/adoption_bootstrap.py tests/test_cluster_runtime_consistency.py` -> PASS.
+  - Selected the next singleton cleanup slice on remaining cluster coordination entrypoints: `distributed_event_bus`, `hybrid_update_manager`, and `raft_consensus`, plus the dependent `clone_reset` ZTP reset path. The first is a true process-wide singleton, while the latter two preserve explicit initialization semantics by registering initialized instances through the shared singleton registry/lock instead of bespoke globals.
+  - Landed that singleton cleanup slice by promoting `DistributedEventBus` onto the shared `Singleton` base/getter pattern, moving `get_hybrid_update_manager()` and `initialize_raft_consensus()` onto the shared singleton registry/lock path while preserving first-call/explicit-init semantics, and updating `clone_reset` to call `ZTPBootstrap.reset_instance()` instead of mutating removed module globals.
+  - Validation for the coordination-entrypoint singleton slice is green via `pytest -q tests/test_cluster_runtime_consistency.py -k 'test_distributed_event_bus_singleton_getter_is_stable or test_hybrid_update_manager_preserves_first_config_under_shared_singleton or test_raft_consensus_initialize_and_getter_share_registry or test_clone_reset_resets_ztp_singleton'` -> PASS (`4 passed, 28 deselected`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/cluster/distributed_event_bus.py app/services/cluster/hybrid_update_manager.py app/services/cluster/raft_consensus.py app/services/cluster/clone_reset.py tests/test_cluster_runtime_consistency.py` -> PASS.
 
 ID: T847
 Status: [✓] Done
