@@ -11,11 +11,11 @@ Generates events for:
 """
 
 import logging
-from datetime import datetime
 from typing import Dict, List, Optional
 
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event
 from app.lcd_models.lcd_event import EventType, EventSeverity
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class PluginEventProducer:
         self.loaded_plugins[plugin_id] = {
             'name': plugin_name,
             'type': plugin_type,
-            'loaded_at': datetime.now().isoformat(),
+            'loaded_at': utc_now().isoformat(),
             'instances': 1
         }
         

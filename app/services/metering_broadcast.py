@@ -6,13 +6,13 @@ Periodically broadcasts spectrum, LUFS, CPU, and phase data via WebSocket
 import asyncio
 import logging
 import json
-from datetime import datetime
 from typing import Optional
 
 from app.config import config_get
 from app.services.websocket_manager import ws_manager
 from app.services.juce_engine_service import get_audio_engine
 from app.services.timing_jitter_collector import get_timing_jitter_collector
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ class MeteringBroadcastService:
                         message = {
                             "type": message_type,
                             "data": data,
-                            "timestamp": datetime.now().isoformat()
+                            "timestamp": utc_now().isoformat()
                         }
                         await ws_manager.broadcast_json(message, topic)
 

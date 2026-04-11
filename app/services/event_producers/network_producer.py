@@ -11,10 +11,10 @@ Monitors network connectivity and generates LCD events for:
 import asyncio
 import logging
 import aiohttp
-from datetime import datetime
 
 from app.services.lcd_event_bus import LCDEventBus, create_system_event
 from app.lcd_models.lcd_event import EventType, EventSeverity
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class NetworkEventProducer:
         """Called when peer node connects"""
         event = {
             "event_id": "",
-            "timestamp": datetime.now(),
+            "timestamp": utc_now(),
             "source_node": self.event_bus.node_label,
             "event_type": EventType.NETWORK,
             "severity": EventSeverity.INFO,
@@ -128,7 +128,7 @@ class NetworkEventProducer:
         """Called when peer node disconnects"""
         event = {
             "event_id": "",
-            "timestamp": datetime.now(),
+            "timestamp": utc_now(),
             "source_node": self.event_bus.node_label,
             "event_type": EventType.NETWORK,
             "severity": EventSeverity.WARNING,

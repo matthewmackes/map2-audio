@@ -11,7 +11,6 @@ REST API and WebSocket endpoints for LCD event system:
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 import logging
 import json
 
@@ -19,6 +18,7 @@ from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 from app.services.lcd_event_persistence import get_lcd_persistence
 from app.utils.health_metrics import get_health_metrics
 from app.utils.platform_version import get_platform_version
+from app.utils.time import utc_now
 from fastapi.responses import Response
 import os
 
@@ -141,7 +141,7 @@ async def create_event(request: EventCreateRequest):
     # Create event
     event = LCDEvent(
         event_id="",  # Will be auto-generated
-        timestamp=datetime.now(),
+        timestamp=utc_now(),
         source_node=lcd_manager.node_label,
         event_type=request.event_type,
         severity=request.severity,

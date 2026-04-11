@@ -3,11 +3,22 @@ Database models and schema for LCD events persistence.
 Stores events in SQLite for historical access and analytics.
 """
 
-from sqlalchemy import Column, String, DateTime, Integer, JSON, Index, select, delete
-from app.database import Base
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
+
+from sqlalchemy import Column, DateTime, Index, Integer, JSON, String, delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import Base
+from app.utils.time import utc_now
+
+
+def _coerce_utc_timestamp(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
+def _parse_event_timestamp(value: str) -> datetime:
+    return _coerce_utc_timestamp(datetime.fromisoformat(value))
 
 class LCDEventRecord(Base):
     """
@@ -23,7 +34,7 @@ class LCDEventRecord(Base):
     
     # Timing
     timestamp = Column(DateTime, index=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Source & routing
     source_node = Column(String(50), index=True, nullable=False)
@@ -59,7 +70,7 @@ class LCDEventRecord(Base):
         """Convert to dictionary"""
         return {
             'event_id': self.event_id,
-            'timestamp': self.timestamp.isoformat(),
+            'timestamp': _coerce_utc_timestamp(self.timestamp).isoformat(),
             'source_node': self.source_node,
             'event_type': self.event_type,
             'severity': self.severity,
@@ -90,7 +101,7 @@ class LCDEventRepository:
         try:
             record = LCDEventRecord(
                 event_id=event_dict['event_id'],
-                timestamp=datetime.fromisoformat(event_dict['timestamp']),
+                timestamp=_parse_event_timestamp(event_dict['timestamp']),
                 source_node=event_dict['source_node'],
                 event_type=event_dict['event_type'],
                 severity=event_dict['severity'],
@@ -122,7 +133,7 @@ class LCDEventRepository:
             records = [
                 LCDEventRecord(
                     event_id=event['event_id'],
-                    timestamp=datetime.fromisoformat(event['timestamp']),
+                    timestamp=_parse_event_timestamp(event['timestamp']),
                     source_node=event['source_node'],
                     event_type=event['event_type'],
                     severity=event['severity'],
@@ -164,7 +175,7 @@ class LCDEventRepository:
         severity: Optional[str] = None
     ) -> List[dict]:
         """Get recent events with optional filtering"""
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = utc_now() - timedelta(hours=hours)
         stmt = select(LCDEventRecord).where(LCDEventRecord.timestamp >= since)
         
         # Apply optional filters
@@ -207,7 +218,7 @@ class LCDEventRepository:
     
     async def delete_old_events(self, hours_to_keep: int = 24) -> int:
         """Delete events older than specified hours"""
-        cutoff = datetime.utcnow() - timedelta(hours=hours_to_keep)
+        cutoff = utc_now() - timedelta(hours=hours_to_keep)
         stmt = delete(LCDEventRecord).where(LCDEventRecord.timestamp < cutoff)
         result = await self.session.execute(stmt)
         await self.session.commit()
@@ -215,7 +226,7 @@ class LCDEventRepository:
     
     async def get_event_statistics(self, hours: int = 24) -> dict:
         """Get event statistics for dashboard"""
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = utc_now() - timedelta(hours=hours)
         stmt = select(LCDEventRecord).where(LCDEventRecord.timestamp >= since)
         result = await self.session.execute(stmt)
         records = result.scalars().all()

@@ -10,10 +10,10 @@ import asyncio
 import logging
 from typing import Callable, List, Deque
 from collections import deque
-from datetime import datetime
 import uuid
 
 from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ async def create_audio_event(
     """Helper to create and publish an audio event"""
     event = LCDEvent(
         event_id=str(uuid.uuid4()),
-        timestamp=datetime.now(),
+        timestamp=utc_now(),
         source_node=event_bus.node_label,
         event_type=EventType.AUDIO,
         severity=severity,
@@ -195,7 +195,7 @@ async def create_system_event(
     """Helper to create and publish a system event"""
     event = LCDEvent(
         event_id=str(uuid.uuid4()),
-        timestamp=datetime.now(),
+        timestamp=utc_now(),
         source_node=event_bus.node_label,
         event_type=EventType.SYSTEM,
         severity=severity,
@@ -217,7 +217,7 @@ async def create_alert_event(
     """Helper to create and publish an alert event"""
     event = LCDEvent(
         event_id=str(uuid.uuid4()),
-        timestamp=datetime.now(),
+        timestamp=utc_now(),
         source_node=event_bus.node_label,
         event_type=EventType.ALERT,
         severity=severity,

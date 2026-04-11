@@ -6,9 +6,15 @@ broadcast across the cluster and displayed on node LCDs.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from enum import Enum
+
+from app.utils.time import utc_now
+
+
+def _coerce_utc_timestamp(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
 
 
 class EventType(str, Enum):
@@ -86,14 +92,14 @@ class LCDEvent:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LCDEvent":
         """Create event from dictionary"""
-        data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+        data["timestamp"] = _coerce_utc_timestamp(datetime.fromisoformat(data["timestamp"]))
         data["event_type"] = EventType(data["event_type"])
         data["severity"] = EventSeverity(data["severity"])
         return cls(**data)
     
     def is_expired(self) -> bool:
         """Check if event has exceeded its TTL"""
-        age_seconds = (datetime.now() - self.timestamp).total_seconds()
+        age_seconds = (utc_now() - _coerce_utc_timestamp(self.timestamp)).total_seconds()
         return age_seconds > self.ttl
     
     def should_display_on_node(self, node_id: str) -> bool:

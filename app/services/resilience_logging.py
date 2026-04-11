@@ -6,9 +6,10 @@ Helps with debugging and monitoring system behavior.
 """
 
 import logging
-from datetime import datetime
 from typing import Optional, Any, Dict
 from enum import Enum
+
+from app.utils.time import utc_now
 
 
 class EventSeverity(Enum):
@@ -40,7 +41,7 @@ class ResilienceLogger:
         log_data = {
             'event_type': event_type,
             'message': message,
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': utc_now().isoformat(),
             'logger': self.name,
             **context
         }

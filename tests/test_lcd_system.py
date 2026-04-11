@@ -11,7 +11,7 @@ Tests cover:
 
 import pytest
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
@@ -19,6 +19,7 @@ from app.services.lcd_event_bus import LCDEventBus, create_audio_event
 from app.services.lcd_event_router import LCDEventRouter
 from app.services.remote_event_aggregator import RemoteEventAggregator
 from app.drivers.lcd_display import MockLCDDisplay
+from app.utils.time import utc_now
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ class TestLCDEventModel:
         """Test creating an LCD event"""
         event = LCDEvent(
             event_id="test-id-1",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             source_node="TEST-NODE-1234",
             event_type=EventType.AUDIO,
             severity=EventSeverity.INFO,
@@ -63,7 +64,7 @@ class TestLCDEventModel:
         """Test serializing event to dict"""
         event = LCDEvent(
             event_id="test-id",
-            timestamp=datetime(2026, 2, 4, 14, 30, 0),
+            timestamp=datetime(2026, 2, 4, 14, 30, 0, tzinfo=timezone.utc),
             source_node="NODE-1",
             event_type=EventType.SYSTEM,
             severity=EventSeverity.WARNING,
@@ -106,6 +107,7 @@ class TestLCDEventModel:
         assert event.event_id == "test-id"
         assert event.event_type == EventType.AUDIO
         assert event.severity == EventSeverity.INFO
+        assert event.timestamp.tzinfo == timezone.utc
     
     def test_event_expiration(self):
         """Test TTL and expiration logic"""
@@ -114,7 +116,7 @@ class TestLCDEventModel:
         # Event with 1 second TTL
         event = LCDEvent(
             event_id="test",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             source_node="NODE-1",
             event_type=EventType.SYSTEM,
             severity=EventSeverity.INFO,
@@ -133,7 +135,7 @@ class TestLCDEventModel:
         """Test should_display_on_node logic"""
         event = LCDEvent(
             event_id="test",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             source_node="NODE-1",
             event_type=EventType.SYSTEM,
             severity=EventSeverity.INFO,
@@ -172,7 +174,7 @@ class TestLCDEventBus:
         # Publish event
         event = LCDEvent(
             event_id="test",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             source_node="TEST-NODE-1234",
             event_type=EventType.AUDIO,
             severity=EventSeverity.INFO,
@@ -195,7 +197,7 @@ class TestLCDEventBus:
         for i in range(5):
             event = LCDEvent(
                 event_id=f"test-{i}",
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
                 source_node="TEST-NODE-1234",
                 event_type=EventType.SYSTEM,
                 severity=EventSeverity.INFO,
@@ -238,7 +240,7 @@ class TestRemoteEventAggregator:
         
         event = LCDEvent(
             event_id="remote-1",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             source_node="REMOTE-NODE-5678",
             event_type=EventType.SYSTEM,
             severity=EventSeverity.WARNING,
@@ -262,7 +264,7 @@ class TestRemoteEventAggregator:
         for i in range(3):
             event = LCDEvent(
                 event_id=f"event-{i}",
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
                 source_node="REMOTE-NODE",
                 event_type=EventType.AUDIO if i < 2 else EventType.SYSTEM,
                 severity=EventSeverity.INFO if i == 0 else EventSeverity.WARNING,
@@ -289,7 +291,7 @@ class TestLCDDisplay:
         await lcd_display.write_line(0, "Test Line")
         
         current = lcd_display.get_current_display()
-        assert current[0] == "Test Line         "  # Padded to 20 chars
+        assert current[0] == "Test Line".ljust(20)
     
     @pytest.mark.asyncio
     async def test_clear_display(self, lcd_display):

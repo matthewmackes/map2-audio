@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.utils.logging_utils import get_logger
+from app.utils.time import utc_now
 from app.exceptions import ConfigurationValidationException, ConfigurationNotFoundException
 
 logger = get_logger(__name__)
@@ -127,7 +128,7 @@ class ConfigValidator:
                 valid=len(errors) == 0,
                 errors=errors,
                 warnings=warnings,
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
             )
             
             # Cache result
@@ -142,7 +143,7 @@ class ConfigValidator:
                 valid=False,
                 errors=[f"Validation failed: {str(e)}"],
                 warnings=[],
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
             )
     
     def _validate_manual(self, config: Dict[str, Any]) -> List[str]:
@@ -191,7 +192,7 @@ class ConfigValidator:
                 valid=False,
                 errors=[f"Failed to load config file: {e}"],
                 warnings=[],
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
             )
 
 

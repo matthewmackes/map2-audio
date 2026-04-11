@@ -5,9 +5,10 @@ Centralized event publishing for real-time WebSocket updates.
 
 import asyncio
 import logging
-from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Iterable, Optional, Protocol
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +155,7 @@ class EventPublisher:
         message = {
             "type": event_type.value,
             "data": data,
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": utc_now().isoformat()
         }
 
         await self.publish_message(message, topics=(topic,))

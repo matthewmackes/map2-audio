@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the active T845/T846 backend cleanup stream with another shipped slice: moved `session_manager` and `folder_scanner` runtime/persisted timestamps onto timezone-aware UTC handling, and promoted the shared observability, transport, Push, surface-control, enriched-surface, LCD/render, and backend utility services onto the shared singleton path with direct reset coverage.
+Last updated: 2026-04-11 - Continued the active T845/T846 backend cleanup stream with another shipped UTC slice: moved LCD event persistence/routes plus realtime meter/event/config/runtime emitters onto timezone-aware UTC handling with direct regression coverage.
 
 ## Performance Brain
 
@@ -19560,6 +19560,9 @@ Last updated: 2026-04-11 13:31 EDT - Codex
   - Validation for the folder-scanner UTC slice is green: `pytest -q tests/test_folder_scanner.py` -> PASS (`1 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/folder_scanner.py tests/test_folder_scanner.py` -> PASS.
   - Landed the next persisted-runtime UTC slice by moving `app/services/session_manager.py` session `created_at` / `modified_at` writes and backup timestamp generation onto `utc_now()`, and by keeping the existing on-disk session schema plus backup filename pattern stable.
   - Validation for the session-manager UTC slice is green: `pytest -q tests/test_session_manager.py` -> PASS (`3 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/session_manager.py tests/test_session_manager.py` -> PASS.
+  - Landed the next runtime/event UTC slice by moving `audio_meters`, `event_publisher`, `metering_broadcast`, `config_validator`, `resilience_logging`, `network_producer`, and `plugin_producer` onto timezone-aware UTC emitters while preserving their existing payload shapes and runtime contracts.
+  - Landed the next LCD UTC slice by moving LCD event creation, expiration checks, persistence timestamps, and route-created events onto timezone-aware UTC handling while coercing legacy naive serialized event timestamps to UTC on read so existing event payloads remain compatible.
+  - Validation for the runtime/LCD UTC slices is green: `pytest -q tests/test_audio_meters.py tests/test_event_publisher.py tests/test_metering_broadcast.py tests/test_runtime_timestamp_surfaces.py tests/test_lcd_system.py tests/test_lcd_events_routes.py` -> PASS (`24 passed`) and `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/audio_meters.py app/services/config_validator.py app/services/event_producers/network_producer.py app/services/event_producers/plugin_producer.py app/services/event_publisher.py app/services/lcd_event_bus.py app/lcd_models/lcd_event.py app/lcd_models/lcd_event_db.py app/routes/lcd_events.py app/services/metering_broadcast.py app/services/resilience_logging.py tests/test_audio_meters.py tests/test_event_publisher.py tests/test_metering_broadcast.py tests/test_runtime_timestamp_surfaces.py tests/test_lcd_system.py tests/test_lcd_events_routes.py` -> PASS.
 
 ID: T846
 Status: [>] In Progress

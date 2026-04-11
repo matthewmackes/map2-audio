@@ -1,8 +1,9 @@
 import asyncio
+from datetime import datetime, timezone
 
 import pytest
 
-from app.services.event_publisher import EventPublisher
+from app.services.event_publisher import EventPublisher, EventType
 
 
 @pytest.mark.asyncio
@@ -25,3 +26,20 @@ async def test_publish_message_threadsafe_uses_current_loop_without_bound_websoc
     assert delivered == [
         (("midi:routes",), {"type": "midi:route_changed"})
     ]
+
+
+@pytest.mark.asyncio
+async def test_publish_uses_utc_timestamp(monkeypatch):
+    publisher = EventPublisher()
+    delivered: list[dict[str, object]] = []
+    publisher._ws_manager = object()
+
+    async def fake_publish_message(message: dict[str, object], *, topics) -> None:
+        delivered.append(dict(message))
+
+    monkeypatch.setattr(publisher, "publish_message", fake_publish_message)
+
+    await publisher.publish("system", EventType.SYSTEM_STATUS, {"ok": True})
+
+    parsed = datetime.fromisoformat(str(delivered[0]["timestamp"]))
+    assert parsed.tzinfo == timezone.utc

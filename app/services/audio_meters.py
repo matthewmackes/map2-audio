@@ -7,9 +7,10 @@ import numpy as np
 import logging
 import asyncio
 from typing import Dict, Optional, List, Tuple
-from datetime import datetime
 from threading import Lock
 from collections import deque
+
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +299,7 @@ class MeterBroadcaster:
                 }
                 for chain_id, levels in chain_levels.items()
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": utc_now().isoformat()
         }
     
     async def start_broadcasting(self, ws_manager) -> None:
