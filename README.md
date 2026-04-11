@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1098** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1772** total commits | **3** stars | **0** forks | **0** open issues
+**1098** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1775** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0f35557c`](https://github.com/matthewmackes/map2-audio/commit/0f35557c87f0c04e09e9a38decdff0124533ae2b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
+| [`aa9d0e9d`](https://github.com/matthewmackes/map2-audio/commit/aa9d0e9d3f5644f596084cab634717fbdae22b82) | Fix default chain startup loader import | Map2 Audio | 2026-04-11 |
+| [`29c0da75`](https://github.com/matthewmackes/map2-audio/commit/29c0da7572dbd6fa0f39454f12f69a1d7332d509) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`c5458b2c`](https://github.com/matthewmackes/map2-audio/commit/c5458b2c76a6d56e94151d8d734fb73cc80ea5dc) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`ef44877a`](https://github.com/matthewmackes/map2-audio/commit/ef44877aca3bad7d59c96a39ff9db0df05ea722b) | Guard remaining MIDI Hub singleton getters | Map2 Audio | 2026-04-11 |
 | [`bd451e2e`](https://github.com/matthewmackes/map2-audio/commit/bd451e2e519771f5d22bb09f0bbc3306b312514a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`d4b34d00`](https://github.com/matthewmackes/map2-audio/commit/d4b34d0036755f4d36971e2d7c5d761ab192fd7f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-11 |
 | [`df524a44`](https://github.com/matthewmackes/map2-audio/commit/df524a446184716ef929f02766ed03f423b69eb9) | Ship centered home desktop start menu overlay | Map2 Audio | 2026-04-11 |
-| [`4328225f`](https://github.com/matthewmackes/map2-audio/commit/4328225faabae56b005241385bac966cb76170c8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`d29440b9`](https://github.com/matthewmackes/map2-audio/commit/d29440b9108614169998d8b3f16e1ca818bc923c) | Update worklist: mark T874 and T875 as Done with completi... | Map2 Audio | 2026-04-11 |
-| [`c2e93235`](https://github.com/matthewmackes/map2-audio/commit/c2e93235a602f6d036477bcb7585ee914eb45375) | T875: Remove decorative box-shadow from AppShell.css (FLA... | Map2 Audio | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
