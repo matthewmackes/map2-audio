@@ -4,8 +4,8 @@
 
 .app-shell:not(:has(.hp-root)) {
   --platform-shell-bg: var(--cds-background, var(--bg));
-  --platform-shell-layer: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 82%, transparent);
-  --platform-shell-layer-strong: color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 88%, transparent);
+  --platform-shell-layer: color-mix(in srgb, var(--cds-layer, var(--surface)) 82%, transparent);
+  --platform-shell-layer-strong: color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 88%, transparent);
   --platform-shell-border: color-mix(in srgb, var(--cds-border-subtle-01, var(--border)) 78%, var(--cds-link-primary, var(--interactive)) 22%);
   --platform-shell-border-strong: color-mix(in srgb, var(--cds-border-strong-01, var(--border-strong, var(--border))) 76%, var(--cds-link-primary, var(--interactive)) 24%);
   --platform-shell-text: var(--cds-text-primary, var(--text-primary));
@@ -18,8 +18,8 @@
     radial-gradient(circle at bottom left, color-mix(in srgb, var(--platform-shell-accent-soft) 8%, transparent), transparent 30%),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 84%, var(--platform-shell-bg)) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 78%, var(--platform-shell-bg)) 20%,
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 84%, var(--platform-shell-bg)) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 78%, var(--platform-shell-bg)) 20%,
       var(--platform-shell-bg) 100%
     );
 }
@@ -136,11 +136,11 @@
   --window-shell-gap: 0;
   --window-shell-border: var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28));
   --window-shell-surface: var(--cds-background, var(--bg));
-  --window-shell-surface-strong: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, var(--bg)));
-  --window-shell-titlebar: color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%);
+  --window-shell-surface-strong: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, var(--bg)));
+  --window-shell-titlebar: color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%);
   --window-shell-titlebar-border: color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent);
   --window-shell-titlebar-contrast: var(--cds-text-primary, var(--text-primary));
-  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-01, #ffffff));
+  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer, #ffffff));
   --window-shell-usable-height: calc(100vh - var(--window-shell-launcher-clearance));
 }
 
@@ -163,7 +163,7 @@
   border-left: 1px solid color-mix(in srgb, white 70%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--window-shell-border) 94%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--window-shell-border) 96%, transparent);
-  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 10%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 10%, var(--cds-layer, #ffffff));
   color: var(--cds-text-primary, var(--text-primary));
   box-shadow: none;
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
@@ -403,8 +403,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-support-warning, #f1c21b) 18%, var(--cds-layer-02, #f4f4f4)) 0%,
-      color-mix(in srgb, var(--cds-support-warning, #f1c21b) 8%, var(--cds-layer-01, #ffffff)) 100%
+      color-mix(in srgb, var(--cds-support-warning, #f1c21b) 18%, var(--cds-layer-hover, #f4f4f4)) 0%,
+      color-mix(in srgb, var(--cds-support-warning, #f1c21b) 8%, var(--cds-layer, #ffffff)) 100%
     );
   box-shadow: none;
 }
@@ -571,7 +571,7 @@
   padding: 0 0.5rem;
   border-top: 1px solid var(--window-shell-border);
   border-bottom: 0;
-  background: color-mix(in srgb, var(--cds-layer-02, #dde1e6) 94%, var(--window-shell-surface) 6%);
+  background: color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 94%, var(--window-shell-surface) 6%);
   box-shadow: none;
   /* The Start menu panel is positioned above the taskbar; clipping it here makes the menu appear broken. */
   overflow: visible;
@@ -635,7 +635,7 @@
   height: 1rem;
   padding: 0.12rem;
   border: 1px solid color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 34%, var(--window-shell-border));
-  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 8%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 8%, var(--cds-layer, #ffffff));
 }
 
 .window-taskbar__start-mark-icon {
@@ -646,7 +646,7 @@
 .window-taskbar__start-btn:hover,
 .window-taskbar__start-btn.is-active {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 42%, var(--window-shell-border));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer, #ffffff));
 }
 
 .window-taskbar__start-btn:active {
@@ -1019,7 +1019,7 @@
   width: 100%;
   padding: 1rem;
   border: 1px solid color-mix(in srgb, black 14%, var(--border, var(--window-shell-border)));
-  background: var(--surface, var(--cds-layer-01, #ffffff));
+  background: var(--surface, var(--cds-layer, #ffffff));
   color: var(--text-primary, var(--cds-text-primary, #161616));
   text-decoration: none;
   text-align: left;
@@ -1031,13 +1031,13 @@
 .start-menu-card--featured,
 .start-menu-card--featured:visited {
   grid-column: span 1;
-  background: var(--surface, var(--cds-layer-01, #ffffff));
+  background: var(--surface, var(--cds-layer, #ffffff));
 }
 
 .start-menu-card:hover,
 .start-menu-card.is-active {
   border-color: color-mix(in srgb, var(--window-shell-accent, #0f62fe) 36%, var(--border, var(--window-shell-border)));
-  background: var(--surface, var(--cds-layer-01, #ffffff));
+  background: var(--surface, var(--cds-layer, #ffffff));
 }
 
 .start-menu-card:focus-visible {
@@ -1319,7 +1319,7 @@
 
 .shell-power-modal .cds--modal-footer {
   border-top: 1px solid color-mix(in srgb, var(--window-shell-border) 88%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02, #dde1e6) 84%, var(--window-shell-surface) 16%);
+  background: color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 84%, var(--window-shell-surface) 16%);
 }
 
 .shell-power-modal .cds--modal-footer .cds--btn {
@@ -1396,7 +1396,7 @@
   position: relative;
   padding: 0.45rem 0.6rem 0.45rem 1.5rem;
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 84%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 96%, var(--window-shell-surface) 4%);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 96%, var(--window-shell-surface) 4%);
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: 0.82rem;
   font-weight: 500;

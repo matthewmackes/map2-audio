@@ -13,7 +13,7 @@
   align-items: stretch;
   min-height: var(--app-window-titlebar-height, 2.3rem);
   border-bottom: 1px solid var(--window-shell-titlebar-border, color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent));
-  background: var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%));
+  background: var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%));
   color: var(--window-shell-titlebar-contrast, var(--cds-text-primary, var(--text-primary)));
   box-shadow: none;
 }
@@ -30,7 +30,7 @@
   justify-content: center;
   width: 2.35rem;
   border-right: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
-  background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-01, #ffffff)));
+  background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer, #ffffff)));
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -96,7 +96,7 @@
   gap: 0.18rem;
   padding: 0.2rem 0.25rem;
   border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 80%, transparent);
-  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%)) 90%, var(--window-shell-surface, var(--cds-background, var(--bg))) 10%);
+  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%)) 90%, var(--window-shell-surface, var(--cds-background, var(--bg))) 10%);
 }
 
 .window-title-strip__close {
@@ -104,7 +104,7 @@
   min-height: 1.75rem;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
-  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, var(--bg)))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%)) 18%);
+  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, var(--bg)))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%)) 18%);
   color: var(--cds-text-primary, var(--text-primary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-01-font-size, 1rem);
@@ -117,7 +117,7 @@
 .window-title-strip__close:hover,
 .window-title-strip__close:focus-visible {
   border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 42%, var(--window-shell-border, var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28))));
-  background: color-mix(in srgb, var(--cds-support-error, #da1e28) 10%, var(--window-shell-surface-strong, var(--cds-layer-01, #ffffff)));
+  background: color-mix(in srgb, var(--cds-support-error, #da1e28) 10%, var(--window-shell-surface-strong, var(--cds-layer, #ffffff)));
   outline: 2px solid var(--cds-focus, var(--cds-support-error, #da1e28));
   outline-offset: 2px;
 }

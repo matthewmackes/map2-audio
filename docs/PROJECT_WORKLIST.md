@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed T972 by moving non-desktop title-strip ownership out of AppShell, wiring routed/workspace surfaces onto ShellWindow context, and validating the full-width shell with typecheck, targeted tests, and a production build.
+Last updated: 2026-04-12 - Completed T866-subB by clearing the remaining shared-shell numeric layer tokens in AppShell/title-strip/empty-state surfaces and validating the shared Carbon Layer scope.
 
 ## Performance Brain
 
@@ -20251,7 +20251,7 @@ Subtasks:
       - `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/layout web/src/app/components/shared web/src/app/components/navigation web/src/app/pages/HomePage.css web/src/app/pages/PipeWirePage.css web/src/app/pages/ChainsPage.css web/src/app/components/ThemeChooserModal.css web/src/app/components/Toasts.css -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS
       - `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages web/src/app/components/IntelFX web/src/app/components/MPX1 web/src/app/pages/midi-hub web/src/app/components/Platform web/src/app/components/ManagementWorkspace web/src/app/components/ClusterDashboard web/src/app/components/NetworkDiscovery web/src/app/components/AvbRouting -g '*.css' -g '*.tsx' -g '*.ts' | head -n 300` -> PASS
   - ID: T866-subB
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Migrate shell and shared workspace surfaces onto explicit Carbon `Layer`
     Description:
     - Goal / acceptance criteria: Wrap shell and shared workspace entry surfaces in `Layer`, remove the corresponding hard-coded layer backgrounds in those touched regions, and validate that nested Carbon children escalate correctly.
@@ -20261,6 +20261,15 @@ Subtasks:
     - Required outputs: Shared `Layer` adoption, reduced hard-coded layer debt, validation evidence.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 11:38 EDT - Codex
+    - Completion notes:
+      - Finished the residual shell/shared cleanup by removing the remaining numeric `--cds-layer-01/02` fallbacks from `web/src/app/layout/AppShell.css`, `web/src/app/components/shared/WindowTitleStrip.css`, and `web/src/app/components/shared/EmptyState.css`, so the shared shell primitives now resolve through `--cds-layer`, `--cds-layer-hover`, and existing shell variables instead of hard-coded layer-depth tokens.
+      - Confirmed the active shared-scope inventory is clean after the shell/title-strip follow-up: `web/src/app/layout`, `web/src/app/components/shared`, `web/src/app/components/navigation`, `ThemeChooserModal.css`, `PipeWirePage.css`, and `ChainsPage.css` no longer contain numeric Carbon layer token references.
+      - With the shared-entry wrappers now migrated, the remaining work is explicitly route-local/workspace debt rather than leftover shell primitives, so `T866-subC` is the correct next slice.
+    - Validation:
+      - `rg -n -- '--cds-layer-0' web/src/app/layout web/src/app/components/shared web/src/app/components/navigation web/src/app/components/ThemeChooserModal.css web/src/app/pages/PipeWirePage.css web/src/app/pages/ChainsPage.css` -> PASS (no matches)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T866-subC
     Status: [ ] Todo
     Title: Sweep route-local layer debt and document intentional exceptions
@@ -20273,7 +20282,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-12 09:10 EDT - Codex
+Last updated: 2026-04-12 11:38 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the loading/empty-state/type/copy sweeps: this is no longer blocked by missing primitives or hardware, only by breadth. The task is now reopened as an aggressive migration epic with restartable sub-slices.
   - Current evidence confirms the debt is still broad but software-only: hard-coded `var(--cds-layer-01|02|03)` backgrounds remain concentrated in `web/src/index.css`, `web/src/app/layout/AppShell.css`, shared route CSS such as `PipeWirePage.css`, `ChainsPage.css`, `ThemeChooserModal.css`, and large route-local families like Snapshot Editor and IntelFX pages, while some surfaces already use Carbon `<Layer>`.
@@ -20289,7 +20298,7 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - Validation for this AppShell launcher follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T866-subB` through the next residual `AppShell` control-panel slice in `web/src/app/layout/AppShell.css`, moving the advanced launcher control-panel count pill, selected-state treatment, blocked hover treatment, and details surface onto `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` instead of hard-coded numeric layer tokens.
   - Validation for this AppShell control-panel follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
-  - The next `T866-subB` queue is now limited to the remaining AppShell/shared-shell layer literals before the task can hand off to the broader route-local sweep in `T866-subC`.
+  - Closed `T866-subB` by clearing the last shared-shell numeric layer fallbacks in `AppShell.css`, `WindowTitleStrip.css`, and `EmptyState.css`; the shared shell/workspace entry inventory is now clean and the remaining debt is explicitly route-local.
 
 ID: T867
 Status: [✓] Done

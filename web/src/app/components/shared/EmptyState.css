@@ -4,7 +4,7 @@
   justify-items: start;
   padding: var(--cds-spacing-06, 2rem);
   border: 1px dashed var(--cds-border-subtle, #c6c6c6);
-  background: var(--cds-layer-01, #f4f4f4);
+  background: var(--cds-layer, #f4f4f4);
 }
 
 .app-empty-state--centered.cds--tile {
