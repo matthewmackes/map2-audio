@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1847** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1850** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`527ffbaf`](https://github.com/matthewmackes/map2-audio/commit/527ffbafb4a66d36b1a1c949d7950040fb21f728) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
+| [`8ee07ebe`](https://github.com/matthewmackes/map2-audio/commit/8ee07ebeff65ae5b90d68f77522068c8e753c8f6) | Refactor shell title strip ownership | Map2 Audio | 2026-04-12 |
+| [`e886b92d`](https://github.com/matthewmackes/map2-audio/commit/e886b92d779a4e9e6c5840ac6e534a8a56dd9c0e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`2e6f7b57`](https://github.com/matthewmackes/map2-audio/commit/2e6f7b57140f2cd35271ca08db3179e3528846bb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
 | [`71e4992e`](https://github.com/matthewmackes/map2-audio/commit/71e4992e6d3bc2e2f994f7b95d32a1d3a6943f72) | T866-subB layer app shell control panel surfaces | Map2 Audio | 2026-04-12 |
 | [`caaaa38a`](https://github.com/matthewmackes/map2-audio/commit/caaaa38aa20f0927d4137b361b3a778080eda35f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`8175a31e`](https://github.com/matthewmackes/map2-audio/commit/8175a31eead3140807220dfa4b7eb48ba225db7e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
 | [`bcb09181`](https://github.com/matthewmackes/map2-audio/commit/bcb09181d13cbd994fd85f9a1672de7f28d51359) | T866-subB retune app shell launcher layer tokens | Map2 Audio | 2026-04-12 |
-| [`1c47efd2`](https://github.com/matthewmackes/map2-audio/commit/1c47efd2c0d4e664bba04320ff709867dd22d430) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`3ca9771d`](https://github.com/matthewmackes/map2-audio/commit/3ca9771d0cbc8e42e74ea86257bf914bb435e728) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
-| [`dbca240e`](https://github.com/matthewmackes/map2-audio/commit/dbca240eea0a60d73138a549b54969e0255249ea) | T866-subB layer theme chooser modal surfaces | Map2 Audio | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
