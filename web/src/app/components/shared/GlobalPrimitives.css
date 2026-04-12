@@ -135,8 +135,6 @@
   to { transform: rotate(360deg); }
 }
 
-.pill,
-.badge,
 .tag {
   display: inline-flex;
   align-items: center;
@@ -154,42 +152,31 @@
   box-shadow: none;
 }
 
-.pill.success,
-.badge.success,
 .tag.success {
   border-color: color-mix(in srgb, var(--support-success) 55%, var(--border));
   background: color-mix(in srgb, var(--support-success) 16%, var(--surface));
   color: var(--support-success);
 }
 
-.badge.primary,
-.pill.info,
 .tag.info {
   border-color: color-mix(in srgb, var(--support-info) 55%, var(--border));
   background: color-mix(in srgb, var(--support-info) 14%, var(--surface));
   color: var(--support-info);
 }
 
-.pill.warn,
-.badge.warn,
 .tag.warn {
   border-color: color-mix(in srgb, var(--support-warning) 50%, var(--border));
   background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
   color: var(--support-warning);
 }
 
-.pill.experimental,
-.badge.experimental,
 .tag.experimental {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   color: color-mix(in srgb, var(--accent) 76%, var(--text-primary));
 }
 
-.pill.danger,
-.badge.danger,
-.tag.danger,
-.pill.muted {
+.tag.danger {
   border-color: color-mix(in srgb, var(--support-danger) 45%, var(--border));
   background: color-mix(in srgb, var(--support-danger) 12%, var(--surface));
   color: var(--support-danger);

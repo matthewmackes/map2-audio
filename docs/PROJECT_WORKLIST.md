@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Shipped T997, then continued T868-subB by converting the shared `TagBadge` helper to Carbon `Tag`.
+Last updated: 2026-04-12 - Closed T868-subB by deleting the dead shared `.pill` / `.badge` CSS and opened T868-subC to document the remaining custom indicator exceptions and any final fit-sensitive conversions.
 
 ## Performance Brain
 
@@ -20369,7 +20369,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
   - ID: T868-subB
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Convert shared status pills and route-local semantic badges to Carbon `Tag`
     Description:
     - Goal / acceptance criteria: Replace shared and route-local semantic status pills with Carbon `Tag`, starting with the generic `.pill` / `.badge` families and the low-risk status surfaces that do not depend on custom geometry.
@@ -20379,8 +20379,15 @@ Subtasks:
     - Required outputs: Carbon `Tag` migration, reduced shared badge CSS, validation evidence.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 08:49 EDT - Codex
+    - Completion notes:
+      - Finished the final shared semantic-label cleanup by deleting the dead `.pill` / `.badge` selectors from `web/src/app/components/shared/GlobalPrimitives.css` after confirming the app no longer renders those generic class names.
+      - The remaining inventory is no longer generic semantic badge debt; it is concentrated in custom indicator families such as push-confirm pills, MIDI CC badges, tab/count chips, control-shaped bypass pills, and fit-sensitive snapshot/mobile indicators.
+    - Validation:
+      - `rg -n 'className=\"badge\"|className=\"pill\"|className=\\{`badge|className=\\{`pill|\\bclass=\\\"badge\\\"|\\bclass=\\\"pill\\\"' web/src -g '*.tsx' -g '*.ts' -g '*.jsx' -g '*.js'` -> PASS (no matches)
+      - `rg -n '\\.(pill|badge)\\b' web/src/app/components/shared/GlobalPrimitives.css web/src -g '*.css' -g '*.tsx' | head -n 200` -> PASS (remaining hits are the documented custom indicator families plus `TagBadge` class names, not shared generic `.pill` / `.badge` usage)
   - ID: T868-subC
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Sweep residual custom indicator badges and document intentional non-Tag exceptions
     Description:
     - Goal / acceptance criteria: Finish software-only badge migrations and document the tiny meter/device indicators that intentionally remain custom because they are not semantic tags.
@@ -20390,8 +20397,9 @@ Subtasks:
     - Required outputs: Residual conversions, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 08:49 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-12 08:24 EDT - Codex
+Last updated: 2026-04-12 08:49 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20412,6 +20420,8 @@ Last updated: 2026-04-12 08:24 EDT - Codex
   - Validation for this static-label slice is green: `rg -n 'hm-feature-card__badge|plugin-tooltip-badge' web/src/app/components/HostMachine/AudioNodeFeatures.tsx web/src/app/components/HostMachine/HostMachine.css web/src/app/components/HorizontalSignalChain/PluginTooltip.tsx web/src/app/components/HorizontalSignalChain/HorizontalSignalChain.css` -> PASS (only the plural `.plugin-tooltip-badges` container remains); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T868-subB` with a shared helper slice in `web/src/app/components/PluginTags/TagBadge.tsx`, replacing the component’s inline custom badge styling with Carbon `Tag` while preserving the clickable wrapper and compact multi-tag display behavior.
   - Validation for this helper slice is green: `rg -n 'background: #333|tag-badge more|border-radius: 3px' web/src/app/components/PluginTags/TagBadge.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Closed `T868-subB` by removing the dead shared `.pill` / `.badge` contract from `GlobalPrimitives.css`; the remaining repo inventory is now explicitly custom indicator debt rather than shared semantic badge debt.
+  - Opened `T868-subC` with the first explicit exception inventory: `PushConfirmationNoticePill.tsx`, `Controls/MidiCcBadge.tsx`, `IntelFXMidiMapper.tsx`, `RoutingTopologyContent.tsx` tab count chip, `AppWindow.tsx` titlebar icon badge, `IntelFXStatusBar.tsx`, `MPX1StatusBar.tsx`, `PushSurfacePage.tsx`, `PerformanceBrainPage.tsx`, `SnapshotEditor*` fit-sensitive chips, and specialized plugin-card indicators such as `boss-mode-badge`, `celestial-*`, and `passionfx-meter-badge`.
 
 ID: T869
 Status: [✗] Blocked
