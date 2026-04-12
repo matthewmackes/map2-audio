@@ -1,10 +1,10 @@
 /* ── Page shell ──────────────────────────────────────────── */
 .platform-shell-page {
   --platform-menu-scale: 1.4;
-  --platform-shell-surface: var(--cds-layer-01);
-  --platform-shell-surface-strong: color-mix(in srgb, var(--cds-layer-02) 92%, var(--cds-layer-01));
-  --platform-shell-object-surface: color-mix(in srgb, var(--cds-layer-01) 88%, white 12%);
-  --platform-shell-object-surface-strong: color-mix(in srgb, var(--cds-layer-02) 94%, white 6%);
+  --platform-shell-surface: var(--cds-layer);
+  --platform-shell-surface-strong: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--cds-layer));
+  --platform-shell-object-surface: color-mix(in srgb, var(--cds-layer) 88%, white 12%);
+  --platform-shell-object-surface-strong: color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%);
   --platform-shell-border-strong: color-mix(in srgb, var(--cds-border-strong-01) 88%, transparent);
   --platform-shell-border-light: color-mix(in srgb, white 76%, transparent);
   --platform-shell-highlight: color-mix(in srgb, white 72%, transparent);
@@ -103,7 +103,7 @@
   border-left: 1px solid var(--platform-shell-border-light);
   border-right: 1px solid var(--platform-shell-border-strong);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 74%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -193,7 +193,7 @@
   border-left: 1px solid var(--platform-shell-border-light);
   border-right: 1px solid var(--platform-shell-border-strong);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--platform-shell-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--platform-shell-surface) 8%);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 7%, transparent);
@@ -201,25 +201,25 @@
 }
 
 .platform-shell__sidebar .workspace-side-nav__item:hover {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 6%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 6%, var(--cds-layer-hover));
   border-right-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 28%, var(--platform-shell-border-strong));
   border-bottom-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 34%, var(--platform-shell-border-strong));
 }
 
 .platform-shell__sidebar .workspace-side-nav__item.is-selected {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 9%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 9%, var(--cds-layer-hover));
   border-right-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 46%, var(--platform-shell-border-strong));
   border-bottom-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 54%, var(--platform-shell-border-strong));
 }
 
 .platform-shell__sidebar .workspace-side-nav__item.is-utility {
-  background: color-mix(in srgb, var(--cds-support-success) 8%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-support-success) 8%, var(--cds-layer-hover));
   border-right-color: color-mix(in srgb, var(--cds-support-success) 26%, var(--platform-shell-border-strong));
 }
 
 .platform-shell__sidebar .workspace-side-nav__item.is-utility:hover,
 .platform-shell__sidebar .workspace-side-nav__item.is-utility.is-selected {
-  background: color-mix(in srgb, var(--cds-support-success) 14%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-support-success) 14%, var(--cds-layer-hover));
   border-right-color: color-mix(in srgb, var(--cds-support-success) 42%, var(--platform-shell-border-strong));
   border-bottom-color: color-mix(in srgb, var(--cds-support-success) 44%, var(--platform-shell-border-strong));
 }
@@ -369,7 +369,7 @@
   min-height: 0;
   padding: calc(0.18rem * var(--platform-menu-scale)) calc(0.34rem * var(--platform-menu-scale));
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: var(--cds-text-secondary);
   font-size: calc(0.5rem * var(--platform-menu-scale));
   font-weight: 600;
@@ -461,7 +461,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 92%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
   box-shadow:
     inset 1px 1px 0 var(--platform-shell-highlight),
     inset -1px -1px 0 var(--platform-shell-shadow);
@@ -514,7 +514,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
   box-shadow:
     inset 1px 1px 0 var(--platform-shell-highlight),
     inset -1px -1px 0 var(--platform-shell-shadow);
@@ -571,7 +571,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
   border-radius: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -640,13 +640,13 @@
 
 .platform-shell__standalone-surface .hm-kpi-card,
 .platform-shell__standalone-surface .hm-fan-card {
-  background: color-mix(in srgb, var(--cds-layer-02) 94%, white 6%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%);
 }
 
 .platform-shell__standalone-surface .hm-cluster-table__head,
 .platform-shell__standalone-surface .hm-tabs__nav {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 96%, white 4%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 96%, white 4%), var(--platform-shell-surface));
 }
 
 .platform-shell__standalone-surface .hm-tabs__panel {
@@ -660,7 +660,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -677,7 +677,7 @@
   gap: 1rem;
   padding: 1rem 1.125rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .platform-shell__catalog-intro-copy {
@@ -823,7 +823,7 @@
 .platform-shell__table-container .cds--data-table-header {
   padding: 0.8rem 0.95rem 0.7rem;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 74%, transparent);
 }
 
@@ -842,7 +842,7 @@
   min-height: 2.6rem;
   padding-inline: 0.95rem;
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--platform-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--platform-shell-object-surface) 8%);
 }
 
 .platform-shell__table-container .cds--toolbar-content {
@@ -855,7 +855,7 @@
 }
 
 .platform-shell__table-container .cds--data-table thead {
-  background: color-mix(in srgb, var(--cds-layer-02) 90%, white 10%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 90%, white 10%);
 }
 
 .platform-shell__table-container .cds--data-table th,
@@ -864,12 +864,12 @@
 }
 
 .platform-shell__table-container .cds--data-table td {
-  background: color-mix(in srgb, var(--cds-layer-01) 95%, white 5%);
+  background: color-mix(in srgb, var(--cds-layer) 95%, white 5%);
 }
 
 .platform-shell__table-container .cds--pagination {
   border-top: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--platform-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--platform-shell-object-surface) 8%);
 }
 
 .platform-shell__table-state {
@@ -1002,7 +1002,7 @@
   border-left: 1px solid var(--platform-shell-border-light);
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 92%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 94%, white 6%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 68%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 6%, transparent);
@@ -1085,7 +1085,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
   box-shadow:
     inset 1px 1px 0 var(--platform-shell-highlight),
     inset -1px -1px 0 var(--platform-shell-shadow);
@@ -1109,7 +1109,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 92%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 68%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 7%, transparent);
@@ -1166,7 +1166,7 @@
   padding-bottom: 0.85rem;
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 82%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-surface));
 }
 
 .platform-shell__update-progress-shell .cds--modal-header__label {
@@ -1187,7 +1187,7 @@
 
 .platform-shell__update-progress-shell .cds--modal-close {
   border-left: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 82%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 90%, var(--platform-shell-surface) 10%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 90%, var(--platform-shell-surface) 10%);
 }
 
 .platform-shell__update-progress-shell .cds--modal-content {
@@ -1196,7 +1196,7 @@
 
 .platform-shell__update-progress-shell .cds--modal-footer {
   border-top: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 84%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--platform-shell-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--platform-shell-surface) 8%);
 }
 
 .platform-shell__update-progress-shell .cds--modal-footer .cds--btn {
@@ -1287,7 +1287,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--platform-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--platform-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 70%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 7%, transparent);
@@ -1325,7 +1325,7 @@
   border-right: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 86%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--platform-shell-border-strong) 92%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 96%, white 4%), var(--platform-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 96%, white 4%), var(--platform-shell-object-surface));
   color: var(--cds-text-primary);
   font-weight: 600;
   box-shadow:

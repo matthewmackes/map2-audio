@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed T866-subB by clearing the remaining shared-shell numeric layer tokens in AppShell/title-strip/empty-state surfaces and validating the shared Carbon Layer scope.
+Last updated: 2026-04-12 - Continued T866-subC by clearing route-local numeric layer tokens from PlatformModal and ManagementWorkspace surfaces and validating the first route-level Carbon Layer follow-up.
 
 ## Performance Brain
 
@@ -20271,7 +20271,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T866-subC
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Sweep route-local layer debt and document intentional exceptions
     Description:
     - Goal / acceptance criteria: Convert remaining software-only route families and document any fit-sensitive visual systems that intentionally keep local layer treatment.
@@ -20281,6 +20281,7 @@ Subtasks:
     - Required outputs: Route sweeps, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 11:40 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-12 11:38 EDT - Codex
 - Progress notes:
@@ -20299,6 +20300,10 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Continued `T866-subB` through the next residual `AppShell` control-panel slice in `web/src/app/layout/AppShell.css`, moving the advanced launcher control-panel count pill, selected-state treatment, blocked hover treatment, and details surface onto `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` instead of hard-coded numeric layer tokens.
   - Validation for this AppShell control-panel follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Closed `T866-subB` by clearing the last shared-shell numeric layer fallbacks in `AppShell.css`, `WindowTitleStrip.css`, and `EmptyState.css`; the shared shell/workspace entry inventory is now clean and the remaining debt is explicitly route-local.
+  - Started `T866-subC` with a route-level workspace-shell slice in `web/src/app/components/Platform/PlatformModal.css`, replacing all `--cds-layer-01/02` usage with contextual `--cds-layer` / `--cds-layer-hover` tokens and local platform-shell variables so the heaviest remaining file in the inventory no longer hard-codes numeric Carbon layer depth.
+  - Continued the same `T866-subC` batch in `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, moving the management workspace shell/graph gradients, graph-node states, and local shell fallback variables onto contextual layer tokens while preserving the existing beveled workspace styling.
+  - Current route-local inventory after this follow-up is down to `ThemePage.css` (`30` hits), `MidiHubAreaLayout.css` (`16`), `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), and `NodeNavChip.css` (`8`); `PlatformModal.css` and `ManagementWorkspace.css` are no longer in the ranked list.
+  - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T867
 Status: [✓] Done

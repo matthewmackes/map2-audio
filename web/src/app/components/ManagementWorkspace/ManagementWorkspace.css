@@ -1,7 +1,7 @@
 .management-workspace {
-  --management-shell-surface: var(--platform-shell-surface, var(--cds-layer-01));
-  --management-shell-surface-strong: var(--platform-shell-surface-strong, color-mix(in srgb, var(--cds-layer-02) 92%, var(--cds-layer-01)));
-  --management-shell-object-surface: var(--platform-shell-object-surface, color-mix(in srgb, var(--cds-layer-01) 88%, white 12%));
+  --management-shell-surface: var(--platform-shell-surface, var(--cds-layer));
+  --management-shell-surface-strong: var(--platform-shell-surface-strong, color-mix(in srgb, var(--cds-layer-hover) 92%, var(--cds-layer)));
+  --management-shell-object-surface: var(--platform-shell-object-surface, color-mix(in srgb, var(--cds-layer) 88%, white 12%));
   --management-shell-border-light: var(--platform-shell-border-light, color-mix(in srgb, white 76%, transparent));
   --management-shell-border-strong: var(--platform-shell-border-strong, color-mix(in srgb, var(--cds-border-strong-01) 88%, transparent));
   --management-shell-highlight: var(--platform-shell-highlight, color-mix(in srgb, white 72%, transparent));
@@ -20,7 +20,7 @@
   border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--management-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-surface));
   box-shadow:
     inset 1px 1px 0 var(--management-shell-highlight),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -88,7 +88,7 @@
   border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--management-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 var(--management-shell-highlight),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -102,7 +102,7 @@
   padding: 0.55rem 0.8rem;
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 76%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 96%, white 4%), var(--management-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 96%, white 4%), var(--management-shell-surface));
   color: var(--cds-text-secondary);
   font-size: 0.62rem;
   font-weight: 700;
@@ -122,7 +122,7 @@
 
 .management-workspace__graph-flow .react-flow__background {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 92%, white 8%), color-mix(in srgb, var(--management-shell-object-surface) 96%, white 4%));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 92%, white 8%), color-mix(in srgb, var(--management-shell-object-surface) 96%, white 4%));
 }
 
 .management-workspace__graph-flow .react-flow__controls {
@@ -139,12 +139,12 @@
 
 .management-workspace__graph-flow .react-flow__controls-button {
   border-bottom-color: color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 94%, white 6%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%);
   color: var(--cds-text-primary);
 }
 
 .management-workspace__graph-flow .react-flow__controls-button:hover {
-  background: color-mix(in srgb, var(--cds-link-primary) 6%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-link-primary) 6%, var(--cds-layer-hover));
 }
 
 .management-workspace__graph-flow .react-flow__edge-path {
@@ -165,7 +165,7 @@
   border-inline-start: 7px solid var(--management-graph-node-accent);
   border-radius: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 95%, white 5%), var(--management-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 95%, white 5%), var(--management-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -176,7 +176,7 @@
 
 .management-workspace__graph-node.is-selected {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--management-graph-node-accent) 12%, var(--cds-layer-02)), color-mix(in srgb, var(--management-graph-node-accent) 8%, var(--management-shell-object-surface)));
+    linear-gradient(180deg, color-mix(in srgb, var(--management-graph-node-accent) 12%, var(--cds-layer-hover)), color-mix(in srgb, var(--management-graph-node-accent) 8%, var(--management-shell-object-surface)));
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, var(--management-graph-node-accent) 16%, transparent);
@@ -275,7 +275,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   border-radius: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--management-shell-object-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-object-surface));
   box-shadow:
     inset 1px 1px 0 var(--management-shell-highlight),
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
@@ -331,7 +331,7 @@
 .management-workspace__table-container .cds--data-table-header {
   padding: 0.8rem 0.95rem 0.7rem;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-02) 94%, white 6%), var(--management-shell-surface));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-surface));
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 74%, transparent);
 }
 
@@ -345,7 +345,7 @@
   min-height: 2.6rem;
   padding-inline: 0.95rem;
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--management-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--management-shell-object-surface) 8%);
 }
 
 .management-workspace__table-container .cds--search,
@@ -359,12 +359,12 @@
 }
 
 .management-workspace__table-container .cds--data-table td {
-  background: color-mix(in srgb, var(--cds-layer-01) 95%, white 5%);
+  background: color-mix(in srgb, var(--cds-layer) 95%, white 5%);
 }
 
 .management-workspace__table-container .cds--pagination {
   border-top: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, var(--management-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--management-shell-object-surface) 8%);
 }
 
 .management-workspace__table-row.is-highlighted > td {
