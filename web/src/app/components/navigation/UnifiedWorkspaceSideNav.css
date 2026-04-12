@@ -1,3 +1,7 @@
+.workspace-side-nav__layer {
+  display: block;
+}
+
 .workspace-side-nav {
   display: flex;
   flex-direction: column;
@@ -5,7 +9,7 @@
   min-width: 0;
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .workspace-side-nav.cds--side-nav {
@@ -93,32 +97,32 @@
   gap: 0.45rem;
   min-width: 0;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer);
   transition: background 120ms ease, border-color 120ms ease;
 }
 
 .workspace-side-nav__item:hover {
-  background: var(--cds-layer-hover-02);
+  background: var(--cds-layer-hover);
   border-color: var(--cds-border-interactive);
 }
 
 .workspace-side-nav__item.is-selected {
-  background: var(--cds-layer-selected-02);
+  background: var(--cds-layer-selected);
   border-color: var(--cds-border-interactive);
 }
 
 .workspace-side-nav__item.is-utility {
   border-color: color-mix(in srgb, var(--cds-support-success) 32%, var(--cds-border-subtle-01));
-  background: color-mix(in srgb, var(--cds-support-success) 12%, var(--cds-layer-02));
+  background: color-mix(in srgb, var(--cds-support-success) 12%, var(--cds-layer));
 }
 
 .workspace-side-nav__item.is-utility:hover {
-  background: color-mix(in srgb, var(--cds-support-success) 18%, var(--cds-layer-hover-02));
+  background: color-mix(in srgb, var(--cds-support-success) 18%, var(--cds-layer-hover));
   border-color: color-mix(in srgb, var(--cds-support-success) 52%, var(--cds-border-interactive));
 }
 
 .workspace-side-nav__item.is-utility.is-selected {
-  background: color-mix(in srgb, var(--cds-support-success) 22%, var(--cds-layer-selected-02));
+  background: color-mix(in srgb, var(--cds-support-success) 22%, var(--cds-layer-selected));
   border-color: color-mix(in srgb, var(--cds-support-success) 58%, var(--cds-border-interactive));
 }
 

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed T866-subA with a restart-safe Carbon layer inventory by ownership tier, then promoted T866-subB as the active shell/shared `Layer` migration slice.
+Last updated: 2026-04-12 - Started T866-subB by moving the shared notifications panel and unified workspace side-nav onto explicit nested Carbon `Layer` wrappers and removing hard-coded numeric layer tokens from those touched files.
 
 ## Performance Brain
 
@@ -20279,6 +20279,9 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - Current evidence confirms the debt is still broad but software-only: hard-coded `var(--cds-layer-01|02|03)` backgrounds remain concentrated in `web/src/index.css`, `web/src/app/layout/AppShell.css`, shared route CSS such as `PipeWirePage.css`, `ChainsPage.css`, `ThemeChooserModal.css`, and large route-local families like Snapshot Editor and IntelFX pages, while some surfaces already use Carbon `<Layer>`.
   - Completed `T866-subA` by turning the remaining layer debt into three explicit ownership buckets and ranking the heaviest files by hit count, which removes the old "too broad" blocker rationale.
   - `T866-subB` is now the active slice: shell/shared entry wrappers (`AppShell`, `Toasts`, `ThemeChooserModal`, `UnifiedWorkspaceSideNav`, `NodeSelector`, plus the entry panels in `PipeWire` and `Chains`) should adopt `Layer` before the larger platform/theme/device families.
+  - Started `T866-subB` with the first shared-surface migration in `web/src/app/components/Toasts.tsx` / `Toasts.css` and `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` / `UnifiedWorkspaceSideNav.css`, wrapping both surfaces and their nested child items in Carbon `Layer` while replacing the touched hard-coded `--cds-layer-01/02` backgrounds with `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected`.
+  - Validation for this shared-surface slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Toasts.css web/src/app/components/navigation/UnifiedWorkspaceSideNav.css web/src/app/components/Toasts.tsx web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - The next `T866-subB` queue remains the rest of the shell/shared wrapper bucket from `T866-subA`: `ThemeChooserModal`, `AppShell`, `NodeSelector`, and the entry panels in `PipeWire` / `Chains`.
 
 ID: T867
 Status: [✓] Done
