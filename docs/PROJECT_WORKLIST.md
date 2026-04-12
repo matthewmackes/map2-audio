@@ -20281,7 +20281,7 @@ Description:
 - Required outputs: Carbon menu usage, removed CSS, keyboard navigation validation.
 Subtasks:
   - ID: T867-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Inventory legacy menu contracts and isolate Carbon-compatible slices
     Description:
     - Goal / acceptance criteria: Identify remaining custom menu surfaces, separate already-semantic `role="menu"` implementations from CSS-only leftovers, and define a migration order that preserves keyboard behavior.
@@ -20291,6 +20291,11 @@ Subtasks:
     - Required outputs: Target inventory, contract notes, first conversion batch.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 06:11 EDT - Codex
+    - Completion notes:
+      - Inventoried the remaining custom menu contracts and split them into three execution buckets: shell power menus (`web/src/app/layout/ShellLauncherPanel.tsx`, `web/src/app/pages/HomeStartMenuOverlay.tsx`, plus `AppShell.css` / `HomePage.css` menu styling), the desktop context menu (`web/src/app/pages/HomePage.tsx` + `HomePage.css`), and intentional custom navigation widgets such as the advanced control-panel launcher / MPX1 mega-menu families that are not direct `OverflowMenu` replacements.
+      - Verified Carbon menu coverage already exists in modern route surfaces such as `SnapshotEditorPageContent.tsx`, `MidiRecorderPanel.tsx`, and `CarbonCardShell.tsx`, so the next conversion slice should target the shell power/launcher menus instead of duplicating already-migrated route-local work.
+      - Established `T867-subB` as the first implementation queue: convert the shell power and launcher action menus before deciding whether the desktop context menu should move to Carbon `OverflowMenu` semantics or remain an intentional positioned context widget.
   - ID: T867-subB
     Status: [ ] Todo
     Title: Convert shell power and launcher action menus to Carbon-backed contracts
@@ -20319,6 +20324,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Re-evaluated the old blocker after the broader Carbon primitive cleanup: this is software-only breadth, not a true block. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows Carbon `OverflowMenu` already covers many route surfaces, while the remaining custom work is concentrated in shell/menu contracts such as `ShellLauncherPanel.tsx` / `AppShell.css` power and launcher menus, plus a smaller set of custom start-menu and advanced-menu affordances.
   - The first implementation target should be `T867-subA`, then the shell power/launcher menu slice before deleting residual legacy menu CSS.
+  - Completed `T867-subA` by classifying the remaining custom menu work into shell power menus, the positioned desktop context menu, and intentional non-Overflow navigation widgets; `T867-subB` is now the clear next execution slice.
 
 ID: T868
 Status: [>] In Progress
