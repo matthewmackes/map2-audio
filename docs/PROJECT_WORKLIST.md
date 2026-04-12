@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed T997 by shrinking the GUI/start-menu launcher hero icon and replacing the Home landing spinner with a larger low-overhead wireframe cube.
+Last updated: 2026-04-12 - Shipped T997, then continued T868-subB by converting the shared `TagBadge` helper to Carbon `Tag`.
 
 ## Performance Brain
 
@@ -20391,7 +20391,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-12 08:15 EDT - Codex
+Last updated: 2026-04-12 08:24 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20410,6 +20410,8 @@ Last updated: 2026-04-12 08:15 EDT - Codex
   - Validation for this JUCE asset-status slice is green: `rg -n 'carbon-asset-selector-status-badge' web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T868-subB` with a static-label slice in `web/src/app/components/HostMachine/AudioNodeFeatures.tsx` and `web/src/app/components/HorizontalSignalChain/PluginTooltip.tsx`, replacing the Host Machine `OPTIMAL` feature badge and the tooltip `PDC` / sidechain badges with Carbon `Tag` and trimming the dedicated local badge styling in `HostMachine.css` and `HorizontalSignalChain.css`.
   - Validation for this static-label slice is green: `rg -n 'hm-feature-card__badge|plugin-tooltip-badge' web/src/app/components/HostMachine/AudioNodeFeatures.tsx web/src/app/components/HostMachine/HostMachine.css web/src/app/components/HorizontalSignalChain/PluginTooltip.tsx web/src/app/components/HorizontalSignalChain/HorizontalSignalChain.css` -> PASS (only the plural `.plugin-tooltip-badges` container remains); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T868-subB` with a shared helper slice in `web/src/app/components/PluginTags/TagBadge.tsx`, replacing the component’s inline custom badge styling with Carbon `Tag` while preserving the clickable wrapper and compact multi-tag display behavior.
+  - Validation for this helper slice is green: `rg -n 'background: #333|tag-badge more|border-radius: 3px' web/src/app/components/PluginTags/TagBadge.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked

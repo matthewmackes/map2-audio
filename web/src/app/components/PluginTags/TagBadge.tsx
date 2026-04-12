@@ -4,6 +4,8 @@
  * Simple inline tag display for showing plugin tags in lists.
  */
 
+import { Tag } from '@carbon/react'
+
 interface TagBadgeProps {
   tags: string[]
   maxDisplay?: number
@@ -18,17 +20,19 @@ export function TagBadge({ tags, maxDisplay = 3, onClick }: TagBadgeProps) {
 
   return (
     <div
-      className={`tag-badge-container ${onClick ? 'clickable' : ''}`}
+      className={`tag-badge-container${onClick ? ' clickable' : ''}`}
       onClick={onClick}
     >
-      {displayTags.map(tag => (
-        <span key={tag} className="tag-badge">
+      {displayTags.map((tag) => (
+        <Tag key={tag} className="tag-badge" size="sm" type="cool-gray">
           {tag}
-        </span>
+        </Tag>
       ))}
-      {remaining > 0 && (
-        <span className="tag-badge more">+{remaining}</span>
-      )}
+      {remaining > 0 ? (
+        <Tag className="tag-badge" size="sm" type="warm-gray">
+          +{remaining}
+        </Tag>
+      ) : null}
 
       <style>{`
         .tag-badge-container {
@@ -43,22 +47,11 @@ export function TagBadge({ tags, maxDisplay = 3, onClick }: TagBadgeProps) {
         }
 
         .tag-badge-container.clickable:hover .tag-badge {
-          background: #444;
+          filter: brightness(0.97);
         }
 
-        .tag-badge {
-          display: inline-block;
-          background: #333;
-          border-radius: 3px;
-          padding: 2px 6px;
-          font-size: 10px;
-          color: #aaa;
+        .tag-badge.cds--tag {
           white-space: nowrap;
-        }
-
-        .tag-badge.more {
-          background: #2a2a2a;
-          color: #666;
         }
       `}</style>
     </div>
