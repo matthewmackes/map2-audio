@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-editor-page__hero-copy {
@@ -49,7 +49,7 @@
 
 .intelfx-editor-page__accordion {
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-editor-page__item-title {
@@ -75,7 +75,7 @@
   --intelfx-editor-accent: var(--cds-border-interactive);
   border-top: 1px solid color-mix(in srgb, var(--intelfx-editor-accent) 50%, var(--cds-border-subtle-01));
   padding: 0.875rem;
-  background: color-mix(in srgb, var(--intelfx-editor-accent) 6%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--intelfx-editor-accent) 6%, var(--cds-layer));
 }
 
 .intelfx-editor-page__controls {

@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-midi-map-page__hero-copy {
@@ -46,7 +46,7 @@
   gap: 0.75rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-midi-map-page__learn {
@@ -61,12 +61,12 @@
 
 .intelfx-midi-map-page__map {
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-midi-map-page__map.is-active {
   border-color: var(--cds-border-interactive);
-  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer));
 }
 
 .intelfx-midi-map-page__map-header {

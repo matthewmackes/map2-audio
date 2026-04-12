@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed T973 by merging cluster hardware inventory fallback into the Start Menu audio-interface summary and validating the Hotone Jogg regression case.
+Last updated: 2026-04-12 - Continued T866-subC with an IntelFX route-family Carbon layer sweep and validated the updated route-local layer inventory.
 
 ## Performance Brain
 
@@ -20281,7 +20281,7 @@ Subtasks:
     - Required outputs: Route sweeps, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-12 11:40 EDT - Codex
+    Last updated: 2026-04-12 15:59 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-12 11:38 EDT - Codex
 - Progress notes:
@@ -20308,6 +20308,8 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Continued `T866-subC` in `web/src/app/pages/AudioEnginePage.css`, replacing the route’s numeric `--cds-layer-01/02` usage across the header band, source-of-truth metrics, workspace/source-truth graph shells, expanded cards, linked table rows, and latency cards with contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens.
   - Continued `T866-subC` in `web/src/app/pages/AudioArtifactsPage.css`, replacing the route’s numeric `--cds-layer-01/02` usage across the header icon, Carbon side-nav shell, sidebar stats, empty-state icon/overflow surfaces, artifact detail rows, sync jobs, and progress rail with contextual `--cds-layer` and `--cds-layer-hover` tokens.
   - Continued `T866-subC` in `web/src/app/components/NodeNav/NodeNavChip.css`, replacing the node-nav chip and overflow/skeleton gradients’ numeric `--cds-layer-01/02/03` usage with contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens while preserving the existing success/warning/error tinting.
+  - Continued `T866-subC` with an IntelFX route-family sweep across `web/src/app/components/IntelFX/IntelFXLibrarian.css`, `IntelFXScenePanel.css`, `IntelFXPanel.css`, `IntelFXMidiMapper.css`, and the page shells `IntelFXPanelView.css`, `IntelFXMonitorView.css`, `IntelFXMidiMapView.css`, `IntelFXPerformView.css`, `IntelFXEditorView.css`, `IntelFXFlowView.css`, and `IntelFXLibraryView.css`, replacing the family’s remaining numeric `--cds-layer-01/02` surfaces with contextual `--cds-layer` and `--cds-layer-hover` tokens.
+  - Validation for the IntelFX layer sweep is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/IntelFX web/src/app/pages/IntelFX*.css web/src/app/pages/IntelFX*.tsx -g '*.css' -g '*.tsx'` -> PASS (no matches); `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/IntelFXEditorView.test.tsx src/app/pages/IntelFXLibraryView.test.tsx src/app/pages/IntelFXMidiMapView.test.tsx src/app/components/IntelFX/programNumber.test.ts` -> PASS (`4 suites, 10 tests`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T866-subC` in `web/src/app/pages/PhysicalSurfacesShell.css`, replacing the route shell, warning banner, detail/view cards, zone cards, and preformatted diagnostics panel numeric `--cds-layer-01/02` usage with contextual `--cds-layer` and `--cds-layer-hover` tokens.
   - Current route-local inventory after this follow-up is down to `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), `NodeNavChip.css` (`8`), `PhysicalSurfacesShell.css` (`6`), and `IntelFXLibrarian.css` (`6`); `ThemePage.css`, `MidiHubAreaLayout.css`, `PlatformModal.css`, and `ManagementWorkspace.css` are no longer in the ranked list.
   - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.

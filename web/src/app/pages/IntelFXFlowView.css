@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-flow-view__hero-copy {
@@ -46,7 +46,7 @@
   flex: 1;
   min-height: 0;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   overflow: hidden;
 }
 

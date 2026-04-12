@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-librarian__hero-copy {
@@ -50,7 +50,7 @@
   display: grid;
   gap: 0.75rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   padding: 1rem;
 }
 
@@ -78,13 +78,13 @@
   flex-direction: column;
   gap: 0.5rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   padding: 0.625rem;
 }
 
 .intelfx-librarian__card.is-active {
   border-color: var(--cds-border-interactive);
-  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer));
 }
 
 .intelfx-librarian__card.is-selected {
@@ -129,7 +129,7 @@
   display: grid;
   gap: 0.75rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   padding: 1rem;
 }
 
@@ -171,7 +171,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   padding: 0.625rem;
 }
 

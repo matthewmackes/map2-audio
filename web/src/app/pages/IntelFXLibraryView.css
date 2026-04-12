@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .intelfx-library-page__hero-copy {
@@ -83,7 +83,7 @@
   min-height: 7rem;
   width: 100%;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: var(--cds-text-primary);
   cursor: pointer;
   padding: 0.625rem;
@@ -93,7 +93,7 @@
 
 .intelfx-library-page__card:hover {
   border-color: var(--cds-border-interactive);
-  background: var(--cds-layer-hover-01);
+  background: var(--cds-layer-hover);
 }
 
 .intelfx-library-page__card:focus-visible {
@@ -103,7 +103,7 @@
 
 .intelfx-library-page__card.is-active {
   border-color: var(--cds-border-interactive);
-  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer));
 }
 
 .intelfx-library-page__card-head {
