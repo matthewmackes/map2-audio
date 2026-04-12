@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties, ComponentType, RefObject, SVGProps } from 'react'
-import { Layer } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
+import { Power } from '@carbon/icons-react'
 
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import {
@@ -56,10 +57,7 @@ export function ShellLauncherPanel({
 }) {
   const launcherButtonRef = useRef<HTMLButtonElement | null>(null)
   const launcherPanelRef = useRef<HTMLDivElement | null>(null)
-  const powerButtonRef = useRef<HTMLButtonElement | null>(null)
-  const powerMenuRef = useRef<HTMLDivElement | null>(null)
   const previousNavOpenRef = useRef(navOpen)
-  const previousPowerMenuOpenRef = useRef(powerMenuOpen)
 
   useEffect(() => {
     if (navOpen) {
@@ -74,22 +72,12 @@ export function ShellLauncherPanel({
   }, [navOpen])
 
   useEffect(() => {
-    if (powerMenuOpen) {
-      const firstFocusable = powerMenuRef.current?.querySelector<HTMLElement>('button:not([disabled])')
-      firstFocusable?.focus()
-    } else if (previousPowerMenuOpenRef.current) {
-      powerButtonRef.current?.focus()
-    }
-    previousPowerMenuOpenRef.current = powerMenuOpen
-  }, [powerMenuOpen])
-
-  useEffect(() => {
     function trapFocus(event: KeyboardEvent) {
       if (event.key !== 'Tab') {
         return
       }
 
-      const scope = powerMenuOpen ? powerMenuRef.current : navOpen ? launcherPanelRef.current : null
+      const scope = navOpen ? launcherPanelRef.current : null
       if (!scope) {
         return
       }
@@ -124,7 +112,7 @@ export function ShellLauncherPanel({
     return () => {
       window.removeEventListener('keydown', trapFocus)
     }
-  }, [navOpen, powerMenuOpen])
+  }, [navOpen])
 
   return (
     <div className="shell-launcher" ref={launcherRef} style={{ '--window-shell-accent': accentColor } as CSSProperties}>
@@ -225,52 +213,30 @@ export function ShellLauncherPanel({
 
             <div className="shell-launcher__footer">
               <div className="shell-launcher__power-root">
-                <button
-                  ref={powerButtonRef}
-                  type="button"
-                  className={`shell-launcher__power-button${powerMenuOpen ? ' is-active' : ''}`}
-                  onClick={onTogglePowerMenu}
-                  role="menuitem"
-                  aria-haspopup="menu"
-                  aria-expanded={powerMenuOpen}
-                  aria-controls="shell-launcher-power-menu"
+                <OverflowMenu
+                  aria-label="Power actions"
+                  className={`shell-launcher__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
+                  direction="top"
+                  flipped
+                  iconDescription="Power actions"
+                  onClose={() => {
+                    if (powerMenuOpen) {
+                      onTogglePowerMenu()
+                    }
+                  }}
+                  onOpen={() => {
+                    if (!powerMenuOpen) {
+                      onTogglePowerMenu()
+                    }
+                  }}
+                  open={powerMenuOpen}
+                  renderIcon={Power}
+                  size="md"
                 >
-                  Power
-                </button>
-                {powerMenuOpen ? (
-                  <div
-                    id="shell-launcher-power-menu"
-                    className="start-menu-power-menu"
-                    role="menu"
-                    aria-label="Power actions"
-                    ref={powerMenuRef}
-                  >
-                    <button
-                      type="button"
-                      className="start-menu-power-menu__item"
-                      role="menuitem"
-                      onClick={onOpenRestartConfirm}
-                    >
-                      Restart Backend
-                    </button>
-                    <button
-                      type="button"
-                      className="start-menu-power-menu__item"
-                      role="menuitem"
-                      onClick={onRefreshPage}
-                    >
-                      Refresh Desktop
-                    </button>
-                    <button
-                      type="button"
-                      className="start-menu-power-menu__item"
-                      role="menuitem"
-                      onClick={onLogOut}
-                    >
-                      Log Out
-                    </button>
-                  </div>
-                ) : null}
+                  <OverflowMenuItem itemText="Restart backend" onClick={onOpenRestartConfirm} />
+                  <OverflowMenuItem itemText="Refresh desktop" onClick={onRefreshPage} />
+                  <OverflowMenuItem itemText="Log out" onClick={onLogOut} />
+                </OverflowMenu>
               </div>
             </div>
           </Layer>

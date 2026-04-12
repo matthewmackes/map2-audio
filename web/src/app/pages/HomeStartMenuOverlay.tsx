@@ -1,7 +1,8 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Layer } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
+import { Power } from '@carbon/icons-react'
 
 import {
   MAP2_PLATFORM_NAME,
@@ -98,9 +99,6 @@ interface HomeStartMenuOverlayProps {
 export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProps) {
   const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
-  const powerButtonRef = useRef<HTMLButtonElement>(null)
-  const powerMenuRef = useRef<HTMLDivElement>(null)
-  const previousPowerOpenRef = useRef(false)
 
   const launcherInterfaceSummary = useLauncherInterfaceSummary(open)
   const platformStatus = useHomePlatformStatus()
@@ -178,17 +176,6 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
-
-  // Power menu focus
-  useEffect(() => {
-    if (powerMenuOpen) {
-      const firstFocusable = powerMenuRef.current?.querySelector<HTMLElement>('button:not([disabled])')
-      firstFocusable?.focus()
-    } else if (previousPowerOpenRef.current) {
-      powerButtonRef.current?.focus()
-    }
-    previousPowerOpenRef.current = powerMenuOpen
-  }, [powerMenuOpen])
 
   if (!open) return null
 
@@ -313,52 +300,22 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
         {/* Footer / Power */}
         <div className="hp2-overlay__footer">
           <div className="hp2-overlay__power-root">
-            <button
-              ref={powerButtonRef}
-              type="button"
-              className={`hp2-overlay__power-button${powerMenuOpen ? ' is-active' : ''}`}
-              onClick={() => setPowerMenuOpen((c) => !c)}
-              role="menuitem"
-              aria-haspopup="menu"
-              aria-expanded={powerMenuOpen}
-              aria-controls="hp2-overlay-power-menu"
+            <OverflowMenu
+              aria-label="Power actions"
+              className={`hp2-overlay__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
+              direction="top"
+              flipped
+              iconDescription="Power actions"
+              onClose={() => setPowerMenuOpen(false)}
+              onOpen={() => setPowerMenuOpen(true)}
+              open={powerMenuOpen}
+              renderIcon={Power}
+              size="md"
             >
-              Power
-            </button>
-            {powerMenuOpen ? (
-              <div
-                id="hp2-overlay-power-menu"
-                className="hp2-overlay__power-menu"
-                role="menu"
-                aria-label="Power actions"
-                ref={powerMenuRef}
-              >
-                <button
-                  type="button"
-                  className="hp2-overlay__power-menu-item"
-                  role="menuitem"
-                  onClick={handleOpenRestartConfirm}
-                >
-                  Restart Backend
-                </button>
-                <button
-                  type="button"
-                  className="hp2-overlay__power-menu-item"
-                  role="menuitem"
-                  onClick={handleRefreshPage}
-                >
-                  Refresh Desktop
-                </button>
-                <button
-                  type="button"
-                  className="hp2-overlay__power-menu-item"
-                  role="menuitem"
-                  onClick={handleLogOut}
-                >
-                  Log Out
-                </button>
-              </div>
-            ) : null}
+              <OverflowMenuItem itemText="Restart backend" onClick={handleOpenRestartConfirm} />
+              <OverflowMenuItem itemText="Refresh desktop" onClick={handleRefreshPage} />
+              <OverflowMenuItem itemText="Log out" onClick={handleLogOut} />
+            </OverflowMenu>
           </div>
         </div>
       </Layer>

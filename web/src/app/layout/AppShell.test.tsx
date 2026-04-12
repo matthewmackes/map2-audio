@@ -212,7 +212,7 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-titlebar__title')).toHaveTextContent('IntelFX Rack')
-    expect(container.querySelector('.shell-launcher__cube-btn')).toBeTruthy()
+    expect(container.querySelector('.static-hero-icon-launcher__btn')).toBeTruthy()
   })
 
   it('closes the current app window back to the desktop route', async () => {
@@ -470,19 +470,20 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
 
-    const powerMenu = screen.getByRole('menu', { name: 'Power actions' })
-    expect(within(powerMenu).getByRole('menuitem', { name: 'Restart Backend' })).toBeInTheDocument()
-    expect(within(powerMenu).getByRole('menuitem', { name: 'Refresh Desktop' })).toBeInTheDocument()
-    expect(within(powerMenu).getByRole('menuitem', { name: 'Log Out' })).toBeInTheDocument()
+    const powerMenu = document.querySelector('.cds--overflow-menu-options') as HTMLElement
+    expect(powerMenu).toBeTruthy()
+    expect(within(powerMenu).getByText('Restart backend')).toBeInTheDocument()
+    expect(within(powerMenu).getByText('Refresh desktop')).toBeInTheDocument()
+    expect(within(powerMenu).getByText('Log out')).toBeInTheDocument()
 
-    fireEvent.click(within(powerMenu).getByRole('menuitem', { name: 'Refresh Desktop' }))
+    fireEvent.click(within(powerMenu).getByText('Refresh desktop'))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Log Out' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
+    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Log out'))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
   })
 
@@ -495,8 +496,8 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Restart Backend' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
+    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Restart backend'))
 
     expect(screen.getByText(/Audio processing will pause briefly/i)).toBeInTheDocument()
 

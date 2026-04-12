@@ -497,39 +497,29 @@
   outline-offset: 2px;
 }
 
-.hp2-overlay__power-menu {
-  display: grid;
-  gap: 0.2rem;
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 0.5rem);
-  min-width: 12rem;
-  padding: 0.35rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 84%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 96%, var(--cds-layer-02, #f4f4f4));
-  box-shadow: none;
-}
-
-.hp2-overlay__power-menu-item {
-  display: flex;
+.hp2-overlay__power-menu-trigger.cds--overflow-menu {
+  display: inline-flex;
   align-items: center;
-  min-height: 2.2rem;
-  width: 100%;
-  padding: 0 0.75rem;
-  border: 0;
-  background: transparent;
+  justify-content: center;
+  min-width: 3rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 84%, transparent);
+  background: var(--cds-layer-02, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
-  font: inherit;
-  font-size: 0.82rem;
-  text-align: left;
-  cursor: pointer;
 }
 
-.hp2-overlay__power-menu-item:hover,
-.hp2-overlay__power-menu-item:focus-visible {
+.hp2-overlay__power-menu-trigger.cds--overflow-menu:hover,
+.hp2-overlay__power-menu-trigger.cds--overflow-menu:focus-visible,
+.hp2-overlay__power-menu-trigger.cds--overflow-menu.is-active {
   background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, var(--cds-layer-02, #f4f4f4));
   outline: 2px solid var(--cds-focus, #0f62fe);
   outline-offset: 2px;
+}
+
+.hp2-overlay__power-menu-trigger .cds--overflow-menu__icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */

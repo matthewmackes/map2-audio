@@ -20297,7 +20297,7 @@ Subtasks:
       - Verified Carbon menu coverage already exists in modern route surfaces such as `SnapshotEditorPageContent.tsx`, `MidiRecorderPanel.tsx`, and `CarbonCardShell.tsx`, so the next conversion slice should target the shell power/launcher menus instead of duplicating already-migrated route-local work.
       - Established `T867-subB` as the first implementation queue: convert the shell power and launcher action menus before deciding whether the desktop context menu should move to Carbon `OverflowMenu` semantics or remain an intentional positioned context widget.
   - ID: T867-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Convert shell power and launcher action menus to Carbon-backed contracts
     Description:
     - Goal / acceptance criteria: Replace the remaining shell action-menu surfaces with Carbon `OverflowMenu` / `MenuButton` patterns or Carbon-aligned contracts while preserving focus return and responsive behavior.
@@ -20307,6 +20307,15 @@ Subtasks:
     - Required outputs: Shell menu migration, reduced custom menu CSS, validation evidence.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 06:28 EDT - Codex
+    - Completion notes:
+      - Replaced the custom shell power popup in `web/src/app/layout/ShellLauncherPanel.tsx` with Carbon `OverflowMenu` / `OverflowMenuItem`, keeping the existing controlled open/close state while retiring the bespoke menu DOM.
+      - Replaced the matching home desktop overlay power popup in `web/src/app/pages/HomeStartMenuOverlay.tsx` with the same Carbon overflow-menu contract, preserving restart, refresh, and logout actions.
+      - Deleted the old dedicated power-menu popup styling from `web/src/app/layout/AppShell.css` and `web/src/app/pages/HomePage.css`, replacing it with focused trigger styling for the Carbon overflow-menu button instead of maintaining a parallel custom menu surface.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T867-subC
     Status: [ ] Todo
     Title: Remove residual legacy menu CSS and close out route-local action menus
@@ -20325,6 +20334,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Current evidence shows Carbon `OverflowMenu` already covers many route surfaces, while the remaining custom work is concentrated in shell/menu contracts such as `ShellLauncherPanel.tsx` / `AppShell.css` power and launcher menus, plus a smaller set of custom start-menu and advanced-menu affordances.
   - The first implementation target should be `T867-subA`, then the shell power/launcher menu slice before deleting residual legacy menu CSS.
   - Completed `T867-subA` by classifying the remaining custom menu work into shell power menus, the positioned desktop context menu, and intentional non-Overflow navigation widgets; `T867-subB` is now the clear next execution slice.
+  - Completed `T867-subB` by migrating the shell launcher and home overlay power menus onto Carbon `OverflowMenu`, leaving the positioned desktop context menu and other intentional custom navigation widgets as the remaining `T867-subC` closeout work.
 
 ID: T868
 Status: [>] In Progress
