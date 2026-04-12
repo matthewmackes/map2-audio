@@ -76,7 +76,7 @@ function AvbRoutingWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
         border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
         borderInlineStart: `6px solid ${data.accentColor}`,
         borderRadius: 10,
-        background: data.selected ? 'var(--cds-layer-selected-01)' : 'var(--cds-layer-01)',
+        background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
         color: 'var(--cds-text-primary)',
         padding: '0.9rem',
         boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 8px 22px rgba(17, 146, 232, 0.08)',

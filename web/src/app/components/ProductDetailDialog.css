@@ -119,7 +119,7 @@
 
 .product-detail-dialog__code {
   display: block;
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   border: 1px solid var(--cds-border-subtle);
   color: var(--cds-text-primary);
   padding: var(--cds-spacing-04);

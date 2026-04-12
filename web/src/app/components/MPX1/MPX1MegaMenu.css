@@ -3,8 +3,8 @@
   --mpx1-amber: var(--cds-support-warning);
   --mpx1-pink: var(--cds-support-info);
   --mpx1-bg: var(--cds-background);
-  --mpx1-surface: var(--cds-layer-02);
-  --mpx1-surface-2: var(--cds-layer-03);
+  --mpx1-surface: var(--cds-layer-hover);
+  --mpx1-surface-2: var(--cds-layer-selected);
   --mpx1-border: var(--cds-border-subtle-02);
   --mpx1-text: var(--cds-text-primary);
   --mpx1-muted: var(--cds-text-secondary);

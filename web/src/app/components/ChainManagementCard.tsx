@@ -176,7 +176,7 @@ export function ChainManagementCard({
         style={{
           padding: '0.5rem 0.75rem',
           borderBottom: '1px solid var(--cds-border-subtle-01)',
-          background: 'var(--cds-layer-02)',
+          background: 'var(--cds-layer-hover)',
           color: 'var(--cds-text-secondary)',
           fontSize: '0.75rem',
           lineHeight: 1.4,

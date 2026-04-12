@@ -75,7 +75,7 @@ function NetworkDiscoveryWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) 
         border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
         borderInlineStart: `6px solid ${data.accentColor}`,
         borderRadius: 10,
-        background: data.selected ? 'var(--cds-layer-selected-01)' : 'var(--cds-layer-01)',
+        background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
         color: 'var(--cds-text-primary)',
         padding: '0.9rem',
         boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 10px 24px rgba(15, 98, 254, 0.08)',

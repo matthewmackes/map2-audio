@@ -72,7 +72,7 @@
   height: clamp(5.75rem, 8vw, 7rem);
   border: 1px solid var(--cds-border-subtle-01);
   border-radius: 1.25rem;
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .midi-hub-area-page__hero-mark {

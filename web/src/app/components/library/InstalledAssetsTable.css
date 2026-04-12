@@ -86,7 +86,7 @@
 }
 
 .installed-assets-table__column-settings {
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   border: 1px solid var(--cds-border-subtle);
   display: flex;
   flex-direction: column;

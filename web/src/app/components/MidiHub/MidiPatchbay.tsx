@@ -254,7 +254,7 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
             </marker>
           </defs>
 
-          <rect x="0" y="0" width="1040" height="680" fill="var(--cds-layer-02)" />
+          <rect x="0" y="0" width="1040" height="680" fill="var(--cds-layer-hover)" />
 
           <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
             {links.map(({ route, source, destination }) => {
@@ -308,7 +308,7 @@ export function MidiPatchbay({ active = true }: { active?: boolean }) {
                     width={144}
                     height={48}
                     rx={4}
-                    fill={isPendingSource ? 'var(--cds-layer-selected-02, var(--cds-layer-selected))' : 'var(--cds-layer-01)'}
+                    fill={isPendingSource ? 'var(--cds-layer-selected)' : 'var(--cds-layer)'}
                     stroke={isPendingSource ? 'var(--cds-border-interactive)' : 'var(--cds-border-strong-01)'}
                     strokeWidth={isPendingSource ? 2.2 : 1.4}
                   />

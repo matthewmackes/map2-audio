@@ -133,7 +133,7 @@
 }
 
 .network-discovery-workspace__expanded-card {
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   border: 1px solid var(--cds-border-subtle-01);
   border-radius: 0.85rem;
   display: flex;

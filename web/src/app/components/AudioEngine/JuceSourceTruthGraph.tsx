@@ -73,7 +73,7 @@ function SourceTruthNode({ data }: NodeProps<RenderNodeData>) {
         minHeight: 108,
         border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
         borderInlineStart: `5px solid ${data.accentColor}`,
-        background: data.selected ? 'var(--cds-layer-selected-01)' : 'var(--cds-layer-01)',
+        background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
         boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 10px 26px rgba(15, 98, 254, 0.08)',
       }}
       onClick={() => data.onSelectNode(data.nodeId)}

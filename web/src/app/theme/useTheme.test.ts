@@ -44,7 +44,7 @@ describe('theme defaults', () => {
     expect(document.body).toHaveAttribute('data-carbon-theme', carbonTheme)
     expect(document.documentElement.style.colorScheme).toBe(colorScheme)
     expect(document.documentElement.style.getPropertyValue('--bg')).toBe('var(--cds-background)')
-    expect(document.documentElement.style.getPropertyValue('--surface')).toBe('var(--cds-layer-01)')
+    expect(document.documentElement.style.getPropertyValue('--surface')).toBe('var(--cds-layer)')
     expect(document.documentElement.style.getPropertyValue('--interactive')).toBe('var(--cds-button-primary)')
     expect(document.documentElement.style.getPropertyValue('--focus-ring')).toBe('var(--cds-focus)')
   })

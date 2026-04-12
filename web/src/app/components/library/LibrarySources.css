@@ -29,7 +29,7 @@
 
 .library-sources__tone3000 {
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .library-sources__source-grid {
