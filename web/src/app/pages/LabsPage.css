@@ -94,7 +94,7 @@
   align-items: center;
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -267,7 +267,7 @@
   gap: 0.1rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -307,7 +307,7 @@
   gap: var(--cds-spacing-02);
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .labs-page__example-card h4 {

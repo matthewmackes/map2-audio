@@ -26,7 +26,7 @@
   gap: var(--cds-spacing-04);
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .midi-hub-network-panel__toolbar {
@@ -47,7 +47,7 @@
 }
 
 .midi-hub-network-table {
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .midi-hub-network-namespace {
@@ -68,7 +68,7 @@
   gap: var(--cds-spacing-04);
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .midi-hub-network-gpio-tile__header {

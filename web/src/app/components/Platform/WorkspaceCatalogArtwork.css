@@ -1,9 +1,9 @@
 .platform-launchers-art {
   --platform-launchers-art-accent: var(--cds-border-interactive);
   --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-border-interactive) 24%, transparent);
-  --platform-launchers-art-surface: color-mix(in srgb, var(--cds-layer-03) 86%, #0d141c);
-  --platform-launchers-art-surface-strong: color-mix(in srgb, var(--cds-layer-02) 90%, #081019);
-  --platform-launchers-art-chrome: color-mix(in srgb, var(--cds-layer-02) 94%, #0a1018);
+  --platform-launchers-art-surface: color-mix(in srgb, var(--cds-layer-selected) 86%, #0d141c);
+  --platform-launchers-art-surface-strong: color-mix(in srgb, var(--cds-layer-hover) 90%, #081019);
+  --platform-launchers-art-chrome: color-mix(in srgb, var(--cds-layer-hover) 94%, #0a1018);
   --platform-launchers-art-panel: color-mix(in srgb, var(--cds-layer-accent-01) 82%, #121a24);
   --platform-launchers-art-panel-strong: color-mix(in srgb, var(--cds-layer-accent-02) 86%, #141e2a);
   --platform-launchers-art-grid: color-mix(in srgb, var(--cds-border-subtle-01) 58%, transparent);

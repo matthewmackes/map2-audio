@@ -53,7 +53,7 @@
   align-items: center;
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .plugin-appearance__preview-card p {
@@ -74,7 +74,7 @@
   inline-size: 3.25rem;
   block-size: 3.25rem;
   border-radius: 1rem;
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .plugin-appearance__preview-shell {
@@ -99,7 +99,7 @@
   justify-items: center;
   padding: 0.8rem 0.65rem;
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: inherit;
 }
 
