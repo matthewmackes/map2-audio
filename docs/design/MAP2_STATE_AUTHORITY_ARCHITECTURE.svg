@@ -1,0 +1,594 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1500" width="2400" height="1500">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap');
+      text { font-family: 'IBM Plex Sans', Arial, sans-serif; }
+      .mono { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+    </style>
+    <!-- Arrowhead markers -->
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#c6c6c6"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f62fe"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#24a148"/>
+    </marker>
+    <marker id="arrow-yellow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f1c21b"/>
+    </marker>
+    <marker id="arrow-blue-start" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto-start-reverse">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f62fe"/>
+    </marker>
+    <marker id="arrow-yellow-start" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto-start-reverse">
+      <polygon points="0 0, 8 3, 0 6" fill="#f1c21b"/>
+    </marker>
+  </defs>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- CANVAS BACKGROUND -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect width="2400" height="1500" fill="#161616"/>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- TITLE BLOCK -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <text x="48" y="52" font-size="20" font-weight="700" fill="#f4f4f4">MAP2 Audio Platform — State Authority &amp; Cluster Replication Architecture</text>
+  <text x="48" y="74" font-size="13" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Snapshot → JUCE Engine → etcd (Single Source of Truth) → Cluster Replication</text>
+  <line x1="48" y1="84" x2="2352" y2="84" stroke="#393939" stroke-width="1"/>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SWIM LANE COLUMNS — background zones -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- Lane 1: OPERATOR / UI (x=32, w=300) -->
+  <rect x="32" y="96" width="300" height="1340" fill="none" stroke="#393939" stroke-width="1" stroke-dasharray="4,3" rx="2"/>
+  <text x="48" y="116" font-size="11" fill="#6f6f6f" font-weight="600" letter-spacing="1">OPERATOR / UI</text>
+
+  <!-- Lane 2: SNAPSHOT AUTHORITY (x=348, w=370) -->
+  <rect x="348" y="96" width="370" height="1340" fill="none" stroke="#393939" stroke-width="1" stroke-dasharray="4,3" rx="2"/>
+  <text x="364" y="116" font-size="11" fill="#6f6f6f" font-weight="600" letter-spacing="1">SNAPSHOT AUTHORITY</text>
+  <text x="364" y="130" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Python FastAPI</text>
+
+  <!-- Lane 3: JUCE ENGINE (x=734, w=520) — center, prominent -->
+  <rect x="734" y="96" width="520" height="1340" fill="#1a1f2e" stroke="#0f62fe" stroke-width="2" rx="2"/>
+  <text x="750" y="116" font-size="11" fill="#0f62fe" font-weight="600" letter-spacing="1">JUCE AUDIO ENGINE</text>
+  <text x="750" y="130" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">C++ / PipeWire / 48kHz / 64 samples</text>
+
+  <!-- Lane 4: ETCD (x=1270, w=370) -->
+  <rect x="1270" y="96" width="370" height="1340" fill="none" stroke="#393939" stroke-width="1" stroke-dasharray="4,3" rx="2"/>
+  <text x="1286" y="116" font-size="11" fill="#6f6f6f" font-weight="600" letter-spacing="1">ETCD — SINGLE SOURCE OF TRUTH</text>
+  <text x="1286" y="130" font-size="10" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">/map2/audio-state/v1</text>
+
+  <!-- Lane 5: CLUSTER PEER NODES (x=1656, w=712) -->
+  <rect x="1656" y="96" width="712" height="1340" fill="none" stroke="#393939" stroke-width="1" stroke-dasharray="4,3" rx="2"/>
+  <text x="1672" y="116" font-size="11" fill="#6f6f6f" font-weight="600" letter-spacing="1">CLUSTER PEER NODES</text>
+  <text x="1672" y="130" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Distributed Cluster</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LANE 1: REACT FRONTEND BOX -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect x="48" y="152" width="268" height="148" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="48" y="152" width="268" height="24" fill="#0f62fe" rx="2"/>
+  <rect x="48" y="168" width="268" height="8" fill="#0f62fe"/>
+  <circle cx="60" cy="164" r="5" fill="#24a148"/>
+  <text x="72" y="168" font-size="12" font-weight="600" fill="#f4f4f4">React Frontend</text>
+  <text x="60" y="192" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">/snapshots editor</text>
+  <text x="60" y="208" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">/runtime/live-state</text>
+  <text x="60" y="224" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">WebSocket subscriber</text>
+  <text x="60" y="240" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">topic: snapshot_runtime_live_state</text>
+  <text x="60" y="258" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">GET /api/runtime/live-state</text>
+  <text x="60" y="274" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">POST /api/snapshots/{id}/activate</text>
+
+  <!-- Draft / Requested / Confirmed columns note -->
+  <rect x="48" y="320" width="268" height="72" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <text x="60" y="338" font-size="10" font-weight="600" fill="#c6c6c6">UI State Columns</text>
+  <text x="60" y="354" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Draft | Requested | Confirmed</text>
+  <text x="60" y="370" font-size="9" fill="#24a148" font-family="'IBM Plex Mono', monospace">LIVE confirmed on N of N channels</text>
+  <text x="60" y="384" font-size="9" fill="#f1c21b" font-family="'IBM Plex Mono', monospace">Waiting for confirmation...</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LANE 2: SNAPSHOT DRAFT -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect x="364" y="152" width="338" height="88" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="364" y="152" width="338" height="24" fill="#393939" rx="2"/>
+  <rect x="364" y="168" width="338" height="8" fill="#393939"/>
+  <circle cx="376" cy="164" r="5" fill="#6f6f6f"/>
+  <text x="388" y="168" font-size="12" font-weight="600" fill="#c6c6c6">Snapshot Draft</text>
+  <text x="376" y="192" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">snapshot_id (UUID)</text>
+  <text x="376" y="208" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">graph doc version: 2026.04</text>
+  <text x="376" y="224" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">authored intent — not yet live</text>
+
+  <!-- Arrow: compile -->
+  <line x1="533" y1="240" x2="533" y2="268" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+  <text x="540" y="258" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">compile()</text>
+
+  <!-- COMPILED SNAPSHOT INTENT -->
+  <rect x="364" y="272" width="338" height="100" fill="#262626" stroke="#0f62fe" stroke-width="1" rx="2"/>
+  <rect x="364" y="272" width="338" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="364" y="288" width="338" height="8" fill="#0f3d8a"/>
+  <circle cx="376" cy="284" r="5" fill="#0f62fe"/>
+  <text x="388" y="288" font-size="12" font-weight="600" fill="#f4f4f4">Compiled Snapshot Intent</text>
+  <text x="376" y="310" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">snapshot_id, io (in/out device)</text>
+  <text x="376" y="326" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">routing mode, chains[]</text>
+  <text x="376" y="342" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">morph A/B/C/D, control_mappings</text>
+  <text x="376" y="358" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">CompiledSnapshotIntent (Pydantic)</text>
+
+  <!-- Arrow: activate() -->
+  <line x1="533" y1="372" x2="533" y2="400" stroke="#0f62fe" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="540" y="390" font-size="9" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">activate()</text>
+
+  <!-- ACTIVATION STATE MACHINE -->
+  <rect x="364" y="404" width="338" height="160" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="364" y="404" width="338" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="364" y="420" width="338" height="8" fill="#0f3d8a"/>
+  <text x="376" y="420" font-size="12" font-weight="600" fill="#f4f4f4">Activation State Machine</text>
+  <!-- Step indicator bar -->
+  <rect x="376" y="436" width="54" height="20" fill="#393939" stroke="#c6c6c6" stroke-width="0.5" rx="2"/>
+  <text x="403" y="450" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">VALIDATING</text>
+  <text x="434" y="449" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="442" y="436" width="42" height="20" fill="#393939" stroke="#c6c6c6" stroke-width="0.5" rx="2"/>
+  <text x="463" y="450" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">STAGING</text>
+  <text x="488" y="449" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="496" y="436" width="44" height="20" fill="#0f62fe" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="518" y="450" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">APPLYING</text>
+  <text x="544" y="449" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="552" y="436" width="50" height="20" fill="#393939" stroke="#c6c6c6" stroke-width="0.5" rx="2"/>
+  <text x="577" y="450" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">VERIFYING</text>
+  <text x="606" y="449" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="614" y="436" width="30" height="20" fill="#24a148" stroke="#24a148" stroke-width="0.5" rx="2"/>
+  <text x="629" y="450" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">LIVE</text>
+
+  <text x="376" y="478" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">timeout: 10s total / 3s escalation rule</text>
+  <text x="376" y="494" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">failed state: </text>
+  <rect x="438" y="484" width="60" height="14" fill="#da1e28" rx="2"/>
+  <text x="468" y="494" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">BLOCKED</text>
+  <text x="376" y="510" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Activation hooks: midi_map_sync,</text>
+  <text x="376" y="524" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">expression_sync, maschine_encoders...</text>
+  <text x="376" y="540" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">state_authority_activation_service.py</text>
+  <text x="376" y="553" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">phase: [APPLYING] → F2 fires here</text>
+
+  <!-- Arrow: load_graph_document -->
+  <line x1="533" y1="564" x2="533" y2="592" stroke="#0f62fe" stroke-width="1" marker-end="url(#arrow-blue)"/>
+
+  <!-- PUBLISH READINESS / BLOCKERS -->
+  <rect x="364" y="596" width="338" height="148" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="364" y="596" width="338" height="24" fill="#3d1a1a" rx="2"/>
+  <rect x="364" y="612" width="338" height="8" fill="#3d1a1a"/>
+  <text x="376" y="612" font-size="12" font-weight="600" fill="#f4f4f4">Publish Readiness / Blockers</text>
+  <text x="376" y="634" font-size="9" fill="#c6c6c6">16 typed </text>
+  <text x="430" y="634" font-size="9" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">PublishBlockerCode</text>
+  <text x="545" y="634" font-size="9" fill="#c6c6c6"> values</text>
+  <!-- Blocker pills -->
+  <rect x="376" y="642" width="82" height="14" fill="#da1e28" rx="7"/>
+  <text x="417" y="652" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">plugin_missing</text>
+  <rect x="466" y="642" width="74" height="14" fill="#da1e28" rx="7"/>
+  <text x="503" y="652" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">asset_missing</text>
+  <rect x="548" y="642" width="68" height="14" fill="#da1e28" rx="7"/>
+  <text x="582" y="652" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">node_offline</text>
+  <rect x="376" y="662" width="100" height="14" fill="#da1e28" rx="7"/>
+  <text x="426" y="672" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">engine_apply_failed</text>
+  <rect x="484" y="662" width="96" height="14" fill="#f1c21b" rx="7"/>
+  <text x="532" y="672" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">observation_stale</text>
+  <rect x="376" y="682" width="94" height="14" fill="#da1e28" rx="7"/>
+  <text x="423" y="692" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">authority_diverged</text>
+  <rect x="478" y="682" width="108" height="14" fill="#f1c21b" rx="7"/>
+  <text x="532" y="692" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">channel_unconfirmed</text>
+  <rect x="376" y="702" width="78" height="14" fill="#f1c21b" rx="7"/>
+  <text x="415" y="712" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">node_sync_pending</text>
+  <rect x="376" y="720" width="9" height="9" fill="#da1e28" rx="1"/>
+  <text x="390" y="729" font-size="8" fill="#c6c6c6"> = blocking   </text>
+  <rect x="448" y="720" width="9" height="9" fill="#f1c21b" rx="1"/>
+  <text x="462" y="729" font-size="8" fill="#c6c6c6"> = warning</text>
+  <text x="376" y="736" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">POST /api/snapshots/{id}/publish-retry</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LANE 3: JUCE ENGINE BOXES -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- GRAPH DOCUMENT LOADER -->
+  <rect x="750" y="152" width="488" height="108" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="750" y="152" width="488" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="750" y="168" width="488" height="8" fill="#0f3d8a"/>
+  <text x="762" y="168" font-size="12" font-weight="600" fill="#f4f4f4">Graph Document Loader</text>
+  <text x="762" y="192" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">load_graph_document(json_string)</text>
+  <text x="762" y="208" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">save_graph_document() → JSON export</text>
+  <text x="762" y="224" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">schema: snapshot-graph-v1.schema.json</text>
+  <text x="762" y="240" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">URI: map2:{type}:{name}  e.g. map2:fx:nam</text>
+  <text x="762" y="253" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">juce_engine_service.py  JuceAudioGraph.cpp</text>
+
+  <!-- Arrow: ValueTree parse -->
+  <line x1="994" y1="260" x2="994" y2="288" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+  <text x="1002" y="278" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">ValueTree parse</text>
+
+  <!-- AUDIO SIGNAL CHAIN -->
+  <rect x="750" y="292" width="488" height="108" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="750" y="292" width="488" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="750" y="308" width="488" height="8" fill="#0f3d8a"/>
+  <text x="762" y="308" font-size="12" font-weight="600" fill="#f4f4f4">Audio Signal Chain</text>
+  <!-- Pipeline nodes -->
+  <rect x="756" y="324" width="38" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="775" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Input</text>
+  <text x="798" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="806" y="324" width="30" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="821" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">NAM</text>
+  <text x="840" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="848" y="324" width="52" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="874" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Cabinet IR</text>
+  <text x="904" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="912" y="324" width="24" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="924" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">EQ</text>
+  <text x="940" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="948" y="324" width="30" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="963" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Gate</text>
+  <text x="982" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="990" y="324" width="52" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="1016" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Compressor</text>
+  <text x="1046" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="1054" y="324" width="34" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="1071" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Limiter</text>
+  <text x="1092" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="1100" y="324" width="36" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="1118" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Reverb</text>
+  <text x="1140" y="337" font-size="10" fill="#6f6f6f">→</text>
+  <rect x="1148" y="324" width="40" height="20" fill="#1a3a5e" stroke="#0f62fe" stroke-width="0.5" rx="2"/>
+  <text x="1168" y="338" font-size="8" fill="#c6c6c6" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Output</text>
+  <text x="756" y="362" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Plugin graph with PDC (Plugin Delay Compensation)</text>
+  <text x="756" y="376" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">Map2AudioEngine.cpp</text>
+  <text x="756" y="390" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">CPU monitor → Input copy → Param updates → Graph (PDC) → ...</text>
+
+  <!-- Arrow: crossfade -->
+  <line x1="994" y1="400" x2="994" y2="428" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+  <text x="1002" y="418" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">old graph ⟷ new graph</text>
+
+  <!-- CROSSFADE ENGINE -->
+  <rect x="750" y="432" width="488" height="108" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="750" y="432" width="488" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="750" y="448" width="488" height="8" fill="#0f3d8a"/>
+  <circle cx="762" cy="444" r="5" fill="#24a148"/>
+  <text x="774" y="448" font-size="12" font-weight="600" fill="#f4f4f4">CrossfadeEngine (C++)</text>
+  <text x="762" y="472" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Equal-power crossfade: cos/sin curve</text>
+  <text x="762" y="488" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Duration: auto ≤500ms (plugin tail lengths)</text>
+  <text x="762" y="504" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Isolation: old &amp; new graphs fully independent</text>
+  <text x="762" y="520" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">oldGain = cos(φ·π/2)  newGain = sin(φ·π/2)</text>
+  <text x="762" y="533" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">CrossfadeEngine.cpp</text>
+
+  <!-- Side arrow to MorphEngine -->
+  <line x1="1238" y1="476" x2="1238" y2="476"/>
+  <!-- Arrow from crossfade right to morph -->
+  <line x1="1180" y1="540" x2="1180" y2="600" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+  <text x="1188" y="575" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">morph(x,y)</text>
+
+  <!-- MORPH ENGINE (offset right in lane) -->
+  <rect x="750" y="604" width="488" height="120" fill="#262626" stroke="#0f62fe" stroke-width="1.5" rx="2"/>
+  <rect x="750" y="604" width="488" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="750" y="620" width="488" height="8" fill="#0f3d8a"/>
+  <text x="762" y="620" font-size="12" font-weight="600" fill="#f4f4f4">MorphEngine (C++)</text>
+  <text x="762" y="644" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Quad morph: A/B/C/D endpoints</text>
+  <text x="762" y="660" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Position: (x, y) — std::atomic&lt;float&gt;</text>
+  <text x="762" y="676" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Auto: continuous=smooth, discrete=snap@50%</text>
+  <text x="762" y="692" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">val = (1-x)(1-y)·A + x(1-y)·B + (1-x)y·C + xy·D</text>
+  <text x="762" y="708" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">MorphEngine.cpp   set_morph_position(x,y)</text>
+  <text x="762" y="717" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">set_morph_endpoints(A, B, C, D)</text>
+
+  <!-- Arrow: observation -->
+  <line x1="994" y1="724" x2="994" y2="752" stroke="#24a148" stroke-width="1" marker-end="url(#arrow-green)"/>
+  <text x="1002" y="742" font-size="9" fill="#24a148" font-family="'IBM Plex Mono', monospace">AudioStateObservation</text>
+
+  <!-- NODE OBSERVATION REPORTER -->
+  <rect x="750" y="756" width="488" height="120" fill="#262626" stroke="#24a148" stroke-width="1.5" rx="2"/>
+  <rect x="750" y="756" width="488" height="24" fill="#0d3320" rx="2"/>
+  <rect x="750" y="772" width="488" height="8" fill="#0d3320"/>
+  <circle cx="762" cy="768" r="5" fill="#24a148"/>
+  <text x="774" y="772" font-size="12" font-weight="600" fill="#f4f4f4">Node Observation Reporter</text>
+  <text x="762" y="796" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">node_id, observed_state_version</text>
+  <text x="762" y="812" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">applied: bool — did engine accept?</text>
+  <text x="762" y="828" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">effective_input / output_device</text>
+  <text x="762" y="844" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">runtime_paths[], CPU / latency / xruns</text>
+  <text x="762" y="860" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">observed_at (ISO timestamp)</text>
+  <text x="762" y="869" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">AudioStateObservation (Pydantic)</text>
+
+  <!-- F4 label in JUCE lane -->
+  <rect x="750" y="900" width="488" height="32" fill="#1a1f2e" stroke="#0f62fe" stroke-width="0.5" stroke-dasharray="3,2" rx="2"/>
+  <text x="762" y="914" font-size="9" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F4 [RECONCILE/RECOVERY]: pull desired state from etcd</text>
+  <text x="762" y="926" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">every 5s self-heal loop → compare saveGraphDocument() vs etcd desired</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LANE 4: ETCD BOXES -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- AUTHORITATIVE AUDIO STATE — crown jewel -->
+  <rect x="1286" y="152" width="338" height="216" fill="#262626" stroke="#0f62fe" stroke-width="2.5" rx="2"/>
+  <rect x="1286" y="152" width="338" height="24" fill="#0f3d8a" rx="2"/>
+  <rect x="1286" y="168" width="338" height="8" fill="#0f3d8a"/>
+  <text x="1298" y="168" font-size="12" font-weight="700" fill="#f4f4f4">AuthoritativeAudioState</text>
+  <text x="1298" y="184" font-size="10" fill="#0f62fe" font-weight="600">Control-Plane Source of Truth</text>
+  <text x="1298" y="204" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">state_version (int)</text>
+  <text x="1298" y="220" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">leader_epoch (int)</text>
+  <text x="1298" y="236" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">committed_at (ISO timestamp)</text>
+  <text x="1298" y="252" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">origin_node_id</text>
+  <text x="1298" y="268" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">desired: CompiledSnapshotIntent</text>
+  <text x="1298" y="284" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">cluster: &#123; sync_status,</text>
+  <text x="1316" y="298" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">applied_node_ids[], degraded_node_ids[] &#125;</text>
+  <text x="1298" y="314" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">engine: &#123; display_state, is_warning &#125;</text>
+  <text x="1298" y="330" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">paths: AudioStatePathRecord[]</text>
+  <text x="1298" y="360" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">audio_state_authority.py</text>
+
+  <!-- Arrow down to EtcdV3 -->
+  <line x1="1455" y1="368" x2="1455" y2="396" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+
+  <!-- ETCD V3 JSON CLIENT -->
+  <rect x="1286" y="400" width="338" height="88" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="1286" y="400" width="338" height="24" fill="#393939" rx="2"/>
+  <rect x="1286" y="416" width="338" height="8" fill="#393939"/>
+  <text x="1298" y="416" font-size="12" font-weight="600" fill="#f4f4f4">EtcdV3JsonClient</text>
+  <text x="1298" y="440" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">etcd v3 HTTP API</text>
+  <text x="1298" y="456" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">namespace: /map2/audio-state/v1</text>
+  <text x="1298" y="472" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">HA endpoints (multi-node etcd cluster)</text>
+  <text x="1298" y="481" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">audio_state_authority.py</text>
+
+  <!-- Arrow down to Raft -->
+  <line x1="1455" y1="488" x2="1455" y2="516" stroke="#c6c6c6" stroke-width="1" marker-end="url(#arrow-gray)"/>
+  <text x="1463" y="506" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">Raft consensus</text>
+
+  <!-- RAFT CONSENSUS -->
+  <rect x="1286" y="520" width="338" height="120" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="1286" y="520" width="338" height="24" fill="#393939" rx="2"/>
+  <rect x="1286" y="536" width="338" height="8" fill="#393939"/>
+  <text x="1298" y="536" font-size="12" font-weight="600" fill="#f4f4f4">RaftConsensus (Python)</text>
+  <text x="1298" y="560" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Leader election, log replication</text>
+  <text x="1298" y="576" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Heartbeat timer, election timer</text>
+  <!-- Role tags -->
+  <rect x="1298" y="586" width="46" height="16" fill="#24a148" rx="8"/>
+  <text x="1321" y="597" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">LEADER</text>
+  <rect x="1350" y="586" width="52" height="16" fill="#0f62fe" rx="8"/>
+  <text x="1376" y="597" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">FOLLOWER</text>
+  <rect x="1408" y="586" width="60" height="16" fill="#6f6f6f" rx="8"/>
+  <text x="1438" y="597" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">CANDIDATE</text>
+  <text x="1298" y="620" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">_election_timer(), _heartbeat_timer()</text>
+  <text x="1298" y="636" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">cluster/raft_consensus.py</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LANE 5: CLUSTER PEER NODES -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- STATE REPLICATOR -->
+  <rect x="1672" y="152" width="330" height="100" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="1672" y="152" width="330" height="24" fill="#393939" rx="2"/>
+  <rect x="1672" y="168" width="330" height="8" fill="#393939"/>
+  <text x="1684" y="168" font-size="12" font-weight="600" fill="#f4f4f4">StateReplicator</text>
+  <text x="1684" y="192" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">Primary/Standby replication loop</text>
+  <text x="1684" y="208" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">_replicate_to_standby()</text>
+  <text x="1684" y="224" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">_check_primary_heartbeat()</text>
+  <text x="1684" y="240" font-size="9" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">_assume_primary_role()</text>
+  <text x="1684" y="244" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">cluster/state_replicator.py</text>
+
+  <!-- NODE DISCOVERY -->
+  <rect x="2018" y="152" width="330" height="100" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="2018" y="152" width="330" height="24" fill="#393939" rx="2"/>
+  <rect x="2018" y="168" width="330" height="8" fill="#393939"/>
+  <text x="2030" y="168" font-size="12" font-weight="600" fill="#f4f4f4">NodeDiscoveryService</text>
+  <text x="2030" y="192" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">peer topology, KnownNodeEndpoint</text>
+  <text x="2030" y="208" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">PeerRecord, cache TTL: 4s</text>
+  <text x="2030" y="224" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">get_topology(), resolve_known_node()</text>
+  <text x="2030" y="244" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">node_discovery_service.py</text>
+
+  <!-- PEER NODE 1 — Rack-2 (LIVE) -->
+  <rect x="1672" y="320" width="330" height="120" fill="#262626" stroke="#24a148" stroke-width="1.5" rx="2"/>
+  <rect x="1672" y="320" width="330" height="24" fill="#0d3320" rx="2"/>
+  <rect x="1672" y="336" width="330" height="8" fill="#0d3320"/>
+  <circle cx="1684" cy="332" r="5" fill="#24a148"/>
+  <text x="1696" y="336" font-size="12" font-weight="600" fill="#f4f4f4">Peer Node — Rack-2</text>
+  <text x="1684" y="360" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">AudioStateObservation</text>
+  <text x="1684" y="376" font-size="10" fill="#24a148" font-family="'IBM Plex Mono', monospace">applied: true</text>
+  <text x="1684" y="392" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">runtime_paths[], drift: none</text>
+  <text x="1684" y="408" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">engine: LIVE</text>
+  <text x="1684" y="430" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">observed_state_version matches</text>
+
+  <!-- PEER NODE 2 — Rack-3 (DEGRADED) -->
+  <rect x="2018" y="320" width="330" height="120" fill="#262626" stroke="#f1c21b" stroke-width="1.5" rx="2"/>
+  <rect x="2018" y="320" width="330" height="24" fill="#3d2e00" rx="2"/>
+  <rect x="2018" y="336" width="330" height="8" fill="#3d2e00"/>
+  <circle cx="2030" cy="332" r="5" fill="#f1c21b"/>
+  <text x="2042" y="336" font-size="12" font-weight="600" fill="#f4f4f4">Peer Node — Rack-3</text>
+  <text x="2030" y="360" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">AudioStateObservation</text>
+  <text x="2030" y="376" font-size="10" fill="#f1c21b" font-family="'IBM Plex Mono', monospace">applied: false (drift detected)</text>
+  <text x="2030" y="392" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">parameter drift &gt;1% threshold</text>
+  <text x="2030" y="408" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">engine: LIVE_WARNING</text>
+  <text x="2030" y="430" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">→ reconcile: targeted set_parameter()</text>
+
+  <!-- RECONCILIATION SERVICE -->
+  <rect x="1672" y="508" width="676" height="148" fill="#262626" stroke="#f1c21b" stroke-width="1.5" rx="2"/>
+  <rect x="1672" y="508" width="676" height="24" fill="#3d2e00" rx="2"/>
+  <rect x="1672" y="524" width="676" height="8" fill="#3d2e00"/>
+  <text x="1684" y="524" font-size="12" font-weight="600" fill="#f4f4f4">Reconciliation Service</text>
+  <text x="1684" y="548" font-size="10" font-weight="600" fill="#f1c21b" font-family="'IBM Plex Mono', monospace">Layer 1: Per-node self-heal (every 5s)</text>
+  <text x="1684" y="564" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">  parameter drift &gt;1% → targeted set_parameter()</text>
+  <text x="1684" y="580" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">  topology drift → report to management node</text>
+  <text x="1684" y="600" font-size="10" font-weight="600" fill="#f1c21b" font-family="'IBM Plex Mono', monospace">Layer 2: Management-node cross-cluster (every 5s, offset)</text>
+  <text x="1684" y="616" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">  topology drift → trigger full re-activation</text>
+  <text x="1684" y="632" font-size="10" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">  plugin missing → redeploy assets + re-activate</text>
+  <text x="1684" y="648" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">  Prometheus: drift_count, last_reconcile_ts</text>
+  <text x="1684" y="649" font-size="9" fill="#393939" font-family="'IBM Plex Mono', monospace">state_authority_reconciliation_service.py</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- CROSS-LANE ARROWS -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <!-- F1: React UI → Snapshot Authority (POST activate) -->
+  <line x1="316" y1="228" x2="362" y2="228" stroke="#0f62fe" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="322" y="220" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F1: POST /api/snapshots/{id}/activate</text>
+
+  <!-- F2: Snapshot Authority → JUCE Engine (load_graph_document) — APPLYING phase -->
+  <line x1="702" y1="488" x2="748" y2="488" stroke="#0f62fe" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="706" y="480" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F2 [APPLYING]: load_graph_document(json)</text>
+
+  <!-- F3: JUCE Engine → etcd (observation push) -->
+  <line x1="1238" y1="818" x2="1282" y2="280" stroke="#24a148" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <text x="1244" y="590" font-size="8" fill="#24a148" font-family="'IBM Plex Mono', monospace">F3: observation push</text>
+
+  <!-- F4: etcd → JUCE Engine (desired state pull) — RECONCILE label -->
+  <line x1="1284" y1="310" x2="1240" y2="818" stroke="#0f62fe" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+  <text x="1248" y="700" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F4 [RECONCILE/RECOVERY]:</text>
+  <text x="1248" y="712" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">desired state pull</text>
+
+  <!-- F5: etcd → Cluster Peers (state replication) -->
+  <line x1="1624" y1="380" x2="1668" y2="380" stroke="#0f62fe" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="1628" y="372" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F5: state replication</text>
+
+  <!-- F6: Cluster Peers → etcd (observation reports) -->
+  <line x1="1668" y1="420" x2="1624" y2="420" stroke="#24a148" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <text x="1628" y="438" font-size="8" fill="#24a148" font-family="'IBM Plex Mono', monospace">F6: AudioStateObservation reports</text>
+
+  <!-- F7: JUCE Engine → React UI (WebSocket) — dotted crossing all lanes -->
+  <path d="M 994 160 Q 994 100 182 100 Q 182 140 182 152" stroke="#c6c6c6" stroke-width="1" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow-gray)"/>
+  <text x="400" y="96" font-size="8" fill="#c6c6c6" font-family="'IBM Plex Mono', monospace">F7 (WS): snapshot_runtime_live_state</text>
+
+  <!-- F8: Reconciliation ↔ etcd (bidirectional) -->
+  <path d="M 1672 582 Q 1640 582 1640 480 Q 1640 380 1624 380" stroke="#f1c21b" stroke-width="1.5" fill="none" marker-end="url(#arrow-yellow)" marker-start="url(#arrow-yellow-start)"/>
+  <text x="1630" y="500" font-size="8" fill="#f1c21b" font-family="'IBM Plex Mono', monospace">F8: reconcile_live_snapshot_payload()</text>
+
+  <!-- F9: Snapshot Authority → etcd (commit AuthoritativeAudioState) -->
+  <line x1="702" y1="260" x2="1282" y2="230" stroke="#0f62fe" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="900" y="242" font-size="8" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">F9: commit AuthoritativeAudioState</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- LEGEND BOX (bottom-right) -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect x="1900" y="716" width="464" height="272" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="1900" y="716" width="464" height="24" fill="#393939" rx="2"/>
+  <rect x="1900" y="732" width="464" height="8" fill="#393939"/>
+  <text x="1912" y="732" font-size="12" font-weight="600" fill="#f4f4f4">Legend</text>
+
+  <!-- Status dots -->
+  <circle cx="1920" cy="758" r="5" fill="#24a148"/>
+  <text x="1932" y="763" font-size="10" fill="#c6c6c6">Green = LIVE / Confirmed</text>
+  <circle cx="1920" cy="778" r="5" fill="#f1c21b"/>
+  <text x="1932" y="783" font-size="10" fill="#c6c6c6">Amber = WARNING / Degraded</text>
+  <circle cx="1920" cy="798" r="5" fill="#da1e28"/>
+  <text x="1932" y="803" font-size="10" fill="#c6c6c6">Red = OFFLINE / Blocked</text>
+  <circle cx="1920" cy="818" r="5" fill="#6f6f6f"/>
+  <text x="1932" y="823" font-size="10" fill="#c6c6c6">Gray = PENDING / Inactive</text>
+
+  <line x1="1912" y1="842" x2="1952" y2="842" stroke="#c6c6c6" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text x="1958" y="847" font-size="10" fill="#c6c6c6">Solid = synchronous call</text>
+  <line x1="1912" y1="862" x2="1952" y2="862" stroke="#c6c6c6" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-gray)"/>
+  <text x="1958" y="867" font-size="10" fill="#c6c6c6">Dashed = async / observation</text>
+  <line x1="1912" y1="882" x2="1952" y2="882" stroke="#c6c6c6" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-gray)"/>
+  <text x="1958" y="887" font-size="10" fill="#c6c6c6">Dotted = WebSocket / real-time</text>
+
+  <rect x="1912" y="900" width="60" height="14" fill="#da1e28" rx="7"/>
+  <text x="1942" y="910" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">tag pill</text>
+  <text x="1978" y="912" font-size="10" fill="#c6c6c6"> = blocking PublishBlocker</text>
+
+  <rect x="1912" y="920" width="60" height="14" fill="#f1c21b" rx="7"/>
+  <text x="1942" y="930" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">tag pill</text>
+  <text x="1978" y="932" font-size="10" fill="#c6c6c6"> = warning PublishBlocker</text>
+
+  <line x1="1912" y1="950" x2="1952" y2="950" stroke="#0f62fe" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text x="1958" y="955" font-size="10" fill="#c6c6c6">Blue = F2/F9 activation / commit</text>
+  <line x1="1912" y1="970" x2="1952" y2="970" stroke="#24a148" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)"/>
+  <text x="1958" y="975" font-size="10" fill="#c6c6c6">Green = observation / reported</text>
+  <line x1="1912" y1="990" x2="1952" y2="990" stroke="#f1c21b" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
+  <text x="1958" y="995" font-size="10" fill="#c6c6c6">Yellow = reconciliation flow</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FIVE-LAYER AUTHORITY MODEL (center bottom) -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <rect x="32" y="1016" width="1200" height="396" fill="#262626" stroke="#393939" stroke-width="1" rx="2"/>
+  <rect x="32" y="1016" width="1200" height="24" fill="#393939" rx="2"/>
+  <rect x="32" y="1032" width="1200" height="8" fill="#393939"/>
+  <text x="44" y="1032" font-size="12" font-weight="600" fill="#f4f4f4">Five-Layer State Authority Model</text>
+
+  <!-- Layer 1 -->
+  <rect x="44" y="1048" width="220" height="60" fill="#262626" stroke="#6f6f6f" stroke-width="1" rx="2"/>
+  <text x="56" y="1066" font-size="10" font-weight="600" fill="#6f6f6f">Layer 1</text>
+  <text x="56" y="1082" font-size="10" fill="#c6c6c6">Snapshot Draft</text>
+  <text x="56" y="1098" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">authored intent (not live)</text>
+  <text x="276" y="1082" font-size="14" fill="#6f6f6f">→</text>
+
+  <!-- Layer 2 -->
+  <rect x="292" y="1048" width="220" height="60" fill="#262626" stroke="#0f62fe" stroke-width="1" rx="2"/>
+  <text x="304" y="1066" font-size="10" font-weight="600" fill="#0f62fe">Layer 2</text>
+  <text x="304" y="1082" font-size="10" fill="#c6c6c6">CompiledSnapshotIntent</text>
+  <text x="304" y="1098" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">publish intent (desired)</text>
+  <text x="524" y="1082" font-size="14" fill="#6f6f6f">→</text>
+
+  <!-- Layer 3 -->
+  <rect x="540" y="1048" width="220" height="60" fill="#262626" stroke="#0f62fe" stroke-width="2" rx="2"/>
+  <text x="552" y="1066" font-size="10" font-weight="600" fill="#0f62fe">Layer 3</text>
+  <text x="552" y="1082" font-size="10" fill="#f4f4f4" font-weight="600">AuthoritativeAudioState</text>
+  <text x="552" y="1098" font-size="9" fill="#0f62fe" font-family="'IBM Plex Mono', monospace">control-plane truth (etcd)</text>
+  <text x="772" y="1082" font-size="14" fill="#6f6f6f">→</text>
+
+  <!-- Layer 4 -->
+  <rect x="788" y="1048" width="220" height="60" fill="#262626" stroke="#24a148" stroke-width="1" rx="2"/>
+  <text x="800" y="1066" font-size="10" font-weight="600" fill="#24a148">Layer 4</text>
+  <text x="800" y="1082" font-size="10" fill="#c6c6c6">AudioStateObservation</text>
+  <text x="800" y="1098" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">per-node runtime report</text>
+  <text x="1020" y="1082" font-size="14" fill="#6f6f6f">→</text>
+
+  <!-- Layer 5 -->
+  <rect x="1036" y="1048" width="180" height="60" fill="#262626" stroke="#24a148" stroke-width="1" rx="2"/>
+  <text x="1048" y="1066" font-size="10" font-weight="600" fill="#24a148">Layer 5</text>
+  <text x="1048" y="1082" font-size="10" fill="#c6c6c6">Effective Live Status</text>
+  <text x="1048" y="1098" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">derived (L3 + L4 agree)</text>
+
+  <!-- Path status states -->
+  <text x="44" y="1136" font-size="10" font-weight="600" fill="#c6c6c6">AudioStatePathStatus:</text>
+  <rect x="44" y="1148" width="56" height="16" fill="#6f6f6f" rx="2"/>
+  <text x="72" y="1159" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">PENDING</text>
+  <rect x="108" y="1148" width="46" height="16" fill="#24a148" rx="2"/>
+  <text x="131" y="1159" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">ACTIVE</text>
+  <rect x="162" y="1148" width="76" height="16" fill="#6f6f6f" rx="2"/>
+  <text x="200" y="1159" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">NOT_LOADED</text>
+  <rect x="246" y="1148" width="56" height="16" fill="#da1e28" rx="2"/>
+  <text x="274" y="1159" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">OFFLINE</text>
+  <rect x="310" y="1148" width="62" height="16" fill="#f1c21b" rx="2"/>
+  <text x="341" y="1159" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">DEGRADED</text>
+
+  <!-- Engine states -->
+  <text x="44" y="1196" font-size="10" font-weight="600" fill="#c6c6c6">AudioStateEngineState:</text>
+  <rect x="44" y="1208" width="30" height="16" fill="#24a148" rx="2"/>
+  <text x="59" y="1219" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">LIVE</text>
+  <rect x="82" y="1208" width="90" height="16" fill="#f1c21b" rx="2"/>
+  <text x="127" y="1219" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">LIVE_WARNING</text>
+  <rect x="180" y="1208" width="58" height="16" fill="#6f6f6f" rx="2"/>
+  <text x="209" y="1219" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">STOPPED</text>
+  <rect x="246" y="1208" width="52" height="16" fill="#da1e28" rx="2"/>
+  <text x="272" y="1219" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">OFFLINE</text>
+
+  <!-- Cluster sync status -->
+  <text x="44" y="1256" font-size="10" font-weight="600" fill="#c6c6c6">AudioStateClusterStatus.sync_status:</text>
+  <rect x="44" y="1268" width="52" height="16" fill="#6f6f6f" rx="2"/>
+  <text x="70" y="1279" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">unknown</text>
+  <rect x="104" y="1268" width="44" height="16" fill="#24a148" rx="2"/>
+  <text x="126" y="1279" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">synced</text>
+  <rect x="156" y="1268" width="48" height="16" fill="#f1c21b" rx="2"/>
+  <text x="180" y="1279" font-size="8" fill="#161616" text-anchor="middle" font-family="'IBM Plex Mono', monospace">drifted</text>
+  <rect x="212" y="1268" width="56" height="16" fill="#da1e28" rx="2"/>
+  <text x="240" y="1279" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">diverged</text>
+
+  <!-- Deployment modes -->
+  <text x="44" y="1316" font-size="10" font-weight="600" fill="#c6c6c6">AudioStateDeployment.placement_mode:</text>
+  <rect x="44" y="1328" width="72" height="16" fill="#0f62fe" rx="2"/>
+  <text x="80" y="1339" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">local_only</text>
+  <rect x="124" y="1328" width="52" height="16" fill="#0f62fe" rx="2"/>
+  <text x="150" y="1339" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">cluster</text>
+  <rect x="184" y="1328" width="58" height="16" fill="#0f62fe" rx="2"/>
+  <text x="213" y="1339" font-size="8" fill="#f4f4f4" text-anchor="middle" font-family="'IBM Plex Mono', monospace">failover</text>
+
+  <!-- Arrow flow summary -->
+  <text x="44" y="1376" font-size="10" font-weight="600" fill="#c6c6c6">Activation Flow:</text>
+  <text x="44" y="1393" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">UI → POST activate (F1) → compile → VALIDATING → STAGING → APPLYING → F2 load_graph_document → crossfade</text>
+  <text x="44" y="1408" font-size="9" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">→ F9 commit etcd → VERIFYING → F3 observation push → F5 replicate peers → F6 peer reports → LIVE</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FOOTER NOTE (bottom-left) -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <line x1="32" y1="1446" x2="2368" y2="1446" stroke="#393939" stroke-width="1"/>
+  <text x="48" y="1464" font-size="10" fill="#6f6f6f" font-family="'IBM Plex Mono', monospace">MAP2 Audio Platform — SNAPSHOT_GRAPH_VERSION: 2026.04   etcd namespace: /map2/audio-state/v1   buffer: 64 samples @ 48kHz (1.33ms/period)   Carbon Design System Dark Theme</text>
+  <text x="48" y="1480" font-size="10" fill="#393939" font-family="'IBM Plex Mono', monospace">juce-engine/Source/Map2AudioEngine.cpp   app/services/audio_state_authority.py   app/services/state_authority_activation_service.py   app/services/cluster/raft_consensus.py</text>
+
+</svg>
