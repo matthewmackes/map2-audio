@@ -5,7 +5,7 @@
   flex-direction: column;
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--cds-link-primary) 16%, transparent), transparent 36%),
-    linear-gradient(180deg, var(--cds-layer-01), color-mix(in srgb, var(--cds-layer-01) 90%, var(--cds-layer-02)));
+    linear-gradient(180deg, var(--cds-layer), color-mix(in srgb, var(--cds-layer) 90%, var(--cds-layer-hover)));
 }
 
 .ground-control-pro-page__surface {
@@ -37,7 +37,7 @@
 .ground-control-pro-page__hero-tile {
   padding: var(--cds-spacing-06);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-02) 92%, white) 0%, var(--cds-layer-02) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-hover) 92%, white) 0%, var(--cds-layer-hover) 100%);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 80%, var(--cds-link-primary));
 }
 
@@ -83,7 +83,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--cds-spacing-04);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .ground-control-pro-page__config-form-grid {
@@ -94,11 +94,11 @@
 }
 
 .ground-control-pro-page__table-container {
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .ground-control-pro-page__selected-row td {
-  background: color-mix(in srgb, var(--cds-link-primary) 14%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--cds-link-primary) 14%, var(--cds-layer-selected));
 }
 
 .ground-control-pro-page__code-block {
