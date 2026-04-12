@@ -107,6 +107,8 @@ import {
 import { audioStateApi } from '../../map2/clients/audioState'
 import { ApiError, fetchJson } from '../../map2/http'
 import { useToasts } from '../components/Toasts'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
@@ -6559,25 +6561,21 @@ export function SnapshotEditorPage() {
       />
 
       {midiMappingsQuery.isLoading ? (
-        <div className="juce-grid-page__empty-state">
-          <InlineLoading description="Loading MIDI mappings" />
-        </div>
+        <LoadingState className="juce-grid-page__empty-state" description="Loading MIDI mappings" />
       ) : midiMappingsQuery.isError ? (
-        <div className="juce-grid-page__empty-state">
-          <p>Unable to load MIDI mappings</p>
-          <p className="juce-grid-page__empty-state-copy">
-            {midiMappingsQuery.error instanceof Error ? midiMappingsQuery.error.message : 'The MIDI API did not return a mapping list.'}
-          </p>
-        </div>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="Unable to load MIDI mappings"
+          description={midiMappingsQuery.error instanceof Error ? midiMappingsQuery.error.message : 'The MIDI API did not return a mapping list.'}
+        />
       ) : midiMappings.length === 0 ? (
-        <div className="juce-grid-page__empty-state">
-          <p>No MIDI mappings in this scope</p>
-          <p className="juce-grid-page__empty-state-copy">
-            {midiLearnActive
-              ? 'Touch a block parameter to start canonical MIDI learn for the selected processor.'
-              : 'Arm MIDI Learn, then touch a block parameter, or use the MIDI window for full mapping authoring.'}
-          </p>
-        </div>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No MIDI mappings in this scope"
+          description={midiLearnActive
+            ? 'Touch a block parameter to start canonical MIDI learn for the selected processor.'
+            : 'Arm MIDI Learn, then touch a block parameter, or use the MIDI window for full mapping authoring.'}
+        />
       ) : (
         <div className="juce-grid-page__midi-list">
           {midiMappings.map((mapping, index) => (
@@ -6821,12 +6819,11 @@ export function SnapshotEditorPage() {
       </div>
 
       {automationLanes.length === 0 ? (
-        <div className="juce-grid-page__empty-state">
-          <p>No automation lanes</p>
-          <p className="juce-grid-page__empty-state-copy">
-            Add a lane to capture parameter movement for the active flow.
-          </p>
-        </div>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No automation lanes"
+          description="Add a lane to capture parameter movement for the active flow."
+        />
       ) : (
         <div className="juce-grid-page__automation-lane-list">
           {automationLanes.map((lane) => (
@@ -8812,12 +8809,11 @@ export function SnapshotEditorPage() {
               )}
 
               {nativeProcessors.length === 0 && groupedPlugins.length === 0 && (
-                <div className="juce-grid-page__empty-state">
-                  <p>No plugins match the current filters</p>
-                  <p className="juce-grid-page__modal-copy">
-                    Adjust the search or category filters to widen the results.
-                  </p>
-                </div>
+                <EmptyState
+                  className="juce-grid-page__empty-state"
+                  title="No plugins match the current filters"
+                  description="Adjust the search or category filters to widen the results."
+                />
               )}
             </div>
           </div>
@@ -8850,12 +8846,11 @@ export function SnapshotEditorPage() {
               </div>
 
               {presets.length === 0 ? (
-                <div className="juce-grid-page__empty-state">
-                  <p>No presets saved</p>
-                  <p className="juce-grid-page__empty-state-copy">
-                    Press <kbd>S</kbd> to save the current chain, or import from file.
-                  </p>
-                </div>
+                <EmptyState
+                  className="juce-grid-page__empty-state"
+                  title="No presets saved"
+                  description={<>Press <kbd>S</kbd> to save the current chain, or import from file.</>}
+                />
               ) : (
                 <div className="juce-grid-page__preset-grid">
                   {presets.map((preset) => (

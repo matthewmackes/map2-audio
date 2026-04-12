@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
-  InlineLoading,
   InlineNotification,
   Modal,
   Search,
@@ -21,6 +20,8 @@ import { ApiError } from '../../../map2/http'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { getPluginIdentityKeyFromParts } from '../../../map2/utils/pluginIdentity'
 import { AssetUploadButton } from './AssetUploadButton'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import { useToasts } from '../Toasts'
 import './ModelManagerDialogs.css'
 
@@ -409,7 +410,7 @@ export function NAMManagerDialog({
         )}
 
         {modelsQuery.isLoading ? (
-          <InlineLoading description="Loading models" status="active" />
+          <LoadingState description="Loading models" />
         ) : modelsQuery.isError ? (
           <InlineNotification
             kind="error"
@@ -419,7 +420,13 @@ export function NAMManagerDialog({
             subtitle="The NAM model query failed. Refresh and try again."
           />
         ) : models.length === 0 ? (
-          <p className="model-manager-dialog__empty">No NAM models found. Upload .nam files to get started.</p>
+          <EmptyState
+            className="model-manager-dialog__empty"
+            title="No NAM models found"
+            description="Upload .nam files to get started."
+            compact
+            align="left"
+          />
         ) : (
           <div className="model-manager-dialog__type-sections">
             {Object.entries(modelsByType).map(([type, typeModels]) => {

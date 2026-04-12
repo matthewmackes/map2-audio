@@ -6,6 +6,8 @@ import { Alert, Button, CircularProgress } from '@mui/material'
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MPX1/programNumber'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import '../components/MPX1/MPX1PageShell.css'
@@ -201,9 +203,7 @@ export function MPX1Page() {
     return (
       <div className="mpx1-shell">
         <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <Alert icon={<CircularProgress size={16} />} severity="info">
-            Checking cluster MIDI inventory for the Lexicon MPX-1.
-          </Alert>
+          <LoadingState description="Checking cluster MIDI inventory for the Lexicon MPX-1" />
         </div>
       </div>
     )
@@ -213,9 +213,11 @@ export function MPX1Page() {
     return (
       <div className="mpx1-shell">
         <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <Alert severity="warning">
-            No Lexicon MPX-1 MIDI interface is currently detected on any cluster node.
-          </Alert>
+          <EmptyState
+            title="No Lexicon MPX-1 MIDI interface is currently detected on any cluster node"
+            description="Connect the interface or switch to the node where it is attached to manage it here."
+            align="left"
+          />
         </div>
       </div>
     )

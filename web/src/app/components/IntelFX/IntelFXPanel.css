@@ -56,15 +56,13 @@
 .intelfx-panel__lcd-label {
   color: #e53935;
   font: var(--cds-label-01-font);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .intelfx-panel__lcd-text {
   color: #e53935;
   font: var(--cds-body-compact-01-font);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -129,7 +127,7 @@
   flex: 1;
   color: var(--intelfx-panel-accent);
   font: var(--cds-heading-compact-01-font);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
 }
 
 .intelfx-panel__block.is-bypassed .intelfx-panel__block-title {

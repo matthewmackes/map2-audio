@@ -13,6 +13,8 @@ import {
   Tag,
   Tile,
 } from '@carbon/react'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
 import { useCommittedAudioState } from '../../hooks/useAuthoritativeAudioState'
@@ -1028,14 +1030,13 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
           )}
 
           {isLoading ? (
-            <InlineLoading description="Loading snapshots" status="active" />
+            <LoadingState description="Loading snapshots" />
           ) : savedSnapshots.length === 0 ? (
-            <div className="juce-grid-page__empty-state">
-              <p>No snapshots saved yet</p>
-              <p className="juce-grid-page__empty-state-copy">
-                Capture the current signal-path state to build a reusable snapshot library.
-              </p>
-            </div>
+            <EmptyState
+              className="juce-grid-page__empty-state"
+              title="No snapshots saved yet"
+              description="Capture the current signal-path state to build a reusable snapshot library."
+            />
           ) : (
             <>
               <section className="juce-grid-page__snapshot-group">

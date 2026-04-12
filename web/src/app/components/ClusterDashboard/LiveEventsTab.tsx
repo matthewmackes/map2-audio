@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { WarningAlt as WarningCircle, Information as Info, Flash as Lightning } from '@carbon/icons-react'
+import { EmptyState } from '../shared/EmptyState'
 
 interface LCDEvent {
   event_id: string
@@ -251,15 +252,14 @@ export function LiveEventsTab() {
             </div>
           ))
         ) : (
-          <div
-            style={{
-              textAlign: 'center',
-              color: '#a0a0a0',
-              padding: '40px 20px',
-              fontSize: 13,
-            }}
-          >
-            {paused ? 'Paused - click Resume to see events' : 'No events yet. Waiting for cluster activity...'}
+          <div style={{ padding: '24px 20px' }}>
+            <EmptyState
+              title={paused ? 'Live events are paused' : 'No events yet'}
+              description={paused
+                ? 'Resume the stream to watch new cluster activity here.'
+                : 'Waiting for cluster activity to arrive over the live event stream.'}
+              compact
+            />
           </div>
         )}
       </div>

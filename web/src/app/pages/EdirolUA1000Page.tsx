@@ -56,6 +56,8 @@ import {
 } from '@carbon/icons-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { LegacyButton } from '../components/shared/LegacyButton'
 import { LegacyTile } from '../components/shared/LegacyTile'
 import { useToasts } from '../components/Toasts'
@@ -312,15 +314,15 @@ export function EdirolUA1000Page() {
       />
 
       {locationLoading ? (
-        <Alert icon={<CircularProgress size={16} />} severity="info">
-          Checking cluster hardware inventory for the Edirol UA-1000 interface.
-        </Alert>
+        <LoadingState description="Checking cluster hardware inventory for the Edirol UA-1000 interface" />
       ) : null}
 
       {!locationLoading && !location ? (
-        <Alert severity="warning">
-          No Edirol UA-1000 interface is currently detected on any cluster node.
-        </Alert>
+        <EmptyState
+          title="No Edirol UA-1000 interface is currently detected on any cluster node"
+          description="Connect the interface or switch to the node where it is attached to continue."
+          align="left"
+        />
       ) : null}
 
       {!locationLoading && needsSwitch ? (

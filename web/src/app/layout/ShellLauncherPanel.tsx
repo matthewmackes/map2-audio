@@ -7,7 +7,7 @@ import {
   MAP2_PLATFORM_NAME,
   Map2BrandMark,
 } from '../components/branding/map2Branding'
-import { SpinningCubeLauncher } from './SpinningCubeLauncher'
+import { StaticHeroIconLauncher } from './StaticHeroIconLauncher'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
 import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
@@ -129,7 +129,7 @@ export function ShellLauncherPanel({
   return (
     <div className="shell-launcher" ref={launcherRef} style={{ '--window-shell-accent': accentColor } as CSSProperties}>
       <div className="shell-launcher__button-wrap">
-        <SpinningCubeLauncher
+        <StaticHeroIconLauncher
           isActive={navOpen}
           buttonRef={launcherButtonRef}
           onClick={onToggleMenu}

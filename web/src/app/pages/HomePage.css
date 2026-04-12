@@ -211,30 +211,25 @@
   justify-content: center;
 }
 
-.hp2-desktop__cube-launcher .shell-launcher__cube-btn {
+.hp2-desktop__cube-launcher .hero-icon-launcher__btn {
   width: 50vmin;
   height: 50vmin;
   max-width: 500px;
   max-height: 500px;
-  border: 1px solid color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 24%, transparent);
-  background: color-mix(in srgb, black 20%, transparent);
-  backdrop-filter: blur(6px);
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
-.hp2-desktop__cube-launcher .shell-launcher__cube-btn:hover {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 52%, transparent);
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, transparent);
-  transform: scale(1.02);
+@media (max-width: 66rem) {
+  .hp2-desktop__cube-launcher .hero-icon-launcher__btn {
+    width: 40vmin;
+    height: 40vmin;
+  }
 }
 
-.hp2-desktop__cube-launcher .shell-launcher__cube-btn.is-active {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 60%, transparent);
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, transparent);
-}
-
-.hp2-desktop__cube-launcher .shell-launcher__cube-btn:active {
-  transform: scale(0.98);
+@media (max-width: 42rem) {
+  .hp2-desktop__cube-launcher .hero-icon-launcher__btn {
+    width: max(35vmin, 180px);
+    height: max(35vmin, 180px);
+  }
 }
 
 /* ============================================================================
@@ -540,11 +535,6 @@
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 66rem) {
-  .hp2-desktop__cube-launcher .shell-launcher__cube-btn {
-    width: 40vmin;
-    height: 40vmin;
-  }
-
   .hp2-overlay__panel {
     width: min(90vw, 48rem);
   }
@@ -563,10 +553,6 @@
 }
 
 @media (max-width: 42rem) {
-  .hp2-desktop__cube-launcher .shell-launcher__cube-btn {
-    width: max(35vmin, 180px);
-    height: max(35vmin, 180px);
-  }
 
   .hp2-overlay {
     padding: 1rem;

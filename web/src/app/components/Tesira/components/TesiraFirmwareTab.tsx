@@ -9,9 +9,11 @@ import {
   Renew,
   WarningAlt,
 } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Link, Tag, Tile } from '@carbon/react'
+import { Button, InlineNotification, Link, Tag, Tile } from '@carbon/react'
 import { useDeviceFirmware, useFirmwareLatest, useRebootDevice, useTesiraDevices } from '../hooks/useTesiraApi'
 import type { TesiraFirmwareStatus, TesiraLatestFirmware } from '../types'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraFirmwareTabProps {
@@ -82,10 +84,16 @@ export function TesiraFirmwareTab({ deviceId, embedded = false }: TesiraFirmware
 
         {devicesLoading ? (
           <div className="tesira-firmware-tab__loading">
-            <InlineLoading description="Loading firmware fleet status" />
+            <LoadingState description="Loading firmware fleet status" />
           </div>
         ) : devices.length === 0 ? (
-          <p className="tesira-presets-tab__empty">No devices in fleet.</p>
+          <EmptyState
+            className="tesira-presets-tab__empty"
+            title="No devices in fleet"
+            description="Add or discover Tesira devices to compare firmware posture."
+            compact
+            align="left"
+          />
         ) : (
           <div className="tesira-firmware-tab__table-wrap">
             <table className="tesira-quick-console__table" aria-label="Tesira fleet firmware status">
@@ -137,7 +145,7 @@ function DeviceRow({
       <tr>
         <td colSpan={4}>
           <div className="tesira-firmware-tab__row-loading">
-            <InlineLoading description="Loading device firmware" />
+            <LoadingState description="Loading device firmware" variant="inline" />
           </div>
         </td>
       </tr>
@@ -196,13 +204,21 @@ function DeviceDetail({
   if (isLoading) {
     return (
       <div className="tesira-firmware-tab__loading">
-        <InlineLoading description="Loading firmware detail" />
+        <LoadingState description="Loading firmware detail" />
       </div>
     )
   }
 
   if (!firmware) {
-    return <p className="tesira-presets-tab__empty">Firmware detail unavailable.</p>
+    return (
+      <EmptyState
+        className="tesira-presets-tab__empty"
+        title="Firmware detail unavailable"
+        description="The selected device did not return firmware detail."
+        compact
+        align="left"
+      />
+    )
   }
 
   return (

@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { Code } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, TextArea, TextInput, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextArea, TextInput, Tile } from '@carbon/react'
 import { useProbeTesiraDsp, useSendTesiraCommand, useTesiraDspBlocks } from '../hooks/useTesiraApi'
 import type { TesiraRawCommandResponse } from '../types'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraQuickCommandPanelProps {
@@ -149,7 +151,7 @@ export function TesiraQuickCommandPanel({ deviceId }: TesiraQuickCommandPanelPro
 
         {dspBlocks.isLoading ? (
           <div className="tesira-quick-console__loading">
-            <InlineLoading description="Loading instance tags" />
+            <LoadingState description="Loading instance tags" />
           </div>
         ) : (
           <div className="tesira-quick-console__table-wrap">
@@ -183,9 +185,12 @@ export function TesiraQuickCommandPanel({ deviceId }: TesiraQuickCommandPanelPro
                 {!filteredBlocks.length ? (
                   <tr>
                     <td colSpan={3}>
-                      <p className="tesira-quick-console__empty">
-                        No instance tags are available yet. Probe tags or open DSP Explorer after the MAP2 layout is deployed.
-                      </p>
+                      <EmptyState
+                        className="tesira-quick-console__empty"
+                        title="No instance tags are available yet"
+                        description="Probe tags or open DSP Explorer after the MAP2 layout is deployed."
+                        compact
+                      />
                     </td>
                   </tr>
                 ) : null}

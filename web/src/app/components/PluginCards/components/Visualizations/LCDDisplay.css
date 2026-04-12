@@ -26,31 +26,36 @@
 }
 
 .lcd-label {
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
   color: var(--lcd-color);
   opacity: 0.7;
 }
 
 .lcd-value {
-  font-size: var(--type-body);
+  font-size: var(--cds-body-compact-01-font-size);
+  line-height: var(--cds-body-compact-01-line-height);
   font-weight: 700;
   color: var(--lcd-color);
   text-shadow: none;
 }
 
 .lcd-row-small .lcd-value {
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
 }
 
 .lcd-row-large .lcd-value {
-  font-size: var(--type-subheading);
+  font-size: var(--cds-heading-02-font-size);
+  line-height: var(--cds-heading-02-line-height);
 }
 
 .lcd-logo {
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: var(--cds-label-01-letter-spacing);
   text-align: right;
   opacity: 0.6;
 }
@@ -75,15 +80,17 @@
 }
 
 .vfd-label {
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: var(--cds-label-01-letter-spacing);
   color: var(--accent-color);
   opacity: 0.6;
 }
 
 .vfd-value {
-  font-size: var(--type-label);
+  font-size: var(--cds-body-compact-01-font-size);
+  line-height: var(--cds-body-compact-01-line-height);
   font-weight: 700;
   color: var(--accent-color);
   text-shadow: none;
@@ -103,14 +110,16 @@
 }
 
 .vfd-channel {
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
   color: var(--accent-color);
   opacity: 0.5;
 }
 
 .vfd-pitch-value {
-  font-size: var(--type-subheading);
+  font-size: var(--cds-heading-02-font-size);
+  line-height: var(--cds-heading-02-line-height);
   font-weight: 700;
   color: var(--accent-color);
   text-shadow: none;
@@ -158,7 +167,8 @@
 }
 
 .led-digit {
-  font-size: var(--type-display);
+  font-size: var(--cds-heading-05-font-size);
+  line-height: var(--cds-heading-05-line-height);
   font-weight: 700;
   font-family: var(--font-sans);
   color: var(--led-color);
@@ -166,7 +176,8 @@
 }
 
 .led-name {
-  font-size: var(--type-body);
+  font-size: var(--cds-body-compact-01-font-size);
+  line-height: var(--cds-body-compact-01-line-height);
   font-weight: 700;
   color: var(--led-color);
   text-shadow: none;
@@ -174,7 +185,8 @@
 
 .led-description {
   margin-top: 6px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   color: var(--led-color);
   opacity: 0.6;
 }

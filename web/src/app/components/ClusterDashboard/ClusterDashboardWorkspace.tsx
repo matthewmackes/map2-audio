@@ -40,6 +40,8 @@ import {
   getNodeStatusTagType,
 } from '../../utils/nodeDisplay'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import { ClusterDashboardWorkspaceGraph } from './ClusterDashboardWorkspaceGraph'
 import {
   buildClusterDashboardWorkspaceGraphModel,
@@ -543,7 +545,7 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
         <Tile className="cluster-dashboard-workspace__hero">
           {isLoading ? (
             <div className="cluster-dashboard-workspace__graph-loading">
-              <InlineLoading description="Loading cluster topology" />
+              <LoadingState description="Loading cluster topology" />
             </div>
           ) : (
             <ClusterDashboardWorkspaceGraph model={graphModel} onSelect={handleGraphSelection} />
@@ -604,7 +606,12 @@ export function ClusterDashboardWorkspace({ layer }: { layer: PlatformLayerData 
 
         <Tile className="cluster-dashboard-workspace__table-tile">
           {filteredRecords.length === 0 ? (
-            <div className="cluster-dashboard-workspace__table-state">No cluster nodes match the current search.</div>
+            <EmptyState
+              className="cluster-dashboard-workspace__table-state"
+              title="No cluster nodes match this search"
+              description="Adjust the search text to bring matching nodes back into the cluster view."
+              compact
+            />
           ) : (
             <TableContainer title={layer.tableTitle} className="cluster-dashboard-workspace__table-container">
               <TableToolbar>

@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { InlineNotification, Layer, Select, SelectItem, Tag, Tile } from '@carbon/react'
 
 import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import launchControlApi, { type LaunchControlProjectionControl } from '../../map2/clients/launchControl'
 
@@ -160,8 +161,15 @@ export function LaunchControlPage() {
                 </div>
               </li>
             ))}
-            {(state?.matched_ports?.length ?? 0) === 0 ? <li className="launch-control-page__list-item">No Launch Control-family MIDI ports are currently visible.</li> : null}
           </ul>
+          {(state?.matched_ports?.length ?? 0) === 0 ? (
+            <EmptyState
+              title="No Launch Control-family MIDI ports are currently visible"
+              description="Connect the controller or refresh the daemon state to discover available Launch Control ports."
+              compact
+              align="left"
+            />
+          ) : null}
         </Layer>
 
         <Layer className="launch-control-page__panel" data-testid="launch-control-grid-panel">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { CheckmarkFilled, Flash, Link, Music, Screen, Time, VolumeUp, Warning, WarningAlt } from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { LegacyTile } from './shared/LegacyTile'
+import { LoadingState } from './shared/LoadingState'
 
 interface Service {
   type: string
@@ -105,7 +106,7 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
   const clusterNodes = clusterResp?.nodes as any[] | undefined
   
   if (isLoading) {
-    return <div style={{ padding: 20, color: '#888' }}>Loading audio path...</div>
+    return <LoadingState description="Loading audio path" />
   }
   
   if (!audioPath) {

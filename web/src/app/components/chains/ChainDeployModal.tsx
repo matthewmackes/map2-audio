@@ -6,6 +6,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Tag,
   Table,
   TableBody,
   TableCell,
@@ -237,13 +238,11 @@ export function ChainDeployModal({
                     </TableCell>
                     <TableCell>
                       {missingPlugins.length === 0 ? (
-                        <span className="pill success">
-                          <CheckCircle size={14} /> Ready
-                        </span>
+                        <Tag type="green" size="sm" renderIcon={CheckCircle}>Ready</Tag>
                       ) : (
-                        <span className="pill warn" title={missingPlugins.join(', ')}>
-                          <XCircle size={14} /> Missing {missingPlugins.length} plugin{missingPlugins.length === 1 ? '' : 's'}
-                        </span>
+                        <Tag type="warm-gray" size="sm" renderIcon={XCircle} title={missingPlugins.join(', ')}>
+                          Missing {missingPlugins.length} plugin{missingPlugins.length === 1 ? '' : 's'}
+                        </Tag>
                       )}
                     </TableCell>
                     <TableCell>{activateOnTargets ? 'Activate after deploy' : 'Stage only'}</TableCell>

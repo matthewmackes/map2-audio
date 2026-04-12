@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Checkbox, InlineLoading, InlineNotification, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, Checkbox, InlineNotification, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
 import '../../shared/ReactFlowTheme.css'
 import ReactFlow, {
   addEdge,
@@ -29,6 +29,8 @@ import {
   useUpdateTesiraDesign,
   useValidateTesiraDesign,
 } from '../hooks/useTesiraApi'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDesignCanvasProps {
@@ -355,7 +357,7 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
           <p className="tesira-dashboard__stat-label">Saved workspaces</p>
           {designsLoading ? (
             <div className="tesira-design-canvas__loading">
-              <InlineLoading description="Loading design workspaces" />
+              <LoadingState description="Loading design workspaces" />
             </div>
           ) : (
             <div className="tesira-design-canvas__workspace-list" role="list" aria-label="Tesira design workspaces">
@@ -375,7 +377,13 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
                 </button>
               ))}
               {!designsLoading && (designs?.designs || []).length === 0 ? (
-                <p className="tesira-presets-tab__empty">No designs yet.</p>
+                <EmptyState
+                  className="tesira-presets-tab__empty"
+                  title="No designs yet"
+                  description="Create a Tesira workspace to begin graph editing."
+                  compact
+                  align="left"
+                />
               ) : null}
             </div>
           )}

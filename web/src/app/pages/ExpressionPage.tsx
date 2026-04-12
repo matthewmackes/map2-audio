@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { NumberInput } from '../components/ParameterControl'
+import { EmptyState } from '../components/shared/EmptyState'
 
 const C = {
   bg: '#161616',
@@ -360,7 +361,11 @@ function LiveDualGraphic({
         textAlign: 'center',
         padding: 16,
       }}>
-        No assignment selected. Create an assignment to see live data.
+        <EmptyState
+          title="No assignment selected"
+          description="Create an assignment to see live data."
+          compact
+        />
       </div>
     )
   }

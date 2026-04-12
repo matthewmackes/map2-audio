@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Dropdown, Button, InlineLoading, Tag, Tile } from '@carbon/react'
 import { Launch, Renew, SettingsAdjust, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from '../ParameterControl'
+import { EmptyState } from '../shared/EmptyState'
 import {
   generateParameterGroups,
   type StandardGroup,
@@ -498,9 +499,15 @@ export function JuceGridParameterEditor({
           )}
 
           {!irPreviewLoading && !irPreview && (
-            <div className="juce-grid-page__parameter-editor-ir-preview-empty">
-              <p>{selectedIRAssetPath ? (irPreviewError ?? 'Waveform preview unavailable.') : 'No WAV impulse loaded for this block yet.'}</p>
-            </div>
+            <EmptyState
+              className="juce-grid-page__parameter-editor-ir-preview-empty"
+              title={selectedIRAssetPath ? 'Waveform preview unavailable' : 'No WAV impulse loaded for this block yet'}
+              description={selectedIRAssetPath
+                ? (irPreviewError ?? 'The selected impulse response could not be rendered into a waveform preview.')
+                : 'Load a WAV impulse response to preview its shape and tail here.'}
+              compact
+              align="left"
+            />
           )}
         </Tile>
       )}

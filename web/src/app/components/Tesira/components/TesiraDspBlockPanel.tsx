@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
 import { useSetTesiraDspParam, useTesiraDspBlock, useTesiraDspParams } from '../hooks/useTesiraApi'
 import { NumberInput } from '../../ParameterControl'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDspBlockPanelProps {
@@ -145,7 +146,7 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
   if (params.isLoading || block.isLoading) {
     return (
       <div className="tesira-dsp-panel__loading">
-        <InlineLoading description="Loading block parameters" />
+        <LoadingState description="Loading block parameters" />
       </div>
     )
   }

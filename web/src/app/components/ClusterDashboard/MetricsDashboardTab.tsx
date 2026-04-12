@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import {
   normalizeClusterMetrics,
   filterMetricsByRange,
@@ -141,9 +143,15 @@ export function MetricsDashboardTab() {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ color: '#888', fontSize: 12 }}>
-            {isLoading ? 'Loading metrics...' : 'No metrics in selected time range.'}
-          </div>
+          isLoading ? (
+            <LoadingState description="Loading metrics" />
+          ) : (
+            <EmptyState
+              compact
+              title="No metrics in the selected time range"
+              description="Choose a wider time range or wait for fresh cluster telemetry samples."
+            />
+          )
         )}
       </div>
 
@@ -171,9 +179,15 @@ export function MetricsDashboardTab() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ color: '#888', fontSize: 12 }}>
-              {isLoading ? 'Loading metrics...' : 'No memory data in selected range.'}
-            </div>
+            isLoading ? (
+              <LoadingState description="Loading metrics" />
+            ) : (
+              <EmptyState
+                compact
+                title="No memory data in the selected range"
+                description="Choose a wider time range or wait for memory telemetry to publish."
+              />
+            )
           )}
         </div>
 
@@ -206,9 +220,15 @@ export function MetricsDashboardTab() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ color: '#888', fontSize: 12 }}>
-              {isLoading ? 'Loading metrics...' : 'No DSP data in selected range.'}
-            </div>
+            isLoading ? (
+              <LoadingState description="Loading metrics" />
+            ) : (
+              <EmptyState
+                compact
+                title="No DSP data in the selected range"
+                description="Choose a wider time range or wait for DSP telemetry to publish."
+              />
+            )
           )}
         </div>
       </div>

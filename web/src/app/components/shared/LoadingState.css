@@ -1,0 +1,33 @@
+.app-loading-state {
+  color: var(--cds-text-secondary, #525252);
+}
+
+.app-loading-state--page,
+.app-loading-state--section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-06, 2rem);
+}
+
+.app-loading-state--page {
+  min-height: 60vh;
+}
+
+.app-loading-state--section {
+  min-height: 8rem;
+}
+
+.app-loading-state--inline {
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-loading-state__copy {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: var(--cds-body-compact-01-font-weight, 400);
+  letter-spacing: var(--cds-body-compact-01-letter-spacing, 0.16px);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
+}

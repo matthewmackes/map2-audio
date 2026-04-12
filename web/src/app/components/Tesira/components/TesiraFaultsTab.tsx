@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import {
   Line,
   LineChart,
@@ -10,6 +10,8 @@ import {
   YAxis,
 } from 'recharts'
 import { useTesiraFaults, useTesiraMeterHistory, useTesiraMeterPeak } from '../hooks/useTesiraApi'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraFaultsTabProps {
@@ -34,7 +36,7 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
   if (isLoading) {
     return (
       <div className="tesira-faults-tab__loading">
-        <InlineLoading description="Loading Tesira faults" />
+        <LoadingState description="Loading Tesira faults" />
       </div>
     )
   }
@@ -137,10 +139,16 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
           />
         ) : meterHistory.isLoading ? (
           <div className="tesira-faults-tab__loading">
-            <InlineLoading description="Loading meter history" />
+            <LoadingState description="Loading meter history" />
           </div>
         ) : chartData.length === 0 ? (
-          <p className="tesira-presets-tab__empty">No meter samples available for this tag.</p>
+          <EmptyState
+            className="tesira-presets-tab__empty"
+            title="No meter samples available"
+            description="Choose a different tag or wait for new meter history samples."
+            compact
+            align="left"
+          />
         ) : (
           <div className="tesira-faults-tab__chart">
             <ResponsiveContainer>

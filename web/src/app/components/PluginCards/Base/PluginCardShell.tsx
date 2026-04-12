@@ -360,29 +360,31 @@ export function PluginCardShell({
         }
 
         .plugin-card-eyebrow {
-          font-size: 11px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           color: var(--cds-text-helper, #8d8d8d);
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
+          letter-spacing: var(--cds-label-01-letter-spacing);
         }
 
         .plugin-card-title {
           margin: 0;
-          font-size: calc(16px * var(--font-scale));
+          font-size: calc(var(--cds-heading-02-font-size, 1rem) * var(--font-scale));
+          line-height: var(--cds-heading-02-line-height, 1.33333);
           font-weight: 600;
           color: var(--cds-text-primary, #f4f4f4);
           letter-spacing: 0.16px;
         }
 
         .compact .plugin-card-title {
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size);
         }
 
         .plugin-card-subtitle {
           display: flex;
           align-items: center;
           gap: 0;
-          font-size: 12px;
+          font-size: var(--cds-body-compact-01-font-size);
+          line-height: var(--cds-body-compact-01-line-height);
           min-width: 0;
         }
 

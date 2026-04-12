@@ -40,12 +40,14 @@ import {
 } from '../../utils/nodeDisplay'
 import { NodeContextPicker } from '../NodeContextPicker/NodeContextPicker'
 import { NetworkDiscoveryWorkspaceGraph } from './NetworkDiscoveryWorkspaceGraph'
+import { EmptyState } from '../shared/EmptyState'
 import {
   buildNetworkDiscoveryWorkspaceGraphModel,
   type NetworkDiscoveryRecord,
   type NetworkDiscoveryWorkspaceGraphSelection,
 } from './networkDiscoveryWorkspaceGraph'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
+import { LoadingState } from '../shared/LoadingState'
 
 type DiscoveryWorkspaceRecord = NetworkDiscoveryRecord & {
   lastSeen: string | null
@@ -492,7 +494,7 @@ export function NetworkDiscoveryWorkspace({
         <Tile className="network-discovery-workspace__hero">
           {discoveryQuery.isLoading && filteredRecords.length === 0 ? (
             <div className="network-discovery-workspace__graph-loading">
-              <InlineLoading description="Loading discovery telemetry…" />
+              <LoadingState description="Loading discovery telemetry" />
             </div>
           ) : (
             <NetworkDiscoveryWorkspaceGraph model={graphModel} onSelect={handleGraphSelect} />
@@ -550,7 +552,11 @@ export function NetworkDiscoveryWorkspace({
                 {filteredRecords.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6}>
-                      <div className="network-discovery-workspace__table-state">No discovery rows match the current search.</div>
+                      <EmptyState
+                        title="No discovery rows match this search"
+                        description="Adjust the search text or wait for more discovery telemetry."
+                        compact
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

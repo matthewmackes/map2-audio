@@ -1,6 +1,8 @@
 import { Headphones } from '@carbon/icons-react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { AudioInterfaceControl } from '../../map2/components/AudioInterfaceControl'
 import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
@@ -30,15 +32,15 @@ export function HoToneJoGGPage() {
       />
 
       {isLoading ? (
-        <Alert icon={<CircularProgress size={16} />} severity="info">
-          Checking cluster hardware inventory for the HoTone JoGG interface.
-        </Alert>
+        <LoadingState description="Checking cluster hardware inventory for the HoTone JoGG interface" />
       ) : null}
 
       {!isLoading && !location ? (
-        <Alert severity="warning">
-          No HoTone JoGG interface is currently detected on any cluster node.
-        </Alert>
+        <EmptyState
+          title="No HoTone JoGG interface is currently detected on any cluster node"
+          description="Connect the interface or switch to the node where it is attached to manage it here."
+          align="left"
+        />
       ) : null}
 
       {!isLoading && needsSwitch ? (

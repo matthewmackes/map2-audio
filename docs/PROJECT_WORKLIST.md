@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued T863/T870 with another validated Carbon type and sentence-case cleanup slice in legacy audio interface controls while leaving the broader frontend debt open.
+Last updated: 2026-04-11 - Continued the aggressive T871/T872 route-local sweep by opening T871-subB/T872-subB and targeting dashboard, modal, Snapshot Editor/JUCE-grid, Horizontal Signal Chain, and MIDI Hub hotspot surfaces.
 
 ## Performance Brain
 
@@ -20149,7 +20149,7 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 19:12 EDT - Codex
+Last updated: 2026-04-11 21:48 EDT - Codex
 - Progress notes:
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
@@ -20176,6 +20176,10 @@ Last updated: 2026-04-11 19:12 EDT - Codex
   - Opened the next bounded legacy-control slice in `web/src/map2/components/AudioInterfaceControl.css`, moving status badges, subtitles, quick-stat labels, panel headings, control labels/buttons, status text, and config-guide copy off literal `px` sizing and onto Carbon label/body/helper tokens while keeping the large hero numerics unchanged for now.
   - This follow-up removed another low-risk patch of non-token sizing from the legacy audio interface surface, but `T863` remains open because significant type debt still spans App Shell, Snapshot Editor, legacy map2 controls, and several route-local fit-sensitive displays.
   - Validation for this legacy audio interface type slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the aggressive shared-shell type sweep through `AvbRoutingWorkspaceGraph.tsx`, `PipeWirePage.tsx`, `SnapshotAbSwitchMidiCard.tsx`, `SnapshotExpressionMappingsCard.tsx`, `SnapshotFootswitchLabelCard.tsx`, `SnapshotEditorParameterEditor.tsx`, `LCDDisplay.css`, `PlatformModal.css`, `PlatformInfoGuideSection.css`, `PlatformGrafanaPanel.css`, `ModelManagerDialogs.css`, `TesiraCarbonChrome.css`, `TesiraOnboardingWizard.css`, `AudioInterfaceControl.css`, `PluginCardShell.tsx`, `ParameterSection.tsx`, `BypassSwitch.tsx`, `carbonCardStyles.css`, `MidiMappingDialog.tsx`, `IntelFXPageShell.css`, `MPX1PageShell.css`, `IntelFXPanel.css`, and the inline DSP section-title style.
+  - This pass removed another broad non-token type patch from shared platform/plugin/device shells while deliberately leaving the photorealistic MPX1/IntelFX canvases and tiny SVG/artwork typography for later fit-sensitive handling.
+  - Current focused inventory after this pass: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src/app/components/PluginCards web/src/app/components/Tesira web/src/app/pages/MPX1DiagView.css web/src/app/components/PluginCards/components/Visualizations/LCDDisplay.css web/src/map2/components/AudioInterfaceControl.css web/src/app/components/Platform/PlatformModal.css web/src/app/components/Platform/PlatformInfoGuideSection.css web/src/app/components/Platform/PlatformGrafanaPanel.css web/src/app/components/loaders/ModelManagerDialogs.css web/src/app/components/IntelFX/IntelFXPageShell.css web/src/app/components/MPX1/MPX1PageShell.css -g '*.css' | wc -l` is now `31`, down from `50` before this follow-up.
+  - Validation for this shared-shell follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T864
 Status: [✓] Done
@@ -20217,7 +20221,7 @@ Last updated: 2026-04-10 11:16 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T866
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Apply Carbon `Layer` nesting for proper layering context throughout the app
 Description:
 - Goal / acceptance criteria: Wrap content regions in Carbon `<Layer>` components to establish proper Carbon layering context. Currently many surfaces hard-code `--cds-layer-01` / `--cds-layer-02` references directly instead of letting Carbon's `Layer` component manage the nesting. This matters for the FLAT design because layer-01 vs layer-02 background differentiation is the primary visual hierarchy mechanism when there are no gradients or shadows.
@@ -20225,15 +20229,49 @@ Description:
 - Dependencies: None
 - Estimated effort: Medium
 - Required outputs: Layer-wrapped content regions, removed hard-coded layer references.
-Subtasks: None
+Subtasks:
+  - ID: T866-subA
+    Status: [ ] Todo
+    Title: Inventory and classify hard-coded layer surfaces by ownership tier
+    Description:
+    - Goal / acceptance criteria: Enumerate remaining `var(--cds-layer-01|02|03)` consumers and classify them into shell, shared workspace/page, and route-local/device-family groups so the migration can proceed in restartable batches.
+    - Why it matters: The old blocker was breadth, not uncertainty; this task needs explicit ownership buckets instead of a single vague sweep.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Inventory evidence, grouped target lists, first migration queue.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T866-subB
+    Status: [ ] Todo
+    Title: Migrate shell and shared workspace surfaces onto explicit Carbon `Layer`
+    Description:
+    - Goal / acceptance criteria: Wrap shell and shared workspace entry surfaces in `Layer`, remove the corresponding hard-coded layer backgrounds in those touched regions, and validate that nested Carbon children escalate correctly.
+    - Why it matters: Shared shell/workspace surfaces have the highest fan-out and unblock later route-local cleanup.
+    - Dependencies: T866-subA
+    - Estimated effort: Medium
+    - Required outputs: Shared `Layer` adoption, reduced hard-coded layer debt, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T866-subC
+    Status: [ ] Todo
+    Title: Sweep route-local layer debt and document intentional exceptions
+    Description:
+    - Goal / acceptance criteria: Convert remaining software-only route families and document any fit-sensitive visual systems that intentionally keep local layer treatment.
+    - Why it matters: The task should end with a narrow, explicit exception list instead of another broad blocker.
+    - Dependencies: T866-subB
+    - Estimated effort: Medium
+    - Required outputs: Route sweeps, exception notes, completion validation.
+    Subtasks: None
+    Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-09 06:18 EDT - Codex
+Last updated: 2026-04-11 21:48 EDT - Codex
 - Progress notes:
-  - Carbon `Layer` is already used in several route and workspace surfaces, but the app still contains widespread hard-coded `var(--cds-layer-01|02|03)` backgrounds and color-mixed shell surfaces across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page-local CSS files.
-  - Completing this safely is blocked because the remaining layer treatment is still intertwined with unresolved shell/token ownership; replacing those hard-coded layer tokens now would be another broad mixed refactor rather than a bounded migration.
+  - Re-evaluated the old blocker after the loading/empty-state/type/copy sweeps: this is no longer blocked by missing primitives or hardware, only by breadth. The task is now reopened as an aggressive migration epic with restartable sub-slices.
+  - Current evidence confirms the debt is still broad but software-only: hard-coded `var(--cds-layer-01|02|03)` backgrounds remain concentrated in `web/src/index.css`, `web/src/app/layout/AppShell.css`, shared route CSS such as `PipeWirePage.css`, `ChainsPage.css`, `ThemeChooserModal.css`, and large route-local families like Snapshot Editor and IntelFX pages, while some surfaces already use Carbon `<Layer>`.
+  - The first implementation target should be `T866-subA`, then shell/shared workspace entry surfaces in `AppShell`, `Home`, `PipeWire`, `Chains`, and other existing `Layer`-ready page wrappers before touching the fit-sensitive route-local visual systems.
 
 ID: T867
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.menu` / `.menu-item` with Carbon `OverflowMenu` / `MenuButton`
 Description:
 - Goal / acceptance criteria: Replace the `.menu`, `.menu-item`, `.menu-item-content`, `.menu-item-label`, `.menu-item-desc` CSS classes with Carbon `OverflowMenu` / `OverflowMenuItem` or `MenuButton` / `MenuItem` patterns. Apply to context menus (e.g. desktop right-click in `HomePage.tsx`), power menus, and action menus.
@@ -20241,15 +20279,49 @@ Description:
 - Dependencies: None
 - Estimated effort: Low
 - Required outputs: Carbon menu usage, removed CSS, keyboard navigation validation.
-Subtasks: None
+Subtasks:
+  - ID: T867-subA
+    Status: [ ] Todo
+    Title: Inventory legacy menu contracts and isolate Carbon-compatible slices
+    Description:
+    - Goal / acceptance criteria: Identify remaining custom menu surfaces, separate already-semantic `role="menu"` implementations from CSS-only leftovers, and define a migration order that preserves keyboard behavior.
+    - Why it matters: The repo already has Carbon menu usage; the missing piece is a concrete contract map for the remaining custom surfaces.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Target inventory, contract notes, first conversion batch.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T867-subB
+    Status: [ ] Todo
+    Title: Convert shell power and launcher action menus to Carbon-backed contracts
+    Description:
+    - Goal / acceptance criteria: Replace the remaining shell action-menu surfaces with Carbon `OverflowMenu` / `MenuButton` patterns or Carbon-aligned contracts while preserving focus return and responsive behavior.
+    - Why it matters: Shell action menus are the highest-visibility remaining custom menu surface.
+    - Dependencies: T867-subA
+    - Estimated effort: Medium
+    - Required outputs: Shell menu migration, reduced custom menu CSS, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T867-subC
+    Status: [ ] Todo
+    Title: Remove residual legacy menu CSS and close out route-local action menus
+    Description:
+    - Goal / acceptance criteria: Sweep leftover route-local menu patterns, delete dead menu CSS, and leave only documented intentional custom nav widgets.
+    - Why it matters: The task should finish with a clear menu primitive strategy instead of mixed CSS leftovers.
+    - Dependencies: T867-subB
+    - Estimated effort: Medium
+    - Required outputs: Residual route conversions, deleted legacy menu CSS, completion validation.
+    Subtasks: None
+    Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-09 06:18 EDT - Codex
+Last updated: 2026-04-11 21:48 EDT - Codex
 - Progress notes:
-  - The app already mixes Carbon `OverflowMenu` usage in some route surfaces with legacy global `.menu` / `.menu-item` CSS in `web/src/index.css`, plus custom shell/mobile/power menu implementations in `web/src/app/layout/AppShell.css` and route-local menu components.
-  - Full completion is blocked because the remaining menu surface is spread across multiple interaction models and ownership layers; removing the legacy menu CSS now would require a route-by-route contract rewrite rather than a low-risk mechanical swap.
+  - Re-evaluated the old blocker after the broader Carbon primitive cleanup: this is software-only breadth, not a true block. The task is now reopened as an aggressive migration epic with explicit sub-slices.
+  - Current evidence shows Carbon `OverflowMenu` already covers many route surfaces, while the remaining custom work is concentrated in shell/menu contracts such as `ShellLauncherPanel.tsx` / `AppShell.css` power and launcher menus, plus a smaller set of custom start-menu and advanced-menu affordances.
+  - The first implementation target should be `T867-subA`, then the shell power/launcher menu slice before deleting residual legacy menu CSS.
 
 ID: T868
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom `.badge` / `.pill` with Carbon `Tag` variants
 Description:
 - Goal / acceptance criteria: Remove the `.badge`, `.pill`, `.pill.success`, `.pill.warn`, `.pill.muted` CSS classes and replace all usages with Carbon `<Tag type="red|magenta|purple|blue|cyan|teal|green|gray|cool-gray|warm-gray|high-contrast">`. The FLAT/Monochrome design uses Carbon's default flat tag style (no filter tag rounding).
@@ -20257,12 +20329,49 @@ Description:
 - Dependencies: T856
 - Estimated effort: Low
 - Required outputs: Carbon Tag migration, removed CSS.
-Subtasks: None
+Subtasks:
+  - ID: T868-subA
+    Status: [✓] Done
+    Title: Inventory remaining badge and pill surfaces, then split Carbon-Tag candidates from intentional custom indicators
+    Description:
+    - Goal / acceptance criteria: Enumerate remaining `.badge` / `.pill` usage, separate semantic status pills from custom visual widgets and tiny meter badges, and define a restartable migration order.
+    - Why it matters: The remaining blocker was taxonomy ambiguity; this subtask turns that ambiguity into an explicit conversion list.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Inventory evidence, conversion buckets, first replacement queue.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T868-subB
+    Status: [>] In Progress
+    Title: Convert shared status pills and route-local semantic badges to Carbon `Tag`
+    Description:
+    - Goal / acceptance criteria: Replace shared and route-local semantic status pills with Carbon `Tag`, starting with the generic `.pill` / `.badge` families and the low-risk status surfaces that do not depend on custom geometry.
+    - Why it matters: This is the highest-yield, lowest-risk badge debt and should delete most of the shared taxonomy quickly.
+    - Dependencies: T868-subA
+    - Estimated effort: Medium
+    - Required outputs: Carbon `Tag` migration, reduced shared badge CSS, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+  - ID: T868-subC
+    Status: [ ] Todo
+    Title: Sweep residual custom indicator badges and document intentional non-Tag exceptions
+    Description:
+    - Goal / acceptance criteria: Finish software-only badge migrations and document the tiny meter/device indicators that intentionally remain custom because they are not semantic tags.
+    - Why it matters: The task should close with a narrow explicit exception list rather than a broad badge blocker.
+    - Dependencies: T868-subB
+    - Estimated effort: Medium
+    - Required outputs: Residual conversions, exception notes, completion validation.
+    Subtasks: None
+    Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-09 06:18 EDT - Codex
+Last updated: 2026-04-11 21:52 EDT - Codex
 - Progress notes:
-  - Carbon `Tag` already exists in several newer surfaces, but the legacy `.badge` / `.pill` families remain in `web/src/index.css` alongside many specialized badge variants such as upload, grid, nav-maturity, cluster, and file-type badges.
-  - This task depends on blocked `T856`, and completion is also blocked by the remaining broad badge taxonomy: the app has not yet normalized which badge variants should map to Carbon tags versus route-specific display affordances.
+  - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
+  - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
+  - The first implementation target should be `T868-subA`, then the shared/generic semantic status surfaces before tackling custom geometry badges such as tiny meter chips and fit-sensitive device indicators.
+  - Completed `T868-subA` by inventorying the remaining semantic badge debt and separating it from intentional custom indicator geometry. The current first-wave Carbon-Tag candidates are concentrated in routing summary panels, chain deploy flows, LCDPage status chips, CPUStatusOverview semantic labels, and a small set of library/deploy status surfaces.
+  - Started `T868-subB` with a first semantic-tag slice in `ParallelRoutingPanel.tsx`, `EffectsLoopSummaryPanel.tsx`, and `ChainDeployModal.tsx`, replacing count/readiness/remote-control/latency/health pills with Carbon `Tag` and replacing the residual routing-panel pill error states with Carbon `InlineNotification`.
+  - Validation for this first badge slice is green: `rg -n '\\b(className=|class=).*(pill|badge)|\\.(pill|badge)\\b' web/src/app/components/Routing/ParallelRoutingPanel.tsx web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx web/src/app/components/chains/ChainDeployModal.tsx -g '*.tsx' -g '*.css'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked
@@ -20292,7 +20401,7 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 19:12 EDT - Codex
+Last updated: 2026-04-11 21:48 EDT - Codex
 - Progress notes:
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
@@ -20329,9 +20438,13 @@ Last updated: 2026-04-11 19:12 EDT - Codex
   - Opened the next CSS-only legacy-control slice in `web/src/map2/components/AudioInterfaceControl.css`, removing forced uppercase/high-tracking treatment from the connection badge, device subtitle, quick-stat labels, panel headings, control labels, and action buttons so that surface now renders sentence-case support copy instead of CSS-enforced all caps.
   - Current measured repo-wide inventory after this legacy audio interface pass: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts'` is down to `114` matches, so `T870` remains open with the remaining hotspots concentrated in MPX1, IntelFX, plugin-card shells, inline JSX style blocks, and the broader legacy map2 control set plus the two residual Snapshot Editor value surfaces.
   - Validation for this legacy audio interface writing slice is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the aggressive sentence-case sweep through shared plugin-card/platform/device shells in `AvbRoutingWorkspaceGraph.tsx`, `PipeWirePage.tsx`, `SnapshotAbSwitchMidiCard.tsx`, `SnapshotExpressionMappingsCard.tsx`, `SnapshotFootswitchLabelCard.tsx`, `SnapshotEditorParameterEditor.tsx`, `PlatformModal.css`, `PlatformInfoGuideSection.css`, `PlatformGrafanaPanel.css`, `ModelManagerDialogs.css`, `PluginCardShell.tsx`, `ParameterSection.tsx`, `BypassSwitch.tsx`, `carbonCardStyles.css`, `MidiMappingDialog.tsx`, `IntelFXPageShell.css`, `MPX1PageShell.css`, `IntelFXPanel.css`, and the DSP section-title inline style.
+  - Extended the route-local helper/device shell copy cleanup in `HoToneJoGGPage.tsx`, `IntelFXPage.tsx`, `EdirolUA1000Page.tsx`, `MPX1Page.tsx`, `McuPage.tsx`, `LaunchControlPage.tsx`, and `MidiCommanderPage.tsx`, keeping those entry surfaces on sentence-case-first loading and empty-state copy.
+  - Current measured repo-wide inventory after this follow-up: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `68`, down from `91` before this pass.
+  - Validation for this shared-shell follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T871
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Replace custom loading patterns with Carbon `Loading` / `InlineLoading` / skeleton states
 Description:
 - Goal / acceptance criteria: (1) Replace the generic `PageLoader` with Carbon `Loading` component. (2) Add Carbon `SkeletonText`, `SkeletonPlaceholder`, and `DataTableSkeleton` for page-level skeleton loading on the 5 heaviest pages. (3) Replace the custom `.skeleton` CSS class and `@keyframes shimmer` with Carbon's skeleton components. (4) Use Carbon `InlineLoading` for in-context loading states (button actions, form submissions).
@@ -20339,15 +20452,83 @@ Description:
 - Dependencies: None
 - Estimated effort: Medium
 - Required outputs: Carbon loading components, removed custom skeleton CSS, visual consistency.
-Subtasks: None
+Subtasks:
+  - ID: T871-subA
+    Status: [✓] Done
+    Title: Land canonical Carbon loading primitives and replace the global route fallback
+    Description:
+    - Goal / acceptance criteria: Add shared loading-state primitives backed by Carbon `Loading`, `InlineLoading`, `SkeletonText`, `SkeletonPlaceholder`, and `DataTableSkeleton`; wire them into the global route fallback and the highest-traffic manual loading surfaces; stop introducing new ad hoc loading text blocks in touched files.
+    - Why it matters: The repo cannot finish the loading migration while every route invents its own spinner or text placeholder.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Shared loading components, route fallback migration, first route/component sweep, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 20:06 EDT - Codex
+    - Completion notes:
+      - Added shared Carbon-backed `LoadingState` primitives under `web/src/app/components/shared/`, then rewired the global route fallback in `web/src/app/App.tsx` onto that canonical component instead of the previous inline loading block.
+      - Replaced broad manual loading text blocks in `PlatformCapabilities`, `NodeAudioPathView`, `CPUStatusOverview`, `ClusterOverviewTab`, `ClusterOverviewTabEnhanced`, `HostMachinePage`, `PlatformInfoGuideSection`, `CommunitySnapshotBrowser`, `KeyboardSamplerCard`, `AudioInterfaceControl`, and the Theme plugin inventory surface with the shared Carbon loading primitive.
+      - Deleted the legacy shared `.skeleton`, `.loading-bar`, and related keyframes from `web/src/app/components/shared/GlobalPrimitives.css`, so the shared layer no longer carries the old fallback loading-pattern CSS debt.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - `rg -n "\\bempty-state\\b|\\bcard--empty\\b|\\.skeleton|@keyframes skeleton-pulse|loading-bar-slide|className=\\\"skeleton\\\"|className='skeleton'" web/src -g '*.tsx' -g '*.ts' -g '*.css'` -> PASS for the deleted shared `.skeleton` / generic `.empty-state` primitives; remaining matches are route-local empty-state families such as MIDI Hub and Horizontal Signal Chain, which stay tracked under `T872-subB` / `T872-subC`.
+  - ID: T871-subB
+    Status: [✓] Done
+    Title: Sweep remaining route-local loading placeholders and button-spinners onto Carbon patterns
+    Description:
+    - Goal / acceptance criteria: Replace the remaining manual loading copy, legacy spinners, and route-local placeholder blocks under `web/src/app/` with shared Carbon loading patterns, including in-context action states and table/detail loading surfaces.
+    - Why it matters: A shared primitive only helps if the route-local fallback debt is actually removed.
+    - Dependencies: T871-subA
+    - Estimated effort: High
+    - Required outputs: Route/component migrations, removed ad hoc loading placeholders, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 21:38 EDT - Codex
+    - Completion notes:
+      - Continued the aggressive route-local loading sweep through `web/src/app/components/ClusterDashboard/MetricsDashboardTab.tsx`, `web/src/app/components/HostMachine/MultiSystemDashboard.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `web/src/app/components/snapshots/SnapshotNewWizard.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`, replacing manual loading copy and bespoke in-section placeholders with the shared `LoadingState` primitive.
+      - This batch removed the remaining route-local loading placeholders from the dashboard metrics empty-range helpers, host-machine system cards, Snapshot modal flows, the Snapshot Editor side panels, the Audio Artifacts snapshots library/detail/history surfaces, and the last obvious routed `PlatformModal` workspace fallback.
+      - Continued the same sweep through `PlatformRemediationWorkflow`, `RoutingTopologyContent`, `JuceGridAudioPortModal`, `DiscoveryDialog`, and the remaining Tesira route-local shells (`TesiraAvbTab`, `TesiraDeviceSettings`), replacing standalone `InlineLoading` blocks and one-off loading wrappers with the shared `LoadingState` primitive while keeping true in-context action spinners on Carbon `InlineLoading`.
+      - Closed the remaining helper-level route-local loading debt in `PipeWirePage`, `HoToneJoGGPage`, `IntelFXPage`, `EdirolUA1000Page`, and `MPX1Page`; the remaining `InlineLoading` uses are now contextual action feedback (`PushSurfacePage`, `GroundControlProPage`, `SnapshotDeployModal`, `SnapshotImportDialog`, `PlatformModal`, `TesiraTopBar`, `TesiraOfflineBanner`, `TesiraOnboardingWizard`, and a few manager/download dialogs) rather than standalone page/section loaders.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+  - ID: T871-subC
+    Status: [✓] Done
+    Title: Delete legacy shared skeleton CSS and prove the repo no longer depends on it
+    Description:
+    - Goal / acceptance criteria: Remove the legacy `.skeleton` / `@keyframes shimmer` / equivalent shared CSS debt once callers are migrated, then validate there are no remaining shared loading-pattern regressions.
+    - Why it matters: The loading migration is not complete until the fallback CSS debt is actually removed from the shared layer.
+    - Dependencies: T871-subA, T871-subB
+    - Estimated effort: Medium
+    - Required outputs: Deleted legacy shared skeleton CSS, inventory proof, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 21:38 EDT - Codex
+    - Completion notes:
+      - Confirmed the legacy shared loading-pattern CSS debt is gone: shared `.skeleton`, shimmer/keyframe, and loading-bar fallbacks are no longer present under `web/src`.
+      - Verified there are no remaining `className="skeleton"` or `className='skeleton'` call sites, so the repo is no longer depending on the retired shared skeleton contract.
+    - Validation:
+      - `rg -n '\\.skeleton|@keyframes shimmer|@keyframes skeleton-pulse|loading-bar-slide' web/src -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS (no matches)
+      - `rg -n -F 'className="skeleton"' web/src -g '*.tsx' -g '*.ts'` -> PASS (no matches)
+      - `rg -n -F "className='skeleton'" web/src -g '*.tsx' -g '*.ts'` -> PASS (no matches)
 Assigned to: Codex
-Last updated: 2026-04-09 06:31 EDT - Codex
+Last updated: 2026-04-11 21:38 EDT - Codex
 - Progress notes:
-  - The app already uses Carbon `Loading`, `InlineLoading`, and `SkeletonText` in some newer surfaces, but `web/src/index.css` still contains multiple legacy `.skeleton` / `@keyframes shimmer` implementations and many route-local loading states still render ad hoc text, MUI spinners, or custom placeholders.
-  - Full completion is blocked because the remaining loading surface spans broad mixed UI systems and route-local ownership; replacing it cleanly now requires a page-by-page contract sweep rather than a bounded shared-primitive change.
+  - Switched this task from a blocked low-risk posture to an aggressive migration posture: the remaining breadth is now being handled as explicit shared-primitive and route-sweep subtasks instead of a blocker rationale.
+  - `T871-subA` is now complete: the shared Carbon loading primitive is authoritative, the global route fallback has moved onto it, and the old shared `.skeleton` / `.loading-bar` CSS debt has been removed from `GlobalPrimitives.css`.
+  - `T871-subB` has now absorbed a broader route-local sweep: `MetricsDashboardTab`, `MultiSystemDashboard`, `PlatformModal`, `SnapshotModalContent`, `SnapshotNewWizard`, `SnapshotEditorPageContent`, `SnapshotArtifactsWorkspace`, `ChainsPage`, `AudioNodesModal`, `SnapshotPublishPage`, `AudioEnginePage`, `PipeWirePage`, `NodeContextBanner`, `SpecialSettingsDialog`, `InstalledAssetsTable`, `PluginManagementCard`, `SnapshotVersionHistoryModal`, and the shared platform workspaces (`NetworkDiscoveryWorkspace`, `ClusterDashboardWorkspace`, `ManagementWorkspace`, `AvbRoutingWorkspace`) now route their touched loading states through the shared `LoadingState` primitive instead of ad hoc `InlineLoading` or copy blocks.
+  - The sweep has now continued through remediation and device-specific route shells too: `PlatformRemediationWorkflow`, `RoutingTopologyContent`, `JuceGridAudioPortModal`, `DiscoveryDialog`, `TesiraAvbTab`, `TesiraDeviceSettings`, and related AVB/Tesira loading surfaces now use the shared `LoadingState` contract for standalone loaders, leaving mainly true inline action spinners and a narrower tail of specialized dialogs/helper flows.
+  - Closed the loading migration: standalone loading surfaces now route through `LoadingState`, contextual action spinners remain on Carbon `InlineLoading`, and the retired shared skeleton/loading-bar CSS has inventory proof showing zero remaining dependencies.
+- Completion notes:
+  - Finished the aggressive loading-pattern migration by closing the remaining route-local standalone loaders in device-detection pages and helper shells, leaving only contextual action feedback on Carbon `InlineLoading`.
+  - Verified the retired shared skeleton contract is gone from the repo with zero remaining CSS or JSX references.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T872
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Replace custom empty-state patterns with Carbon empty-state guidance
 Description:
 - Goal / acceptance criteria: Audit the codebase for empty-state rendering (empty lists, no-results search, first-use states). Replace custom implementations (`.h-empty-state`, `.chain-panel-empty`, italic placeholder text) with Carbon's empty-state pattern: illustration (optional for FLAT style), heading, description, and primary action. Use Carbon `Tile` as the container with `--cds-layer-01` background.
@@ -20355,12 +20536,81 @@ Description:
 - Dependencies: None
 - Estimated effort: Low
 - Required outputs: Consistent empty-state component, Carbon-aligned rendering.
-Subtasks: None
+Subtasks:
+  - ID: T872-subA
+    Status: [✓] Done
+    Title: Land a canonical Carbon empty-state primitive and replace the broad shared callers
+    Description:
+    - Goal / acceptance criteria: Add one reusable Carbon empty-state component for heading/description/action flows, migrate broad shared callers such as PipeWire, artifact browsing, and search/browser surfaces, and stop introducing new ad hoc empty text blocks in touched files.
+    - Why it matters: The repo cannot finish the empty-state migration while each route carries its own one-off markup and styling contract.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Shared empty-state component, first route/component sweep, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 20:06 EDT - Codex
+    - Completion notes:
+      - Added a reusable Carbon-backed `EmptyState` component under `web/src/app/components/shared/` and used it as the new canonical empty-state primitive for app routes/components.
+      - Replaced broad shared callers and helpers with the canonical primitive in `PipeWirePage`, `AudioArtifactsPage`, `ThemePage`, `ClusterEngineGrid`, `HostMachinePage`, `PlatformInfoGuideSection`, `KeyboardSamplerCard`, `CommunitySnapshotBrowser`, `ClusterOverviewTabEnhanced`, and `LatencyDisplay`.
+      - Deleted the old generic shared `.empty-state` / `card--empty` styling from `web/src/app/components/shared/GlobalPrimitives.css`, so the shared layer no longer carries the previous empty-state fallback class family.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+      - `rg -n "\\bempty-state\\b|\\bcard--empty\\b|\\.skeleton|@keyframes skeleton-pulse|loading-bar-slide|className=\\\"skeleton\\\"|className='skeleton'" web/src -g '*.tsx' -g '*.ts' -g '*.css'` -> PASS for the removed generic shared empty-state primitives; remaining matches are specialized route-local families (`midi-hub-empty-state`, `h-empty-state`, JUCE-grid empty-state copy) that remain tracked under `T872-subB` / `T872-subC`.
+  - ID: T872-subB
+    Status: [✓] Done
+    Title: Sweep remaining route-local empty-state helpers and specialized variants
+    Description:
+    - Goal / acceptance criteria: Replace the remaining specialized empty-state implementations under `web/src/app/` with the canonical primitive or a documented wrapper, including Snapshot Editor/JUCE-grid helpers, MIDI Hub variants, and browser/library tables.
+    - Why it matters: The empty-state migration is only complete once route-local helper duplication is retired.
+    - Dependencies: T872-subA
+    - Estimated effort: High
+    - Required outputs: Route/component migrations, removed helper duplication, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 21:38 EDT - Codex
+    - Completion notes:
+      - Continued the aggressive route-local empty-state sweep through `web/src/app/components/ClusterDashboard/MetricsDashboardTab.tsx`, `web/src/app/components/HostMachine/MultiSystemDashboard.tsx`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `web/src/app/components/snapshots/SnapshotNewWizard.tsx`, `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`, `web/src/app/components/MidiHub/MidiClockPanel.tsx`, `web/src/app/components/MidiHub/AiLearnPanel.tsx`, `web/src/app/components/MidiHub/MidiRecorderPanel.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx`.
+      - This batch migrated the metrics no-data helpers, host-machine empty dashboard shell, MIDI Hub no-selection states, Snapshot modal/editor empty panels, and the Audio Artifacts snapshot search/detail/history deployment empties onto the shared `EmptyState` primitive or the documented `MidiHubEmptyState` wrapper, while deleting the old `.h-empty-state` and simple `.midi-hub-empty-state` CSS fallbacks.
+      - Continued the same sweep into `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.tsx`, `web/src/app/components/ManagementWorkspace/ManagementWorkspace.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, and the API Observatory tabs (`CatalogTab.tsx`, `WebSocketInspectorTab.tsx`, `CollectionsTab.tsx`), replacing one-line no-results and no-data copy with compact shared `EmptyState` panels in table/search/results surfaces.
+      - Continued the sweep through broader route-local and device-specific panels: `ChainsPage`, `AudioNodesModal`, `SnapshotPublishPage`, `SpecialSettingsDialog`, `InstalledAssetsTable`, `PushSurfacePage`, `ExpressionPage`, `GroundControlProPage`, `MPX1DiagView`, `IntelFXMonitorView`, `IntelFXScenePanel`, `IntelFXMidiMapper`, `IntelFXLibrarian`, `MPX1MidiMapper`, `MPX1Librarian`, `SnapshotVersionHistoryModal`, `ParallelRoutingPanel`, `OnboardingWizard`, `MidiClusterConnectionMatrix`, `HostMachine/MetricsCharts`, `HostMachine/MetricsChartsEnhanced`, and `ClusterOverviewTabEnhanced`.
+      - This follow-up replaced raw no-results copy, monitor/log empty text, chart/report placeholders, onboarding/discovery empties, and cluster filter fallbacks with the shared `EmptyState` primitive, sharply reducing the remaining empty-state debt outside the heavier Tesira and JUCE-grid families.
+      - Continued the same sweep through `JuceGridAudioPortModal`, `AvbRoutingWorkspace`, `AvbRouting/components/Inspector/InspectorPanel`, `TesiraAvbTab`, `TesiraDeviceSettings`, `DiscoveryDialog`, `ClusterDashboard/LiveEventsTab`, and `ShoppingSearchDialog`, replacing route-local no-results/no-discovery/no-data shells with the shared `EmptyState` primitive.
+      - Closed the remaining obvious device-presence and helper-level route shells in `AvbRoutingWorkspaceGraph`, `SnapshotAbSwitchMidiCard`, `SnapshotExpressionMappingsCard`, `SnapshotFootswitchLabelCard`, `SnapshotEditorParameterEditor`, `PipeWirePage`, `HoToneJoGGPage`, `IntelFXPage`, `EdirolUA1000Page`, `MPX1Page`, `McuPage`, `LaunchControlPage`, and `MidiCommanderPage`, moving those no-device/no-selection/no-data states onto the canonical `EmptyState` contract.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+  - ID: T872-subC
+    Status: [✓] Done
+    Title: Delete obsolete shared empty-state classes and prove the repo no longer depends on them
+    Description:
+    - Goal / acceptance criteria: Remove the old shared `.empty-state` / `.h-empty-state` styling debt once callers are migrated and validate that no high-traffic app routes still depend on the retired shared classes.
+    - Why it matters: The migration is not complete until the legacy shared empty-state classes are removed rather than left as fallback debt.
+    - Dependencies: T872-subA, T872-subB
+    - Estimated effort: Medium
+    - Required outputs: Deleted obsolete shared empty-state CSS, inventory proof, validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-11 21:38 EDT - Codex
+    - Completion notes:
+      - Confirmed the retired shared empty-state classes are gone: `.empty-state`, `.h-empty-state`, and `card--empty` no longer exist under `web/src`.
+      - The remaining empty-state styling is now either the canonical `EmptyState` component, documented wrappers such as the MIDI Hub empty card, or route-specific layout classes rather than the old shared fallback family.
+    - Validation:
+      - `rg -n '\\.empty-state\\b|\\.h-empty-state\\b|card--empty' web/src -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS (no matches)
 Assigned to: Codex
-Last updated: 2026-04-09 06:31 EDT - Codex
+Last updated: 2026-04-11 21:38 EDT - Codex
 - Progress notes:
-  - The codebase still mixes legacy global empty-state classes in `web/src/index.css`, ad hoc italic placeholders, route-local helper components such as `TableEmptyState`, and specialized empty-state variants like `ArtifactEmptyState` and `MidiHubEmptyState`.
-  - This task is blocked because the remaining empty-state patterns are not yet normalized under one reusable primitive; completing it safely now would require a broad route-by-route redesign pass instead of a low-risk shared replacement.
+  - Switched this task from a blocked low-risk posture to an aggressive migration posture: the remaining breadth is now being handled as explicit shared-primitive and route-sweep subtasks instead of a blocker rationale.
+  - `T872-subA` is now complete: the canonical `EmptyState` primitive is landed, multiple broad app-route callers have been migrated, and the old generic shared `.empty-state` / `card--empty` CSS has been removed from `GlobalPrimitives.css`.
+  - `T872-subB` has now absorbed a much broader aggressive route-local sweep: the MIDI Hub wrapper path is canonical, `HorizontalSignalChain.css` no longer carries the old `.h-empty-state` helper, Snapshot/editor/artifact/dashboard/modal empty panels route through the shared `EmptyState` primitive or the documented `MidiHubEmptyState` wrapper, platform/network/API search-result fallbacks use the same compact empty-state contract, and additional route-local surfaces such as `ChainsPage`, `AudioNodesModal`, `SnapshotPublishPage`, `PushSurfacePage`, `ExpressionPage`, `GroundControlProPage`, IntelFX/MPX1 monitor+librarian views, `ParallelRoutingPanel`, `OnboardingWizard`, `MidiClusterConnectionMatrix`, and Host Machine chart placeholders now use the shared primitive too.
+  - The sweep has now continued through JUCE-grid, AVB, Tesira, discovery, live-events, and shopping-search route shells as well, leaving the remaining empty-state debt concentrated in smaller helper-level/device-presence strings and a short tail of specialized browser/dialog variants rather than high-traffic panel wrappers.
+  - Closed the empty-state migration by finishing the remaining device-detection routes, helper cards, and route-local no-data shells, then proving the retired shared `.empty-state` / `.h-empty-state` / `card--empty` family is gone from the repo.
+- Completion notes:
+  - Finished the aggressive empty-state migration across app routes, helper cards, device-detection shells, and search/result fallbacks using the canonical `EmptyState` contract or documented wrapper variants.
+  - Verified the old shared empty-state fallback classes are gone from the codebase.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T873
 Status: [✓] Done

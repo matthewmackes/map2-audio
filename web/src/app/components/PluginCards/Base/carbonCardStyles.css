@@ -37,7 +37,7 @@
   isolation: isolate;
   color: var(--cds-text-primary, #f4f4f4);
   font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
-  font-size: 14px;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   container-type: inline-size;
   container-name: carbon-card;
 }
@@ -86,19 +86,19 @@
 
 .carbon-card-header-eyebrow {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 400;
   color: var(--cds-text-secondary, #c6c6c6);
-  letter-spacing: 0.16px;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .carbon-card-header-name {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  line-height: var(--cds-heading-03-line-height, 1.4);
   font-weight: 600;
   color: var(--cds-text-primary, #f4f4f4);
-  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -106,9 +106,9 @@
 
 .carbon-card-header-subtitle {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   color: var(--cds-text-secondary, #c6c6c6);
-  line-height: 1.28572;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -179,9 +179,9 @@
   padding: var(--carbon-spacing-03) var(--carbon-spacing-05);
   background: var(--cds-layer-02, #262626);
   color: var(--cds-text-secondary, #c6c6c6);
-  text-transform: uppercase;
-  letter-spacing: 0.32px;
-  font-size: 12px;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
 }
 
@@ -216,11 +216,11 @@
 }
 
 .carbon-param-section-label {
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   color: var(--cds-text-secondary, #c6c6c6);
-  text-transform: uppercase;
-  letter-spacing: 0.32px;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .carbon-param-section-body {
@@ -268,11 +268,11 @@
 
 .carbon-asset-selector-kicker {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   color: var(--cds-text-helper, #8d8d8d);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .carbon-asset-selector-nav {
@@ -292,7 +292,8 @@
   border-radius: var(--carbon-card-radius);
   display: flex;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   font-weight: 600;
   color: var(--cds-text-primary, #f4f4f4);
   overflow: hidden;
@@ -329,10 +330,10 @@
   border-radius: 999px;
   background: var(--cds-layer-01, #1c1c1c);
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 0.6875rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .carbon-asset-selector-status-badge--accent {
@@ -363,16 +364,17 @@
 }
 
 .carbon-asset-selector-fact-label {
-  font-size: 0.6875rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   color: var(--cds-text-helper, #8d8d8d);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .carbon-asset-selector-fact-value {
   min-width: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   font-weight: 600;
   color: var(--cds-text-primary, #f4f4f4);
   overflow: hidden;
@@ -383,7 +385,8 @@
 .carbon-asset-selector-support,
 .carbon-asset-selector-meta {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   color: var(--cds-text-helper, #8d8d8d);
 }
 
@@ -459,10 +462,10 @@
 }
 
 .carbon-card .cds--accordion__title {
-  font-size: 12px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.32px;
+  letter-spacing: 0.01em;
   color: var(--cds-text-secondary, #c6c6c6);
 }
 
@@ -495,7 +498,7 @@
 .carbon-card .carbon-card-accordion-item--more .cds--accordion__title {
   color: var(--cds-text-on-color, #ffffff);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
 }
 
 .carbon-card .carbon-card-accordion-item--more .cds--accordion__arrow {
@@ -547,7 +550,8 @@
   flex-shrink: 0;
   min-height: 32px;
   font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
-  font-size: 11px;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   color: var(--cds-text-secondary, #c6c6c6);
 }
 
@@ -560,9 +564,9 @@
 .carbon-card-footer-meter-label {
   color: var(--cds-text-secondary, #c6c6c6);
   font-weight: 500;
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.32px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
+  letter-spacing: 0.01em;
 }
 
 .carbon-card-footer-meter-value {
@@ -630,7 +634,8 @@
   border-radius: var(--carbon-card-radius);
   background: transparent;
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 11px;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -662,10 +667,10 @@
   border-radius: var(--carbon-card-radius);
   background: transparent;
   color: var(--cds-text-secondary, #a8a8a8);
-  font-size: 11px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.32px;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition: all 0.15s ease;
 }

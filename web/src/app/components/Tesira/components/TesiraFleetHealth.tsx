@@ -1,7 +1,8 @@
 import React from 'react'
 import { Renew } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useTesiraFleetHealth } from '../hooks/useTesiraApi'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 export function TesiraFleetHealth() {
@@ -50,7 +51,7 @@ export function TesiraFleetHealth() {
 
         {loading && !health ? (
           <div className="tesira-fleet-health__loading">
-            <InlineLoading description="Loading fleet health" />
+            <LoadingState description="Loading fleet health" />
           </div>
         ) : (
           <div className="tesira-fleet-health__stats">

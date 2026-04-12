@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import { TesiraDspProbeDialog } from './TesiraDspProbeDialog'
 import { TesiraDspBlockPanel } from './TesiraDspBlockPanel'
 import { useProbeTesiraDsp, useTesiraDspBlocks } from '../hooks/useTesiraApi'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDspExplorerProps {
@@ -115,7 +117,7 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
 
         {dspBlocks.isLoading ? (
           <div className="tesira-dsp-explorer__loading">
-            <InlineLoading description="Loading DSP blocks" />
+            <LoadingState description="Loading DSP blocks" />
           </div>
         ) : (
           <div className="tesira-dsp-explorer__table-wrap">
@@ -152,7 +154,12 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
                 {filteredBlocks.length === 0 ? (
                   <tr>
                     <td colSpan={6}>
-                      <p className="tesira-presets-tab__empty">No DSP blocks matched this filter.</p>
+                      <EmptyState
+                        className="tesira-presets-tab__empty"
+                        title="No DSP blocks match this filter"
+                        description="Adjust the search text or probe again to discover more blocks."
+                        compact
+                      />
                     </td>
                   </tr>
                 ) : null}

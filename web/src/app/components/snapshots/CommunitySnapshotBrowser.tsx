@@ -29,6 +29,8 @@ import type {
   CommunitySnapshot as SharedCommunitySnapshot,
   SnapshotDetail,
 } from '../../../map2/types'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 interface CommunitySnapshotBrowserProps {
   pluginUri?: string
@@ -332,18 +334,7 @@ export function CommunitySnapshotBrowser({
 
       {/* Loading */}
       {loading && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px',
-            color: 'var(--text-secondary, #888)',
-          }}
-        >
-          <SpinnerGap size={24} className="animate-spin" />
-          <span style={{ marginLeft: '12px' }}>Loading snapshots...</span>
-        </div>
+        <LoadingState description="Loading snapshots" />
       )}
 
       {/* Snapshot Grid */}
@@ -368,16 +359,10 @@ export function CommunitySnapshotBrowser({
 
       {/* Empty State */}
       {!loading && snapshots.length === 0 && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '40px',
-            color: 'var(--text-secondary, #888)',
-          }}
-        >
-          <p>No snapshots found.</p>
-          {search && <p>Try adjusting your search or filters.</p>}
-        </div>
+        <EmptyState
+          title="No snapshots found"
+          description={search ? 'Try adjusting your search or filters.' : 'Upload a community snapshot or broaden the current filters.'}
+        />
       )}
 
       {/* Pagination */}

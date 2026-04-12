@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { WarningAlt } from '@carbon/icons-react'
 import { Tag } from '@carbon/react'
+import { EmptyState } from '../shared/EmptyState'
 
 export type MidiHubPanelId =
   | 'core'
@@ -233,15 +234,13 @@ export function MidiHubEmptyState({
   icon = <WarningAlt size={20} />,
 }: MidiHubEmptyStateProps) {
   return (
-    <MidiHubSurface className="midi-hub-empty-state-card" tone="raised">
-      <div className="midi-hub-empty-state-card__icon" aria-hidden="true">
-        {icon}
-      </div>
-      <div className="midi-hub-empty-state-card__copy">
-        <h4>{title}</h4>
-        <p>{description}</p>
-      </div>
-      {action ? <div className="midi-hub-empty-state-card__action">{action}</div> : null}
-    </MidiHubSurface>
+    <EmptyState
+      className="midi-hub-empty-state-card"
+      align="left"
+      icon={<div className="midi-hub-empty-state-card__icon" aria-hidden="true">{icon}</div>}
+      title={title}
+      description={description}
+      actions={action ? <div className="midi-hub-empty-state-card__action">{action}</div> : undefined}
+    />
   )
 }

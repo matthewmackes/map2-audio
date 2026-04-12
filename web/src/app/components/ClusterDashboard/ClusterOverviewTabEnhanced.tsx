@@ -5,6 +5,8 @@ import { TopologyGraph } from './TopologyGraph'
 import { useClusterSimulation } from '../../hooks/useClusterSimulation'
 import { normalizeClusterNodes, normalizeClusterMetrics, summarizeClusterMetrics } from './clusterData'
 import { LegacyTile } from '../shared/LegacyTile'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 interface ClusterOverviewTabProps {
   simulationMode: boolean
@@ -203,18 +205,15 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
   }, [simulationMode, simulation.nodes, normalizedNodes, metricSummary, clusterStatus])
 
   if (statusLoading && !simulationMode) {
-    return (
-      <div style={{ padding: 20, textAlign: 'center', color: '#a0a0a0' }}>
-        Loading cluster overview...
-      </div>
-    )
+    return <LoadingState description="Loading cluster overview" />
   }
 
   if (!stats) {
     return (
-      <div style={{ padding: 20, textAlign: 'center', color: '#a0a0a0' }}>
-        No cluster data available
-      </div>
+      <EmptyState
+        title="No cluster data available"
+        description="Wait for cluster telemetry to report or check the management node connection."
+      />
     )
   }
 
@@ -312,9 +311,12 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
           </div>
 
           {hardwareNodes.length === 0 ? (
-            <div style={{ color: '#94a3b8', fontSize: 13 }}>
-              No cluster hardware inventory available yet.
-            </div>
+            <EmptyState
+              title="No cluster hardware inventory available yet"
+              description="Wait for hardware inventory telemetry to populate this view."
+              compact
+              align="left"
+            />
           ) : (
             <div
               style={{

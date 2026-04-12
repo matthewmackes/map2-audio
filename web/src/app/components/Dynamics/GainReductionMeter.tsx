@@ -98,10 +98,10 @@ function GainReductionMeterComponent({
         }
 
         .gr-meter-label {
-          font-size: 10px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           color: #888;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: var(--cds-label-01-letter-spacing);
         }
 
         .gr-meter-container {

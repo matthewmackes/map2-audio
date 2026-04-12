@@ -1,7 +1,8 @@
 import React from 'react'
 import { Renew } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useTesiraPtpTopology } from '../hooks/useTesiraApi'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 function ptpStateTag(state: string) {
@@ -59,7 +60,7 @@ export function TesiraPtpTopology() {
 
         {loading && !data ? (
           <div className="tesira-ptp-topology__loading">
-            <InlineLoading description="Loading PTP topology" />
+            <LoadingState description="Loading PTP topology" />
           </div>
         ) : (
           <div className="tesira-ptp-topology__table-wrap">

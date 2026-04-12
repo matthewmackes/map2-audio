@@ -35,10 +35,10 @@
 .tesira-dashboard__eyebrow {
   margin: 0 0 0.25rem;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .tesira-carbon-bar__title,
@@ -46,7 +46,8 @@
 .tesira-dashboard__title {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 1.125rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  line-height: var(--cds-heading-03-line-height, 1.4);
   font-weight: 600;
 }
 
@@ -79,7 +80,8 @@
 .tesira-device-header__details,
 .tesira-dashboard__summary {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
 }
 
 .tesira-device-header__actions {
@@ -172,16 +174,17 @@
 .tesira-dashboard__stat-label {
   margin: 0 0 0.25rem;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .tesira-dashboard__stat-value {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 1rem;
+  font-size: var(--cds-heading-01-font-size, 0.875rem);
+  line-height: var(--cds-heading-01-line-height, 1.28572);
   font-weight: 600;
 }
 

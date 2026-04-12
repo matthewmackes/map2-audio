@@ -193,11 +193,11 @@ export function CompressorCard({
 
         .dynamics-card-title {
           margin: 0;
-          font-size: 14px;
+          font-size: var(--cds-heading-01-font-size);
+          line-height: var(--cds-heading-01-line-height);
           font-weight: 600;
           color: #fff;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.16px;
         }
 
         .dynamics-card-controls {

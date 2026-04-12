@@ -1,0 +1,63 @@
+/* ============================================================================
+   Static Hero Icon Launcher — Map2BrandMark without animation.
+   Used in bottom-left shell launcher on all pages except HomePage.
+   ============================================================================ */
+
+.static-hero-icon-launcher__scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Icon container ────────────────────────────────────────────────────────── */
+
+.static-hero-icon-launcher__icon-wrap {
+  --icon-size: 100%;
+  position: relative;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.static-hero-icon-launcher__icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(69, 137, 255, 0.25));
+}
+
+/* ── Button styling ───────────────────────────────────────────────────────── */
+
+.static-hero-icon-launcher__btn {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.static-hero-icon-launcher__btn:hover {
+  opacity: 0.8;
+  filter: drop-shadow(0 0 10px rgba(69, 137, 255, 0.45));
+}
+
+.static-hero-icon-launcher__btn.is-active {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 12px rgba(69, 137, 255, 0.55));
+}
+
+.static-hero-icon-launcher__btn:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}

@@ -30,6 +30,7 @@ import { CheckmarkFilled, Renew, TrashCan, WarningAltFilled } from '@carbon/icon
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import { LoadingState } from './shared/LoadingState'
 import './PluginManagementCard.css'
 
 type SortKey = 'name' | 'author' | 'format'
@@ -173,7 +174,7 @@ export function PluginManagementCard() {
 
         {isLoading ? (
           <div className="plugin-management-card__loading">
-            <InlineLoading description="Loading plugins" />
+            <LoadingState description="Loading plugins" />
           </div>
         ) : isError ? (
           <InlineNotification

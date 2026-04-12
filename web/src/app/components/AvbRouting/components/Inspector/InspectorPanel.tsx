@@ -29,6 +29,7 @@ import { getRouteStreams } from '../../utils/avbRouteStreams';
 import { resolveAvbHostLabel } from '../../utils/avbHost';
 import { hasEndpointOperationalIssue } from '../../utils/endpointIssues';
 import { audioApi, chainsApi } from '@/map2/api';
+import { EmptyState } from '../../../shared/EmptyState';
 
 const PANEL_WIDTH = 300;
 
@@ -460,9 +461,12 @@ export function InspectorPanel() {
           AVDECC Discovery
         </Typography>
         {contextAvdeccEntities.length === 0 ? (
-          <Typography variant="body2" color="text.disabled" sx={{ py: 1 }}>
-            No AVDECC entities discovered in the active node scope.
-          </Typography>
+          <EmptyState
+            title="No AVDECC entities discovered in the active node scope"
+            description="Change the active node scope or wait for discovery to report AVDECC entities here."
+            compact
+            align="left"
+          />
         ) : (
           <List dense sx={{ py: 0 }}>
             {contextAvdeccEntities.slice(0, 6).map((entity) => (

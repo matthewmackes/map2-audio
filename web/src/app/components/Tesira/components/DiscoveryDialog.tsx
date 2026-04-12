@@ -16,7 +16,6 @@ import React, { useState, useCallback, useEffect } from 'react'
 import {
   Button,
   ComposedModal,
-  InlineLoading,
   InlineNotification,
   ModalBody,
   ModalFooter,
@@ -27,6 +26,8 @@ import {
 } from '@carbon/react'
 import { Search } from '@carbon/icons-react'
 import { MapMatrixProcessorIcon } from '../../icons/map'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import {
   useStartDiscovery,
   useDiscoveryStatus,
@@ -292,7 +293,7 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
             </div>
           </div>
 
-          {isScanning ? <InlineLoading description="Scanning Tesira discovery sources" /> : null}
+          {isScanning ? <LoadingState description="Scanning Tesira discovery sources" /> : null}
         </Tile>
 
         {devices.length > 0 ? (
@@ -313,11 +314,11 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
             ))}
           </div>
         ) : hasScanned && !isScanning ? (
-          <Tile className="tesira-discovery-modal__tile">
-            <p className="tesira-dashboard__summary">
-              No Tesira devices were discovered on the current network segment. Fall back to manual IP enrollment if the unit is reachable but blocked from discovery.
-            </p>
-          </Tile>
+          <EmptyState
+            title="No Tesira devices were discovered on the current network segment"
+            description="Fall back to manual IP enrollment if the unit is reachable but blocked from discovery."
+            align="left"
+          />
         ) : null}
       </ModalBody>
       <ModalFooter>

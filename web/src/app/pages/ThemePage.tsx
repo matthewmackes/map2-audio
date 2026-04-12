@@ -49,6 +49,8 @@ import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { IconPickerModal } from '../components/pluginAppearance/IconPickerModal'
 import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppearanceIcon'
 import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { usePluginAppearances } from '../hooks/usePluginAppearances'
 import type { PageTransitionPreset } from '../stores/effectsSettingsStore'
 import {
@@ -1458,9 +1460,14 @@ export function ThemePage() {
                       />
                     ) : null}
                     {pluginInventoryLoading ? (
-                      <div className="theme-page__plugin-empty">Loading plugin catalog…</div>
+                      <LoadingState className="theme-page__plugin-empty" description="Loading plugin catalog" />
                     ) : filteredPlugins.length === 0 ? (
-                      <div className="theme-page__plugin-empty">No plugins match the current filter.</div>
+                      <EmptyState
+                        className="theme-page__plugin-empty"
+                        compact
+                        title="No plugins match the current filter"
+                        description="Try adjusting the search or source filters."
+                      />
                     ) : (
                       <div className="theme-page__plugin-list-scroll">
                         {filteredPlugins.map((plugin) => {
@@ -1550,7 +1557,12 @@ export function ThemePage() {
                         </div>
                       </>
                     ) : (
-                      <div className="theme-page__plugin-empty">Select a plugin to edit its icon, accent, and description.</div>
+                      <EmptyState
+                        className="theme-page__plugin-empty"
+                        compact
+                        title="Select a plugin to edit its appearance"
+                        description="Choose a plugin from the list to change its icon, accent, and description."
+                      />
                     )}
                   </div>
                 </div>

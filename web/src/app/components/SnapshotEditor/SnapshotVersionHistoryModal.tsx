@@ -1,5 +1,7 @@
-import { Button, InlineLoading, Modal, Tag } from '@carbon/react'
+import { Button, Modal, Tag } from '@carbon/react'
 import type { SnapshotRevisionSummary } from '../../../map2/types'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 const REVISION_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -51,13 +53,23 @@ export function SnapshotVersionHistoryModal({
     >
       <div className="juce-grid-page__version-history">
         {loading ? (
-          <InlineLoading status="active" description="Loading snapshot revisions..." />
+          <LoadingState description="Loading snapshot revisions" />
         ) : errorMessage ? (
-          <p className="juce-grid-page__version-history-empty">{errorMessage}</p>
+          <EmptyState
+            className="juce-grid-page__version-history-empty"
+            title="Version history unavailable"
+            description={errorMessage}
+            compact
+            align="left"
+          />
         ) : revisions.length === 0 ? (
-          <p className="juce-grid-page__version-history-empty">
-            No saved revisions yet. Use the editor save action to start a version history for this snapshot.
-          </p>
+          <EmptyState
+            className="juce-grid-page__version-history-empty"
+            title="No saved revisions yet"
+            description="Use the editor save action to start a version history for this snapshot."
+            compact
+            align="left"
+          />
         ) : (
           <div className="juce-grid-page__version-history-list" role="list" aria-label="Snapshot revision history">
             {revisions.map((revision) => {

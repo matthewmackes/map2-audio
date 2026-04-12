@@ -33,6 +33,7 @@ import {
   type IntelFXState,
   type IntelFXTrafficEvent,
 } from '../../map2/intelfxApi'
+import { EmptyState } from '../components/shared/EmptyState'
 import './IntelFXMonitorView.css'
 
 function percentile(values: number[], p: number): number {
@@ -356,14 +357,26 @@ export function IntelFXMonitorView() {
           </Table>
         </div>
         {!isRefreshing && trafficRows.length === 0 ? (
-          <p className="intelfx-monitor-page__empty">No traffic captured yet.</p>
+          <EmptyState
+            className="intelfx-monitor-page__empty"
+            title="No traffic captured yet"
+            description="Send or receive MIDI traffic to populate the diagnostic log."
+            compact
+            align="left"
+          />
         ) : null}
       </section>
 
       <section className="intelfx-monitor-page__log-card">
         <h3 className="intelfx-monitor-page__log-title">Error log</h3>
         {errorLog.length === 0 ? (
-          <p className="intelfx-monitor-page__empty">No errors recorded in the diagnostic log.</p>
+          <EmptyState
+            className="intelfx-monitor-page__empty"
+            title="No errors recorded"
+            description="The diagnostic log has not captured any IntelFX errors yet."
+            compact
+            align="left"
+          />
         ) : (
           <ul className="intelfx-monitor-page__log-list">
             {errorLog.map((row, index) => {

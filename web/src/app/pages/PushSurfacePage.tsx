@@ -58,6 +58,7 @@ import {
   PUSH_RENDER_WIDTH,
   findHotspotForControlId,
 } from './labsPushLayout'
+import { EmptyState } from '../components/shared/EmptyState'
 
 const INTERACTION_OPTIONS = [
   'tap',
@@ -1100,7 +1101,11 @@ export function PushSurfacePage() {
             )
           }) : (
             <div className="labs-page__empty">
-              <p>No assignments match the current filter.</p>
+              <EmptyState
+                title="No assignments match this filter"
+                description="Adjust the current filter to show matching assignments."
+                compact
+              />
             </div>
           )}
         </div>

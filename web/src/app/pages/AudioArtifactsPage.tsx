@@ -59,6 +59,7 @@ import { useToasts } from '../components/Toasts'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
+import { EmptyState } from '../components/shared/EmptyState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './AudioArtifactsPage.css'
 
@@ -485,59 +486,64 @@ function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes, 
   const isPluginCategory = category.id === 'lv2-plugins' || category.id === 'native-juce'
 
   return (
-    <Tile className="aap-empty">
-      <div className="aap-empty__icon-wrap">
-        <Icon size={48} aria-hidden="true" />
-      </div>
-      <h3 className="aap-empty__title">No {category.label} found on this node</h3>
-      <p className="aap-empty__subtitle">{category.description}</p>
-      <div className="aap-empty__actions">
-        {isPluginCategory ? (
-          <div className="aap-empty__scan-group">
-            <div className="aap-empty__scan-wrap">
-              <Button
-                kind="primary"
-                size="md"
-                renderIcon={Search}
-                onClick={() => onScan('plugins')}
-                disabled={isScanning}
-              >
-                Scan for plugins
-              </Button>
-              <OverflowMenu
-                ariaLabel="More scan options"
-                size="md"
-                flipped
-                disabled={isScanning}
-              >
-                <OverflowMenuItem itemText="Scan plugins only" onClick={() => onScan('plugins')} />
-                <OverflowMenuItem itemText="Scan all folders" onClick={() => onScan('folders')} />
-                <OverflowMenuItem itemText="Scan plugins and folders" onClick={() => onScan('both')} />
-              </OverflowMenu>
+    <EmptyState
+      className="aap-empty"
+      icon={
+        <div className="aap-empty__icon-wrap">
+          <Icon size={48} aria-hidden="true" />
+        </div>
+      }
+      title={`No ${category.label} found on this node`}
+      description={category.description}
+      actions={(
+        <>
+          {isPluginCategory ? (
+            <div className="aap-empty__scan-group">
+              <div className="aap-empty__scan-wrap">
+                <Button
+                  kind="primary"
+                  size="md"
+                  renderIcon={Search}
+                  onClick={() => onScan('plugins')}
+                  disabled={isScanning}
+                >
+                  Scan for plugins
+                </Button>
+                <OverflowMenu
+                  ariaLabel="More scan options"
+                  size="md"
+                  flipped
+                  disabled={isScanning}
+                >
+                  <OverflowMenuItem itemText="Scan plugins only" onClick={() => onScan('plugins')} />
+                  <OverflowMenuItem itemText="Scan all folders" onClick={() => onScan('folders')} />
+                  <OverflowMenuItem itemText="Scan plugins and folders" onClick={() => onScan('both')} />
+                </OverflowMenu>
+              </div>
+              {isScanning ? (
+                <InlineLoading
+                  className="aap-empty__loading"
+                  description="Scanning plugins"
+                  status="active"
+                />
+              ) : null}
             </div>
-            {isScanning ? (
-              <InlineLoading
-                className="aap-empty__loading"
-                description="Scanning plugins"
-                status="active"
-              />
-            ) : null}
-          </div>
-        ) : (
-          <Button kind="primary" size="md" renderIcon={Upload} onClick={onUpload}>
-            Upload {category.shortLabel}
+          ) : (
+            <Button kind="primary" size="md" renderIcon={Upload} onClick={onUpload}>
+              Upload {category.shortLabel}
+            </Button>
+          )}
+          <Button kind="tertiary" size="md" renderIcon={CloudUpload} onClick={onOpenDownload}>
+            Download {category.shortLabel}
           </Button>
-        )}
-        <Button kind="tertiary" size="md" renderIcon={CloudUpload} onClick={onOpenDownload}>
-          Download {category.shortLabel}
-        </Button>
-        {isClusterMode ? (
-          <Button kind="ghost" size="md" renderIcon={Network_4} onClick={onBrowseNodes}>
-            Browse other nodes
-          </Button>
-        ) : null}
-      </div>
-    </Tile>
+          {isClusterMode ? (
+            <Button kind="ghost" size="md" renderIcon={Network_4} onClick={onBrowseNodes}>
+              Browse other nodes
+            </Button>
+          ) : null}
+        </>
+      )}
+    />
   )
 }
 

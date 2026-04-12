@@ -24,6 +24,7 @@ import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { LegacyButton } from './shared/LegacyButton'
 import { LegacyTile } from './shared/LegacyTile'
+import { LoadingState } from './shared/LoadingState'
 import './StatusPanelFlatteners.css'
 
 interface CategoryResult {
@@ -469,10 +470,7 @@ export function PlatformCapabilities() {
 
           {/* Services List - Grouped by Priority */}
           {servicesStatus.isLoading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
-              <SpinnerGap size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
-              Loading services...
-            </div>
+            <LoadingState description="Loading services" />
           ) : servicesStatus.error ? (
             <div style={{ padding: 12, background: '#ef535015', border: '1px solid #ef5350', borderRadius: 6, color: '#ef5350', fontSize: 12 }}>
               Failed to load services
@@ -780,10 +778,7 @@ export function PlatformCapabilities() {
 
           {/* Loading State */}
           {metricsCurrentQuery.isLoading && (
-            <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
-              <SpinnerGap size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
-              Loading metrics...
-            </div>
+            <LoadingState description="Loading metrics" />
           )}
 
           {/* Error State */}

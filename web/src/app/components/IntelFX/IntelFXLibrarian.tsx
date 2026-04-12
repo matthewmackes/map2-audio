@@ -16,6 +16,7 @@ import {
   type IntelFXLibraryVersion,
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
+import { EmptyState } from '../shared/EmptyState'
 import { formatIntelFXProgramName, formatIntelFXProgramNumber } from './programNumber'
 import './IntelFXLibrarian.css'
 
@@ -431,7 +432,12 @@ export function IntelFXLibrarian() {
       </div>
 
       {filteredSlots.length === 0 && !isLoading ? (
-        <Layer className="intelfx-librarian__empty">No preset slots match the current filter.</Layer>
+        <EmptyState
+          className="intelfx-librarian__empty"
+          title="No preset slots match this filter"
+          description="Adjust the filter to show more IntelFX preset slots."
+          compact
+        />
       ) : null}
 
       {selectedProgram != null ? (

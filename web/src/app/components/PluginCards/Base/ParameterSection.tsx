@@ -131,11 +131,11 @@ export function ParameterSection({
         }
 
         .parameter-section-label {
-          font-size: 11px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           font-weight: 600;
           color: #9ca3af;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: var(--cds-label-01-letter-spacing);
         }
 
         .parameter-section-content {

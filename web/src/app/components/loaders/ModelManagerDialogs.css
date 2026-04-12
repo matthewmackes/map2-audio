@@ -49,7 +49,8 @@
 .model-manager-dialog__support-note {
   margin: 0;
   color: var(--cds-text-helper, #8d8d8d);
-  font-size: 0.75rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
 }
 
 .model-manager-dialog__featured {
@@ -63,7 +64,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font: var(--cds-heading-01-font);
   color: var(--cds-text-secondary, #c6c6c6);
 }
 
@@ -84,7 +85,7 @@
 
 .model-manager-dialog__featured-title {
   margin: 0;
-  font-size: 0.875rem;
+  font: var(--cds-body-compact-01-font);
   color: var(--cds-text-primary, #f4f4f4);
   overflow: hidden;
   white-space: nowrap;
@@ -93,7 +94,8 @@
 
 .model-manager-dialog__featured-subtitle {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
   color: var(--cds-text-helper, #8d8d8d);
 }
 
@@ -113,9 +115,9 @@
 
 .model-manager-dialog__type-section h5 {
   margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
+  letter-spacing: 0.01em;
   color: var(--cds-text-secondary, #c6c6c6);
 }
 

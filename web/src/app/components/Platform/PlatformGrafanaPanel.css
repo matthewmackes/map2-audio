@@ -23,23 +23,23 @@
 .platform-grafana-panel__eyebrow {
   margin: 0 0 0.25rem;
   color: var(--cds-text-helper);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .platform-grafana-panel__title {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 1rem;
+  font: var(--cds-heading-02-font);
   font-weight: 600;
 }
 
 .platform-grafana-panel__description {
   margin: 0.35rem 0 0;
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font: var(--cds-body-compact-01-font);
   line-height: 1.45;
 }
 
@@ -69,7 +69,8 @@
   align-items: center;
   gap: 0.35rem;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
 }
 
 .platform-grafana-panel__legend-swatch {

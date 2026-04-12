@@ -439,11 +439,11 @@ export function EQCard({
 
         .eq-card-title {
           margin: 0;
-          font-size: 14px;
+          font-size: var(--cds-heading-01-font-size);
+          line-height: var(--cds-heading-01-line-height);
           font-weight: 600;
           color: #fff;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.16px;
         }
 
         .eq-card-controls {
@@ -627,9 +627,10 @@ export function EQCard({
         }
 
         .eq-band-label {
-          font-size: 10px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           color: #888;
-          text-transform: uppercase;
+          letter-spacing: var(--cds-label-01-letter-spacing);
         }
 
         .eq-band-toggle {
@@ -676,8 +677,9 @@ export function EQCard({
 
         .param-knob-label {
           color: #888;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
+          letter-spacing: var(--cds-label-01-letter-spacing);
         }
 
         .param-knob-dial {

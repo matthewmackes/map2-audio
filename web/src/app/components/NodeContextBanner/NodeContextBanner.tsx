@@ -1,11 +1,12 @@
 import './NodeContextBanner.css'
 
-import { InlineLoading, Layer, Tag } from '@carbon/react'
+import { Layer, Tag } from '@carbon/react'
 
 import type { NodeIdentity, NodeTopology } from '../../types/node'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import { useViewedNode } from '../../stores/viewedNodeStore'
 import { formatNodeDisplayName } from '../../utils/nodeDisplay'
+import { LoadingState } from '../shared/LoadingState'
 
 interface NodeContextBannerProps {
   pageKey: string
@@ -26,7 +27,7 @@ export function NodeContextBanner({ pageKey, localNode, topology: providedTopolo
   return (
     <Layer className="node-context-banner">
       {topologyQuery.isLoading && !topology ? (
-        <InlineLoading description="Loading node context" />
+        <LoadingState description="Loading node context" variant="inline" />
       ) : (
         <>
           <div className="node-context-banner__headline">

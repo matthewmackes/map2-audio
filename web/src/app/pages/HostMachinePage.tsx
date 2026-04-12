@@ -25,6 +25,8 @@ import DiskHealthCard from '../components/HostMachine/DiskHealthCard'
 import AudioNodeFeatures from '../components/HostMachine/AudioNodeFeatures'
 import PerformanceMetrics from '../components/HostMachine/PerformanceMetrics'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../components/Platform/PlatformGrafanaPanel'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 
 const TABS = ['Specifications', 'Disk Health', 'Audio Features', 'Performance', 'Service Info'] as const
 
@@ -59,10 +61,7 @@ export function HostMachinePage() {
   if (isLoading) {
     return (
       <div className="hm-page hm-page--loading">
-        <div className="hm-page__load-card">
-          <div className="hm-spinner" />
-          <p className="hm-page__load-copy">Loading host machine data…</p>
-        </div>
+        <LoadingState className="hm-page__load-card" description="Loading host machine data" />
       </div>
     )
   }
@@ -151,9 +150,12 @@ export function HostMachinePage() {
             )
           })}
           {comparisonRows.length === 0 && (
-            <div className="hm-page__empty-state">
-              No nodes available
-            </div>
+            <EmptyState
+              className="hm-page__empty-state"
+              compact
+              title="No nodes available"
+              description="Connect a cluster node or select a different host context to inspect hardware diagnostics."
+            />
           )}
         </div>
       </div>

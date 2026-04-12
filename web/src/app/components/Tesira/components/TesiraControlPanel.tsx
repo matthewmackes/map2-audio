@@ -1,5 +1,5 @@
 import React from 'react'
-import { InlineLoading, InlineNotification, Tab, TabList, Tabs, Tile } from '@carbon/react'
+import { InlineNotification, Tab, TabList, Tabs } from '@carbon/react'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceHeader } from './TesiraDeviceHeader'
@@ -12,6 +12,8 @@ import { TesiraAvbTab } from './TesiraAvbTab'
 import { TesiraFaultsTab } from './TesiraFaultsTab'
 import { TesiraFirmwareTab } from './TesiraFirmwareTab'
 import { TesiraLoopBuilderTab } from './TesiraLoopBuilderTab'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 const TABS = ['Levels', 'Mixer', 'EQ', 'Presets', 'AVB Streams', 'Faults', 'Firmware', 'Loops']
@@ -22,13 +24,11 @@ export function TesiraControlPanel() {
   if (!selectedDeviceId) {
     return (
       <div className="tesira-control-panel__empty-wrap">
-        <Tile className="tesira-control-panel__empty">
-          <p className="tesira-dashboard__eyebrow">Tesira fleet</p>
-          <h3 className="tesira-dashboard__title">Select a device from the fleet panel</h3>
-          <p className="tesira-dashboard__summary">
-            Choose a Tesira unit to open its Carbon-aligned control tabs, onboarding helpers, and recovery views.
-          </p>
-        </Tile>
+        <EmptyState
+          className="tesira-control-panel__empty"
+          title="Select a device from the fleet panel"
+          description="Choose a Tesira unit to open its control tabs, onboarding helpers, and recovery views."
+        />
       </div>
     )
   }
@@ -50,7 +50,7 @@ function DevicePanel({ deviceId, tab, onTabChange }: DevicePanelProps) {
   if (isLoading) {
     return (
       <div className="tesira-control-panel__loading">
-        <InlineLoading description="Loading device details" />
+        <LoadingState description="Loading device details" />
       </div>
     )
   }

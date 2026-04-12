@@ -1,6 +1,7 @@
 import { Button, Select, SelectItem, Tag, Tile } from '@carbon/react'
 
 import { NumberInput } from '../ParameterControl'
+import { EmptyState } from '../shared/EmptyState'
 import type { SnapshotAbSwitchMidiBinding, SnapshotAbSwitchMidiMessageType } from '../../utils/snapshotAbSwitchMidi'
 
 interface SnapshotAbSwitchMidiCardProps {
@@ -119,9 +120,13 @@ export function SnapshotAbSwitchMidiCard({
       </div>
 
       {!hasActiveSnapshot && (
-        <p className="juce-grid-page__empty-state-copy">
-          Load a snapshot to configure an A/B switch MIDI trigger.
-        </p>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No snapshot is active"
+          description="Load a snapshot to configure an A/B switch MIDI trigger."
+          compact
+          align="left"
+        />
       )}
     </Tile>
   )

@@ -14,6 +14,7 @@ import {
   type MPX1MidiMapping,
 } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
+import { EmptyState } from '../shared/EmptyState'
 import { NumberInput } from '../ParameterControl'
 import './MPX1MidiMapper.css'
 
@@ -402,13 +403,18 @@ export function MPX1MidiMapper() {
                   onClick={() => setSelectedMappingId(line.id)}
                 />
               ))}
-              {lines.length === 0 && (
-                <text x="16" y="38" className="mpx1-midi-map__svg-hint">
-                  No mappings yet. Select source + target, then click Link.
-                </text>
-              )}
             </svg>
           </div>
+
+          {lines.length === 0 ? (
+            <EmptyState
+              className="mpx1-midi-map__svg-hint"
+              title="No mappings yet"
+              description="Select a source and target, then click Link."
+              compact
+              align="left"
+            />
+          ) : null}
 
           <div className="mpx1-midi-map__actions">
             <button type="button" onClick={() => void handleCreateMapping()}>

@@ -38,6 +38,8 @@ import {
   getNodeStatusTagType,
 } from '../../utils/nodeDisplay'
 import { ManagementWorkspaceGraph } from './ManagementWorkspaceGraph'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import {
   buildManagementWorkspaceGraphModel,
   type ManagementWorkspaceGraphSelection,
@@ -331,7 +333,7 @@ export function ManagementWorkspace({
         <Tile className="management-workspace__hero">
           {topologyQuery.isLoading && nodes.length === 0 ? (
             <div className="management-workspace__graph-loading">
-              <InlineLoading description="Loading management telemetry…" />
+              <LoadingState description="Loading management telemetry" />
             </div>
           ) : (
             <ManagementWorkspaceGraph model={graphModel} onSelect={handleGraphSelect} />
@@ -387,7 +389,11 @@ export function ManagementWorkspace({
                 {filteredRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={layer.tableColumns.length + 1}>
-                      <div className="management-workspace__table-state">No management rows match the current search.</div>
+                      <EmptyState
+                        title="No management rows match this search"
+                        description="Clear or adjust the search text to show more management records."
+                        compact
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

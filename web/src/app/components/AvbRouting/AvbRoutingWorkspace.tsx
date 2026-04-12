@@ -37,6 +37,8 @@ import {
   useEndpoints,
 } from './hooks/useAvbApi'
 import { useNodes, usePtpStatus } from './hooks/useNodeApi'
+import { LoadingState } from '../shared/LoadingState'
+import { EmptyState } from '../shared/EmptyState'
 import type {
   AvbAvdeccEntity,
   AvbNode,
@@ -339,7 +341,12 @@ function NodeDetailPanel({
             </Tag>
           </div>
           {summary.activeRoutes.length === 0 ? (
-            <p className="avb-routing-workspace__muted">No active AVB routes currently touch this node.</p>
+            <EmptyState
+              title="No active AVB routes touch this node"
+              description="Select another AVB node or publish a route to populate this summary."
+              compact
+              align="left"
+            />
           ) : (
             <div className="avb-routing-workspace__route-list">
               {summary.activeRoutes.slice(0, 6).map((route) => (
@@ -367,7 +374,12 @@ function NodeDetailPanel({
           </div>
 
           {summary.tesiraDevices.length === 0 ? (
-            <p className="avb-routing-workspace__muted">No Tesira devices are bound to this AVB node.</p>
+            <EmptyState
+              title="No Tesira devices are bound to this AVB node"
+              description="Bind a Tesira device to this node to inspect device-specific AVB routing details here."
+              compact
+              align="left"
+            />
           ) : (
             <>
               <div className="avb-routing-workspace__tesira-chip-row">
@@ -872,7 +884,7 @@ export function AvbRoutingWorkspace({ layer }: { layer: PlatformLayerData }) {
         <Tile className="avb-routing-workspace__hero">
           {isLoading && sortedNodes.length === 0 ? (
             <div className="avb-routing-workspace__graph-loading">
-              <InlineLoading description="Loading AVB discovery fabric" />
+              <LoadingState description="Loading AVB discovery fabric" />
             </div>
           ) : (
             <AvbRoutingWorkspaceGraph model={graphModel} onSelect={handleGraphSelection} />

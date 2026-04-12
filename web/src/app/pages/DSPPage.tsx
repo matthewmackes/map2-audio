@@ -409,11 +409,11 @@ const styles = `
 
   .section-title {
     margin: 0 0 16px 0;
-    font-size: 16px;
+    font-size: var(--cds-heading-02-font-size, 1rem);
+    line-height: var(--cds-heading-02-line-height, 1.5rem);
     font-weight: 500;
     color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.01em;
   }
 
   .dynamics-grid {

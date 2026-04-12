@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Button, InlineLoading, Tag, Tile } from '@carbon/react'
+import { Button, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
+import { LoadingState } from '../../shared/LoadingState'
 import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
 import { TesiraDeployDialog } from './TesiraDeployDialog'
@@ -21,7 +22,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
   if (isLoading || !device) {
     return (
       <div className="tesira-dashboard__loading">
-        <InlineLoading description="Loading Tesira dashboard" />
+        <LoadingState description="Loading Tesira dashboard" />
       </div>
     )
   }

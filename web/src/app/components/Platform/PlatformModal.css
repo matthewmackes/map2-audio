@@ -59,10 +59,10 @@
 }
 
 .platform-modal__header-title {
-  font-size: 13px;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -140,28 +140,27 @@
 .platform-shell__sidebar .workspace-side-nav__eyebrow {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
-  letter-spacing: 0.1em;
-  line-height: 1.1;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .platform-shell__sidebar .workspace-side-nav__title {
   margin: 0;
   color: var(--cds-text-primary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1.02rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
+  line-height: var(--cds-heading-02-line-height, 1.33333);
   font-weight: 600;
-  line-height: 1.2;
   letter-spacing: 0.02em;
 }
 
 .platform-shell__sidebar .workspace-side-nav__copy {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.8rem;
-  line-height: 1.45;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
 }
 
 .platform-shell__sidebar .workspace-side-nav__list,
@@ -179,10 +178,10 @@
 .platform-shell__sidebar .workspace-side-nav__section-label {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
 }
 
 .platform-shell__sidebar .workspace-side-nav__item {
@@ -254,9 +253,9 @@
 
 .platform-shell__sidebar .workspace-side-nav__item-label {
   color: var(--cds-text-primary);
-  font-size: 0.84rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   font-weight: 600;
-  line-height: 1.2;
   letter-spacing: 0.01em;
 }
 
@@ -266,15 +265,16 @@
 
 .platform-shell__sidebar .workspace-side-nav__item-desc {
   color: var(--cds-text-secondary);
-  font-size: 0.72rem;
-  line-height: 1.35;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1rem);
 }
 
 .platform-shell__sidebar .workspace-side-nav__item-meta {
   color: var(--cds-text-secondary);
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
 }
 
 .platform-shell__panel {
@@ -492,17 +492,15 @@
 
 .platform-shell__ws-header-title {
   margin: 0;
-  font-size: 1.25rem;
+  font: var(--cds-heading-03-font);
   font-weight: 400;
-  line-height: 1.2;
   color: var(--cds-text-primary);
 }
 
 .platform-shell__ws-header-summary {
   margin: 0.5rem 0 0;
   max-width: 42rem;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font: var(--cds-body-compact-01-font);
   color: var(--cds-text-secondary);
 }
 
@@ -696,16 +694,16 @@
 
 .platform-shell__catalog-intro-title {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.25;
+  font-size: var(--cds-heading-02-font-size, 1rem);
+  line-height: var(--cds-heading-02-line-height, 1.33333);
   color: var(--cds-text-primary);
 }
 
 .platform-shell__catalog-intro-summary {
   margin: 0;
   max-width: 44rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   color: var(--cds-text-secondary);
 }
 
@@ -781,8 +779,8 @@
 
 .platform-shell__summary-tile strong {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1.4rem;
-  line-height: 1;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  line-height: var(--cds-heading-04-line-height, 2.25rem);
 }
 
 .platform-shell__summary-tile span {
@@ -1119,11 +1117,11 @@
 
 .platform-shell__node-ops-group h4 {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   color: var(--cds-text-secondary);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .platform-shell__node-ops-actions {
@@ -1174,10 +1172,10 @@
 .platform-shell__update-progress-shell .cds--modal-header__label {
   color: var(--cds-text-secondary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.58rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .platform-shell__update-progress-shell .cds--modal-header__heading {
@@ -1258,10 +1256,10 @@
 }
 
 .platform-shell__update-progress-current-eyebrow {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--cds-text-secondary);
 }
 

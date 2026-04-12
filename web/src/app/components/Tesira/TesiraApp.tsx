@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
-import { InlineLoading, InlineNotification } from '@carbon/react'
+import { InlineNotification } from '@carbon/react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { LoadingState } from '../shared/LoadingState'
 import { TesiraProvider } from './context/TesiraContext'
 import { useTesiraContext } from './context/TesiraContext'
 import { TesiraTopBar } from './components/TesiraTopBar'
@@ -111,7 +112,7 @@ function DeviceRouteView({ render }: { render: (deviceId: string) => React.React
   if (isLoading) {
     return (
       <div className="tesira-route-view__loading">
-        <InlineLoading description="Loading Tesira device" />
+        <LoadingState description="Loading Tesira device" />
       </div>
     )
   }

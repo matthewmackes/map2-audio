@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Add, PlayFilled, Renew, TrashCan } from '@carbon/icons-react'
 import {
   Button,
-  InlineLoading,
   InlineNotification,
   Select,
   SelectItem,
@@ -14,6 +13,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { chainsApi, effectsLoopsApi } from '../../../../map2/api'
 import type { EffectsLoop, LoopInsertion } from '../../../../map2/types'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../map2/hooks/useWebSocket'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
@@ -603,10 +604,16 @@ export function TesiraLoopBuilderTab({ deviceId }: TesiraLoopBuilderTabProps) {
 
           {loopsQuery.isLoading && loops.length === 0 ? (
             <div className="tesira-loop-builder__loading">
-              <InlineLoading description="Loading effects loops" />
+              <LoadingState description="Loading effects loops" />
             </div>
           ) : loops.length === 0 ? (
-            <p className="tesira-loop-builder__empty">No loops configured yet.</p>
+            <EmptyState
+              className="tesira-loop-builder__empty"
+              title="No loops configured yet"
+              description="Create an effects loop to manage Tesira loop routing here."
+              compact
+              align="left"
+            />
           ) : (
             <div className="tesira-loop-builder__inventory-list">
               {loops.map((loop) => {

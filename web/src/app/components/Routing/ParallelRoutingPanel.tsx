@@ -1,6 +1,9 @@
+import { InlineNotification, Tag } from '@carbon/react'
 import { Add as Plus, Branch as GitBranch, Renew as ArrowsClockwise, Renew as SpinnerGap, TrashCan as Trash, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useParallel } from '../../hooks/useParallel'
 import { LegacyButton } from '../shared/LegacyButton'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
 
@@ -44,10 +47,10 @@ export function ParallelRoutingPanel({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <GitBranch size={18} style={{ color: '#818cf8' }} />
           <strong>Parallel Routing</strong>
-          <span className="pill muted">{groups.length} groups</span>
-          {remoteLabel && <span className="pill success">Remote Control · {remoteLabel}</span>}
+          <Tag type="cool-gray" size="sm">{groups.length} groups</Tag>
+          {remoteLabel && <Tag type="green" size="sm">Remote control · {remoteLabel}</Tag>}
           {remoteLabel && typeof latencyMs === 'number' && latencyMs > 10 && (
-            <span className="pill warn">{latencyMs.toFixed(1)} ms</span>
+            <Tag type="warm-gray" size="sm">{latencyMs.toFixed(1)} ms</Tag>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -79,11 +82,20 @@ export function ParallelRoutingPanel({
           <span className="muted">Loading parallel groups…</span>
         </div>
       ) : isError ? (
-        <div className="pill warn">{error instanceof Error ? error.message : 'Failed to load parallel groups'}</div>
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Failed to load parallel groups"
+          subtitle={error instanceof Error ? error.message : 'The routing service did not return the current parallel-group state.'}
+        />
       ) : groups.length === 0 ? (
-        <div className="muted" style={{ lineHeight: 1.6 }}>
-          No parallel groups on this node yet. Create one to manage A/B or blended branch routing remotely.
-        </div>
+        <EmptyState
+          title="No parallel groups on this node yet"
+          description="Create one to manage A/B or blended branch routing remotely."
+          compact
+          align="left"
+        />
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {groups.map((group) => (
@@ -181,9 +193,9 @@ export function ParallelRoutingPanel({
                         {branch.length} plugins
                       </div>
                     </div>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      Level {Math.round((group.branchLevels[index] ?? 1) * 100)}%
-                    </div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Level {Math.round((group.branchLevels[index] ?? 1) * 100)}%
+                  </div>
                   </div>
                 ))}
               </div>

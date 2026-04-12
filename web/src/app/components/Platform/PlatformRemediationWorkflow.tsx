@@ -3,7 +3,6 @@ import {
   Button,
   Checkbox,
   ComposedModal,
-  InlineLoading,
   InlineNotification,
   ModalBody,
   ModalFooter,
@@ -30,6 +29,8 @@ import {
   usePlatformRemediationSummary,
   useRemediationNodesByState,
 } from '../../hooks/usePlatformRemediation'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import './PlatformRemediationWorkflow.css'
 
@@ -305,7 +306,7 @@ export function PlatformRemediationWorkflow({
         <ProgressStep label="Clone" description="Recover and rejoin cloned nodes" />
       </ProgressIndicator>
       <PlatformGrafanaPanelDeck panels={grafanaPanels} />
-      {summaryQuery.isLoading && !providedSummary ? <InlineLoading description="Loading remediation status…" /> : null}
+      {summaryQuery.isLoading && !providedSummary ? <LoadingState description="Loading remediation status" /> : null}
       {summaryQuery.error && !providedSummary ? (
         <InlineNotification
           kind="error"
@@ -378,9 +379,16 @@ function AdoptionWorkflow({
       </div>
       {error ? <InlineNotification kind="error" lowContrast hideCloseButton title="Adoption unavailable" subtitle={error} /> : null}
       {filteredCandidates === null ? (
-        <Tile><InlineLoading description="Loading adoption candidates…" /></Tile>
+        <LoadingState description="Loading adoption candidates" />
       ) : filteredCandidates.length === 0 ? (
-        <Tile><p>No nodes are waiting for adoption.</p></Tile>
+        <EmptyState
+          title="No nodes are waiting for adoption"
+          description={stateFilter
+            ? 'Clear the current adoption-state filter to review other candidates.'
+            : 'Run discovery or wait for new nodes to enter the adoption workflow.'}
+          compact
+          align="left"
+        />
       ) : (
         <div className="platform-remediation__stack">
           {filteredCandidates.map((candidate) => {

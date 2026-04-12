@@ -43,6 +43,7 @@ import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, 
 import './PlatformModal.css'
 import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
 import { WorkspacePageTemplate } from '../layout/WorkspacePageTemplate'
+import { LoadingState } from '../shared/LoadingState'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import {
   isPlatformUtilityPanel,
@@ -371,7 +372,7 @@ function LayerDataTable({ layer, onRowSelect, selectedRowId }: {
   const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
 
   if (layer.isLoading && !layer.tableRows.length) {
-    return <div className="platform-shell__table-state"><InlineLoading description={`Loading ${layer.label} data`} status="active" /></div>
+    return <div className="platform-shell__table-state"><LoadingState description={`Loading ${layer.label} data`} /></div>
   }
   if (layer.error && !layer.tableRows.length) {
     return <InlineNotification kind="error" lowContrast hideCloseButton title={`${layer.label} unavailable`} subtitle={layer.error} />
@@ -449,7 +450,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
         </div>
       </div>
       <div className="platform-shell__standalone-surface">
-        <Suspense fallback={<div className="platform-shell__table-state"><span>Loading…</span></div>}>
+        <Suspense fallback={<div className="platform-shell__table-state"><LoadingState description="Loading platform workspace" /></div>}>
           {panel === 'host-machine' && <HostMachinePage />}
           {panel === 'audio-engine' && <AudioEnginePage />}
           {panel === 'theme'        && <ThemePage />}
@@ -1007,7 +1008,7 @@ export function PlatformModalContent({
                 transition={{ duration: 0.16, ease: 'easeOut' }}
               >
                 <div className="platform-shell__table-state">
-                  <InlineLoading description="Loading platform workspace" status="active" />
+                  <LoadingState description="Loading platform workspace" />
                 </div>
               </motion.section>
             )}

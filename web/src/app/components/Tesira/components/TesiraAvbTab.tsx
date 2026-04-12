@@ -4,6 +4,7 @@ import { Button, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraAvbStreams, useTesiraPTP } from '../hooks/useTesiraApi'
 import { buildAvbRoutingWorkspaceHref } from '../../AvbRouting/avbRoutingWorkspaceHref'
+import { EmptyState } from '../../shared/EmptyState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraAvbTabProps {
@@ -59,7 +60,13 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
         </div>
 
         {!streams || streams.length === 0 ? (
-          <p className="tesira-presets-tab__empty">No AVB streams discovered.</p>
+          <EmptyState
+            className="tesira-presets-tab__empty"
+            title="No AVB streams discovered"
+            description="Bring the device online and confirm AVB is enabled to inspect routable streams here."
+            compact
+            align="left"
+          />
         ) : (
           <div className="tesira-avb-tab__table-wrap">
             <table className="tesira-quick-console__table" aria-label="Tesira AVB streams">

@@ -20,6 +20,7 @@ import {
   TextInput,
 } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
@@ -240,7 +241,10 @@ export function MidiRecorderPanel() {
                   {rows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={headers.length + 1}>
-                        <div className="midi-hub-empty-state">No recordings saved.</div>
+                        <MidiHubEmptyState
+                          title="No recordings saved"
+                          description="Capture MIDI traffic to start building a recording library."
+                        />
                       </TableCell>
                     </TableRow>
                   ) : null}

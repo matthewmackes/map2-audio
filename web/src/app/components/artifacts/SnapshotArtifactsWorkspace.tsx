@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
-  InlineLoading,
   Modal,
   NumberInput,
   OverflowMenu,
@@ -48,6 +47,8 @@ import {
   resolveControlPlaneSnapshot,
   resolveSnapshotControlPlaneStatus,
 } from '../../pages/snapshotAuthorityState'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 type ToastKind = 'error' | 'info' | 'success' | 'warning'
 
@@ -568,11 +569,15 @@ export function SnapshotArtifactsWorkspace({
 
           {snapshotsQuery.isLoading ? (
             <div className="aap-snapshots__loading">
-              <InlineLoading description="Loading snapshots" status="active" />
+              <LoadingState description="Loading snapshots" />
             </div>
           ) : filteredSnapshots.length === 0 ? (
             <div className="aap-snapshots__empty">
-              <p>No saved snapshots match the current query.</p>
+              <EmptyState
+                title="No snapshots match this search"
+                description="Try a different search term or clear the current filters."
+                compact
+              />
             </div>
           ) : (
             <div className="aap-snapshots__list" role="list" aria-label="Snapshots library">
@@ -645,9 +650,14 @@ export function SnapshotArtifactsWorkspace({
 
         <Tile className="aap-snapshots__detail" role="complementary" aria-label="Snapshot details">
           {selectedSnapshotQuery.isLoading || (authoritySnapshotId === selectedId && authoritySnapshotDetailQuery.isLoading) ? (
-            <InlineLoading description="Loading snapshot detail" status="active" />
+            <LoadingState description="Loading snapshot detail" />
           ) : !selectedSnapshot ? (
-            <p>Select a snapshot to inspect its full contents, lifecycle, and cluster state.</p>
+            <EmptyState
+              title="Select a snapshot"
+              description="Choose a saved snapshot to inspect its lifecycle, cluster state, and detailed contents."
+              compact
+              align="left"
+            />
           ) : (
             <>
               <div className="aap-snapshots__detail-header">
@@ -841,7 +851,13 @@ export function SnapshotArtifactsWorkspace({
                   </div>
                 </div>
                 {selectedDeployment.length === 0 ? (
-                  <p className="aap-snapshots__section-copy">No remote deployment recorded yet. Cluster operations are best-effort and keep the canonical snapshot available locally.</p>
+                  <EmptyState
+                    title="No remote deployment recorded yet"
+                    description="Cluster operations stay best-effort until this snapshot has been published to a node."
+                    compact
+                    align="left"
+                    className="aap-snapshots__section-copy"
+                  />
                 ) : (
                   <div className="aap-snapshots__deployment-list">
                     {selectedDeployment.map((deployment) => (
@@ -913,7 +929,7 @@ export function SnapshotArtifactsWorkspace({
               <section className="aap-snapshots__section">
                 <h4>Activation history</h4>
                 {activationEventsQuery.isLoading ? (
-                  <InlineLoading description="Loading activation history" status="active" />
+                  <LoadingState description="Loading activation history" />
                 ) : activationEventsQuery.data?.events.length ? (
                   <div className="aap-snapshots__deployment-history">
                     {activationEventsQuery.data.events.map((event) => (
@@ -924,7 +940,13 @@ export function SnapshotArtifactsWorkspace({
                     ))}
                   </div>
                 ) : (
-                  <p className="aap-snapshots__section-copy">No local activation events recorded yet. The backend retains the last 100 events per node.</p>
+                  <EmptyState
+                    title="No activation history recorded yet"
+                    description="The backend keeps the last 100 activation events per node."
+                    compact
+                    align="left"
+                    className="aap-snapshots__section-copy"
+                  />
                 )}
               </section>
 

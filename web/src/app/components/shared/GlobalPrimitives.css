@@ -147,10 +147,10 @@
   border-radius: 0;
   background: var(--surface-2);
   color: var(--text-secondary);
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   box-shadow: none;
 }
 
@@ -242,13 +242,6 @@
   border-color: var(--interactive);
 }
 
-.card--empty,
-.empty-state {
-  border-style: dashed;
-  background: var(--bg-empty);
-  color: var(--text-secondary);
-}
-
 .card--offline {
   border-left: 3px solid var(--support-danger);
   background: var(--bg-offline);
@@ -267,20 +260,6 @@
 .card--success {
   border-left: 3px solid var(--support-success);
   background: color-mix(in srgb, var(--support-success) 10%, var(--surface));
-}
-
-.empty-state {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-3);
-  text-align: center;
-  padding: var(--space-8);
-}
-
-.empty-state svg {
-  width: 48px;
-  height: 48px;
-  color: var(--text-tertiary);
 }
 
 input:not([type='range']):not([type='checkbox']):not([type='radio']),
@@ -318,7 +297,8 @@ textarea {
 .midi-mapping-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--type-body);
+  font-size: var(--cds-body-compact-01-font-size);
+  line-height: var(--cds-body-compact-01-line-height);
 }
 
 .lv2-management-table th,
@@ -337,10 +317,10 @@ textarea {
 .midi-mapping-table th {
   background: var(--surface-2);
   color: var(--text-secondary);
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .lv2-management-table tr:hover,
@@ -370,50 +350,6 @@ textarea {
 .midi-mapping-dialog-content {
   color: var(--text-secondary);
   font-size: var(--type-body);
-}
-
-.loading-bar,
-.skeleton {
-  border-radius: 0;
-}
-
-.loading-bar {
-  position: relative;
-  overflow: hidden;
-  background: var(--surface-2);
-}
-
-.loading-bar::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 32%;
-  background: var(--interactive);
-  animation: loading-bar-slide 1.2s linear infinite;
-}
-
-.skeleton {
-  background: color-mix(in srgb, var(--surface-3) 85%, var(--surface));
-  animation: skeleton-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes loading-bar-slide {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(360%);
-  }
-}
-
-@keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 .midi-overview,

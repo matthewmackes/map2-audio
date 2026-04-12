@@ -50,9 +50,9 @@
 .mpx1-diag__card h3,
 .mpx1-diag__traffic h3 {
   margin: 0;
-  font-size: var(--type-label);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
   color: var(--interactive);
 }
 
@@ -67,7 +67,8 @@
   display: flex;
   justify-content: space-between;
   gap: var(--cds-spacing-04, 0.75rem);
-  font-size: var(--type-label);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   color: var(--interactive);
 }
 
@@ -117,7 +118,8 @@
   border-bottom: 1px solid var(--interactive);
   padding: var(--cds-spacing-03, 0.5rem);
   text-align: left;
-  font-size: var(--type-label);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
   color: var(--text-primary);
 }
 
@@ -125,15 +127,16 @@
   position: sticky;
   top: 0;
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: var(--type-caption);
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .mpx1-diag__empty {
   padding: 12px;
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.28572);
 }
 
 @media (max-width: 1200px) {

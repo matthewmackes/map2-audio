@@ -11,6 +11,8 @@ import {
 } from '@carbon/react'
 import { pipewireApi } from '../../../map2/api'
 import type { PipeWireDeviceInfo } from '../../../map2/types'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import {
   normalizeSnapshotName,
   validateSnapshotName,
@@ -192,15 +194,21 @@ export function SnapshotNewWizard({
           {(stepIndex === 2 || stepIndex === 3) && (
             <>
               {devicesQuery.isLoading ? (
-                <InlineLoading description="Loading audio devices" status="active" />
+                <LoadingState description="Loading audio devices" />
               ) : devicesQuery.isError ? (
-                <p className="juce-grid-page__empty-state-copy">
-                  Unable to load audio devices. You can continue without selecting one.
-                </p>
+                <EmptyState
+                  compact
+                  className="juce-grid-page__empty-state"
+                  title="Unable to load audio devices"
+                  description="You can continue without selecting one."
+                />
               ) : devices.length === 0 ? (
-                <p className="juce-grid-page__empty-state-copy">
-                  No PipeWire devices are available right now. This step can be skipped.
-                </p>
+                <EmptyState
+                  compact
+                  className="juce-grid-page__empty-state"
+                  title="No PipeWire devices are available right now"
+                  description="This step can be skipped."
+                />
               ) : (
                 <Select
                   id={`snapshot-new-wizard-${stepDeviceField}-device`}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
   Checkbox,
-  InlineLoading,
   InlineNotification,
   Modal,
 } from '@carbon/react'
 import { apiUrl } from '../utils/apiTarget'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import { EmptyState } from './shared/EmptyState'
+import { LoadingState } from './shared/LoadingState'
 import './SpecialSettingsDialog.css'
 
 interface Plugin {
@@ -130,7 +131,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, o
         </p>
 
         {isLoading ? (
-          <InlineLoading description="Loading plugins..." status="active" />
+          <LoadingState description="Loading plugins" variant="inline" />
         ) : null}
 
         {!isLoading && loadError ? (
@@ -144,12 +145,11 @@ export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, o
         ) : null}
 
         {!isLoading && !loadError && nativePlugins.length === 0 ? (
-          <InlineNotification
-            kind="info"
-            lowContrast
-            hideCloseButton
+          <EmptyState
             title="No native plugins found"
-            subtitle="No plugins matched the map2:// native namespace."
+            description="No plugins matched the map2:// native namespace."
+            compact
+            align="left"
           />
         ) : null}
 

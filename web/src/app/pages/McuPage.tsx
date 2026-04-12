@@ -5,6 +5,7 @@ import { Button, InlineNotification, Layer, Tag, Tile } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import mcuApi from '../../map2/clients/mcu'
 
@@ -146,8 +147,15 @@ export function McuPage() {
                 </div>
               </li>
             ))}
-            {(state?.matched_ports?.length ?? 0) === 0 ? <li className="mcu-page__port-item">No Mackie MCU Pro MIDI ports are currently visible.</li> : null}
           </ul>
+          {(state?.matched_ports?.length ?? 0) === 0 ? (
+            <EmptyState
+              title="No Mackie MCU Pro MIDI ports are currently visible"
+              description="Connect the controller or refresh the daemon state to discover available MCU ports."
+              compact
+              align="left"
+            />
+          ) : null}
         </Layer>
 
         <Layer className="mcu-page__panel" data-testid="mcu-plugin-panel">

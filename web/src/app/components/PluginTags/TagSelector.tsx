@@ -18,6 +18,7 @@ import {
   ViewOff as EyeSlash,
 } from '@carbon/icons-react'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
+import { LoadingState } from '../shared/LoadingState'
 
 interface TagSelectorProps {
   pluginUri: string
@@ -120,10 +121,7 @@ export function TagSelector({
 
   if (isLoadingTags || isLoading) {
     return (
-      <div className="tag-selector loading">
-        <div className="loading-spinner" />
-        <span>Loading tags...</span>
-      </div>
+      <LoadingState className="tag-selector loading" description="Loading tags" />
     )
   }
 

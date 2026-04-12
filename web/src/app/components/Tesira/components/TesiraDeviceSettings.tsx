@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { PlayFilled, TrashCan } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
 import { TesiraFirmwareTab } from './TesiraFirmwareTab'
 import {
   useCaptureTesiraScene,
@@ -11,6 +11,8 @@ import {
   useTesiraGpio,
   useTesiraScenes,
 } from '../hooks/useTesiraApi'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraDeviceSettingsProps {
@@ -86,7 +88,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
 
         {capabilities.isLoading ? (
           <div className="tesira-device-settings__loading">
-            <InlineLoading description="Loading device capabilities" />
+            <LoadingState description="Loading device capabilities" />
           </div>
         ) : capabilities.error ? (
           <InlineNotification
@@ -163,8 +165,16 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
 
         {gpio.isLoading ? (
           <div className="tesira-device-settings__loading">
-            <InlineLoading description="Loading GPIO state" />
+            <LoadingState description="Loading GPIO state" />
           </div>
+        ) : gpioRows.length === 0 ? (
+          <EmptyState
+            className="tesira-presets-tab__empty"
+            title="No GPIO pins discovered"
+            description="This Tesira device is not currently reporting any GPIO pins."
+            compact
+            align="left"
+          />
         ) : (
           <div className="tesira-device-settings__table-wrap">
             <table className="tesira-quick-console__table" aria-label="Tesira GPIO pins">
@@ -195,13 +205,6 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                     </td>
                   </tr>
                 ))}
-                {gpioRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={3}>
-                      <p className="tesira-presets-tab__empty">No GPIO pins discovered.</p>
-                    </td>
-                  </tr>
-                ) : null}
               </tbody>
             </table>
           </div>
@@ -262,7 +265,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
 
         {scenes.isLoading ? (
           <div className="tesira-device-settings__loading">
-            <InlineLoading description="Loading scene snapshots" />
+            <LoadingState description="Loading scene snapshots" />
           </div>
         ) : (
           <div className="tesira-device-settings__table-wrap">
@@ -310,7 +313,12 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                 {sceneRows.length === 0 ? (
                   <tr>
                     <td colSpan={3}>
-                      <p className="tesira-presets-tab__empty">No scene snapshots captured yet.</p>
+                      <EmptyState
+                        className="tesira-presets-tab__empty"
+                        title="No scene snapshots captured yet"
+                        description="Capture a scene to store the current Tesira device state."
+                        compact
+                      />
                     </td>
                   </tr>
                 ) : null}

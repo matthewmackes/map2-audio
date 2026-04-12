@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { Add, Renew } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceCard } from './TesiraDeviceCard'
 import { ManualAddDialog } from './ManualAddDialog'
 import { useCluster } from '../../../contexts/useCluster'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 export function TesiraFleetPanel() {
@@ -19,7 +21,7 @@ export function TesiraFleetPanel() {
   if (isLoading) {
     return (
       <div className="tesira-fleet-panel tesira-fleet-panel__loading">
-        <InlineLoading description="Loading Tesira fleet" />
+        <LoadingState description="Loading Tesira fleet" />
       </div>
     )
   }
@@ -71,10 +73,13 @@ export function TesiraFleetPanel() {
         </div>
 
         {(!devices || devices.length === 0) ? (
-          <Tile className="tesira-fleet-panel__empty">
-            <p className="tesira-dashboard__summary">No Tesira devices configured.</p>
-            <p className="tesira-device-header__details">Use add-device or discovery in the toolbar to begin onboarding.</p>
-          </Tile>
+          <EmptyState
+            className="tesira-fleet-panel__empty"
+            title="No Tesira devices configured"
+            description="Use add-device or discovery in the toolbar to begin onboarding."
+            compact
+            align="left"
+          />
         ) : (
           <div className="tesira-fleet-panel__list">
             {devices.map((device) => (

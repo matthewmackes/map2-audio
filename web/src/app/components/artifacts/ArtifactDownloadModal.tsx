@@ -16,7 +16,6 @@ import {
   Button,
   Checkbox,
   ComposedModal,
-  InlineLoading,
   InlineNotification,
   Layer,
   ModalBody,
@@ -48,6 +47,7 @@ import {
   ViewOff,
 } from '@carbon/icons-react'
 import type { CarbonIconType } from '@carbon/icons-react'
+import { LoadingState } from '../shared/LoadingState'
 import { irLibraryApi, soundfontApi } from '../../../map2/api'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import { useSoundFontDownloadProgress } from '../../hooks/useSoundFontDownloadProgress'
@@ -440,7 +440,7 @@ function PluginPacksTab({ nodeId }: { nodeId: string | null }) {
     pollStatus(packId)
   }, [nodeId, pollStatus])
 
-  if (loading) return <div className="adm-tab-loading"><InlineLoading description="Loading plugin packs…" /></div>
+  if (loading) return <div className="adm-tab-loading"><LoadingState description="Loading plugin packs" /></div>
 
   if (error) return (
     <InlineNotification kind="error" lowContrast hideCloseButton
@@ -483,7 +483,7 @@ function PluginPacksTab({ nodeId }: { nodeId: string | null }) {
                     {pack.error_message ? <Tag type="red">{pack.error_message}</Tag> : null}
                     <div className="adm-pack-body__actions">
                       {transitional ? (
-                        <InlineLoading description={`${tag.label}…`} />
+                        <LoadingState description={tag.label} variant="inline" />
                       ) : pack.status === 'disabled' ? (
                         <Button size="sm" kind="primary" renderIcon={View}
                           onClick={() => void doAction(pack.id, 'enable', 'enabling')}>

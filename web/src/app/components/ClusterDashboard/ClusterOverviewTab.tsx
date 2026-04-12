@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning, Activity as Cpu, DataBase as HardDrive, Wifi as WifiHigh } from '@carbon/icons-react'
 import { useMemo } from 'react'
 import { LegacyTile } from '../shared/LegacyTile'
+import { LoadingState } from '../shared/LoadingState'
 
 interface ClusterOverviewTabProps {
   simulationMode: boolean
@@ -74,11 +75,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
   }, [clusterStatus, clusterMetrics])
 
   if (statusLoading || !stats) {
-    return (
-      <div style={{ padding: 20, textAlign: 'center', color: '#a0a0a0' }}>
-        Loading cluster overview...
-      </div>
-    )
+    return <LoadingState description="Loading cluster overview" />
   }
 
   const healthColor = stats.healthScore >= 80 ? '#00ff41' : stats.healthScore >= 60 ? '#ffaa00' : '#ff3333'

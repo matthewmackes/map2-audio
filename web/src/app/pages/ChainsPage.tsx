@@ -27,6 +27,8 @@ import {
 } from '@carbon/icons-react'
 import type { Chain, ChainsResponse } from '../../map2/types'
 import { chainsApi } from '../../map2/api'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { useToasts } from '../components/Toasts'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SidechainPanel } from '../components/Routing/SidechainPanel'
@@ -311,7 +313,7 @@ export function ChainsPage() {
           </div>
 
           {clusterChainsQuery.isLoading ? (
-            <InlineLoading description="Loading cluster chains..." />
+            <LoadingState description="Loading cluster chains" />
           ) : clusterChainsQuery.error ? (
             <InlineNotification
               kind="error"
@@ -456,7 +458,7 @@ export function ChainsPage() {
         </div>
 
         {chainsQuery.isLoading ? (
-          <InlineLoading description="Loading chains..." />
+          <LoadingState description="Loading chains" />
         ) : chainsQuery.error ? (
           <InlineNotification
             kind="error"
@@ -466,12 +468,10 @@ export function ChainsPage() {
             subtitle="The backend did not return chain inventory for this node."
           />
         ) : filteredChains.length === 0 ? (
-          <InlineNotification
-            kind="info"
-            lowContrast
-            hideCloseButton
-            title="No chains found"
-            subtitle={searchValue.trim() ? 'No chains match that filter.' : 'Create a chain to begin routing plugins.'}
+          <EmptyState
+            title={searchValue.trim() ? 'No chains match this filter' : 'No chains yet'}
+            description={searchValue.trim() ? 'Try a different chain name.' : 'Create a chain to begin routing plugins.'}
+            compact
           />
         ) : (
           <TableContainer className="chains-page__table-wrap">

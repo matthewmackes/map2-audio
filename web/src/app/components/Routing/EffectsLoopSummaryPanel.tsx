@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { InlineNotification, Tag } from '@carbon/react'
 import { Renew as ArrowsClockwise, Renew as SpinnerGap, Waveform as WaveSine, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import type { Chain, EffectsLoop, LoopInsertion } from '../../../map2/types'
 import { effectsLoopsApi } from '../../../map2/api'
@@ -86,10 +87,10 @@ export function EffectsLoopSummaryPanel({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <WaveSine size={18} style={{ color: '#c084fc' }} />
           <strong>Effects Loops</strong>
-          <span className="pill muted">{loops.length} loops</span>
-          {remoteLabel && <span className="pill success">Remote Control · {remoteLabel}</span>}
+          <Tag type="cool-gray" size="sm">{loops.length} loops</Tag>
+          {remoteLabel && <Tag type="green" size="sm">Remote control · {remoteLabel}</Tag>}
           {remoteLabel && typeof latencyMs === 'number' && latencyMs > 10 && (
-            <span className="pill warn">{latencyMs.toFixed(1)} ms</span>
+            <Tag type="warm-gray" size="sm">{latencyMs.toFixed(1)} ms</Tag>
           )}
         </div>
         <LegacyButton variant="ghost" size="sm" iconDescription="Refresh effects loops" onClick={invalidate}>
@@ -127,7 +128,13 @@ export function EffectsLoopSummaryPanel({
           <span className="muted">Loading loop state…</span>
         </div>
       ) : loopsQuery.isError ? (
-        <div className="pill warn">Failed to load effects loops</div>
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Failed to load effects loops"
+          subtitle="The loop service did not return the current node loop inventory."
+        />
       ) : loops.length === 0 ? (
         <div className="muted" style={{ lineHeight: 1.6 }}>
           No effects loops are configured on this node.
@@ -155,10 +162,10 @@ export function EffectsLoopSummaryPanel({
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <span className={`pill ${loop.health_status === 'healthy' ? 'success' : 'warn'}`}>
+                    <Tag type={loop.health_status === 'healthy' ? 'green' : 'warm-gray'} size="sm">
                       {loop.health_status}
-                    </span>
-                    {inserted && <span className="pill success">In selected chain</span>}
+                    </Tag>
+                    {inserted && <Tag type="green" size="sm">In selected chain</Tag>}
                   </div>
                 </div>
 

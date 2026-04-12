@@ -576,10 +576,10 @@ export function MidiMappingDialog({
         .midi-mapping-table th {
           padding: 12px 16px;
           text-align: left;
-          font-size: 11px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: var(--cds-label-01-letter-spacing);
           color: #6b7280;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }

@@ -20,6 +20,7 @@ import {
   ComposedChart,
 } from 'recharts'
 import type { HistoricalMetric } from '@/app/hooks/useHealthMonitoring'
+import { EmptyState } from '../shared/EmptyState'
 
 interface MetricsChartsProps {
   metrics: HistoricalMetric[]
@@ -93,7 +94,11 @@ export default function MetricsCharts({
   if (chartData.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: 'center', color: '#999' }}>
-        <Typography>No historical data available. Start monitoring to collect metrics.</Typography>
+        <EmptyState
+          title="No historical data available"
+          description="Start monitoring to collect metrics."
+          compact
+        />
       </Paper>
     )
   }

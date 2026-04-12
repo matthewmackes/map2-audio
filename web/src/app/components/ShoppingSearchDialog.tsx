@@ -5,7 +5,6 @@ import {
   Button,
   Checkbox,
   InlineNotification,
-  Loading,
   Modal,
   NumberInput,
   Search,
@@ -27,6 +26,8 @@ import { ChevronDown, ChevronUp, Compare, Information, Launch, Search as SearchI
 import { API_BASE } from '../../map2/api'
 import { ProductDetailDialog, type ProductDetails } from './ProductDetailDialog'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { EmptyState } from './shared/EmptyState'
+import { LoadingState } from './shared/LoadingState'
 import './ShoppingSearchDialog.css'
 
 interface DeviceMatch {
@@ -376,15 +377,13 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
               <TabPanel>
                 {loading && results.length === 0 ? (
                   <div className="shopping-search-dialog__loading">
-                    <Loading active withOverlay={false} description="Searching marketplaces" />
+                    <LoadingState description="Searching marketplaces" />
                   </div>
                 ) : filteredAndSortedResults.length === 0 ? (
-                  <InlineNotification
-                    kind="info"
-                    lowContrast
-                    hideCloseButton
+                  <EmptyState
                     title="No results found"
-                    subtitle="Adjust price limits or search filters and try again."
+                    description="Adjust price limits or search filters and try again."
+                    compact
                   />
                 ) : (
                   <TableContainer className="shopping-search-dialog__table-container">

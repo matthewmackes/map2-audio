@@ -89,9 +89,9 @@
 }
 
 .intelfx-statusbar__device {
-  font-size: var(--type-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
+  letter-spacing: 0.01em;
   color: var(--text-primary);
   font-weight: 700;
 }
@@ -153,9 +153,9 @@
   white-space: nowrap;
   padding-left: 100%;
   color: #e53935;
-  font-size: var(--type-caption);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-helper-text-01-font-size);
+  line-height: var(--cds-helper-text-01-line-height);
+  letter-spacing: 0.01em;
   animation: intelfx-lcd-scroll 14s linear infinite;
 }
 
@@ -177,10 +177,10 @@
 
 .intelfx-statusbar__mix-label {
   color: var(--text-primary);
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.01em;
 }
 
 .intelfx-statusbar__mix input[type='range'] {
@@ -198,9 +198,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   cursor: pointer;
 }
 
@@ -223,9 +224,10 @@
   background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
   color: var(--support-success);
   padding: 0 8px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-label-01-font-size);
+  line-height: var(--cds-label-01-line-height);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   cursor: pointer;
 }
 

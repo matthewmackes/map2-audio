@@ -16,6 +16,7 @@ import {
   SearchableList,
   type SearchableListItem,
 } from '../../components/ApiObservatory/primitives'
+import { EmptyState } from '../../components/shared/EmptyState'
 import { safeJsonPretty } from './utils'
 
 interface CatalogListItem extends SearchableListItem {
@@ -81,7 +82,15 @@ export function CatalogTab({
   }, [items, selectedId])
 
   if (!selected) {
-    return <div className="api-observatory-panel">No OpenAPI endpoints available.</div>
+    return (
+      <div className="api-observatory-panel">
+        <EmptyState
+          title="No OpenAPI endpoints available"
+          description="Load schema data to populate the endpoint catalog."
+          compact
+        />
+      </div>
+    )
   }
 
   const endpoint = selected.endpoint
@@ -233,7 +242,12 @@ export function CatalogTab({
         <section>
           <h3>Endpoint Changelog</h3>
           {changelog.length === 0 ? (
-            <p>No changelog entries yet.</p>
+            <EmptyState
+              title="No changelog entries yet"
+              description="This endpoint does not have any recorded catalog changes yet."
+              compact
+              align="left"
+            />
           ) : (
             <ul>
               {changelog.map((entry) => (

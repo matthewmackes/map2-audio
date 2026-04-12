@@ -32,6 +32,8 @@ import {
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useCluster } from '../contexts/useCluster'
 import type { PipeWireMetrics } from '../../map2/types'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import './PipeWirePage.css'
 
 type PipeWireHealthStatus = 'ok' | 'warning' | 'error' | 'offline'
@@ -151,7 +153,24 @@ function MetricCard({
 }
 
 function TableEmptyState({ text }: { text: string }) {
-  return <p className="pipewire-page__empty">{text}</p>
+  const description = text === 'No audio devices detected'
+    ? 'PipeWire is running, but this node is not currently reporting any devices.'
+    : text === 'No sink/source nodes'
+      ? 'PipeWire has not exposed any sink or source nodes for this view yet.'
+      : text === 'No active audio streams'
+        ? 'No active clients are streaming audio through PipeWire right now.'
+        : text === 'No port connections'
+          ? 'PipeWire ports are present, but no links are currently active.'
+          : text === 'No PipeWire topology data available for this node.'
+            ? 'Select another node or wait for PipeWire topology data to arrive.'
+            : text === 'No default sink'
+              ? 'Select or create a default sink to route output audio here.'
+              : text === 'No default source'
+                ? 'Select or create a default source to route input audio here.'
+                : text === 'PipeWire nodes are present but there are no active port links right now.'
+                  ? 'Nodes are available, but no active port links are present in the current topology.'
+                  : undefined
+  return <EmptyState title={text} description={description} compact className="pipewire-page__empty" align="left" />
 }
 
 function DaemonSection({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
@@ -409,7 +428,7 @@ function ClusterSummaryTable({
   onSelectNode: (nodeId: string) => void
 }) {
   if (isLoading && rows.length === 0) {
-    return <InlineLoading description="Loading cluster PipeWire summary..." />
+    return <LoadingState description="Loading cluster PipeWire summary" />
   }
 
   if (error && rows.length === 0) {

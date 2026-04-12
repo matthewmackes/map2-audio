@@ -4,6 +4,7 @@ import { Select, SelectItem } from '@carbon/react'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { LegacyButton } from './shared/LegacyButton'
+import { LoadingState } from './shared/LoadingState'
 import './StatusPanelFlatteners.css'
 
 interface AudioActivity {
@@ -358,11 +359,7 @@ export function CPUStatusOverview() {
   }
 
   if (configQuery.isLoading) {
-    return (
-      <div className="flex" style={{ padding: '12px 4px' }}>
-        <SpinnerGap className="spin" size={18} /> Loading core configuration...
-      </div>
-    )
+    return <LoadingState description="Loading core configuration" />
   }
 
   if (!configQuery.data) {

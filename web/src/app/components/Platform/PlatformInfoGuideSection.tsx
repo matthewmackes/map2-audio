@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, Column, Grid, Tag, TextInput } from '@carbon/react'
 import { Book, Document, Download, RecentlyViewed, Search } from '@carbon/icons-react'
 import { useLocation, useSearchParams } from 'react-router-dom'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 import './PlatformInfoGuideSection.css'
 
@@ -378,14 +380,17 @@ function DocumentLibrary() {
 
       <div className="platform-guide-library__body">
         {loading ? (
-          <div className="platform-guide-library__state">Loading…</div>
+          <LoadingState className="platform-guide-library__state" description="Loading platform documents" />
         ) : error ? (
           <div className="platform-guide-library__state platform-guide-library__state--error">{error}</div>
         ) : groupedDocs.length === 0 ? (
-          <div className="platform-guide-library__state">
-            <Search size={18} />
-            <span>No documents match the current filter.</span>
-          </div>
+          <EmptyState
+            className="platform-guide-library__state"
+            compact
+            icon={<Search size={18} />}
+            title="No documents match the current filter"
+            description="Try adjusting the search terms or clear the filter to browse the full library."
+          />
         ) : (
           groupedDocs.map(([category, docs]) => (
             <section key={category} className="platform-guide-library__group" aria-label={category}>

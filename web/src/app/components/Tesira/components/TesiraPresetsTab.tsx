@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Add, PlayFilled, TrashCan } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import {
   useTesiraPresets,
   useRecallPreset,
@@ -10,6 +10,8 @@ import {
 } from '../hooks/useTesiraApi'
 import { useTesiraReversePresetSync } from '../hooks/useTesiraWebSocket'
 import type { TesiraReversePresetSyncEvent } from '../types'
+import { EmptyState } from '../../shared/EmptyState'
+import { LoadingState } from '../../shared/LoadingState'
 import './TesiraCarbonChrome.css'
 
 interface TesiraPresetsTabProps {
@@ -72,9 +74,15 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
           </div>
 
           {isLoading ? (
-            <InlineLoading description="Loading device presets" />
+            <LoadingState description="Loading device presets" />
           ) : !presets || presets.length === 0 ? (
-            <p className="tesira-presets-tab__empty">No presets found.</p>
+            <EmptyState
+              className="tesira-presets-tab__empty"
+              title="No presets found"
+              description="This Tesira device does not currently report any stored presets."
+              compact
+              align="left"
+            />
           ) : (
             <div className="tesira-presets-tab__list">
               {presets.map((preset) => (

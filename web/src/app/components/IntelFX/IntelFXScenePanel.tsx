@@ -18,6 +18,7 @@ import {
   type IntelFXSetlist,
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
+import { EmptyState } from '../shared/EmptyState'
 import { formatIntelFXProgramNumber } from './programNumber'
 import { NumberInput } from '../ParameterControl'
 import './IntelFXScenePanel.css'
@@ -359,7 +360,15 @@ export function IntelFXScenePanel() {
             </div>
           </article>
         ))}
-        {scenes.length === 0 ? <p className="intelfx-scene__empty">No scenes captured yet.</p> : null}
+        {scenes.length === 0 ? (
+          <EmptyState
+            className="intelfx-scene__empty"
+            title="No scenes captured yet"
+            description="Capture or create a scene to manage IntelFX snapshots here."
+            compact
+            align="left"
+          />
+        ) : null}
       </Layer>
 
       <Layer className="intelfx-scene__morph">

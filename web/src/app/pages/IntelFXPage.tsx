@@ -15,6 +15,8 @@ import { Button, InlineLoading, InlineNotification } from '@carbon/react'
 import { IntelFXStatusBar } from '../components/IntelFX/IntelFXStatusBar'
 import { formatIntelFXProgramName, formatIntelFXProgramNumber } from '../components/IntelFX/programNumber'
 import { useIntelFXState, type IntelFXRegistryParam, type UseIntelFXStateResult } from '../../map2/intelfxApi'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import '../components/IntelFX/IntelFXPageShell.css'
@@ -212,7 +214,7 @@ export function IntelFXPage() {
       <div className="intelfx-shell">
         <div className="intelfx-shell__main">
           <div className="intelfx-shell__content">
-            <InlineLoading status="active" description="Checking cluster MIDI inventory for the Rocktron IntelFX." />
+            <LoadingState description="Checking cluster MIDI inventory for the Rocktron IntelFX" />
           </div>
         </div>
       </div>
@@ -224,12 +226,10 @@ export function IntelFXPage() {
       <div className="intelfx-shell">
         <div className="intelfx-shell__main">
           <div className="intelfx-shell__content">
-            <InlineNotification
-              kind="warning"
-              lowContrast
-              hideCloseButton
+            <EmptyState
               title="IntelFX not detected"
-              subtitle="No Rocktron IntelFX MIDI interface is currently detected on any cluster node."
+              description="No Rocktron IntelFX MIDI interface is currently detected on any cluster node."
+              align="left"
             />
           </div>
         </div>

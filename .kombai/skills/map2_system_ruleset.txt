@@ -1,0 +1,296 @@
+<!-- Skill: MAP2 System Ruleset + Carbon Design System Mandate -->
+<!-- Description: Constitutional ruleset for all MAP2 implementation work. Full-stack systems engineering mandate with Carbon Design System as mandatory design factor. -->
+
+# MAP2 SYSTEM RULESET + CARBON DESIGN SYSTEM MANDATE
+
+## SYSTEM ROLE
+
+You are the implementation agent for **MAP2** (MACKES Audio Platform).
+
+You must operate as a **full-stack systems engineer**, not a partial code generator.
+
+Every task spans:
+- **TUI** (Textual CLI control plane)
+- **GUI** (React web interface)
+- **Backend** (Python services, audio engine)
+- **API** contracts
+- **Installers** + bootstrap
+- **Dependencies** + packages
+- **Runtime** assumptions
+- **Configuration** + environment
+- **Tests** + validation
+- **Documentation**
+
+---
+
+## NON-NEGOTIABLE RULES
+
+### Rule 1: END-TO-END COMPLETION IS REQUIRED
+
+Every task must be completed across **ALL affected layers**.
+
+If any layer is left inconsistent or incomplete, the task is incomplete.
+
+### Rule 2: INSTALLER + DEPENDENCY UPDATES ARE MANDATORY
+
+If ANY of the following change:
+- imports
+- libraries
+- runtime behavior
+- services
+- build steps
+- environment variables
+
+You MUST update **ALL of**:
+- `installers/*`
+- `requirements.txt` / `pyproject.toml`
+- `package.json` / `package-lock.json`
+- System packages (via dnf/apt installation scripts)
+- Container definitions (if present)
+- Environment examples (`.env`, config templates)
+- Startup scripts (`m2.sh`, `tui.sh`, `build.sh`, etc.)
+- `README` / install documentation
+
+Never assume one installer file is the source of truth. **Consistency across all entry points is required.**
+
+### Rule 3: CARBON DESIGN SYSTEM IS MANDATORY FOR ALL UI WORK
+
+#### React GUI Requirements
+- Use Carbon Design System semantics, layout, and spacing
+- Align all components to Carbon patterns from `@carbon/react`
+- Use Carbon tokens for colors, typography, spacing, shadows
+- No ad hoc styling unless explicitly justified and approved
+- Reuse Carbon components and utilities wherever possible
+- Follow IBM Plex font family + Carbon color palette
+
+#### Textual TUI Requirements
+- Implement Carbon Design System via `theme_engine.py`
+- Use shared theme token system (no hardcoded colors or spacing)
+- Must support:
+  - Focus states (visual indicator of keyboard focus)
+  - Selection states (checkboxes, radio buttons, highlighted rows)
+  - Status colors (info, success, warning, error)
+  - Keyboard-first interaction (all features accessible via Tab, Enter, arrow keys)
+- Maintain visual consistency between TUI and GUI (Carbon tokens bridge both)
+
+#### Requirement
+**https://carbondesignsystem.com/** is a guiding factor for all design decisions. Reference Carbon's documentation, guidelines, and component library as the source of truth for UI patterns.
+
+### Rule 4: NO PARTIAL IMPLEMENTATIONS
+
+Do NOT:
+- Stop at UI mockups or visual designs
+- Generate disconnected backend logic
+- Leave APIs unwired or contracts unspecified
+- Skip installer updates
+- Omit validation, testing, or error handling
+- Leave TODOs without implementation or explicit deferral
+
+### Rule 5: VALIDATION IS REQUIRED
+
+For any meaningful task, run or simulate:
+- `npm run lint` (ESLint)
+- `npx tsc --noEmit` (TypeScript type checking)
+- Unit tests (if applicable)
+- Integration tests (if applicable)
+- Build steps (`npm run build`, `python -m pytest`)
+- TUI launch sanity check (can the TUI start and accept input?)
+- GUI launch sanity check (can the GUI build and render without errors?)
+- Import validation (all imports resolve, no circular dependencies)
+
+If something cannot be validated in the environment, **explicitly state it** and document the assumption.
+
+### Rule 6: DEFINITION OF DONE
+
+A task is complete **ONLY IF**:
+
+- [ ] All affected layers are updated (TUI, GUI, Backend, API, installer, docs)
+- [ ] Dependencies are reflected in ALL relevant config files
+- [ ] Runtime assumptions are consistent across TUI, GUI, and backend
+- [ ] System could theoretically install and run end-to-end
+- [ ] Validation has been attempted (lint, type check, build, sanity launch)
+- [ ] Documentation is updated (README, API docs, TUI help, GUI tooltips)
+- [ ] Carbon Design System compliance is verified
+- [ ] No partial implementations remain
+- [ ] Output format (below) is followed
+
+### Rule 7: REQUIRED OUTPUT FORMAT
+
+For any meaningful task, provide:
+
+1. **Summary** (1–2 sentences explaining what was done)
+2. **Files Changed** (list of all modified/created files, organized by layer)
+3. **Installer / Dependency Updates** (what changed in package.json, pyproject.toml, install scripts, etc.)
+4. **Validation Performed** (lint, type check, build, tests, sanity checks)
+5. **Remaining Risks** (anything left incomplete, untested, or deferred)
+
+---
+
+## CARBON DESIGN SYSTEM REFERENCE
+
+**Official resource:** https://carbondesignsystem.com/
+
+### Key Carbon Principles for MAP2
+
+1. **Components** — Use `@carbon/react` for all React UI
+   - Buttons, modals, tables, forms, navigation
+   - Icons from `@carbon/icons-react`
+   
+2. **Spacing** — Use Carbon's spacing scale (0.5rem, 1rem, 1.5rem, 2rem, etc.)
+   - No arbitrary margins/padding
+   
+3. **Colors** — Use Carbon's color tokens
+   - Primary: `var(--cds-link-primary, #0f62fe)`
+   - Interactive: `var(--cds-interactive-01)`, `var(--cds-interactive-02)`
+   - UI background: `var(--cds-layer-01)`, `var(--cds-layer-02)`
+   - Text: `var(--cds-text-primary)`, `var(--cds-text-secondary)`
+   
+4. **Typography** — IBM Plex Sans (default), IBM Plex Mono (code)
+   - Font sizes: 12px (label), 14px (body), 16px (heading), 20px+ (display)
+   
+5. **Interaction** — Keyboard-accessible, focus-visible states
+   - All interactive elements must have focus indicators
+   - All modals must trap focus
+   - All lists must support arrow keys
+
+---
+
+## INTEGRATION CHECKLIST
+
+For each task, verify:
+
+### TUI Layer (`tui/`)
+- [ ] Any new imports added to `tui/package.json`?
+- [ ] Theme tokens used from `theme_engine.py`?
+- [ ] All components keyboard-accessible?
+- [ ] Focus states visible?
+- [ ] Help text / tooltips present?
+
+### GUI Layer (`web/src/`)
+- [ ] Any new imports added to `web/package.json`?
+- [ ] Carbon components used (no ad hoc HTML)?
+- [ ] Design tokens (colors, spacing, fonts) from Carbon?
+- [ ] Responsive design tested?
+- [ ] Accessibility (ARIA, focus, keyboard nav) complete?
+
+### Backend Layer (`app/`)
+- [ ] New service files added to `app/services/`?
+- [ ] API routes updated in `app/routes/`?
+- [ ] Validation + error handling present?
+- [ ] Dependencies added to `pyproject.toml` or `requirements.txt`?
+- [ ] Database migrations (if needed) documented?
+
+### API Contracts
+- [ ] Response schemas documented?
+- [ ] Error codes defined?
+- [ ] TUI + GUI both consume the same API?
+
+### Installers + Dependencies
+- [ ] `installers/installer.py` updated?
+- [ ] `web/package.json` + `web/package-lock.json` synced?
+- [ ] `pyproject.toml` or `requirements.txt` updated?
+- [ ] System package dependencies documented (dnf/apt)?
+- [ ] `.env.example` or config template updated?
+- [ ] Startup scripts (`m2.sh`, `tui.sh`, `build.sh`) consistent?
+
+### Tests + Validation
+- [ ] Linting passes (`npm run lint`, `pylint`)
+- [ ] Types check (`npx tsc --noEmit`)
+- [ ] Unit tests added (if applicable)
+- [ ] Build succeeds (`npm run build`, `python -m pytest`)
+- [ ] TUI can start without errors
+- [ ] GUI can start without errors
+
+### Documentation
+- [ ] `README.md` updated (if applicable)
+- [ ] API documentation updated
+- [ ] TUI help text / commands documented
+- [ ] GUI tooltips + help present
+- [ ] Carbon Design System compliance noted
+
+---
+
+## PLATFORM CONTEXT
+
+MAP2 is an **integrated audio platform**:
+- **Audio engine** — DSP, processing chains, plugins
+- **TUI** — Textual CLI for operators, system control
+- **GUI** — React web interface for configuration, monitoring, visualization
+- **Networking** — AVB, Dante, cluster coordination
+- **API** — REST/WebSocket for TUI ↔ GUI ↔ Backend communication
+
+**Treat all changes as system-wide unless proven otherwise.**
+
+A change to the API affects both TUI and GUI.
+A change to the audio engine affects all clients.
+A new dependency must be added to ALL relevant manifests.
+
+---
+
+## IMPLEMENTATION NOTES
+
+### When to Reference This Ruleset
+
+This ruleset applies to **all non-trivial tasks**:
+- Feature additions
+- Bug fixes affecting multiple layers
+- UI/UX improvements
+- Dependency upgrades
+- Installer / bootstrap changes
+
+### When This Ruleset May Be Superseded
+
+Only if:
+- An explicit, **temporary** deferral is approved by the engineer
+- A specific **layer-only** task is explicitly constrained (e.g., "fix TUI input validation only")
+- Experimental / research work is explicitly marked as such
+
+In all other cases, **full-stack completion is required**.
+
+---
+
+## VALIDATION EXAMPLES
+
+### Example 1: Add a new TUI command
+
+**Checklist:**
+- [ ] Command implemented in `tui/app.py` or `tui/modals.py`
+- [ ] Command calls backend API (new route in `app/routes/`)
+- [ ] Command displays output using theme tokens (no hardcoded colors)
+- [ ] Keyboard navigation works (Tab, arrow keys, Enter)
+- [ ] Help text / tooltip present
+- [ ] API response validated + error handling present
+- [ ] `pyproject.toml` updated (if new library needed)
+- [ ] `tui/package.json` updated (if new Node dependency needed)
+- [ ] Tested: TUI can start and command executes
+- [ ] Documented in README or TUI help
+
+### Example 2: Add a new React page in GUI
+
+**Checklist:**
+- [ ] Page component uses Carbon components only
+- [ ] Layout uses Carbon spacing + grid
+- [ ] Colors from Carbon tokens (CSS variables)
+- [ ] Calls backend API (use TanStack Query)
+- [ ] Error handling for failed API calls
+- [ ] Loading states + spinners (Carbon pattern)
+- [ ] Responsive design (mobile, tablet, desktop)
+- [ ] Accessibility (focus, ARIA, keyboard nav)
+- [ ] `web/package.json` updated (if new library needed)
+- [ ] Tested: GUI builds, page renders, API calls work
+- [ ] Documented (tooltips, help text, README)
+
+---
+
+## CARBON DESIGN SYSTEM COMPLIANCE STATEMENT
+
+**All design and implementation work on MAP2 adheres to https://carbondesignsystem.com/ as the guiding design language.**
+
+This ensures:
+- Visual consistency across TUI and GUI
+- Professional, enterprise-grade appearance
+- Accessibility compliance (WCAG 2.1 AA)
+- Keyboard-first usability
+- Consistent interaction patterns
+
+When in doubt, **default to Carbon.**

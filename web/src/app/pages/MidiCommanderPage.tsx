@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { InlineNotification, Layer, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
 
 import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import midiCommanderApi, { type MidiCommanderProjectionControl } from '../../map2/clients/midiCommander'
 
@@ -144,8 +145,15 @@ export function MidiCommanderPage() {
                 </div>
               </li>
             ))}
-            {(state?.matched_ports?.length ?? 0) === 0 ? <li className="midi-commander-page__list-item">No MIDI Commander-family MIDI ports are currently visible.</li> : null}
           </ul>
+          {(state?.matched_ports?.length ?? 0) === 0 ? (
+            <EmptyState
+              title="No MIDI Commander-family MIDI ports are currently visible"
+              description="Connect the controller or refresh the daemon state to discover available MIDI Commander ports."
+              compact
+              align="left"
+            />
+          ) : null}
         </Layer>
 
         <Layer className="midi-commander-page__panel" data-testid="midi-commander-setup-panel">

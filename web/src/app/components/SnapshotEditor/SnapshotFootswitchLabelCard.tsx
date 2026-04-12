@@ -1,5 +1,6 @@
 import { Button, Tag, TextInput, Tile } from '@carbon/react'
 
+import { EmptyState } from '../shared/EmptyState'
 import type { SnapshotFootswitchLabelMap } from '../../utils/snapshotFootswitchLabels'
 import {
   SNAPSHOT_FOOTSWITCH_LABEL_COUNT,
@@ -97,9 +98,13 @@ export function SnapshotFootswitchLabelCard({
       </div>
 
       {!hasActiveSnapshot && (
-        <p className="juce-grid-page__empty-state-copy">
-          Load a snapshot to configure footswitch labels.
-        </p>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No snapshot is active"
+          description="Load a snapshot to configure footswitch labels."
+          compact
+          align="left"
+        />
       )}
     </Tile>
   )

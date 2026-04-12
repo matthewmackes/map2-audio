@@ -29,7 +29,8 @@
 }
 
 .audio-interface-title {
-  font-size: 24px;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  line-height: var(--cds-heading-04-line-height, 1.28572);
   font-weight: 700;
   color: #fff;
   display: flex;
@@ -40,7 +41,8 @@
 }
 
 .audio-interface-icon {
-  font-size: 32px;
+  font-size: var(--cds-heading-05-font-size, 2rem);
+  line-height: var(--cds-heading-05-line-height, 1.25);
   filter: drop-shadow(0 0 10px rgba(77, 158, 255, 0.8));
 }
 
@@ -159,7 +161,8 @@
 }
 
 .audio-device-name {
-  font-size: 36px;
+  font-size: var(--cds-heading-05-font-size, 2rem);
+  line-height: var(--cds-heading-05-line-height, 1.25);
   font-weight: 800;
   color: #fff;
   margin-bottom: 8px;
@@ -170,7 +173,7 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: var(--cds-body-compact-01-line-height, 1.285);
   color: #4a9eff;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
   margin-bottom: 20px;
 }
 
@@ -185,10 +188,10 @@
 }
 
 .audio-quick-stat-value {
-  font-size: 32px;
+  font-size: var(--cds-heading-05-font-size, 2rem);
+  line-height: var(--cds-heading-05-line-height, 1.25);
   font-weight: 700;
   color: #4ade80;
-  line-height: 1;
   text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
 }
 

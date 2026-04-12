@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { AILabel, AILabelContent, Button, ProgressBar, Tag, TextInput } from '@carbon/react'
 import { midiHubApi, type MidiHubLearnSuggestion } from '../../../map2/api'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
@@ -63,7 +64,12 @@ export function AiLearnPanel() {
       </div>
 
       <div className="midi-hub-record-list">
-        {suggestions.length === 0 ? <div className="midi-hub-empty-state">No AI suggestions generated.</div> : null}
+        {suggestions.length === 0 ? (
+          <MidiHubEmptyState
+            title="No AI suggestions generated"
+            description="Enter the current parameter and plug-in context, then request suggestions again."
+          />
+        ) : null}
         {suggestions.map((suggestion, index) => (
           <div key={`${suggestion.cc_number}-${index}`} className="midi-hub-lab-suggestion">
             <div className="midi-hub-record-copy">

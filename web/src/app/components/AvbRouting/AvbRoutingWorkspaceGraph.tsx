@@ -15,6 +15,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
+import { EmptyState } from '../shared/EmptyState'
 import type {
   AvbRoutingWorkspaceGraphModel,
   AvbRoutingWorkspaceGraphSelection,
@@ -92,18 +93,45 @@ function AvbRoutingWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
     >
       <Handle type="target" position={Position.Left} style={{ background: data.accentColor }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--cds-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <span style={{
+          fontSize: 'var(--cds-label-01-font-size)',
+          lineHeight: 'var(--cds-label-01-line-height)',
+          fontWeight: 600,
+          color: 'var(--cds-text-secondary)',
+        }}>
           {data.eyebrow}
         </span>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: data.selected ? data.accentColor : 'var(--cds-text-secondary)' }}>
+        <span style={{
+          fontSize: 'var(--cds-label-01-font-size)',
+          lineHeight: 'var(--cds-label-01-line-height)',
+          fontWeight: 600,
+          color: data.selected ? data.accentColor : 'var(--cds-text-secondary)',
+        }}>
           {toneLabel(data.tone)}
         </span>
       </div>
-      <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.25 }}>{data.label}</div>
-      <div style={{ fontSize: '0.76rem', color: 'var(--cds-text-secondary)', marginTop: '0.375rem', lineHeight: 1.35 }}>
+      <div style={{
+        fontSize: 'var(--cds-heading-02-font-size)',
+        lineHeight: 'var(--cds-heading-02-line-height)',
+        fontWeight: 600,
+      }}>
+        {data.label}
+      </div>
+      <div style={{
+        fontSize: 'var(--cds-body-compact-01-font-size)',
+        lineHeight: 'var(--cds-body-compact-01-line-height)',
+        color: 'var(--cds-text-secondary)',
+        marginTop: '0.375rem',
+      }}>
         {data.caption}
       </div>
-      <div style={{ fontSize: '0.76rem', color: data.accentColor, marginTop: '0.75rem', fontWeight: 600 }}>
+      <div style={{
+        fontSize: 'var(--cds-body-compact-01-font-size)',
+        lineHeight: 'var(--cds-body-compact-01-line-height)',
+        color: data.accentColor,
+        marginTop: '0.75rem',
+        fontWeight: 600,
+      }}>
         {data.metric}
       </div>
       <Handle type="source" position={Position.Right} style={{ background: data.accentColor }} />
@@ -163,9 +191,11 @@ export function AvbRoutingWorkspaceGraph({
 
   if (graphNodes.length === 0) {
     return (
-      <div className="avb-routing-workspace__graph-empty">
-        No AVB discovery nodes are currently available for this workspace.
-      </div>
+      <EmptyState
+        className="avb-routing-workspace__graph-empty"
+        title="No AVB discovery nodes are currently available for this workspace"
+        description="Select another node scope or wait for discovery to populate the AVB graph."
+      />
     )
   }
 

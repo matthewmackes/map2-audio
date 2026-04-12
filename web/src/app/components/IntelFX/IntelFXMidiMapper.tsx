@@ -20,6 +20,7 @@ import {
   type IntelFXRegistryParam,
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
+import { EmptyState } from '../shared/EmptyState'
 import { NumberInput } from '../ParameterControl'
 import './IntelFXMidiMapper.css'
 
@@ -526,7 +527,13 @@ export function IntelFXMidiMapper() {
           </table>
 
           {activeMap.mappings.length === 0 ? (
-            <div className="intelfx-midi-mapper__table-empty">No mappings yet. Add a row and assign a target parameter.</div>
+            <EmptyState
+              className="intelfx-midi-mapper__table-empty"
+              title="No mappings yet"
+              description="Add a row and assign a target parameter."
+              compact
+              align="left"
+            />
           ) : null}
         </Layer>
       )}

@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity as Pulse, Activity as Cpu, Flash as Lightning } from '@carbon/icons-react'
 import { useCluster } from '../../contexts/useCluster'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 type ClusterAudioResponse = {
   nodes: Record<string, {
@@ -84,11 +86,7 @@ export function ClusterEngineGrid() {
   }, [audioQuery.data, nodes])
 
   if (audioQuery.isLoading && cards.length === 0) {
-    return (
-      <div style={{ color: C.muted, fontSize: 13, padding: '18px 0' }}>
-        Loading cluster engine state…
-      </div>
-    )
+    return <LoadingState description="Loading cluster engine state" />
   }
 
   if (audioQuery.isError) {
@@ -102,6 +100,15 @@ export function ClusterEngineGrid() {
       }}>
         {audioQuery.error instanceof Error ? audioQuery.error.message : 'Cluster audio health unavailable'}
       </div>
+    )
+  }
+
+  if (cards.length === 0) {
+    return (
+      <EmptyState
+        title="No cluster engine telemetry available"
+        description="Connect an audio node or wait for engine health telemetry to publish."
+      />
     )
   }
 

@@ -14,6 +14,8 @@ import type {
   SnapshotActivationIntent,
   SnapshotPublishReadiness,
 } from '../../map2/types'
+import { EmptyState } from '../components/shared/EmptyState'
+import { LoadingState } from '../components/shared/LoadingState'
 import { useToasts } from '../components/Toasts'
 import { useCommittedAudioState, useDesiredAudioState, useObservedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useSnapshotActivationEvents, useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
@@ -406,10 +408,11 @@ export function SnapshotPublishPage() {
   if (!isValidSnapshotId) {
     return (
       <div className="snapshot-publish-page">
-        <Tile className="snapshot-publish-page__empty">
-          <h1>Publish snapshot</h1>
-          <p>The route needs a valid snapshot id.</p>
-        </Tile>
+        <EmptyState
+          className="snapshot-publish-page__empty"
+          title="Publish snapshot"
+          description="The route needs a valid snapshot id."
+        />
       </div>
     )
   }
@@ -418,7 +421,7 @@ export function SnapshotPublishPage() {
     return (
       <div className="snapshot-publish-page">
         <Tile className="snapshot-publish-page__empty">
-          <InlineLoading description="Loading publish workspace" />
+          <LoadingState description="Loading publish workspace" />
         </Tile>
       </div>
     )
@@ -427,17 +430,18 @@ export function SnapshotPublishPage() {
   if (snapshotQuery.isError || readinessQuery.isError || !snapshot || !readiness) {
     return (
       <div className="snapshot-publish-page">
-        <Tile className="snapshot-publish-page__empty">
-          <h1>Publish snapshot</h1>
-          <p>
-            {snapshotQuery.error instanceof Error
+        <EmptyState
+          className="snapshot-publish-page__empty"
+          title="Publish snapshot"
+          description={
+            snapshotQuery.error instanceof Error
               ? snapshotQuery.error.message
               : readinessQuery.error instanceof Error
                 ? readinessQuery.error.message
-                : 'The publish workspace could not load this snapshot.'}
-          </p>
-          <Button kind="secondary" onClick={openEditor}>Open editor</Button>
-        </Tile>
+                : 'The publish workspace could not load this snapshot.'
+          }
+          actions={<Button kind="secondary" onClick={openEditor}>Open editor</Button>}
+        />
       </div>
     )
   }

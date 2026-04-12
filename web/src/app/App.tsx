@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { DataTableSkeleton, Loading, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
+import { DataTableSkeleton, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
 import { Map2BrandMark } from './components/branding/map2Branding'
 import { ViewportPolicyGate } from './components/ViewportPolicyGate'
@@ -11,6 +11,7 @@ import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
 import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath } from './platform/routes'
 import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
+import { LoadingState } from './components/shared/LoadingState'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -126,10 +127,7 @@ function RouteLoadingState({ variant }: { variant: 'default' | 'snapshot' | 'mid
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '8px' }}>
-      <Loading active small withOverlay={false} description="Loading page content" />
-      <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Loading…</span>
-    </div>
+    <LoadingState description="Loading page content" variant="page" />
   )
 }
 

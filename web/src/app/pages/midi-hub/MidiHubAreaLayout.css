@@ -97,7 +97,6 @@
 .midi-hub-workbench-card p,
 .midi-hub-mini-surface p,
 .midi-hub-panel-note,
-.midi-hub-empty-state,
 .midi-hub-empty-state-card__copy p {
   margin: 0;
   color: var(--cds-text-secondary);
@@ -675,12 +674,6 @@
 .midi-hub-modal-grid .cds--select,
 .midi-hub-modal-grid .cds--toggle {
   width: 100%;
-}
-
-.midi-hub-empty-state {
-  padding: var(--cds-spacing-05);
-  border: 1px dashed var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
 }
 
 @keyframes midi-hub-enter {

@@ -8,6 +8,8 @@
 import React from 'react';
 import { useLatency } from '../../hooks/useLatency';
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames';
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 interface LatencyDisplayProps {
   /** Show detailed per-plugin breakdown */
@@ -71,11 +73,7 @@ export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
   } = useLatency({ nodeId });
 
   if (isLoading) {
-    return (
-      <div className={`${className} text-zinc-500 text-sm`}>
-        Loading latency info...
-      </div>
-    );
+    return <LoadingState className={className} description="Loading latency info" />;
   }
 
   if (!latency) {
@@ -177,9 +175,12 @@ export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
           )}
 
           {breakdown.length === 0 && (
-            <div className="text-xs text-zinc-500">
-              No plugins with reported latency
-            </div>
+            <EmptyState
+              compact
+              className={className}
+              title="No plugins with reported latency"
+              description="Latency data will appear here when the active chain reports per-plugin values."
+            />
           )}
         </div>
       )}

@@ -4,7 +4,6 @@ import { CheckmarkFilled, Flash, Link, Renew, VolumeUp, WarningAlt } from '@carb
 import {
   Button,
   Checkbox,
-  InlineLoading,
   InlineNotification,
   Modal,
   Tab,
@@ -19,6 +18,8 @@ import {
   type AudioPort,
   type AudioPortPreset,
 } from '../../../map2/api'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 export interface JuceGridAudioPortModalProps {
   open: boolean
@@ -387,12 +388,13 @@ export function JuceGridAudioPortModal({
         ))}
 
         {endpoints.length === 0 ? (
-          <div className="juce-grid-page__empty-state">
-            <p>No AVB endpoints discovered</p>
-            <p className="juce-grid-page__empty-state-copy">
-              {type === 'input' ? 'Talker inputs' : 'Listener outputs'} will appear here when the AVB fabric is ready.
-            </p>
-          </div>
+          <EmptyState
+            className="juce-grid-page__empty-state"
+            title="No AVB endpoints discovered"
+            description={`${type === 'input' ? 'Talker inputs' : 'Listener outputs'} will appear here when the AVB fabric is ready.`}
+            compact
+            align="left"
+          />
         ) : (
           <div className="juce-grid-page__port-grid juce-grid-page__port-grid--wide">
             {endpoints.map((endpoint) => {
@@ -536,7 +538,7 @@ export function JuceGridAudioPortModal({
 
         {(portsQuery.isLoading || routingQuery.isLoading || (isPerChain && chainRoutingQuery.isLoading)) && (
           <div className="juce-grid-page__port-loading">
-            <InlineLoading description="Loading port routing" />
+            <LoadingState description="Loading port routing" />
           </div>
         )}
 
@@ -565,10 +567,13 @@ export function JuceGridAudioPortModal({
                 <p>Select one or more local channels for the active signal path.</p>
               </div>
               {inputPorts.length > 0 ? renderPortCards('input', inputGroups, selectedInputs) : (
-                <div className="juce-grid-page__empty-state">
-                  <p>No local input ports</p>
-                  <p className="juce-grid-page__empty-state-copy">This node is not currently exposing input channels.</p>
-                </div>
+                <EmptyState
+                  className="juce-grid-page__empty-state"
+                  title="No local input ports"
+                  description="This node is not currently exposing input channels."
+                  compact
+                  align="left"
+                />
               )}
             </section>
 
@@ -588,10 +593,13 @@ export function JuceGridAudioPortModal({
                 <p>Select one or more local destinations for the processed signal.</p>
               </div>
               {outputPorts.length > 0 ? renderPortCards('output', outputGroups, selectedOutputs) : (
-                <div className="juce-grid-page__empty-state">
-                  <p>No local output ports</p>
-                  <p className="juce-grid-page__empty-state-copy">This node is not currently exposing output channels.</p>
-                </div>
+                <EmptyState
+                  className="juce-grid-page__empty-state"
+                  title="No local output ports"
+                  description="This node is not currently exposing output channels."
+                  compact
+                  align="left"
+                />
               )}
             </section>
 

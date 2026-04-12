@@ -26,6 +26,7 @@ import {
   useTesiraLayouts,
 } from '../hooks/useTesiraApi'
 import type { DiscoveredTesiraDevice, TesiraLayoutArtifact } from '../types'
+import { EmptyState } from '../../shared/EmptyState'
 import './TesiraOnboardingWizard.css'
 
 type OnboardingMethod = 'serial' | 'network-discovery' | 'manual-ip'
@@ -409,9 +410,13 @@ export function TesiraOnboardingWizard() {
 
               <div className="tesira-onboarding-wizard__candidate-list">
                 {discoveryDevices.length === 0 ? (
-                  <p className="tesira-onboarding-wizard__empty">
-                    No discovery candidates yet. Start a scan or use the known-IP fallback.
-                  </p>
+                  <EmptyState
+                    className="tesira-onboarding-wizard__empty"
+                    title="No discovery candidates yet"
+                    description="Start a scan or use the known-IP fallback."
+                    compact
+                    align="left"
+                  />
                 ) : (
                   discoveryDevices.map((device) => (
                     <button

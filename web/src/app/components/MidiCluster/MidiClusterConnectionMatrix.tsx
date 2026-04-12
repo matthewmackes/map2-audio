@@ -15,6 +15,7 @@ import { useMemo, useState } from 'react'
 
 import type { MidiClusterConnection, MidiClusterEndpoint } from '../../../map2/api'
 import { useConnectMidiCluster, useDisconnectMidiCluster } from '../../hooks/useMidiCluster'
+import { EmptyState } from '../shared/EmptyState'
 import './MidiClusterConnectionMatrix.css'
 
 interface Props {
@@ -141,9 +142,12 @@ export function MidiClusterConnectionMatrix({ endpoints, connections }: Props) {
       </div>
 
       {outputs.length === 0 || inputs.length === 0 ? (
-        <div className="midi-cluster-connection-matrix__empty-table" role="status">
-          No matrix endpoints detected yet. Connect at least one MIDI output and input to configure routing.
-        </div>
+        <EmptyState
+          className="midi-cluster-connection-matrix__empty-table"
+          title="No matrix endpoints detected yet"
+          description="Connect at least one MIDI output and input to configure routing."
+          compact
+        />
       ) : (
         <div className="midi-cluster-connection-matrix__table-wrap">
           <TableContainer

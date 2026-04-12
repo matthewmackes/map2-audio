@@ -23,6 +23,8 @@ import {
 import { Add as Plus, Renew as ArrowsClockwise, TrashCan as Trash, WarningAlt as Warning } from '@carbon/icons-react'
 import type { HealthAlert } from '@/app/hooks/useHealthMonitoring'
 import { NumberInput } from '../ParameterControl'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 
 interface SystemHost {
   id: string
@@ -359,9 +361,13 @@ export default function MultiSystemDashboard({
                     </Box>
                   </Box>
                 ) : (
-                  <Typography sx={{ fontSize: 12, color: '#999', textAlign: 'center', py: 2 }}>
-                    {host.status === 'offline' ? 'System offline' : 'Loading metrics...'}
-                  </Typography>
+                  host.status === 'offline' ? (
+                    <Typography sx={{ fontSize: 12, color: '#999', textAlign: 'center', py: 2 }}>
+                      System offline
+                    </Typography>
+                  ) : (
+                    <LoadingState description="Loading metrics" />
+                  )
                 )}
               </CardContent>
             </Card>
@@ -381,11 +387,11 @@ export default function MultiSystemDashboard({
               }}
               onClick={() => setAddDialogOpen(true)}
             >
-              <Plus size={48} style={{ margin: '0 auto 16px', color: '#9ca3af' }} />
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>No Systems Added</Typography>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>
-                Click to add your first MAP2 system to the dashboard
-              </Typography>
+              <EmptyState
+                icon={<Plus size={48} style={{ color: '#9ca3af' }} />}
+                title="No systems added"
+                description="Click to add your first MAP2 system to the dashboard."
+              />
             </Paper>
           </Grid>
         )}

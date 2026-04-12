@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 
 import { JsonDiffViewer, JsonTreeViewer } from '../../components/ApiObservatory/primitives'
+import { EmptyState } from '../../components/shared/EmptyState'
 import { CodeEditor } from './CodeEditor'
 import type { WsConnectionState, WsInspectorMessage } from './types'
 import { wsUrl } from '../../utils/apiTarget'
@@ -377,7 +378,14 @@ export function WebSocketInspectorTab() {
                 </label>
               </article>
             ))}
-            {filteredMessages.length === 0 && <p>No messages match current filters.</p>}
+            {filteredMessages.length === 0 && (
+              <EmptyState
+                title="No messages match the current filters"
+                description="Adjust the filter fields or wait for more WebSocket traffic."
+                compact
+                align="left"
+              />
+            )}
           </div>
 
           {diffLeft && diffRight && (

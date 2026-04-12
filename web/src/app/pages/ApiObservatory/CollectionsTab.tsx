@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { EmptyState } from '../../components/shared/EmptyState'
 import { CodeEditor } from './CodeEditor'
 import { sendProxyRequest } from './api'
 import { runScriptInSandbox } from './scriptSandbox'
@@ -554,13 +555,25 @@ export function CollectionsTab({
                         {result.message ? ` · ${result.message}` : ''}
                       </li>
                     ))}
-                    {runnerResults.length === 0 && <li>No run results yet.</li>}
                   </ul>
+                  {runnerResults.length === 0 && (
+                    <EmptyState
+                      title="No run results yet"
+                      description="Run the collection to capture request outcomes and timing."
+                      compact
+                      align="left"
+                    />
+                  )}
                 </div>
               </section>
             </>
           ) : (
-            <p>Create or select a collection to begin.</p>
+            <EmptyState
+              title="Create or select a collection"
+              description="Choose an existing collection or create a new one to begin."
+              compact
+              align="left"
+            />
           )}
         </main>
       </div>

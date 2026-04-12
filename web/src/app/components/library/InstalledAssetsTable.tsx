@@ -2,7 +2,6 @@ import { Fragment, useCallback, useMemo, useState } from 'react'
 import {
   Button,
   Checkbox,
-  InlineLoading,
   InlineNotification,
   Modal,
   Search,
@@ -37,6 +36,8 @@ import { foldersApi, irApi, namApi, pluginsApi, soundfontApi } from '../../../ma
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import type { IRFile, NAMModel } from '../../../map2/types'
 import { useCluster } from '../../contexts/useCluster'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import type { SoundFont } from '../../types/library'
 import './InstalledAssetsTable.css'
 
@@ -858,16 +859,14 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
       <div className="installed-assets-table-wrap">
         {isLoading ? (
           <div className="installed-assets-table__state">
-            <InlineLoading description="Loading assets" status="active" />
+            <LoadingState description="Loading assets" />
           </div>
         ) : filteredAssets.length === 0 ? (
           <div className="installed-assets-table__state">
-            <InlineNotification
-              kind="info"
-              lowContrast
-              hideCloseButton
+            <EmptyState
               title="No assets found"
-              subtitle="Adjust your filters or refresh the library scan."
+              description="Adjust your filters or refresh the library scan."
+              compact
             />
           </div>
         ) : (

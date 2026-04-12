@@ -17,6 +17,8 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToasts } from '../Toasts'
+import { EmptyState } from '../shared/EmptyState'
+import { LoadingState } from '../shared/LoadingState'
 import {
   Branch,
   CheckmarkFilled,
@@ -248,7 +250,7 @@ function ClusterNodesTab({
   }))
 
   if (isLoading) {
-    return <div className="audio-nodes-modal__state"><InlineLoading description="Loading cluster nodes" status="active" /></div>
+    return <div className="audio-nodes-modal__state"><LoadingState description="Loading cluster nodes" /></div>
   }
   if (error) {
     return <InlineNotification kind="error" lowContrast hideCloseButton title="Cluster nodes unavailable" subtitle="Could not reach the cluster API." />
@@ -303,7 +305,17 @@ function ClusterNodesTab({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tableRows.map((row) => {
+                {tableRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={headers.length}>
+                      <EmptyState
+                        title="No cluster nodes match this search"
+                        description="Adjust the search text to show more cluster nodes."
+                        compact
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : tableRows.map((row) => {
                   const { key: _k, ...rp } = getRowProps({ row })
                   return (
                     <TableRow key={row.id} {...rp}>
@@ -412,7 +424,7 @@ function FlowAssignmentsTab({
   }))
 
   if (isLoading) {
-    return <div className="audio-nodes-modal__state"><InlineLoading description="Loading flow assignments" status="active" /></div>
+    return <div className="audio-nodes-modal__state"><LoadingState description="Loading flow assignments" /></div>
   }
   if (error) {
     return <InlineNotification kind="error" lowContrast hideCloseButton title="Flow assignments unavailable" subtitle="Could not reach the cluster assignments API." />
@@ -461,7 +473,17 @@ function FlowAssignmentsTab({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tableRows.map((row) => {
+                {tableRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={headers.length}>
+                      <EmptyState
+                        title="No flow assignments match this search"
+                        description="Adjust the search text to show more cluster flow assignments."
+                        compact
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : tableRows.map((row) => {
                   const { key: _k, ...rp } = getRowProps({ row })
                   return (
                     <TableRow key={row.id} {...rp}>
@@ -990,7 +1012,7 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
             <TabPanel>
               {deploymentQuery.isLoading ? (
                 <div className="audio-nodes-modal__state">
-                  <InlineLoading description="Loading deployment mode" status="active" />
+                  <LoadingState description="Loading deployment mode" />
                 </div>
               ) : deploymentQuery.isError ? (
                 <InlineNotification kind="error" lowContrast hideCloseButton

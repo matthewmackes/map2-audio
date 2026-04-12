@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, ArrowRight, BareMetalServer, Certificate, ChartNetwork, Checkmark, CheckmarkFilled, Close, Document, Link, Locked, Renew, Search, Security, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from './ParameterControl'
+import { EmptyState } from './shared/EmptyState'
 import { LegacyButton } from './shared/LegacyButton'
 
 interface WizardStep {
@@ -296,9 +297,11 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               {discoveredNodes.length === 0 ? (
-                <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>
-                  No nodes discovered yet. Click "Auto-Discover" to scan the network.
-                </div>
+                <EmptyState
+                  title="No nodes discovered yet"
+                  description='Click "Auto-Discover" to scan the network.'
+                  compact
+                />
               ) : (
                 <div>
                   <div style={{ marginBottom: 12, color: '#00ff41', display: 'flex', alignItems: 'center', gap: 6 }}>

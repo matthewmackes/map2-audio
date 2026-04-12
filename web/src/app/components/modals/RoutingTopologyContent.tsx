@@ -27,6 +27,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { midiApiV2 } from '../../../map2/api'
 import type { MIDICommand, MIDITriggerType, MIDIActionType, MIDIMappingV2 } from '../../../map2/types'
 import { MidiCcBadge } from '../Controls/MidiCcBadge'
+import { LoadingState } from '../shared/LoadingState'
 import {
   JuceGridRoutingVisualizer,
   type JuceGridRoutingFlowInfo,
@@ -497,7 +498,7 @@ export function RoutingTopologyContent({
 
       {commandsQuery.isLoading ? (
         <div className="rtm__midi-loading">
-          <InlineLoading description="Loading MIDI commands…" />
+          <LoadingState description="Loading MIDI commands" />
         </div>
       ) : null}
 

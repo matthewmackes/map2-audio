@@ -28,6 +28,8 @@ import {
 import type { PluginCardProps } from '../../types'
 import { resolvePluginAccentColor } from '../../../../utils/pluginAccent'
 import api from '../../../../../map2/api'
+import { EmptyState } from '../../../shared/EmptyState'
+import { LoadingState } from '../../../shared/LoadingState'
 
 const PARAM_MAP = {
   volume: 0,
@@ -290,9 +292,13 @@ export function KeyboardSamplerCard({
             {/* Sound List */}
             <div style={{ flex: 1, overflow: 'auto', padding: '8px 16px' }}>
               {isLoading ? (
-                <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>Loading sounds...</div>
+                <LoadingState description="Loading sounds" />
               ) : Object.keys(groupedByLibrary).length === 0 ? (
-                <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>No sounds found</div>
+                <EmptyState
+                  compact
+                  title="No sounds found"
+                  description="Try a different category or search term, or download more sounds to this library."
+                />
               ) : (
                 Object.entries(groupedByLibrary).map(([library, sounds]) => (
                   <div key={library} style={{ marginBottom: 8 }}>

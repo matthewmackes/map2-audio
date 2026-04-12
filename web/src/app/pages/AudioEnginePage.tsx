@@ -62,6 +62,7 @@ import {
 } from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { audioApi } from '../../map2/api'
+import { LoadingState } from '../components/shared/LoadingState'
 import type {
   AudioSourceTruthPayload,
   PipeWireAlert,
@@ -238,7 +239,7 @@ function SourceOfTruthSection({
             <h2 className="audio-engine-page__section-title">Source of truth</h2>
           </div>
         </div>
-        <InlineLoading description="Loading source-of-truth snapshot" />
+        <LoadingState description="Loading source-of-truth snapshot" />
       </Tile>
     )
   }

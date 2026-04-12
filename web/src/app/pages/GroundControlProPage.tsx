@@ -43,6 +43,7 @@ import {
 } from '@carbon/react'
 import { ArrowRight, Code, Download, Save, Send, Upload } from '@carbon/icons-react'
 
+import { EmptyState } from '../components/shared/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import groundControlProApi, {
@@ -732,7 +733,12 @@ export function GroundControlProPage() {
                         )}
                       </div>
                     ) : (
-                      <p>No validation report yet.</p>
+                      <EmptyState
+                        title="No validation report yet"
+                        description="Run validation to generate a structural and preservation report."
+                        compact
+                        align="left"
+                      />
                     )}
                   </Tile>
                 </div>
@@ -1180,7 +1186,12 @@ export function GroundControlProPage() {
                         </StructuredListBody>
                       </StructuredListWrapper>
                     ) : (
-                      <p>No compile report yet.</p>
+                      <EmptyState
+                        title="No compile report yet"
+                        description="Compile the current session to generate a transfer-ready report."
+                        compact
+                        align="left"
+                      />
                     )}
                   </Tile>
                   <Tile>

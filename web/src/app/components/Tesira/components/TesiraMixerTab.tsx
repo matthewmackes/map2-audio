@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Renew } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import { useSetCrosspoint, useSetCrosspointMute, useTesiraCrosspointMatrix } from '../hooks/useTesiraApi'
+import { LoadingState } from '../../shared/LoadingState'
 import { NumberInput } from '../../ParameterControl'
 import './TesiraCarbonChrome.css'
 
@@ -162,7 +163,7 @@ export function TesiraMixerTab({ deviceId }: TesiraMixerTabProps) {
 
         {matrix.isLoading && !matrix.data ? (
           <div className="tesira-mixer-tab__loading">
-            <InlineLoading description="Loading Tesira crosspoint matrix" />
+            <LoadingState description="Loading Tesira crosspoint matrix" />
           </div>
         ) : (
           <div className="tesira-mixer-tab__table-wrap">

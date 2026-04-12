@@ -14,6 +14,7 @@ import {
   type MPX1Program,
 } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
+import { EmptyState } from '../shared/EmptyState'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from './programNumber'
 import './MPX1Librarian.css'
 
@@ -422,7 +423,12 @@ export function MPX1Librarian() {
           </tbody>
         </table>
         {!isLoading && filteredEntries.length === 0 && (
-          <div className="mpx1-library__empty">No programs match your filter.</div>
+          <EmptyState
+            className="mpx1-library__empty"
+            title="No programs match this filter"
+            description="Adjust the filter to show more MPX1 programs."
+            compact
+          />
         )}
       </div>
     </div>

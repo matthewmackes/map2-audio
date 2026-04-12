@@ -43,9 +43,9 @@
 .tesira-onboarding-wizard__progress-kicker,
 .tesira-onboarding-wizard__method-header p {
   margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1rem);
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
   color: var(--cds-text-helper, #6f6f6f);
 }
 

@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { LoadingState } from '../../app/components/shared/LoadingState'
 import './AudioInterfaceControl.css';
 
 interface AudioStatus {
@@ -337,7 +338,11 @@ CURRENT STATUS
   };
 
   if (loading) {
-    return <div className="audio-interface-section" style={{ padding: '40px', textAlign: 'center', color: '#888' }}>Loading audio interface...</div>;
+    return (
+      <div className="audio-interface-section">
+        <LoadingState description="Loading audio interface" />
+      </div>
+    )
   }
 
   const isConnected = audioStatus?.available && (usbDevices?.hotone_detected || (usbDevices?.device_count || 0) > 0);

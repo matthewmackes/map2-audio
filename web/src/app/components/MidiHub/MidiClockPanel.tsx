@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PauseFilled, PlayFilled, PlayOutlineFilled, Touch_1 } from '@carbon/icons-react'
 import { Button, Checkbox, Select, SelectItem, Slider, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useMidiHubOverview } from './useMidiHubOverview'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -210,7 +211,10 @@ export function MidiClockPanel() {
                 )
               })}
               {availableOutputPorts.length === 0 ? (
-                <div className="midi-hub-empty-state">No output ports available.</div>
+                <MidiHubEmptyState
+                  title="No output ports available"
+                  description="Connect a MIDI output port or refresh discovery to route MIDI clock."
+                />
               ) : null}
             </div>
           </div>

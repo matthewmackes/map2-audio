@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Activity, Flash, Renew } from '@carbon/icons-react'
 
 import { mpx1Api, type MPX1Diagnostics, type MPX1MidiPorts } from '../../map2/mpx1Api'
+import { EmptyState } from '../components/shared/EmptyState'
 import { useMPX1PageContext } from './MPX1Page'
 import './MPX1DiagView.css'
 
@@ -197,7 +198,12 @@ export function MPX1DiagView() {
             </tbody>
           </table>
           {!isRefreshing && trafficRows.length === 0 && (
-            <div className="mpx1-diag__empty">No traffic captured yet.</div>
+            <EmptyState
+              className="mpx1-diag__empty"
+              title="No traffic captured yet"
+              description="Send or receive MIDI traffic to populate the diagnostic log."
+              compact
+            />
           )}
         </div>
       </section>

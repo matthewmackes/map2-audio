@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import type { SnapshotExpressionCurve, SnapshotExpressionMapping } from '../../../map2/types'
 import { NumberInput } from '../ParameterControl'
+import { EmptyState } from '../shared/EmptyState'
 import { createDefaultSnapshotExpressionMapping, normalizeSnapshotExpressionMappings } from '../../utils/snapshotExpressionMappings'
 
 interface SnapshotExpressionParameterOption {
@@ -119,9 +120,13 @@ export function SnapshotExpressionMappingsCard({
       </div>
 
       {draftMappings.length === 0 ? (
-        <p className="juce-grid-page__empty-state-copy">
-          Add a snapshot-scoped expression pedal map to drive multiple engine parameters from one CC.
-        </p>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No expression pedals are configured"
+          description="Add a snapshot-scoped expression pedal map to drive multiple engine parameters from one CC."
+          compact
+          align="left"
+        />
       ) : (
         <div className="juce-grid-page__midi-list">
           {draftMappings.map((mapping, mappingIndex) => (
@@ -372,9 +377,13 @@ export function SnapshotExpressionMappingsCard({
       </div>
 
       {!hasActiveSnapshot && (
-        <p className="juce-grid-page__empty-state-copy">
-          Load a snapshot to configure per-snapshot expression pedal mappings.
-        </p>
+        <EmptyState
+          className="juce-grid-page__empty-state"
+          title="No snapshot is active"
+          description="Load a snapshot to configure per-snapshot expression pedal mappings."
+          compact
+          align="left"
+        />
       )}
     </Tile>
   )
