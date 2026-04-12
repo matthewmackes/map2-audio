@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1827** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1829** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b90dcfed`](https://github.com/matthewmackes/map2-audio/commit/b90dcfed818a236a3e453d62e3733359efef9dda) | Convert MIDI CC badges to Carbon tags | Map2 Audio | 2026-04-12 |
+| [`53dc61de`](https://github.com/matthewmackes/map2-audio/commit/53dc61de20c298ef8f006bf6e8c1f51f390ea915) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`4c3d2fe4`](https://github.com/matthewmackes/map2-audio/commit/4c3d2fe44db62dd0ecd96aa5802f4ba68cdc11f9) | Convert routing topology tab count to Carbon tag | Map2 Audio | 2026-04-12 |
 | [`2eab9f5f`](https://github.com/matthewmackes/map2-audio/commit/2eab9f5fad5c1e0c8157c264f8da6b23529b0e5a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`9f2ed348`](https://github.com/matthewmackes/map2-audio/commit/9f2ed348a319a9ae25d782208fab022ab012e036) | Close shared badge migration and document custom exceptions | Map2 Audio | 2026-04-12 |
 | [`79758069`](https://github.com/matthewmackes/map2-audio/commit/79758069c549630f477981af0211769770c4bdf4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`9287a27c`](https://github.com/matthewmackes/map2-audio/commit/9287a27c2fb7be3d78dec42c718c8e763cfcc5db) | Convert shared TagBadge helper to Carbon tags | Map2 Audio | 2026-04-12 |
 | [`8932462a`](https://github.com/matthewmackes/map2-audio/commit/8932462a8ec4f8bfdbcdc8ebfc589e645caeca15) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`8d76c598`](https://github.com/matthewmackes/map2-audio/commit/8d76c59807592ecb98e3c09229aa1a4e17c0ec35) | Retune launcher hero icon sizing and landing spinner | Map2 Audio | 2026-04-12 |
-| [`3f9fdb89`](https://github.com/matthewmackes/map2-audio/commit/3f9fdb891817e3ac9c9905dee954ddf9cf9ba406) | Convert static feature badges to Carbon tags | Map2 Audio | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
