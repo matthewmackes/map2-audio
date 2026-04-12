@@ -9,7 +9,7 @@
   color: var(--cds-text-primary);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--cds-link-primary) 12%, transparent), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-01) 90%, black), var(--cds-background));
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer) 90%, black), var(--cds-background));
 }
 
 .physical-surfaces-shell__frame {
@@ -71,7 +71,7 @@
   gap: var(--cds-spacing-03);
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .physical-surfaces-shell__warning svg {
@@ -197,7 +197,7 @@
 .physical-surfaces-page__detail-list li {
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .physical-surfaces-page__view-item {
@@ -205,7 +205,7 @@
   gap: var(--cds-spacing-04);
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .physical-surfaces-page__detail-list li p {
@@ -225,7 +225,7 @@
   gap: var(--cds-spacing-02);
   padding: var(--cds-spacing-03);
   border: 1px solid var(--cds-border-subtle-01);
-  background: color-mix(in srgb, var(--cds-layer-02) 75%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover) 75%, transparent);
 }
 
 .physical-surfaces-page__zone-card strong {
@@ -242,7 +242,7 @@
   margin: 0;
   padding: var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: var(--cds-text-secondary);
   overflow: auto;
   font-size: 0.8rem;
