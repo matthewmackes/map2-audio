@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1835** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1838** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a604e9a2`](https://github.com/matthewmackes/map2-audio/commit/a604e9a29b43211f841e645b545cf05168b3ce17) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
+| [`554fef38`](https://github.com/matthewmackes/map2-audio/commit/554fef3898d79520fb933527bd9bcc7e8a6ef039) | T866-subB layer shared node selector and chain entry shells | Map2 Audio | 2026-04-12 |
+| [`09ed34f1`](https://github.com/matthewmackes/map2-audio/commit/09ed34f1319c9138222875dbc49665c22593fd12) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`947d50a2`](https://github.com/matthewmackes/map2-audio/commit/947d50a290f0c36175bca99590a4aab276311361) | Start Carbon layer migration | Map2 Audio | 2026-04-12 |
 | [`85251f20`](https://github.com/matthewmackes/map2-audio/commit/85251f20067deb123a29d479301781f6a8a73de9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`55b289d7`](https://github.com/matthewmackes/map2-audio/commit/55b289d7a262d47ffec4a1f491a80905ea0e082f) | Inventory Carbon layer migration queue | Map2 Audio | 2026-04-12 |
 | [`9a40274c`](https://github.com/matthewmackes/map2-audio/commit/9a40274c07fa1feacbd80b13aa4a4abdc7f4d21d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`d8208bc8`](https://github.com/matthewmackes/map2-audio/commit/d8208bc8dd94e1f99dff0cc74a345948e9f507c9) | Close Carbon badge migration | Map2 Audio | 2026-04-12 |
-| [`cbb7fd1b`](https://github.com/matthewmackes/map2-audio/commit/cbb7fd1b0608104fac3c4436e567d85f627a83b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`b90dcfed`](https://github.com/matthewmackes/map2-audio/commit/b90dcfed818a236a3e453d62e3733359efef9dda) | Convert MIDI CC badges to Carbon tags | Map2 Audio | 2026-04-12 |
-| [`53dc61de`](https://github.com/matthewmackes/map2-audio/commit/53dc61de20c298ef8f006bf6e8c1f51f390ea915) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
