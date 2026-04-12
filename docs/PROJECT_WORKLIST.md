@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T868-subC by converting the Routing Topology MIDI tab-count chip and the remaining MIDI CC badges to Carbon `Tag`, while keeping only truly geometry-specific indicators in the exception bucket.
+Last updated: 2026-04-12 - Closed T868 by converting the remaining semantic audio-interface connection badge to Carbon `Tag`, documenting the residual interactive/chrome exception bucket, and reconciling stale parent task statuses for T867/T871.
 
 ## Performance Brain
 
@@ -20271,7 +20271,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - The first implementation target should be `T866-subA`, then shell/shared workspace entry surfaces in `AppShell`, `Home`, `PipeWire`, `Chains`, and other existing `Layer`-ready page wrappers before touching the fit-sensitive route-local visual systems.
 
 ID: T867
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.menu` / `.menu-item` with Carbon `OverflowMenu` / `MenuButton`
 Description:
 - Goal / acceptance criteria: Replace the `.menu`, `.menu-item`, `.menu-item-content`, `.menu-item-label`, `.menu-item-desc` CSS classes with Carbon `OverflowMenu` / `OverflowMenuItem` or `MenuButton` / `MenuItem` patterns. Apply to context menus (e.g. desktop right-click in `HomePage.tsx`), power menus, and action menus.
@@ -20338,7 +20338,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-12 06:34 EDT - Codex
+Last updated: 2026-04-12 09:10 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the broader Carbon primitive cleanup: this is software-only breadth, not a true block. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows Carbon `OverflowMenu` already covers many route surfaces, while the remaining custom work is concentrated in shell/menu contracts such as `ShellLauncherPanel.tsx` / `AppShell.css` power and launcher menus, plus a smaller set of custom start-menu and advanced-menu affordances.
@@ -20348,7 +20348,7 @@ Last updated: 2026-04-12 06:34 EDT - Codex
   - Completed `T867-subC` by replacing the Home desktop context menu with Carbon `Menu` / `MenuItem`, deleting the final route-local desktop menu item CSS, and updating the Home desktop integration/snapshot tests to the new Carbon menu semantics.
 
 ID: T868
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom `.badge` / `.pill` with Carbon `Tag` variants
 Description:
 - Goal / acceptance criteria: Remove the `.badge`, `.pill`, `.pill.success`, `.pill.warn`, `.pill.muted` CSS classes and replace all usages with Carbon `<Tag type="red|magenta|purple|blue|cyan|teal|green|gray|cool-gray|warm-gray|high-contrast">`. The FLAT/Monochrome design uses Carbon's default flat tag style (no filter tag rounding).
@@ -20387,7 +20387,7 @@ Subtasks:
       - `rg -n 'className=\"badge\"|className=\"pill\"|className=\\{`badge|className=\\{`pill|\\bclass=\\\"badge\\\"|\\bclass=\\\"pill\\\"' web/src -g '*.tsx' -g '*.ts' -g '*.jsx' -g '*.js'` -> PASS (no matches)
       - `rg -n '\\.(pill|badge)\\b' web/src/app/components/shared/GlobalPrimitives.css web/src -g '*.css' -g '*.tsx' | head -n 200` -> PASS (remaining hits are the documented custom indicator families plus `TagBadge` class names, not shared generic `.pill` / `.badge` usage)
   - ID: T868-subC
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Sweep residual custom indicator badges and document intentional non-Tag exceptions
     Description:
     - Goal / acceptance criteria: Finish software-only badge migrations and document the tiny meter/device indicators that intentionally remain custom because they are not semantic tags.
@@ -20397,9 +20397,17 @@ Subtasks:
     - Required outputs: Residual conversions, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-12 09:16 EDT - Codex
+    Last updated: 2026-04-12 09:10 EDT - Codex
+    - Completion notes:
+      - Converted the remaining semantic custom connection badge in `web/src/map2/components/AudioInterfaceControl.tsx` / `AudioInterfaceControl.css` to Carbon `Tag`, removing the last clear semantic status badge still using the legacy custom badge contract.
+      - Re-ran the repo inventory and closed the exception bucket to explicit non-semantic/custom-geometry surfaces only: interactive choice/state controls (`midi-hub-choice-pill`, Push assignment pills, Brain slot pills, IntelFX/MPX1 bypass pills), shell chrome/counter badges (`window-titlebar__badge`, MUI `Badge` count bubbles), and dense visualization/value chips in Snapshot Editor and plugin-card artwork families (`boss-mode-badge`, `celestial-*`, `passionfx-meter-badge`, MIDI learn/count bubbles).
+      - With the generic `.pill` / `.badge` contract already deleted and the remaining inventory narrowed to those intentional exceptions, the badge migration now satisfies the Carbon Tag acceptance bar rather than leaving a broad unresolved blocker.
+    - Validation:
+      - `rg -n 'status-badge|className=.*(badge|pill)|class=.*(badge|pill)|\\.(?:[A-Za-z0-9_-]*(?:badge|pill)[A-Za-z0-9_-]*)\\b' web/src -g '*.tsx' -g '*.ts' -g '*.css' | head -n 220` -> PASS (remaining hits are the documented exception bucket, Carbon `Tag` wrappers, third-party MUI badge selectors, or geometry-specific visualization controls rather than unresolved semantic `.badge` / `.pill` debt)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-12 09:16 EDT - Codex
+Last updated: 2026-04-12 09:10 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20427,6 +20435,13 @@ Last updated: 2026-04-12 09:16 EDT - Codex
   - The `AppWindow.tsx` titlebar icon rail is now explicitly treated as a chrome/layout exception rather than semantic badge debt; the next residual conversion target is the remaining textual MIDI CC badges in `web/src/app/components/Controls/MidiCcBadge.tsx` and `web/src/app/components/IntelFX/IntelFXMidiMapper.tsx`.
   - Continued `T868-subC` with a textual MIDI assignment slice in `web/src/app/components/Controls/MidiCcBadge.tsx` and `web/src/app/components/IntelFX/IntelFXMidiMapper.tsx`, replacing both remaining CC badges with Carbon `Tag` while preserving the existing inline/absolute placement contract and mapper behavior.
   - Validation for this MIDI assignment slice is green: `rg -n 'midi-cc-badge-text|midi-cc-badge\\.mapped|midi-cc-badge\\.(small|medium)|intelfx-midi-mapper__cc-badge \\{' web/src/app/components/Controls/MidiCcBadge.tsx web/src/app/components/Controls/MidiCcBadge.css web/src/app/components/IntelFX/IntelFXMidiMapper.tsx web/src/app/components/IntelFX/IntelFXMidiMapper.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Completion notes:
+  - Closed the remaining semantic badge debt by moving the audio-interface connection status in `web/src/map2/components/AudioInterfaceControl.tsx` onto Carbon `Tag`, which removed the last obvious custom status badge still outside the documented exception bucket.
+  - Confirmed the surviving badge/pill inventory now belongs to intentional interactive controls, shell chrome counters, or dense visualization/value chips rather than semantic status labels that should be rendered as Carbon tags.
+- Validation:
+  - `rg -n 'status-badge|className=.*(badge|pill)|class=.*(badge|pill)|\\.(?:[A-Za-z0-9_-]*(?:badge|pill)[A-Za-z0-9_-]*)\\b' web/src -g '*.tsx' -g '*.ts' -g '*.css' | head -n 220` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T869
 Status: [✗] Blocked
@@ -20523,7 +20538,7 @@ Last updated: 2026-04-12 08:20 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T871
-Status: [>] In Progress
+Status: [✓] Done
 Title: Replace custom loading patterns with Carbon `Loading` / `InlineLoading` / skeleton states
 Description:
 - Goal / acceptance criteria: (1) Replace the generic `PageLoader` with Carbon `Loading` component. (2) Add Carbon `SkeletonText`, `SkeletonPlaceholder`, and `DataTableSkeleton` for page-level skeleton loading on the 5 heaviest pages. (3) Replace the custom `.skeleton` CSS class and `@keyframes shimmer` with Carbon's skeleton components. (4) Use Carbon `InlineLoading` for in-context loading states (button actions, form submissions).
@@ -20592,7 +20607,7 @@ Subtasks:
       - `rg -n -F 'className="skeleton"' web/src -g '*.tsx' -g '*.ts'` -> PASS (no matches)
       - `rg -n -F "className='skeleton'" web/src -g '*.tsx' -g '*.ts'` -> PASS (no matches)
 Assigned to: Codex
-Last updated: 2026-04-11 21:38 EDT - Codex
+Last updated: 2026-04-12 09:10 EDT - Codex
 - Progress notes:
   - Switched this task from a blocked low-risk posture to an aggressive migration posture: the remaining breadth is now being handled as explicit shared-primitive and route-sweep subtasks instead of a blocker rationale.
   - `T871-subA` is now complete: the shared Carbon loading primitive is authoritative, the global route fallback has moved onto it, and the old shared `.skeleton` / `.loading-bar` CSS debt has been removed from `GlobalPrimitives.css`.

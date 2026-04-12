@@ -46,27 +46,11 @@
   filter: drop-shadow(0 0 10px rgba(77, 158, 255, 0.8));
 }
 
-/* Connection Status Badge */
-.status-badge {
-  padding: 8px 16px;
-  border-radius: var(--border-radius-lg);
+/* Connection Status Tag */
+.audio-interface-status-tag.cds--tag {
+  flex-shrink: 0;
   font-weight: 600;
-  font-size: var(--cds-label-01-font-size, 0.75rem);
-  line-height: var(--cds-label-01-line-height, 1rem);
-  transition: all 0.3s ease;
-}
-
-.status-badge.connected {
-  background: rgba(74, 222, 128, 0.2);
-  color: #4ade80;
-  border: 1px solid #4ade80;
-  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
-}
-
-.status-badge.disconnected {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
-  border: 1px solid #fbbf24;
+  box-shadow: 0 0 15px rgba(77, 158, 255, 0.15);
 }
 
 /* Hero Section with Device Display */

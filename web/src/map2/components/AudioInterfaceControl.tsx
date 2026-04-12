@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Tag } from '@carbon/react'
 import { LoadingState } from '../../app/components/shared/LoadingState'
 import './AudioInterfaceControl.css';
 
@@ -358,9 +359,13 @@ CURRENT STATUS
           <span className="audio-interface-icon">I/O</span>
           Audio Interface
         </h2>
-        <div className={`status-badge ${isConnected ? 'connected' : 'disconnected'}`}>
-          {isConnected ? '✓ Connected' : '○ Disconnected'}
-        </div>
+        <Tag
+          className="audio-interface-status-tag"
+          size="md"
+          type={isConnected ? 'green' : 'warm-gray'}
+        >
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </Tag>
       </div>
 
       {/* Hero Section with Device Image */}
