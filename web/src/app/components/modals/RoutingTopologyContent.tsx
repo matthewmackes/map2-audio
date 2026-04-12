@@ -733,7 +733,9 @@ export function RoutingTopologyContent({
               <Music size={14} style={{ marginRight: 6 }} />
               MIDI Control
               {midiAssignedCount > 0 ? (
-                <span className="rtm__tab-badge">{midiAssignedCount}</span>
+                <Tag type="blue" size="sm">
+                  {midiAssignedCount}
+                </Tag>
               ) : null}
             </Tab>
           </TabList>

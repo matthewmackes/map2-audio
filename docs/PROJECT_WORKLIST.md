@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Closed T868-subB by deleting the dead shared `.pill` / `.badge` CSS and opened T868-subC to document the remaining custom indicator exceptions and any final fit-sensitive conversions.
+Last updated: 2026-04-12 - Continued T868-subC by converting the Routing Topology MIDI tab-count chip to Carbon `Tag` and tightening the residual custom-indicator exception list.
 
 ## Performance Brain
 
@@ -20397,9 +20397,9 @@ Subtasks:
     - Required outputs: Residual conversions, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-12 08:49 EDT - Codex
+    Last updated: 2026-04-12 09:02 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-12 08:49 EDT - Codex
+Last updated: 2026-04-12 09:02 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20422,6 +20422,8 @@ Last updated: 2026-04-12 08:49 EDT - Codex
   - Validation for this helper slice is green: `rg -n 'background: #333|tag-badge more|border-radius: 3px' web/src/app/components/PluginTags/TagBadge.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Closed `T868-subB` by removing the dead shared `.pill` / `.badge` contract from `GlobalPrimitives.css`; the remaining repo inventory is now explicitly custom indicator debt rather than shared semantic badge debt.
   - Opened `T868-subC` with the first explicit exception inventory: `PushConfirmationNoticePill.tsx`, `Controls/MidiCcBadge.tsx`, `IntelFXMidiMapper.tsx`, `RoutingTopologyContent.tsx` tab count chip, `AppWindow.tsx` titlebar icon badge, `IntelFXStatusBar.tsx`, `MPX1StatusBar.tsx`, `PushSurfacePage.tsx`, `PerformanceBrainPage.tsx`, `SnapshotEditor*` fit-sensitive chips, and specialized plugin-card indicators such as `boss-mode-badge`, `celestial-*`, and `passionfx-meter-badge`.
+  - Continued `T868-subC` with a first low-risk residual conversion in `web/src/app/components/modals/RoutingTopologyContent.tsx`, replacing the custom `rtm__tab-badge` MIDI tab-count chip with a Carbon `Tag` and deleting the orphaned `.rtm__tab-badge` CSS from `web/src/app/components/modals/RoutingTopologyModal.css`.
+  - Validation for this Routing Topology slice is green: `rg -n 'rtm__tab-badge' web/src/app/components/modals/RoutingTopologyContent.tsx web/src/app/components/modals/RoutingTopologyModal.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked

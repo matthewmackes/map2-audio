@@ -68,25 +68,6 @@
   margin-top: 0.125rem;
 }
 
-/* ── Tab badge (MIDI count) ─────────────────────────────────────────────────── */
-
-.rtm__tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  line-height: 1;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: var(--cds-interactive, #0f62fe);
-  color: #fff;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
 /* ── Topology tab panel ─────────────────────────────────────────────────────── */
 
 .rtm__panel-grid {
