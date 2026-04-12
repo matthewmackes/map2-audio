@@ -2,6 +2,7 @@
  * Audio Node Features - MAP2 Audio Optimization Highlights
  */
 
+import { Tag } from '@carbon/react'
 import { ChartLine as TrendUp, Flash as Lightning, Meter, Music, Security as Shield, Windy as Wind } from '@carbon/icons-react'
 import type { HostMachineInfo, SystemHealthOverview, BrandingAssets } from '@/map2/types'
 
@@ -90,7 +91,7 @@ export default function AudioNodeFeatures({ machineInfo, healthOverview, brandin
             <div className="hm-feature-card__top">
               <span className="hm-feature-card__icon">{f.icon}</span>
               <span className="hm-feature-card__title">{f.title}</span>
-              {f.badge && <span className="hm-feature-card__badge">{f.badge}</span>}
+              {f.badge ? <Tag className="hm-feature-card__tag" size="sm" type="green">{f.badge}</Tag> : null}
             </div>
             <p className="hm-feature-card__desc">{f.description}</p>
           </div>

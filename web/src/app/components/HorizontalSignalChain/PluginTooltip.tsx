@@ -2,6 +2,7 @@
  * Plugin tooltip showing technical details on hover
  */
 
+import { Tag } from '@carbon/react'
 import type { ChainPlugin, Plugin } from '../../../map2/types'
 import { getEffectIcon } from '../icons/effectIcons'
 import { getDisplayPluginName } from '../../../map2/displayNames'
@@ -95,12 +96,12 @@ export function PluginTooltipContent({ plugin, meta }: PluginTooltipContentProps
       {(plugin.latency_compensated || plugin.sidechain_source) && (
         <div className="plugin-tooltip-badges">
           {plugin.latency_compensated && (
-            <span className="plugin-tooltip-badge pdc">PDC</span>
+            <Tag className="plugin-tooltip-tag" size="sm" type="green">PDC</Tag>
           )}
           {plugin.sidechain_source && (
-            <span className="plugin-tooltip-badge sidechain">
+            <Tag className="plugin-tooltip-tag" size="sm" type="purple">
               SC: {plugin.sidechain_source}
-            </span>
+            </Tag>
           )}
         </div>
       )}

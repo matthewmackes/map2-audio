@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T868-subB by converting the repeated JUCE asset-status badges in the NAM and IR cards to Carbon `Tag`, keeping the remaining work centered on the last semantic status-chip families.
+Last updated: 2026-04-12 - Continued T868-subB by converting the static Host Machine feature badges and horizontal signal-chain tooltip labels to Carbon `Tag`, leaving a narrower set of control-shaped or geometry-sensitive indicators behind.
 
 ## Performance Brain
 
@@ -20391,7 +20391,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-12 07:14 EDT - Codex
+Last updated: 2026-04-12 08:15 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20408,6 +20408,8 @@ Last updated: 2026-04-12 07:14 EDT - Codex
   - The focused Host Machine regression also required updating `web/src/app/pages/HostMachinePage.test.tsx` to mock `../contexts/useCluster` instead of the stale `../contexts/ClusterContext` module and to assert the loading shell via the spinner image role now that the Carbon loading primitive exposes duplicate label text nodes.
   - Continued `T868-subB` with a JUCE asset-status slice in `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, replacing the repeated `carbon-asset-selector-status-badge` runtime/configuration labels with Carbon `Tag`.
   - Validation for this JUCE asset-status slice is green: `rg -n 'carbon-asset-selector-status-badge' web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T868-subB` with a static-label slice in `web/src/app/components/HostMachine/AudioNodeFeatures.tsx` and `web/src/app/components/HorizontalSignalChain/PluginTooltip.tsx`, replacing the Host Machine `OPTIMAL` feature badge and the tooltip `PDC` / sidechain badges with Carbon `Tag` and trimming the dedicated local badge styling in `HostMachine.css` and `HorizontalSignalChain.css`.
+  - Validation for this static-label slice is green: `rg -n 'hm-feature-card__badge|plugin-tooltip-badge' web/src/app/components/HostMachine/AudioNodeFeatures.tsx web/src/app/components/HostMachine/HostMachine.css web/src/app/components/HorizontalSignalChain/PluginTooltip.tsx web/src/app/components/HorizontalSignalChain/HorizontalSignalChain.css` -> PASS (only the plural `.plugin-tooltip-badges` container remains); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked

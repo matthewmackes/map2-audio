@@ -991,14 +991,12 @@
   flex: 1;
 }
 
-.hm-feature-card__badge {
+.hm-feature-card__tag.cds--tag {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  min-height: auto;
   padding: 2px 6px;
-  background: color-mix(in srgb, var(--success) 15%, var(--surface-2));
-  color: var(--success);
-  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
 }
 
 .hm-feature-card__desc {
