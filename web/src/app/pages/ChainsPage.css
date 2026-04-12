@@ -10,7 +10,7 @@
   gap: var(--cds-spacing-05);
   padding: var(--cds-spacing-06);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .chains-page__header-row {
@@ -63,7 +63,7 @@
 .chains-page__scope-card {
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer);
 }
 
 .chains-page__scope-card--all {
@@ -109,7 +109,7 @@
   flex-direction: column;
   gap: var(--cds-spacing-03);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   padding: var(--cds-spacing-05);
 }
 
@@ -130,7 +130,7 @@
   flex-direction: column;
   gap: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   padding: var(--cds-spacing-06);
 }
 
@@ -204,7 +204,7 @@
 .chains-page__routing-surface,
 .chains-page__routing-summary {
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer);
   padding: var(--cds-spacing-04);
 }
 

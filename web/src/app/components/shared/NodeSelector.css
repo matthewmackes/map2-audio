@@ -13,5 +13,5 @@
 
 .node-selector .cds--select-input {
   min-height: 2rem;
-  background: var(--cds-layer-01);
+  background: var(--cds-field);
 }

@@ -281,13 +281,13 @@ export function ChainsPage() {
             </div>
           </div>
 
-          <div className="chains-page__scope-card chains-page__scope-card--all">
+          <Layer className="chains-page__scope-card chains-page__scope-card--all">
             <div className="chains-page__scope-label">Chain scope</div>
             <strong className="chains-page__scope-title">All nodes cluster comparison</strong>
             <p className="chains-page__scope-copy">
               Compare chain counts, runtime-active chains, and plugin footprint across the cluster, then inspect one node to manage direct runtime chain switching.
             </p>
-          </div>
+          </Layer>
 
           <InlineNotification
             kind="warning"
@@ -405,7 +405,7 @@ export function ChainsPage() {
         </div>
 
         {isClusterMode ? (
-          <div className={`chains-page__scope-card ${remoteSelected ? 'chains-page__scope-card--remote' : 'chains-page__scope-card--local'}`}>
+          <Layer className={`chains-page__scope-card ${remoteSelected ? 'chains-page__scope-card--remote' : 'chains-page__scope-card--local'}`}>
             <div className="chains-page__scope-label">Chain scope</div>
             <strong className="chains-page__scope-title">{remoteSelected ? selectedNode?.hostname ?? viewedNodeId : 'Local node'}</strong>
             <p className="chains-page__scope-copy">
@@ -413,7 +413,7 @@ export function ChainsPage() {
                 ? `Runtime chain actions are proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
                 : 'This page edits local runtime chain inventory. Select all nodes for comparison, or switch to a peer node to manage remote runtime chain inventory.'}
             </p>
-          </div>
+          </Layer>
         ) : null}
 
         <InlineNotification

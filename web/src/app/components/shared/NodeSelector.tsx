@@ -1,4 +1,4 @@
-import { Select, SelectItem } from '@carbon/react'
+import { Layer, Select, SelectItem } from '@carbon/react'
 import { memo, useMemo } from 'react'
 
 import { useCluster } from '../../contexts/useCluster'
@@ -23,27 +23,29 @@ export const NodeSelector = memo(function NodeSelector() {
 
   return (
     <div className="node-selector">
-      <Select
-        id="cluster-node-selector"
-        aria-label="Select cluster node"
-        labelText="Cluster node"
-        hideLabel
-        size="sm"
-        value={activeNodeId ?? localNodeId}
-        onChange={(event) => {
-          const value = event.currentTarget.value
-          setActiveNode(value === localNodeId ? null : value)
-        }}
-      >
-        {options.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}
-            text={`${option.online ? 'Online' : 'Offline'} · ${option.label}${option.latency !== null ? ` · ${option.latency.toFixed(1)}ms` : ''}`}
-          />
-        ))}
-        <SelectItem value="all" text="Online · All nodes" />
-      </Select>
+      <Layer className="node-selector__layer">
+        <Select
+          id="cluster-node-selector"
+          aria-label="Select cluster node"
+          labelText="Cluster node"
+          hideLabel
+          size="sm"
+          value={activeNodeId ?? localNodeId}
+          onChange={(event) => {
+            const value = event.currentTarget.value
+            setActiveNode(value === localNodeId ? null : value)
+          }}
+        >
+          {options.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              text={`${option.online ? 'Online' : 'Offline'} · ${option.label}${option.latency !== null ? ` · ${option.latency.toFixed(1)}ms` : ''}`}
+            />
+          ))}
+          <SelectItem value="all" text="Online · All nodes" />
+        </Select>
+      </Layer>
     </div>
   )
 })

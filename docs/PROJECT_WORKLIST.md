@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Started T866-subB by moving the shared notifications panel and unified workspace side-nav onto explicit nested Carbon `Layer` wrappers and removing hard-coded numeric layer tokens from those touched files.
+Last updated: 2026-04-12 - Continued T866-subB by moving the shared node selector plus the PipeWire/Chains entry surfaces onto explicit Carbon `Layer` ownership and replacing the touched hard-coded numeric layer tokens with context-aware Carbon layer tokens.
 
 ## Performance Brain
 
@@ -20281,7 +20281,9 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - `T866-subB` is now the active slice: shell/shared entry wrappers (`AppShell`, `Toasts`, `ThemeChooserModal`, `UnifiedWorkspaceSideNav`, `NodeSelector`, plus the entry panels in `PipeWire` and `Chains`) should adopt `Layer` before the larger platform/theme/device families.
   - Started `T866-subB` with the first shared-surface migration in `web/src/app/components/Toasts.tsx` / `Toasts.css` and `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` / `UnifiedWorkspaceSideNav.css`, wrapping both surfaces and their nested child items in Carbon `Layer` while replacing the touched hard-coded `--cds-layer-01/02` backgrounds with `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected`.
   - Validation for this shared-surface slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Toasts.css web/src/app/components/navigation/UnifiedWorkspaceSideNav.css web/src/app/components/Toasts.tsx web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
-  - The next `T866-subB` queue remains the rest of the shell/shared wrapper bucket from `T866-subA`: `ThemeChooserModal`, `AppShell`, `NodeSelector`, and the entry panels in `PipeWire` / `Chains`.
+  - Continued `T866-subB` through the remaining low-risk shared entry surfaces in `web/src/app/components/shared/NodeSelector.tsx` / `NodeSelector.css` plus `web/src/app/pages/PipeWirePage.css` and `web/src/app/pages/ChainsPage.tsx` / `ChainsPage.css`, wrapping the Chains scope cards and shared node selector in explicit Carbon `Layer` ownership and replacing the touched hard-coded `--cds-layer-01/02` backgrounds with `--cds-layer` / field tokens on the layered PipeWire and Chains entry surfaces.
+  - Validation for this follow-up shared entry slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/shared/NodeSelector.css web/src/app/pages/PipeWirePage.css web/src/app/pages/ChainsPage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - The next `T866-subB` queue is now narrowed to the remaining shared wrapper bucket from `T866-subA`: `ThemeChooserModal` and the residual `AppShell` layer-treatment surfaces.
 
 ID: T867
 Status: [✓] Done
