@@ -7,6 +7,7 @@
  */
 
 import { memo } from 'react'
+import { Tag } from '@carbon/react'
 import type { MIDIMappingV2 } from '../../../map2/types'
 import './MidiCcBadge.css'
 
@@ -38,13 +39,15 @@ export const MidiCcBadge = memo(function MidiCcBadge({
   const tooltipText = `${badgeText} on ${channelText}`
 
   return (
-    <div
-      className={`midi-cc-badge ${position} ${size} mapped`}
+    <Tag
+      className={`midi-cc-badge midi-cc-badge--${position}`}
+      size={size === 'small' ? 'sm' : 'md'}
+      type="blue"
       title={tooltipText}
       aria-label={`MIDI CC ${mapping.cc} on ${channelText}`}
     >
-      <span className="midi-cc-badge-text">{badgeText}</span>
-    </div>
+      {badgeText}
+    </Tag>
   )
 })
 

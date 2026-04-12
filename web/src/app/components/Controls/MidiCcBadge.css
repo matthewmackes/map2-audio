@@ -4,75 +4,42 @@
  * Display-only component - no interactive styles
  */
 
-/* Base badge styles */
-.midi-cc-badge {
+/* Base Carbon tag positioning contract */
+.midi-cc-badge.cds--tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-sans);
-  font-weight: 600;
   user-select: none;
   z-index: 10;
   white-space: nowrap;
 }
 
-/* Size variants */
-.midi-cc-badge.small {
-  font-size: var(--type-caption);
-  padding: 2px 4px;
-  border-radius: var(--border-radius-sm);
-  min-width: 24px;
-  height: 14px;
-}
-
-.midi-cc-badge.medium {
-  font-size: var(--type-caption);
-  padding: 3px 6px;
-  border-radius: var(--border-radius-sm);
-  min-width: 32px;
-  height: 18px;
-}
-
 /* Position variants */
-.midi-cc-badge.top-right {
+.midi-cc-badge--top-right {
   position: absolute;
   top: -4px;
   right: -4px;
 }
 
-.midi-cc-badge.top-left {
+.midi-cc-badge--top-left {
   position: absolute;
   top: -4px;
   left: -4px;
 }
 
-.midi-cc-badge.bottom-right {
+.midi-cc-badge--bottom-right {
   position: absolute;
   bottom: -4px;
   right: -4px;
 }
 
-.midi-cc-badge.bottom-left {
+.midi-cc-badge--bottom-left {
   position: absolute;
   bottom: -4px;
   left: -4px;
 }
 
-.midi-cc-badge.inline {
+.midi-cc-badge--inline {
   position: relative;
   margin-left: 4px;
-}
-
-/* Mapped state (only state now - badge only shows when mapped) */
-.midi-cc-badge.mapped {
-  background: var(--surface);
-  border: 1px solid var(--interactive);
-  color: var(--text-primary);
-  box-shadow: none;
-}
-
-/* Badge text */
-.midi-cc-badge-text {
-  line-height: 1;
-  letter-spacing: 0.5px;
 }

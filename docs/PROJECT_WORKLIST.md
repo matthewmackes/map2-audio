@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T868-subC by converting the Routing Topology MIDI tab-count chip to Carbon `Tag` and tightening the residual custom-indicator exception list.
+Last updated: 2026-04-12 - Continued T868-subC by converting the Routing Topology MIDI tab-count chip and the remaining MIDI CC badges to Carbon `Tag`, while keeping only truly geometry-specific indicators in the exception bucket.
 
 ## Performance Brain
 
@@ -20397,9 +20397,9 @@ Subtasks:
     - Required outputs: Residual conversions, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-12 09:02 EDT - Codex
+    Last updated: 2026-04-12 09:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-12 09:02 EDT - Codex
+Last updated: 2026-04-12 09:16 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20424,6 +20424,9 @@ Last updated: 2026-04-12 09:02 EDT - Codex
   - Opened `T868-subC` with the first explicit exception inventory: `PushConfirmationNoticePill.tsx`, `Controls/MidiCcBadge.tsx`, `IntelFXMidiMapper.tsx`, `RoutingTopologyContent.tsx` tab count chip, `AppWindow.tsx` titlebar icon badge, `IntelFXStatusBar.tsx`, `MPX1StatusBar.tsx`, `PushSurfacePage.tsx`, `PerformanceBrainPage.tsx`, `SnapshotEditor*` fit-sensitive chips, and specialized plugin-card indicators such as `boss-mode-badge`, `celestial-*`, and `passionfx-meter-badge`.
   - Continued `T868-subC` with a first low-risk residual conversion in `web/src/app/components/modals/RoutingTopologyContent.tsx`, replacing the custom `rtm__tab-badge` MIDI tab-count chip with a Carbon `Tag` and deleting the orphaned `.rtm__tab-badge` CSS from `web/src/app/components/modals/RoutingTopologyModal.css`.
   - Validation for this Routing Topology slice is green: `rg -n 'rtm__tab-badge' web/src/app/components/modals/RoutingTopologyContent.tsx web/src/app/components/modals/RoutingTopologyModal.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - The `AppWindow.tsx` titlebar icon rail is now explicitly treated as a chrome/layout exception rather than semantic badge debt; the next residual conversion target is the remaining textual MIDI CC badges in `web/src/app/components/Controls/MidiCcBadge.tsx` and `web/src/app/components/IntelFX/IntelFXMidiMapper.tsx`.
+  - Continued `T868-subC` with a textual MIDI assignment slice in `web/src/app/components/Controls/MidiCcBadge.tsx` and `web/src/app/components/IntelFX/IntelFXMidiMapper.tsx`, replacing both remaining CC badges with Carbon `Tag` while preserving the existing inline/absolute placement contract and mapper behavior.
+  - Validation for this MIDI assignment slice is green: `rg -n 'midi-cc-badge-text|midi-cc-badge\\.mapped|midi-cc-badge\\.(small|medium)|intelfx-midi-mapper__cc-badge \\{' web/src/app/components/Controls/MidiCcBadge.tsx web/src/app/components/Controls/MidiCcBadge.css web/src/app/components/IntelFX/IntelFXMidiMapper.tsx web/src/app/components/IntelFX/IntelFXMidiMapper.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked

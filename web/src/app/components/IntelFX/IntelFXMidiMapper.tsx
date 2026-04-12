@@ -80,7 +80,11 @@ interface MidiCcBadgeProps {
 }
 
 function MidiCcBadge({ mapping }: MidiCcBadgeProps) {
-  return <span className="intelfx-midi-mapper__cc-badge">{midiBadgeLabel(mapping)}</span>
+  return (
+    <Tag className="intelfx-midi-mapper__cc-badge" size="sm" type="blue">
+      {midiBadgeLabel(mapping)}
+    </Tag>
+  )
 }
 
 function resolveTargetRange(targetParam: IntelFXRegistryParam | undefined): { min: number; max: number } {
