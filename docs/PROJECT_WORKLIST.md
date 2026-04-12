@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-11 - Continued the aggressive T871/T872 route-local sweep by opening T871-subB/T872-subB and targeting dashboard, modal, Snapshot Editor/JUCE-grid, Horizontal Signal Chain, and MIDI Hub hotspot surfaces.
+Last updated: 2026-04-12 - Published the T871/T872 loading and empty-state checkpoint to both remotes, then continued T868-subB by converting LCD, library asset cards, and CPU/DSP status pills onto Carbon `Tag` / `InlineNotification`.
 
 ## Performance Brain
 
@@ -20364,7 +20364,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-11 21:52 EDT - Codex
+Last updated: 2026-04-12 06:05 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20372,6 +20372,8 @@ Last updated: 2026-04-11 21:52 EDT - Codex
   - Completed `T868-subA` by inventorying the remaining semantic badge debt and separating it from intentional custom indicator geometry. The current first-wave Carbon-Tag candidates are concentrated in routing summary panels, chain deploy flows, LCDPage status chips, CPUStatusOverview semantic labels, and a small set of library/deploy status surfaces.
   - Started `T868-subB` with a first semantic-tag slice in `ParallelRoutingPanel.tsx`, `EffectsLoopSummaryPanel.tsx`, and `ChainDeployModal.tsx`, replacing count/readiness/remote-control/latency/health pills with Carbon `Tag` and replacing the residual routing-panel pill error states with Carbon `InlineNotification`.
   - Validation for this first badge slice is green: `rg -n '\\b(className=|class=).*(pill|badge)|\\.(pill|badge)\\b' web/src/app/components/Routing/ParallelRoutingPanel.tsx web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx web/src/app/components/chains/ChainDeployModal.tsx -g '*.tsx' -g '*.css'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T868-subB` with a low-risk semantic asset/status slice in `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, `NAMItemCard.tsx`, `IRItemCard.tsx`, and `SFItemCard.tsx`, replacing generic `.pill` / `.badge` usage with Carbon `Tag` and swapping the DSP cluster error pill to Carbon `InlineNotification`.
+  - Validation for this follow-up badge slice is green: `rg -n '\\b(className=\"pill|className=\"badge|className=\\{`pill|className=\\{`badge|\\.pill\\b|\\.badge\\b)' web/src/app/components/library/NAMItemCard.tsx web/src/app/components/library/IRItemCard.tsx web/src/app/components/library/SFItemCard.tsx web/src/app/pages/LCDPage.tsx web/src/app/pages/DSPPage.tsx web/src/app/components/CPUStatusOverview.tsx -g '*.tsx' -g '*.css'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked

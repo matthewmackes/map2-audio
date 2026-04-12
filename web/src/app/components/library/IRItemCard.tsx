@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
+import { Tag } from '@carbon/react'
 import { irApi } from '../../../map2/api'
 import { LegacyButton } from '../shared/LegacyButton'
 import './ModelList.css'
@@ -68,9 +69,10 @@ export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCard
       </div>
       <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
         {isActive ? (
-          <span className="pill success" style={{ padding: '4px 8px' }}>
-            <Check size={12} /> Active
-          </span>
+          <Tag type="green" size="sm">
+            <Check size={12} />
+            <span>Active</span>
+          </Tag>
         ) : (
           <LegacyButton
             variant="primary"

@@ -34,7 +34,7 @@
 
 import React, { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Layer } from '@carbon/react'
+import { Layer, Tag } from '@carbon/react'
 import {
   Activity,
   Book,
@@ -137,12 +137,12 @@ function LCDSimulator({ lcdId, lines, address, currentPage, onPageChange, connec
         </div>
         <div className="lcd-status-badges">
           {connected ? (
-            <span className="pill success"><CheckmarkFilled size={12} /> Connected</span>
+            <Tag type="green" size="sm">Connected</Tag>
           ) : (
-            <span className="pill warn"><WarningAlt size={12} /> Disconnected</span>
+            <Tag type="warm-gray" size="sm">Disconnected</Tag>
           )}
           {isPolling && (
-            <span className="pill muted"><Activity size={12} /> Live</span>
+            <Tag type="cool-gray" size="sm">Live</Tag>
           )}
         </div>
       </div>
@@ -1062,10 +1062,9 @@ export function LCDPage() {
           <div className="events-tab">
             {/* Connection status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <div className={`pill ${wsEventConnected ? 'success' : 'warn'}`}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: wsEventConnected ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
-                {wsEventConnected ? 'WebSocket Connected' : 'Disconnected'}
-              </div>
+              <Tag type={wsEventConnected ? 'green' : 'warm-gray'}>
+                {wsEventConnected ? 'WebSocket connected' : 'Disconnected'}
+              </Tag>
               {wsEventError && <span style={{ color: '#ef4444', fontSize: 12 }}>{wsEventError.message}</span>}
             </div>
 
@@ -1842,12 +1841,6 @@ export function LCDPage() {
         .lcd-select {
           width: 100%; padding: 8px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 13px;
         }
-
-        /* ── Shared ── */
-        .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: var(--cds-label-01-font-size, 0.75rem); font-weight: 500; }
-        .pill.success { background: rgba(34,197,94,0.15); color: #22c55e; }
-        .pill.warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
-        .pill.muted { background: rgba(107,114,128,0.15); color: #9ca3af; }
 
       `}</style>
       </div>

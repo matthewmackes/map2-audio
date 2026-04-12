@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Select, SelectItem } from '@carbon/react'
+import { Select, SelectItem, Tag } from '@carbon/react'
 import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { LegacyButton } from './shared/LegacyButton'
@@ -363,7 +363,7 @@ export function CPUStatusOverview() {
   }
 
   if (!configQuery.data) {
-    return <div className="pill warn">Failed to load core configuration</div>
+    return <Tag type="warm-gray">Failed to load core configuration</Tag>
   }
 
   return (
@@ -655,28 +655,31 @@ export function CPUStatusOverview() {
                           return (
                             <div
                               key={service}
-                              className="pill"
-                              style={{ 
-                                fontSize: 10, 
-                                alignSelf: 'flex-start', 
-                                padding: '4px 8px', 
-                                background: activity?.category === 'JUCE' ? 'rgba(100,181,246,0.2)'
-                                  : activity?.category === 'Plugins' ? 'rgba(171,71,188,0.2)'
-                                  : 'rgba(129,199,132,0.2)',
-                                border: activity?.category === 'JUCE' ? '1px solid #64b5f6'
-                                  : activity?.category === 'Plugins' ? '1px solid #ab47bc'
-                                  : '1px solid #81c784',
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 4,
+                                alignItems: 'flex-start',
                               }}
                               title={activity?.description || service}
                             >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <span style={{ fontWeight: 500 }}>{service}</span>
-                                {activity && (
-                                  <span style={{ fontSize: 8, color: '#6b7280', fontWeight: 400 }}>
-                                    {activity.description.split(',')[0]}
-                                  </span>
-                                )}
-                              </div>
+                              <Tag
+                                type={
+                                  activity?.category === 'JUCE'
+                                    ? 'blue'
+                                    : activity?.category === 'Plugins'
+                                      ? 'purple'
+                                      : 'green'
+                                }
+                                size="sm"
+                              >
+                                {service}
+                              </Tag>
+                              {activity && (
+                                <span style={{ fontSize: 8, color: '#6b7280', fontWeight: 400 }}>
+                                  {activity.description.split(',')[0]}
+                                </span>
+                              )}
                             </div>
                           )
                         })
@@ -689,7 +692,7 @@ export function CPUStatusOverview() {
                   {/* Priority & Isolation */}
                   <div className="flex-between" style={{ fontSize: 10, paddingTop: 4, borderTop: '1px solid rgba(100,100,100,0.2)' }}>
                     <span className="muted">{core.priority}</span>
-                    {core.isolated && <span className="pill muted" style={{ fontSize: 9, padding: '2px 6px' }}>isolated</span>}
+                    {core.isolated && <Tag type="cool-gray" size="sm">Isolated</Tag>}
                   </div>
                 </div>
               )}

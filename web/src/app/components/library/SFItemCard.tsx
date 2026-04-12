@@ -1,4 +1,5 @@
 import { Document } from '@carbon/icons-react'
+import { Tag } from '@carbon/react'
 import type { SoundFont } from '../../types/library'
 import './ModelList.css'
 
@@ -15,12 +16,12 @@ function formatSize(bytes?: number): string {
 }
 
 const FORMAT_COLORS: Record<string, string> = {
-  sf2: 'var(--primary)',
-  sfz: 'var(--accent)',
+  sf2: 'blue',
+  sfz: 'purple',
 }
 
 export function SFItemCard({ soundfont, availabilityLabel }: SFItemCardProps) {
-  const formatColor = FORMAT_COLORS[soundfont.format] ?? 'var(--muted)'
+  const formatColor = FORMAT_COLORS[soundfont.format] ?? 'cool-gray'
 
   return (
     <div className="model-item">
@@ -30,18 +31,9 @@ export function SFItemCard({ soundfont, availabilityLabel }: SFItemCardProps) {
           <div className="model-item-name">{soundfont.name}</div>
         </div>
         <div className="model-item-meta">
-          <span
-            className="badge"
-            style={{
-              background: formatColor,
-              color: '#fff',
-              marginRight: 8,
-              textTransform: 'uppercase',
-              fontSize: 10,
-            }}
-          >
+          <Tag type={formatColor as 'blue' | 'purple' | 'cool-gray'} size="sm">
             {soundfont.format}
-          </span>
+          </Tag>
           {soundfont.category && (
             <span style={{ marginRight: 8, color: 'var(--muted)' }}>
               {soundfont.category}

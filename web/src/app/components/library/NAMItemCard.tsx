@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
+import { Tag } from '@carbon/react'
 import { namApi } from '../../../map2/api'
 import { LegacyButton } from '../shared/LegacyButton'
 import './ModelList.css'
@@ -23,10 +24,10 @@ function formatSize(bytes?: number): string {
 }
 
 const MODEL_TYPE_COLORS: Record<string, string> = {
-  amp: 'var(--primary)',
-  pedal: 'var(--accent)',
-  preamp: 'var(--success)',
-  unknown: 'var(--muted)',
+  amp: 'red',
+  pedal: 'purple',
+  preamp: 'green',
+  unknown: 'cool-gray',
 }
 
 export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardProps) {
@@ -53,9 +54,9 @@ export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardP
       <div className="model-item-info">
         <div className="model-item-name">{model.name}</div>
         <div className="model-item-meta">
-          <span className="badge" style={{ background: typeColor, color: '#fff', marginRight: 8 }}>
+          <Tag type={typeColor as 'red' | 'purple' | 'green' | 'cool-gray'} size="sm">
             {model.type}
-          </span>
+          </Tag>
           {model.size && formatSize(model.size)}
         </div>
         {availabilityLabel && (
@@ -64,9 +65,10 @@ export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardP
       </div>
       <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
         {isActive ? (
-          <span className="pill success" style={{ padding: '4px 8px' }}>
-            <Check size={12} /> Active
-          </span>
+          <Tag type="green" size="sm">
+            <Check size={12} />
+            <span>Active</span>
+          </Tag>
         ) : (
           <LegacyButton
             variant="primary"

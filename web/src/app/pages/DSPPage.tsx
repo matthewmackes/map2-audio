@@ -9,7 +9,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Renew, Waveform } from '@carbon/icons-react'
-import { Button, ClickableTile, Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow, Tag, Tile } from '@carbon/react'
+import { Button, ClickableTile, InlineNotification, Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
@@ -155,7 +155,13 @@ export function DSPPage() {
           </div>
 
           {clusterDspQuery.isError ? (
-            <div className="pill warn">Failed to load cluster DSP status</div>
+            <InlineNotification
+              kind="warning"
+              lowContrast
+              hideCloseButton
+              title="Cluster DSP status unavailable"
+              subtitle="Failed to load cluster DSP status."
+            />
           ) : (
             <TableContainer title="Cluster DSP status" style={{ overflowX: 'auto' }}>
               <Table size="sm" className="cluster-summary-table">
