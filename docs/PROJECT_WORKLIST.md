@@ -23085,3 +23085,24 @@ Last updated: 2026-04-12 15:14 EDT - Codex
 - Validation:
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS (`15 tests`)
   - `npm --prefix web run typecheck` -> PASS
+
+ID: T974
+Status: [✓] Done
+Title: Consolidate workspace side-nav status panels into the shared shell primitive
+Description:
+- Goal / acceptance criteria: Extend `UnifiedWorkspaceSideNav` so routed workspace shells can render shared footer status blocks and warning/info callouts without duplicating route-local shell markup, while preserving each shell's route-specific layout/styling hooks and responsive behavior.
+- Why it matters: Platform, MIDI Hub, Physical Surfaces, and Audio Artifacts were still carrying their own side-nav footer/warning/status wrappers, which duplicated shell chrome and made the shared navigation primitive incomplete.
+- Dependencies: T972
+- Estimated effort: Low
+- Required outputs: Shared side-nav primitive support for status/callout content, routed shell integrations for Platforms/Artifacts/MIDI Hub/Physical Surfaces, focused regression coverage, validation evidence, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-12 16:08 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` / `UnifiedWorkspaceSideNav.css` with shared `metaBlocks` and `callout` support so routed workspace rails can render status cards and warning/info copy through the primitive instead of hand-rolled footer markup.
+  - Updated `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/pages/MidiHubShell.tsx`, and `web/src/app/pages/PhysicalSurfacesShell.tsx` to use the new shared footer content model and removed the old route-local warning/status markup duplication.
+  - Kept route-level styling ownership where it still matters by preserving thin wrapper classes in `PlatformModal.css`, `AudioArtifactsPage.css`, `MidiHubShell.css`, and `PhysicalSurfacesShell.css` for shell-specific sizing, decorative surfaces, and responsive sidebar behavior while letting the shared primitive own the common structure.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/MidiHubPage.test.tsx` -> PASS (`4 suites, 20 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS

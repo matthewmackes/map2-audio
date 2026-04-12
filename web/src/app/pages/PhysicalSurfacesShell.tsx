@@ -7,7 +7,6 @@ import {
   DataStructured,
   IbmWatsonMachineLearning,
   Music,
-  WarningAltFilled,
 } from '@carbon/icons-react'
 import { GlobalTheme, InlineNotification, Tag, Theme } from '@carbon/react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -200,12 +199,10 @@ export function PhysicalSurfacesShell() {
                 items={navItems}
                 footerTitle="Dedicated Routes"
                 footerItems={footerRouteItems}
-                footer={(
-                  <div className="physical-surfaces-shell__warning">
-                    <WarningAltFilled size={14} />
-                    <span>Rich protocol depth still varies by device family; this shell exposes the shared truth and current posture.</span>
-                  </div>
-                )}
+                callout={{
+                  kind: 'warning',
+                  text: 'Rich protocol depth still varies by device family; this shell exposes the shared truth and current posture.',
+                }}
               />
             )}
             content={(

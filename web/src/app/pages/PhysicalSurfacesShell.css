@@ -65,28 +65,6 @@
   background: var(--cds-border-strong-01);
 }
 
-.physical-surfaces-shell__warning {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--cds-spacing-03);
-  padding: 0.6rem 0.7rem;
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer);
-}
-
-.physical-surfaces-shell__warning svg {
-  color: var(--cds-support-warning);
-  flex-shrink: 0;
-  margin-top: 0.05rem;
-}
-
-.physical-surfaces-shell__warning span {
-  margin: 0;
-  color: var(--cds-text-secondary);
-  font-size: 0.76rem;
-  line-height: 1.45;
-}
-
 .physical-surfaces-page {
   display: grid;
   align-content: start;

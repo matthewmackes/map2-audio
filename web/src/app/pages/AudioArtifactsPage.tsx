@@ -1405,28 +1405,15 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
                 items={primaryNavItems}
                 footerTitle="Utilities"
                 footerItems={utilityNavItems}
-                footer={(
-                  <>
-                    <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
-                      <div className="aap__sidebar-stat">
-                        <span>Current node</span>
-                        <strong>{selectedNodeLabel}</strong>
-                      </div>
-                      <div className="aap__sidebar-stat">
-                        <span>Items in view</span>
-                        <strong>{discoverMode ? 'Discovery' : totalItems}</strong>
-                      </div>
-                      <div className="aap__sidebar-stat">
-                        <span>Sync queue</span>
-                        <strong>{activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle'}</strong>
-                      </div>
-                    </div>
-
-                    <div className="aap__sidebar-note">
-                      <p>Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.</p>
-                    </div>
-                  </>
-                )}
+                metaBlocks={[
+                  { key: 'current-node', label: 'Current node', value: selectedNodeLabel },
+                  { key: 'items-in-view', label: 'Items in view', value: discoverMode ? 'Discovery' : totalItems },
+                  { key: 'sync-queue', label: 'Sync queue', value: activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle' },
+                ]}
+                callout={{
+                  kind: 'info',
+                  text: 'Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.',
+                }}
               />
             )}
             content={artifactsContent}

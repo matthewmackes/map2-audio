@@ -7,7 +7,6 @@ import {
   DataStructured,
   IbmWatsonMachineLearning,
   Music,
-  WarningAltFilled,
 } from '@carbon/icons-react'
 import {
   GlobalTheme,
@@ -161,12 +160,7 @@ export function MidiHubShell() {
                   items={primaryNavItems}
                   footerTitle="Utilities"
                   footerItems={utilityNavItems}
-                  footer={(
-                    <div className="midi-hub-shell__warning">
-                      <WarningAltFilled size={14} />
-                      <span>Some protocol and event-list areas are still in progress.</span>
-                    </div>
-                  )}
+                  callout={{ kind: 'warning', text: 'Some protocol and event-list areas are still in progress.' }}
                 />
               )}
               content={(

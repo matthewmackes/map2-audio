@@ -17,6 +17,17 @@ export interface UnifiedWorkspaceSideNavItem {
   variant?: 'default' | 'utility'
 }
 
+export interface UnifiedWorkspaceSideNavMetaBlock {
+  key: string
+  label: string
+  value: ReactNode
+}
+
+export interface UnifiedWorkspaceSideNavCallout {
+  kind?: 'info' | 'warning'
+  text: ReactNode
+}
+
 interface UnifiedWorkspaceSideNavProps {
   ariaLabel: string
   eyebrow: string
@@ -25,7 +36,8 @@ interface UnifiedWorkspaceSideNavProps {
   items: UnifiedWorkspaceSideNavItem[]
   footerTitle?: string
   footerItems?: UnifiedWorkspaceSideNavItem[]
-  footer?: ReactNode
+  metaBlocks?: UnifiedWorkspaceSideNavMetaBlock[]
+  callout?: UnifiedWorkspaceSideNavCallout
   className?: string
 }
 
@@ -41,7 +53,8 @@ export function UnifiedWorkspaceSideNav({
   items,
   footerTitle,
   footerItems,
-  footer,
+  metaBlocks,
+  callout,
   className,
 }: UnifiedWorkspaceSideNavProps) {
   const renderItem = (item: UnifiedWorkspaceSideNavItem) => {
@@ -108,11 +121,30 @@ export function UnifiedWorkspaceSideNav({
             {items.map(renderItem)}
           </div>
 
-          {footerItems?.length || footer ? (
+          {footerItems?.length || metaBlocks?.length || callout ? (
             <div className="workspace-side-nav__footer">
               {footerTitle ? <p className="workspace-side-nav__section-label">{footerTitle}</p> : null}
               {footerItems?.map(renderItem)}
-              {footer}
+              {metaBlocks?.length ? (
+                <div className="workspace-side-nav__meta-grid" aria-label="Workspace side panel status">
+                  {metaBlocks.map((block) => (
+                    <article key={block.key} className="workspace-side-nav__meta-block">
+                      <p className="workspace-side-nav__meta-label">{block.label}</p>
+                      <div className="workspace-side-nav__meta-value">{block.value}</div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+              {callout ? (
+                <div
+                  className={joinClasses(
+                    'workspace-side-nav__callout',
+                    callout.kind === 'warning' && 'is-warning',
+                  )}
+                >
+                  <p className="workspace-side-nav__callout-copy">{callout.text}</p>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </SideNavItems>
