@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1859** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1862** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`74fc9a8e`](https://github.com/matthewmackes/map2-audio/commit/74fc9a8eda66170053e2e5167c1fc74f24f99e99) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
+| [`96871efa`](https://github.com/matthewmackes/map2-audio/commit/96871efa2e0538951f56e2dd7f2804011f3c50a8) | Continue MIDI Hub layer cleanup | Map2 Audio | 2026-04-12 |
+| [`6a81373f`](https://github.com/matthewmackes/map2-audio/commit/6a81373f38093e51887e5a1c73f3d75ac1552992) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`fdc06fb9`](https://github.com/matthewmackes/map2-audio/commit/fdc06fb982cd21cc83a38bd1e0a23935ef72fc57) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
 | [`b647735c`](https://github.com/matthewmackes/map2-audio/commit/b647735c7d2af117226694dd3e387c4ff376b645) | Continue theme layer token cleanup | Map2 Audio | 2026-04-12 |
 | [`7beacfa6`](https://github.com/matthewmackes/map2-audio/commit/7beacfa6ce7e528c1296588dc27fc77134127840) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`00c1f0ae`](https://github.com/matthewmackes/map2-audio/commit/00c1f0ae2ef9c721889bf972cabb591327e574a4) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
 | [`3400bc1c`](https://github.com/matthewmackes/map2-audio/commit/3400bc1cd555e89bb5eafe767ac409fc72e89dc6) | Continue route-local Carbon layer cleanup | Map2 Audio | 2026-04-12 |
-| [`ab682a8c`](https://github.com/matthewmackes/map2-audio/commit/ab682a8c312ffa09e3be5d40f91710dd9af5f84b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`b96de683`](https://github.com/matthewmackes/map2-audio/commit/b96de68321c3c66c0e2cb7eb3c24e16ecbaab688) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
-| [`38a73833`](https://github.com/matthewmackes/map2-audio/commit/38a738330d9cf309870ae32559cd7607f7f37309) | Finish shared Carbon layer cleanup | Map2 Audio | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
