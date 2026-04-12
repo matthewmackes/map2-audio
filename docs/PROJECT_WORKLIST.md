@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T866-subB by moving the AppShell start-menu gradient fallbacks, launcher hero/compact cards, and launcher power trigger onto context-aware Carbon layer tokens inside the existing layered launcher surfaces.
+Last updated: 2026-04-12 - Continued T866-subB by moving the AppShell advanced launcher control-panel count pill, selected state, blocked hover, and details surface onto context-aware Carbon layer tokens.
 
 ## Performance Brain
 
@@ -20287,7 +20287,9 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - Validation for this ThemeChooser follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/ThemeChooserModal.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T866-subB` through the first residual `AppShell` launcher slice in `web/src/app/layout/AppShell.css`, moving the start-menu panel gradient fallbacks, launcher power trigger, and launcher hero/compact card surfaces onto `--cds-layer` / `--cds-layer-hover` tokens so those shared launcher surfaces now follow the existing layered shell context instead of hard-coding numeric layer tokens.
   - Validation for this AppShell launcher follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
-  - The next `T866-subB` queue is now the remaining AppShell control-panel/detail surfaces (for example the advanced launcher control panel) before the task can hand off to the broader route-local sweep in `T866-subC`.
+  - Continued `T866-subB` through the next residual `AppShell` control-panel slice in `web/src/app/layout/AppShell.css`, moving the advanced launcher control-panel count pill, selected-state treatment, blocked hover treatment, and details surface onto `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` instead of hard-coded numeric layer tokens.
+  - Validation for this AppShell control-panel follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - The next `T866-subB` queue is now limited to the remaining AppShell/shared-shell layer literals before the task can hand off to the broader route-local sweep in `T866-subC`.
 
 ID: T867
 Status: [✓] Done

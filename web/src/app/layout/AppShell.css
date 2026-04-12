@@ -1942,7 +1942,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   height: 1.5rem;
   padding: 0 0.45rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 82%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, transparent);
   color: var(--cds-text-secondary);
   font-size: 0.72rem;
   font-weight: 600;
@@ -1954,7 +1954,7 @@ button.topbar-pro__latency-pressure:focus-visible {
 
 .advanced-menu-control-panel__item.is-active,
 .advanced-menu-control-panel__item.is-expanded {
-  background: color-mix(in srgb, var(--advanced-menu-item-accent, var(--cds-link-primary)) 10%, var(--cds-layer-selected-01));
+  background: color-mix(in srgb, var(--advanced-menu-item-accent, var(--cds-link-primary)) 10%, var(--cds-layer-selected));
   border-color: color-mix(in srgb, var(--advanced-menu-item-accent, var(--cds-link-primary)) 42%, var(--cds-border-strong-01));
 }
 
@@ -1963,7 +1963,7 @@ button.topbar-pro__latency-pressure:focus-visible {
 }
 
 .advanced-menu-control-panel__item.is-blocked:hover {
-  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer) 92%, transparent);
   border-color: color-mix(in srgb, var(--cds-support-error) 38%, transparent);
 }
 
@@ -2043,7 +2043,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   gap: 0.95rem;
   padding: calc(0.95rem * var(--platform-menu-scale));
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer) 94%, transparent);
 }
 
 .advanced-menu-control-panel__details-header {
