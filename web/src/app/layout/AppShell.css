@@ -1041,8 +1041,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface, var(--cds-layer-01, #ffffff)) 96%, var(--bg, var(--cds-background, #f4f4f4))) 0%,
-      color-mix(in srgb, var(--surface-2, var(--cds-layer-02, #dde1e6)) 92%, var(--bg, var(--cds-background, #f4f4f4))) 100%
+      color-mix(in srgb, var(--surface, var(--cds-layer, #ffffff)) 96%, var(--bg, var(--cds-background, #f4f4f4))) 0%,
+      color-mix(in srgb, var(--surface-2, var(--cds-layer-hover, #dde1e6)) 92%, var(--bg, var(--cds-background, #f4f4f4))) 100%
     );
   box-shadow: none;
   animation: start-menu-panel-enter 140ms cubic-bezier(0.2, 0.84, 0.32, 1) both;
@@ -1187,7 +1187,7 @@
   min-height: 2.5rem;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 82%, transparent);
-  background: var(--cds-layer-02, #f4f4f4);
+  background: var(--cds-layer, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -1195,7 +1195,7 @@
 .shell-launcher__power-menu-trigger.cds--overflow-menu:focus-visible,
 .shell-launcher__power-menu-trigger.cds--overflow-menu.is-active {
   border-color: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 32%, var(--window-shell-border));
-  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-02, #f4f4f4));
+  background: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-hover, #f4f4f4));
   outline: 2px solid var(--cds-focus, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)));
   outline-offset: 2px;
 }
@@ -1380,7 +1380,7 @@
   padding: 0.875rem 0.75rem 0.875rem 1rem;
   border: 1px solid color-mix(in srgb, black 12%, var(--border, var(--window-shell-border)));
   border-left: 3px solid var(--item-color);
-  background: var(--cds-layer-01, var(--surface, #ffffff));
+  background: var(--cds-layer, var(--surface, #ffffff));
   color: var(--cds-text-primary, var(--text-primary, #161616));
   text-decoration: none;
   text-align: left;
@@ -1390,7 +1390,7 @@
 
 .start-menu-hero-card:hover,
 .start-menu-hero-card.is-active {
-  background: var(--cds-layer-02, var(--surface-2, #e8e8e8));
+  background: var(--cds-layer-hover, var(--surface-2, #e8e8e8));
   border-color: color-mix(in srgb, var(--item-color) 60%, var(--border, var(--window-shell-border)));
 }
 
@@ -1406,7 +1406,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--item-color) 16%, var(--cds-layer-02, var(--surface-2, #e8e8e8)));
+  background: color-mix(in srgb, var(--item-color) 16%, var(--cds-layer-hover, var(--surface-2, #e8e8e8)));
   color: var(--item-color);
   flex-shrink: 0;
 }
@@ -1460,7 +1460,7 @@
   gap: 0.3rem;
   padding: 0.625rem 0.5rem;
   border: 1px solid color-mix(in srgb, black 12%, var(--border, var(--window-shell-border)));
-  background: var(--cds-layer-01, var(--surface, #ffffff));
+  background: var(--cds-layer, var(--surface, #ffffff));
   color: var(--cds-text-primary, var(--text-primary, #161616));
   text-decoration: none;
   cursor: pointer;
@@ -1469,7 +1469,7 @@
 
 .start-menu-compact-card:hover,
 .start-menu-compact-card.is-active {
-  background: var(--cds-layer-02, var(--surface-2, #e8e8e8));
+  background: var(--cds-layer-hover, var(--surface-2, #e8e8e8));
   border-color: color-mix(in srgb, var(--item-color) 50%, var(--border, var(--window-shell-border)));
 }
 
