@@ -294,92 +294,28 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               aria-hidden="true"
               class="hero-icon-launcher__scene"
             >
-              <div
-                class="hero-icon-launcher__icon-wrap"
+              <span
+                class="hero-icon-launcher__wire-cube"
               >
-                <svg
-                  aria-hidden="true"
-                  class="hero-icon-launcher__icon"
-                  focusable="false"
-                  viewBox="0 0 192 192"
-                >
-                  <rect
-                    fill="#4589FF"
-                    height="168"
-                    rx="34"
-                    width="168"
-                    x="12"
-                    y="12"
-                  />
-                  <rect
-                    fill="none"
-                    height="162"
-                    rx="31"
-                    stroke="#A6C8FF"
-                    stroke-opacity="0.45"
-                    stroke-width="2"
-                    width="162"
-                    x="15"
-                    y="15"
-                  />
-                  <rect
-                    fill="#13171B"
-                    height="136"
-                    rx="24"
-                    width="136"
-                    x="28"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="136"
-                    rx="13"
-                    width="26"
-                    x="83"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="26"
-                    rx="13"
-                    width="136"
-                    x="28"
-                    y="83"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="115"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="115"
-                  />
-                </svg>
-              </div>
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--front"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--back"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--left"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--right"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--top"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--bottom"
+                />
+              </span>
             </div>
           </button>
         </div>
@@ -600,92 +536,28 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               aria-hidden="true"
               class="hero-icon-launcher__scene"
             >
-              <div
-                class="hero-icon-launcher__icon-wrap"
+              <span
+                class="hero-icon-launcher__wire-cube"
               >
-                <svg
-                  aria-hidden="true"
-                  class="hero-icon-launcher__icon"
-                  focusable="false"
-                  viewBox="0 0 192 192"
-                >
-                  <rect
-                    fill="#4589FF"
-                    height="168"
-                    rx="34"
-                    width="168"
-                    x="12"
-                    y="12"
-                  />
-                  <rect
-                    fill="none"
-                    height="162"
-                    rx="31"
-                    stroke="#A6C8FF"
-                    stroke-opacity="0.45"
-                    stroke-width="2"
-                    width="162"
-                    x="15"
-                    y="15"
-                  />
-                  <rect
-                    fill="#13171B"
-                    height="136"
-                    rx="24"
-                    width="136"
-                    x="28"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="136"
-                    rx="13"
-                    width="26"
-                    x="83"
-                    y="28"
-                  />
-                  <rect
-                    fill="#4589FF"
-                    height="26"
-                    rx="13"
-                    width="136"
-                    x="28"
-                    y="83"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="34"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="34"
-                    y="115"
-                  />
-                  <rect
-                    fill="#1A1E23"
-                    height="43"
-                    rx="8"
-                    width="43"
-                    x="115"
-                    y="115"
-                  />
-                </svg>
-              </div>
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--front"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--back"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--left"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--right"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--top"
+                />
+                <span
+                  class="hero-icon-launcher__face hero-icon-launcher__face--bottom"
+                />
+              </span>
             </div>
           </button>
         </div>

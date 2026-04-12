@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T868-subB by converting the static Host Machine feature badges and horizontal signal-chain tooltip labels to Carbon `Tag`, leaving a narrower set of control-shaped or geometry-sensitive indicators behind.
+Last updated: 2026-04-12 - Completed T997 by shrinking the GUI/start-menu launcher hero icon and replacing the Home landing spinner with a larger low-overhead wireframe cube.
 
 ## Performance Brain
 
@@ -20480,6 +20480,30 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Extended the route-local helper/device shell copy cleanup in `HoToneJoGGPage.tsx`, `IntelFXPage.tsx`, `EdirolUA1000Page.tsx`, `MPX1Page.tsx`, `McuPage.tsx`, `LaunchControlPage.tsx`, and `MidiCommanderPage.tsx`, keeping those entry surfaces on sentence-case-first loading and empty-state copy.
   - Current measured repo-wide inventory after this follow-up: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `68`, down from `91` before this pass.
   - Validation for this shared-shell follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+
+ID: T997
+Status: [✓] Done
+Title: Retune launcher hero sizing and landing-page center spinner performance
+Description:
+- Goal / acceptance criteria: Reduce the shared GUI/start-menu hero launcher footprint by about 60%, replace the Home landing page center spinner with a much larger wireframe rendering, and keep the revised animation cheaper than the current branded spinner while preserving menu-open behavior and focus contracts.
+- Why it matters: The current shell launcher reads oversized in the windowed GUI, while the landing-page center spinner no longer matches the desired wireframe look or low-overhead animation posture.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated launcher sizing/styles, wireframe landing-spinner implementation, validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-12 08:20 EDT - Codex
+- Progress notes:
+  - The shared GUI/start-menu launcher footprint is still driven by `--window-shell-launcher-size: 7.65rem` in `web/src/app/layout/AppShell.css`; reducing that token is the cleanest way to shrink the visible shell hero icon everywhere it appears in the windowed GUI.
+  - The Home landing page still renders `HeroIconLauncher` as a spinning `Map2BrandMark`; the repo already includes a CSS-only wireframe cube implementation in `web/src/app/layout/SpinningCubeLauncher.css`, so the lowest-risk CPU reduction is to move the landing spinner onto the same wireframe/CSS-transform approach instead of keeping the larger drop-shadowed brand-mark animation.
+- Completion notes:
+  - Reduced the shared GUI/start-menu launcher footprint by 60% in `web/src/app/layout/AppShell.css`, changing `--window-shell-launcher-size` from `7.65rem` to `3.06rem` so the static shell hero icon no longer dominates the window chrome.
+  - Replaced the Home landing-page `HeroIconLauncher` mark spin with a CSS-only wireframe cube in `web/src/app/layout/HeroIconLauncher.tsx` / `HeroIconLauncher.css`, scaling the center spinner up to a `24rem` wireframe cube and slowing the animation to a lighter transform-only loop with reduced visual effects.
+  - Updated the Home desktop visual snapshots in `web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap` to lock the new wireframe landing spinner DOM.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T871
 Status: [>] In Progress

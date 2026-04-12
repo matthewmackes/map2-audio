@@ -1,5 +1,4 @@
 import { useRef } from 'react'
-import { Map2BrandMark } from '../components/branding/map2Branding'
 import './HeroIconLauncher.css'
 
 // ─── Public hero icon launcher button component ──────────────────────────────
@@ -28,9 +27,14 @@ export function HeroIconLauncher({
       aria-controls="shell-launcher-panel"
     >
       <div className="hero-icon-launcher__scene" aria-hidden="true" ref={containerRef}>
-        <div className="hero-icon-launcher__icon-wrap">
-          <Map2BrandMark decorative className="hero-icon-launcher__icon" />
-        </div>
+        <span className="hero-icon-launcher__wire-cube">
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--front" />
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--back" />
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--left" />
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--right" />
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--top" />
+          <span className="hero-icon-launcher__face hero-icon-launcher__face--bottom" />
+        </span>
       </div>
     </button>
   )

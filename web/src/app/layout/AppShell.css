@@ -157,7 +157,7 @@
   --window-taskbar-height: 0rem;
   --window-taskbar-control-height: 2rem;
   --window-taskbar-latency-height: calc(var(--window-taskbar-height) - 0.25rem);
-  --window-shell-launcher-size: 7.65rem; /* 200% larger than the current 2.55 rem size */
+  --window-shell-launcher-size: 3.06rem; /* reduced by 60% from the previous 7.65 rem shell launcher size */
   --window-shell-launcher-offset: clamp(1rem, 2vw, 1.5rem);
   --window-shell-launcher-clearance: calc(var(--window-shell-launcher-size) + var(--window-shell-launcher-offset));
   --app-window-titlebar-height: 2.3rem;
