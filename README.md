@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1151** TypeScript | **136** C++/H | **143** Docs | **1802** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1804** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-11 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-12 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-10 |
 | [MAP2 FAQ: Simple Consumer Version](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_CONSUMER_11TH_GRADE_2026-04-10.md) | 2026-04-10 |
 | [MAP2 FAQ: What Is the MAP Platform and How Different Music Users Could Use It](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_MARKET_ALIGNED_2026-04-10.md) | 2026-04-10 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b4591ef4`](https://github.com/matthewmackes/map2-audio/commit/b4591ef43eecd7f98075cd069361ea75a834a263) | Complete Carbon loading and empty-state sweep; continue f... | Map2 Audio | 2026-04-12 |
+| [`48e8b3f7`](https://github.com/matthewmackes/map2-audio/commit/48e8b3f7e341b2fb0a80fb9f53ce56cb0b6f26ee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`ef50c1b5`](https://github.com/matthewmackes/map2-audio/commit/ef50c1b54d73f23d14c7c7b98171c8bc41dfc57e) | Advance audio interface Carbon writing cleanup | Map2 Audio | 2026-04-11 |
 | [`72207d54`](https://github.com/matthewmackes/map2-audio/commit/72207d54bbf15a12a19a6659d669843713c55424) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`aa70c168`](https://github.com/matthewmackes/map2-audio/commit/aa70c168528ccff672540eafecd586f927ff46c3) | Advance reporting and display sentence-case cleanup | Map2 Audio | 2026-04-11 |
 | [`18309c4b`](https://github.com/matthewmackes/map2-audio/commit/18309c4bd82990988ce6a2d765b349b692e06395) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 | [`e7baee5b`](https://github.com/matthewmackes/map2-audio/commit/e7baee5b81baa24105ad09d2075e846248f8ed50) | Advance component sentence-case cleanup | Map2 Audio | 2026-04-11 |
 | [`71baf17f`](https://github.com/matthewmackes/map2-audio/commit/71baf17fbd5e4fa56d70f7627c3e847e39f3a25a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
-| [`81b77c38`](https://github.com/matthewmackes/map2-audio/commit/81b77c382b4cebe5a6ba8b1cb8152143734830b1) | Advance workspace shell sentence-case cleanup | Map2 Audio | 2026-04-11 |
-| [`63acd165`](https://github.com/matthewmackes/map2-audio/commit/63acd1652e4c97bae810da5dddae32d56bcf0cd2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
