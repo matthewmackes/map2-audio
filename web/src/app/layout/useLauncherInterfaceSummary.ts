@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { audioApi, midiApi } from '../../map2/api'
+import { useClusterHardwareInventory } from '../hooks/useDeviceLocation'
 
 type AudioStatusLike = {
   available_input_devices?: string[]
@@ -20,6 +21,15 @@ type MidiDevicesResponse = {
   inputs?: MidiDeviceLike[]
   outputs?: MidiDeviceLike[]
 } | null
+
+type ClusterHardwareInventoryResponse = {
+  nodes?: Record<string, {
+    status?: string
+    audio_interfaces?: string[]
+    usb_audio_devices?: Array<Record<string, unknown>>
+    pipewire_devices?: Array<Record<string, unknown>>
+  }>
+}
 
 export type LauncherInterfaceSummary = {
   audioInterfaces: string[]
@@ -51,6 +61,52 @@ function dedupeNames(names: Array<string | null | undefined>): string[] {
 
 function normalizeMidiName(device: MidiDeviceLike): string | null {
   return typeof device === 'string' ? device : device?.name ?? null
+}
+
+function normalizeHardwareDeviceName(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value.trim() || null
+  }
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const device = value as Record<string, unknown>
+  for (const key of ['description', 'name', 'product', 'nick']) {
+    const candidate = device[key]
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim()
+    }
+  }
+
+  return null
+}
+
+function isGenericAudioInterfaceName(name: string): boolean {
+  return /^(alsa|jack|pipewire|pulseaudio|pulseaudio|default|system)$/i.test(name.trim())
+}
+
+function collectHardwareAudioInterfaces(inventory: ClusterHardwareInventoryResponse | undefined): string[] {
+  const nodes = inventory?.nodes ?? {}
+  const names: string[] = []
+
+  for (const node of Object.values(nodes)) {
+    if (node?.status === 'offline') {
+      continue
+    }
+
+    names.push(
+      ...(node?.usb_audio_devices ?? []).map(normalizeHardwareDeviceName).filter((name): name is string => Boolean(name)),
+    )
+    names.push(
+      ...(node?.pipewire_devices ?? []).map(normalizeHardwareDeviceName).filter((name): name is string => Boolean(name)),
+    )
+    names.push(
+      ...((node?.audio_interfaces ?? []).filter((name) => !isGenericAudioInterfaceName(name))),
+    )
+  }
+
+  return dedupeNames(names)
 }
 
 function sameNames(left: string[], right: string[]): boolean {
@@ -105,6 +161,7 @@ async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
 }
 
 export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterfaceSummary {
+  const hardwareInventoryQuery = useClusterHardwareInventory(navOpen)
   const query = useQuery({
     queryKey: ['app-shell', 'launcher-interface-summary'],
     queryFn: fetchLauncherInterfaces,
@@ -135,7 +192,10 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
   }, [])
 
   useEffect(() => {
-    const nextAudioInterfaces = query.data?.audioInterfaces ?? []
+    const nextAudioInterfaces = dedupeNames([
+      ...(query.data?.audioInterfaces ?? []),
+      ...collectHardwareAudioInterfaces(hardwareInventoryQuery.data),
+    ])
 
     if (audioEmptyTimerRef.current !== null) {
       window.clearTimeout(audioEmptyTimerRef.current)
@@ -153,7 +213,7 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
       setAudioInterfaces((current) => (current.length === 0 ? current : []))
       audioEmptyTimerRef.current = null
     }, EMPTY_INTERFACE_TRANSITION_DELAY_MS)
-  }, [audioInterfaces, query.data?.audioInterfaces])
+  }, [audioInterfaces, hardwareInventoryQuery.data, query.data?.audioInterfaces])
 
   useEffect(() => {
     const nextMidiInterfaces = query.data?.midiInterfaces ?? []
@@ -176,11 +236,20 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
     }, EMPTY_INTERFACE_TRANSITION_DELAY_MS)
   }, [midiInterfaces, query.data?.midiInterfaces])
 
-  const hasResolvedOnce = query.dataUpdatedAt > 0 || query.error != null
+  const hasResolvedOnce =
+    query.dataUpdatedAt > 0
+    || query.error != null
+    || hardwareInventoryQuery.dataUpdatedAt > 0
+    || hardwareInventoryQuery.error != null
 
   return {
     audioInterfaces,
     midiInterfaces,
-    isLoading: !hasResolvedOnce && (query.isLoading || query.isFetching),
+    isLoading: !hasResolvedOnce && (
+      query.isLoading
+      || query.isFetching
+      || hardwareInventoryQuery.isLoading
+      || hardwareInventoryQuery.isFetching
+    ),
   }
 }

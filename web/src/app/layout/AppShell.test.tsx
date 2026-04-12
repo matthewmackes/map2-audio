@@ -151,6 +151,22 @@ describe('AppShell floating launcher shell', () => {
           }),
         })
       }
+      if (url.includes('/cluster/health/extended/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'local-node': {
+                hostname: 'map2-host',
+                status: 'online',
+                usb_audio_devices: [],
+                audio_interfaces: [],
+                pipewire_devices: [],
+              },
+            },
+          }),
+        })
+      }
       if (url.includes('/midi/devices')) {
         return Promise.resolve({
           ok: true,
@@ -330,6 +346,22 @@ describe('AppShell floating launcher shell', () => {
           }),
         })
       }
+      if (url.includes('/cluster/health/extended/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'local-node': {
+                hostname: 'map2-host',
+                status: 'online',
+                usb_audio_devices: [],
+                audio_interfaces: ['ALSA', 'JACK'],
+                pipewire_devices: [],
+              },
+            },
+          }),
+        })
+      }
       if (url.includes('/midi/devices')) {
         return Promise.resolve({
           ok: true,
@@ -357,6 +389,71 @@ describe('AppShell floating launcher shell', () => {
     })
   })
 
+  it('falls back to cluster hardware inventory when audio status omits connected interfaces', async () => {
+    mockFetch.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/audio/status')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            running: false,
+            sample_rate: 48000,
+            buffer_size: 128,
+            cpu_load: 0.0,
+            engine: 'juce',
+            available: true,
+            available_input_devices: [],
+            available_output_devices: [],
+          }),
+        })
+      }
+      if (url.includes('/cluster/health/extended/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'local-node': {
+                hostname: 'map2-host',
+                status: 'online',
+                usb_audio_devices: [
+                  { name: 'Hotone Jogg USB Audio', vid_pid: '84ef:0014' },
+                ],
+                audio_interfaces: ['ALSA', 'JACK'],
+                pipewire_devices: [
+                  { name: 'Jogg', description: 'Hotone Jogg USB Audio' },
+                ],
+              },
+            },
+          }),
+        })
+      }
+      if (url.includes('/midi/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            inputs: [],
+            outputs: [],
+          }),
+        })
+      }
+      return Promise.reject(new Error(`Unhandled fetch in AppShell.test.tsx: ${url}`))
+    })
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Hotone Jogg USB Audio').length).toBeGreaterThan(0)
+    })
+    expect(screen.queryByText('No audio interfaces detected')).not.toBeInTheDocument()
+  })
+
   it('keeps the last detected interface visible during a transient empty refresh', async () => {
     let audioRefresh = 0
     let midiRefresh = 0
@@ -376,6 +473,22 @@ describe('AppShell floating launcher shell', () => {
             available: true,
             available_input_devices: audioRefresh === 1 ? ['MOTU UltraLite mk5'] : [],
             available_output_devices: [],
+          }),
+        })
+      }
+      if (url.includes('/cluster/health/extended/devices')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            nodes: {
+              'local-node': {
+                hostname: 'map2-host',
+                status: 'online',
+                usb_audio_devices: [],
+                audio_interfaces: [],
+                pipewire_devices: [],
+              },
+            },
           }),
         })
       }
