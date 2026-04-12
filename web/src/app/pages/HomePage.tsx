@@ -1,8 +1,8 @@
-import type { KeyboardEvent, MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Maximize, Minimize } from '@carbon/icons-react'
-import { Button, ProgressBar } from '@carbon/react'
+import { Button, Menu, MenuItem, ProgressBar } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -31,7 +31,6 @@ export function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
   const restoreFocusRef = useRef<HTMLElement | null>(null)
-  const contextMenuItemRefs = useRef<Array<HTMLButtonElement | null>>([])
   const cubeButtonRef = useRef<HTMLButtonElement | null>(null)
   const fullscreenAvailable = typeof document.documentElement.requestFullscreen === 'function'
 
@@ -62,30 +61,7 @@ export function HomePage() {
 
   useEffect(() => {
     if (!contextMenu) {
-      return undefined
-    }
-
-    const handleDismiss = () => setContextMenu(null)
-    window.addEventListener('click', handleDismiss)
-    window.addEventListener('contextmenu', handleDismiss)
-    return () => {
-      window.removeEventListener('click', handleDismiss)
-      window.removeEventListener('contextmenu', handleDismiss)
-    }
-  }, [contextMenu])
-
-  useEffect(() => {
-    if (!contextMenu) {
       restoreFocusRef.current?.focus()
-      return undefined
-    }
-
-    const focusFirstMenuItem = window.setTimeout(() => {
-      contextMenuItemRefs.current[0]?.focus()
-    }, 0)
-
-    return () => {
-      window.clearTimeout(focusFirstMenuItem)
     }
   }, [contextMenu])
 
@@ -130,62 +106,6 @@ export function HomePage() {
     }
 
     await document.documentElement.requestFullscreen()
-  }
-
-  const handleContextMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!contextMenu) {
-      return
-    }
-
-    const focusableItems = contextMenuItemRefs.current.filter(
-      (item): item is HTMLButtonElement => item !== null,
-    )
-
-    if (focusableItems.length === 0) {
-      return
-    }
-
-    const activeIndex = focusableItems.indexOf(document.activeElement as HTMLButtonElement)
-
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      setContextMenu(null)
-      return
-    }
-
-    if (event.key === 'Tab') {
-      event.preventDefault()
-      const nextIndex = event.shiftKey
-        ? (activeIndex <= 0 ? focusableItems.length - 1 : activeIndex - 1)
-        : (activeIndex === -1 || activeIndex === focusableItems.length - 1 ? 0 : activeIndex + 1)
-      focusableItems[nextIndex]?.focus()
-      return
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      const nextIndex = activeIndex === -1 || activeIndex === focusableItems.length - 1 ? 0 : activeIndex + 1
-      focusableItems[nextIndex]?.focus()
-      return
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      const nextIndex = activeIndex <= 0 ? focusableItems.length - 1 : activeIndex - 1
-      focusableItems[nextIndex]?.focus()
-      return
-    }
-
-    if (event.key === 'Home') {
-      event.preventDefault()
-      focusableItems[0]?.focus()
-      return
-    }
-
-    if (event.key === 'End') {
-      event.preventDefault()
-      focusableItems[focusableItems.length - 1]?.focus()
-    }
   }
 
   const handleToggleCubeMenu = () => {
@@ -277,41 +197,19 @@ export function HomePage() {
         </div>
 
         {contextMenu ? (
-          <div
+          <Menu
             className="hp2-desktop__context-menu"
-            role="menu"
-            aria-label="Desktop context menu"
-            onKeyDown={handleContextMenuKeyDown}
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            label="Desktop context menu"
+            onClose={() => setContextMenu(null)}
+            open
+            size="sm"
+            x={contextMenu.x}
+            y={contextMenu.y}
           >
-            <button
-              ref={(node) => { contextMenuItemRefs.current[0] = node }}
-              type="button"
-              role="menuitem"
-              className="hp2-desktop__context-item"
-              onClick={handleRefreshDesktop}
-            >
-              Refresh
-            </button>
-            <button
-              ref={(node) => { contextMenuItemRefs.current[1] = node }}
-              type="button"
-              role="menuitem"
-              className="hp2-desktop__context-item"
-              onClick={() => handleOpenDesktopRoute('/platforms/theme')}
-            >
-              Display settings
-            </button>
-            <button
-              ref={(node) => { contextMenuItemRefs.current[2] = node }}
-              type="button"
-              role="menuitem"
-              className="hp2-desktop__context-item"
-              onClick={() => handleOpenDesktopRoute('/platforms/about')}
-            >
-              About
-            </button>
-          </div>
+            <MenuItem label="Refresh" onClick={handleRefreshDesktop} />
+            <MenuItem label="Display settings" onClick={() => handleOpenDesktopRoute('/platforms/theme')} />
+            <MenuItem label="About" onClick={() => handleOpenDesktopRoute('/platforms/about')} />
+          </Menu>
         ) : null}
       </section>
 

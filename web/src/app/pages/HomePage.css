@@ -164,39 +164,7 @@
 }
 
 .hp2-desktop__context-menu {
-  position: fixed;
   z-index: 20;
-  display: grid;
-  min-width: 12rem;
-  padding: 0.3rem;
-  border: 1px solid var(--cds-border-subtle, #c6c6c6);
-  background: var(--cds-background, #f4f4f4);
-  box-shadow: 0 6px 18px color-mix(in srgb, black 16%, transparent);
-}
-
-.hp2-desktop__context-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 2rem;
-  padding: 0 0.7rem;
-  border: 0;
-  background: transparent;
-  color: var(--cds-text-primary, #161616);
-  font: inherit;
-  font-size: 0.82rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.hp2-desktop__context-item:hover,
-.hp2-desktop__context-item:focus-visible {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-background, #f4f4f4));
-}
-
-.hp2-desktop__context-item:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
-  outline-offset: -2px;
 }
 
 /* ============================================================================

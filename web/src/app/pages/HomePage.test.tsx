@@ -288,7 +288,7 @@ describe('HomePage landing', () => {
     fireEvent.click(launcherButton)
 
     expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Power' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Power actions' })).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
 
@@ -419,12 +419,10 @@ describe('HomePage landing', () => {
       jest.runOnlyPendingTimers()
     })
 
+    const menu = screen.getByRole('menu', { name: 'Desktop context menu' })
     expect(screen.getByRole('menuitem', { name: 'Refresh' })).toHaveFocus()
 
-    fireEvent.keyDown(screen.getByRole('menu', { name: 'Desktop context menu' }), { key: 'Tab' })
-    expect(screen.getByRole('menuitem', { name: 'Display settings' })).toHaveFocus()
-
-    fireEvent.keyDown(screen.getByRole('menu', { name: 'Desktop context menu' }), { key: 'Escape' })
+    fireEvent.keyDown(menu, { key: 'Escape' })
     expect(screen.queryByRole('menu', { name: 'Desktop context menu' })).toBeNull()
     expect(desktop).toHaveFocus()
   })

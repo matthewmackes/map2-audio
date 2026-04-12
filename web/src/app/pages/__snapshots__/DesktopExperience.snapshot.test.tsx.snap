@@ -287,25 +287,100 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             aria-expanded="false"
             aria-haspopup="menu"
             aria-label="Open platform menu"
-            class="shell-launcher__cube-btn"
+            class="hero-icon-launcher__btn"
             type="button"
           >
-            <span
+            <div
               aria-hidden="true"
-              class="shell-launcher__cube-scene"
+              class="hero-icon-launcher__scene"
             >
               <div
-                style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
+                class="hero-icon-launcher__icon-wrap"
               >
-                <div
-                  style="width: 100%; height: 100%;"
+                <svg
+                  aria-hidden="true"
+                  class="hero-icon-launcher__icon"
+                  focusable="false"
+                  viewBox="0 0 192 192"
                 >
-                  <canvas
-                    style="display: block;"
+                  <rect
+                    fill="#4589FF"
+                    height="168"
+                    rx="34"
+                    width="168"
+                    x="12"
+                    y="12"
                   />
-                </div>
+                  <rect
+                    fill="none"
+                    height="162"
+                    rx="31"
+                    stroke="#A6C8FF"
+                    stroke-opacity="0.45"
+                    stroke-width="2"
+                    width="162"
+                    x="15"
+                    y="15"
+                  />
+                  <rect
+                    fill="#13171B"
+                    height="136"
+                    rx="24"
+                    width="136"
+                    x="28"
+                    y="28"
+                  />
+                  <rect
+                    fill="#4589FF"
+                    height="136"
+                    rx="13"
+                    width="26"
+                    x="83"
+                    y="28"
+                  />
+                  <rect
+                    fill="#4589FF"
+                    height="26"
+                    rx="13"
+                    width="136"
+                    x="28"
+                    y="83"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="115"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="115"
+                  />
+                </svg>
               </div>
-            </span>
+            </div>
           </button>
         </div>
       </section>
@@ -454,7 +529,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               class="cds--tooltip-trigger__wrapper"
             >
               <button
-                aria-labelledby="tooltip-_r_r_"
+                aria-labelledby="tooltip-_r_p_"
                 class="hp2-desktop__fullscreen-toggle cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost cds--btn--disabled cds--btn--icon-only"
                 disabled=""
                 type="button"
@@ -481,7 +556,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_r_"
+              id="tooltip-_r_p_"
               role="tooltip"
             >
               <span
@@ -518,53 +593,100 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
             aria-expanded="false"
             aria-haspopup="menu"
             aria-label="Open platform menu"
-            class="shell-launcher__cube-btn"
+            class="hero-icon-launcher__btn"
             type="button"
           >
-            <span
+            <div
               aria-hidden="true"
-              class="shell-launcher__cube-scene"
+              class="hero-icon-launcher__scene"
             >
               <div
-                style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
+                class="hero-icon-launcher__icon-wrap"
               >
-                <div
-                  style="width: 100%; height: 100%;"
+                <svg
+                  aria-hidden="true"
+                  class="hero-icon-launcher__icon"
+                  focusable="false"
+                  viewBox="0 0 192 192"
                 >
-                  <canvas
-                    style="display: block;"
+                  <rect
+                    fill="#4589FF"
+                    height="168"
+                    rx="34"
+                    width="168"
+                    x="12"
+                    y="12"
                   />
-                </div>
+                  <rect
+                    fill="none"
+                    height="162"
+                    rx="31"
+                    stroke="#A6C8FF"
+                    stroke-opacity="0.45"
+                    stroke-width="2"
+                    width="162"
+                    x="15"
+                    y="15"
+                  />
+                  <rect
+                    fill="#13171B"
+                    height="136"
+                    rx="24"
+                    width="136"
+                    x="28"
+                    y="28"
+                  />
+                  <rect
+                    fill="#4589FF"
+                    height="136"
+                    rx="13"
+                    width="26"
+                    x="83"
+                    y="28"
+                  />
+                  <rect
+                    fill="#4589FF"
+                    height="26"
+                    rx="13"
+                    width="136"
+                    x="28"
+                    y="83"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="34"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="34"
+                    y="115"
+                  />
+                  <rect
+                    fill="#1A1E23"
+                    height="43"
+                    rx="8"
+                    width="43"
+                    x="115"
+                    y="115"
+                  />
+                </svg>
               </div>
-            </span>
-          </button>
-        </div>
-        <div
-          aria-label="Desktop context menu"
-          class="hp2-desktop__context-menu"
-          role="menu"
-          style="left: 80px; top: 120px;"
-        >
-          <button
-            class="hp2-desktop__context-item"
-            role="menuitem"
-            type="button"
-          >
-            Refresh
-          </button>
-          <button
-            class="hp2-desktop__context-item"
-            role="menuitem"
-            type="button"
-          >
-            Display settings
-          </button>
-          <button
-            class="hp2-desktop__context-item"
-            role="menuitem"
-            type="button"
-          >
-            About
+            </div>
           </button>
         </div>
       </section>
@@ -614,7 +736,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_12_"
+                  aria-labelledby="tooltip-_r_u_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -638,7 +760,7 @@ exports[`Desktop experience visual snapshots matches the desktop wallpaper conte
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_12_"
+                id="tooltip-_r_u_"
                 role="tooltip"
               >
                 <span
@@ -875,25 +997,100 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
         aria-expanded="true"
         aria-haspopup="menu"
         aria-label="Close platform menu"
-        class="shell-launcher__cube-btn is-active"
+        class="static-hero-icon-launcher__btn is-active"
         type="button"
       >
-        <span
+        <div
           aria-hidden="true"
-          class="shell-launcher__cube-scene"
+          class="static-hero-icon-launcher__scene"
         >
           <div
-            style="position: relative; width: 100%; height: 100%; overflow: hidden; pointer-events: auto;"
+            class="static-hero-icon-launcher__icon-wrap"
           >
-            <div
-              style="width: 100%; height: 100%;"
+            <svg
+              aria-hidden="true"
+              class="static-hero-icon-launcher__icon"
+              focusable="false"
+              viewBox="0 0 192 192"
             >
-              <canvas
-                style="display: block;"
+              <rect
+                fill="#4589FF"
+                height="168"
+                rx="34"
+                width="168"
+                x="12"
+                y="12"
               />
-            </div>
+              <rect
+                fill="none"
+                height="162"
+                rx="31"
+                stroke="#A6C8FF"
+                stroke-opacity="0.45"
+                stroke-width="2"
+                width="162"
+                x="15"
+                y="15"
+              />
+              <rect
+                fill="#13171B"
+                height="136"
+                rx="24"
+                width="136"
+                x="28"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="136"
+                rx="13"
+                width="26"
+                x="83"
+                y="28"
+              />
+              <rect
+                fill="#4589FF"
+                height="26"
+                rx="13"
+                width="136"
+                x="28"
+                y="83"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="34"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="34"
+                y="115"
+              />
+              <rect
+                fill="#1A1E23"
+                height="43"
+                rx="8"
+                width="43"
+                x="115"
+                y="115"
+              />
+            </svg>
           </div>
-        </span>
+        </div>
       </button>
       <div
         aria-label="Platform menu"
@@ -2089,16 +2286,60 @@ exports[`Desktop experience visual snapshots matches the taskbar and Start Menu 
           <div
             class="shell-launcher__power-root"
           >
-            <button
-              aria-controls="shell-launcher-power-menu"
-              aria-expanded="false"
-              aria-haspopup="menu"
-              class="shell-launcher__power-button"
-              role="menuitem"
-              type="button"
+            <span
+              class="cds--overflow-menu__wrapper"
             >
-              Power
-            </button>
+              <span
+                class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
+              >
+                <div
+                  class="cds--tooltip-trigger__wrapper"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                    aria-labelledby="tooltip-_r_1h_"
+                    class="shell-launcher__power-menu-trigger cds--overflow-menu cds--overflow-menu--md cds--btn cds--btn--md cds--layout--size-md cds--btn--ghost cds--btn--icon-only"
+                    type="button"
+                  >
+                    <svg
+                      aria-label="Power actions"
+                      class="cds--overflow-menu__icon"
+                      fill="currentColor"
+                      focusable="false"
+                      height="16"
+                      preserveAspectRatio="xMidYMid meet"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M11.2,2.9l-0.5,0.9c2.6,1.5,3.5,4.9,2,7.5s-4.9,3.5-7.5,2s-3.5-4.9-2-7.5c0.5-0.8,1.2-1.5,2-2L4.8,2.9 c-3.1,1.8-4.2,5.8-2.4,8.9s5.8,4.2,8.9,2.4s4.2-5.8,2.4-8.9C13.1,4.3,12.2,3.4,11.2,2.9z"
+                      />
+                      <path
+                        d="M7.5 1H8.5V8H7.5z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <span
+                  aria-hidden="true"
+                  class="cds--popover"
+                  id="tooltip-_r_1h_"
+                  role="tooltip"
+                >
+                  <span
+                    class="cds--popover-content cds--tooltip-content"
+                  >
+                    Power actions
+                  </span>
+                  <span
+                    class="cds--popover-caret"
+                  />
+                </span>
+              </span>
+            </span>
           </div>
         </div>
       </div>

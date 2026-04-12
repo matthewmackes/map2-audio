@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Published the T871/T872 loading and empty-state checkpoint to both remotes, then continued T868-subB by converting LCD, library asset cards, and CPU/DSP status pills onto Carbon `Tag` / `InlineNotification`.
+Last updated: 2026-04-12 - Completed and shipped T867-subC by moving the Home desktop context menu onto Carbon `Menu`, deleting the residual route-local menu CSS, and updating the desktop shell tests/snapshots.
 
 ## Performance Brain
 
@@ -20317,7 +20317,7 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T867-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove residual legacy menu CSS and close out route-local action menus
     Description:
     - Goal / acceptance criteria: Sweep leftover route-local menu patterns, delete dead menu CSS, and leave only documented intentional custom nav widgets.
@@ -20327,14 +20327,25 @@ Subtasks:
     - Required outputs: Residual route conversions, deleted legacy menu CSS, completion validation.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 06:34 EDT - Codex
+    - Completion notes:
+      - Replaced the remaining Home desktop positioned context widget in `web/src/app/pages/HomePage.tsx` with Carbon `Menu` / `MenuItem`, preserving route navigation, refresh behavior, and focus restoration while removing the bespoke menu-button contract.
+      - Deleted the route-local desktop context-item styling from `web/src/app/pages/HomePage.css`, leaving only a lightweight z-index hook for the Carbon surface instead of a parallel custom menu implementation.
+      - Updated `web/src/app/pages/HomePage.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap` to reflect the Carbon action-menu semantics already used by the shell power menus and the new Home desktop menu DOM.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/DesktopExperience.snapshot.test.tsx -u` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-11 21:48 EDT - Codex
+Last updated: 2026-04-12 06:34 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the broader Carbon primitive cleanup: this is software-only breadth, not a true block. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows Carbon `OverflowMenu` already covers many route surfaces, while the remaining custom work is concentrated in shell/menu contracts such as `ShellLauncherPanel.tsx` / `AppShell.css` power and launcher menus, plus a smaller set of custom start-menu and advanced-menu affordances.
   - The first implementation target should be `T867-subA`, then the shell power/launcher menu slice before deleting residual legacy menu CSS.
   - Completed `T867-subA` by classifying the remaining custom menu work into shell power menus, the positioned desktop context menu, and intentional non-Overflow navigation widgets; `T867-subB` is now the clear next execution slice.
   - Completed `T867-subB` by migrating the shell launcher and home overlay power menus onto Carbon `OverflowMenu`, leaving the positioned desktop context menu and other intentional custom navigation widgets as the remaining `T867-subC` closeout work.
+  - Completed `T867-subC` by replacing the Home desktop context menu with Carbon `Menu` / `MenuItem`, deleting the final route-local desktop menu item CSS, and updating the Home desktop integration/snapshot tests to the new Carbon menu semantics.
 
 ID: T868
 Status: [>] In Progress

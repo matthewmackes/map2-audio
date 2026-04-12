@@ -279,19 +279,19 @@ describe('Desktop experience integration', () => {
     renderDesktopExperience(['/artifacts'])
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
 
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Refresh Desktop' }))
+    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Refresh desktop'))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Log Out' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
+    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Log out'))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Power' }))
-    fireEvent.click(within(screen.getByRole('menu', { name: 'Power actions' })).getByRole('menuitem', { name: 'Restart Backend' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
+    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Restart backend'))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))
 
     await waitFor(() => expect(mockRestartBackend).toHaveBeenCalledTimes(1))
