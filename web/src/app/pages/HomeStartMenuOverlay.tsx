@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
 import type { ComponentType, SVGProps } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
 import {
@@ -268,7 +268,9 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
                   <span className="hp2-overlay__device-empty">Detecting audio interfaces...</span>
                 ) : launcherInterfaceSummary.audioInterfaces.length > 0 ? (
                   launcherInterfaceSummary.audioInterfaces.map((name) => (
-                    <span key={name} className="hp2-overlay__device-pill">{name}</span>
+                    <Tag key={name} className="hp2-overlay__device-tag" size="sm" type="cool-gray">
+                      {name}
+                    </Tag>
                   ))
                 ) : (
                   <span className="hp2-overlay__device-empty">No audio interfaces detected</span>
@@ -282,7 +284,9 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
                   <span className="hp2-overlay__device-empty">Detecting MIDI interfaces...</span>
                 ) : launcherInterfaceSummary.midiInterfaces.length > 0 ? (
                   launcherInterfaceSummary.midiInterfaces.map((name) => (
-                    <span key={name} className="hp2-overlay__device-pill">{name}</span>
+                    <Tag key={name} className="hp2-overlay__device-tag" size="sm" type="cool-gray">
+                      {name}
+                    </Tag>
                   ))
                 ) : (
                   <span className="hp2-overlay__device-empty">No MIDI interfaces detected</span>

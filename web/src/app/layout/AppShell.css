@@ -707,20 +707,25 @@
   min-width: 0;
 }
 
-.shell-launcher__device-pill,
+.shell-launcher__device-tag.cds--tag,
 .shell-launcher__device-empty {
   display: inline-flex;
   align-items: center;
   min-height: 1.9rem;
   padding: 0.35rem 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
-  background: var(--cds-layer-01, #ffffff);
-  color: var(--cds-text-primary, var(--text-primary));
   font-size: 0.72rem;
   line-height: 1.25;
 }
 
+.shell-launcher__device-tag.cds--tag {
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
+  background: var(--cds-layer-01, #ffffff);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
 .shell-launcher__device-empty {
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
+  background: var(--cds-layer-01, #ffffff);
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 

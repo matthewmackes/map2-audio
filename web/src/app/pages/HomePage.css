@@ -398,20 +398,25 @@
   min-width: 0;
 }
 
-.hp2-overlay__device-pill,
+.hp2-overlay__device-tag.cds--tag,
 .hp2-overlay__device-empty {
   display: inline-flex;
   align-items: center;
   min-height: 1.9rem;
   padding: 0.35rem 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
-  background: var(--cds-layer-01, #ffffff);
-  color: var(--cds-text-primary, var(--text-primary));
   font-size: 0.72rem;
   line-height: 1.25;
 }
 
+.hp2-overlay__device-tag.cds--tag {
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
+  background: var(--cds-layer-01, #ffffff);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
 .hp2-overlay__device-empty {
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
+  background: var(--cds-layer-01, #ffffff);
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties, ComponentType, RefObject, SVGProps } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
@@ -179,9 +179,9 @@ export function ShellLauncherPanel({
                       <span className="shell-launcher__device-empty">Detecting audio interfaces...</span>
                     ) : launcherInterfaceSummary.audioInterfaces.length > 0 ? (
                       launcherInterfaceSummary.audioInterfaces.map((name) => (
-                        <span key={name} className="shell-launcher__device-pill">
+                        <Tag key={name} className="shell-launcher__device-tag" size="sm" type="cool-gray">
                           {name}
-                        </span>
+                        </Tag>
                       ))
                     ) : (
                       <span className="shell-launcher__device-empty">No audio interfaces detected</span>
@@ -195,9 +195,9 @@ export function ShellLauncherPanel({
                       <span className="shell-launcher__device-empty">Detecting MIDI interfaces...</span>
                     ) : launcherInterfaceSummary.midiInterfaces.length > 0 ? (
                       launcherInterfaceSummary.midiInterfaces.map((name) => (
-                        <span key={name} className="shell-launcher__device-pill">
+                        <Tag key={name} className="shell-launcher__device-tag" size="sm" type="cool-gray">
                           {name}
-                        </span>
+                        </Tag>
                       ))
                     ) : (
                       <span className="shell-launcher__device-empty">No MIDI interfaces detected</span>

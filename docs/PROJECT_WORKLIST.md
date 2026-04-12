@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Completed and shipped T867-subC by moving the Home desktop context menu onto Carbon `Menu`, deleting the residual route-local menu CSS, and updating the desktop shell tests/snapshots.
+Last updated: 2026-04-12 - Shipped T867-subC, then continued T868-subB by converting shell/start-menu detected-interface pills and the Library Paths badge onto Carbon `Tag`.
 
 ## Performance Brain
 
@@ -20391,7 +20391,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-12 06:05 EDT - Codex
+Last updated: 2026-04-12 06:38 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20401,6 +20401,8 @@ Last updated: 2026-04-12 06:05 EDT - Codex
   - Validation for this first badge slice is green: `rg -n '\\b(className=|class=).*(pill|badge)|\\.(pill|badge)\\b' web/src/app/components/Routing/ParallelRoutingPanel.tsx web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx web/src/app/components/chains/ChainDeployModal.tsx -g '*.tsx' -g '*.css'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T868-subB` with a low-risk semantic asset/status slice in `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, `NAMItemCard.tsx`, `IRItemCard.tsx`, and `SFItemCard.tsx`, replacing generic `.pill` / `.badge` usage with Carbon `Tag` and swapping the DSP cluster error pill to Carbon `InlineNotification`.
   - Validation for this follow-up badge slice is green: `rg -n '\\b(className=\"pill|className=\"badge|className=\\{`pill|className=\\{`badge|\\.pill\\b|\\.badge\\b)' web/src/app/components/library/NAMItemCard.tsx web/src/app/components/library/IRItemCard.tsx web/src/app/components/library/SFItemCard.tsx web/src/app/pages/LCDPage.tsx web/src/app/pages/DSPPage.tsx web/src/app/components/CPUStatusOverview.tsx -g '*.tsx' -g '*.css'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T868-subB` with a shell/library semantic-tag slice in `web/src/app/layout/ShellLauncherPanel.tsx`, `web/src/app/pages/HomeStartMenuOverlay.tsx`, and `web/src/app/components/library/LibraryPaths.tsx`, replacing detected-interface pills and the Library Paths badge with Carbon `Tag` while keeping only the empty-state chips as lightweight custom text containers.
+  - Validation for this shell/library slice is green: `rg -n '\\b(className=\"pill|className=\"badge|className=\\{`pill|className=\\{`badge|\\.pill\\b|\\.badge\\b)' web/src/app/layout/ShellLauncherPanel.tsx web/src/app/pages/HomeStartMenuOverlay.tsx web/src/app/components/library/LibraryPaths.tsx web/src/app/layout/AppShell.css web/src/app/pages/HomePage.css -g '*.tsx' -g '*.css'` -> PASS (no matches); `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked
