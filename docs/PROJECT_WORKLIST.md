@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Closed T868 by converting the remaining semantic audio-interface connection badge to Carbon `Tag`, documenting the residual interactive/chrome exception bucket, and reconciling stale parent task statuses for T867/T871.
+Last updated: 2026-04-12 - Completed T866-subA with a restart-safe Carbon layer inventory by ownership tier, then promoted T866-subB as the active shell/shared `Layer` migration slice.
 
 ## Performance Brain
 
@@ -20231,7 +20231,7 @@ Description:
 - Required outputs: Layer-wrapped content regions, removed hard-coded layer references.
 Subtasks:
   - ID: T866-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Inventory and classify hard-coded layer surfaces by ownership tier
     Description:
     - Goal / acceptance criteria: Enumerate remaining `var(--cds-layer-01|02|03)` consumers and classify them into shell, shared workspace/page, and route-local/device-family groups so the migration can proceed in restartable batches.
@@ -20241,8 +20241,17 @@ Subtasks:
     - Required outputs: Inventory evidence, grouped target lists, first migration queue.
     Subtasks: None
     Assigned to: Codex
+    Last updated: 2026-04-12 09:10 EDT - Codex
+    - Completion notes:
+      - Captured the current hard-coded layer inventory with `rg -n "var\\(--cds-layer-0[123]\\)" web/src -g '*.css' -g '*.tsx' -g '*.ts' | cut -d: -f1 | sort | uniq -c | sort -nr`, which shows the heaviest remaining debt concentrated in `PlatformModal.css` (`31` hits), `ThemePage.css` (`30`), `MidiHubAreaLayout.css` (`16`), `ManagementWorkspace.css` (`16`), `AboutPage.css` (`10`), `PipeWirePage.css` (`9`), `AudioEnginePage.css` (`9`), and `ThemeChooserModal.css` (`9`).
+      - Classified the next migration queue into ownership tiers: shell/shared entry surfaces (`AppShell.css`, `Toasts.css`, `ThemeChooserModal.css`, `UnifiedWorkspaceSideNav.css`, `NodeSelector.css`, plus the entry wrappers in `PipeWirePage.css` and `ChainsPage.css`), shared workspace/page shells (`PlatformModal.css`, `ManagementWorkspace.css`, `ClusterDashboardWorkspace.css`, `NetworkDiscoveryWorkspace.css`, `AvbRoutingWorkspace.css`, graph node wrappers), and route-local/device families (`ThemePage.css`, MIDI Hub layout shells, IntelFX views/components, AudioEngine/AudioArtifacts/Push/PhysicalSurfaces/About pages, plus the residual Snapshot Editor layer accents).
+      - Marked `T866-subB` as the immediate follow-up because the highest-fan-out low-risk slice is now explicit: shell/shared entry wrappers should move onto `Layer` before touching the heavier route-local design systems and fit-sensitive device families.
+    - Validation:
+      - `rg -n "var\\(--cds-layer-0[123]\\)" web/src -g '*.css' -g '*.tsx' -g '*.ts' | cut -d: -f1 | sort | uniq -c | sort -nr | head -n 80` -> PASS
+      - `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/layout web/src/app/components/shared web/src/app/components/navigation web/src/app/pages/HomePage.css web/src/app/pages/PipeWirePage.css web/src/app/pages/ChainsPage.css web/src/app/components/ThemeChooserModal.css web/src/app/components/Toasts.css -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS
+      - `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages web/src/app/components/IntelFX web/src/app/components/MPX1 web/src/app/pages/midi-hub web/src/app/components/Platform web/src/app/components/ManagementWorkspace web/src/app/components/ClusterDashboard web/src/app/components/NetworkDiscovery web/src/app/components/AvbRouting -g '*.css' -g '*.tsx' -g '*.ts' | head -n 300` -> PASS
   - ID: T866-subB
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Migrate shell and shared workspace surfaces onto explicit Carbon `Layer`
     Description:
     - Goal / acceptance criteria: Wrap shell and shared workspace entry surfaces in `Layer`, remove the corresponding hard-coded layer backgrounds in those touched regions, and validate that nested Carbon children escalate correctly.
@@ -20264,11 +20273,12 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-11 21:48 EDT - Codex
+Last updated: 2026-04-12 09:10 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the loading/empty-state/type/copy sweeps: this is no longer blocked by missing primitives or hardware, only by breadth. The task is now reopened as an aggressive migration epic with restartable sub-slices.
   - Current evidence confirms the debt is still broad but software-only: hard-coded `var(--cds-layer-01|02|03)` backgrounds remain concentrated in `web/src/index.css`, `web/src/app/layout/AppShell.css`, shared route CSS such as `PipeWirePage.css`, `ChainsPage.css`, `ThemeChooserModal.css`, and large route-local families like Snapshot Editor and IntelFX pages, while some surfaces already use Carbon `<Layer>`.
-  - The first implementation target should be `T866-subA`, then shell/shared workspace entry surfaces in `AppShell`, `Home`, `PipeWire`, `Chains`, and other existing `Layer`-ready page wrappers before touching the fit-sensitive route-local visual systems.
+  - Completed `T866-subA` by turning the remaining layer debt into three explicit ownership buckets and ranking the heaviest files by hit count, which removes the old "too broad" blocker rationale.
+  - `T866-subB` is now the active slice: shell/shared entry wrappers (`AppShell`, `Toasts`, `ThemeChooserModal`, `UnifiedWorkspaceSideNav`, `NodeSelector`, plus the entry panels in `PipeWire` and `Chains`) should adopt `Layer` before the larger platform/theme/device families.
 
 ID: T867
 Status: [✓] Done
