@@ -4,7 +4,7 @@
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--cds-background) 94%, white 6%) 0%,
-      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background) 8%) 100%
+      color-mix(in srgb, var(--cds-layer) 92%, var(--cds-background) 8%) 100%
     );
 }
 
@@ -17,8 +17,8 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--cds-layer-01) 88%, var(--cds-background) 12%) 0%,
-      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background) 8%) 100%
+      color-mix(in srgb, var(--cds-layer) 88%, var(--cds-background) 12%) 0%,
+      color-mix(in srgb, var(--cds-layer) 92%, var(--cds-background) 8%) 100%
     );
 }
 
@@ -31,8 +31,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02) 94%, white 6%) 0%,
-      color-mix(in srgb, var(--cds-layer-01) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer) 98%, transparent) 100%
     );
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
@@ -109,8 +109,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-accent-01) 74%, var(--cds-layer-01) 26%) 0%,
-      color-mix(in srgb, var(--cds-layer-01) 96%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-accent-01) 74%, var(--cds-layer) 26%) 0%,
+      color-mix(in srgb, var(--cds-layer) 96%, transparent) 100%
     );
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 66%, transparent),
@@ -314,8 +314,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02) 95%, white 5%) 0%,
-      color-mix(in srgb, var(--cds-layer-01) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover) 95%, white 5%) 0%,
+      color-mix(in srgb, var(--cds-layer) 98%, transparent) 100%
     );
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 66%, transparent),
@@ -327,8 +327,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-hover-01) 92%, white 8%) 0%,
-      color-mix(in srgb, var(--cds-layer-02) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover) 92%, white 8%) 0%,
+      color-mix(in srgb, var(--cds-layer-hover) 98%, transparent) 100%
     );
 }
 
