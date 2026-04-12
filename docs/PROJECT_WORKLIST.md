@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T866-subB by moving the shared node selector plus the PipeWire/Chains entry surfaces onto explicit Carbon `Layer` ownership and replacing the touched hard-coded numeric layer tokens with context-aware Carbon layer tokens.
+Last updated: 2026-04-12 - Continued T866-subB by moving ThemeChooserModal’s stepper, palette chips, family cards, and inline slot picker onto explicit Carbon `Layer` ownership and replacing the touched hard-coded numeric layer tokens with context-aware Carbon layer tokens.
 
 ## Performance Brain
 
@@ -20283,7 +20283,9 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - Validation for this shared-surface slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Toasts.css web/src/app/components/navigation/UnifiedWorkspaceSideNav.css web/src/app/components/Toasts.tsx web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Continued `T866-subB` through the remaining low-risk shared entry surfaces in `web/src/app/components/shared/NodeSelector.tsx` / `NodeSelector.css` plus `web/src/app/pages/PipeWirePage.css` and `web/src/app/pages/ChainsPage.tsx` / `ChainsPage.css`, wrapping the Chains scope cards and shared node selector in explicit Carbon `Layer` ownership and replacing the touched hard-coded `--cds-layer-01/02` backgrounds with `--cds-layer` / field tokens on the layered PipeWire and Chains entry surfaces.
   - Validation for this follow-up shared entry slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/shared/NodeSelector.css web/src/app/pages/PipeWirePage.css web/src/app/pages/ChainsPage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
-  - The next `T866-subB` queue is now narrowed to the remaining shared wrapper bucket from `T866-subA`: `ThemeChooserModal` and the residual `AppShell` layer-treatment surfaces.
+  - Continued `T866-subB` in `web/src/app/components/ThemeChooserModal.tsx` / `ThemeChooserModal.css`, adding explicit Carbon `Layer` wrappers around the modal stepper, base-shell chips, family cards, and inline slot-picker surfaces so the touched modal controls now use `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` instead of hard-coded `--cds-layer-01/02/03` backgrounds.
+  - Validation for this ThemeChooser follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/ThemeChooserModal.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - The next `T866-subB` queue is now narrowed to the residual `AppShell` layer-treatment surfaces before the task can hand off to the broader route-local sweep in `T866-subC`.
 
 ID: T867
 Status: [✓] Done

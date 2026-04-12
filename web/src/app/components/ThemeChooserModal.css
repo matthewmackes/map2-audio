@@ -21,13 +21,17 @@
   border-block-end: 1px solid var(--cds-border-subtle);
 }
 
+.tcm-step-layer {
+  display: flex;
+}
+
 .tcm-step {
   display: flex;
   align-items: center;
   gap: var(--cds-spacing-03);
   padding: var(--cds-spacing-02) var(--cds-spacing-04);
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: var(--cds-text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
@@ -37,13 +41,18 @@
 .tcm-step--active {
   border-color: var(--cds-border-strong);
   color: var(--cds-text-primary);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-selected, var(--cds-layer-hover));
   font-weight: 600;
 }
 
 .tcm-step--done {
   border-color: var(--cds-border-subtle);
   color: var(--cds-text-secondary);
+}
+
+.tcm-step__num-layer {
+  display: flex;
+  border-radius: 50%;
 }
 
 .tcm-step__num {
@@ -53,7 +62,7 @@
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 50%;
-  background: var(--cds-layer-03);
+  background: var(--cds-layer);
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--cds-text-primary);
@@ -123,13 +132,17 @@
   flex-wrap: wrap;
 }
 
+.tcm-base-chip-layer {
+  display: flex;
+}
+
 .tcm-base-chip {
   display: flex;
   align-items: center;
   gap: var(--cds-spacing-03);
   padding: var(--cds-spacing-03) var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   color: var(--cds-text-primary);
   font-size: 0.875rem;
   cursor: pointer;
@@ -138,7 +151,7 @@
 
 .tcm-base-chip--selected {
   border-color: var(--interactive, var(--cds-border-interactive));
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-selected, var(--cds-layer-hover));
 }
 
 .tcm-base-chip__swatch {
@@ -161,12 +174,16 @@
   gap: var(--cds-spacing-03);
 }
 
+.tcm-family-card-layer {
+  display: flex;
+}
+
 .tcm-family-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   cursor: pointer;
   padding: 0;
   overflow: hidden;
@@ -312,7 +329,7 @@
   gap: var(--cds-spacing-04);
   width: 100%;
   padding: var(--cds-spacing-03) var(--cds-spacing-04);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   border: none;
   cursor: pointer;
   color: var(--cds-text-primary);
@@ -322,7 +339,7 @@
 }
 
 .tcm-slot__btn:hover {
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .tcm-slot__label {
@@ -360,7 +377,7 @@
 /* ── Slot palette picker ────────────────────────────────────── */
 
 .tcm-slot-picker {
-  background: var(--cds-layer-02);
+  background: var(--cds-layer);
   border: 1px solid var(--cds-border-strong);
   padding: var(--cds-spacing-04);
   display: flex;

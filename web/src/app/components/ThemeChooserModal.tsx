@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Button,
   ComposedModal,
+  Layer,
   ModalBody,
   ModalFooter,
   ModalHeader,
@@ -260,23 +261,31 @@ export function ThemeChooserModal({ isOpen, onClose, onThemeChange }: ThemeChoos
       <ModalBody hasScrollingContent className="tcm-body">
         {/* ── Step indicator ── */}
         <div className="tcm-steps">
-          <button
-            type="button"
-            className={`tcm-step ${step === 'palette' ? 'tcm-step--active' : 'tcm-step--done'}`}
-            onClick={() => setStep('palette')}
-          >
-            <span className="tcm-step__num">1</span>
-            <span>Choose palette</span>
-          </button>
+          <Layer className="tcm-step-layer">
+            <button
+              type="button"
+              className={`tcm-step ${step === 'palette' ? 'tcm-step--active' : 'tcm-step--done'}`}
+              onClick={() => setStep('palette')}
+            >
+              <Layer className="tcm-step__num-layer">
+                <span className="tcm-step__num">1</span>
+              </Layer>
+              <span>Choose palette</span>
+            </button>
+          </Layer>
           <span className="tcm-step__sep" aria-hidden="true" />
-          <button
-            type="button"
-            className={`tcm-step ${step === 'customize' ? 'tcm-step--active' : ''}`}
-            onClick={() => setStep('customize')}
-          >
-            <span className="tcm-step__num">2</span>
-            <span>Customize</span>
-          </button>
+          <Layer className="tcm-step-layer">
+            <button
+              type="button"
+              className={`tcm-step ${step === 'customize' ? 'tcm-step--active' : ''}`}
+              onClick={() => setStep('customize')}
+            >
+              <Layer className="tcm-step__num-layer">
+                <span className="tcm-step__num">2</span>
+              </Layer>
+              <span>Customize</span>
+            </button>
+          </Layer>
         </div>
 
         {/* ═══════════════════ STEP 1: Palette ═══════════════════ */}
@@ -309,45 +318,53 @@ export function ThemeChooserModal({ isOpen, onClose, onThemeChange }: ThemeChoos
               <div className="tcm-base-variants">
                 {isDark ? (
                   <>
-                    <button
-                      type="button"
-                      className={`tcm-base-chip ${darkBase === 'g100' ? 'tcm-base-chip--selected' : ''}`}
-                      onClick={() => setDarkBase('g100')}
-                    >
-                      <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g100" />
-                      <span>Gray 100</span>
-                      {darkBase === 'g100' && <Checkmark size={14} />}
-                    </button>
-                    <button
-                      type="button"
-                      className={`tcm-base-chip ${darkBase === 'g90' ? 'tcm-base-chip--selected' : ''}`}
-                      onClick={() => setDarkBase('g90')}
-                    >
-                      <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g90" />
-                      <span>Gray 90</span>
-                      {darkBase === 'g90' && <Checkmark size={14} />}
-                    </button>
+                    <Layer className="tcm-base-chip-layer">
+                      <button
+                        type="button"
+                        className={`tcm-base-chip ${darkBase === 'g100' ? 'tcm-base-chip--selected' : ''}`}
+                        onClick={() => setDarkBase('g100')}
+                      >
+                        <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g100" />
+                        <span>Gray 100</span>
+                        {darkBase === 'g100' && <Checkmark size={14} />}
+                      </button>
+                    </Layer>
+                    <Layer className="tcm-base-chip-layer">
+                      <button
+                        type="button"
+                        className={`tcm-base-chip ${darkBase === 'g90' ? 'tcm-base-chip--selected' : ''}`}
+                        onClick={() => setDarkBase('g90')}
+                      >
+                        <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g90" />
+                        <span>Gray 90</span>
+                        {darkBase === 'g90' && <Checkmark size={14} />}
+                      </button>
+                    </Layer>
                   </>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      className={`tcm-base-chip ${lightBase === 'g10' ? 'tcm-base-chip--selected' : ''}`}
-                      onClick={() => setLightBase('g10')}
-                    >
-                      <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g10" />
-                      <span>Gray 10</span>
-                      {lightBase === 'g10' && <Checkmark size={14} />}
-                    </button>
-                    <button
-                      type="button"
-                      className={`tcm-base-chip ${lightBase === 'white' ? 'tcm-base-chip--selected' : ''}`}
-                      onClick={() => setLightBase('white')}
-                    >
-                      <span className="tcm-base-chip__swatch tcm-base-chip__swatch--white" />
-                      <span>White</span>
-                      {lightBase === 'white' && <Checkmark size={14} />}
-                    </button>
+                    <Layer className="tcm-base-chip-layer">
+                      <button
+                        type="button"
+                        className={`tcm-base-chip ${lightBase === 'g10' ? 'tcm-base-chip--selected' : ''}`}
+                        onClick={() => setLightBase('g10')}
+                      >
+                        <span className="tcm-base-chip__swatch tcm-base-chip__swatch--g10" />
+                        <span>Gray 10</span>
+                        {lightBase === 'g10' && <Checkmark size={14} />}
+                      </button>
+                    </Layer>
+                    <Layer className="tcm-base-chip-layer">
+                      <button
+                        type="button"
+                        className={`tcm-base-chip ${lightBase === 'white' ? 'tcm-base-chip--selected' : ''}`}
+                        onClick={() => setLightBase('white')}
+                      >
+                        <span className="tcm-base-chip__swatch tcm-base-chip__swatch--white" />
+                        <span>White</span>
+                        {lightBase === 'white' && <Checkmark size={14} />}
+                      </button>
+                    </Layer>
                   </>
                 )}
               </div>
@@ -365,31 +382,32 @@ export function ThemeChooserModal({ isOpen, onClose, onThemeChange }: ThemeChoos
                   const hex = f.shades[previewShade]
                   const isSelected = selectedFamily === f.id
                   return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      className={`tcm-family-card ${isSelected ? 'tcm-family-card--selected' : ''}`}
-                      onClick={() => setSelectedFamily(f.id)}
-                      aria-pressed={isSelected}
-                    >
-                      {/* Gradient band showing all shades */}
-                      <span
-                        className="tcm-family-card__band"
-                        style={{
-                          background: `linear-gradient(to right, ${Object.values(f.shades).join(', ')})`,
-                        }}
-                        aria-hidden="true"
-                      />
-                      <span className="tcm-family-card__body">
+                    <Layer key={f.id} className="tcm-family-card-layer">
+                      <button
+                        type="button"
+                        className={`tcm-family-card ${isSelected ? 'tcm-family-card--selected' : ''}`}
+                        onClick={() => setSelectedFamily(f.id)}
+                        aria-pressed={isSelected}
+                      >
+                        {/* Gradient band showing all shades */}
                         <span
-                          className="tcm-family-card__dot"
-                          style={{ background: hex }}
+                          className="tcm-family-card__band"
+                          style={{
+                            background: `linear-gradient(to right, ${Object.values(f.shades).join(', ')})`,
+                          }}
                           aria-hidden="true"
                         />
-                        <span className="tcm-family-card__name">{f.name}</span>
-                        {isSelected && <Checkmark size={14} className="tcm-family-card__check" />}
-                      </span>
-                    </button>
+                        <span className="tcm-family-card__body">
+                          <span
+                            className="tcm-family-card__dot"
+                            style={{ background: hex }}
+                            aria-hidden="true"
+                          />
+                          <span className="tcm-family-card__name">{f.name}</span>
+                          {isSelected && <Checkmark size={14} className="tcm-family-card__check" />}
+                        </span>
+                      </button>
+                    </Layer>
                   )
                 })}
               </div>
@@ -437,15 +455,17 @@ export function ThemeChooserModal({ isOpen, onClose, onThemeChange }: ThemeChoos
                     const isActive = activeSlot === slot
                     return (
                       <div key={slot} className={`tcm-slot ${isActive ? 'tcm-slot--active' : ''} ${isOverridden ? 'tcm-slot--overridden' : ''}`}>
-                        <button
-                          type="button"
-                          className="tcm-slot__btn"
-                          onClick={() => setActiveSlot(isActive ? null : slot)}
-                        >
-                          {swatch(value, 22)}
-                          <span className="tcm-slot__label">{SLOT_LABELS[slot] ?? slot}</span>
-                          {isOverridden && <Tag type="warm-gray" size="sm">edited</Tag>}
-                        </button>
+                        <Layer className="tcm-slot__btn-layer">
+                          <button
+                            type="button"
+                            className="tcm-slot__btn"
+                            onClick={() => setActiveSlot(isActive ? null : slot)}
+                          >
+                            {swatch(value, 22)}
+                            <span className="tcm-slot__label">{SLOT_LABELS[slot] ?? slot}</span>
+                            {isOverridden && <Tag type="warm-gray" size="sm">edited</Tag>}
+                          </button>
+                        </Layer>
                         {isOverridden && (
                           <button
                             type="button"
@@ -570,7 +590,7 @@ function SlotPalettePicker({ slot: _slot, currentValue, onPick, onClose }: SlotP
   const family = CARBON_FAMILY_BY_ID[selectedFamilyId]
 
   return (
-    <div className="tcm-slot-picker">
+    <Layer className="tcm-slot-picker">
       {/* Family selector row */}
       <div className="tcm-slot-picker__families">
         {CARBON_COLOR_FAMILIES.map((f) => {
@@ -617,6 +637,6 @@ function SlotPalettePicker({ slot: _slot, currentValue, onPick, onClose }: SlotP
         <code className="tcm-slot-picker__hex">{currentValue}</code>
         <Button kind="ghost" size="sm" onClick={onClose}>Close</Button>
       </div>
-    </div>
+    </Layer>
   )
 }
