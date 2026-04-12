@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1877** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1881** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7d1f6da5`](https://github.com/matthewmackes/map2-audio/commit/7d1f6da5cdd732d8f5b0fee56e2490e3d63c639f) | Contextualize IntelFX layer tokens | Map2 Audio | 2026-04-12 |
+| [`5fb469ad`](https://github.com/matthewmackes/map2-audio/commit/5fb469adcc4471257c69a0fe65f42c0ea606b693) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
+| [`d0cd4c26`](https://github.com/matthewmackes/map2-audio/commit/d0cd4c26453f7d465ae603ae46086e6268068c94) | Fix Start Menu audio interface fallback | Map2 Audio | 2026-04-12 |
+| [`1c48d5ac`](https://github.com/matthewmackes/map2-audio/commit/1c48d5acab221ac42499870df9d870dd59dde65e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`47111942`](https://github.com/matthewmackes/map2-audio/commit/47111942f0a8cc80dc7f41abb3b5a303f72b574f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
 | [`9867a55f`](https://github.com/matthewmackes/map2-audio/commit/9867a55fc9d5033ab185073950b63a3c9ea286ea) | Continue physical surfaces layer cleanup | Map2 Audio | 2026-04-12 |
 | [`48d67ff2`](https://github.com/matthewmackes/map2-audio/commit/48d67ff2bf68c85275a82188b1977dbbd85833e9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`a58284cf`](https://github.com/matthewmackes/map2-audio/commit/a58284cf5b61b0fc6ea44d35172afc9b08e73955) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
-| [`c4fbc406`](https://github.com/matthewmackes/map2-audio/commit/c4fbc4064e1e30c0cd5f22ad8e424213fb56b7b4) | Continue node nav layer cleanup | Map2 Audio | 2026-04-12 |
-| [`f89c6dd7`](https://github.com/matthewmackes/map2-audio/commit/f89c6dd7193fefa2e92099fcc51485b4f683647a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`12dd3324`](https://github.com/matthewmackes/map2-audio/commit/12dd33242b3e29463beffb932383141a6966a030) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-12 |
-| [`5413b951`](https://github.com/matthewmackes/map2-audio/commit/5413b951fef13907a6e6010f8cf8a0611a841d2e) | Continue audio artifacts layer cleanup | Map2 Audio | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
