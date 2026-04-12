@@ -5,8 +5,8 @@
   border-radius: 1rem;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-layer-02) 84%, #0f62fe 16%), transparent 48%),
-    linear-gradient(180deg, var(--cds-layer-01), var(--cds-layer));
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-layer-hover) 84%, #0f62fe 16%), transparent 48%),
+    linear-gradient(180deg, var(--cds-layer), var(--cds-layer));
 }
 
 .node-graph-card {
@@ -17,7 +17,7 @@
   border: 1px solid var(--cds-border-subtle-01);
   border-inline-start: 3px solid var(--cds-link-primary);
   border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--cds-layer-02) 88%, white 12%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 88%, white 12%);
   box-shadow: 0 10px 24px color-mix(in srgb, black 10%, transparent);
   text-align: left;
 }
@@ -144,11 +144,11 @@
   gap: 1rem;
   padding: 0.7rem 0.8rem;
   border-radius: 0.75rem;
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .node-tearsheet__kv--warn {
-  background: color-mix(in srgb, var(--cds-support-warning) 14%, var(--cds-layer-01));
+  background: color-mix(in srgb, var(--cds-support-warning) 14%, var(--cds-layer));
 }
 
 @media (max-width: 768px) {
@@ -156,4 +156,3 @@
     width: 100vw;
   }
 }
-
