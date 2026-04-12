@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Started T973 to restore Start Menu audio-interface detection when `/api/audio/status` is empty but cluster hardware inventory still reports connected USB/PipeWire interfaces.
+Last updated: 2026-04-12 - Completed T973 by merging cluster hardware inventory fallback into the Start Menu audio-interface summary and validating the Hotone Jogg regression case.
 
 ## Performance Brain
 
@@ -20305,6 +20305,7 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Continued `T866-subC` with a dedicated `web/src/app/pages/ThemePage.css` pass, converting the route's desktop-dialog, section-nav, catalog, option, launcher, plugin, theme-card, slot-card, and picker surfaces from hard-coded `--cds-layer-01/02` usage to contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens while preserving the retro desktop/studio styling.
   - Continued `T866-subC` again in `web/src/app/pages/midi-hub/MidiHubAreaLayout.css`, moving the route shell, header/workflow surfaces, empty states, stat tiles, record/table wrappers, routing matrix cells, and patchbay shell from hard-coded `--cds-layer-01/02/03` backgrounds onto contextual `--cds-layer`, `--cds-layer-hover`, `--cds-layer-selected`, and the existing selected-state tokens.
   - Continued `T866-subC` in `web/src/app/pages/AboutPage.css`, replacing the route’s numeric `--cds-layer-01/02` gradients in the page shell, hero/panel surfaces, AGPL panel, and hardware cards with contextual `--cds-layer` and `--cds-layer-hover` tokens while preserving the existing accent-layer mix.
+  - Continued `T866-subC` in `web/src/app/pages/AudioEnginePage.css`, replacing the route’s numeric `--cds-layer-01/02` usage across the header band, source-of-truth metrics, workspace/source-truth graph shells, expanded cards, linked table rows, and latency cards with contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens.
   - Current route-local inventory after this follow-up is down to `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), `NodeNavChip.css` (`8`), `PhysicalSurfacesShell.css` (`6`), and `IntelFXLibrarian.css` (`6`); `ThemePage.css`, `MidiHubAreaLayout.css`, `PlatformModal.css`, and `ManagementWorkspace.css` are no longer in the ranked list.
   - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Validation for this Theme Page follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/ThemePage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
@@ -23060,7 +23061,7 @@ Last updated: 2026-04-12 11:10 EDT - Codex
   - Licensing evidence: `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'` -> PASS (no new compliance gaps in touched areas)
 
 ID: T973
-Status: [>] In Progress
+Status: [✓] Done
 Title: Restore Start Menu audio-interface visibility when runtime status omits connected hardware
 Description:
 - Goal / acceptance criteria: Update the routed AppShell Start Menu interface summary so connected physical audio devices still appear when `/api/audio/status` reports empty `available_*_devices` arrays, by merging in the existing cluster hardware inventory/PipeWire discovery evidence without regressing the current MIDI summary behavior or transient-empty hold logic.
@@ -23070,4 +23071,12 @@ Description:
 - Required outputs: Start Menu interface-summary fix, focused frontend regression coverage for hardware-inventory fallback, validation evidence, and licensing/worklist updates.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-12 15:11 EDT - Codex
+Last updated: 2026-04-12 15:14 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/useLauncherInterfaceSummary.ts` so the Start Menu now merges `/api/audio/status` device names with the existing cluster hardware inventory feed, using USB/PipeWire-derived interface names as a fallback when runtime status temporarily reports no available audio devices.
+  - Filtered generic non-device labels such as `ALSA`, `JACK`, `PipeWire`, `Default`, and `System` from the hardware-inventory fallback path so the Start Menu prefers real operator-meaningful interface names like `Hotone Jogg USB Audio`.
+  - Added focused regression coverage in `web/src/app/layout/AppShell.test.tsx` proving the launcher shows the Hotone Jogg from cluster hardware inventory even when `/api/audio/status` is empty, while preserving the existing empty-state and transient-refresh behavior.
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS (`15 tests`)
+  - `npm --prefix web run typecheck` -> PASS
