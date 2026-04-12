@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { Tag } from '@carbon/react'
 import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
 import '../components/HostMachine/HostMachine.css'
 import { PageHeader } from '../components/PageHeader'
@@ -29,6 +30,13 @@ import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 
 const TABS = ['Specifications', 'Disk Health', 'Audio Features', 'Performance', 'Service Info'] as const
+
+function healthTagType(health: string): 'green' | 'warm-gray' | 'red' | 'gray' {
+  if (health === 'excellent' || health === 'good') return 'green'
+  if (health === 'warning') return 'warm-gray'
+  if (health === 'critical') return 'red'
+  return 'gray'
+}
 
 export function HostMachinePage() {
   const { pushToast } = useToasts()
@@ -143,8 +151,10 @@ export function HostMachinePage() {
                 <div className="hm-cluster-table__cell">
                   {interfaces.length > 0 ? interfaces.join(', ') : <span className="hm-page__empty-cell">None reported</span>}
                 </div>
-                <div className={`hm-cluster-table__cell hm-health-badge hm-health-badge--${health}`}>
-                  {health.toUpperCase()}
+                <div className="hm-cluster-table__cell">
+                  <Tag className="hm-health-tag" size="sm" type={healthTagType(health)}>
+                    {health.toUpperCase()}
+                  </Tag>
                 </div>
               </div>
             )

@@ -2,7 +2,8 @@
  * Disk Health Card - SMART Health Monitoring
  */
 
-import { CheckmarkFilled as CheckCircle, DataBase as HardDrive, WarningAlt as Warning, WarningAltFilled as WarningCircle } from '@carbon/icons-react'
+import { Tag } from '@carbon/react'
+import { DataBase as HardDrive } from '@carbon/icons-react'
 import type { DiskHealthData } from '@/map2/types'
 
 interface DiskHealthCardProps {
@@ -19,18 +20,11 @@ function normalizeDiskStatus(raw?: string): 'passing' | 'warning' | 'failing' | 
   return 'passing'
 }
 
-function statusTone(status: 'passing' | 'warning' | 'failing' | 'unknown') {
-  if (status === 'passing') return 'success'
-  if (status === 'warning') return 'warning'
-  if (status === 'failing') return 'danger'
-  return 'info'
-}
-
-function StatusIcon({ status }: { status: 'passing' | 'warning' | 'failing' | 'unknown' }) {
-  if (status === 'passing') return <CheckCircle size={14} />
-  if (status === 'warning') return <WarningCircle size={14} />
-  if (status === 'failing') return <Warning size={14} />
-  return <HardDrive size={14} />
+function statusTagType(status: 'passing' | 'warning' | 'failing' | 'unknown'): 'green' | 'warm-gray' | 'red' | 'gray' {
+  if (status === 'passing') return 'green'
+  if (status === 'warning') return 'warm-gray'
+  if (status === 'failing') return 'red'
+  return 'gray'
 }
 
 export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
@@ -43,7 +37,6 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
       {diskHealth.disks.map((disk, idx) => {
         const rawStatus = disk.health_status || diskHealth.overall_health
         const status = normalizeDiskStatus(rawStatus)
-        const tone = statusTone(status)
         const usedPct = disk.used_percent ?? disk.use_percent ?? 0
         const usageTone = usedPct > 85 ? 'danger' : usedPct > 75 ? 'warning' : 'success'
         const label = (disk.health_status || diskHealth.overall_health || 'UNKNOWN').toUpperCase()
@@ -63,10 +56,9 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
                   </div>
                 )}
               </div>
-              <div className={`hm-badge hm-badge--${tone}`}>
-                <StatusIcon status={status} />
+              <Tag className="hm-status-tag" size="sm" type={statusTagType(status)}>
                 {label}
-              </div>
+              </Tag>
             </div>
 
             {/* Capacity bar */}

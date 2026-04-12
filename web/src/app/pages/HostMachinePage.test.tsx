@@ -23,7 +23,7 @@ jest.mock('../components/Toasts', () => ({
   useToasts: () => ({ pushToast: mockPushToast }),
 }))
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 
@@ -144,7 +144,7 @@ describe('HostMachinePage', () => {
     render(<HostMachinePage />)
 
     expect(document.querySelector('.hm-page--loading')).toBeTruthy()
-    expect(screen.getByText(/loading host machine data/i)).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /loading host machine data/i })).toBeInTheDocument()
   })
 
   it('renders the cluster comparison shell for all nodes', () => {

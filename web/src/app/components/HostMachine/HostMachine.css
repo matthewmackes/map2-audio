@@ -475,35 +475,16 @@
 .hm-progress-fill--danger  { background: var(--danger); }
 .hm-progress-fill--info    { background: var(--interactive); }
 
-/* ── Health badge (used in cluster table) ─────────────────────── */
+/* ── Health tags ──────────────────────────────────────────────── */
 
-.hm-health-badge {
-  align-items: center;
-  justify-content: center;
-  font-size: var(--cds-label-01-font-size, 0.75rem);
-  font-weight: 700;
-}
-.hm-health-badge--excellent,
-.hm-health-badge--good   { color: var(--success); }
-.hm-health-badge--warning { color: var(--warning); }
-.hm-health-badge--critical { color: var(--danger); }
-.hm-health-badge--unknown  { color: var(--text-tertiary); }
-
-/* ── Badge pill ───────────────────────────────────────────────── */
-
-.hm-badge {
+.hm-health-tag.cds--tag,
+.hm-status-tag.cds--tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   padding: 3px 8px;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }
-
-.hm-badge--success { background: color-mix(in srgb, var(--success) 15%, var(--surface-2)); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 40%, transparent); }
-.hm-badge--warning { background: color-mix(in srgb, var(--warning) 15%, var(--surface-2)); color: var(--warning); border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent); }
-.hm-badge--danger  { background: color-mix(in srgb, var(--danger)  15%, var(--surface-2)); color: var(--danger);  border: 1px solid color-mix(in srgb, var(--danger)  40%, transparent); }
-.hm-badge--info    { background: color-mix(in srgb, var(--interactive) 12%, var(--surface-2)); color: var(--interactive); border: 1px solid color-mix(in srgb, var(--interactive) 30%, transparent); }
 
 /* ── Empty state ──────────────────────────────────────────────── */
 
