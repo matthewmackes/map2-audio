@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T866-subC by clearing ThemePage's route-local numeric layer tokens and validating the next Carbon Layer follow-up.
+Last updated: 2026-04-12 - Continued T866-subC by clearing MidiHubAreaLayout's numeric layer tokens and validating the next route-local Carbon Layer follow-up.
 
 ## Performance Brain
 
@@ -20303,9 +20303,11 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Started `T866-subC` with a route-level workspace-shell slice in `web/src/app/components/Platform/PlatformModal.css`, replacing all `--cds-layer-01/02` usage with contextual `--cds-layer` / `--cds-layer-hover` tokens and local platform-shell variables so the heaviest remaining file in the inventory no longer hard-codes numeric Carbon layer depth.
   - Continued the same `T866-subC` batch in `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, moving the management workspace shell/graph gradients, graph-node states, and local shell fallback variables onto contextual layer tokens while preserving the existing beveled workspace styling.
   - Continued `T866-subC` with a dedicated `web/src/app/pages/ThemePage.css` pass, converting the route's desktop-dialog, section-nav, catalog, option, launcher, plugin, theme-card, slot-card, and picker surfaces from hard-coded `--cds-layer-01/02` usage to contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens while preserving the retro desktop/studio styling.
-  - Current route-local inventory after this follow-up is down to `MidiHubAreaLayout.css` (`16`), `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), `NodeNavChip.css` (`8`), and `PhysicalSurfacesShell.css` (`6`); `ThemePage.css`, `PlatformModal.css`, and `ManagementWorkspace.css` are no longer in the ranked list.
+  - Continued `T866-subC` again in `web/src/app/pages/midi-hub/MidiHubAreaLayout.css`, moving the route shell, header/workflow surfaces, empty states, stat tiles, record/table wrappers, routing matrix cells, and patchbay shell from hard-coded `--cds-layer-01/02/03` backgrounds onto contextual `--cds-layer`, `--cds-layer-hover`, `--cds-layer-selected`, and the existing selected-state tokens.
+  - Current route-local inventory after this follow-up is down to `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), `NodeNavChip.css` (`8`), `PhysicalSurfacesShell.css` (`6`), and `IntelFXLibrarian.css` (`6`); `ThemePage.css`, `MidiHubAreaLayout.css`, `PlatformModal.css`, and `ManagementWorkspace.css` are no longer in the ranked list.
   - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Validation for this Theme Page follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/ThemePage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Validation for this MIDI Hub layout follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/midi-hub/MidiHubAreaLayout.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T867
 Status: [✓] Done
