@@ -50,7 +50,7 @@
   inline-size: 100%;
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   text-align: left;
 }
 
@@ -97,7 +97,7 @@
   inline-size: 100%;
   block-size: 2.5rem;
   border: 1px solid var(--cds-border-subtle);
-  background: linear-gradient(135deg, var(--cds-layer-01) 0%, var(--cds-layer-03) 100%);
+  background: linear-gradient(135deg, var(--cds-layer) 0%, var(--cds-layer-selected) 100%);
 }
 
 .theme-creator-dialog__preset-swatch--white {

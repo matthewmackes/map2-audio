@@ -31,7 +31,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .tesira-page__surface {
@@ -39,5 +39,5 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }

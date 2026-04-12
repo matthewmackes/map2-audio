@@ -4752,7 +4752,7 @@
 
 .juce-grid-page.is-tablet-mode .juce-grid-page__workspace-header {
   padding: 0.75rem;
-  background: color-mix(in srgb, var(--cds-layer-01) 96%, black 4%);
+  background: color-mix(in srgb, var(--cds-layer) 96%, black 4%);
 }
 
 .juce-grid-page.is-tablet-mode .juce-grid-page__snapshot-status-top-row,
@@ -4798,7 +4798,7 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 24%, var(--cds-border-subtle, var(--border)));
-  background: color-mix(in srgb, var(--cds-layer-01) 96%, black 4%);
+  background: color-mix(in srgb, var(--cds-layer) 96%, black 4%);
 }
 
 .juce-grid-page__tablet-flow-summary {

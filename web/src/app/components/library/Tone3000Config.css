@@ -4,7 +4,7 @@
   gap: var(--cds-spacing-05, 1rem);
   padding: var(--cds-spacing-05, 1rem);
   border-left: 3px solid var(--cds-support-info);
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
 }
 
 .tone3000-config__header {
@@ -46,7 +46,7 @@
   gap: var(--cds-spacing-03, 0.5rem);
   padding: var(--cds-spacing-04, 0.75rem);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .tone3000-config__progress-header {
