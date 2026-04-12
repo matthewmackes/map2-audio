@@ -7,10 +7,10 @@ function createThemeColors(carbonTheme: CarbonThemeId): ThemeColors {
 
   return {
     bg: 'var(--cds-background)',
-    surface: 'var(--cds-layer-01)',
-    'surface-2': 'var(--cds-layer-02)',
-    'surface-3': 'var(--cds-layer-03)',
-    'surface-overlay': 'var(--cds-layer-02)',
+    surface: 'var(--cds-layer)',
+    'surface-2': 'var(--cds-layer-hover)',
+    'surface-3': 'var(--cds-layer-selected)',
+    'surface-overlay': 'var(--cds-layer-hover)',
     interactive: 'var(--cds-button-primary)',
     'interactive-hover': 'var(--cds-button-primary-hover)',
     'interactive-active': 'var(--cds-button-primary-active)',
@@ -33,7 +33,7 @@ function createThemeColors(carbonTheme: CarbonThemeId): ThemeColors {
     success: 'var(--cds-support-success)',
     warning: 'var(--cds-support-warning)',
     danger: 'var(--cds-support-error)',
-    'bg-empty': 'var(--cds-layer-01)',
+    'bg-empty': 'var(--cds-layer)',
     'bg-offline': 'color-mix(in srgb, var(--cds-support-error) 16%, var(--cds-background))',
     'bg-fault': 'color-mix(in srgb, var(--cds-support-error) 24%, var(--cds-background))',
     'bg-warning': 'color-mix(in srgb, var(--cds-support-warning) 20%, var(--cds-background))',
