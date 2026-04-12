@@ -49,7 +49,7 @@
   height: 3rem;
   flex-shrink: 0;
   color: var(--cds-icon-primary);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   border: 1px solid var(--cds-border-subtle-01);
 }
 
@@ -116,7 +116,7 @@
   gap: calc(0.85rem * var(--workspace-shell-scale));
   padding: calc(1rem * var(--workspace-shell-scale));
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-01) !important;
+  background: var(--cds-layer) !important;
 }
 
 .aap__carbon-sidenav.cds--side-nav {
@@ -149,7 +149,7 @@
 .aap__sidebar-note {
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .aap__sidebar-stat span {
@@ -277,7 +277,7 @@
   width: 5rem;
   height: 5rem;
   color: var(--cds-icon-primary);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   border: 1px solid var(--cds-border-subtle-01);
 }
 
@@ -320,7 +320,7 @@
 
 .aap-empty__scan-wrap .cds--overflow-menu {
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .aap-detail-panel,
@@ -437,7 +437,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
   border: 1px solid var(--cds-border-subtle-01);
 }
 
@@ -484,7 +484,7 @@
   gap: 0.5rem;
   padding: 0.75rem;
   border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-02);
+  background: var(--cds-layer-hover);
 }
 
 .aap-sync-drawer__job--done {
@@ -530,7 +530,7 @@
   position: relative;
   flex: 1;
   height: 0.25rem;
-  background: var(--cds-layer-01);
+  background: var(--cds-layer);
   overflow: hidden;
 }
 
