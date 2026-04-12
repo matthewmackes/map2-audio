@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T866-subB by moving the AppShell advanced launcher control-panel count pill, selected state, blocked hover, and details surface onto context-aware Carbon layer tokens.
+Last updated: 2026-04-12 - Completed T972 by moving non-desktop title-strip ownership out of AppShell, wiring routed/workspace surfaces onto ShellWindow context, and validating the full-width shell with typecheck, targeted tests, and a production build.
 
 ## Performance Brain
 
@@ -22979,3 +22979,63 @@ Validation:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-04-11 11:36 EDT - Codex
+
+ID: T972
+Status: [✓] Done
+Title: Move non-desktop shell title-strip ownership from `AppShell` into page and workspace surfaces
+Description:
+- Goal / acceptance criteria: Replace the legacy `AppWindow`-owned shell chrome with a reusable page-level `WindowTitleStrip`, keep `AppShell` full-width and frame-free, provide shell presentation/close behavior through context, and ensure every non-desktop routed surface renders the strip from its own page or workspace root while preserving current visual parity and navigation-to-home close behavior.
+- Why it matters: The extra `AppWindow` nesting keeps route content constrained inside an obsolete frame, makes full-width workspace adoption inconsistent, and prevents pages from owning their own header chrome. The refactor is only complete when the shell, page roots, tests, and worklist stay in sync.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Reusable title-strip component/CSS, `AppShell` context/full-width cleanup, route/page integrations, deleted `AppWindow`, updated tests/snapshots, and validation notes.
+Subtasks:
+  - ID: T972-subA
+    Status: [✓] Done
+    Title: Finish the shared shell primitives and remove `AppWindow` ownership from `AppShell`
+    Description:
+    - Goal / acceptance criteria: Finalize `WindowTitleStrip`, expose shell title/icon/route/accent/close through shared context, remove any remaining `AppWindow`/shell-rendered title-strip ownership from `AppShell`, and keep `app-content` full-width with the obsolete border overlay removed.
+    - Why it matters: The shell composition root must stop owning route chrome before page-level integrations can be correct.
+    - Dependencies: None
+    - Estimated effort: Medium
+    - Required outputs: Shared component/context updates, `AppShell` cleanup, deleted `AppWindow` references, focused tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-12 11:10 EDT - Codex
+  - ID: T972-subB
+    Status: [✓] Done
+    Title: Integrate `ShellWindowTitleStrip` into workspace shells and direct-route page roots
+    Description:
+    - Goal / acceptance criteria: Add the title strip at the top of workspace shells (`MidiHub`, `PhysicalSurfaces`, `Artifacts`, `Platforms`) and direct-route page roots such as Chains, Expression, Snapshot Editor/Publish, and standalone controller/device pages so every non-desktop route renders its own strip from page-level code rather than from `AppShell`.
+    - Why it matters: The architecture goal is page-owned chrome, not a shell-level fallback.
+    - Dependencies: T972-subA
+    - Estimated effort: High
+    - Required outputs: Route/root integrations with no duplicate strips, preserved close behavior, and visual parity.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-12 11:10 EDT - Codex
+  - ID: T972-subC
+    Status: [✓] Done
+    Title: Rebaseline routed-shell tests and snapshots after the title-strip migration
+    Description:
+    - Goal / acceptance criteria: Update the routed-shell/unit/integration tests and any snapshots that depended on `AppWindow` markup, then capture validation evidence for the new full-width shell and page-owned title-strip behavior.
+    - Why it matters: This refactor crosses layout, navigation, and visual-structure boundaries; it is not complete without explicit regression coverage.
+    - Dependencies: T972-subA, T972-subB
+    - Estimated effort: Medium
+    - Required outputs: Updated tests/snapshots, passing targeted validation, and worklist notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-12 11:10 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-12 11:10 EDT - Codex
+- Completion notes:
+  - Kept `AppShell` as the composition root for shell state/context only: it now always renders `main.app-content.app-content--full`, no longer owns the title strip markup, and continues to provide title/icon/route/accent/close behavior through `ShellWindowContext`.
+  - Finished the reusable `WindowTitleStrip`/`ShellWindowTitleStrip` flow and wired it into the routed ownership points: `PageHeader`, workspace shells (`MidiHub`, `PhysicalSurfaces`, `Artifacts`, `Platforms`), and direct-route roots such as `Chains`, `Expression`, `Snapshot Editor`, `Snapshot Publish`, `PipeWire`, `Metering`, `Tesira`, `IntelFX`, `MPX1`, `MOTU/RME`, `CPU Performance`, and `Legacy`.
+  - Wrapped workspace/platform shells in `ShellWindowProvider value={null}` after their top-level strip render so nested outlet/PageHeader content does not duplicate shell chrome while still preserving the close-to-home contract.
+  - Removed the remaining `AppWindow` ownership from the active layout path, kept the page strip visuals aligned with the old `.window-titlebar` surface, and rebaselined the active routed-shell tests to assert page-owned title-strip behavior instead of `AppShell`-owned chrome.
+  - Licensing review: the touched `web/src` and `docs/PROJECT_WORKLIST.md` artifacts remain MAP2-owned AGPL-covered repository files, and the compliance scan found no new notice or ownership gaps requiring follow-up work.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/components/PageHeader.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/MidiHubPage.test.tsx src/app/pages/SnapshotPublishPage.test.tsx src/app/pages/SnapshotEditorPage.test.tsx` -> PASS (`8 suites, 34 tests`)
+  - `npm --prefix web run build` -> PASS
+  - Licensing evidence: `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'` -> PASS (no new compliance gaps in touched areas)

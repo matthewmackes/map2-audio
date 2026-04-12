@@ -350,10 +350,7 @@ a {
     padding: var(--cds-spacing-05, 1rem);
   }
 
-  /* ── Ensure app-window animations don't cause horizontal overflow ── */
-  .app-window {
-    max-width: 100vw;
-  }
+  /* app-window overflow guard removed — window wrapper no longer exists. */
 }
 
 @media (max-width: 42rem) {

@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from './AppShell'
 
 const mockRestartBackend = jest.fn()
@@ -100,6 +101,15 @@ function LocationProbe() {
   return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
+function ShellAwareContent() {
+  return (
+    <>
+      <ShellWindowTitleStrip />
+      <div>shell content</div>
+    </>
+  )
+}
+
 describe('AppShell floating launcher shell', () => {
   beforeEach(() => {
     jest.useFakeTimers()
@@ -192,46 +202,46 @@ describe('AppShell floating launcher shell', () => {
   it('renders the floating launcher on the landing route without a titlebar', () => {
     const { container } = renderInRouter(
       <AppShell>
-        <div>shell content</div>
+        <ShellAwareContent />
       </AppShell>,
       ['/'],
     )
 
-    expect(container.querySelector('.window-titlebar')).toBeNull()
-    expect(container.querySelector('.app-window')).toBeNull()
+    expect(container.querySelector('.window-title-strip')).toBeNull()
   })
 
-  it('renders non-landing routes inside window chrome with the floating launcher', () => {
+  it('renders non-landing routes with the title strip and the floating launcher', () => {
     const { container } = renderInRouter(
       <AppShell>
-        <div>shell content</div>
+        <ShellAwareContent />
       </AppShell>,
       ['/intelfx'],
     )
 
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
-    expect(container.querySelector('.window-titlebar__title')).toHaveTextContent('IntelFX Rack')
+    expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
     expect(container.querySelector('.static-hero-icon-launcher__btn')).toBeTruthy()
   })
 
-  it('closes the current app window back to the desktop route', async () => {
-    const { container } = renderInRouter(
+  it('closes the current app back to the desktop route', async () => {
+    renderInRouter(
       <AppShell>
-        <LocationProbe />
+        <>
+          <ShellWindowTitleStrip />
+          <LocationProbe />
+        </>
       </AppShell>,
       ['/intelfx'],
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Close IntelFX Rack' }))
-    expect(container.querySelector('.app-window')).toHaveClass('is-closing')
 
     await act(async () => {
-      jest.advanceTimersByTime(200)
+      jest.advanceTimersByTime(50)
     })
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
-    expect(container.querySelector('.app-window')).toBeNull()
   })
 
   it('starts Perform in true fullscreen and restores the launcher on Escape', async () => {
@@ -248,7 +258,7 @@ describe('AppShell floating launcher shell', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
 
     await waitFor(() => expect(container.querySelector('.shell-launcher')).toBeTruthy())
-    expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
   })
 
   it('shows the merged floating menu with header, system summary, and launcher tiles', async () => {

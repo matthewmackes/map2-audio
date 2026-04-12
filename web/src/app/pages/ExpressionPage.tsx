@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { NumberInput } from '../components/ParameterControl'
 import { EmptyState } from '../components/shared/EmptyState'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 
 const C = {
   bg: '#161616',
@@ -1471,7 +1472,12 @@ export function ExpressionView({
 }
 
 export function ExpressionPage() {
-  return <ExpressionView />
+  return (
+    <>
+      <ShellWindowTitleStrip />
+      <ExpressionView />
+    </>
+  )
 }
 
 export default ExpressionPage

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import './CPUPerformancePage.css'
 import {
   Card,
@@ -132,6 +133,7 @@ export default function CPUPerformancePage() {
 
   return (
     <div className="cpu-performance-page">
+      <ShellWindowTitleStrip />
       {/* Page Title */}
       <Box sx={{ mb: 4, textAlign: 'center' }}>
         <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>

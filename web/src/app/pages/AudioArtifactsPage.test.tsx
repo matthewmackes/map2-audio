@@ -23,7 +23,7 @@ const mockNamUpload = jest.fn()
 const mockSoundfontList = jest.fn()
 const mockSoundfontUpload = jest.fn()
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

@@ -1,0 +1,128 @@
+/* ============================================================================
+   WindowTitleStrip — page-level titlebar strip.
+   Extracted from the former AppWindow / .window-titlebar so every page
+   can render its own title row without the extra wrapper layer.
+   ============================================================================ */
+
+.window-title-strip {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-height: var(--app-window-titlebar-height, 2.3rem);
+  border-bottom: 1px solid var(--window-shell-titlebar-border, color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent));
+  background: var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%));
+  color: var(--window-shell-titlebar-contrast, var(--cds-text-primary, var(--text-primary)));
+  box-shadow: none;
+}
+
+.window-title-strip__lead {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.window-title-strip__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  border-right: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
+  background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-01, #ffffff)));
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.window-title-strip__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.window-title-strip__copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0.22rem 0.7rem 0.2rem;
+}
+
+.window-title-strip__eyebrow {
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.window-title-strip__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.window-title-strip__title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-title-strip__meta {
+  overflow: hidden;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-title-strip__controls {
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.18rem;
+  padding: 0.2rem 0.25rem;
+  border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 80%, transparent);
+  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%)) 90%, var(--window-shell-surface, var(--cds-background, var(--bg))) 10%);
+}
+
+.window-title-strip__close {
+  min-width: 1.85rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
+  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, var(--bg)))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-02, #dde1e6) 96%, black 4%)) 18%);
+  color: var(--cds-text-primary, var(--text-primary));
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-body-01-font-size, 1rem);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.window-title-strip__close:hover,
+.window-title-strip__close:focus-visible {
+  border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 42%, var(--window-shell-border, var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28))));
+  background: color-mix(in srgb, var(--cds-support-error, #da1e28) 10%, var(--window-shell-surface-strong, var(--cds-layer-01, #ffffff)));
+  outline: 2px solid var(--cds-focus, var(--cds-support-error, #da1e28));
+  outline-offset: 2px;
+}
+
+.window-title-strip__close:active {
+  box-shadow: none;
+  transform: translateY(1px);
+}

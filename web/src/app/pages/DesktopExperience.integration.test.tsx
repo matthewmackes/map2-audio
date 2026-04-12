@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from '../layout/AppShell'
 import { HomePage } from './HomePage'
 
@@ -150,6 +151,21 @@ function LocationProbe() {
   return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
+function ShellStubPage({
+  testId,
+  children,
+}: {
+  testId: string
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <ShellWindowTitleStrip />
+      <div data-testid={testId}>{children}</div>
+    </>
+  )
+}
+
 function renderDesktopExperience(initialEntries: string[] = ['/']) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -170,9 +186,9 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
         <AppShell>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/artifacts" element={<div data-testid="artifacts-page">Audio Artifacts Workspace</div>} />
+            <Route path="/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
-            <Route path="/platforms/theme" element={<div data-testid="theme-page">Theme Settings</div>} />
+            <Route path="/platforms/theme" element={<ShellStubPage testId="theme-page">Theme Settings</ShellStubPage>} />
           </Routes>
           <LocationProbe />
         </AppShell>
@@ -250,10 +266,9 @@ describe('Desktop experience integration', () => {
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Close Artifacts' }))
-    expect(container.querySelector('.app-window')).toHaveClass('is-closing')
 
     await act(async () => {
-      jest.advanceTimersByTime(200)
+      jest.advanceTimersByTime(50)
     })
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
@@ -307,6 +322,6 @@ describe('Desktop experience integration', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
 
     await waitFor(() => expect(container.querySelector('.shell-launcher')).toBeTruthy())
-    expect(screen.getByRole('button', { name: 'Close Stage' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
   })
 })

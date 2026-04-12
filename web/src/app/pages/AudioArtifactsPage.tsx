@@ -59,8 +59,10 @@ import { useToasts } from '../components/Toasts'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { EmptyState } from '../components/shared/EmptyState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
+import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import './AudioArtifactsPage.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1384,51 +1386,54 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
 
   return (
     <section className="aap">
-      <Layer className="aap__surface">
-        <WorkspacePageTemplate
-          className="aap__template"
-          windowClassName={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}
-          sidebarClassName={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}
-          contentClassName={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}
-          asideClassName="aap__aside"
-          sidebar={(
-            <UnifiedWorkspaceSideNav
-              ariaLabel="Artifact categories"
-              className="aap__carbon-sidenav"
-              eyebrow="Navigation"
-              title="Artifacts Library"
-              description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
-              items={primaryNavItems}
-              footerTitle="Utilities"
-              footerItems={utilityNavItems}
-              footer={(
-                <>
-                  <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
-                    <div className="aap__sidebar-stat">
-                      <span>Current node</span>
-                      <strong>{selectedNodeLabel}</strong>
+      <ShellWindowTitleStrip />
+      <ShellWindowProvider value={null}>
+        <Layer className="aap__surface">
+          <WorkspacePageTemplate
+            className="aap__template"
+            windowClassName={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}
+            sidebarClassName={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}
+            contentClassName={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}
+            asideClassName="aap__aside"
+            sidebar={(
+              <UnifiedWorkspaceSideNav
+                ariaLabel="Artifact categories"
+                className="aap__carbon-sidenav"
+                eyebrow="Navigation"
+                title="Artifacts Library"
+                description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
+                items={primaryNavItems}
+                footerTitle="Utilities"
+                footerItems={utilityNavItems}
+                footer={(
+                  <>
+                    <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
+                      <div className="aap__sidebar-stat">
+                        <span>Current node</span>
+                        <strong>{selectedNodeLabel}</strong>
+                      </div>
+                      <div className="aap__sidebar-stat">
+                        <span>Items in view</span>
+                        <strong>{discoverMode ? 'Discovery' : totalItems}</strong>
+                      </div>
+                      <div className="aap__sidebar-stat">
+                        <span>Sync queue</span>
+                        <strong>{activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle'}</strong>
+                      </div>
                     </div>
-                    <div className="aap__sidebar-stat">
-                      <span>Items in view</span>
-                      <strong>{discoverMode ? 'Discovery' : totalItems}</strong>
-                    </div>
-                    <div className="aap__sidebar-stat">
-                      <span>Sync queue</span>
-                      <strong>{activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle'}</strong>
-                    </div>
-                  </div>
 
-                  <div className="aap__sidebar-note">
-                    <p>Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.</p>
-                  </div>
-                </>
-              )}
-            />
-          )}
-          content={artifactsContent}
-          aside={artifactsAside}
-        />
-      </Layer>
+                    <div className="aap__sidebar-note">
+                      <p>Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.</p>
+                    </div>
+                  </>
+                )}
+              />
+            )}
+            content={artifactsContent}
+            aside={artifactsAside}
+          />
+        </Layer>
+      </ShellWindowProvider>
 
       {/* Upload modal */}
       <Modal

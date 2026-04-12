@@ -35,6 +35,7 @@ import { SidechainPanel } from '../components/Routing/SidechainPanel'
 import { ParallelRoutingPanel } from '../components/Routing/ParallelRoutingPanel'
 import { EffectsLoopSummaryPanel } from '../components/Routing/EffectsLoopSummaryPanel'
 import { ChainDeployModal } from '../components/chains/ChainDeployModal'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useCluster } from '../contexts/useCluster'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -265,6 +266,7 @@ export function ChainsPage() {
 
     return (
       <div className="chains-page">
+        <ShellWindowTitleStrip />
         <Layer className="chains-page__hero">
           <div className="chains-page__header-row">
             <div className="chains-page__title-block">
@@ -375,6 +377,7 @@ export function ChainsPage() {
 
   return (
     <div className="chains-page">
+      <ShellWindowTitleStrip />
       <Layer className="chains-page__hero">
         <div className="chains-page__header-row">
           <div className="chains-page__title-block">

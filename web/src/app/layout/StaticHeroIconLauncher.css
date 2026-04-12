@@ -14,7 +14,7 @@
 /* ── Icon container ────────────────────────────────────────────────────────── */
 
 .static-hero-icon-launcher__icon-wrap {
-  --icon-size: 100%;
+  --icon-size: 35%;
   position: relative;
   width: var(--icon-size);
   height: var(--icon-size);

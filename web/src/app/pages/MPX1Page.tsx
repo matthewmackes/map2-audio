@@ -8,6 +8,7 @@ import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MP
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import '../components/MPX1/MPX1PageShell.css'
@@ -199,115 +200,118 @@ export function MPX1Page() {
     setLcdText,
   }), [activeSection, apiNodeId, currentProgramName, lcdText, mpx1])
 
-  if (locationLoading) {
-    return (
+  const renderShell = (content: React.ReactNode) => (
+    <>
+      <ShellWindowTitleStrip />
       <div className="mpx1-shell">
-        <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <LoadingState description="Checking cluster MIDI inventory for the Lexicon MPX-1" />
-        </div>
+        {content}
+      </div>
+    </>
+  )
+
+  if (locationLoading) {
+    return renderShell(
+      <div className="mpx1-shell__main" style={{ padding: 24 }}>
+        <LoadingState description="Checking cluster MIDI inventory for the Lexicon MPX-1" />
       </div>
     )
   }
 
   if (!deviceLocation) {
-    return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <EmptyState
-            title="No Lexicon MPX-1 MIDI interface is currently detected on any cluster node"
-            description="Connect the interface or switch to the node where it is attached to manage it here."
-            align="left"
-          />
-        </div>
+    return renderShell(
+      <div className="mpx1-shell__main" style={{ padding: 24 }}>
+        <EmptyState
+          title="No Lexicon MPX-1 MIDI interface is currently detected on any cluster node"
+          description="Connect the interface or switch to the node where it is attached to manage it here."
+          align="left"
+        />
       </div>
     )
   }
 
   if (needsSwitch) {
     const locationLabel = deviceLocation.hostname ?? deviceLocation.nodeId
-    return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <Alert
-            severity="info"
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
-              >
-                Switch to {locationLabel}
-              </Button>
-            }
-          >
-            Lexicon MPX-1 is connected to {locationLabel}. Select that node to manage the rack.
-          </Alert>
-        </div>
+    return renderShell(
+      <div className="mpx1-shell__main" style={{ padding: 24 }}>
+        <Alert
+          severity="info"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
+            >
+              Switch to {locationLabel}
+            </Button>
+          }
+        >
+          Lexicon MPX-1 is connected to {locationLabel}. Select that node to manage the rack.
+        </Alert>
       </div>
     )
   }
 
   if (locationOffline) {
-    return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main" style={{ padding: 24 }}>
-          <Alert severity="warning">
-            Lexicon MPX-1 is assigned to {deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.
-          </Alert>
-        </div>
+    return renderShell(
+      <div className="mpx1-shell__main" style={{ padding: 24 }}>
+        <Alert severity="warning">
+          Lexicon MPX-1 is assigned to {deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.
+        </Alert>
       </div>
     )
   }
 
   return (
     <MPX1PageContext.Provider value={contextValue}>
-      <div className="mpx1-shell">
-        <aside className="mpx1-shell__sidebar" aria-label="MPX1 section navigation">
-          {SIDEBAR_SECTIONS.map((section) => {
-            const SectionIcon = section.icon
-            return (
-              <NavLink
-                key={section.id}
-                to={section.to}
-                title={section.label}
-                aria-label={section.label}
-                className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
-                style={{ '--section-accent': section.color } as React.CSSProperties}
-              >
-                <SectionIcon size={18} aria-hidden />
-              </NavLink>
-            )
-          })}
-        </aside>
+      {renderShell(
+        <>
+          <aside className="mpx1-shell__sidebar" aria-label="MPX1 section navigation">
+            {SIDEBAR_SECTIONS.map((section) => {
+              const SectionIcon = section.icon
+              return (
+                <NavLink
+                  key={section.id}
+                  to={section.to}
+                  title={section.label}
+                  aria-label={section.label}
+                  className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
+                  style={{ '--section-accent': section.color } as React.CSSProperties}
+                >
+                  <SectionIcon size={18} aria-hidden />
+                </NavLink>
+              )
+            })}
+          </aside>
 
-        <div className="mpx1-shell__main">
-          {remoteSelected ? (
-            <div style={{ padding: '12px 16px 0 16px' }}>
-              <Alert severity="info">
-                MPX-1 control is proxied to {selectedNode?.hostname ?? selectedNodeId}.
-              </Alert>
+          <div className="mpx1-shell__main">
+            {remoteSelected ? (
+              <div style={{ padding: '12px 16px 0 16px' }}>
+                <Alert severity="info">
+                  MPX-1 control is proxied to {selectedNode?.hostname ?? selectedNodeId}.
+                </Alert>
+              </div>
+            ) : null}
+            <div className="mpx1-shell__content">
+              <Outlet />
             </div>
-          ) : null}
-          <div className="mpx1-shell__content">
-            <Outlet />
-          </div>
 
-          <MPX1StatusBar
-            connected={Boolean(mpx1.state?.connected)}
-            deviceName="MPX1 Rack"
-            programNumber={currentProgram}
-            programName={currentProgramName}
-            lcdText={lcdText}
-            mixValue={mixValue}
-            tapTempoBpm={tapTempoBpm}
-            bypassState={bypassState}
-            onProgramStep={handleProgramStep}
-            onMixChange={handleMixChange}
-            onTapTempo={handleTapTempo}
-            onToggleBypass={handleToggleBypass}
-          />
-        </div>
-      </div>
+            <MPX1StatusBar
+              connected={Boolean(mpx1.state?.connected)}
+              deviceName="MPX1 Rack"
+              programNumber={currentProgram}
+              programName={currentProgramName}
+              lcdText={lcdText}
+              mixValue={mixValue}
+              tapTempoBpm={tapTempoBpm}
+              bypassState={bypassState}
+              onProgramStep={handleProgramStep}
+              onMixChange={handleMixChange}
+              onTapTempo={handleTapTempo}
+              onToggleBypass={handleToggleBypass}
+            />
+          </div>
+        </>
+      )}
     </MPX1PageContext.Provider>
   )
 }

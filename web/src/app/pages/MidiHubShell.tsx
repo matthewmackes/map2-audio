@@ -19,9 +19,11 @@ import type { ReactNode } from 'react'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
 import { MidiHubStatusBar } from '../components/MidiHub/MidiHubStatusBar'
 import { useNodePageContext } from '../hooks/useNodePageContext'
+import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import { useTheme } from '../theme'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './MidiHubShell.css'
@@ -141,37 +143,40 @@ export function MidiHubShell() {
     <MidiHubNodeScopeProvider nodeId={apiNodeId} scopeKey={scopeKey}>
       <GlobalTheme theme={resolvedTheme}>
         <Theme as="div" theme={resolvedTheme} className="midi-hub-shell">
-          <WorkspacePageTemplate
-            className="midi-hub-shell__template"
-            windowClassName="midi-hub-shell__frame"
-            sidebarClassName="midi-hub-shell__sidebar"
-            contentClassName="midi-hub-shell__content"
-            stickySidebar
-            sidebar={(
-              <UnifiedWorkspaceSideNav
-                ariaLabel="MIDI Hub navigation"
-                className="midi-hub-shell__sidenav"
-                eyebrow="Navigation"
-                title="MIDI Hub"
-                description="Move across routing, transport, event, and network workspaces from one shell."
-                items={primaryNavItems}
-                footerTitle="Utilities"
-                footerItems={utilityNavItems}
-                footer={(
-                  <div className="midi-hub-shell__warning">
-                    <WarningAltFilled size={14} />
-                    <span>Some protocol and event-list areas are still in progress.</span>
-                  </div>
-                )}
-              />
-            )}
-            content={(
-              <main className="midi-hub-shell__content-body" key={location.pathname}>
-                <MidiHubStatusBar apiNodeId={apiNodeId} scopeKey={scopeKey} />
-                <Outlet />
-              </main>
-            )}
-          />
+          <ShellWindowTitleStrip />
+          <ShellWindowProvider value={null}>
+            <WorkspacePageTemplate
+              className="midi-hub-shell__template"
+              windowClassName="midi-hub-shell__frame"
+              sidebarClassName="midi-hub-shell__sidebar"
+              contentClassName="midi-hub-shell__content"
+              stickySidebar
+              sidebar={(
+                <UnifiedWorkspaceSideNav
+                  ariaLabel="MIDI Hub navigation"
+                  className="midi-hub-shell__sidenav"
+                  eyebrow="Navigation"
+                  title="MIDI Hub"
+                  description="Move across routing, transport, event, and network workspaces from one shell."
+                  items={primaryNavItems}
+                  footerTitle="Utilities"
+                  footerItems={utilityNavItems}
+                  footer={(
+                    <div className="midi-hub-shell__warning">
+                      <WarningAltFilled size={14} />
+                      <span>Some protocol and event-list areas are still in progress.</span>
+                    </div>
+                  )}
+                />
+              )}
+              content={(
+                <main className="midi-hub-shell__content-body" key={location.pathname}>
+                  <MidiHubStatusBar apiNodeId={apiNodeId} scopeKey={scopeKey} />
+                  <Outlet />
+                </main>
+              )}
+            />
+          </ShellWindowProvider>
         </Theme>
       </GlobalTheme>
     </MidiHubNodeScopeProvider>

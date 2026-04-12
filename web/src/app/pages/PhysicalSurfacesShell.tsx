@@ -23,6 +23,8 @@ import {
   UnifiedWorkspaceSideNav,
   type UnifiedWorkspaceSideNavItem,
 } from '../components/navigation/UnifiedWorkspaceSideNav'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
+import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import { useTheme } from '../theme'
 
 type NavAccent = 'green' | 'blue' | 'warm-gray' | 'red'
@@ -180,45 +182,48 @@ export function PhysicalSurfacesShell() {
   return (
     <GlobalTheme theme={resolvedTheme}>
       <Theme as="div" theme={resolvedTheme} className="physical-surfaces-shell">
-        <WorkspacePageTemplate
-          className="physical-surfaces-shell__template"
-          windowClassName="physical-surfaces-shell__frame"
-          sidebarClassName="physical-surfaces-shell__sidebar"
-          contentClassName="physical-surfaces-shell__content"
-          stickySidebar
-          sidebar={(
-            <UnifiedWorkspaceSideNav
-              ariaLabel="Physical surface navigation"
-              className="physical-surfaces-shell__sidenav"
-              eyebrow="Unified stack"
-              title="Enriched_MIDI_Physical_Surfaces"
-              description="Unified controller architecture for richer physical-surface discovery, transport selection, and device-family workflows."
-              items={navItems}
-              footerTitle="Dedicated Routes"
-              footerItems={footerRouteItems}
-              footer={(
-                <div className="physical-surfaces-shell__warning">
-                  <WarningAltFilled size={14} />
-                  <span>Rich protocol depth still varies by device family; this shell exposes the shared truth and current posture.</span>
-                </div>
-              )}
-            />
-          )}
-          content={(
-            <main className="physical-surfaces-shell__content-body" key={location.pathname}>
-              {summaryQuery.isError ? (
-                <InlineNotification
-                  kind="error"
-                  lowContrast
-                  hideCloseButton
-                  title="Physical surface summary could not be loaded"
-                  subtitle="The shared stack route exists, but the backend summary request failed."
-                />
-              ) : null}
-              <Outlet context={shellContext} />
-            </main>
-          )}
-        />
+        <ShellWindowTitleStrip />
+        <ShellWindowProvider value={null}>
+          <WorkspacePageTemplate
+            className="physical-surfaces-shell__template"
+            windowClassName="physical-surfaces-shell__frame"
+            sidebarClassName="physical-surfaces-shell__sidebar"
+            contentClassName="physical-surfaces-shell__content"
+            stickySidebar
+            sidebar={(
+              <UnifiedWorkspaceSideNav
+                ariaLabel="Physical surface navigation"
+                className="physical-surfaces-shell__sidenav"
+                eyebrow="Unified stack"
+                title="Enriched_MIDI_Physical_Surfaces"
+                description="Unified controller architecture for richer physical-surface discovery, transport selection, and device-family workflows."
+                items={navItems}
+                footerTitle="Dedicated Routes"
+                footerItems={footerRouteItems}
+                footer={(
+                  <div className="physical-surfaces-shell__warning">
+                    <WarningAltFilled size={14} />
+                    <span>Rich protocol depth still varies by device family; this shell exposes the shared truth and current posture.</span>
+                  </div>
+                )}
+              />
+            )}
+            content={(
+              <main className="physical-surfaces-shell__content-body" key={location.pathname}>
+                {summaryQuery.isError ? (
+                  <InlineNotification
+                    kind="error"
+                    lowContrast
+                    hideCloseButton
+                    title="Physical surface summary could not be loaded"
+                    subtitle="The shared stack route exists, but the backend summary request failed."
+                  />
+                ) : null}
+                <Outlet context={shellContext} />
+              </main>
+            )}
+          />
+        </ShellWindowProvider>
       </Theme>
     </GlobalTheme>
   )

@@ -109,6 +109,7 @@ import { ApiError, fetchJson } from '../../map2/http'
 import { useToasts } from '../components/Toasts'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
@@ -7834,18 +7835,22 @@ export function SnapshotEditorPage() {
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
   if (showViewportBlockScreen) {
     return (
-      <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
-        <MapAudioGridIcon size={120} />
-        <h1 className="juce-grid-page__viewport-block-heading">This experience requires a 560x917 or larger display</h1>
-        {showViewportRotateHint && (
-          <p>Maximize the browser window or move to a larger display, then reopen Audio Grid.</p>
-        )}
+      <div className="juce-grid-page">
+        <ShellWindowTitleStrip />
+        <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
+          <MapAudioGridIcon size={120} />
+          <h1 className="juce-grid-page__viewport-block-heading">This experience requires a 560x917 or larger display</h1>
+          {showViewportRotateHint && (
+            <p>Maximize the browser window or move to a larger display, then reopen Audio Grid.</p>
+          )}
+        </div>
       </div>
     )
   }
 
   return (
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
+      <ShellWindowTitleStrip />
       <LandscapePrompt componentId="juce-grid" />
       <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">

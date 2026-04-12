@@ -1,8 +1,10 @@
 import { Tag, Tile } from '@carbon/react'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 
 export function LegacyPage() {
   return (
     <div className="stack">
+      <ShellWindowTitleStrip />
       <Tile>
         <div className="flex-between" style={{ gap: 16 }}>
           <div>

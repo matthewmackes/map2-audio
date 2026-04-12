@@ -17,6 +17,7 @@ import { Activity, ChartLine, Information } from '@carbon/icons-react'
 import { audioApi } from '../../map2/api'
 import type { AudioHealth, JuceMetrics } from '../../map2/api'
 import type { AudioStatus } from '../../map2/types'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useVuMeters } from '../hooks/useVuMeters'
 
 type LatencyMode = 'motu-only' | 'adat-expanded' | 'outboard-inserts'
@@ -155,6 +156,7 @@ export default function MOTURMEPage() {
       background: 'linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%)',
       padding: '24px',
     }}>
+      <ShellWindowTitleStrip />
       {/* Page Title */}
       <Box sx={{ mb: 4, textAlign: 'center' }}>
         <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>

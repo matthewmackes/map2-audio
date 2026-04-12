@@ -43,7 +43,9 @@ import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, 
 import './PlatformModal.css'
 import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
 import { WorkspacePageTemplate } from '../layout/WorkspacePageTemplate'
+import { ShellWindowProvider } from '../../layout/ShellWindowContext'
 import { LoadingState } from '../shared/LoadingState'
+import { ShellWindowTitleStrip } from '../shared/ShellWindowTitleStrip'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import {
   isPlatformUtilityPanel,
@@ -979,42 +981,52 @@ export function PlatformModalContent({
   const showStandalone = activePanel !== null
   const showLayer = !showStandalone && activeLayer !== null
   const activeId = activePanel ?? activeLayerId
+  const workspaceTemplate = (
+    <WorkspacePageTemplate
+      sidebar={(
+        <SidebarNavigation
+          activeId={activeId}
+          onOpenLayer={handleOpenLayer}
+          onOpenStandalone={handleOpenStandalone}
+        />
+      )}
+      contentClassName="platform-shell__panel"
+      content={(
+        <AnimatePresence mode="wait">
+          {showStandalone && activePanel && (
+            <StandaloneWorkspace key={activePanel} panel={activePanel} />
+          )}
+          {showLayer && activeLayer && (
+            <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
+          )}
+          {!showStandalone && !showLayer && (
+            <motion.section
+              key="platform-loading"
+              className="platform-shell__workspace platform-shell__workspace--empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              <div className="platform-shell__table-state">
+                <LoadingState description="Loading platform workspace" />
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+      )}
+    />
+  )
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
-      <WorkspacePageTemplate
-        sidebar={(
-          <SidebarNavigation
-            activeId={activeId}
-            onOpenLayer={handleOpenLayer}
-            onOpenStandalone={handleOpenStandalone}
-          />
-        )}
-        contentClassName="platform-shell__panel"
-        content={(
-          <AnimatePresence mode="wait">
-            {showStandalone && activePanel && (
-              <StandaloneWorkspace key={activePanel} panel={activePanel} />
-            )}
-            {showLayer && activeLayer && (
-              <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
-            )}
-            {!showStandalone && !showLayer && (
-              <motion.section
-                key="platform-loading"
-                className="platform-shell__workspace platform-shell__workspace--empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
-              >
-                <div className="platform-shell__table-state">
-                  <LoadingState description="Loading platform workspace" />
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
-        )}
-      />
+      {surface === 'route' ? <ShellWindowTitleStrip /> : null}
+      {surface === 'route' ? (
+        <ShellWindowProvider value={null}>
+          {workspaceTemplate}
+        </ShellWindowProvider>
+      ) : (
+        workspaceTemplate
+      )}
     </div>
   )
 

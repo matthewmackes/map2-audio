@@ -34,6 +34,7 @@ import { useCluster } from '../contexts/useCluster'
 import type { PipeWireMetrics } from '../../map2/types'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import './PipeWirePage.css'
 
 type PipeWireHealthStatus = 'ok' | 'warning' | 'error' | 'offline'
@@ -710,6 +711,7 @@ export function PipeWirePage() {
 
   return (
     <div className="pipewire-page">
+      <ShellWindowTitleStrip />
       <header className="pipewire-page__header">
         <div className="pipewire-page__header-main">
           <NetworkThree size={32} aria-hidden="true" className="pipewire-page__header-icon" />

@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
-import { AppWindow } from './AppWindow'
 import { RestartOverlay } from './RestartOverlay'
 import { ShellLauncherPanel } from './ShellLauncherPanel'
 import { ShellPowerModal } from './ShellPowerModal'
+import { ShellWindowProvider } from './ShellWindowContext'
+import type { ShellWindowContextValue } from './ShellWindowContext'
 import { useAppShellState } from './useAppShellState'
 import { useAppShellPresentation } from './useAppShellPresentation'
 import { useRestartBackend } from './useRestartBackend'
@@ -19,7 +21,6 @@ import { useLauncherInterfaceSummary } from './useLauncherInterfaceSummary'
 import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
-const APP_WINDOW_CLOSE_DURATION_MS = 180
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -41,7 +42,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     SnapshotEditorIcon,
     isAudioGridWorkspaceRoute,
     isDesktopRoute,
-    isFullBleedBaseRoute,
     isIntegratedWorkspaceRoute,
     launcherSummaryItems,
     platformStatusLabels,
@@ -59,14 +59,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     websocketStatus,
   })
   const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
-  const isFullBleedRoute = isFullBleedBaseRoute || showPerformFullscreen
   const showLauncherShell = !showPerformFullscreen && !isDesktopRoute
-  const { closingAppRoute, handleCloseCurrentApp } = useRunningRoutes({
+  const { handleCloseCurrentApp } = useRunningRoutes({
     pathname: location.pathname,
     isDesktopRoute,
     navigate,
     closeShellMenus,
-    closeDurationMs: APP_WINDOW_CLOSE_DURATION_MS,
+    closeDurationMs: 0,
   })
   const {
     restartConfirmOpen,
@@ -91,6 +90,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     setRestartConfirmOpen,
   })
 
+  const shellWindowContext = useMemo<ShellWindowContextValue>(
+    () => ({
+      title: shellWorkspaceLabel,
+      titleIcon: ShellWindowIcon,
+      routeHint: shellRouteHint,
+      accentColor: shellAccentColor,
+      onClose: handleCloseCurrentApp,
+    }),
+    [shellWorkspaceLabel, ShellWindowIcon, shellRouteHint, shellAccentColor, handleCloseCurrentApp],
+  )
+
   useEffect(() => {
     const handleOpenRestartConfirm = () => {
       closeShellMenus()
@@ -104,25 +114,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [closeShellMenus, setRestartConfirmOpen])
 
   return (
-    <div className={`${showLauncherShell ? shellClassName : shellClassName.replace(' app-shell--windowed', '')}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}`}>
-      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
-        {isDesktopRoute ? (
+    <div
+      className={`${showLauncherShell ? shellClassName : shellClassName.replace(' app-shell--windowed', '')}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}`}
+      style={!isDesktopRoute ? { '--window-shell-accent': shellAccentColor } as CSSProperties : undefined}
+    >
+      <main className="app-content app-content--full">
+        <ShellWindowProvider value={isDesktopRoute ? null : shellWindowContext}>
           <PageTransition>{children}</PageTransition>
-        ) : (
-          <AppWindow
-            accentColor={shellAccentColor}
-            ariaLabel={`${shellWorkspaceLabel} window`}
-            closeLabel={`Close ${shellWorkspaceLabel}`}
-            closing={closingAppRoute === location.pathname}
-            routeHint={shellRouteHint}
-            showPerformFullscreen={showPerformFullscreen}
-            title={shellWorkspaceLabel}
-            titleIcon={ShellWindowIcon}
-            onClose={handleCloseCurrentApp}
-          >
-            {children}
-          </AppWindow>
-        )}
+        </ShellWindowProvider>
       </main>
       {showMobileConnectionBanner ? (
         <div className="mobile-connection-banner" role="status" aria-live="polite">

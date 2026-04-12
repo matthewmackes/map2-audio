@@ -7,6 +7,7 @@ import {
   useState,
   type ComponentType,
   type CSSProperties,
+  type ReactNode,
 } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Book, Branch, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
@@ -17,6 +18,7 @@ import { formatIntelFXProgramName, formatIntelFXProgramNumber } from '../compone
 import { useIntelFXState, type IntelFXRegistryParam, type UseIntelFXStateResult } from '../../map2/intelfxApi'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import '../components/IntelFX/IntelFXPageShell.css'
@@ -209,29 +211,34 @@ export function IntelFXPage() {
     onToggleBypass: handleToggleBypass,
   }), [activeSection, apiNodeId, currentProgramName, lcdText, intelfx, bypassState, handleToggleBypass])
 
-  if (locationLoading) {
-    return (
+  const renderShell = (content: ReactNode) => (
+    <>
+      <ShellWindowTitleStrip />
       <div className="intelfx-shell">
-        <div className="intelfx-shell__main">
-          <div className="intelfx-shell__content">
-            <LoadingState description="Checking cluster MIDI inventory for the Rocktron IntelFX" />
-          </div>
+        {content}
+      </div>
+    </>
+  )
+
+  if (locationLoading) {
+    return renderShell(
+      <div className="intelfx-shell__main">
+        <div className="intelfx-shell__content">
+          <LoadingState description="Checking cluster MIDI inventory for the Rocktron IntelFX" />
         </div>
       </div>
     )
   }
 
   if (!deviceLocation) {
-    return (
-      <div className="intelfx-shell">
-        <div className="intelfx-shell__main">
-          <div className="intelfx-shell__content">
-            <EmptyState
-              title="IntelFX not detected"
-              description="No Rocktron IntelFX MIDI interface is currently detected on any cluster node."
-              align="left"
-            />
-          </div>
+    return renderShell(
+      <div className="intelfx-shell__main">
+        <div className="intelfx-shell__content">
+          <EmptyState
+            title="IntelFX not detected"
+            description="No Rocktron IntelFX MIDI interface is currently detected on any cluster node."
+            align="left"
+          />
         </div>
       </div>
     )
@@ -239,44 +246,40 @@ export function IntelFXPage() {
 
   if (needsSwitch) {
     const locationLabel = deviceLocation.hostname ?? deviceLocation.nodeId
-    return (
-      <div className="intelfx-shell">
-        <div className="intelfx-shell__main">
-          <div className="intelfx-shell__content">
-            <InlineNotification
-              kind="info"
-              lowContrast
-              hideCloseButton
-              title="Switch cluster node"
-              subtitle={`Rocktron IntelFX is connected to ${locationLabel}. Select that node to manage the rack.`}
-            />
-            <Button
-              size="sm"
-              kind="tertiary"
-              className="intelfx-page__notice-action"
-              onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
-            >
-              Switch to {locationLabel}
-            </Button>
-          </div>
+    return renderShell(
+      <div className="intelfx-shell__main">
+        <div className="intelfx-shell__content">
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Switch cluster node"
+            subtitle={`Rocktron IntelFX is connected to ${locationLabel}. Select that node to manage the rack.`}
+          />
+          <Button
+            size="sm"
+            kind="tertiary"
+            className="intelfx-page__notice-action"
+            onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
+          >
+            Switch to {locationLabel}
+          </Button>
         </div>
       </div>
     )
   }
 
   if (locationOffline) {
-    return (
-      <div className="intelfx-shell">
-        <div className="intelfx-shell__main">
-          <div className="intelfx-shell__content">
-            <InlineNotification
-              kind="warning"
-              lowContrast
-              hideCloseButton
-              title="Assigned node offline"
-              subtitle={`Rocktron IntelFX is assigned to ${deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.`}
-            />
-          </div>
+    return renderShell(
+      <div className="intelfx-shell__main">
+        <div className="intelfx-shell__content">
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Assigned node offline"
+            subtitle={`Rocktron IntelFX is assigned to ${deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.`}
+          />
         </div>
       </div>
     )
@@ -284,57 +287,59 @@ export function IntelFXPage() {
 
   return (
     <IntelFXPageContext.Provider value={contextValue}>
-      <div className="intelfx-shell">
-        <aside className="intelfx-shell__sidebar" aria-label="IntelFX section navigation">
-          {SIDEBAR_SECTIONS.map((section) => {
-            const SectionIcon = section.icon
-            return (
-              <NavLink
-                key={section.id}
-                to={section.to}
-                title={section.label}
-                aria-label={section.label}
-                className={({ isActive }) => `intelfx-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
-                style={{ '--section-accent': section.color } as CSSProperties}
-              >
-                <SectionIcon size={18} aria-hidden />
-              </NavLink>
-            )
-          })}
-        </aside>
+      {renderShell(
+        <>
+          <aside className="intelfx-shell__sidebar" aria-label="IntelFX section navigation">
+            {SIDEBAR_SECTIONS.map((section) => {
+              const SectionIcon = section.icon
+              return (
+                <NavLink
+                  key={section.id}
+                  to={section.to}
+                  title={section.label}
+                  aria-label={section.label}
+                  className={({ isActive }) => `intelfx-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
+                  style={{ '--section-accent': section.color } as CSSProperties}
+                >
+                  <SectionIcon size={18} aria-hidden />
+                </NavLink>
+              )
+            })}
+          </aside>
 
-        <div className="intelfx-shell__main">
-          {remoteSelected ? (
-            <div className="intelfx-page__proxy-notice">
-              <InlineNotification
-                kind="info"
-                lowContrast
-                hideCloseButton
-                title="Remote control proxy active"
-                subtitle={`IntelFX control is proxied to ${selectedNode?.hostname ?? selectedNodeId}.`}
-              />
+          <div className="intelfx-shell__main">
+            {remoteSelected ? (
+              <div className="intelfx-page__proxy-notice">
+                <InlineNotification
+                  kind="info"
+                  lowContrast
+                  hideCloseButton
+                  title="Remote control proxy active"
+                  subtitle={`IntelFX control is proxied to ${selectedNode?.hostname ?? selectedNodeId}.`}
+                />
+              </div>
+            ) : null}
+            <div className="intelfx-shell__content">
+              <Outlet />
             </div>
-          ) : null}
-          <div className="intelfx-shell__content">
-            <Outlet />
-          </div>
 
-          <IntelFXStatusBar
-            deviceName="INTELFX"
-            connected={Boolean(intelfx.state?.connected)}
-            programNumber={currentProgram}
-            programName={currentProgramName}
-            lcdText={lcdText}
-            mixValue={mixValue}
-            tapTempoBpm={tapTempoBpm}
-            bypassState={bypassState}
-            onProgramStep={handleProgramStep}
-            onMixChange={handleMixChange}
-            onTapTempo={handleTapTempo}
-            onToggleBypass={(block) => handleToggleBypass(block as BypassBlock)}
-          />
-        </div>
-      </div>
+            <IntelFXStatusBar
+              deviceName="INTELFX"
+              connected={Boolean(intelfx.state?.connected)}
+              programNumber={currentProgram}
+              programName={currentProgramName}
+              lcdText={lcdText}
+              mixValue={mixValue}
+              tapTempoBpm={tapTempoBpm}
+              bypassState={bypassState}
+              onProgramStep={handleProgramStep}
+              onMixChange={handleMixChange}
+              onTapTempo={handleTapTempo}
+              onToggleBypass={(block) => handleToggleBypass(block as BypassBlock)}
+            />
+          </div>
+        </>
+      )}
     </IntelFXPageContext.Provider>
   )
 }
