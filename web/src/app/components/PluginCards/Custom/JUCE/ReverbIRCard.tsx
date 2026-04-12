@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, type ChangeEvent } from 'react'
+import { Tag } from '@carbon/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ConvolutionCategoryLayout } from '../../Layouts/ConvolutionCategoryLayout'
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
@@ -198,10 +199,10 @@ function ReverbIRCardBase({
         irName={displayIR}
         assetStatus={(
           <div className="carbon-asset-selector-status">
-            {status?.loaded ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--accent">Live runtime</span> : null}
-            {status?.configuredIR ? <span className="carbon-asset-selector-status-badge">Configured</span> : null}
-            {usingConfiguredFallback ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Stored only</span> : null}
-            {status?.runtimeWarning ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Runtime warning</span> : null}
+            {status?.loaded ? <Tag size="sm" type="green">Live runtime</Tag> : null}
+            {status?.configuredIR ? <Tag size="sm" type="cool-gray">Configured</Tag> : null}
+            {usingConfiguredFallback ? <Tag size="sm" type="warm-gray">Stored only</Tag> : null}
+            {status?.runtimeWarning ? <Tag size="sm" type="warm-gray">Runtime warning</Tag> : null}
           </div>
         )}
         assetFacts={(

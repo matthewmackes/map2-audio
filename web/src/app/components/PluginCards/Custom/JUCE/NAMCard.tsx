@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useMemo, type ChangeEvent } from 'react'
+import { Tag } from '@carbon/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MachineLearningModel } from '@carbon/icons-react'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
@@ -423,10 +424,10 @@ function NAMCardBase({
               </div>
             </div>
             <div className="carbon-asset-selector-status">
-              {usingLiveModel ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--accent">Live runtime</span> : null}
-              {hasConfiguredModel ? <span className="carbon-asset-selector-status-badge">Configured</span> : null}
-              {usingConfiguredFallback ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Stored only</span> : null}
-              {status?.runtimeWarning ? <span className="carbon-asset-selector-status-badge carbon-asset-selector-status-badge--warning">Runtime warning</span> : null}
+              {usingLiveModel ? <Tag size="sm" type="green">Live runtime</Tag> : null}
+              {hasConfiguredModel ? <Tag size="sm" type="cool-gray">Configured</Tag> : null}
+              {usingConfiguredFallback ? <Tag size="sm" type="warm-gray">Stored only</Tag> : null}
+              {status?.runtimeWarning ? <Tag size="sm" type="warm-gray">Runtime warning</Tag> : null}
             </div>
             <div className="carbon-asset-selector-fact-grid">
               <div className="carbon-asset-selector-fact">

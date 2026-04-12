@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T868-subB by converting the Host Machine cluster and disk health badges to Carbon `Tag`, including the focused Host Machine test harness cleanup needed to validate the slice.
+Last updated: 2026-04-12 - Continued T868-subB by converting the repeated JUCE asset-status badges in the NAM and IR cards to Carbon `Tag`, keeping the remaining work centered on the last semantic status-chip families.
 
 ## Performance Brain
 
@@ -20391,7 +20391,7 @@ Subtasks:
     Subtasks: None
     Assigned to: Codex
 Assigned to: Codex
-Last updated: 2026-04-12 06:45 EDT - Codex
+Last updated: 2026-04-12 07:14 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the Carbon primitive cleanup and confirmed this task is software-only. The task is now reopened as an aggressive migration epic with explicit sub-slices.
   - Current evidence shows the remaining debt is concentrated in shared `.pill` / `.badge` usage across `LCDPage.tsx`, `CPUStatusOverview.tsx`, `DSPPage.tsx`, routing summary panels, library cards, chain deploy flows, and a smaller set of shell/device indicator pills, while many modern surfaces already use Carbon `Tag`.
@@ -20406,6 +20406,8 @@ Last updated: 2026-04-12 06:45 EDT - Codex
   - Continued `T868-subB` with a Host Machine semantic-tag slice in `web/src/app/pages/HostMachinePage.tsx` and `web/src/app/components/HostMachine/DiskHealthCard.tsx`, replacing the cluster-health badge and disk status badge with Carbon `Tag` while deleting the dedicated `hm-health-badge` / `hm-badge` CSS in `web/src/app/components/HostMachine/HostMachine.css`.
   - Validation for this Host Machine slice is green: `rg -n 'hm-health-badge|hm-badge' web/src/app/pages/HostMachinePage.tsx web/src/app/components/HostMachine/DiskHealthCard.tsx web/src/app/components/HostMachine/HostMachine.css` -> PASS (no matches); `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HostMachinePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - The focused Host Machine regression also required updating `web/src/app/pages/HostMachinePage.test.tsx` to mock `../contexts/useCluster` instead of the stale `../contexts/ClusterContext` module and to assert the loading shell via the spinner image role now that the Carbon loading primitive exposes duplicate label text nodes.
+  - Continued `T868-subB` with a JUCE asset-status slice in `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, replacing the repeated `carbon-asset-selector-status-badge` runtime/configuration labels with Carbon `Tag`.
+  - Validation for this JUCE asset-status slice is green: `rg -n 'carbon-asset-selector-status-badge' web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T869
 Status: [✗] Blocked
