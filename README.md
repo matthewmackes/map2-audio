@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1814** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1155** TypeScript | **136** C++/H | **143** Docs | **1816** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cac9be7c`](https://github.com/matthewmackes/map2-audio/commit/cac9be7cb77c51821fee571f837a0fe52a8114fa) | Convert host machine health badges to Carbon tags | Map2 Audio | 2026-04-12 |
+| [`d3e14cb3`](https://github.com/matthewmackes/map2-audio/commit/d3e14cb3a037328a80fd222d881178bbdcd51ed6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`21d787e6`](https://github.com/matthewmackes/map2-audio/commit/21d787e6781d93412c2ee1ddf83a004223cae326) | Convert launcher interface badges to Carbon tags | Map2 Audio | 2026-04-12 |
 | [`396d7add`](https://github.com/matthewmackes/map2-audio/commit/396d7addc49f9d2547158e253fb54b5513dc0063) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`0f54fdda`](https://github.com/matthewmackes/map2-audio/commit/0f54fddaf72a99a968ff16443d0d98561f233341) | Convert home desktop context menu to Carbon menu | Map2 Audio | 2026-04-12 |
 | [`2f28ad13`](https://github.com/matthewmackes/map2-audio/commit/2f28ad13be77eb0ced3680a020fc84e3a9ec6396) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 | [`33149a05`](https://github.com/matthewmackes/map2-audio/commit/33149a058e3b5e5311f50f188a92f8bc465e5061) | Convert shell power menus to Carbon overflow menus | Map2 Audio | 2026-04-12 |
 | [`119f69b8`](https://github.com/matthewmackes/map2-audio/commit/119f69b896f8b5a7f9152963796233da36734f4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
-| [`83ba6716`](https://github.com/matthewmackes/map2-audio/commit/83ba671680eb40bd91e91718fe619ca624ddd33f) | Document remaining shell and desktop menu migration inven... | Map2 Audio | 2026-04-12 |
-| [`1c2cb70a`](https://github.com/matthewmackes/map2-audio/commit/1c2cb70ab2d6a10045f8abac9199af003f3e099f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
