@@ -27,6 +27,15 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ label: 'Launch path', value: '/brain' }),
       ]),
     })
+    expect(getLauncherCatalogItem('/outboard-hardware')).toMatchObject({
+      heroTitle: 'Outboard Hardware',
+      landingEligible: true,
+      navEligible: false,
+      storefrontCollections: expect.arrayContaining(['featured']),
+      technicalSpecs: expect.arrayContaining([
+        expect.objectContaining({ label: 'Launch path', value: '/outboard-hardware' }),
+      ]),
+    })
     expect(getLauncherCatalogItem('/audio-table')).toBeNull()
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()

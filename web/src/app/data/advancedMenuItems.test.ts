@@ -140,6 +140,7 @@ describe('navigation catalog', () => {
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
       '/physical-surfaces',
+      '/outboard-hardware',
       '/mcu',
       '/launch-control',
       '/midi-commander',

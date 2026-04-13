@@ -25,7 +25,15 @@ import { dispatchShellOpenRestartConfirmEvent } from '../layout/shellEvents'
 
 // ── Build start menu tile items (same logic as useAppShellPresentation) ──────
 
-const START_MENU_EXCLUDED_ROUTES = new Set(['/launch-control', '/midi-commander'])
+const START_MENU_EXCLUDED_ROUTES = new Set([
+  '/launch-control',
+  '/midi-commander',
+  '/tesira',
+  '/edirol-ua1000',
+  '/hotone-jogg',
+  '/mpx1',
+  '/intelfx',
+])
 
 function buildStartMenuTileItems(): ShellNavigationRenderItem[] {
   const launcherItems = launcherCatalogDisplayItems

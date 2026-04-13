@@ -35,6 +35,9 @@ const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').the
 const PhysicalSurfacesShell = lazy(() => import('./pages/PhysicalSurfacesShell').then(m => ({ default: m.PhysicalSurfacesShell })))
 const PhysicalSurfacesOverviewPage = lazy(() => import('./pages/PhysicalSurfacesOverviewPage').then(m => ({ default: m.PhysicalSurfacesOverviewPage })))
 const PhysicalSurfaceUnitPage = lazy(() => import('./pages/PhysicalSurfaceUnitPage').then(m => ({ default: m.PhysicalSurfaceUnitPage })))
+const OutboardHardwareShell = lazy(() => import('./pages/OutboardHardwareShell').then(m => ({ default: m.OutboardHardwareShell })))
+const OutboardHardwareOverviewPage = lazy(() => import('./pages/OutboardHardwareOverviewPage').then(m => ({ default: m.OutboardHardwareOverviewPage })))
+const OutboardHardwareDevicePage = lazy(() => import('./pages/OutboardHardwareDevicePage').then(m => ({ default: m.OutboardHardwareDevicePage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
@@ -329,6 +332,10 @@ export function App() {
                                 <Route path="/physical-surfaces/*" element={<PhysicalSurfacesShell />}>
                                   <Route index element={<PhysicalSurfacesOverviewPage />} />
                                   <Route path=":surfaceId" element={<PhysicalSurfaceUnitPage />} />
+                                </Route>
+                                <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
+                                  <Route index element={<OutboardHardwareOverviewPage />} />
+                                  <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
                                 </Route>
                                 <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />

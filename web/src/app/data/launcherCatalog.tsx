@@ -90,6 +90,7 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
 const FEATURED_ROUTE_SET = new Set([
   '/platforms/overview',
   '/artifacts',
+  '/outboard-hardware',
   '/tesira',
   '/perform',
 ])
@@ -155,6 +156,25 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
       { label: 'AVB capabilities and use cases', name: 'MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
+    ],
+  },
+  '/outboard-hardware': {
+    storefrontCollections: ['featured'],
+    featureBullets: [
+      'Groups Tesira, Edirol, HoTone, MPX1, and IntelFX under one routed shell without deleting their specialized pages.',
+      'Reduces start-menu clutter by giving operators a single rack-and-interface entry point for outboard gear.',
+      'Keeps dedicated routes one click away for live status, deep editors, and device-family workflows.',
+    ],
+    technicalSpecs: [
+      { label: 'Primary workflow', value: 'Grouped navigation for outboard DSP, interfaces, and rack processors' },
+      { label: 'Surface mode', value: 'Routed overview + per-device identity pages' },
+      { label: 'Launch path', value: '/outboard-hardware' },
+      { label: 'Home placement', value: 'Pinned hero tile' },
+    ],
+    availabilityNote: 'Always available as the grouped outboard entry point; live status continues to come from each dedicated hardware route.',
+    documentLinks: [
+      { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
+      { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
     ],
   },
   '/lcd': {

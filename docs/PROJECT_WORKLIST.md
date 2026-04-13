@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-13 - Closed the remaining unblocked frontend typography and sentence-case work. `web/src` now has zero literal `font-size` declarations, zero `--type-*` alias usages, and zero uppercase-style transforms; only AVB/Tesira hardware-HIL blockers remain, now with explicit unblock paths.
+Last updated: 2026-04-13 - Shipped `T998` by adding the unified `/outboard-hardware` routed shell, pinning the grouped launcher on Home, removing the five dedicated outboard routes from the Start Menu tile set, and seeding the next browser-smoke/live-status follow-up tasks as `T999` and `T1000`.
 
 ## Performance Brain
 
@@ -23207,7 +23207,7 @@ Last updated: 2026-04-12 16:08 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T998
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unified Outboard-Hardware workspace — consolidate Tesira, Edirol, Hotone, IntelFX, MPX1 into one shell
 Description:
 - Goal / acceptance criteria: Introduce a new `/outboard-hardware/*` Carbon workspace that mirrors the Physical Surfaces shell pattern and collects the five heterogeneous outboard-hardware surfaces — Tesira AVB, Edirol UA-1000, HoTone JoGG, IntelFX Rack, and MPX1 Rack — under a single overview + per-device detail shell. The workspace must reuse `WorkspacePageTemplate`, `UnifiedWorkspaceSideNav`, and the Physical Surfaces overview/tile layout conventions. Each device card must expose two navigation actions: "Open in workspace" (→ `/outboard-hardware/:deviceId`) and "Open dedicated route" (→ the existing `/tesira`, `/edirol-ua1000`, `/hotone-jogg`, `/mpx1`, `/intelfx` routes, which remain fully intact). A new "Outboard Hardware" tile must appear on the home start menu (via `FEATURED_ROUTE_SET` in `launcherCatalog.tsx`) and the five individual device routes must be removed from the home start menu by extending `START_MENU_EXCLUDED_ROUTES` in `HomeStartMenuOverlay.tsx` — matching the precedent already set for `/launch-control` and `/midi-commander`. Advanced Menu entries and the workspace catalog entries for the five devices remain untouched so they stay discoverable through those surfaces. Device metadata is a static frontend catalog constant (no new backend API needed) since live status continues to be rendered by each dedicated route's existing hooks.
@@ -23240,5 +23240,48 @@ Description:
 - Licensing review: All touched files are MAP2-owned AGPL-covered repository artifacts; no third-party notices expected.
 - Plan reference: `.claude/plans/fluttering-singing-mountain.md`
 Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-13 15:36 EDT - Codex
+- Completion notes:
+  - Added the new routed `/outboard-hardware/*` shell under `web/src/app/pages/OutboardHardwareShell.tsx`, plus overview and per-device detail pages backed by one inline `OUTBOARD_HARDWARE_DEVICES` catalog covering Tesira AVB, Edirol UA-1000, HoTone JoGG, MPX1 Rack, and IntelFX Rack with preserved dedicated-route resolvers.
+  - Reused the routed workspace-shell pattern already established by Physical Surfaces: `WorkspacePageTemplate`, `UnifiedWorkspaceSideNav`, shared shell styling, dedicated-route footer entries, and scoped overview/detail layouts now power the new outboard workspace without touching backend/device-route internals.
+  - Wired the new workspace into `web/src/app/App.tsx`, added the `Outboard Hardware` entry to `web/src/app/data/advancedMenuItems.ts`, promoted it into the pinned launcher set in `web/src/app/data/launcherCatalog.tsx`, and removed the five individual device routes from the home Start Menu tile list in `web/src/app/pages/HomeStartMenuOverlay.tsx` while leaving Advanced Menu and workspace-catalog discoverability intact.
+  - Added focused regression coverage for the new shell/pages plus the start-menu/catalog behavior in `web/src/app/pages/OutboardHardware*.test.tsx`, `web/src/app/pages/HomeStartMenuOverlay.test.tsx`, `web/src/app/data/advancedMenuItems.test.ts`, and `web/src/app/data/launcherCatalog.test.tsx`.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer/environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx src/app/data/launcherCatalog.test.tsx src/app/data/advancedMenuItems.test.ts` -> PASS (`6 suites, 27 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - Smoke evidence on the already-bound port `3000` listener after the atomic build swap:
+    - `curl -I http://127.0.0.1:3000/` -> `200 OK`
+    - `curl -I http://127.0.0.1:3000/outboard-hardware` -> `200 OK`
+    - `curl -I http://127.0.0.1:3000/assets/OutboardHardwareShell-_IGxIJnS.js` -> `200 OK`
+    - `curl -I http://127.0.0.1:3000/assets/OutboardHardwareOverviewPage-DjSqx64A.js` -> `200 OK`
+    - `curl -I http://127.0.0.1:3000/assets/OutboardHardwareDevicePage-DMi4ojUO.js` -> `200 OK`
+  - Licensing review: touched `web/src`, `VERSION`, `version.json`, and `docs/PROJECT_WORKLIST.md` artifacts remain MAP2-owned AGPL-covered repository files; no new third-party notices or ownership gaps were introduced.
+
+ID: T999
+Status: [ ] Todo
+Title: Add browser-level smoke coverage for the grouped Outboard Hardware launcher flow
+Description:
+- Goal / acceptance criteria: Add an automated browser-level smoke that proves the home Start Menu shows the new `Outboard Hardware` launcher, hides the five individual outboard device tiles there, and can navigate through `/outboard-hardware` into at least one device detail page without regressing the existing shell chrome.
+- Why it matters: T998 added strong unit/integration coverage plus HTTP-level smoke, but the grouped launcher flow still lacks one end-to-end browser assertion across the real desktop shell surface.
+- Dependencies: T998
+- Estimated effort: Medium
+- Required outputs: Browser smoke/test harness updates, route assertions for Start Menu → `/outboard-hardware` → device detail flow, and validation evidence.
+Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-04-13 - planning only (no implementation yet)
+Last updated: 2026-04-13 15:36 EDT - Codex
+
+ID: T1000
+Status: [ ] Todo
+Title: Surface live-status rollups inside the Outboard Hardware overview without adding a new backend API
+Description:
+- Goal / acceptance criteria: Extend the new `/outboard-hardware` overview cards with lightweight live-status rollups derived from the existing dedicated-route hooks or shared frontend status sources so operators can see basic readiness posture before opening a specialized device page, without adding any new backend summary endpoint.
+- Why it matters: T998 fixed navigation hierarchy and discoverability, but the overview is still purely static identity metadata; a small live-status layer would make the grouped workspace materially more useful during operation.
+- Dependencies: T998
+- Estimated effort: Medium
+- Required outputs: Frontend-only status aggregation, device-card status presentation, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 15:36 EDT - Codex
