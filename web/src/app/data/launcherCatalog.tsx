@@ -16,7 +16,7 @@ export type LandingTileSize = 'small' | 'medium' | 'large'
 export type LauncherDirectory = 'core' | 'labs' | 'platforms' | 'nav-only'
 export type LauncherCatalogCategory = 'Audio Interface' | 'Human Interface' | 'Platform'
 export type LauncherStorefrontCollection = 'featured' | 'platform-essentials' | 'recently-added'
-export const REQUIRED_HOME_LAUNCHER_ROUTE = '/platforms/overview'
+export const REQUIRED_HOME_LAUNCHER_ROUTE = '/workspace'
 export const WORKSPACE_CATALOG_REFERENCE_DOC = 'WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md'
 
 export interface LandingTilePlacement {
@@ -88,14 +88,12 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/platforms/about',
 ])
 const FEATURED_ROUTE_SET = new Set([
-  '/platforms/overview',
-  '/artifacts',
-  '/outboard-hardware',
+  '/workspace',
   '/tesira',
   '/perform',
 ])
 const PLATFORM_ESSENTIALS_ROUTE_SET = new Set([
-  '/platforms/overview',
+  '/workspace',
 ])
 const RECENTLY_ADDED_ROUTE_SET = new Set([
 ])
@@ -103,28 +101,27 @@ const RECENTLY_ADDED_ROUTE_SET = new Set([
 const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = []
 
 const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
-  '/platforms/overview': {
+  '/workspace': {
     storefrontCollections: ['featured', 'platform-essentials'],
     featureBullets: [
-      'Supervisory platform entry point with node, alert, and operational posture visibility.',
-      'Connects operators to management, AVB, discovery, and utility workspaces from one Carbon shell.',
-      'Designed as the flagship starting surface for cluster-aware MAP2 deployments.',
+      'Unified workspace hub for platform posture, physical surfaces, audio artifacts, and outboard hardware.',
+      'Connects operators to the canonical `/workspace/*` sections from one Carbon shell instead of legacy route roots.',
+      'Designed as the flagship starting surface for cluster-aware MAP2 deployments after the workspace migration.',
     ],
     technicalSpecs: [
       { label: 'Primary audience', value: 'Operators and prospective platform evaluators' },
-      { label: 'Surface mode', value: 'Routed Platforms overview workspace' },
+      { label: 'Surface mode', value: 'Workspace hub shell with section-level routed content' },
       { label: 'Home placement', value: 'Required first launcher tile' },
-      { label: 'Shell behavior', value: 'Utility-independent supervisory landing surface' },
+      { label: 'Launch path', value: '/workspace' },
     ],
-    availabilityNote: 'Always available as the default Platforms destination, even when downstream workspaces have limited readiness.',
+    availabilityNote: 'Always available as the canonical workspace destination, even when individual sections have limited readiness.',
     documentLinks: [
       { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
       { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
   },
-  '/artifacts': {
-    storefrontCollections: ['featured'],
+  '/workspace/artifacts': {
     featureBullets: [
       'Unified library for plugins, NAM captures, IRs, SoundFonts, and native JUCE processors.',
       'Presents node-aware asset coverage and remediation from a single Carbon-managed inventory.',
@@ -133,7 +130,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     technicalSpecs: [
       { label: 'Library scope', value: 'Plugins, presets, NAM, IR, SoundFont, and native processors' },
       { label: 'Node awareness', value: 'Local and cluster-aware inventory' },
-      { label: 'Launch path', value: '/artifacts' },
+      { label: 'Launch path', value: '/workspace/artifacts' },
       { label: 'Home placement', value: 'Eligible' },
     ],
     availabilityNote: 'Available without payment or catalog checkout; inventory visibility follows the selected node and installed asset set.',
@@ -158,8 +155,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
   },
-  '/outboard-hardware': {
-    storefrontCollections: ['featured'],
+  '/workspace/outboard-hardware': {
     featureBullets: [
       'Groups Tesira, Edirol, HoTone, MPX1, and IntelFX under one routed shell without deleting their specialized pages.',
       'Reduces start-menu clutter by giving operators a single rack-and-interface entry point for outboard gear.',
@@ -168,7 +164,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     technicalSpecs: [
       { label: 'Primary workflow', value: 'Grouped navigation for outboard DSP, interfaces, and rack processors' },
       { label: 'Surface mode', value: 'Routed overview + per-device identity pages' },
-      { label: 'Launch path', value: '/outboard-hardware' },
+      { label: 'Launch path', value: '/workspace/outboard-hardware' },
       { label: 'Home placement', value: 'Pinned hero tile' },
     ],
     availabilityNote: 'Always available as the grouped outboard entry point; live status continues to come from each dedicated hardware route.',
@@ -411,6 +407,9 @@ function buildLauncherCatalog(): LauncherCatalogItem[] {
 
   for (const item of platformPinnedItems) {
     const launcher = enrichLauncherCatalogItem(toLauncherCatalogItem(item, 'platforms'))
+    if (launcher.route === REQUIRED_HOME_LAUNCHER_ROUTE) {
+      continue
+    }
     if (WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET.has(launcher.route)) {
       continue
     }

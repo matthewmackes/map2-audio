@@ -69,8 +69,11 @@ describe('navigation catalog', () => {
   it('keeps every Home card aligned with an application route', () => {
     const hasRouteRegistration = (route: string) => {
       const pathname = new URL(route, 'https://map2.local').pathname
+      if (pathname === '/workspace' || pathname.startsWith('/workspace/')) {
+        return appSource.includes('path="/workspace/*"')
+      }
       if (pathname.startsWith('/platforms/')) {
-        return appSource.includes('path="/platforms/:workspace"')
+        return appSource.includes('path="/platforms/:workspace"') || appSource.includes('path="/workspace/*"')
       }
 
       return appSource.includes(`path="${pathname}"`) || appSource.includes(`path="${pathname}/*"`)
@@ -95,7 +98,6 @@ describe('navigation catalog', () => {
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
     expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about', '/platform'])).toEqual([
       '/platforms/about',
-      '/platforms/overview',
     ])
   })
 
@@ -139,8 +141,8 @@ describe('navigation catalog', () => {
     const advancedItems = advancedMenuItems
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
-      '/physical-surfaces',
-      '/outboard-hardware',
+      '/workspace/physical-surfaces',
+      '/workspace/outboard-hardware',
       '/mcu',
       '/launch-control',
       '/midi-commander',
@@ -152,17 +154,17 @@ describe('navigation catalog', () => {
     ])
   })
 
-  it('keeps Platforms on Home as the routed cluster workspace entry instead of the removed dedicated cluster pages', () => {
-    const platform = navigationCatalogItems.find((item) => item.to === '/platforms/overview')
+  it('keeps Workspaces on Home as the canonical hub entry instead of the removed dedicated cluster pages', () => {
+    const platform = navigationCatalogItems.find((item) => item.to === '/workspace')
     expect(platform).toBeDefined()
-    expect(platform?.label).toBe('Platforms')
+    expect(platform?.label).toBe('Workspaces')
     expect(platform?.includeInAdvancedMenu).toBe(false)
     expect(platform?.pinnable).toBe(false)
     expect(platform?.showOnHome).toBe(true)
-    expect(pinnableNavigationItems.some((item) => item.to === '/platforms/overview')).toBe(false)
+    expect(pinnableNavigationItems.some((item) => item.to === '/workspace')).toBe(false)
 
     const appearsOnHome = homeNavigationSections.some((section) =>
-      section.items.some((item) => item.to === '/platforms/overview'),
+      section.items.some((item) => item.to === '/workspace'),
     )
     expect(appearsOnHome).toBe(true)
   })

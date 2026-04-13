@@ -307,8 +307,8 @@ describe('AppShell floating launcher shell', () => {
       expect(screen.queryByText('Virtual Input 1')).not.toBeInTheDocument()
     })
     expect(mockFetch.mock.calls.filter(([input]) => String(input).includes('/audio/status'))).toHaveLength(1)
-    expect(screen.getByText('Platforms')).toBeInTheDocument()
-    expect(screen.getByText('Files')).toBeInTheDocument()
+    expect(screen.getByText('Workspaces')).toBeInTheDocument()
+    expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
@@ -319,10 +319,10 @@ describe('AppShell floating launcher shell', () => {
     expect(heroSection).toBeTruthy()
     expect(compactSection).toBeTruthy()
     expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Advanced MIDI/ })).toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Physical Surfaces/ })).toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Stage Mode/ })).not.toBeInTheDocument()
+    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Workspaces/ })).toBeInTheDocument()
+    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Stage Mode/ })).toBeInTheDocument()
     expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Tesira AVB/ })).not.toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Stage Mode/ })).toBeInTheDocument()
+    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Stage Mode/ })).not.toBeInTheDocument()
     expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Tesira AVB/ })).toBeInTheDocument()
     expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Launch Control/ })).not.toBeInTheDocument()
     expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /MIDI Commander/ })).not.toBeInTheDocument()
@@ -560,9 +560,9 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: /Platforms/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Workspaces/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
   })
 
   it('moves focus into the launcher panel and restores it to the trigger when the panel closes', () => {

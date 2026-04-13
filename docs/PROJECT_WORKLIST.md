@@ -23828,7 +23828,7 @@ Subtasks:
           - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS
           - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subD-subB
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Repoint advanced menu and launcher catalog entries to one Workspaces entry
         Description:
         - Goal / acceptance criteria: Repoint advanced menu entries to `/workspace/*`, add the canonical `/workspace` launcher/storefront entry, and remove the four separate workspace routes from the featured catalog set.
@@ -23838,9 +23838,16 @@ Subtasks:
         - Required outputs: advanced-menu updates, launcher-catalog updates, and focused catalog/menu regressions.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:20 EDT - Codex
+        Last updated: 2026-04-13 19:28 EDT - Codex
+        - Completion notes:
+          - Repointed the advanced navigation catalog and launcher/storefront canonicalization so the workspace-family entries now resolve to `/workspace`, `/workspace/artifacts`, `/workspace/physical-surfaces`, and `/workspace/outboard-hardware`.
+          - Added the canonical `Workspaces` launcher entry at `/workspace`, made it the required featured storefront/home launcher, and stopped advertising the legacy workspace roots as featured catalog destinations.
+          - Updated the floating shell launcher regressions so menu labels, hero/compact placement, and route navigation match the new canonical workspace launch model.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/layout/AppShell.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subD-subC
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Collapse start-menu workspace tiles and sweep shell-facing route aliases
         Description:
         - Goal / acceptance criteria: Exclude the four legacy workspace routes from home/start-shell tile generation, keep one Workspaces launch path discoverable, and align the remaining shell-facing aliases with the canonical hub routes.
@@ -23849,10 +23856,10 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: start-menu/shell presentation cleanup, focused UI regressions, and grep evidence for the remaining intentional legacy references.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 19:14 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:28 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:20 EDT - Codex
+    Last updated: 2026-04-13 19:28 EDT - Codex
   - ID: T1004-subE
     Status: [ ] Todo
     Title: Delete legacy shells and sweep residual workspace route references

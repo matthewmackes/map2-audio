@@ -9,13 +9,23 @@ import {
 describe('launcherCatalog', () => {
   it('keeps standalone routed workspaces in the catalog and removes the migrated fixed Start Menu routes', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
+    expect(getLauncherCatalogItem('/workspace')).toMatchObject({
+      heroTitle: 'Workspaces',
+      landingEligible: true,
+      navEligible: false,
+      directory: 'core',
+      storefrontCollections: expect.arrayContaining(['featured', 'platform-essentials']),
+      technicalSpecs: expect.arrayContaining([
+        expect.objectContaining({ label: 'Launch path', value: '/workspace' }),
+      ]),
+    })
     expect(getLauncherCatalogItem('/artifacts')).toMatchObject({
       heroTitle: 'Audio Artifacts',
       landingEligible: true,
       navEligible: true,
       directory: 'core',
       technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/artifacts' }),
+        expect.objectContaining({ label: 'Launch path', value: '/workspace/artifacts' }),
       ]),
     })
     expect(getLauncherCatalogItem('/brain')).toMatchObject({
@@ -31,9 +41,8 @@ describe('launcherCatalog', () => {
       heroTitle: 'Outboard Hardware',
       landingEligible: true,
       navEligible: false,
-      storefrontCollections: expect.arrayContaining(['featured']),
       technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/outboard-hardware' }),
+        expect.objectContaining({ label: 'Launch path', value: '/workspace/outboard-hardware' }),
       ]),
     })
     expect(getLauncherCatalogItem('/audio-table')).toBeNull()
@@ -78,31 +87,31 @@ describe('launcherCatalog', () => {
       { route: '/platforms/about', size: 'large' },
     ])).toEqual([
       { route: '/brain', size: 'large' },
-      { route: '/platforms/overview', size: 'medium' },
-      { route: '/artifacts', size: 'large' },
+      { route: '/workspace', size: 'medium' },
+      { route: '/workspace/artifacts', size: 'large' },
     ])
   })
 
-  it('keeps the required Platforms launcher first when present', () => {
+  it('keeps the required Workspaces launcher first when present', () => {
     expect(prioritizeRequiredHomeLauncher([
       { route: '/perform', size: 'small' },
-      { route: '/platforms/overview', size: 'medium' },
-      { route: '/artifacts', size: 'large' },
+      { route: '/workspace', size: 'medium' },
+      { route: '/workspace/artifacts', size: 'large' },
     ])).toEqual([
-      { route: '/platforms/overview', size: 'medium' },
+      { route: '/workspace', size: 'medium' },
       { route: '/perform', size: 'small' },
-      { route: '/artifacts', size: 'large' },
+      { route: '/workspace/artifacts', size: 'large' },
     ])
   })
 
-  it('injects the required Platforms launcher when missing', () => {
+  it('injects the required Workspaces launcher when missing', () => {
     expect(ensureRequiredHomeLauncher([
       { route: '/perform', size: 'small' },
-      { route: '/artifacts', size: 'large' },
+      { route: '/workspace/artifacts', size: 'large' },
     ])).toEqual([
-      { route: '/platforms/overview', size: 'medium' },
+      { route: '/workspace', size: 'medium' },
       { route: '/perform', size: 'small' },
-      { route: '/artifacts', size: 'large' },
+      { route: '/workspace/artifacts', size: 'large' },
     ])
   })
 
