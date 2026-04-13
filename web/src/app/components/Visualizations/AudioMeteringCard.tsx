@@ -25,7 +25,7 @@ export function AudioMeteringCard({
 
   return (
     <LegacyTile style={{
-      background: 'linear-gradient(135deg, rgba(14, 22, 37, 0.95), rgba(20, 30, 50, 0.9))',
+      background: 'rgba(14, 22, 37, 0.96)',
       borderColor: `rgba(55, 214, 201, 0.2)`,
       padding: 0,
       overflow: 'hidden',
@@ -38,7 +38,7 @@ export function AudioMeteringCard({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: compact ? '10px 14px' : '14px 20px',
-          background: 'linear-gradient(135deg, rgba(55, 214, 201, 0.1), rgba(0, 212, 255, 0.05))',
+          background: 'rgba(55, 214, 201, 0.1)',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
         }}
@@ -48,7 +48,7 @@ export function AudioMeteringCard({
             width: 36,
             height: 36,
             borderRadius: 8,
-            background: `linear-gradient(135deg, ${accentColor}20, ${accentColor}10)`,
+            background: `${accentColor}20`,
             border: `1px solid ${accentColor}30`,
             display: 'flex',
             alignItems: 'center',

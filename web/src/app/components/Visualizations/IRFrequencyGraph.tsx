@@ -257,7 +257,7 @@ export function IRFrequencyGraph({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, rgba(20, 15, 10, 0.95), rgba(10, 8, 5, 0.95))',
+          background: 'rgba(16, 12, 8, 0.96)',
           borderRadius: 8,
           border: '1px solid rgba(255, 184, 77, 0.2)',
           color: '#666'

@@ -8,7 +8,7 @@ const mockUseCluster = jest.fn()
 const mockUseVuMeters = jest.fn()
 const mockUseCPUMetrics = jest.fn()
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

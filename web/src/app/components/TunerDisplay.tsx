@@ -223,6 +223,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   
   const color = getInTuneColor(centsDeviation);
   const label = getTuningLabel(centsDeviation);
+  const confidenceColor = confidence >= 0.75 ? '#22c55e' : confidence >= 0.45 ? '#eab308' : '#ef4444';
   
   // Size configurations
   const sizes = {
@@ -241,7 +242,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
       style={{
         width: size.width,
         height: size.height,
-        background: 'linear-gradient(180deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 15, 0.95) 100%)',
+        background: 'rgba(14, 14, 18, 0.96)',
         borderRadius: 12,
         border: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
@@ -421,7 +422,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
             style={{
               width: `${confidence * 100}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #22c55e, #3b82f6)',
+              background: confidenceColor,
               transition: 'width 0.2s ease',
             }}
           />

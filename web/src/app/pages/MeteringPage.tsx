@@ -128,7 +128,7 @@ export function MeteringPage() {
       className="metering-page"
       style={{
       padding: '32px',
-      background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)'
+      background: 'rgba(12, 18, 28, 0.46)'
       }}
     >
       <ShellWindowTitleStrip />
@@ -453,7 +453,7 @@ export function MeteringPage() {
       <div style={{
         marginTop: 32,
         padding: 16,
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%)',
+        background: 'rgba(37, 99, 235, 0.08)',
         borderRadius: 12,
         border: '1px solid rgba(59, 130, 246, 0.15)',
         backdropFilter: 'blur(8px)'

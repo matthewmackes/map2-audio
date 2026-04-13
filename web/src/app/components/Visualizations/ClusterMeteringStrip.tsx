@@ -13,10 +13,10 @@ function dbToMarkerTop(db: number, height: number, min = -60, max = 6): number {
   return height - (dbToPercent(db, min, max) / 100) * height
 }
 
-function getMeterGradient(db: number): string {
-  if (db > -6) return 'linear-gradient(to top, #22c55e 0%, #eab308 68%, #ef4444 100%)'
-  if (db > -12) return 'linear-gradient(to top, #22c55e 0%, #22c55e 72%, #eab308 100%)'
-  return 'linear-gradient(to top, #22c55e 0%, #22c55e 100%)'
+function getMeterColor(db: number): string {
+  if (db > -6) return '#ef4444'
+  if (db > -12) return '#eab308'
+  return '#22c55e'
 }
 
 function CompactMeterBar({ value, peak }: { value: number; peak: number }) {
@@ -39,7 +39,7 @@ function CompactMeterBar({ value, peak }: { value: number; peak: number }) {
           insetInline: 0,
           bottom: 0,
           height: `${dbToPercent(value)}%`,
-          background: getMeterGradient(value),
+          background: getMeterColor(value),
           transition: 'height 0.05s ease-out',
         }}
       />

@@ -13,7 +13,7 @@ function mockNodePanel(testId: string) {
   )
 }
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

@@ -32,10 +32,10 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
   const dbToPercent = (db: number) => Math.max(0, Math.min(100, ((db - min) / range) * 100))
   const dbToY = (db: number) => barHeight - (dbToPercent(db) / 100) * barHeight
 
-  const getBarGradient = (db: number) => {
-    if (db > 0) return 'linear-gradient(to top, #22c55e 0%, #22c55e 60%, #eab308 80%, #ef4444 100%)'
-    if (db > -12) return 'linear-gradient(to top, #22c55e 0%, #22c55e 70%, #eab308 100%)'
-    return 'linear-gradient(to top, #22c55e 0%, #22c55e 100%)'
+  const getBarColor = (db: number) => {
+    if (db > 0) return '#ef4444'
+    if (db > -12) return '#eab308'
+    return '#22c55e'
   }
 
   const formatDb = (db: number) => {
@@ -63,7 +63,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
             left: 0,
             right: 0,
             height: `${dbToPercent(leftDb)}%`,
-            background: getBarGradient(leftDb),
+            background: getBarColor(leftDb),
             transition: 'height 0.05s ease-out'
           }} />
           {/* Peak marker */}
@@ -101,7 +101,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
             left: 0,
             right: 0,
             height: `${dbToPercent(rightDb)}%`,
-            background: getBarGradient(rightDb),
+            background: getBarColor(rightDb),
             transition: 'height 0.05s ease-out'
           }} />
           <div style={{

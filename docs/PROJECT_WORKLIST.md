@@ -23522,7 +23522,7 @@ Last updated: 2026-04-13 16:43 EDT - Codex
   - `rg -n "gradient|bg-gradient|linearGradient|radialGradient" web/src/app/theme web/src/app/pages/ThemePage.tsx web/src/app/pages/ThemePage.css web/src/app/components/ThemeChooserModal.tsx web/src/app/components/ThemeCreatorDialog.css` -> PASS (`0 matches`)
 
 ID: T1007
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove gradient fills from visualizations and add regression guards against future gradient use
 Description:
 - Goal / acceptance criteria: Update live charting, SVG, canvas, and animation surfaces so they no longer use gradient fills or gradient-driven decorative effects, then add lightweight repository checks or focused tests that catch new gradient usage in current app code.
@@ -23531,8 +23531,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: flattened visualization surfaces, any necessary animation adjustments, guard/test coverage, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:29 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 18:23 EDT - Codex
+Completion notes:
+- Flattened the remaining decorative visualization shells in `web/src/app/components/Visualizations/AudioMeteringCard.tsx`, `web/src/app/components/TunerDisplay.tsx`, `web/src/app/pages/MeteringPage.tsx`, and the empty-state shell in `web/src/app/components/Visualizations/IRFrequencyGraph.tsx`, replacing gradient backdrops with flat fills while preserving the underlying analysis widgets.
+- Replaced gradient-based live meter fills in `web/src/app/components/Visualizations/ClusterMeteringStrip.tsx` and `web/src/app/components/Visualizations/VuMeterDisplay.tsx` with threshold-based solid colors so the meters still communicate safe/warn/hot state without gradient fills.
+- Added `web/src/app/visualizationNoGradient.test.ts` as a focused regression guard that scans the visualization files flattened in this slice for `linear-gradient`/`radial-gradient` strings, and updated the affected metering tests to mock `useCluster` from the hook module now used by the components.
+- Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Visualizations/ClusterMeteringStrip.test.tsx src/app/pages/MeteringPage.test.tsx src/app/visualizationNoGradient.test.ts` -> PASS (`3 suites, 11 tests`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS
 
 ID: T1004
 Status: [ ] Todo
