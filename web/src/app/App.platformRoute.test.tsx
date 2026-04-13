@@ -97,6 +97,29 @@ jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitP
   },
 }))
 
+jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet', () => ({
+  WorkspaceOutboardHardwareOutlet: () => {
+    const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    return <Outlet />
+  },
+}))
+
+jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage', () => ({
+  WorkspaceOutboardHardwareOverviewPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-outboard-hardware-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
+jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage', () => ({
+  WorkspaceOutboardHardwareDevicePage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-outboard-hardware-device-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/WorkspaceHubShell', () => ({
   WorkspaceHubShell: () => {
     const { Outlet, useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -246,7 +269,16 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-placeholder')).toHaveTextContent('Outboard Hardware|/workspace/outboard-hardware')
+    expect(await screen.findByTestId('workspace-outboard-hardware-route')).toHaveTextContent('/workspace/outboard-hardware')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('mounts the migrated outboard-hardware device route inside the workspace hub', async () => {
+    window.history.pushState({}, '', '/workspace/outboard-hardware/lexicon-mpx1')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-outboard-hardware-device-route')).toHaveTextContent('/workspace/outboard-hardware/lexicon-mpx1')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 

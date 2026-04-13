@@ -31,6 +31,9 @@ const PlatformWorkspaceSection = lazy(() => import('./pages/workspace-hub/platfo
 const WorkspacePhysicalSurfacesOutlet = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOutlet').then(m => ({ default: m.WorkspacePhysicalSurfacesOutlet })))
 const WorkspacePhysicalSurfacesOverviewPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage').then(m => ({ default: m.WorkspacePhysicalSurfacesOverviewPage })))
 const WorkspacePhysicalSurfaceUnitPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitPage').then(m => ({ default: m.WorkspacePhysicalSurfaceUnitPage })))
+const WorkspaceOutboardHardwareOutlet = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet').then(m => ({ default: m.WorkspaceOutboardHardwareOutlet })))
+const WorkspaceOutboardHardwareOverviewPage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage').then(m => ({ default: m.WorkspaceOutboardHardwareOverviewPage })))
+const WorkspaceOutboardHardwareDevicePage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage').then(m => ({ default: m.WorkspaceOutboardHardwareDevicePage })))
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const WorkspaceHubPlaceholder = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubPlaceholder })))
@@ -338,8 +341,11 @@ export function App() {
                                   />
                                   <Route
                                     path="outboard-hardware"
-                                    element={<WorkspaceHubPlaceholder sectionKey="outboard-hardware" title="Outboard Hardware" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
-                                  />
+                                    element={<WorkspaceOutboardHardwareOutlet />}
+                                  >
+                                    <Route index element={<WorkspaceOutboardHardwareOverviewPage />} />
+                                    <Route path=":deviceId" element={<WorkspaceOutboardHardwareDevicePage />} />
+                                  </Route>
                                 </Route>
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />

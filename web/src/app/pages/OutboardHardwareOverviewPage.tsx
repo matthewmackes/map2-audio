@@ -14,6 +14,7 @@ import {
   type OutboardHardwareShellContextValue,
 } from './OutboardHardwareShell'
 import { useCluster } from '../contexts/useCluster'
+import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
 
 type StatusTagType = 'green' | 'red' | 'blue' | 'cool-gray' | 'warm-gray'
 type OutboardHardwareLiveStatusGroup = 'healthy' | 'attention' | 'offline'
@@ -389,10 +390,12 @@ function OutboardHardwareCard({
   device,
   liveStatus,
   routeTarget,
+  buildDevicePath,
 }: {
   device: OutboardHardwareDevice
   liveStatus: OutboardHardwareLiveStatus
   routeTarget: OutboardHardwareRouteTarget | null
+  buildDevicePath: (deviceId?: string | null) => string
 }) {
   const navigate = useNavigate()
   const { setActiveNode } = useCluster()
@@ -440,7 +443,7 @@ function OutboardHardwareCard({
         {dedicatedRoute ? <Tag type="purple">{dedicatedRoute}</Tag> : null}
       </div>
       <div className="outboard-hardware-page__action-row">
-        <Button kind="ghost" size="sm" onClick={() => navigate(`/outboard-hardware/${device.deviceId}`)}>
+        <Button kind="ghost" size="sm" onClick={() => navigate(buildDevicePath(device.deviceId))}>
           Open in workspace
         </Button>
         {dedicatedRoute ? (
@@ -453,7 +456,11 @@ function OutboardHardwareCard({
   )
 }
 
-export function OutboardHardwareOverviewPage() {
+export function OutboardHardwareOverviewPage({
+  buildDevicePath = buildOutboardHardwarePath,
+}: {
+  buildDevicePath?: (deviceId?: string | null) => string
+}) {
   const { devices } = useOutletContext<OutboardHardwareShellContextValue>()
   const { localNodeId } = useCluster()
   const tesiraDevicesQuery = useTesiraDevices()
@@ -609,6 +616,7 @@ export function OutboardHardwareOverviewPage() {
                 facts: [],
               }}
               routeTarget={routeTargetsByDeviceId[device.deviceId] ?? null}
+              buildDevicePath={buildDevicePath}
             />
           ))
         )}

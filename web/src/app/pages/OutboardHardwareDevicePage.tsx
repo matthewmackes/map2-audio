@@ -7,6 +7,7 @@ import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareShellContextValue,
 } from './OutboardHardwareShell'
+import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
 
 function categoryTagType(category: string): 'red' | 'blue' | 'green' {
   if (category === 'AVB DSP Mixer') return 'red'
@@ -14,7 +15,11 @@ function categoryTagType(category: string): 'red' | 'blue' | 'green' {
   return 'green'
 }
 
-export function OutboardHardwareDevicePage() {
+export function OutboardHardwareDevicePage({
+  buildDevicePath = buildOutboardHardwarePath,
+}: {
+  buildDevicePath?: (deviceId?: string | null) => string
+}) {
   const navigate = useNavigate()
   const { deviceId } = useParams<{ deviceId: string }>()
   const { devices } = useOutletContext<OutboardHardwareShellContextValue>()
@@ -36,7 +41,7 @@ export function OutboardHardwareDevicePage() {
             Return to the overview to choose one of the routed outboard-hardware entries.
           </p>
           <div className="outboard-hardware-page__action-row">
-            <Button kind="secondary" size="sm" onClick={() => navigate('/outboard-hardware')}>
+            <Button kind="secondary" size="sm" onClick={() => navigate(buildDevicePath())}>
               Back to overview
             </Button>
           </div>
@@ -102,7 +107,7 @@ export function OutboardHardwareDevicePage() {
                 Open dedicated route
               </Button>
             ) : null}
-            <Button kind="ghost" size="sm" onClick={() => navigate('/outboard-hardware')}>
+            <Button kind="ghost" size="sm" onClick={() => navigate(buildDevicePath())}>
               Back to overview
             </Button>
           </div>

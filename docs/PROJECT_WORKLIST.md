@@ -23693,7 +23693,7 @@ Subtasks:
         - `npm --prefix web run typecheck` -> PASS
         - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subC
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Move Outboard Hardware pages under `workspace-hub` and remount them at `/workspace/outboard-hardware/*`
         Description:
         - Goal / acceptance criteria: Relocate the overview and device pages into `web/src/app/pages/workspace-hub/outboard-hardware/`, preserve the dedicated device routes, and keep the overview live-status rollups intact inside the hub.
@@ -23703,9 +23703,18 @@ Subtasks:
         - Required outputs: relocated Outboard Hardware pages, canonical `/workspace/outboard-hardware/*` routes, and focused page regressions.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 18:12 EDT - Codex
+        Last updated: 2026-04-13 18:45 EDT - Codex
+        Completion notes:
+        - Added the workspace-hub Outboard Hardware route wrappers under `web/src/app/pages/workspace-hub/outboard-hardware/`, including a shared outlet that reuses the existing outboard device catalog/context so the canonical `/workspace/outboard-hardware/*` routes now mount the real overview and device pages inside `WorkspaceHubShell`.
+        - Parameterized the shared Outboard Hardware page bodies with explicit route builders in `web/src/app/pages/OutboardHardwareOverviewPage.tsx`, `web/src/app/pages/OutboardHardwareDevicePage.tsx`, and `web/src/app/pages/outboardHardwareRoutes.ts`, so the canonical hub pages stay on `/workspace/outboard-hardware/*` while the legacy `/outboard-hardware/*` tree keeps its current behavior.
+        - Updated `web/src/app/App.tsx` and `web/src/app/App.platformRoute.test.tsx` so the canonical workspace outboard overview and device routes are exercised through the hub shell instead of the placeholder scaffold.
+        - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+        Validation:
+        - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (`1 suite, 17 tests`; React Router future-flag and suspended-resource warnings only)
+        - `npm --prefix web run typecheck` -> PASS
+        - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subD
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Extract Audio Artifacts section bodies under `workspace-hub` and remount them at `/workspace/artifacts/*`
         Description:
         - Goal / acceptance criteria: Split the `AudioArtifactsPage` shell/body boundary, relocate the content-facing section body under `web/src/app/pages/workspace-hub/artifacts/`, and mount canonical artifact routes inside the hub while keeping the existing data/query behavior intact.
@@ -23714,8 +23723,8 @@ Subtasks:
         - Estimated effort: High
         - Required outputs: extracted artifact section body, canonical `/workspace/artifacts/*` routes, and focused artifact regressions.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 18:08 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 18:45 EDT - Codex
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
