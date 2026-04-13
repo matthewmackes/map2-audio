@@ -277,7 +277,7 @@
 .tesira-deploy-modal__asset-list strong {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 0.95rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -287,7 +287,7 @@
 .tesira-offline-banner__body {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-device-card__signals {
@@ -326,7 +326,7 @@
 
 .tesira-offline-banner__title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
 }
 
@@ -364,7 +364,7 @@
 .tesira-quick-console__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-quick-console__table th,
@@ -377,7 +377,7 @@
 
 .tesira-quick-console__table th {
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -493,14 +493,14 @@
 .tesira-presets-tab__empty {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-discovery-modal__device-title,
 .tesira-presets-tab__preset-title {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 0.95rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -512,7 +512,7 @@
 .tesira-discovery-modal__device-error {
   margin: 0;
   color: var(--cds-support-error);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-manual-add-modal__grid,
@@ -675,7 +675,7 @@
 
 .tesira-firmware-tab__device-meta {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-firmware-tab__row-loading {
@@ -736,7 +736,7 @@
 .tesira-dsp-panel__param-title {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 0.95rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -745,7 +745,7 @@
 .tesira-faults-tab__ok-copy {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-levels-tab__meter-shell {
@@ -976,14 +976,14 @@
 .tesira-loop-builder__inventory-card-title {
   margin: 0;
   color: var(--cds-text-primary);
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }
 
 .tesira-loop-builder__inventory-card-meta {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-loop-builder__route {
@@ -1008,7 +1008,7 @@
   border: 1px solid var(--cds-border-subtle);
   background: var(--cds-layer);
   color: var(--cds-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   word-break: break-word;
 }
 
@@ -1019,7 +1019,7 @@
 
 .tesira-loop-builder__route-arrow {
   color: var(--cds-text-secondary);
-  font-size: 1.125rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   line-height: 1;
 }
 
@@ -1200,7 +1200,7 @@
 
 .tesira-eq-tab__label {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .tesira-eq-tab__range,
@@ -1272,7 +1272,7 @@
 
 .tesira-ptp-topology__device-meta {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .tesira-design-canvas {
@@ -1338,7 +1338,7 @@
 
 .tesira-design-canvas__workspace-meta {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .tesira-design-canvas__notice-stack {
