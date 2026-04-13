@@ -7,6 +7,7 @@ const mockUseTesiraDevices = jest.fn()
 const mockUseDeviceLocation = jest.fn()
 const mockUseMPX1State = jest.fn()
 const mockUseIntelFXState = jest.fn()
+const mockUseCluster = jest.fn()
 
 jest.mock('../theme', () => ({
   useTheme: () => ({
@@ -33,6 +34,10 @@ jest.mock('../../map2/intelfxApi', () => ({
   useIntelFXState: (...args: unknown[]) => mockUseIntelFXState(...args),
 }))
 
+jest.mock('../contexts/useCluster', () => ({
+  useCluster: () => mockUseCluster(),
+}))
+
 const { OutboardHardwareShell } =
   jest.requireActual('./OutboardHardwareShell') as typeof import('./OutboardHardwareShell')
 const { OutboardHardwareOverviewPage } =
@@ -54,7 +59,7 @@ function renderOverview(initialEntry = '/outboard-hardware') {
           <Route index element={<OutboardHardwareOverviewPage />} />
           <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
         </Route>
-        <Route path="/tesira" element={<div>Tesira route</div>} />
+        <Route path="/tesira/*" element={<div>Tesira route</div>} />
         <Route path="/edirol-ua1000" element={<div>Edirol route</div>} />
         <Route path="/hotone-jogg" element={<div>HoTone route</div>} />
         <Route path="/mpx1/*" element={<div>MPX1 route</div>} />
@@ -66,6 +71,15 @@ function renderOverview(initialEntry = '/outboard-hardware') {
 
 describe('OutboardHardwareOverviewPage', () => {
   beforeEach(() => {
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      nodes: [],
+      localNodeId: 'node-a',
+      isClusterMode: true,
+      setActiveNode: jest.fn(),
+      getNodeApiPrefix: jest.fn(() => ''),
+      getNodeWsPrefix: jest.fn(() => ''),
+    })
     mockUseTesiraDevices.mockReturnValue({
       data: [
         {
@@ -188,7 +202,17 @@ describe('OutboardHardwareOverviewPage', () => {
     renderOverview()
     const mpx1Card = screen.getByRole('heading', { name: 'MPX1 Rack', level: 2 }).closest('.cds--tile')
     expect(mpx1Card).not.toBeNull()
-    fireEvent.click(within(mpx1Card as HTMLElement).getByRole('button', { name: 'Open dedicated route' }))
+    fireEvent.click(within(mpx1Card as HTMLElement).getByRole('button', { name: 'Open on rack-b' }))
     expect(screen.getByText('MPX1 route')).toBeInTheDocument()
+    expect(mockUseCluster().setActiveNode).toHaveBeenCalledWith('node-b')
+  })
+
+  it('opens the Tesira dashboard route scoped from the live fleet summary', () => {
+    renderOverview()
+    const tesiraCard = screen.getByRole('heading', { name: 'Tesira AVB', level: 2 }).closest('.cds--tile')
+    expect(tesiraCard).not.toBeNull()
+    fireEvent.click(within(tesiraCard as HTMLElement).getByRole('button', { name: 'Open on rack-a' }))
+    expect(screen.getByText('Tesira route')).toBeInTheDocument()
+    expect(mockUseCluster().setActiveNode).toHaveBeenCalledWith(null)
   })
 })

@@ -23328,7 +23328,7 @@ Last updated: 2026-04-13 16:26 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T1002
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add node-targeted launch affordances from Outboard Hardware rollups into dedicated routes
 Description:
 - Goal / acceptance criteria: Use the existing inventory/location data already shown in `/outboard-hardware` to help operators open the most relevant dedicated route with the correct node context or an explicit switch affordance, reducing the manual “find the right node after opening the device page” step. Keep the implementation frontend-only unless a smaller backend contract is proven necessary.
@@ -23337,8 +23337,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: clarified route/node launch contract, focused implementation, regression coverage, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:22 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 16:33 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/OutboardHardwareOverviewPage.tsx` so each dedicated-route button now derives a frontend-only route target from the same inventory and live-status data already shown on the overview, instead of always dropping operators into a generic route without node context.
+  - Added node-aware launch behavior for MPX1 and IntelFX that switches the shared cluster selection to the detected hardware node before opening the dedicated rack route, which removes the extra manual node-switch step when the device lives on a remote rack host.
+  - Added Tesira launch targeting that jumps straight into the single discovered device dashboard when the fleet summary resolves to one known unit, while still falling back to the fleet route when the overview cannot safely infer a single device target.
+  - Expanded `web/src/app/pages/OutboardHardwareOverviewPage.test.tsx` to cover both remote rack node-targeted launches and the Tesira device-dashboard launch path.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx` -> PASS (`1 suite, 6 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T1003
 Status: [ ] Todo

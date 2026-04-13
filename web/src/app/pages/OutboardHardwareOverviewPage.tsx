@@ -13,6 +13,7 @@ import {
   type OutboardHardwareDevice,
   type OutboardHardwareShellContextValue,
 } from './OutboardHardwareShell'
+import { useCluster } from '../contexts/useCluster'
 
 type StatusTagType = 'green' | 'red' | 'blue' | 'cool-gray' | 'warm-gray'
 type OutboardHardwareLiveStatusGroup = 'healthy' | 'attention' | 'offline'
@@ -29,6 +30,12 @@ type OutboardHardwareLiveStatus = {
   type: StatusTagType
   summary: string
   facts: LiveStatusFact[]
+}
+
+type OutboardHardwareRouteTarget = {
+  label: string
+  path: string
+  nodeId: string | null
 }
 
 function categoryTagType(category: OutboardHardwareDevice['category']): 'red' | 'blue' | 'green' {
@@ -302,6 +309,71 @@ function useOutboardHardwareLiveStatus(): Record<string, OutboardHardwareLiveSta
   )
 }
 
+function routeTargetLabel(nodeName: string | null | undefined): string {
+  return nodeName?.trim() ? `Open on ${nodeName}` : 'Open dedicated route'
+}
+
+function resolveRouteTarget(
+  device: OutboardHardwareDevice,
+  liveStatusByDeviceId: Record<string, OutboardHardwareLiveStatus>,
+  locations: {
+    edirol: DeviceLocation | null
+    jogg: DeviceLocation | null
+    mpx1: DeviceLocation | null
+    intelfx: DeviceLocation | null
+  },
+  tesiraDevices: TesiraDeviceSummary[],
+  localNodeId: string,
+): OutboardHardwareRouteTarget | null {
+  const dedicatedRoute = resolveOutboardHardwareStandaloneRoute(device.deviceId)
+  if (!dedicatedRoute) {
+    return null
+  }
+
+  if (device.deviceId === 'biamp-tesira') {
+    if (tesiraDevices.length === 1) {
+      const deviceSummary = tesiraDevices[0]
+      const nodeId = deviceSummary.source_node_id && deviceSummary.source_node_id !== localNodeId
+        ? deviceSummary.source_node_id
+        : null
+      const nodeName = deviceSummary.source_hostname ?? deviceSummary.source_node_id ?? null
+      return {
+        label: routeTargetLabel(nodeName),
+        path: `/tesira/${deviceSummary.device_id}/dashboard`,
+        nodeId,
+      }
+    }
+
+    const primaryNode = dedupeLabels(tesiraDevices.flatMap((entry) => [entry.source_hostname, entry.source_node_id]))[0] ?? null
+    return {
+      label: routeTargetLabel(primaryNode),
+      path: dedicatedRoute,
+      nodeId: null,
+    }
+  }
+
+  const location =
+    device.deviceId === 'edirol-ua1000'
+      ? locations.edirol
+      : device.deviceId === 'hotone-jogg'
+        ? locations.jogg
+        : device.deviceId === 'lexicon-mpx1'
+          ? locations.mpx1
+          : device.deviceId === 'eventide-intelfx'
+            ? locations.intelfx
+            : null
+
+  const nodeId = location?.nodeId && location.nodeId !== localNodeId ? location.nodeId : null
+  const nodeName = describeLocation(location)
+  const status = liveStatusByDeviceId[device.deviceId]
+
+  return {
+    label: routeTargetLabel(nodeName),
+    path: dedicatedRoute,
+    nodeId: status?.group === 'offline' && !location ? null : nodeId,
+  }
+}
+
 function matchesStatusFilter(status: OutboardHardwareLiveStatus, filter: StatusFilter): boolean {
   return filter === 'all' || status.group === filter
 }
@@ -316,12 +388,21 @@ function filterLabel(filter: StatusFilter): string {
 function OutboardHardwareCard({
   device,
   liveStatus,
+  routeTarget,
 }: {
   device: OutboardHardwareDevice
   liveStatus: OutboardHardwareLiveStatus
+  routeTarget: OutboardHardwareRouteTarget | null
 }) {
   const navigate = useNavigate()
-  const dedicatedRoute = resolveOutboardHardwareStandaloneRoute(device.deviceId)
+  const { setActiveNode } = useCluster()
+  const dedicatedRoute = routeTarget?.path ?? resolveOutboardHardwareStandaloneRoute(device.deviceId)
+
+  const openDedicatedRoute = () => {
+    if (!routeTarget) return
+    setActiveNode(routeTarget.nodeId)
+    navigate(routeTarget.path)
+  }
 
   return (
     <Tile className="outboard-hardware-page__card">
@@ -363,8 +444,8 @@ function OutboardHardwareCard({
           Open in workspace
         </Button>
         {dedicatedRoute ? (
-          <Button kind="secondary" size="sm" onClick={() => navigate(dedicatedRoute)}>
-            Open dedicated route
+          <Button kind="secondary" size="sm" onClick={openDedicatedRoute}>
+            {routeTarget?.label ?? 'Open dedicated route'}
           </Button>
         ) : null}
       </div>
@@ -374,6 +455,12 @@ function OutboardHardwareCard({
 
 export function OutboardHardwareOverviewPage() {
   const { devices } = useOutletContext<OutboardHardwareShellContextValue>()
+  const { localNodeId } = useCluster()
+  const tesiraDevicesQuery = useTesiraDevices()
+  const edirolLocation = useDeviceLocation('edirol-ua1000')
+  const joggLocation = useDeviceLocation('hotone-jogg')
+  const mpx1Location = useDeviceLocation('lexicon-mpx1')
+  const intelfxLocation = useDeviceLocation('rocktron-intelfx')
   const liveStatusByDeviceId = useOutboardHardwareLiveStatus()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
@@ -387,6 +474,37 @@ export function OutboardHardwareOverviewPage() {
   const filteredDevices = useMemo(
     () => devices.filter((device) => matchesStatusFilter(liveStatusByDeviceId[device.deviceId], statusFilter)),
     [devices, liveStatusByDeviceId, statusFilter],
+  )
+
+  const routeTargetsByDeviceId = useMemo(
+    () =>
+      Object.fromEntries(
+        devices.map((device) => [
+          device.deviceId,
+          resolveRouteTarget(
+            device,
+            liveStatusByDeviceId,
+            {
+              edirol: edirolLocation.location,
+              jogg: joggLocation.location,
+              mpx1: mpx1Location.location,
+              intelfx: intelfxLocation.location,
+            },
+            tesiraDevicesQuery.data ?? [],
+            localNodeId,
+          ),
+        ]),
+      ) as Record<string, OutboardHardwareRouteTarget | null>,
+    [
+      devices,
+      edirolLocation.location,
+      intelfxLocation.location,
+      joggLocation.location,
+      liveStatusByDeviceId,
+      localNodeId,
+      mpx1Location.location,
+      tesiraDevicesQuery.data,
+    ],
   )
 
   return (
@@ -490,6 +608,7 @@ export function OutboardHardwareOverviewPage() {
                 summary: 'Live status is not available for this device yet.',
                 facts: [],
               }}
+              routeTarget={routeTargetsByDeviceId[device.deviceId] ?? null}
             />
           ))
         )}
