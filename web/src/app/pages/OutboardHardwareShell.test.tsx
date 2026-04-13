@@ -7,6 +7,9 @@ const mockUseTesiraDevices = jest.fn()
 const mockUseDeviceLocation = jest.fn()
 const mockUseMPX1State = jest.fn()
 const mockUseIntelFXState = jest.fn()
+const mockUseMPX1OverviewStatus = jest.fn()
+const mockUseIntelFXOverviewStatus = jest.fn()
+const mockUseCluster = jest.fn()
 
 jest.mock('../theme', () => ({
   useTheme: () => ({
@@ -27,10 +30,16 @@ jest.mock('../hooks/useDeviceLocation', () => ({
 
 jest.mock('../../map2/mpx1Api', () => ({
   useMPX1State: (...args: unknown[]) => mockUseMPX1State(...args),
+  useMPX1OverviewStatus: (...args: unknown[]) => mockUseMPX1OverviewStatus(...args),
 }))
 
 jest.mock('../../map2/intelfxApi', () => ({
   useIntelFXState: (...args: unknown[]) => mockUseIntelFXState(...args),
+  useIntelFXOverviewStatus: (...args: unknown[]) => mockUseIntelFXOverviewStatus(...args),
+}))
+
+jest.mock('../contexts/useCluster', () => ({
+  useCluster: () => mockUseCluster(),
 }))
 
 const { OutboardHardwareShell } =
@@ -66,10 +75,21 @@ function renderShell(initialEntry = '/outboard-hardware') {
 
 describe('OutboardHardwareShell', () => {
   beforeEach(() => {
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      nodes: [],
+      localNodeId: 'node-a',
+      isClusterMode: true,
+      setActiveNode: jest.fn(),
+      getNodeApiPrefix: jest.fn(() => ''),
+      getNodeWsPrefix: jest.fn(() => ''),
+    })
     mockUseTesiraDevices.mockReturnValue({ data: [], isLoading: false, error: null })
     mockUseDeviceLocation.mockReturnValue({ location: null, isLoading: false, error: null })
     mockUseMPX1State.mockReturnValue({ state: null, error: null })
     mockUseIntelFXState.mockReturnValue({ state: null, error: null })
+    mockUseMPX1OverviewStatus.mockReturnValue({ state: null, error: null, isLoading: false, refresh: jest.fn() })
+    mockUseIntelFXOverviewStatus.mockReturnValue({ state: null, error: null, isLoading: false, refresh: jest.fn() })
   })
 
   it('lists the overview and all five device entries in the shared shell', () => {

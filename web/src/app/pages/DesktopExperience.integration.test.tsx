@@ -16,6 +16,7 @@ const mockRestartBackend = jest.fn()
 const mockReloadHomeDesktopShell = jest.fn()
 const mockReturnHomeDesktopToBoot = jest.fn()
 const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {}
+const mockUseCluster = jest.fn()
 const mockDeviceLocations: Record<string, { nodeId: string; hostname: string; kind: string; status: string } | null> = {
   'edirol-ua1000': { nodeId: 'node-a', hostname: 'rack-a', kind: 'usb_audio', status: 'online' },
   'hotone-jogg': null,
@@ -84,6 +85,10 @@ jest.mock('../hooks/useNodeTopology', () => ({
   }),
 }))
 
+jest.mock('../contexts/useCluster', () => ({
+  useCluster: () => mockUseCluster(),
+}))
+
 jest.mock('../hooks/useHomePlatformStatus', () => ({
   useHomePlatformStatus: () => ({
     avb: { label: 'AVB: operational', state: 'ok' },
@@ -136,6 +141,12 @@ jest.mock('../../map2/mpx1Api', () => ({
     getMidiPorts: jest.fn(),
     disconnectMidi: jest.fn(),
   },
+  useMPX1OverviewStatus: () => ({
+    state: { connected: false, current_program: 0, rtmidi_available: false },
+    error: null,
+    isLoading: false,
+    refresh: jest.fn(),
+  }),
   useMPX1State: () => ({
     state: { connected: false, current_program: 0 },
     programs: [],
@@ -146,6 +157,12 @@ jest.mock('../../map2/mpx1Api', () => ({
 }))
 
 jest.mock('../../map2/intelfxApi', () => ({
+  useIntelFXOverviewStatus: () => ({
+    state: { connected: false, current_program: 0, rtmidi_available: false },
+    error: null,
+    isLoading: false,
+    refresh: jest.fn(),
+  }),
   useIntelFXState: () => ({
     state: { connected: false, current_program: 0, rtmidi_available: false },
     programs: [],
@@ -256,6 +273,15 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
 
 describe('Desktop experience integration', () => {
   beforeEach(() => {
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      nodes: [],
+      localNodeId: 'MANAGEMENT-NODE-1',
+      isClusterMode: false,
+      setActiveNode: jest.fn(),
+      getNodeApiPrefix: jest.fn(() => ''),
+      getNodeWsPrefix: jest.fn(() => ''),
+    })
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
       observe() {}

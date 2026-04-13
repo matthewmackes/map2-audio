@@ -7,9 +7,7 @@
   --workspace-page-template-sidebar-max: 22rem;
   min-height: 100%;
   color: var(--cds-text-primary);
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--cds-link-primary) 12%, transparent), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer) 90%, black), var(--cds-background));
+  background: color-mix(in srgb, var(--cds-layer) 10%, var(--cds-background));
 }
 
 .physical-surfaces-shell__frame {

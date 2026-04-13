@@ -23395,7 +23395,7 @@ Last updated: 2026-04-13 16:39 EDT - Codex
   - `rg -n "linear-gradient\\(#0a1628, #050d18\\)" .github/copilot-instructions.md .gemini/instructions.md` -> PASS (`0 matches`)
 
 ID: T1005
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Remove gradient styling from CSS and inline UI surfaces across the web app
 Description:
 - Goal / acceptance criteria: Audit and replace all UI gradients used in CSS and inline React styles with solid Carbon-aligned colors or approved tokens, including routed pages, modals, plugin cards, buttons, decorative shells, and shared primitives. Exclude non-UI documentation prose and archival evidence artifacts unless they are used as current project guidance.
@@ -23403,9 +23403,67 @@ Description:
 - Dependencies: T1004
 - Estimated effort: High
 - Required outputs: codebase-wide gradient inventory, flat replacements, focused frontend regression updates where visuals are asserted, and validation evidence.
-Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:29 EDT - Codex
+Subtasks:
+  - ID: T1005-subA
+    Status: [✓] Done
+    Title: Flatten shared shell and header gradients in routed workspace chrome
+    Description:
+    - Goal / acceptance criteria: Remove gradient backgrounds and decorative gradient overlays from the shared routed shell/header surfaces first, including `AppShell.css`, `PageHeader.css`, and the outboard/physical-surface shell wrappers, while preserving Carbon-aligned hierarchy and readable contrast.
+    - Why it matters: These shell surfaces frame a large portion of the app, so removing gradients here gives immediate broad coverage and establishes the flat styling pattern for the rest of T1005.
+    - Dependencies: T1004
+    - Estimated effort: Medium
+    - Required outputs: flat shell/header CSS replacements, focused regression updates if needed, and validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-13 17:19 EDT - Codex
+    - Completion notes:
+      - Flattened the top-level routed shell background in `web/src/app/layout/AppShell.css` by replacing the radial/vertical gradient stack with a solid Carbon-mixed backdrop while keeping the subtle fixed grid overlay as a non-gradient line pattern.
+      - Flattened `web/src/app/components/PageHeader.css` so the shared page header, accent rail wash, and brand block now use solid Carbon layer fills instead of gradient backgrounds.
+      - Flattened the wrapper backgrounds in `web/src/app/pages/OutboardHardwareShell.css` and `web/src/app/pages/PhysicalSurfacesShell.css`, removing the decorative shell gradients from those grouped workspace roots.
+      - Updated `web/src/app/pages/OutboardHardwareShell.test.tsx` and `web/src/app/pages/DesktopExperience.integration.test.tsx` to provide the cluster-context and lightweight rack-status mocks now required by the shipped overview surface, restoring the focused regression harness after the recent outboard hardware work.
+      - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS (`2 suites, 7 tests`)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+  - ID: T1005-subB
+    Status: [ ] Todo
+    Title: Flatten routed page hero and poster fallback gradients
+    Description:
+    - Goal / acceptance criteria: Remove gradient styling from routed-page hero cards and poster fallback surfaces, starting with the inventoried `posterFallbacks.css`, `CPUPerformancePage*`, `MOTURMEPage.tsx`, and small routed summary panels.
+    - Why it matters: These are still operator-visible page-level surfaces that would keep violating the no-gradient rule even after the shell chrome is flattened.
+    - Dependencies: T1005-subA
+    - Estimated effort: Medium
+    - Required outputs: flat page/panel replacements and validation evidence.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 16:47 EDT - Codex
+  - ID: T1005-subC
+    Status: [ ] Todo
+    Title: Flatten category and plugin appearance helper gradients
+    Description:
+    - Goal / acceptance criteria: Remove gradient-producing helpers and preview surfaces from category-style and plugin-appearance utilities so shared editor/plugin surfaces no longer reintroduce gradient fills through helper contracts.
+    - Why it matters: Helper-level gradient contracts spread styling regressions faster than isolated page CSS.
+    - Dependencies: T1005-subA
+    - Estimated effort: Medium
+    - Required outputs: updated helper contracts, dependent surface updates, and validation evidence.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 16:47 EDT - Codex
+  - ID: T1005-subD
+    Status: [ ] Todo
+    Title: Flatten remaining non-visualization shared primitives and route panels
+    Description:
+    - Goal / acceptance criteria: Remove gradient use from remaining non-visualization shared UI primitives and route panels such as routing summaries, page transitions, node-context banners, and similar non-chart surfaces.
+    - Why it matters: T1007 should be reserved for visualization/chart/SVG/canvas concerns; non-visualization UI needs a separate cleanup slice.
+    - Dependencies: T1005-subA, T1005-subB, T1005-subC
+    - Estimated effort: High
+    - Required outputs: flat non-visualization UI replacements and validation evidence.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 16:47 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 16:47 EDT - Codex
 
 ID: T1006
 Status: [✓] Done

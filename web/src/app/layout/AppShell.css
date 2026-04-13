@@ -13,15 +13,7 @@
   --platform-shell-accent: var(--cds-link-primary, var(--interactive));
   --platform-shell-accent-soft: var(--accent, var(--cds-link-primary, var(--interactive)));
   position: relative;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--platform-shell-accent) 10%, transparent), transparent 24%),
-    radial-gradient(circle at bottom left, color-mix(in srgb, var(--platform-shell-accent-soft) 8%, transparent), transparent 30%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 84%, var(--platform-shell-bg)) 0%,
-      color-mix(in srgb, var(--cds-layer, var(--surface)) 78%, var(--platform-shell-bg)) 20%,
-      var(--platform-shell-bg) 100%
-    );
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 14%, var(--platform-shell-bg));
 }
 
 .app-shell:not(:has(.hp-root))::before {
@@ -31,10 +23,10 @@
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--platform-shell-border) 28%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--platform-shell-border) 28%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--platform-shell-border) 20%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--platform-shell-border) 20%, transparent) 1px, transparent 1px);
   background-size: 28px 28px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 100%);
+  opacity: 0.35;
 }
 
 .app-shell--audio-grid {
