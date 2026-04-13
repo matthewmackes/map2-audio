@@ -180,7 +180,8 @@ export function GateCard({
           border: 1px solid #555;
           border-radius: 4px;
           color: #888;
-          font-size: 10px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           padding: 4px 8px;
           cursor: pointer;
           transition: all 0.2s;
@@ -249,7 +250,8 @@ export function GateCard({
         }
 
         .gate-attenuation {
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size);
+          line-height: var(--cds-helper-text-01-line-height);
           color: #888;
           font-family: var(--font-ui-tight);
         }
@@ -282,7 +284,8 @@ export function GateCard({
         }
 
         .level-label {
-          font-size: 10px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           color: #666;
           font-family: var(--font-ui-tight);
         }

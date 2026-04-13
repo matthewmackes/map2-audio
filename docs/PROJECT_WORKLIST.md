@@ -20194,6 +20194,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Continued `T863` in `web/src/app/components/NodeNav/NodeNavChip.css` and `web/src/app/components/ApiActivityOverlay/ApiActivityOverlay.css`, normalizing the remaining tiny navigation-chip and API-overlay text sizes to a consistent helper/label scale without changing the surrounding interaction/layout behavior.
   - Continued `T863` in `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` and `web/src/app/pages/EdirolUA1000Page.tsx`, normalizing the remaining plugin-shell menu/description copy and Edirol fallback support text sizing while preserving the existing scaled plugin title and large panel fallback labels.
   - Continued `T863` in `web/src/app/components/NumericInput/NumericInput.css`, replacing the remaining label/value/unit/meta size literals with Carbon helper/body/legal/heading tokens while preserving the existing control dimensions and responsive behavior.
+  - Continued `T863` in `web/src/app/components/Dynamics/CompressorCard.tsx`, `web/src/app/components/Dynamics/GateCard.tsx`, and `web/src/app/components/Dynamics/LimiterCard.tsx`, converting the remaining bypass/footer/status helper text literals to Carbon label/helper tokens while leaving the surrounding dynamics layout and metering behavior unchanged.
 
 ID: T864
 Status: [✓] Done
