@@ -153,7 +153,7 @@ export default function MOTURMEPage() {
   return (
     <div className="motu-rme-page" style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%)',
+      background: '#0a0a0a',
       padding: '24px',
     }}>
       <ShellWindowTitleStrip />
@@ -187,7 +187,7 @@ export default function MOTURMEPage() {
 
       {/* Hero Section - Product Photos */}
       <Card style={{ 
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.05))',
+        background: 'rgba(15, 23, 42, 0.9)',
         border: '1px solid rgba(37, 99, 235, 0.2)',
         marginBottom: 24,
       }}>
@@ -198,7 +198,7 @@ export default function MOTURMEPage() {
               <div style={{
                 width: '100%',
                 height: 180,
-                background: 'linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(37, 99, 235, 0.1))',
+                background: 'rgba(42, 32, 20, 0.78)',
                 border: '1px solid rgba(37, 99, 235, 0.35)',
                 borderRadius: 12,
                 display: 'flex',
@@ -221,8 +221,9 @@ export default function MOTURMEPage() {
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(37, 99, 235, 0.3), transparent)',
+                background: 'rgba(21, 42, 72, 0.92)',
                 border: '2px solid #2563eb',
+                boxShadow: '0 0 0 6px rgba(37, 99, 235, 0.12)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -240,7 +241,7 @@ export default function MOTURMEPage() {
               <div style={{
                 width: '100%',
                 height: 180,
-                background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.1), rgba(37, 99, 235, 0.1))',
+                background: 'rgba(12, 46, 39, 0.8)',
                 border: '1px solid rgba(0, 255, 157, 0.35)',
                 borderRadius: 12,
                 display: 'flex',
@@ -419,7 +420,7 @@ export default function MOTURMEPage() {
 
           {/* Total RTL Display */}
           <Box sx={{ 
-            background: 'linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(255, 68, 68, 0.1))',
+            background: 'rgba(63, 38, 20, 0.78)',
             border: '2px solid rgba(255, 170, 0, 0.5)',
             borderRadius: 3,
             padding: 3,
@@ -473,7 +474,7 @@ export default function MOTURMEPage() {
           </Typography>
           
           <Box sx={{ 
-            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.05))',
+            background: 'rgba(15, 23, 42, 0.78)',
             borderRadius: 3,
             padding: 4,
             display: 'flex',
@@ -547,7 +548,7 @@ function SignalNode({ label, color, latency }: { label: string; color: string; l
         width: 100,
         height: 100,
         borderRadius: 3,
-        background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+        background: `${color}1f`,
         border: `2px solid ${color}`,
         display: 'flex',
         flexDirection: 'column',
@@ -575,7 +576,7 @@ function Arrow({ label }: { label?: string }) {
       <div style={{ 
         width: 60, 
         height: 2, 
-        background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
+        background: '#3b82f6',
         position: 'relative',
       }}>
         <div style={{

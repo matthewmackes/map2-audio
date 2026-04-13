@@ -418,7 +418,7 @@ export default function CPUPerformancePage() {
 
       {/* Summary Cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mt: 3 }}>
-        <Card style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+        <Card style={{ background: 'rgba(31, 45, 68, 0.72)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
           <CardContent>
             <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>
               Biggest Generation Leap
@@ -432,7 +432,7 @@ export default function CPUPerformancePage() {
           </CardContent>
         </Card>
 
-        <Card style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(34, 197, 94, 0.1))', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+        <Card style={{ background: 'rgba(45, 31, 68, 0.72)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
           <CardContent>
             <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>
               Latest Generation Gain
@@ -446,7 +446,7 @@ export default function CPUPerformancePage() {
           </CardContent>
         </Card>
 
-        <Card style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(245, 158, 11, 0.1))', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+        <Card style={{ background: 'rgba(24, 54, 39, 0.72)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
           <CardContent>
             <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>
               Sweet Spot (Price/Performance)

@@ -40,7 +40,7 @@ export function ParallelRoutingPanel({
         padding: 16,
         borderRadius: 12,
         border: '1px solid rgba(99, 102, 241, 0.16)',
-        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.82))',
+        background: 'rgba(15, 23, 42, 0.88)',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>

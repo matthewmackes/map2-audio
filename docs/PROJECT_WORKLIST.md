@@ -23427,7 +23427,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T1005-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Flatten routed page hero and poster fallback gradients
     Description:
     - Goal / acceptance criteria: Remove gradient styling from routed-page hero cards and poster fallback surfaces, starting with the inventoried `posterFallbacks.css`, `CPUPerformancePage*`, `MOTURMEPage.tsx`, and small routed summary panels.
@@ -23436,8 +23436,19 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: flat page/panel replacements and validation evidence.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 16:47 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 17:39 EDT - Codex
+    Completion notes:
+      - Replaced the gradient-only poster fallback variants in `web/src/app/pages/posterFallbacks.css` with flat per-route solid backgrounds so routed product and catalog tiles no longer violate the no-gradients rule when image artwork is unavailable.
+      - Flattened `web/src/app/pages/CPUPerformancePage.css` and the summary cards in `web/src/app/pages/CPUPerformancePage.tsx`, removing decorative page and card gradients while preserving the functional comparison content.
+      - Flattened the routed MOTU/RME page chrome in `web/src/app/pages/MOTURMEPage.tsx`, including the page backdrop, hero card, product-photo frames, ADAT status medallion, latency callout, signal-flow stage, signal nodes, and arrow treatment. Functional meter-bar gradients were intentionally left in place for this slice because they encode live level state rather than decorative surface styling.
+      - Flattened the routed summary panel shells in `web/src/app/components/Routing/ParallelRoutingPanel.tsx` and `web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx` to solid surfaces so remote-routing pages align with the no-gradients rule.
+      - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    Validation:
+      - `rg -n "gradient|radial-gradient" web/src/app/pages/posterFallbacks.css web/src/app/pages/CPUPerformancePage.css web/src/app/pages/CPUPerformancePage.tsx web/src/app/pages/MOTURMEPage.tsx web/src/app/components/Routing/ParallelRoutingPanel.tsx web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx` -> remaining hits limited to MOTU meter fill bars, which are functional metering visuals rather than page-surface decoration
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (`1 suite, 13 tests`; React Router future-flag and suspended-resource warnings only)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T1005-subC
     Status: [ ] Todo
     Title: Flatten category and plugin appearance helper gradients
