@@ -528,7 +528,7 @@ export function EdirolUA1000Page() {
                   <div style="padding: 40px; color: #888; text-align: center;">
                     <div style="font-size: 48px; margin-bottom: 12px;">FRONT</div>
                     <div>Front Panel Image</div>
-                    <div style="font-size: 12px; opacity: 0.7;">XLR/TRS Inputs 1-4 • Headphones • Gain Controls</div>
+                    <div style="font-size: 0.75rem; opacity: 0.7;">XLR/TRS Inputs 1-4 • Headphones • Gain Controls</div>
                   </div>
                 `
               }}
@@ -560,7 +560,7 @@ export function EdirolUA1000Page() {
                   <div style="padding: 40px; color: #888; text-align: center;">
                     <div style="font-size: 48px; margin-bottom: 12px;">REAR</div>
                     <div>Rear Panel Image</div>
-                    <div style="font-size: 12px; opacity: 0.7;">Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB</div>
+                    <div style="font-size: 0.75rem; opacity: 0.7;">Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB</div>
                   </div>
                 `
               }}

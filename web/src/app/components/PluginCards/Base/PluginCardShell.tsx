@@ -466,7 +466,7 @@ export function PluginCardShell({
           border-radius: 4px;
           background: transparent;
           color: var(--cds-text-secondary, #c6c6c6);
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size, 0.75rem);
           cursor: pointer;
           text-align: left;
         }
@@ -484,7 +484,7 @@ export function PluginCardShell({
 
         .plugin-card-description {
           padding: 8px 16px;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: var(--cds-text-secondary, #a8a8a8);
           background: var(--cds-layer);
           border-bottom: 1px solid var(--cds-border-subtle, #393939);
@@ -554,7 +554,7 @@ export function PluginCardShell({
           }
 
           .plugin-card-title {
-            font-size: calc(12px * var(--font-scale));
+            font-size: calc(var(--cds-label-01-font-size, 0.75rem) * var(--font-scale));
           }
 
           .plugin-card-watermark svg {

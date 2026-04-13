@@ -20192,6 +20192,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Continued `T863` with another small shared-surface bundle in `web/src/app/components/pluginAppearance/PluginAppearanceControls.css`, `web/src/app/pages/McuPage.css`, `web/src/app/pages/MaschinePage.css`, `web/src/app/components/NodeContextBanner/NodeContextBanner.css`, and `web/src/app/hooks/useExportData.ts`, replacing remaining helper/body/title/export-text literals with Carbon-aligned token or rem sizing while leaving the denser artwork/control surfaces untouched.
   - Continued `T863` with a final small route/component bundle in `web/src/app/components/NodeGraph/NodeGraph.css`, `web/src/app/components/ViewportPolicyGate.css`, and `web/src/app/pages/LabsPage.css`, replacing the remaining non-responsive label/body/heading literals with Carbon tokens while preserving the existing `clamp()`-based hero and surface-display typography.
   - Continued `T863` in `web/src/app/components/NodeNav/NodeNavChip.css` and `web/src/app/components/ApiActivityOverlay/ApiActivityOverlay.css`, normalizing the remaining tiny navigation-chip and API-overlay text sizes to a consistent helper/label scale without changing the surrounding interaction/layout behavior.
+  - Continued `T863` in `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` and `web/src/app/pages/EdirolUA1000Page.tsx`, normalizing the remaining plugin-shell menu/description copy and Edirol fallback support text sizing while preserving the existing scaled plugin title and large panel fallback labels.
 
 ID: T864
 Status: [✓] Done
