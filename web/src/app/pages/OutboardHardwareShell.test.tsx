@@ -3,6 +3,11 @@ import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
+const mockUseTesiraDevices = jest.fn()
+const mockUseDeviceLocation = jest.fn()
+const mockUseMPX1State = jest.fn()
+const mockUseIntelFXState = jest.fn()
+
 jest.mock('../theme', () => ({
   useTheme: () => ({
     theme: { carbonTheme: 'g100' },
@@ -10,6 +15,22 @@ jest.mock('../theme', () => ({
     setTheme: jest.fn(),
     themes: {},
   }),
+}))
+
+jest.mock('../components/Tesira/hooks/useTesiraApi', () => ({
+  useTesiraDevices: () => mockUseTesiraDevices(),
+}))
+
+jest.mock('../hooks/useDeviceLocation', () => ({
+  useDeviceLocation: (...args: unknown[]) => mockUseDeviceLocation(...args),
+}))
+
+jest.mock('../../map2/mpx1Api', () => ({
+  useMPX1State: (...args: unknown[]) => mockUseMPX1State(...args),
+}))
+
+jest.mock('../../map2/intelfxApi', () => ({
+  useIntelFXState: (...args: unknown[]) => mockUseIntelFXState(...args),
 }))
 
 const { OutboardHardwareShell } =
@@ -44,6 +65,13 @@ function renderShell(initialEntry = '/outboard-hardware') {
 }
 
 describe('OutboardHardwareShell', () => {
+  beforeEach(() => {
+    mockUseTesiraDevices.mockReturnValue({ data: [], isLoading: false, error: null })
+    mockUseDeviceLocation.mockReturnValue({ location: null, isLoading: false, error: null })
+    mockUseMPX1State.mockReturnValue({ state: null, error: null })
+    mockUseIntelFXState.mockReturnValue({ state: null, error: null })
+  })
+
   it('lists the overview and all five device entries in the shared shell', () => {
     renderShell()
 

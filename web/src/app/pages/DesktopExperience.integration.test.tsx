@@ -16,6 +16,12 @@ const mockRestartBackend = jest.fn()
 const mockReloadHomeDesktopShell = jest.fn()
 const mockReturnHomeDesktopToBoot = jest.fn()
 const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {}
+const mockDeviceLocations: Record<string, { nodeId: string; hostname: string; kind: string; status: string } | null> = {
+  'edirol-ua1000': { nodeId: 'node-a', hostname: 'rack-a', kind: 'usb_audio', status: 'online' },
+  'hotone-jogg': null,
+  'lexicon-mpx1': { nodeId: 'node-b', hostname: 'rack-b', kind: 'midi', status: 'online' },
+  'rocktron-intelfx': { nodeId: 'node-c', hostname: 'rack-c', kind: 'midi', status: 'online' },
+}
 const mockSpecialSettings = {
   enabled: true,
   hiddenPlugins: [],
@@ -40,6 +46,11 @@ jest.mock('../hooks/useSpecialSettings', () => ({
 jest.mock('../hooks/useDeviceLocation', () => ({
   useClusterHardwareInventory: () => ({
     data: { nodes: {} },
+    isLoading: false,
+    error: null,
+  }),
+  useDeviceLocation: (deviceType: string) => ({
+    location: mockDeviceLocations[deviceType] ?? null,
     isLoading: false,
     error: null,
   }),
@@ -131,6 +142,40 @@ jest.mock('../../map2/mpx1Api', () => ({
     shadow: {},
     setProgram: jest.fn(),
     refresh: jest.fn(),
+  }),
+}))
+
+jest.mock('../../map2/intelfxApi', () => ({
+  useIntelFXState: () => ({
+    state: { connected: false, current_program: 0, rtmidi_available: false },
+    programs: [],
+    shadow: {},
+    setProgram: jest.fn(),
+    refresh: jest.fn(),
+    error: null,
+  }),
+}))
+
+jest.mock('../components/Tesira/hooks/useTesiraApi', () => ({
+  useTesiraDevices: () => ({
+    data: [
+      {
+        device_id: 'tesira-main',
+        host: '10.0.0.10',
+        port: 23,
+        name: 'Tesira Forte',
+        connected: true,
+        serial_number: 'ABC123',
+        firmware_version: '1.0.0',
+        fault_count: 0,
+        avb_stream_count: 4,
+        ptp_state: 'slave',
+        source_node_id: 'node-a',
+        source_hostname: 'rack-a',
+      },
+    ],
+    isLoading: false,
+    error: null,
   }),
 }))
 

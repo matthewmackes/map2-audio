@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-13 - Shipped `T998` by adding the unified `/outboard-hardware` routed shell, pinning the grouped launcher on Home, removing the five dedicated outboard routes from the Start Menu tile set, and seeding the next browser-smoke/live-status follow-up tasks as `T999` and `T1000`.
+Last updated: 2026-04-13 - Completed `T1000` by adding live-status rollups to the `/outboard-hardware` overview cards, reusing the existing frontend hook surfaces, and tightening IntelFX device-location alias coverage without introducing a new backend summary API.
 
 ## Performance Brain
 
@@ -23282,7 +23282,7 @@ Last updated: 2026-04-13 15:51 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T1000
-Status: [ ] Todo
+Status: [✓] Done
 Title: Surface live-status rollups inside the Outboard Hardware overview without adding a new backend API
 Description:
 - Goal / acceptance criteria: Extend the new `/outboard-hardware` overview cards with lightweight live-status rollups derived from the existing dedicated-route hooks or shared frontend status sources so operators can see basic readiness posture before opening a specialized device page, without adding any new backend summary endpoint.
@@ -23291,5 +23291,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Frontend-only status aggregation, device-card status presentation, focused regression coverage, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 15:36 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 15:53 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/OutboardHardwareOverviewPage.tsx` so each outboard card now shows a lightweight live-status rollup derived from the same frontend sources the dedicated routes already trust: Tesira fleet status from `useTesiraDevices`, interface inventory presence from `useDeviceLocation`, and MPX1/IntelFX rack readiness from `useMPX1State` / `useIntelFXState`.
+  - Kept the task frontend-only by reusing existing query and websocket-aware hook families instead of adding any backend summary endpoint; the overview now shows connected/detected/offline posture, node labels, and basic rack/fleet facts before operators open the deeper route.
+  - Tightened `web/src/app/hooks/useDeviceLocation.ts` by adding the missing `rocktron-intelfx` search aliases, which fixes the same inventory lookup inconsistency already used by the dedicated IntelFX page and makes the new overview rollup more reliable.
+  - Added focused regression coverage in `web/src/app/pages/OutboardHardwareOverviewPage.test.tsx`, `web/src/app/pages/OutboardHardwareShell.test.tsx`, `web/src/app/pages/DesktopExperience.integration.test.tsx`, and `web/src/app/hooks/__tests__/useDeviceLocation.test.tsx` for connected/offline rollups and the IntelFX alias lookup.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/__tests__/useDeviceLocation.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS (`6 suites, 18 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS

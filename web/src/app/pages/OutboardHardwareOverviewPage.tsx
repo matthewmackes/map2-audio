@@ -2,12 +2,31 @@ import { Button, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
+import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
+import type { TesiraDeviceSummary } from '../components/Tesira/types'
+import { type DeviceLocation, useDeviceLocation } from '../hooks/useDeviceLocation'
 import { PageHeader } from '../components/PageHeader'
+import { useIntelFXState, type IntelFXState } from '../../map2/intelfxApi'
+import { useMPX1State, type MPX1State } from '../../map2/mpx1Api'
 import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareDevice,
   type OutboardHardwareShellContextValue,
 } from './OutboardHardwareShell'
+
+type StatusTagType = 'green' | 'red' | 'blue' | 'cool-gray' | 'warm-gray'
+
+type LiveStatusFact = {
+  label: string
+  type: StatusTagType
+}
+
+type OutboardHardwareLiveStatus = {
+  label: string
+  type: StatusTagType
+  summary: string
+  facts: LiveStatusFact[]
+}
 
 function categoryTagType(category: OutboardHardwareDevice['category']): 'red' | 'blue' | 'green' {
   if (category === 'AVB DSP Mixer') return 'red'
@@ -15,7 +34,263 @@ function categoryTagType(category: OutboardHardwareDevice['category']): 'red' | 
   return 'green'
 }
 
-function OutboardHardwareCard({ device }: { device: OutboardHardwareDevice }) {
+function dedupeLabels(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))))
+}
+
+function describeLocation(location: DeviceLocation | null | undefined): string | null {
+  return location?.hostname ?? location?.nodeId ?? null
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`
+}
+
+function buildInterfaceStatus(
+  displayName: string,
+  location: DeviceLocation | null,
+  isLoading: boolean,
+  error: unknown,
+): OutboardHardwareLiveStatus {
+  const nodeLabel = describeLocation(location)
+
+  if (isLoading && !location && !error) {
+    return {
+      label: 'Refreshing',
+      type: 'blue',
+      summary: `Checking cluster inventory for ${displayName}.`,
+      facts: [{ label: 'Inventory poll active', type: 'blue' }],
+    }
+  }
+
+  if (location?.status === 'offline') {
+    return {
+      label: 'Node offline',
+      type: 'red',
+      summary: `${displayName} is assigned to ${nodeLabel ?? 'a cluster node'}, but that node is currently offline.`,
+      facts: [
+        { label: nodeLabel ?? 'Offline node', type: 'red' },
+        { label: 'Switch required', type: 'warm-gray' },
+      ],
+    }
+  }
+
+  if (location) {
+    return {
+      label: 'Detected',
+      type: 'green',
+      summary: `${displayName} is visible on ${nodeLabel ?? 'the cluster inventory'} and ready for its dedicated route.`,
+      facts: [
+        { label: nodeLabel ?? 'Cluster inventory', type: 'green' },
+        { label: location.kind.replace('_', ' '), type: 'cool-gray' },
+      ],
+    }
+  }
+
+  if (error) {
+    return {
+      label: 'Inventory issue',
+      type: 'red',
+      summary: `Cluster inventory could not confirm ${displayName} right now.`,
+      facts: [{ label: 'Retry from dedicated route', type: 'warm-gray' }],
+    }
+  }
+
+  return {
+    label: 'Not detected',
+    type: 'cool-gray',
+    summary: `${displayName} is not currently visible in the shared hardware inventory.`,
+    facts: [{ label: 'No inventory match', type: 'cool-gray' }],
+  }
+}
+
+function buildRackStatus(
+  displayName: string,
+  location: DeviceLocation | null,
+  state: MPX1State | IntelFXState | null,
+  error: string | null,
+): OutboardHardwareLiveStatus {
+  const nodeLabel = describeLocation(location)
+
+  if (!state && !error && !location) {
+    return {
+      label: 'Refreshing',
+      type: 'blue',
+      summary: `Checking live rack status for ${displayName}.`,
+      facts: [{ label: 'State bootstrap active', type: 'blue' }],
+    }
+  }
+
+  if (location?.status === 'offline') {
+    return {
+      label: 'Node offline',
+      type: 'red',
+      summary: `${displayName} is assigned to ${nodeLabel ?? 'a cluster node'}, but that node is currently offline.`,
+      facts: [{ label: nodeLabel ?? 'Offline node', type: 'red' }],
+    }
+  }
+
+  if (state?.connected) {
+    return {
+      label: 'Connected',
+      type: 'green',
+      summary: `${displayName} is responding${nodeLabel ? ` on ${nodeLabel}` : ''} and reports program ${state.current_program}.`,
+      facts: [
+        { label: `Program ${state.current_program}`, type: 'green' },
+        ...(nodeLabel ? [{ label: nodeLabel, type: 'cool-gray' as const }] : []),
+        { label: state.rtmidi_available ? 'RtMidi ready' : 'RtMidi unavailable', type: state.rtmidi_available ? 'green' : 'warm-gray' },
+      ],
+    }
+  }
+
+  if (location) {
+    return {
+      label: 'Detected only',
+      type: 'warm-gray',
+      summary: `${displayName} is visible on ${nodeLabel ?? 'the cluster inventory'}, but the live control service is not currently connected.`,
+      facts: [
+        { label: nodeLabel ?? 'Cluster inventory', type: 'cool-gray' },
+        { label: 'Control link down', type: 'warm-gray' },
+      ],
+    }
+  }
+
+  if (error) {
+    return {
+      label: 'Control issue',
+      type: 'red',
+      summary: `The live control hook for ${displayName} returned an error before the rack could be confirmed.`,
+      facts: [{ label: 'Open dedicated route', type: 'warm-gray' }],
+    }
+  }
+
+  return {
+    label: 'Not detected',
+    type: 'cool-gray',
+    summary: `${displayName} is not currently visible in inventory and is not reporting live control state.`,
+    facts: [{ label: 'No live rack session', type: 'cool-gray' }],
+  }
+}
+
+function buildTesiraStatus(devices: TesiraDeviceSummary[], isLoading: boolean, error: unknown): OutboardHardwareLiveStatus {
+  if (isLoading && devices.length === 0 && !error) {
+    return {
+      label: 'Refreshing',
+      type: 'blue',
+      summary: 'Checking the Tesira fleet feed.',
+      facts: [{ label: 'Fleet query active', type: 'blue' }],
+    }
+  }
+
+  if (error && devices.length === 0) {
+    return {
+      label: 'Fleet issue',
+      type: 'red',
+      summary: 'The Tesira fleet query did not return any devices.',
+      facts: [{ label: 'Query retry needed', type: 'warm-gray' }],
+    }
+  }
+
+  if (devices.length === 0) {
+    return {
+      label: 'Not discovered',
+      type: 'cool-gray',
+      summary: 'No Tesira units are currently discovered by the fleet query.',
+      facts: [{ label: '0 devices', type: 'cool-gray' }],
+    }
+  }
+
+  const connectedCount = devices.filter((device) => device.connected).length
+  const faultCount = devices.reduce((sum, device) => sum + (device.fault_count ?? 0), 0)
+  const nodeLabels = dedupeLabels(devices.flatMap((device) => [device.source_hostname, device.source_node_id, device.host]))
+  const stateType: StatusTagType = connectedCount === 0 ? 'red' : faultCount > 0 || connectedCount < devices.length ? 'warm-gray' : 'green'
+  const stateLabel =
+    connectedCount === 0
+      ? 'Offline'
+      : faultCount > 0
+        ? 'Attention'
+        : connectedCount < devices.length
+          ? 'Partial'
+          : 'Healthy'
+
+  return {
+    label: stateLabel,
+    type: stateType,
+    summary: `${connectedCount}/${devices.length} Tesira devices connected${faultCount > 0 ? ` with ${pluralize(faultCount, 'fault')}` : ''}.`,
+    facts: [
+      { label: `${connectedCount}/${devices.length} connected`, type: connectedCount > 0 ? 'green' : 'red' },
+      ...(faultCount > 0 ? [{ label: pluralize(faultCount, 'fault'), type: 'red' as const }] : []),
+      ...(nodeLabels[0] ? [{ label: nodeLabels[0], type: 'cool-gray' as const }] : []),
+    ],
+  }
+}
+
+function useOutboardHardwareLiveStatus(): Record<string, OutboardHardwareLiveStatus> {
+  const tesiraDevicesQuery = useTesiraDevices()
+  const edirolLocation = useDeviceLocation('edirol-ua1000')
+  const joggLocation = useDeviceLocation('hotone-jogg')
+  const mpx1Location = useDeviceLocation('lexicon-mpx1')
+  const intelfxLocation = useDeviceLocation('rocktron-intelfx')
+  const mpx1 = useMPX1State({
+    autoConnectWs: false,
+    pollIntervalMs: 15_000,
+    nodeId: mpx1Location.location?.nodeId ?? null,
+  })
+  const intelfx = useIntelFXState({
+    autoConnectWs: false,
+    pollIntervalMs: 15_000,
+    nodeId: intelfxLocation.location?.nodeId ?? null,
+  })
+
+  return useMemo(
+    () => ({
+      'biamp-tesira': buildTesiraStatus(
+        tesiraDevicesQuery.data ?? [],
+        tesiraDevicesQuery.isLoading,
+        tesiraDevicesQuery.error,
+      ),
+      'edirol-ua1000': buildInterfaceStatus(
+        'Edirol UA-1000',
+        edirolLocation.location,
+        edirolLocation.isLoading,
+        edirolLocation.error,
+      ),
+      'hotone-jogg': buildInterfaceStatus(
+        'HoTone JoGG',
+        joggLocation.location,
+        joggLocation.isLoading,
+        joggLocation.error,
+      ),
+      'lexicon-mpx1': buildRackStatus('MPX1 Rack', mpx1Location.location, mpx1.state, mpx1.error),
+      'eventide-intelfx': buildRackStatus('IntelFX Rack', intelfxLocation.location, intelfx.state, intelfx.error),
+    }),
+    [
+      edirolLocation.error,
+      edirolLocation.isLoading,
+      edirolLocation.location,
+      intelfx.error,
+      intelfx.state,
+      intelfxLocation.location,
+      joggLocation.error,
+      joggLocation.isLoading,
+      joggLocation.location,
+      mpx1.error,
+      mpx1.state,
+      mpx1Location.location,
+      tesiraDevicesQuery.data,
+      tesiraDevicesQuery.error,
+      tesiraDevicesQuery.isLoading,
+    ],
+  )
+}
+
+function OutboardHardwareCard({
+  device,
+  liveStatus,
+}: {
+  device: OutboardHardwareDevice
+  liveStatus: OutboardHardwareLiveStatus
+}) {
   const navigate = useNavigate()
   const dedicatedRoute = resolveOutboardHardwareStandaloneRoute(device.deviceId)
 
@@ -31,6 +306,20 @@ function OutboardHardwareCard({ device }: { device: OutboardHardwareDevice }) {
       <p className="outboard-hardware-page__body-copy">{device.description}</p>
       <p className="outboard-hardware-page__body-copy">
         Operator focus: <strong>{device.operatorFocus}</strong>
+      </p>
+      <div
+        className="outboard-hardware-page__tag-row outboard-hardware-page__status-row"
+        aria-label={`${device.displayName} live status`}
+      >
+        <Tag type={liveStatus.type}>{liveStatus.label}</Tag>
+        {liveStatus.facts.map((fact) => (
+          <Tag key={`${device.deviceId}-${fact.label}`} type={fact.type}>
+            {fact.label}
+          </Tag>
+        ))}
+      </div>
+      <p className="outboard-hardware-page__body-copy">
+        Live status: <strong>{liveStatus.summary}</strong>
       </p>
       <div className="outboard-hardware-page__tag-row">
         {device.capabilities.slice(0, 4).map((capability) => (
@@ -56,6 +345,7 @@ function OutboardHardwareCard({ device }: { device: OutboardHardwareDevice }) {
 
 export function OutboardHardwareOverviewPage() {
   const { devices } = useOutletContext<OutboardHardwareShellContextValue>()
+  const liveStatusByDeviceId = useOutboardHardwareLiveStatus()
 
   const metrics = useMemo(() => ({
     total: devices.length,
@@ -114,7 +404,16 @@ export function OutboardHardwareOverviewPage() {
 
       <div className="outboard-hardware-page__unit-grid">
         {devices.map((device) => (
-          <OutboardHardwareCard key={device.deviceId} device={device} />
+          <OutboardHardwareCard
+            key={device.deviceId}
+            device={device}
+            liveStatus={liveStatusByDeviceId[device.deviceId] ?? {
+              label: 'Unavailable',
+              type: 'cool-gray',
+              summary: 'Live status is not available for this device yet.',
+              facts: [],
+            }}
+          />
         ))}
       </div>
     </div>

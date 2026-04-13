@@ -36,6 +36,7 @@ const DEVICE_TYPE_SEARCH_TERMS: Record<string, string[]> = {
   'hotone-jogg': ['hotone jogg', 'jogg', '84ef 0014'],
   'generic-interface': ['hotone jogg', 'jogg', '84ef 0014'],
   'lexicon-mpx1': ['lexicon mpx 1', 'mpx 1', 'lexicon'],
+  'rocktron-intelfx': ['rocktron intellifex', 'rocktron intelfx', 'intellifex', 'intel fx', 'rocktron'],
   'ground-control-pro': ['ground control pro', 'voodoo lab ground control', 'gc pro', 'groundcontrolpro', 'voodoo lab'],
   'mackie-mcu-pro': ['mackie mcu pro', 'mcu pro', 'mackie control universal', 'mackie control', 'mcu'],
   'novation-launch-control': ['novation launch control', 'launch control xl', 'launch control', 'novation'],

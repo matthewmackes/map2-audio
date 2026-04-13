@@ -182,4 +182,31 @@ describe('useDeviceLocation', () => {
       expect.objectContaining({ nodeId: 'node-commander', hostname: 'mix-c' }),
     )
   })
+
+  it('finds the IntelFX rack from the dedicated Rocktron search aliases', async () => {
+    fetchMock.mockResolvedValueOnce(
+      makeJsonResponse({
+        nodes: {
+          'node-intelfx': {
+            hostname: 'rack-fx',
+            status: 'online',
+            usb_audio_devices: [],
+            midi_devices: [{ name: 'Rocktron Intellifex', direction: 'input', type: 'midi_hub' }],
+            audio_interfaces: [],
+            pipewire_devices: [],
+          },
+        },
+      }),
+    )
+
+    const { result } = renderHook(() => useDeviceLocation('rocktron-intelfx'), {
+      wrapper: makeWrapper(),
+    })
+
+    await waitFor(() =>
+      expect(result.current.location).toEqual(
+        expect.objectContaining({ nodeId: 'node-intelfx', hostname: 'rack-fx' }),
+      ),
+    )
+  })
 })
