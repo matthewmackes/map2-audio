@@ -122,14 +122,14 @@
 }
 
 .intelfx-statusbar__prog-number {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   font-weight: 700;
   min-width: 40px;
 }
 
 .intelfx-statusbar__prog-name {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   max-width: 132px;
   overflow: hidden;

@@ -18,16 +18,15 @@
 
 .mpx1-scene-current__label {
   color: var(--interactive);
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .mpx1-scene-current__name {
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: var(--type-heading);
+  font-size: var(--cds-heading-03-font-size, 1.5rem);
   font-weight: 700;
   line-height: 1.1;
   overflow: hidden;
@@ -56,7 +55,7 @@
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   color: var(--text-primary);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 600;
   text-align: center;
   transition: background 0.12s, border-color 0.12s;
@@ -76,7 +75,7 @@
 }
 
 .mpx1-scene-btn__program {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
   font-weight: 400;
 }
@@ -90,7 +89,7 @@
 }
 
 .mpx1-scene-btn__tag {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   padding: 1px 5px;
   border-radius: var(--border-radius-sm);
   background: var(--surface-3);
@@ -112,11 +111,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .mpx1-morph-strip__controls {
@@ -134,13 +132,13 @@
 }
 
 .mpx1-morph-strip__label {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   white-space: nowrap;
 }
 
 .mpx1-morph-strip__select {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   padding: 3px 6px;
   border-radius: var(--border-radius-sm);
   background: var(--surface-3);
@@ -152,7 +150,7 @@
 .mpx1-morph-strip__btn {
   padding: 4px 12px;
   border-radius: var(--border-radius-sm);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--interactive);
@@ -185,7 +183,7 @@
   background: var(--surface-3);
   border: 1px solid var(--border-strong);
   color: var(--text-primary);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-scene-capture-row__input:focus {
@@ -197,7 +195,7 @@
 .mpx1-scene-capture-row__btn {
   padding: 6px 14px;
   border-radius: var(--border-radius-sm);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--interactive);
@@ -219,12 +217,12 @@
   gap: 8px;
   padding: 40px 20px;
   color: var(--interactive);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   text-align: center;
 }
 
 .mpx1-scene-empty__icon {
-  font-size: var(--type-display);
+  font-size: var(--cds-heading-05-font-size, 2rem);
   opacity: 0.4;
 }
 
@@ -245,7 +243,7 @@
   }
 
   .mpx1-scene-btn__program {
-    font-size: var(--type-label);
+    font-size: var(--cds-label-01-font-size, 0.75rem);
     justify-self: end;
   }
 
@@ -254,7 +252,7 @@
   }
 
   .mpx1-scene-current__name {
-    font-size: var(--type-heading);
+    font-size: var(--cds-heading-03-font-size, 1.5rem);
   }
 
   .mpx1-scene-capture-row {
@@ -263,7 +261,7 @@
   }
 
   .mpx1-scene-capture-row__input {
-    font-size: var(--type-subheading);
+    font-size: var(--cds-body-02-font-size, 1rem);
     min-height: 48px;
   }
 
@@ -279,11 +277,11 @@
   }
 
   .mpx1-morph-strip__label {
-    font-size: var(--type-body);
+    font-size: var(--cds-body-01-font-size, 0.875rem);
   }
 
   .mpx1-morph-strip__select {
-    font-size: var(--type-body);
+    font-size: var(--cds-body-01-font-size, 0.875rem);
     min-height: 44px;
     width: 100%;
   }
@@ -294,7 +292,7 @@
   }
 
   .mpx1-morph-strip__btn {
-    font-size: var(--type-body);
+    font-size: var(--cds-body-01-font-size, 0.875rem);
     min-height: 48px;
     width: 100%;
   }

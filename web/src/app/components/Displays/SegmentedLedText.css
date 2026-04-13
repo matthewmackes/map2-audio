@@ -10,7 +10,7 @@
   min-width: 0;
   white-space: nowrap;
   font-family: var(--font-ui);
-  font-size: 1em;
+  font-size: inherit;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }

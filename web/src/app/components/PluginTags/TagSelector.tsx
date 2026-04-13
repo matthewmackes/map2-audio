@@ -294,7 +294,7 @@ export function TagSelector({
 
         .tag-selector-title h3 {
           margin: 0;
-          font-size: 14px;
+          font-size: var(--cds-heading-01-font-size, 0.875rem);
           font-weight: 600;
           color: #fff;
           white-space: nowrap;
@@ -329,7 +329,7 @@ export function TagSelector({
           border: 1px solid #1e293b;
           border-radius: 4px;
           color: #6b7280;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           padding: 4px 8px;
           cursor: pointer;
           transition: all 0.2s;
@@ -364,7 +364,7 @@ export function TagSelector({
           justify-content: space-between;
           align-items: center;
           margin-bottom: 8px;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #6b7280;
         }
 
@@ -372,7 +372,7 @@ export function TagSelector({
           background: none;
           border: none;
           color: #6b7280;
-          font-size: 10px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           cursor: pointer;
         }
 
@@ -393,7 +393,7 @@ export function TagSelector({
           background: #1e293b;
           border-radius: 4px;
           padding: 2px 6px;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #fff;
           cursor: pointer;
         }
@@ -413,7 +413,7 @@ export function TagSelector({
           border: 1px solid #1e293b;
           border-radius: 4px;
           padding: 8px 30px 8px 10px;
-          font-size: 12px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           color: #fff;
         }
 
@@ -461,7 +461,7 @@ export function TagSelector({
           padding: 8px 10px;
           cursor: pointer;
           color: #fff;
-          font-size: 12px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           text-align: left;
         }
 
@@ -476,7 +476,7 @@ export function TagSelector({
         }
 
         .category-count {
-          font-size: 10px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #6b7280;
           background: #222222;
           padding: 2px 6px;
@@ -499,7 +499,7 @@ export function TagSelector({
           border: 1px solid #1e293b;
           border-radius: 4px;
           padding: 4px 8px;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #9ca3af;
           cursor: pointer;
           transition: all 0.15s;

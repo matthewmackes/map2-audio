@@ -113,8 +113,7 @@ function OverlayActionButton({
         borderRadius: 0.75,
         fontSize: '0.68rem',
         fontWeight: 700,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
+        letterSpacing: '0.02em',
         cursor: 'pointer',
         transition: 'transform 120ms ease, filter 120ms ease',
         '&:hover': {
@@ -286,8 +285,7 @@ const AudioPluginNode = memo(
                     color: '#f4f4f4',
                     fontSize: '0.68rem',
                     fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '0.02em',
                   }}
                 >
                   Selected

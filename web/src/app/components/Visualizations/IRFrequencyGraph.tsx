@@ -285,7 +285,6 @@ export function IRFrequencyGraph({
         right: 8,
         fontSize: 9,
         color: 'rgba(255, 184, 77, 0.6)',
-        textTransform: 'uppercase',
         letterSpacing: 1,
         fontWeight: 600,
       }}>

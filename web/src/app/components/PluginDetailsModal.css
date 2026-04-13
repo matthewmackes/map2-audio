@@ -33,7 +33,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   padding: 6px 8px;
   background: rgba(0, 0, 0, 0.15);
   border-radius: 6px;
@@ -46,5 +46,5 @@
 
 .param-range {
   color: var(--muted);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }

@@ -37,7 +37,6 @@ export function ReverbMSEGChart({
           fontSize: 11,
           fontWeight: 700,
           color: '#a855f7',
-          textTransform: 'uppercase',
           marginBottom: 8,
           letterSpacing: 0.5
         }}>

@@ -157,7 +157,7 @@ export function RealtimeTestResults() {
 
       <div className="grid two" style={{ gap: 12, marginBottom: 12 }}>
         <Tile>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--type-body)' }}>Overall RT score</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--cds-body-01-font-size, 0.875rem)' }}>Overall RT score</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: getScoreColor(score), marginBottom: 6 }}>
             {loading ? '...' : `${score}/100`}
           </div>
@@ -169,7 +169,7 @@ export function RealtimeTestResults() {
           </p>
         </Tile>
         <Tile>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--type-body)' }}>Latency (round-trip)</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--cds-body-01-font-size, 0.875rem)' }}>Latency (round-trip)</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>
             {latency} ms
           </div>

@@ -102,8 +102,7 @@ function NodeMeterColumn({
               border: `1px solid ${node.isOnline ? 'rgba(96, 165, 250, 0.3)' : 'rgba(148, 163, 184, 0.25)'}`,
               padding: '2px 6px',
               borderRadius: 999,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
+              letterSpacing: '0.02em',
             }}
           >
             {node.isLocal ? 'Local' : node.role}
@@ -119,7 +118,7 @@ function NodeMeterColumn({
         <CompactMeterBar value={levels.outputRight} peak={peakHold.outputRight} />
       </div>
 
-      <div style={{ display: 'flex', gap: 12, fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+      <div style={{ display: 'flex', gap: 12, fontSize: 9, color: '#94a3b8', letterSpacing: '0.02em' }}>
         <span>L</span>
         <span>R</span>
       </div>
@@ -137,7 +136,7 @@ function NodeMeterColumn({
             border: '1px solid rgba(34, 197, 94, 0.12)',
           }}
         >
-          <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 }}>CPU</div>
+          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: '0.02em' }}>CPU</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: cpuColor, fontFamily: 'var(--font-mono)' }}>
             {metrics.totalCpuPercent.toFixed(0)}%
           </div>
@@ -150,7 +149,7 @@ function NodeMeterColumn({
             border: `1px solid ${metrics.xrunCount > 0 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(34, 197, 94, 0.12)'}`,
           }}
         >
-          <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 }}>XRun</div>
+          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: '0.02em' }}>Xrun</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: metrics.xrunCount > 0 ? '#ef4444' : '#22c55e', fontFamily: 'var(--font-mono)' }}>
             {metrics.xrunCount}
           </div>

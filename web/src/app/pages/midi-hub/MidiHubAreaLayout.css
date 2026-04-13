@@ -504,7 +504,6 @@
 .midi-hub-router-checkbox__meta {
   color: var(--cds-text-helper);
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  text-transform: uppercase;
 }
 
 .midi-hub-choice-pill {

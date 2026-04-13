@@ -93,7 +93,7 @@ function TunerCardBase({
           borderRadius: 8,
           border: `2px solid ${inTune && frequency > 0 ? accentColor : '#444'}`,
           color: inTune && frequency > 0 ? '#000' : '#666',
-          fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase',
+          fontSize: 14, fontWeight: 'bold',
           transition: 'all 0.2s',
         }}>
           {frequency === 0 ? 'No Signal' : inTune ? 'In Tune' : 'Tuning...'}

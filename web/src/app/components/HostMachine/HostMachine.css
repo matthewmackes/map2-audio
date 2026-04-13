@@ -439,7 +439,7 @@
 
 .hm-mono {
   font-family: var(--font-mono);
-  font-size: 11px !important;
+  font-size: var(--hm-font-mono, 0.6875rem) !important;
 }
 
 .hm-na {
@@ -992,7 +992,7 @@
 }
 
 .hm-feature-card__tag.cds--tag {
-  font-size: 9px;
+  font-size: var(--hm-font-tag, 0.5625rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   min-height: auto;

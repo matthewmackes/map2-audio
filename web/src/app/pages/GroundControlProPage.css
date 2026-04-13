@@ -52,9 +52,8 @@
 .ground-control-pro-page__eyebrow {
   margin: 0;
   color: var(--cds-link-primary);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
 }
 
 .ground-control-pro-page__panel-grid,

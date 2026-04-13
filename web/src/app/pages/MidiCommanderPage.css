@@ -28,9 +28,8 @@
 
 .midi-commander-page__eyebrow {
   margin: 0 0 0.25rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   color: var(--cds-text-secondary);
 }
 

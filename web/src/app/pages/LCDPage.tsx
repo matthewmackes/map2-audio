@@ -1531,6 +1531,7 @@ export function LCDPage() {
 
         /* ── Educational Banner ── */
         .lcd-edu-banner {
+          --lcd-edu-banner-copy-size: 13px;
           display: flex;
           align-items: flex-start;
           gap: 12px;
@@ -1539,7 +1540,7 @@ export function LCDPage() {
           border-radius: 10px;
           padding: 'var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem)';
           margin-bottom: 20px;
-          font-size: 13px;
+          font-size: var(--lcd-edu-banner-copy-size);
           line-height: 1.6;
           color: #a3e635;
         }
@@ -1557,6 +1558,7 @@ export function LCDPage() {
           flex-wrap: wrap;
         }
         .lcd-tab {
+          --lcd-tab-copy-size: 14px;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -1564,7 +1566,7 @@ export function LCDPage() {
           border: none;
           background: transparent;
           color: #888;
-          font-size: 14px;
+          font-size: var(--lcd-tab-copy-size);
           font-weight: 500;
           border-radius: 8px;
           cursor: pointer;
@@ -1667,35 +1669,35 @@ export function LCDPage() {
         .composer-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .composer-content { display: flex; flex-direction: column; gap: 16px; }
         .composer-target { display: flex; align-items: center; gap: 12px; }
-        .composer-target label { color: #888; font-size: 13px; }
+        .composer-target label { color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .composer-target-btns { display: flex; gap: 4px; }
         .composer-btn {
-          padding: 6px 12px; background: #222; border: 1px solid #333; border-radius: 6px; color: #888; font-size: 12px; cursor: pointer; transition: all 0.2s;
+          padding: 6px 12px; background: #222; border: 1px solid #333; border-radius: 6px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.2s;
         }
         .composer-btn:hover { background: #333; color: #fff; }
         .composer-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
         .composer-lines { display: flex; flex-direction: column; gap: 12px; }
         .composer-line { display: flex; align-items: center; gap: 8px; }
-        .composer-line label { color: #888; font-size: 13px; min-width: 50px; }
+        .composer-line label { color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); min-width: 50px; }
         .composer-line input {
           flex: 1; background: #222; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; color: #fff; font-family: var(--font-ui-tight);
         }
         .composer-line input:focus { outline: 2px solid var(--cds-focus, #22c55e); outline-offset: 2px; border-color: #22c55e; }
-        .char-count { color: #666; font-size: 11px; min-width: 40px; }
+        .char-count { color: #666; font-size: var(--cds-helper-text-01-font-size, 0.75rem); min-width: 40px; }
         .composer-duration { display: flex; align-items: center; gap: 12px; }
-        .composer-duration label { color: #888; font-size: 13px; }
+        .composer-duration label { color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .composer-duration input[type="range"] { flex: 1; accent-color: #22c55e; }
-        .composer-duration span { color: #fff; font-size: 14px; min-width: 30px; }
+        .composer-duration span { color: #fff; font-size: var(--cds-heading-01-font-size, 1rem); min-width: 30px; }
         .composer-send { width: 100%; }
 
         /* Event Triggers */
         .event-triggers { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .triggers-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
-        .triggers-hint { color: #666; font-size: 12px; font-weight: 400; margin-left: auto; }
+        .triggers-hint { color: #666; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 400; margin-left: auto; }
         .triggers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .trigger-btn {
           display: flex; align-items: center; gap: 8px; padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
-          background: #222; border: 1px solid #333; border-radius: 8px; color: #888; font-size: 12px; cursor: pointer; transition: all 0.2s;
+          background: #222; border: 1px solid #333; border-radius: 8px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.2s;
         }
         .trigger-btn:hover { background: #333; color: #fff; border-color: #444; }
         .trigger-btn:active { background: #22c55e; border-color: #22c55e; }
@@ -1708,7 +1710,7 @@ export function LCDPage() {
         .lcd-filter-group { display: flex; flex-direction: column; gap: 4px; }
         .lcd-filter-group label { font-size: var(--cds-label-01-font-size, 0.75rem); color: '#6b7280'; font-weight: 600; }
         .lcd-filter-group select {
-          background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: 13px;
+          background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: var(--cds-body-compact-01-font-size, 0.875rem);
         }
 
         /* Event Modal */
@@ -1735,41 +1737,41 @@ export function LCDPage() {
         .alert-type-card.disabled { opacity: 0.5; }
         .alert-type-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
         .alert-severity-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .alert-type-label { flex: 1; color: #fff; font-size: 13px; font-weight: 500; }
-        .alert-toggle { padding: 3px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: 10px; font-weight: 600; cursor: pointer; }
+        .alert-type-label { flex: 1; color: #fff; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 500; }
+        .alert-toggle { padding: 3px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: var(--cds-helper-text-01-font-size, 0.75rem); font-weight: 600; cursor: pointer; }
         .alert-toggle.on { background: #22c55e; color: #fff; }
         .alert-toggle.off { background: #444; color: #666; }
-        .alert-type-target { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); color: #888; font-size: 12px; }
+        .alert-type-target { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .lcd-target-btns { display: flex; gap: 4px; }
         .lcd-target-btn {
-          padding: 4px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: 11px; cursor: pointer; transition: all 0.2s;
+          padding: 4px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: var(--cds-helper-text-01-font-size, 0.75rem); cursor: pointer; transition: all 0.2s;
         }
         .lcd-target-btn:hover { background: #444; color: #fff; }
         .lcd-target-btn.active { background: #3b82f6; color: #fff; }
         .alert-type-details { margin-top: 12px; padding-top: 12px; border-top: 1px solid #333; }
         .alert-detail-row { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); margin-bottom: 8px; }
-        .alert-detail-row label { color: #888; font-size: 12px; min-width: 100px; }
+        .alert-detail-row label { color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); min-width: 100px; }
         .alert-detail-row input {
-          width: 60px; padding: 4px 8px; background: #333; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 12px;
+          width: 60px; padding: 4px 8px; background: #333; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: var(--cds-body-compact-01-font-size, 0.875rem);
         }
         .active-alerts-panel { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); margin-top: 24px; }
         .alerts-panel-header { display: flex; align-items: center; gap: 8px; color: #f59e0b; font-weight: 600; margin-bottom: 16px; }
         .alerts-list { display: flex; flex-direction: column; gap: 8px; }
         .alert-item { display: flex; align-items: center; gap: 12px; padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem); background: #222; border-radius: 8px; }
-        .alert-item .alert-type { color: #f59e0b; font-weight: 500; font-size: 13px; }
-        .alert-item .alert-message { flex: 1; color: #888; font-size: 13px; }
-        .alert-item .alert-target { color: #666; font-size: 12px; }
+        .alert-item .alert-type { color: #f59e0b; font-weight: 500; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
+        .alert-item .alert-message { flex: 1; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
+        .alert-item .alert-target { color: #666; font-size: var(--cds-helper-text-01-font-size, 0.75rem); }
 
         /* ── Hardware Tab ── */
         .hardware-controls { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); }
         .hardware-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .hardware-actions { margin-bottom: 20px; }
         .scan-results { margin-top: 12px; padding: 12px; background: #222; border-radius: 8px; }
-        .scan-summary { color: #22c55e; font-size: 13px; display: block; margin-bottom: 8px; }
+        .scan-summary { color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); display: block; margin-bottom: 8px; }
         .scan-devices { display: flex; flex-wrap: wrap; gap: 8px; }
         .scan-device { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: #333; border-radius: 4px; }
-        .device-address { color: #3b82f6; font-family: var(--font-ui-tight); font-size: 12px; }
-        .device-type { color: #888; font-size: 11px; }
+        .device-address { color: #3b82f6; font-family: var(--font-ui-tight); font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
+        .device-type { color: #888; font-size: var(--cds-helper-text-01-font-size, 0.75rem); }
         .lcd-controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         .lcd-control-card { background: #222; border: 1px solid #333; border-radius: 10px; padding: 16px; }
         .lcd-control-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 500; margin-bottom: 12px; }
@@ -1780,66 +1782,66 @@ export function LCDPage() {
         .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
         @media (max-width: 800px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
         .info-item { display: flex; flex-direction: column; gap: 4px; }
-        .info-label { color: #666; font-size: 12px; }
-        .info-value { color: #fff; font-size: 16px; font-weight: 500; }
+        .info-label { color: #666; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
+        .info-value { color: #fff; font-size: var(--cds-heading-01-font-size, 1rem); font-weight: 500; }
 
         /* FT232H */
         .ft232h-config { background: #111; border: 1px solid #222; border-radius: 12px; padding: var(--cds-spacing-06, 1.5rem); }
-        .ft232h-header { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); margin-bottom: var(--cds-spacing-06, 1.5rem); font-size: 18px; font-weight: 600; color: #fff; }
-        .ft232h-docs-link { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #22c55e; text-decoration: none; }
+        .ft232h-header { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); margin-bottom: var(--cds-spacing-06, 1.5rem); font-size: var(--cds-heading-03-font-size, 1.25rem); font-weight: 600; color: #fff; }
+        .ft232h-docs-link { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: var(--cds-body-compact-01-font-size, 0.875rem); color: #22c55e; text-decoration: none; }
         .ft232h-docs-link:hover { text-decoration: underline; }
         .ft232h-layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: var(--cds-spacing-06, 1.5rem); }
         @media (max-width: 1200px) { .ft232h-layout { grid-template-columns: 1fr; } }
         .ft232h-status-panel, .ft232h-wiring-panel { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 16px; }
-        .panel-header { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #888; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #222; }
+        .panel-header { display: flex; align-items: center; gap: 8px; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 600; color: #888; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #222; }
         .status-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
-        .status-label { color: #666; font-size: 12px; }
-        .status-value { color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+        .status-label { color: #666; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
+        .status-value { color: #fff; font-size: var(--cds-body-compact-01-font-size, 0.875rem); display: flex; align-items: center; gap: 6px; }
         .status-value.connected { color: #22c55e; }
         .status-value.disconnected { color: #f59e0b; }
         .status-value.mono { font-family: var(--font-ui-tight); }
-        .status-value.small { font-size: 11px; }
+        .status-value.small { font-size: var(--cds-helper-text-01-font-size, 0.75rem); }
         .full-width { width: 100%; margin-top: 12px; }
         .scan-results-box { margin-top: 12px; background: #111; border: 1px solid #222; border-radius: 6px; overflow: hidden; }
-        .scan-header { padding: 8px 12px; background: rgba(34,197,94,0.1); color: #22c55e; font-size: 12px; font-weight: 500; }
+        .scan-header { padding: 8px 12px; background: rgba(34,197,94,0.1); color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 500; }
         .scan-device-item { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #1a1a1a; cursor: pointer; transition: background 0.2s; }
         .scan-device-item:hover, .scan-device-item.selected { background: rgba(34,197,94,0.1); }
-        .device-addr { font-family: var(--font-ui-tight); color: #22c55e; font-size: 13px; }
+        .device-addr { font-family: var(--font-ui-tight); color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .ft232h-board-container { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-        .board-title, .schematic-title { font-size: 14px; color: #666; margin-bottom: 8px; text-align: center; }
+        .board-title, .schematic-title { font-size: var(--cds-body-compact-01-font-size, 0.875rem); color: #666; margin-bottom: 8px; text-align: center; }
         .schematic-title { margin-top: 16px; padding-top: 16px; border-top: 1px solid #222; width: 100%; }
         .board-image-wrapper { position: relative; width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; border: 2px solid #333; }
         .board-photo { width: 100%; height: auto; display: block; }
         .pin-overlays { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
         .pin-overlay {
           position: absolute; width: 50px; height: 24px; display: flex; align-items: center; justify-content: center;
-          border-radius: 4px; cursor: pointer; pointer-events: auto; transition: all 0.2s; font-size: 10px; font-weight: 600;
+          border-radius: 4px; cursor: pointer; pointer-events: auto; transition: all 0.2s; font-size: var(--cds-helper-text-01-font-size, 0.75rem); font-weight: 600;
         }
         .pin-overlay.i2c { background: rgba(34,197,94,0.8); border: 2px solid #22c55e; color: #fff; }
         .pin-overlay.power { background: rgba(239,68,68,0.8); border: 2px solid #ef4444; color: #fff; }
         .pin-overlay:hover, .pin-overlay.selected { transform: scale(1.1); box-shadow: 0 0 20px currentColor; z-index: 10; }
         .pin-label { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
         .ft232h-schematic-svg { width: 100%; max-width: 450px; height: auto; background: #0a0a0a; border-radius: 8px; border: 1px solid #222; padding: var(--cds-spacing-04, 0.75rem); }
-        .pin-detail-popup { margin-top: var(--cds-spacing-04, 0.75rem); padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: 6px; color: #22c55e; font-size: 13px; text-align: center; }
-        .wiring-table { font-size: 13px; }
+        .pin-detail-popup { margin-top: var(--cds-spacing-04, 0.75rem); padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem); background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: 6px; color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); text-align: center; }
+        .wiring-table { font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .wiring-header { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; color: #666; font-size: var(--cds-label-01-font-size, 0.75rem); border-bottom: 1px solid #222; }
         .wiring-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-spacing-04, 0.75rem); padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
         .wire-from { font-family: var(--font-ui-tight); color: #22c55e; }
         .wire-arrow { color: #444; }
         .wire-to { font-family: var(--font-ui-tight); color: #3b82f6; }
-        .wiring-notes { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: var(--cds-spacing-04, 0.75rem); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; color: #f59e0b; font-size: 12px; }
+        .wiring-notes { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: var(--cds-spacing-04, 0.75rem); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; color: #f59e0b; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .test-controls { display: flex; flex-direction: column; gap: 12px; }
-        .test-address label, .test-message label { display: block; color: #666; font-size: 11px; margin-bottom: 4px; }
-        .test-address select, .test-message input { width: 100%; padding: 8px 12px; background: #111; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 13px; }
+        .test-address label, .test-message label { display: block; color: #666; font-size: var(--cds-helper-text-01-font-size, 0.75rem); margin-bottom: 4px; }
+        .test-address select, .test-message input { width: 100%; padding: 8px 12px; background: #111; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .test-message input { font-family: var(--font-ui-tight); }
         .cli-commands { display: flex; flex-direction: column; gap: 8px; }
-        .cli-commands code { display: block; padding: 8px 12px; background: #111; border: 1px solid #222; border-radius: 4px; font-family: var(--font-ui-tight); font-size: 11px; color: #22c55e; word-break: break-all; }
+        .cli-commands code { display: block; padding: 8px 12px; background: #111; border: 1px solid #222; border-radius: 4px; font-family: var(--font-ui-tight); font-size: var(--cds-helper-text-01-font-size, 0.75rem); color: #22c55e; word-break: break-all; }
 
         /* ── Settings Tab ── */
         .setting-hint { font-size: var(--cds-label-01-font-size, 0.75rem); color: #666; margin: 4px 0 0; }
         .lcd-slider { width: 100%; accent-color: #22c55e; height: 6px; }
         .lcd-select {
-          width: 100%; padding: 8px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 13px;
+          width: 100%; padding: 8px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: var(--cds-body-compact-01-font-size, 0.875rem);
         }
 
       `}</style>

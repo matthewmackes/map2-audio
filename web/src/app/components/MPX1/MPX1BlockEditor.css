@@ -16,9 +16,8 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  font-size: var(--type-label);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   font-weight: 700;
   padding: 8px 10px;
   display: inline-flex;
@@ -69,9 +68,8 @@
 }
 
 .mpx1-editor__panel-title {
-  font-size: var(--type-label);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -106,13 +104,13 @@
 }
 
 .mpx1-editor__algorithm-name {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--text-primary);
   font-weight: 600;
 }
 
 .mpx1-editor__algorithm-meta {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
 }
 
@@ -180,10 +178,9 @@
 }
 
 .mpx1-editor__page-title {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--text-primary);
 }
 
@@ -212,12 +209,12 @@
 }
 
 .mpx1-editor__toggle-name {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
 .mpx1-editor__toggle-value {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
 }
 
@@ -238,13 +235,13 @@
 }
 
 .mpx1-editor__label {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--text-primary);
   font-weight: 600;
 }
 
 .mpx1-editor__value {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
 }
 
@@ -253,7 +250,7 @@
   border-radius: var(--border-radius-sm);
   padding: var(--cds-spacing-05, 1rem);
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-knob {
@@ -274,9 +271,8 @@
 
 .mpx1-knob .numeric-input__label {
   text-align: center;
-  font-size: var(--type-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   color: var(--interactive);
   max-width: 110px;
 }

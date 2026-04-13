@@ -193,8 +193,7 @@ export function MeteringPage() {
             gap: 10,
             fontSize: 12,
             color: '#94a3b8',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em'
+            letterSpacing: '0.02em'
           }}>
             <span>meters: {topicActivity.meters ? 'live' : 'waiting'}</span>
             <span>cpu: {topicActivity.cpu ? 'live' : 'waiting'}</span>
@@ -233,8 +232,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#2563eb',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               Cluster Metering Strip
             </div>
@@ -278,8 +276,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#2563eb',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               ⚡ Frequency Spectrum
             </div>
@@ -310,8 +307,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#22c55e',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartBar size={16} /> Signal Levels</span>
             </div>
@@ -333,8 +329,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#2563eb',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartBar size={16} /> Loudness (LUFS)</span>
             </div>
@@ -361,8 +356,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#60a5fa',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               🎼 Stereo Phase
             </div>
@@ -388,8 +382,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#f59e0b',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SettingsAdjust size={16} /> Dynamics</span>
             </div>
@@ -416,8 +409,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#22c55e',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               🖥️ CPU & DSP Performance
             </div>
@@ -443,8 +435,7 @@ export function MeteringPage() {
               fontWeight: 700,
               color: '#f59e0b',
               marginBottom: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Time size={16} /> Latency Analysis</span>
             </div>
@@ -523,8 +514,7 @@ export function MeteringPage() {
               fontSize: 14,
               fontWeight: 700,
               color: '#64748b',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Link size={16} /> API Reference</span>
             </span>

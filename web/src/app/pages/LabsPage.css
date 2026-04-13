@@ -35,8 +35,7 @@
 .labs-page__eyebrow,
 .labs-page__micro-heading {
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--cds-text-secondary);
   font-size: var(--cds-label-01-font-size);
 }

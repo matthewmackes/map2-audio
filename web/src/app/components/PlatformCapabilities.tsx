@@ -396,7 +396,7 @@ export function PlatformCapabilities() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
             {/* Audio Connectivity Layer */}
             <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#4caf50', textTransform: 'uppercase', marginBottom: 4 }}>🔊 Audio Connectivity</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#4caf50', marginBottom: 4, letterSpacing: '0.02em' }}>🔊 Audio connectivity</div>
               <div className="stack" style={{ gap: 6, fontSize: 11 }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'flex-start' }}>
                   <span style={{ color: '#4caf50', fontWeight: 600, marginTop: 1, flexShrink: 0 }}>✓</span>
@@ -419,7 +419,7 @@ export function PlatformCapabilities() {
 
             {/* REST API Engine */}
             <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#64b5f6', textTransform: 'uppercase', marginBottom: 4 }}>REST API Engine</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64b5f6', marginBottom: 4, letterSpacing: '0.02em' }}>REST API engine</div>
               <div style={{ padding: 8, background: '#64b5f615', borderRadius: 4, border: '1px solid #64b5f6' }}>
                 <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 2 }}>Available Endpoints</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64b5f6' }}>{apiCount || '120'}+</div>
@@ -429,7 +429,7 @@ export function PlatformCapabilities() {
 
             {/* Web Services & WebSocket */}
             <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#81c784', textTransform: 'uppercase', marginBottom: 4 }}>Real-time Services</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#81c784', marginBottom: 4, letterSpacing: '0.02em' }}>Real-time services</div>
               <div className="stack" style={{ gap: 5, fontSize: 10 }}>
                 <div><strong>WebSocket Server</strong> - Live updates</div>
                 <div><strong>Network Streaming</strong> - Remote audio control</div>
@@ -488,7 +488,7 @@ export function PlatformCapabilities() {
                 return (
                   <div key={priority} style={{ borderRadius: 6, border: '1px solid #1e293b', overflow: 'hidden' }}>
                     <div style={{ padding: 10, background: '#0a0a0a', fontSize: 11, fontWeight: 600, color: '#ffa726', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{PRIORITY_LABELS[priority]} SERVICES</span>
+                      <span>{PRIORITY_LABELS[priority]} services</span>
                       <span style={{ fontSize: 10, color: '#9ca3af' }}>{servicesInGroup.length} services</span>
                     </div>
                     <div>
@@ -525,7 +525,7 @@ export function PlatformCapabilities() {
                                   marginLeft: 'auto',
                                 }}
                               >
-                                {service.state.toUpperCase()}
+                                {service.state.charAt(0).toUpperCase() + service.state.slice(1)}
                               </span>
                             </div>
                             {expandedServices.has(service.name) && (
@@ -752,7 +752,7 @@ export function PlatformCapabilities() {
           {/* Summary Statistics */}
           {metricsSummaryQuery.data && (
             <div style={{ marginBottom: 16, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#ffa726', marginBottom: 10, textTransform: 'uppercase' }}>Min / Avg / Max Statistics</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#ffa726', marginBottom: 10, letterSpacing: '0.02em' }}>Min / avg / max statistics</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 6 }}>CPU %</div>
@@ -809,10 +809,10 @@ export function PlatformCapabilities() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(100,100,100,0.3)' }}>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#81c784', textTransform: 'uppercase' }}>Formats</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#64b5f6', textTransform: 'uppercase' }}>System</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#ffa726', textTransform: 'uppercase' }}>Dev Tools</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#ce93d8', textTransform: 'uppercase' }}>Assets</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#81c784', letterSpacing: '0.02em' }}>Formats</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#64b5f6', letterSpacing: '0.02em' }}>System</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#ffa726', letterSpacing: '0.02em' }}>Dev tools</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#ce93d8', letterSpacing: '0.02em' }}>Assets</th>
               </tr>
             </thead>
             <tbody>
@@ -898,7 +898,7 @@ export function PlatformCapabilities() {
             {/* Score and Latency Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div style={{ padding: 12, background: 'rgba(100,100,100,0.1)', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>RT Score</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, letterSpacing: '0.02em' }}>RT score</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: getStatusColor(testResult.overall_status, testResult.score) }}>
                   {testResult.score}/100
                 </div>
@@ -907,7 +907,7 @@ export function PlatformCapabilities() {
                 </div>
               </div>
               <div style={{ padding: 12, background: 'rgba(100,100,100,0.1)', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Latency</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, letterSpacing: '0.02em' }}>Latency</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: '#4caf50' }}>
                   {testResult.engine_info?.buffer_size && testResult.engine_info?.sample_rate
                     ? ((testResult.engine_info.buffer_size / testResult.engine_info.sample_rate) * 1000).toFixed(2)

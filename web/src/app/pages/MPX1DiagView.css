@@ -16,7 +16,7 @@
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
   padding: 6px 9px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -29,7 +29,7 @@
   background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
   color: var(--support-danger);
   padding: 8px 10px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-diag__metrics {

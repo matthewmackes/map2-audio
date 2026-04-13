@@ -45,7 +45,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
       }}>
         <span style={{ fontSize: 11, fontWeight: 600, color }}>{label}</span>
         {bypass && (
-          <span style={{ fontSize: 9, color: '#666', textTransform: 'uppercase' }}>Bypass</span>
+          <span style={{ fontSize: 9, color: '#666', letterSpacing: '0.02em' }}>Bypass</span>
         )}
       </div>
 

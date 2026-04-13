@@ -93,7 +93,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>
                 Cluster Health
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: healthColor, marginTop: 8 }}>
@@ -123,7 +123,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>Nodes</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
                 {stats.onlineCount}/{stats.nodeCount}
               </div>
@@ -151,7 +151,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>
                 Avg CPU
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#ffa726', marginTop: 8 }}>
@@ -179,7 +179,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>
                 Avg Memory
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6', marginTop: 8 }}>
@@ -207,7 +207,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>
                 Audio DSP
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', marginTop: 8 }}>
@@ -235,7 +235,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <LegacyTile>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>
                 Max Latency
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>

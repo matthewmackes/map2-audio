@@ -71,8 +71,7 @@
 .live-runtime-paths-modal__path-label {
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 

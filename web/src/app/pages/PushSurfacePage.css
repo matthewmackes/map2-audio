@@ -1,4 +1,6 @@
 .push-surface-page {
+  --push-surface-font-confirmation-eyebrow: 0.54rem;
+  --push-surface-font-hotspot-badge: 0.625rem;
   display: grid;
   gap: var(--cds-spacing-06);
   padding: var(--cds-spacing-06);
@@ -87,8 +89,7 @@
 .push-surface-page .labs-page__micro-heading,
 .push-surface-page__eyebrow {
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--cds-text-secondary);
   font-size: var(--cds-label-01-font-size);
 }
@@ -236,16 +237,14 @@
 }
 
 .push-surface-page .labs-page__surface-confirmation-eyebrow {
-  font-size: 0.54rem;
+  font-size: var(--push-surface-font-confirmation-eyebrow);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .push-surface-page .labs-page__surface-confirmation strong {
   font-size: clamp(0.6rem, 0.92vw, 0.84rem);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .push-surface-page .labs-page__surface-confirmation > span:last-of-type,
@@ -311,7 +310,7 @@
   place-items: center;
   background: var(--cds-link-primary);
   color: var(--cds-text-on-color);
-  font-size: 0.625rem;
+  font-size: var(--push-surface-font-hotspot-badge);
   font-weight: 700;
 }
 

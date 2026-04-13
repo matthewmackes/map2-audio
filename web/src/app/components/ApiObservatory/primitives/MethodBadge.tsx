@@ -30,7 +30,6 @@ export function MethodBadge({ method, compact = false }: { method: string; compa
           fontSize: compact ? 10 : 11,
           fontWeight: 800,
           letterSpacing: '0.08em',
-          textTransform: 'uppercase',
           padding: compact ? '3px 7px' : '4px 9px',
           minWidth: compact ? 42 : 48,
         } as CSSProperties

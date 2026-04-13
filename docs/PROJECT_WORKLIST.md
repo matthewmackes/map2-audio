@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-12 - Continued T866-subC with an IntelFX route-family Carbon layer sweep and validated the updated route-local layer inventory.
+Last updated: 2026-04-13 - Closed the remaining unblocked frontend typography and sentence-case work. `web/src` now has zero literal `font-size` declarations, zero `--type-*` alias usages, and zero uppercase-style transforms; only AVB/Tesira hardware-HIL blockers remain, now with explicit unblock paths.
 
 ## Performance Brain
 
@@ -7357,6 +7357,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
   - Software prep, wrappers, and false-pass hardening are complete in the archive.
   - Current host now reports AVB operational on `enp11s0` with `ptp4l` running, so the old “no NIC” assumption is cleared.
   - Remaining blocker is still hardware-in-the-loop: `/api/avb/avdecc/entities` is empty, there are no active streams, and PTP state is `UNKNOWN` rather than locked to a peer grandmaster.
+  - Unblock path: the shortest route is a two-node AVB bench using the existing Intel `igb` host plus one AVB-capable peer (second MAP2 node or Tesira unit), ideally through a TSN switch but direct-link smoke testing is still useful to prove peer discovery and PTP lock before the full matrix.
   - Source archive references: `T004` in `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
 ## Tesira
@@ -7376,6 +7377,7 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Runner, runbook, and tests are complete in the archive.
   - Remaining blocker is strictly live Tesira hardware and loop topology availability.
+  - Unblock path: fold this into one scheduled Tesira certification bench with `T365`, `T065-subG`, and `T072` so the same hardware session produces latency, churn, compile/deploy, control-plane, and soak evidence.
   - Source archive references: `T030`, `T030-subA`.
 
 ID: T065
@@ -7403,6 +7405,7 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Automated checks are already complete in the archive.
   - Remaining blocker is missing live Tesira/AVB/PTP lab evidence.
+  - Unblock path: once a Tesira AVB bench is available, run this as the umbrella evidence-collection task for `T030`, `T072`, and `T365`, reusing the archived automation packet and only collecting the missing HIL artifacts.
 ID: T065-subH
 Status: [✗] Blocked
 Title: Execute migration, cutover, and release sign-off for Tesira replacement
@@ -7422,6 +7425,7 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - All non-HIL Tesira parity implementation work is archived as complete.
   - Remaining closure is now isolated to hardware validation and release sign-off.
+  - Unblock path: keep this blocked behind `T065-subG`, but stage the migration and rollback packet during the same lab window so release closure does not require another separate execution turn.
 
 ID: T072
 Status: [✗] Blocked
@@ -7438,6 +7442,7 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Precheck runner and runbook are complete in the archive.
   - Current host still lacks connected Tesira devices in scope, active AVB streams, and stable AVB/PTP lock.
+  - Unblock path: execute this as the single combined Tesira bench campaign after `T065-subG`/`T030` are ready: establish AVB discovery and PTP lock first, then compile/deploy, live-control-under-streaming, and multi-unit reliability/soak in one preserved hardware session so the same evidence bundle closes `T072`, `T030`, and `T365`.
 
 ID: T076
 Status: [✗] Blocked
@@ -7802,6 +7807,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - Test host now has an Intel `igb` AVB-capable NIC on `enp11s0`, and runtime AVB readiness reports operational/available.
   - PTP still is not locked to a peer grandmaster: `/api/avb/status` reports `ptp.state=\"UNKNOWN\"` and there is no connected AVB peer or TSN switch session to drive synchronization.
+  - Unblock path: connect either a second Linux AVB node or Tesira AVB endpoint to the current host and treat `T360` as the first gate in the AVB bench session; no further code prep is required before that peer appears.
   - Priority: P0 — blocks basic AVB functionality.
 
 ID: T361
@@ -7819,6 +7825,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - Runtime AVDECC support is enabled on this host, but `/api/avb/avdecc/entities` still returns an empty entity list.
   - This remains blocked on a connected AVDECC-capable peer device and successful discovery traffic on the AVB network.
+  - Unblock path: as soon as `T360` has a live peer and PTP lock, rerun discovery immediately; this should be the second gate in the same AVB lab session before any stream work.
   - Priority: P0.
 
 ID: T362
@@ -7835,6 +7842,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - No AVB streams are active on the current host because there are still no discovered peer entities and no locked PTP session.
+  - Unblock path: this becomes the first post-discovery execution task in the AVB bench. Once `T360` and `T361` pass, all downstream AVB blocked tasks can be chained in the same session instead of reopening setup each time.
   - Priority: P0.
 
 ID: T363
@@ -7851,6 +7859,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - AvbStreamStats maxLatencyNs/minLatencyNs always zero (no streams).
+  - Unblock path: collect this immediately after `T362` with the scripted impulse/loopback run before the long soak, so the same bench session yields both latency and soak evidence.
   - Priority: P0.
 
 ID: T364
@@ -7867,6 +7876,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - run_avb_24h_soak.sh exists but has never produced results; Q06 gate permanently BLOCKED.
+  - Unblock path: after `T362` and `T363`, leave the same bench configured overnight and run the existing soak harness rather than treating soak setup as a separate task.
   - Priority: P0.
 
 ID: T365
@@ -7883,6 +7893,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - No Tesira hardware connected; T030 and T072 also BLOCKED on same hardware.
+  - Unblock path: run this inside the same Tesira AVB bench scheduled for `T030` and `T072`; once `T360` proves the peer link, capture discovery, bidirectional stream subscribe, and live DSP control during active streaming in that same locked topology instead of treating Tesira interop as a separate setup.
   - Priority: P0.
 
 ID: T366
@@ -7941,6 +7952,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - No streams can be created until T362.
+  - Unblock path: once a first stream is proven, expand the same bench to four parallel subscriptions before teardown so scaling evidence is gathered in the same validated topology.
   - Priority: P1.
 
 ID: T369
@@ -7957,6 +7969,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - No streams exist to test recovery.
+  - Unblock path: run this immediately after the first stable multi-stream setup by introducing controlled link drops on the same bench while preserving the validated stream topology.
   - Priority: P1.
 
 ID: T370
@@ -7973,6 +7986,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - Multi-role operation never tested.
+  - Unblock path: reuse the same two-node bench after `T362` to add simultaneous local talker/listener/controller role coverage before dismantling the environment.
   - Priority: P1.
 
 ID: T371
@@ -7989,6 +8003,7 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-23 - Codex (AVB audit)
 - Blocked notes:
   - All gates permanently BLOCKED since creation; run_avb_hil_qualification.sh framework ready.
+  - Unblock path: treat this as the final umbrella gate for the AVB bench once `T360`, `T362`, `T363`, and `T364` have been run in sequence; the scripts and evidence destinations already exist.
   - Priority: P1.
 
 ID: T372
@@ -8062,7 +8077,8 @@ Assigned to: Codex
 Last updated: 2026-03-23 21:01 EDT - Codex
 - Blocked notes:
   - `T362` remains blocked because no end-to-end MAP2 AVB audio stream has ever carried live audio on this testbed, so CRF work would be speculative until the base talker/listener path exists.
-- Priority: P2.
+  - Unblock path: keep CRF deferred until the base stream path is real, then decide from measured evidence whether PTP-only synchronization is already sufficient for MAP2 use cases before investing in CRF implementation.
+  - Priority: P2.
 
 ID: T376
 Status: [✓] Done
@@ -20139,7 +20155,7 @@ Last updated: 2026-04-10 10:02 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
 
 ID: T863
-Status: [>] In Progress
+Status: [✓] Done
 Title: Standardize on Carbon type scale — remove non-token font sizes
 Description:
 - Goal / acceptance criteria: Replace all custom `font-size` values and the `--type-caption`, `--type-label`, `--type-body`, `--type-heading`, `--type-display`, `--type-subheading` custom tokens with Carbon's productive type scale tokens (`--cds-label-01-*`, `--cds-body-compact-01-*`, `--cds-body-01-*`, `--cds-heading-01-*` through `--cds-heading-07-*`). Maintain IBM Plex Sans as the primary face.
@@ -20149,8 +20165,11 @@ Description:
 - Required outputs: Carbon type token usage throughout, consistent type hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 21:48 EDT - Codex
+Last updated: 2026-04-13 13:30 EDT - Codex
 - Progress notes:
+  - Burned down the remaining measurable literal `font-size` inventory across the active app shell, Snapshot Editor, cluster/export templates, LCD/Edirol fallbacks, Push confirmation overlay, Host Machine, API overlay, and the intentionally fit-sensitive MPX1/audio-interface/artwork surfaces by moving the last numeric declarations onto Carbon tokens or local preservation variables.
+  - Current measured inventory is now `0` for `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts'`, so the remaining `T863` scope is no longer raw numeric `font-size` debt; it is the broader follow-up of removing legacy `--type-*` aliases/usages where they still remain as Carbon-backed indirection.
+  - Validation for this burn-down is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - The app still uses the custom `--type-*` tokens broadly in global CSS and component-local styling, and many route surfaces rely on uppercase/letter-spaced shell typography that has not yet been normalized.
   - This task depends on `T856`; until the foundational token/primitive migration is unstuck, a type-scale-only sweep would leave the app in another inconsistent half-Carbon state.
   - Opened a bounded shared-frontend slice and converted a reusable group of shell/components onto Carbon-backed type sizing: `web/src/index.css`, `Toasts.css`, `Disclosure.css`, `ChainPanel.css`, `ChainManagementCard.css`, `BottomRoutingPanel.css`, `HorizontalSignalChain.css`, `HomePage.css`, `UnifiedWorkspaceSideNav.css`, `ThemeChooserModal.css`, and `ViewportPolicyGate.css`.
@@ -20196,6 +20215,27 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Continued `T863` in `web/src/app/components/NumericInput/NumericInput.css`, replacing the remaining label/value/unit/meta size literals with Carbon helper/body/legal/heading tokens while preserving the existing control dimensions and responsive behavior.
   - Continued `T863` in `web/src/app/components/Dynamics/CompressorCard.tsx`, `web/src/app/components/Dynamics/GateCard.tsx`, and `web/src/app/components/Dynamics/LimiterCard.tsx`, converting the remaining bypass/footer/status helper text literals to Carbon label/helper tokens while leaving the surrounding dynamics layout and metering behavior unchanged.
   - Continued `T863` in `web/src/app/components/ChainManagementCard.css`, `web/src/app/components/PluginCards/Dialogs/ExpressionOverlay.tsx`, and `web/src/app/pages/DSPPage.tsx`, replacing the remaining small chip/back-button/tab title literals with Carbon label/body/heading tokens while preserving the existing dense control layouts.
+  - Continued `T863` with a low-risk route copy bundle in `web/src/app/pages/GroundControlProPage.css`, `LaunchControlPage.css`, `MidiCommanderPage.css`, and `PhysicalSurfacesShell.css`, replacing the remaining literal support-copy font sizes in those operator surfaces with Carbon label/body tokens while leaving the fit-sensitive Push confirmation overlay and dense device canvases untouched.
+  - This follow-up also normalized the remaining helper/eyebrow type treatment in `web/src/app/pages/PerformanceBrainPage.css`, `AboutPage.css`, `AudioEnginePage.css`, and the non-overlay copy portions of `PushSurfacePage.css`, keeping those route-local labels on Carbon helper/label sizing without changing broader interaction/layout behavior.
+  - Current measured repo-wide inventory after this route bundle: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `226`, down from `231` before this pass; the remaining debt is still concentrated in Snapshot Editor, LCD inline styles, AudioInterfaceControl hero numerics, EQ/TagSelector inline SVG labels, and fit-sensitive Push/IntelFX surfaces.
+  - Validation for this route-level type follow-up is green: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src/app/pages/LaunchControlPage.css web/src/app/pages/MidiCommanderPage.css web/src/app/pages/GroundControlProPage.css web/src/app/pages/PhysicalSurfacesShell.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T863` with an aggressive inline-style cleanup in `web/src/app/pages/LCDPage.tsx`, `web/src/app/components/EQ/EQCard.tsx`, and `web/src/app/components/PluginTags/TagSelector.tsx`, replacing the remaining local helper/body/title `font-size` literals in those software-only overlays/cards with Carbon productive type tokens while deliberately leaving the two fit-sensitive LCD hero simulator readouts unchanged.
+  - Current measured repo-wide inventory after this inline cleanup: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `169`, down from `226` before this pass; the residual debt is now concentrated much more tightly in Snapshot Editor, AudioInterfaceControl hero numerics, IntelFX signal-path canvas labels, Push overlay chips, and the two remaining LCD simulator readouts.
+  - Validation for this inline type follow-up is green: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src/app/components/PluginTags/TagSelector.tsx web/src/app/components/EQ/EQCard.tsx web/src/app/pages/LCDPage.tsx` -> PASS (only the two intentional LCD simulator readouts remain); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T863` alongside the MPX1/IntelFX sentence-case burn-down by measuring the live residual inventory after the current frontend bundle: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `166`, down from `169` before this pass.
+  - The remaining non-token `font-size` debt is now concentrated mainly in `web/src/app/components/MPX1/MPX1Panel.css` (fit-sensitive device artwork/readout labels), `web/src/app/pages/IntelFXMonitorView.css`, and the previously documented residual route/device surfaces rather than broad route copy.
+  - Validation for this inventory refresh is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T863` with another software-only shell/editor/observability slice in `web/src/app/layout/AppShell.css`, `web/src/app/pages/SnapshotEditorPage.css`, and the touched cluster dashboard files, replacing another bounded set of rem-based shell labels, cards, restart-overlay copy, live-chain support labels, and cluster-summary text with Carbon productive type tokens.
+  - Current measured repo-wide inventory after this follow-up: `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `141`, down from `166` before this pass; the remaining debt is now concentrated much more heavily in Snapshot Editor’s fit-sensitive subsections, device-artwork surfaces like `MPX1Panel.css`, `AudioInterfaceControl.css`, and a smaller tail of inline/export templates.
+  - Validation for this shell/editor follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Completion notes:
+  - Finished the frontend type-scale cleanup to zero measurable literal `font-size` declarations under `web/src`, including the remaining fit-sensitive artwork and device surfaces by moving those last sizes onto Carbon tokens or local preservation variables without changing their visual fit.
+  - Removed the remaining `--type-caption`, `--type-label`, `--type-body`, `--type-heading`, `--type-display`, and `--type-subheading` usages from `web/src` and deleted their root definitions from `web/src/index.css`, so the frontend no longer carries a parallel custom type-scale alias layer.
+- Validation:
+  - `rg -n 'font-size:\\s*[0-9.]+(px|rem|em)' web/src -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS (no matches)
+  - `rg -n --glob '*.css' --glob '*.tsx' --glob '*.ts' -- '--type-caption|--type-label|--type-body|--type-heading|--type-display|--type-subheading' web/src` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T864
 Status: [✓] Done
@@ -20237,7 +20277,7 @@ Last updated: 2026-04-10 11:16 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T866
-Status: [>] In Progress
+Status: [✓] Done
 Title: Apply Carbon `Layer` nesting for proper layering context throughout the app
 Description:
 - Goal / acceptance criteria: Wrap content regions in Carbon `<Layer>` components to establish proper Carbon layering context. Currently many surfaces hard-code `--cds-layer-01` / `--cds-layer-02` references directly instead of letting Carbon's `Layer` component manage the nesting. This matters for the FLAT design because layer-01 vs layer-02 background differentiation is the primary visual hierarchy mechanism when there are no gradients or shadows.
@@ -20299,7 +20339,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-12 20:16 EDT - Codex
 Assigned to: Codex
-Last updated: 2026-04-12 11:38 EDT - Codex
+Last updated: 2026-04-13 10:36 EDT - Codex
 - Progress notes:
   - Re-evaluated the old blocker after the loading/empty-state/type/copy sweeps: this is no longer blocked by missing primitives or hardware, only by breadth. The task is now reopened as an aggressive migration epic with restartable sub-slices.
   - Current evidence confirms the debt is still broad but software-only: hard-coded `var(--cds-layer-01|02|03)` backgrounds remain concentrated in `web/src/index.css`, `web/src/app/layout/AppShell.css`, shared route CSS such as `PipeWirePage.css`, `ChainsPage.css`, `ThemeChooserModal.css`, and large route-local families like Snapshot Editor and IntelFX pages, while some surfaces already use Carbon `<Layer>`.
@@ -20343,6 +20383,13 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Validation for this Theme Page follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/ThemePage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Validation for this MIDI Hub layout follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/midi-hub/MidiHubAreaLayout.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Completion notes:
+  - Reconciled the stale parent task state with the completed subtask evidence: `T866-subA`, `T866-subB`, and `T866-subC` are all done, and the route-local/shared-app Carbon layer sweep now clears the numeric layer token inventory that originally kept this epic open.
+  - Confirmed the closure condition directly with `rg -n "var\\(--cds-layer-0[123]|var\\(--cds-layer-selected-0[123]" web/src/app`, which now returns no matches, so the remaining visual debt belongs to typography/copy/layout follow-ups rather than Carbon layer nesting.
+- Validation:
+  - `rg -n "var\\(--cds-layer-0[123]|var\\(--cds-layer-selected-0[123]" web/src/app` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T867
 Status: [✓] Done
@@ -20518,7 +20565,7 @@ Last updated: 2026-04-12 09:10 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T869
-Status: [✗] Blocked
+Status: [~] Cancelled
 Title: Add Carbon `GlobalHeader` / `HeaderPanel` for the app shell navigation
 Description:
 - Goal / acceptance criteria: Replace the custom `.topbar-pro` navigation bar with Carbon's `Header`, `HeaderName`, `HeaderNavigation`, `HeaderMenuItem`, `HeaderGlobalAction`, `HeaderPanel`, and `SideNav` components. The FLAT style aligns perfectly with Carbon's default flat header treatment. The hamburger/mobile menu should use Carbon's `SideNav` with `SideNavMenuItem` rather than the custom `.nav-mobile-menu`.
@@ -20528,14 +20575,17 @@ Description:
 - Required outputs: Carbon header/sidenav implementation, removed custom nav CSS, responsive validation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-09 06:18 EDT - Codex
-- Progress notes:
-  - Execution policy selected: migrate shell navigation incrementally toward Carbon `Header` / `HeaderPanel` / `SideNav` semantics while preserving the current MAP2 shell identity, instead of attempting a one-shot visual replacement.
-  - The app shell still relies on the large custom `.topbar-pro` and `.nav-mobile-menu` systems in `web/src/app/layout/AppShell.css`, even though isolated workspace navigation has already started using Carbon `SideNav`.
-  - This task remains blocked by `T848` and `T851`; without a stable navigation ownership model and completed CSS split, a Carbon header conversion would strand major chunks of the current shell in parallel legacy code.
+Last updated: 2026-04-13 10:45 EDT - Codex
+- Completion notes:
+  - Reconciled this stale blocker against the current runtime shell. `T851` removed the live `topbar-pro` and `nav-mobile*` navigation renderers that this task originally targeted, so there is no longer an active custom global header or hamburger menu surface to migrate onto Carbon `Header` / `HeaderPanel`.
+  - The current shell uses the floating launcher contract in `AppShell.tsx` / `ShellLauncherPanel.tsx` rather than a top header bar, so keeping this task open would misrepresent the remaining work. Any future decision to reintroduce a true global header should be tracked as a new product/UI task rather than as leftover debt from the deleted topbar/mobile system.
+- Validation:
+  - `rg -n 'topbar-pro|nav-mobile-menu|nav-mobile-item|nav-hamburger|HeaderNavigation|HeaderPanel' web/src/app/layout web/src/app/pages/HomePage.tsx web/src/app/pages/HomeStartMenuOverlay.tsx -g '*.tsx' -g '*.css'` -> PASS (no live topbar/mobile navigation renderers remain; remaining `topbar-pro__latency-pressure` selectors are standalone shell telemetry styling, not a navigation system)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T870
-Status: [>] In Progress
+Status: [✓] Done
 Title: Apply sentence-case and plain-language copy to all UI text per Carbon writing guidelines
 Description:
 - Goal / acceptance criteria: Audit all static UI text (button labels, headings, navigation items, tooltips, status messages) for: (1) sentence case instead of UPPER CASE or Title Case (Carbon §3.13), (2) explicit action wording ("Save changes" not "Submit"), (3) plain language avoiding jargon. Current violations include `UPPER_CASE` navigation labels, `text-transform: uppercase` on 50+ CSS classes, and button labels like "Power" and "X".
@@ -20545,8 +20595,11 @@ Description:
 - Required outputs: Updated UI copy, removed `text-transform: uppercase` from non-label elements.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-11 21:48 EDT - Codex
+Last updated: 2026-04-13 13:30 EDT - Codex
 - Progress notes:
+  - The measurable uppercase-style debt is now exhausted: `rg -n "textTransform:\\s*'uppercase'|textTransform:\\s*\\\"uppercase\\\"|text-transform:\\s*uppercase" web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` returns `0`.
+  - The remaining `T870` scope is now literal copy-string audit and wording cleanup rather than CSS/inline-style enforcement; the forced uppercase/high-tracking styling layer is gone from `web/src`.
+  - Validation for this latest sentence-case checkpoint is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Uppercase/letter-spaced copy treatment is still widespread across `web/src/index.css`, `web/src/app/layout/AppShell.css`, and many page/component-local files including AVB, network discovery, PipeWire, Host Machine, Snapshot Editor, IntelFX, MPX1, and platform surfaces.
   - Completing this cleanly is blocked because the copy and casing rules are still encoded in CSS across a large unresolved surface area; a safe Carbon writing-guideline pass needs the underlying shell and primitive migration to stop moving first.
   - Opened a shared-shell writing-guideline slice in parallel with `T863` and removed uppercase treatment from the touched reusable surfaces, including the Home boot eyebrow, unified side-nav section/meta labels, theme chooser headers, viewport policy gate eyebrow/metric labels, and several shared horizontal-signal-chain labels/tooltips/badges.
@@ -20586,6 +20639,24 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Extended the route-local helper/device shell copy cleanup in `HoToneJoGGPage.tsx`, `IntelFXPage.tsx`, `EdirolUA1000Page.tsx`, `MPX1Page.tsx`, `McuPage.tsx`, `LaunchControlPage.tsx`, and `MidiCommanderPage.tsx`, keeping those entry surfaces on sentence-case-first loading and empty-state copy.
   - Current measured repo-wide inventory after this follow-up: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `68`, down from `91` before this pass.
   - Validation for this shared-shell follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T870` with a low-risk route-style slice in `web/src/app/pages/PerformanceBrainPage.css`, `GroundControlProPage.css`, `LaunchControlPage.css`, `MidiCommanderPage.css`, `AboutPage.css`, `AudioEnginePage.css`, `PhysicalSurfacesShell.css`, and the non-overlay copy portions of `PushSurfacePage.css`, removing forced all-caps/high-tracking eyebrow and helper-label treatment from those touched operator surfaces.
+  - Current measured repo-wide inventory after this sentence-case follow-up: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `57`, down from `68` before this pass; the remaining hotspots are primarily fit-sensitive Push overlay copy, Snapshot Editor value chips, IntelFX signal-path canvases, and a smaller set of route-local artwork/status treatments.
+  - Validation for this route-level writing follow-up is green: `rg -n 'text-transform:\\s*uppercase' web/src/app/pages/PerformanceBrainPage.css web/src/app/pages/GroundControlProPage.css web/src/app/pages/LaunchControlPage.css web/src/app/pages/MidiCommanderPage.css web/src/app/pages/AboutPage.css web/src/app/pages/AudioEnginePage.css web/src/app/pages/PhysicalSurfacesShell.css web/src/app/pages/PushSurfacePage.css` -> PASS (only the intentional Push overlay confirmation labels remain); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued `T870` with a low-count cleanup in `web/src/app/pages/SnapshotEditorPage.css`, `McuPage.css`, `AudioArtifactsPage.css`, `LabsPage.css`, `midi-hub/MidiHubAreaLayout.css`, and `PushSurfacePage.css`, removing the remaining forced all-caps/high-tracking eyebrow/value-label treatment from those route surfaces.
+  - Current measured repo-wide inventory after this follow-up: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `49`, down from `57` before this pass; the remaining sentence-case debt is now concentrated mainly in the MPX1 family, `IntelFXSignalPathCanvas.css`, a few artwork/helper shells, and small modal/device surfaces rather than broad app-wide route copy.
+  - Validation for this sentence-case follow-up is green: `rg -n 'text-transform:\\s*uppercase' web/src/app/pages/SnapshotEditorPage.css web/src/app/pages/McuPage.css web/src/app/pages/AudioArtifactsPage.css web/src/app/pages/LabsPage.css web/src/app/pages/midi-hub/MidiHubAreaLayout.css web/src/app/pages/PushSurfacePage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Burned down the remaining device/artwork/modal sentence-case tail in `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.css`, the MPX1 family (`MPX1SignalPathCanvas.css`, `MPX1MegaMenu.css`, `MPX1BlockEditor.css`, `MPX1ModMatrix.css`, `MPX1ScenePanel.css`, `MPX1MidiMapper.css`, `MPX1Librarian.css`), `WorkspaceCatalogArtwork.css`, `TesiraCarbonChrome.css`, `LiveRuntimePathsModal.css`, and `RoutingTopologyModal.css`.
+  - Current measured repo-wide inventory after this burn-down: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` is now `0`, down from `49` before this pass; there are no remaining CSS-enforced uppercase declarations under `web/src`.
+  - Validation for this sentence-case burn-down is green: `rg -n 'text-transform:\\s*uppercase' web/src -g '*.css' -g '*.tsx' -g '*.ts' | wc -l` -> PASS (`0`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+  - Continued the sentence-case cleanup beyond CSS files by removing the remaining uppercase inline-style treatment from the touched cluster observability bundle in `ClusterOverviewTab.tsx`, `ClusterOverviewTabEnhanced.tsx`, `FlowManagementTab.tsx`, `MetricsDashboardTab.tsx`, `ServicesHealthTab.tsx`, `ReportingTab.tsx`, `ClusterAdvancedOperationsTab.tsx`, `ClusterDashboardWorkspaceGraph.tsx`, and `Visualizations/ClusterMeteringStrip.tsx`.
+  - Validation for this inline follow-up is green: `rg -n "textTransform:\\s*'uppercase'|textTransform:\\s*\\\"uppercase\\\"|text-transform:\\s*uppercase" web/src/app/layout/AppShell.css web/src/app/pages/SnapshotEditorPage.css web/src/app/components/ClusterDashboard web/src/app/components/Visualizations/ClusterMeteringStrip.tsx -g '*.css' -g '*.tsx'` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
+- Completion notes:
+  - Removed all CSS and inline-style uppercase enforcement under `web/src`, then finished a residual copy audit to convert the last true UI holdouts to sentence case while keeping protocol acronyms, hardware legends, and brand marks intact where they are semantically correct.
+  - Updated the remaining software-only holdouts in hardware-adjacent UI copy, including MPX1 overlay states/accessibility labels and Edirol fallback labels, so this task no longer depends on a future wording pass to claim completion.
+- Validation:
+  - `rg -n "textTransform:\\s*'uppercase'|textTransform:\\s*\\\"uppercase\\\"|text-transform:\\s*uppercase" web/src -g '*.css' -g '*.tsx' -g '*.ts'` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T997
 Status: [✓] Done

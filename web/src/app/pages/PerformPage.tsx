@@ -465,7 +465,7 @@ function TapTempo({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, letterSpacing: '0.02em' }}>
         Tap Tempo
       </div>
       <div style={{ position: 'relative', textAlign: 'center' }}>
@@ -600,7 +600,7 @@ function Tuner({
           </span>
         </div>
       )}
-      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, letterSpacing: '0.02em' }}>
         Tuner
       </div>
       {/* Note + octave */}
@@ -1293,7 +1293,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         gap: 12,
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted, letterSpacing: 1, textTransform: 'uppercase' }}>
+        <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted, letterSpacing: '0.02em' }}>
           Stage Mode
         </span>
         <span style={{ fontFamily: C.sans, fontSize: 13, fontWeight: 500, color: C.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1322,8 +1322,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         color: C.muted,
         fontFamily: C.mono,
         fontSize: 10,
-        letterSpacing: 0.4,
-        textTransform: 'uppercase',
+        letterSpacing: '0.02em',
         flexShrink: 0,
       }}>
         {STAGE_RUNTIME_NOTICE}
@@ -1355,7 +1354,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
 
         {/* Bypass strip */}
         <div style={{ padding: '8px 16px', flexShrink: 0 }}>
-          <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+          <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, letterSpacing: '0.02em', marginBottom: 6 }}>
             Effect Blocks
           </div>
           <BypassStrip chain={activeChain} onToggle={handleBypass} isBlockFlashing={isBypassFlashing} />

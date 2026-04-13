@@ -186,7 +186,7 @@ function PerformanceBrainCardBase({
         'radial-gradient(circle at top right, rgba(15,98,254,0.18), transparent 34%), ' +
         'linear-gradient(145deg, rgba(18,18,18,0.98), rgba(10,10,10,0.94))',
     }}>
-      <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8d8d8d' }}>
+      <span style={{ fontSize: 11, letterSpacing: '0.02em', color: '#8d8d8d' }}>
         Performance brain
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 20, fontWeight: 800, color: '#f4f4f4' }}>

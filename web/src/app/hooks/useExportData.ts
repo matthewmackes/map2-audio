@@ -108,6 +108,10 @@ export function generatePDFHTML(
   <meta charset="UTF-8">
   <title>Host Machine Monitoring Report</title>
   <style>
+    :root {
+      --host-report-font-label: 0.75rem;
+      --host-report-font-value: 1.5rem;
+    }
     body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
     h1 { color: #1f2937; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; }
     h2 { color: #374151; margin-top: 30px; }
@@ -117,11 +121,11 @@ export function generatePDFHTML(
     tr:hover { background-color: #f9fafb; }
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
     .stat-box { background: #f3f4f6; padding: 15px; border-radius: 8px; }
-    .stat-label { font-size: 0.75rem; color: #666; font-weight: 600; }
-    .stat-value { font-size: 1.5rem; font-weight: 700; color: #3b82f6; }
+    .stat-label { font-size: var(--host-report-font-label); color: #666; font-weight: 600; }
+    .stat-value { font-size: var(--host-report-font-value); font-weight: 700; color: #3b82f6; }
     .warning { background-color: #fef3c7; }
     .critical { background-color: #fee2e2; }
-    .footer { margin-top: 40px; font-size: 0.75rem; color: #999; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+    .footer { margin-top: 40px; font-size: var(--host-report-font-label); color: #999; border-top: 1px solid #e5e7eb; padding-top: 20px; }
   </style>
 </head>
 <body>

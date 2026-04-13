@@ -77,7 +77,7 @@ function AudioEngineWorkspaceNodeCard({ data }: NodeProps<AudioEngineWorkspaceRe
     >
       <Handle type="target" position={Position.Left} style={{ background: data.accentColor }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--cds-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--cds-text-secondary)', letterSpacing: '0.02em' }}>
           {data.eyebrow}
         </span>
         <span style={{ fontSize: '0.72rem', fontWeight: 600, color: data.selected ? data.accentColor : 'var(--cds-text-secondary)' }}>

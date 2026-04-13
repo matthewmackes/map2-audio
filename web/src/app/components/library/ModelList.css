@@ -30,6 +30,6 @@
 
 .model-item-meta {
   margin-top: 2px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--muted);
 }

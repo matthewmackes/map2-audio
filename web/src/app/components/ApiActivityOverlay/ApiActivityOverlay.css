@@ -19,7 +19,7 @@
   flex-shrink: 0;
   padding: 0.25rem 0.75rem 0.25rem 0;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   text-align: right;
   white-space: pre-wrap;
@@ -53,7 +53,7 @@
 /* Individual log line */
 .api-overlay__line {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
@@ -95,7 +95,7 @@
 
 .api-overlay__ts {
   color: color-mix(in srgb, var(--text-secondary) 72%, transparent);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 /* Hovered line highlight */
@@ -114,7 +114,7 @@
   border-radius: 2px;
   color: var(--interactive);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   padding: 2px 6px;
   cursor: pointer;
   line-height: 1;

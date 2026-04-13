@@ -167,7 +167,7 @@
   color: var(--cds-text-primary, var(--text-primary));
   box-shadow: none;
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.8rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -320,14 +320,14 @@
 }
 
 .shell-launcher__header-copy strong {
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
   line-height: 1.2;
 }
 
 .shell-launcher__header-copy span {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.76rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -421,7 +421,7 @@
   max-width: 13rem;
   overflow: hidden;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.68rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -451,7 +451,7 @@
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
   background: var(--cds-layer, #ffffff);
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.72rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
 }
 
@@ -487,7 +487,7 @@
   align-items: center;
   min-height: 1.9rem;
   padding: 0.35rem 0.65rem;
-  font-size: 0.72rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.25;
 }
 
@@ -533,7 +533,7 @@
   background: var(--cds-layer, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
   font: inherit;
-  font-size: 0.82rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   cursor: pointer;
 }
@@ -618,7 +618,7 @@
   background: var(--cds-background, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.74rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -740,7 +740,7 @@
 
 .window-taskbar__indicator-text {
   white-space: nowrap;
-  font-size: 0.68rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   line-height: 1;
 }
@@ -862,7 +862,7 @@
 
 .start-menu-panel__header-copy strong {
   color: var(--text-primary, var(--cds-text-primary, #161616));
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -918,7 +918,7 @@
 
 .start-menu-panel__column-header strong {
   color: var(--text-primary, var(--cds-text-primary, #161616));
-  font-size: 0.84rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
 }
 
@@ -936,7 +936,7 @@
   background: color-mix(in srgb, var(--surface, #ffffff) 82%, transparent);
   color: var(--text-primary, var(--cds-text-primary, #161616));
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -1193,7 +1193,7 @@
 }
 
 .start-menu-hero-card__label {
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
@@ -1203,7 +1203,7 @@
 }
 
 .start-menu-hero-card__desc {
-  font-size: 0.7rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-secondary, var(--text-secondary, #525252));
   line-height: 1.3;
   overflow: hidden;
@@ -1263,7 +1263,7 @@
 }
 
 .start-menu-compact-card__label {
-  font-size: 0.7rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
@@ -1273,7 +1273,7 @@
 }
 
 .start-menu-compact-card__status {
-  font-size: 0.62rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-support-error, #da1e28);
   line-height: 1.2;
 }
@@ -1371,14 +1371,14 @@
 
 .shell-restart-overlay__title {
   padding: 1rem 0.95rem 0.2rem;
-  font-size: 1.5rem;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
   line-height: 1.15;
 }
 
 .shell-restart-overlay__subtitle {
   padding: 0 0.95rem 0.95rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.94rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.5;
 }
 
@@ -1398,7 +1398,7 @@
   border: 1px solid color-mix(in srgb, var(--window-shell-border) 84%, transparent);
   background: color-mix(in srgb, var(--cds-layer, #ffffff) 96%, var(--window-shell-surface) 4%);
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.82rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 500;
   box-shadow: none;
 }
@@ -1623,7 +1623,7 @@ button.topbar-pro__latency-pressure {
   gap: 0.24rem;
   margin-top: 0.2rem;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.76rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .window-taskbar__clock:focus-visible,
@@ -1648,7 +1648,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   }
 
   .topbar-pro__latency-pressure-digits {
-    font-size: 1rem;
+    font-size: var(--cds-body-01-font-size, 1rem);
   }
 }
 
@@ -1718,7 +1718,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 82%, transparent);
   background: color-mix(in srgb, var(--cds-layer-hover) 92%, transparent);
   color: var(--cds-text-secondary);
-  font-size: 0.72rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
 }
 
@@ -1917,7 +1917,7 @@ button.topbar-pro__latency-pressure:focus-visible {
 .advanced-menu-control-panel__details-list li {
   position: relative;
   padding-left: 0.75rem;
-  font-size: 0.88rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
   color: var(--cds-text-primary);
 }

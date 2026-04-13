@@ -194,7 +194,7 @@
   padding: var(--cds-spacing-03);
   color: var(--cds-text-primary);
   font-family: var(--cds-code-01-font-family, var(--font-mono));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.4;
   margin: 0;
 }

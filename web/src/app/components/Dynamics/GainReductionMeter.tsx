@@ -136,7 +136,7 @@ function GainReductionMeterComponent({
         }
 
         .gr-meter-marker-label {
-          font-size: 8px;
+          font-size: var(--gr-meter-marker-font-size, 0.5rem);
           color: #666;
           width: 18px;
           text-align: right;
@@ -158,7 +158,7 @@ function GainReductionMeterComponent({
         }
 
         .gr-meter-value {
-          font-size: 10px;
+          font-size: var(--gr-meter-value-font-size, 0.625rem);
           color: #ccc;
           font-family: var(--font-ui-tight);
           min-width: 50px;

@@ -26,7 +26,7 @@ export function FlowManagementTab() {
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, letterSpacing: '0.02em' }}>
           Flow Distribution
         </div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.5 }}>
@@ -80,7 +80,7 @@ export function FlowManagementTab() {
                     padding: '10px 12px',
                   }}
                 >
-                  <div style={{ fontSize: 10, color: '#00ff41', fontWeight: 600, marginBottom: 6 }}>PRIMARY</div>
+                  <div style={{ fontSize: 10, color: '#00ff41', fontWeight: 600, marginBottom: 6, letterSpacing: '0.02em' }}>Primary</div>
                   <div style={{ fontSize: 12, color: '#d0d0d0', fontWeight: 500 }}>
                     {flow.primary_node || 'Unassigned'}
                   </div>
@@ -95,7 +95,7 @@ export function FlowManagementTab() {
                     padding: '10px 12px',
                   }}
                 >
-                  <div style={{ fontSize: 10, color: '#ffaa00', fontWeight: 600, marginBottom: 6 }}>STANDBY</div>
+                  <div style={{ fontSize: 10, color: '#ffaa00', fontWeight: 600, marginBottom: 6, letterSpacing: '0.02em' }}>Standby</div>
                   <div style={{ fontSize: 12, color: '#d0d0d0', fontWeight: 500 }}>
                     {flow.standby_node || 'None'}
                   </div>

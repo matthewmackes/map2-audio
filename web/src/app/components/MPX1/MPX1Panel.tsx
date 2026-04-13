@@ -344,7 +344,7 @@ export function MPX1Panel() {
               <div
                 className={`mpx1-power-led ${mpx1.state?.connected ? 'mpx1-power-led--on' : ''}`}
                 title={mpx1.state?.connected ? 'Device connected' : 'Device offline'}
-                aria-label={mpx1.state?.connected ? 'Power on' : 'Power off'}
+                aria-label={mpx1.state?.connected ? 'Device connected' : 'Device offline'}
               />
             </div>
           </div>
@@ -353,10 +353,10 @@ export function MPX1Panel() {
 
         {/* ── State overlays ──────────────────────────────────────────── */}
         {panelState === 'offline' && (
-          <div className="mpx1-panel-overlay mpx1-panel-overlay--offline">NO DEVICE</div>
+          <div className="mpx1-panel-overlay mpx1-panel-overlay--offline">No device</div>
         )}
         {panelState === 'bypassed' && (
-          <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">BYPASS ACTIVE</div>
+          <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">Bypass active</div>
         )}
 
         {/* ── Parameter popover ───────────────────────────────────────── */}

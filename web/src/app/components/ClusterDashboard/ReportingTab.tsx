@@ -169,16 +169,21 @@ export function ReportingTab() {
     <meta charset="utf-8" />
     <title>Cluster Health Report</title>
     <style>
+      :root {
+        --report-font-label: 0.75rem;
+        --report-font-value: 1.75rem;
+        --report-font-table: 0.875rem;
+      }
       body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 24px; }
       h1, h2 { margin: 0 0 12px 0; }
       .meta { color: #94a3b8; margin-bottom: 20px; }
       .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
       .card { border: 1px solid #334155; border-radius: 8px; padding: 12px; background: #111827; }
-      .label { color: #94a3b8; font-size: 0.75rem; }
-      .value { font-size: 1.75rem; font-weight: 700; margin-top: 6px; }
+      .label { color: #94a3b8; font-size: var(--report-font-label); }
+      .value { font-size: var(--report-font-value); font-weight: 700; margin-top: 6px; }
       table { width: 100%; border-collapse: collapse; background: #111827; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
-      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: 0.875rem; }
-      th { color: #94a3b8; font-weight: 600; font-size: 0.75rem; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: var(--report-font-table); }
+      th { color: #94a3b8; font-weight: 600; font-size: var(--report-font-label); }
     </style>
   </head>
   <body>
@@ -225,16 +230,21 @@ export function ReportingTab() {
     <meta charset="utf-8" />
     <title>Service Uptime Snapshot</title>
     <style>
+      :root {
+        --report-font-label: 0.75rem;
+        --report-font-value: 1.75rem;
+        --report-font-table: 0.875rem;
+      }
       body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
       h1 { margin: 0 0 8px 0; }
       .muted { color: #6b7280; margin-bottom: 20px; }
       .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
       .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; background: #f9fafb; }
-      .k { font-size: 0.75rem; color: #6b7280; }
-      .v { font-size: 1.75rem; font-weight: 700; margin-top: 4px; }
+      .k { font-size: var(--report-font-label); color: #6b7280; }
+      .v { font-size: var(--report-font-value); font-weight: 700; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 0.875rem; }
-      th { font-size: 0.75rem; color: #6b7280; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: var(--report-font-table); }
+      th { font-size: var(--report-font-label); color: #6b7280; }
     </style>
   </head>
   <body>
@@ -340,7 +350,7 @@ export function ReportingTab() {
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, letterSpacing: '0.02em' }}>
           Export & Reporting
         </div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.5 }}>

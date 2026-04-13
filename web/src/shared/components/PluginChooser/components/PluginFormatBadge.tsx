@@ -61,7 +61,6 @@ export function PluginFormatBadge({ format, size = 'small' }: PluginFormatBadgeP
           py,
           letterSpacing: '0.02em',
           border: `1px solid ${color}`,
-          textTransform: 'uppercase',
           lineHeight: 1,
           whiteSpace: 'nowrap',
           userSelect: 'none',

@@ -132,13 +132,6 @@ input[type="range"]:focus::-webkit-slider-thumb {
   --cds-code-01-font-family: var(--font-mono);
   --cds-code-02-font-family: var(--font-mono);
 
-  --type-display: var(--cds-heading-05-font-size, 2rem);
-  --type-heading: var(--cds-heading-03-font-size, 1.5rem);
-  --type-subheading: var(--cds-body-02-font-size, 1rem);
-  --type-body: var(--cds-body-01-font-size, 0.875rem);
-  --type-label: var(--cds-label-01-font-size, 0.75rem);
-  --type-caption: var(--cds-label-01-font-size, 0.6875rem);
-
   --space-0: 0;
   --space-1: 0.125rem;
   --space-2: 0.25rem;

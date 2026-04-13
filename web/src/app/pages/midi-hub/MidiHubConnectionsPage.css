@@ -149,7 +149,7 @@
 }
 
 .midi-hub-connections-patchbay__node-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
 }
 

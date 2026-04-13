@@ -5,6 +5,13 @@
 
 /* Main Container - Premium Dark Design */
 .audio-interface-section {
+  --audio-interface-font-fallback-icon: 100px;
+  --audio-interface-font-title-mobile: 20px;
+  --audio-interface-font-device-name-tablet: 28px;
+  --audio-interface-font-stat-tablet: 26px;
+  --audio-interface-font-fallback-icon-mobile: 60px;
+  --audio-interface-font-device-name-mobile: 24px;
+  --audio-interface-font-stat-mobile: 22px;
   background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
   border: 1px solid rgba(77, 158, 255, 0.3);
   border-radius: 20px;
@@ -133,7 +140,7 @@
 }
 
 .audio-device-image .fallback-icon {
-  font-size: 100px;
+  font-size: var(--audio-interface-font-fallback-icon);
   opacity: 0.7;
   position: relative;
   z-index: 1;
@@ -494,7 +501,7 @@
   }
 
   .audio-interface-title {
-    font-size: 20px;
+    font-size: var(--audio-interface-font-title-mobile);
   }
 
   .audio-details-section {
@@ -518,7 +525,7 @@
   }
 
   .audio-device-name {
-    font-size: 28px;
+    font-size: var(--audio-interface-font-device-name-tablet);
   }
 
   .audio-quick-stats {
@@ -527,7 +534,7 @@
   }
 
   .audio-quick-stat-value {
-    font-size: 26px;
+    font-size: var(--audio-interface-font-stat-tablet);
   }
 
   .audio-button-row {
@@ -550,11 +557,11 @@
   }
 
   .audio-device-image .fallback-icon {
-    font-size: 60px;
+    font-size: var(--audio-interface-font-fallback-icon-mobile);
   }
 
   .audio-device-name {
-    font-size: 24px;
+    font-size: var(--audio-interface-font-device-name-mobile);
   }
 
   .audio-device-subtitle {
@@ -564,7 +571,7 @@
   }
 
   .audio-quick-stat-value {
-    font-size: 22px;
+    font-size: var(--audio-interface-font-stat-mobile);
   }
 
   .audio-panel {

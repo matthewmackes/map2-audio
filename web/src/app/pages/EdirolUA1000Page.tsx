@@ -525,10 +525,10 @@ export function EdirolUA1000Page() {
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
                 e.currentTarget.parentElement!.innerHTML = `
-                  <div style="padding: 40px; color: #888; text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">FRONT</div>
+                  <div style="padding: 40px; color: #888; text-align: center; --ua1000-fallback-title-size: 48px; --ua1000-fallback-copy-size: 0.75rem;">
+                    <div style="font-size: var(--ua1000-fallback-title-size); margin-bottom: 12px;">Front</div>
                     <div>Front Panel Image</div>
-                    <div style="font-size: 0.75rem; opacity: 0.7;">XLR/TRS Inputs 1-4 • Headphones • Gain Controls</div>
+                    <div style="font-size: var(--ua1000-fallback-copy-size); opacity: 0.7;">XLR/TRS Inputs 1-4 • Headphones • Gain Controls</div>
                   </div>
                 `
               }}
@@ -557,10 +557,10 @@ export function EdirolUA1000Page() {
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
                 e.currentTarget.parentElement!.innerHTML = `
-                  <div style="padding: 40px; color: #888; text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">REAR</div>
+                  <div style="padding: 40px; color: #888; text-align: center; --ua1000-fallback-title-size: 48px; --ua1000-fallback-copy-size: 0.75rem;">
+                    <div style="font-size: var(--ua1000-fallback-title-size); margin-bottom: 12px;">Rear</div>
                     <div>Rear Panel Image</div>
-                    <div style="font-size: 0.75rem; opacity: 0.7;">Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB</div>
+                    <div style="font-size: var(--ua1000-fallback-copy-size); opacity: 0.7;">Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB</div>
                   </div>
                 `
               }}

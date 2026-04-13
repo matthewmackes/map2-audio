@@ -224,34 +224,34 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
       {/* Quick Stats */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
         <LegacyTile style={{ background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`, borderColor: healthColor }}>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Health</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>Health</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: healthColor, marginTop: 8 }}>{stats.healthScore.toFixed(0)}%</div>
         </LegacyTile>
 
         <LegacyTile>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>Nodes</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
             {stats.onlineCount}/{stats.nodeCount}
           </div>
         </LegacyTile>
 
         <LegacyTile>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>CPU</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>CPU</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#ffa726', marginTop: 8 }}>{stats.avgCpuUsage.toFixed(0)}%</div>
         </LegacyTile>
 
         <LegacyTile>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>RAM</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>RAM</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6', marginTop: 8 }}>{stats.avgMemoryUsage.toFixed(0)}%</div>
         </LegacyTile>
 
         <LegacyTile>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>DSP</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>DSP</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', marginTop: 8 }}>{stats.avgDspLoad.toFixed(0)}%</div>
         </LegacyTile>
 
         <LegacyTile>
-          <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Latency</div>
+          <div style={{ fontSize: 11, color: '#a0a0a0', letterSpacing: '0.02em' }}>Latency</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>{stats.totalLatency.toFixed(1)}ms</div>
         </LegacyTile>
       </div>
@@ -293,19 +293,19 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
             }}
           >
             <LegacyTile style={{ margin: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', letterSpacing: '0.02em' }}>Nodes</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#60a5fa', marginTop: 8 }}>{hardwareSummary.node_count}</div>
             </LegacyTile>
             <LegacyTile style={{ margin: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>USB Audio</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', letterSpacing: '0.02em' }}>USB audio</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#34d399', marginTop: 8 }}>{hardwareSummary.usb_audio_device_count}</div>
             </LegacyTile>
             <LegacyTile style={{ margin: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>MIDI</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', letterSpacing: '0.02em' }}>MIDI</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>{hardwareSummary.midi_device_count}</div>
             </LegacyTile>
             <LegacyTile style={{ margin: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>PipeWire</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', letterSpacing: '0.02em' }}>PipeWire</div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#f472b6', marginTop: 8 }}>{hardwareSummary.pipewire_device_count}</div>
             </LegacyTile>
           </div>
@@ -346,7 +346,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                     <span
                       style={{
                         fontSize: 11,
-                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em',
                         color: node.status === 'online' ? '#34d399' : '#f87171',
                         border: `1px solid ${node.status === 'online' ? 'rgba(52, 211, 153, 0.35)' : 'rgba(248, 113, 113, 0.35)'}`,
                         borderRadius: 999,
@@ -358,7 +358,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>USB Audio</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6, letterSpacing: '0.02em' }}>USB audio</div>
                     <div style={{ color: '#e2e8f0', fontSize: 13 }}>
                       {node.usb_audio_devices.length
                         ? node.usb_audio_devices.map(formatHardwareDevice).join(', ')
@@ -367,7 +367,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>MIDI</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6, letterSpacing: '0.02em' }}>MIDI</div>
                     <div style={{ color: '#e2e8f0', fontSize: 13 }}>
                       {node.midi_devices.length
                         ? node.midi_devices.map(formatHardwareDevice).join(', ')
@@ -376,7 +376,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>Audio Interfaces</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6, letterSpacing: '0.02em' }}>Audio interfaces</div>
                     <div style={{ color: '#e2e8f0', fontSize: 13 }}>
                       {node.audio_interfaces.length ? node.audio_interfaces.join(', ') : 'No interfaces reported'}
                     </div>

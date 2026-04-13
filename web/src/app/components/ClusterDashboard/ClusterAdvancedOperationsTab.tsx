@@ -130,7 +130,7 @@ export function ClusterAdvancedOperationsTab() {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: 13, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+          <div style={{ fontSize: 13, color: '#9ca3af', letterSpacing: '0.02em' }}>
             Reset Preview
           </div>
           <LegacyButton variant="secondary" size="sm" renderIcon={ArrowsClockwise} onClick={loadPreview} disabled={loadingPreview}>
@@ -172,7 +172,7 @@ export function ClusterAdvancedOperationsTab() {
           gap: 12,
         }}
       >
-        <div style={{ fontSize: 13, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+        <div style={{ fontSize: 13, color: '#9ca3af', letterSpacing: '0.02em' }}>
           Execution Options
         </div>
 

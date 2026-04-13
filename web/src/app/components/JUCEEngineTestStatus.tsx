@@ -31,7 +31,7 @@ interface TestStatusProps {
   showDetails?: boolean
 }
 
-const CARD_TITLE_STYLE = { color: 'var(--text-secondary)', fontSize: 'var(--type-body)' } as const
+const CARD_TITLE_STYLE = { color: 'var(--text-secondary)', fontSize: 'var(--cds-body-01-font-size, 0.875rem)' } as const
 
 function getStatusTone(status: string, score: number): 'green' | 'blue' | 'warm-gray' | 'red' {
   if (status === 'excellent' || score >= 90) return 'green'
@@ -177,13 +177,13 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Tile>
           <div style={CARD_TITLE_STYLE}>Overall score</div>
-          <div style={{ fontSize: 'var(--type-heading)', color: tone === 'green' ? 'var(--support-success)' : tone === 'blue' ? 'var(--interactive)' : tone === 'warm-gray' ? 'var(--support-warning)' : 'var(--support-danger)' }}>
+          <div style={{ fontSize: 'var(--cds-heading-03-font-size, 1.5rem)', color: tone === 'green' ? 'var(--support-success)' : tone === 'blue' ? 'var(--interactive)' : tone === 'warm-gray' ? 'var(--support-warning)' : 'var(--support-danger)' }}>
             {testResult.score}/100
           </div>
         </Tile>
         <Tile>
           <div style={CARD_TITLE_STYLE}>Tests passed</div>
-          <div style={{ fontSize: 'var(--type-heading)' }}>
+          <div style={{ fontSize: 'var(--cds-heading-03-font-size, 1.5rem)' }}>
             {testResult.passed_tests}/{testResult.total_tests}
           </div>
         </Tile>
@@ -195,7 +195,7 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
         </Tile>
         <Tile>
           <div style={CARD_TITLE_STYLE}>Test duration</div>
-          <div style={{ fontSize: 'var(--type-heading)' }}>{testResult.duration_seconds.toFixed(1)}s</div>
+          <div style={{ fontSize: 'var(--cds-heading-03-font-size, 1.5rem)' }}>{testResult.duration_seconds.toFixed(1)}s</div>
         </Tile>
       </div>
 

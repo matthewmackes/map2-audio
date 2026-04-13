@@ -265,7 +265,7 @@ function OutputMeter({
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        <span style={{ fontSize: 10, color: '#888', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 10, color: '#888', letterSpacing: '0.02em' }}>
           {port.name}
         </span>
         <span style={{
@@ -756,7 +756,7 @@ export function LV2PluginParameterEditor({
               <div style={{ fontSize: 14, fontWeight: 700, color: accentColor }}>
                 {plugin.parameters?.length || 0}
               </div>
-              <div style={{ fontSize: 9, color: '#888', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 9, color: '#888', letterSpacing: '0.02em' }}>
                 Params
               </div>
             </div>
@@ -769,7 +769,7 @@ export function LV2PluginParameterEditor({
               <div style={{ fontSize: 14, fontWeight: 700, color: accentColor }}>
                 {plugin.in_ports}→{plugin.out_ports}
               </div>
-              <div style={{ fontSize: 9, color: '#888', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 9, color: '#888', letterSpacing: '0.02em' }}>
                 Ports
               </div>
             </div>
@@ -857,8 +857,7 @@ export function LV2PluginParameterEditor({
             fontSize: 11,
             fontWeight: 600,
             color: '#888',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
+            letterSpacing: '0.02em',
             marginBottom: 10,
             display: 'flex',
             alignItems: 'center',
@@ -1109,8 +1108,7 @@ export function LV2PluginParameterEditor({
             fontSize: 11,
             fontWeight: 600,
             color: '#888',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
+            letterSpacing: '0.02em',
             marginBottom: 12,
             display: 'flex',
             alignItems: 'center',
@@ -1275,8 +1273,7 @@ export function LV2PluginParameterEditor({
             fontSize: 11,
             fontWeight: 600,
             color: '#888',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
+            letterSpacing: '0.02em',
             marginBottom: 12,
             display: 'flex',
             alignItems: 'center',

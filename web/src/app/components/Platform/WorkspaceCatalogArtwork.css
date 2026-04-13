@@ -1,4 +1,8 @@
 .platform-launchers-art {
+  --platform-launchers-art-font-title: 8px;
+  --platform-launchers-art-font-label: 5px;
+  --platform-launchers-art-font-subtitle: 4.8px;
+  --platform-launchers-art-font-chip: 6px;
   --platform-launchers-art-accent: var(--cds-border-interactive);
   --platform-launchers-art-accent-soft: color-mix(in srgb, var(--cds-border-interactive) 24%, transparent);
   --platform-launchers-art-surface: color-mix(in srgb, var(--cds-layer-selected) 86%, #0d141c);
@@ -77,10 +81,9 @@
 
 .platform-launchers-art__title {
   fill: var(--platform-launchers-art-text);
-  font-size: 8px;
+  font-size: var(--platform-launchers-art-font-title);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .platform-launchers-art__subtitle,
@@ -89,13 +92,12 @@
 .platform-launchers-art__panel-label,
 .platform-launchers-art__footer-label {
   fill: var(--platform-launchers-art-text-muted);
-  font-size: 5px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: var(--platform-launchers-art-font-label);
+  letter-spacing: 0.02em;
 }
 
 .platform-launchers-art__subtitle {
-  font-size: 4.8px;
+  font-size: var(--platform-launchers-art-font-subtitle);
 }
 
 .platform-launchers-art__chip {
@@ -107,10 +109,9 @@
 .platform-launchers-art__chip-text,
 .platform-launchers-art__metric-value {
   fill: var(--platform-launchers-art-text);
-  font-size: 6px;
+  font-size: var(--platform-launchers-art-font-chip);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .platform-launchers-art__sidebar,

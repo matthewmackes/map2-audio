@@ -277,7 +277,7 @@ function NAMCardBase({
     <div style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'center' }}>
       {/* Input Meter */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase' }}>IN</span>
+        <span style={{ fontSize: '9px', color: '#666' }}>IN</span>
         <div
           style={{
             width: '12px',
@@ -313,7 +313,7 @@ function NAMCardBase({
             marginBottom: '8px',
           }}
         >
-          <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px', letterSpacing: '0.02em' }}>
             NAM Model
           </div>
           <div
@@ -334,7 +334,7 @@ function NAMCardBase({
 
       {/* Output Meter */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontSize: '9px', color: '#666', textTransform: 'uppercase' }}>OUT</span>
+        <span style={{ fontSize: '9px', color: '#666' }}>OUT</span>
         <div
           style={{
             width: '12px',

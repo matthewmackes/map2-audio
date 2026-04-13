@@ -45,7 +45,7 @@ export function ServicesHealthTab() {
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8, letterSpacing: '0.02em' }}>
           Service Status Matrix
         </div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.5 }}>

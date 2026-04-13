@@ -172,8 +172,7 @@
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.4;
   color: var(--cds-text-placeholder);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
 }
 
 .about-page__hero-title-row {

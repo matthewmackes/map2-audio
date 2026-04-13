@@ -8,7 +8,7 @@
 
 .hero h2 {
   margin: 0 0 10px;
-  font-size: var(--type-heading);
+  font-size: var(--cds-heading-03-font-size, 1.5rem);
 }
 
 .hero p {
@@ -34,12 +34,12 @@
 
 .stat-label {
   color: var(--text-secondary);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   letter-spacing: 0.02em;
 }
 
 .stat-value {
-  font-size: var(--type-heading);
+  font-size: var(--cds-heading-03-font-size, 1.5rem);
   margin-top: 6px;
   color: var(--text-primary);
 }
@@ -331,12 +331,12 @@ textarea {
 
 .midi-mapping-dialog-title {
   color: var(--text-primary);
-  font-size: var(--type-subheading);
+  font-size: var(--cds-body-02-font-size, 1rem);
 }
 
 .midi-mapping-dialog-content {
   color: var(--text-secondary);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
 }
 
 .midi-overview,
@@ -350,7 +350,7 @@ textarea {
 .midi-overview__eyebrow,
 .midi-overview__step-index,
 .midi-tab-count {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .midi-overview__step-index,
@@ -365,7 +365,7 @@ textarea {
 .midi-capability-card h4,
 .midi-playbook-card h4 {
   color: var(--text-primary);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
 }
 
 .midi-overview__path-step p,
@@ -374,7 +374,7 @@ textarea {
 .midi-capability-card li,
 .midi-playbook-card li {
   color: var(--text-secondary);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
 }
 
 @media (max-width: 960px) {

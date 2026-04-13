@@ -178,8 +178,7 @@ const AudioMeterComponent: React.FC<AudioMeterProps> = ({
           style={{
             fontSize: variant === 'mini' ? 8 : 10,
             color: 'rgba(255, 255, 255, 0.6)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            letterSpacing: '0.02em',
           }}
         >
           {label}
@@ -499,7 +498,6 @@ const GainReductionMeterComponent: React.FC<GainReductionMeterProps> = ({
         style={{
           fontSize: 8,
           color: 'rgba(255, 255, 255, 0.5)',
-          textTransform: 'uppercase',
         }}
       >
         GR

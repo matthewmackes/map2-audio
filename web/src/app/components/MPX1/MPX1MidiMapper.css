@@ -27,7 +27,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   padding: 6px 8px;
 }
 
@@ -46,9 +46,8 @@
 }
 
 .mpx1-midi-map__learn {
-  font-size: var(--type-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   font-weight: 700;
   color: var(--interactive);
   display: inline-flex;
@@ -66,7 +65,7 @@
   background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
   color: var(--support-danger);
   padding: 8px 10px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-midi-map__workspace {
@@ -88,9 +87,8 @@
 }
 
 .mpx1-midi-map__title {
-  font-size: var(--type-label);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -113,10 +111,9 @@
 .mpx1-midi-map__detail label {
   display: grid;
   gap: 4px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 
 .mpx1-midi-map__source-picker input {
@@ -138,7 +135,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   cursor: pointer;
   text-align: left;
 }
@@ -155,7 +152,7 @@
 
 .mpx1-midi-map__muted {
   color: var(--interactive);
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .mpx1-midi-map__empty {
@@ -163,7 +160,7 @@
   border-radius: var(--border-radius-sm);
   padding: var(--cds-spacing-04, 0.75rem);
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-midi-map__canvas-wrap {
@@ -198,7 +195,7 @@
 
 .mpx1-midi-map__svg-hint {
   fill: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-midi-map__actions {
@@ -226,7 +223,7 @@
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   text-transform: none;
   letter-spacing: normal;
 }
@@ -254,16 +251,15 @@
 }
 
 .mpx1-midi-map__target-group-title {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .mpx1-midi-map__loading {
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 @media (max-width: 1320px) {

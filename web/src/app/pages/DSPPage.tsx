@@ -311,7 +311,7 @@ export function DSPPage() {
             </p>
             {Object.entries(pluginsByCategory).map(([category, plugins]) => (
               <div key={category} style={{ marginBottom: 20 }}>
-                <h3 style={{ fontSize: 14, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                <h3 style={{ fontSize: 14, color: 'var(--text-secondary)', letterSpacing: '0.02em', marginBottom: 10 }}>
                   {category} <span style={{ color: 'var(--text-tertiary)' }}>({plugins.length})</span>
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>

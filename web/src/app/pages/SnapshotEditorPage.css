@@ -4,6 +4,38 @@
   --juce-grid-led-panel-bg: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 92%, #eef5ff 8%);
   --juce-grid-led-panel-bg-hover: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 86%, #e3efff 14%);
   --juce-grid-led-panel-border: color-mix(in srgb, var(--cds-border-subtle, var(--border, #c6c6c6)) 72%, var(--juce-grid-midi-led-color) 28%);
+  --juce-grid-font-label-01: var(--cds-label-01-font-size, 0.75rem);
+  --juce-grid-font-body-compact-01: var(--cds-body-compact-01-font-size, 0.875rem);
+  --juce-grid-font-body-01: var(--cds-body-01-font-size, 1rem);
+  --juce-grid-font-heading-03: var(--cds-heading-03-font-size, 1.25rem);
+  --juce-grid-font-support-80: 0.8rem;
+  --juce-grid-font-support-82: 0.82rem;
+  --juce-grid-font-support-90: 0.9rem;
+  --juce-grid-font-support-95: 0.95rem;
+  --juce-grid-font-support-110: 1.1rem;
+  --juce-grid-font-support-150: 1.5rem;
+  --juce-grid-font-support-175: 1.75rem;
+  --juce-grid-font-support-72: 0.72rem;
+  --juce-grid-font-support-78: 0.78rem;
+  --juce-grid-font-support-8125: 0.8125rem;
+  --juce-grid-font-support-1640625: 1.640625rem;
+  --juce-grid-font-signal-675: 0.675rem;
+  --juce-grid-font-signal-66: 0.66rem;
+  --juce-grid-font-signal-65: 0.65rem;
+  --juce-grid-font-signal-625: 0.625rem;
+  --juce-grid-font-signal-60: 0.6rem;
+  --juce-grid-font-signal-55: 0.55rem;
+  --juce-grid-font-signal-68: 0.68rem;
+  --juce-grid-font-signal-62: 0.62rem;
+  --juce-grid-font-signal-6875: 0.6875rem;
+  --juce-grid-font-signal-70: 0.7rem;
+  --juce-grid-font-signal-74: 0.74rem;
+  --juce-grid-font-signal-88: 0.88rem;
+  --juce-grid-font-signal-102: 1.02rem;
+  --juce-grid-font-signal-735: 0.735rem;
+  --juce-grid-font-signal-5625: 0.5625rem;
+  --juce-grid-font-signal-114: 1.14rem;
+  --juce-grid-font-signal-1375: 1.375rem;
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 56px);
@@ -43,7 +75,7 @@
   max-width: 24rem;
   margin: 0;
   color: var(--cds-text-inverse, #f4f4f4);
-  font-size: 0.95rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   line-height: 1.5;
   opacity: 0.78;
 }
@@ -304,7 +336,7 @@
 
 .juce-grid-page__live-chain-row-title strong,
 .juce-grid-page__live-chain-summary-main strong {
-  font-size: 1rem;
+  font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
   color: var(--cds-text-primary, var(--text-primary));
 }
@@ -355,7 +387,7 @@
 .juce-grid-page__live-chain-miniature-label,
 .juce-grid-page__live-chain-miniature-empty {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -369,7 +401,7 @@
 
 .juce-grid-page__live-chain-miniature-chip small {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1.2;
 }
 
@@ -566,7 +598,7 @@
 
 .snapshot-menu-rail__item--utility.cds--btn {
   min-block-size: 2.5rem;
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
   font-weight: 500;
 }
 
@@ -1169,7 +1201,7 @@
 .snapshot-toolbar__setlist-menu-empty {
   margin: 0;
   color: var(--cds-text-helper, #c6c6c6);
-  font-size: 0.8rem;
+  font-size: var(--juce-grid-font-support-80);
 }
 
 .snapshot-toolbar__setlist-menu-list {
@@ -1223,20 +1255,20 @@
 
 .snapshot-toolbar__setlist-menu-label {
   color: var(--cds-text-primary, #f4f4f4);
-  font-size: 0.9rem;
+  font-size: var(--juce-grid-font-support-90);
   font-weight: 600;
 }
 
 .snapshot-toolbar__setlist-menu-meta {
   color: var(--cds-text-helper, #c6c6c6);
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
   line-height: 1.35;
 }
 
 .snapshot-toolbar__setlist-menu-action {
   flex-shrink: 0;
   color: var(--cds-text-secondary, #dde1e6);
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1308,7 +1340,7 @@
 .juce-grid-page__control-center-card-copy h3 {
   margin: 0;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 1rem;
+  font-size: var(--juce-grid-font-body-01);
   font-weight: 600;
 }
 
@@ -1373,7 +1405,7 @@
 .juce-grid-page__routing-panel-copy {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__routing-focus-list {
@@ -1404,7 +1436,7 @@
 .juce-grid-page__routing-focus-button-caption {
   color: inherit;
   opacity: 0.72;
-  font-size: 0.8rem;
+  font-size: var(--juce-grid-font-support-80);
   line-height: 1.3;
 }
 
@@ -1490,7 +1522,7 @@
 
 .juce-grid-page__ops-summary-status {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
   line-height: 1.4;
 }
 
@@ -1505,7 +1537,7 @@
 .juce-grid-page__cluster-empty-copy {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__ops-empty {
@@ -1569,13 +1601,13 @@
 
 .juce-grid-page__cluster-card-copy span {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
 }
 
 .juce-grid-page__assignment-tile-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__cluster-metrics {
@@ -1670,7 +1702,7 @@
 .juce-grid-page__chain-tile-copy span {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__chain-action-grid {
@@ -1836,7 +1868,7 @@
   border: 1px solid color-mix(in srgb, var(--chain-flow-color, var(--cds-link-primary)) 60%, transparent);
   background: color-mix(in srgb, var(--chain-flow-color, var(--cds-link-primary)) 12%, transparent);
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
   font-weight: 600;
 }
 
@@ -1932,7 +1964,7 @@
 .juce-grid-page__snapshot-status-empty p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__snapshot-status-layout {
@@ -2027,7 +2059,7 @@
 .juce-grid-page__snapshot-status-channel-badge.cds--tag {
   min-block-size: 1.75rem;
   padding-inline: 0.625rem;
-  font-size: 0.72rem;
+  font-size: var(--juce-grid-font-support-72);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -2041,7 +2073,7 @@
 .juce-grid-page__snapshot-status-monitoring-badge.cds--tag {
   min-block-size: 1.75rem;
   padding-inline: 0.625rem;
-  font-size: 0.72rem;
+  font-size: var(--juce-grid-font-support-72);
   font-weight: 600;
   letter-spacing: 0.02em;
   background: color-mix(in srgb, #78a9ff 14%, var(--cds-layer, #262626));
@@ -2172,7 +2204,7 @@
 .juce-grid-page__snapshot-status-title-error {
   margin: 0;
   color: var(--cds-support-error, #da1e28);
-  font-size: 0.82rem;
+  font-size: var(--juce-grid-font-support-82);
   font-weight: 600;
 }
 
@@ -2258,7 +2290,7 @@
 .juce-grid-page__snapshot-status-go-live-checklist-item p {
   margin: 0.4rem 0 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   line-height: 1.5;
 }
 
@@ -2281,7 +2313,7 @@
 .juce-grid-page__snapshot-status-go-live-error {
   margin: 0;
   color: var(--cds-support-error, #fa4d56);
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   line-height: 1.45;
   white-space: pre-line;
 }
@@ -2295,7 +2327,7 @@
 .juce-grid-page__snapshot-status-go-live-progress-summary,
 .juce-grid-page__snapshot-status-go-live-progress-note {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   line-height: 1.45;
 }
 
@@ -2319,7 +2351,7 @@
   align-items: center;
   gap: 0.45rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   line-height: 1.4;
 }
 
@@ -2388,7 +2420,7 @@
 
 .juce-grid-page__snapshot-status-go-live-diff-item {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   line-height: 1.5;
 }
 
@@ -2445,7 +2477,7 @@
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__field {
-  font-size: 1.5rem;
+  font-size: var(--juce-grid-font-support-150);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -2456,7 +2488,7 @@
 }
 
 .juce-grid-page__snapshot-status-bpm-input .numeric-input__unit {
-  font-size: 0.9rem;
+  font-size: var(--juce-grid-font-support-90);
   font-weight: 600;
   letter-spacing: 0.08em;
 }
@@ -2569,7 +2601,7 @@
   flex-direction: column;
   gap: 0.35rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
 }
 
 .juce-grid-page__snapshot-status-output-threshold-field input {
@@ -2775,7 +2807,7 @@
   display: block;
   margin-top: 0.375rem;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.78rem;
+  font-size: var(--juce-grid-font-support-78);
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -3004,7 +3036,7 @@
 
 .juce-grid-page__routing-flow-copy span {
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
 }
 
 .juce-grid-page__slot-grid {
@@ -3103,7 +3135,7 @@
 .juce-grid-page__live-path-summary-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__routing-summary-actions {
@@ -3507,7 +3539,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.95rem;
+  font-size: var(--juce-grid-font-support-95);
   font-weight: 600;
 }
 
@@ -3528,7 +3560,7 @@
 .juce-grid-page__flow-card-error {
   margin: 0;
   color: var(--cds-support-error, #da1e28);
-  font-size: 0.72rem;
+  font-size: var(--juce-grid-font-support-72);
   line-height: 1.35;
 }
 
@@ -3624,7 +3656,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.625rem;
+  font-size: var(--juce-grid-font-signal-625);
   line-height: 1.15;
   letter-spacing: 0.04em;
 }
@@ -3849,13 +3881,13 @@
 }
 
 .juce-grid-page__flow-level-input .numeric-input__field {
-  font-size: 0.95rem;
+  font-size: var(--juce-grid-font-support-95);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .juce-grid-page__flow-level-input .numeric-input__unit {
-  font-size: 0.72rem;
+  font-size: var(--juce-grid-font-support-72);
   font-weight: 600;
   letter-spacing: 0.06em;
 }
@@ -3873,7 +3905,7 @@
 }
 
 .juce-grid-page__flow-level-readout {
-  font-size: 1.1rem;
+  font-size: var(--juce-grid-font-support-110);
   display: inline-flex;
   justify-content: center;
   min-width: 4.9rem;
@@ -4008,7 +4040,7 @@
 
 .juce-grid-page__thin-bar-title {
   margin: 0;
-  font-size: 1.640625rem;
+  font-size: var(--juce-grid-font-support-1640625);
   font-weight: 600;
   color: var(--cds-text-primary, var(--text-primary));
   white-space: nowrap;
@@ -4063,7 +4095,7 @@
 
 .juce-grid-page__title {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: var(--juce-grid-font-support-175);
   line-height: 1.1;
   color: var(--cds-text-primary, var(--text-primary));
 }
@@ -4482,7 +4514,7 @@
 .juce-grid-page__selected-midi-card-heading,
 .juce-grid-page__selected-midi-empty-heading {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--juce-grid-font-heading-03);
   line-height: 1.25;
   font-weight: 600;
 }
@@ -4571,11 +4603,11 @@
 .juce-grid-page__selected-midi-grid-name small,
 .juce-grid-page__selected-midi-grid-row span:not(.juce-grid-page__selected-midi-grid-name) {
   color: var(--cds-text-secondary, #a8a8a8);
-  font-size: 0.78rem;
+  font-size: var(--juce-grid-font-support-78);
 }
 
 .juce-grid-page__selected-midi-grid-name-heading {
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
   font-weight: 600;
 }
 
@@ -4715,7 +4747,7 @@
 }
 
 .juce-grid-page__touch-toolbar-copy strong {
-  font-size: 1rem;
+  font-size: var(--juce-grid-font-body-01);
 }
 
 .juce-grid-page__touch-toolbar-nav {
@@ -4855,7 +4887,7 @@
 .juce-grid-page__tablet-editor-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.8rem;
+  font-size: var(--juce-grid-font-support-80);
 }
 
 .juce-grid-page__tablet-flow-summary-pills {
@@ -5026,7 +5058,7 @@
 .juce-grid-page__tablet-launcher-page-readout {
   min-width: 2.8rem;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.82rem;
+  font-size: var(--juce-grid-font-support-82);
   font-weight: 700;
   text-align: center;
 }
@@ -5460,13 +5492,13 @@
   align-items: center;
   gap: 0.75rem;
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 1rem;
+  font-size: var(--juce-grid-font-body-01);
 }
 
 .juce-grid-page__snapshot-compare-copy {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__snapshot-tile {
@@ -5535,7 +5567,7 @@
   border: 1px solid color-mix(in srgb, var(--snapshot-slot-color, var(--cds-link-primary)) 30%, var(--cds-border-subtle, var(--border)));
   background: color-mix(in srgb, var(--snapshot-slot-color, var(--cds-link-primary)) 16%, var(--cds-layer-hover, rgba(255, 255, 255, 0.03)));
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
   font-weight: 600;
 }
 
@@ -5972,10 +6004,9 @@
 .juce-grid-page__midi-block-focus-preview-note {
   color: var(--cds-support-success, #24a148);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.8rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -6127,7 +6158,7 @@
 }
 
 .juce-grid-page__signal-rail-label {
-  font-size: 0.675rem;
+  font-size: var(--juce-grid-font-signal-675);
   font-weight: 700;
   color: var(--cds-text-primary, var(--text));
   white-space: nowrap;
@@ -6187,7 +6218,7 @@
   border-radius: 0;
   background: var(--cds-layer, var(--surface));
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.66rem;
+  font-size: var(--juce-grid-font-signal-66);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -6252,13 +6283,13 @@
 }
 
 .juce-grid-page__signal-rail-group-heading {
-  font-size: 0.55rem;
+  font-size: var(--juce-grid-font-signal-55);
   font-weight: 700;
 }
 
 .juce-grid-page__signal-rail-group-summary {
   grid-column: 1 / -1;
-  font-size: 0.625rem;
+  font-size: var(--juce-grid-font-signal-625);
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -6311,7 +6342,7 @@
 }
 
 .juce-grid-page__signal-rail-slot-label {
-  font-size: 0.65rem;
+  font-size: var(--juce-grid-font-signal-65);
   font-weight: 600;
   line-height: 1;
   text-align: center;
@@ -6326,7 +6357,7 @@
   border: 1px dashed var(--cds-border-subtle, var(--border));
   border-radius: 0.35rem;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.6rem;
+  font-size: var(--juce-grid-font-signal-60);
   font-weight: 600;
 }
 
@@ -6335,7 +6366,7 @@
 .juce-grid-page__signal-level span {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
 }
 
 .juce-grid-page__signal-plugin-actions,
@@ -6465,7 +6496,7 @@
 }
 
 .juce-grid-page__signal-terminal-heading {
-  font-size: 0.72rem;
+  font-size: var(--juce-grid-font-support-72);
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -6473,7 +6504,7 @@
 
 .juce-grid-page__signal-terminal-caption {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.68rem;
+  font-size: var(--juce-grid-font-signal-68);
   font-weight: 600;
   line-height: 1.2;
 }
@@ -6543,7 +6574,7 @@
 .juce-grid-page__signal-flow-bridge-label {
   flex: 0 0 auto;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.625rem;
+  font-size: var(--juce-grid-font-signal-625);
   font-weight: 700;
 }
 
@@ -6779,7 +6810,7 @@
   border: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 58%, var(--cds-border-subtle, var(--border)));
   background: color-mix(in srgb, var(--juce-grid-signal-accent) 16%, var(--cds-layer, #161616));
   color: color-mix(in srgb, var(--juce-grid-signal-accent) 74%, var(--cds-text-primary, #f4f4f4));
-  font-size: 0.62rem;
+  font-size: var(--juce-grid-font-signal-62);
   font-weight: 700;
   line-height: 1;
 }
@@ -6793,7 +6824,7 @@
   white-space: normal;
   text-align: left;
   color: var(--cds-text-primary, #f4f4f4);
-  font-size: 0.88rem;
+  font-size: var(--juce-grid-font-signal-88);
   font-weight: 600;
   line-height: 1.14;
   min-width: 0;
@@ -6810,7 +6841,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.6875rem;
+  font-size: var(--juce-grid-font-signal-6875);
   font-weight: 600;
   line-height: 1.2;
 }
@@ -6850,10 +6881,9 @@
 }
 
 .juce-grid-page__signal-plugin-bypass span {
-  font-size: 0.68rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .juce-grid-page__signal-plugin-bypass.is-bypassed {
@@ -6899,7 +6929,7 @@
 
 .juce-grid-page__signal-plugin-delete-glyph {
   font-family: var(--font-ui-tight, var(--font-ui, 'BlexMono Nerd Font', monospace));
-  font-size: 1.02rem;
+  font-size: var(--juce-grid-font-signal-102);
   font-weight: 700;
   line-height: 1;
   transform: translateY(-0.02em);
@@ -6968,7 +6998,7 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-field-02, #393939);
   color: var(--cds-text-primary, #f4f4f4);
-  font-size: 0.735rem;
+  font-size: var(--juce-grid-font-signal-735);
   font-weight: 600;
   line-height: 1.15;
 }
@@ -7017,7 +7047,7 @@
 .juce-grid-page__port-summary-copy p {
   margin: 0;
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__port-modal-meta,
@@ -7107,7 +7137,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--juce-grid-port-accent) 14%, var(--cds-layer-hover, rgba(255, 255, 255, 0.06)));
   color: var(--juce-grid-port-accent);
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
   font-weight: 600;
 }
 
@@ -7191,7 +7221,7 @@
   padding: 0 0.6rem;
   background: var(--juce-grid-parameter-flow-color, var(--juce-grid-parameter-accent));
   color: var(--cds-text-on-color, #ffffff);
-  font-size: 0.8125rem;
+  font-size: var(--juce-grid-font-support-8125);
   font-weight: 700;
 }
 
@@ -7455,11 +7485,11 @@
 }
 
 .juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control-copy strong {
-  font-size: 1rem;
+  font-size: var(--juce-grid-font-body-01);
 }
 
 .juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control-copy span {
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .juce-grid-page__parameter-editor--card {
@@ -7583,7 +7613,7 @@
   top: 0;
   transform: translateX(-50%);
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--juce-grid-font-label-01);
 }
 
 .juce-grid-page__automation-playhead {
@@ -7718,7 +7748,7 @@
   }
 
   .juce-grid-page__flow-card-meta-line {
-    font-size: 0.5625rem;
+    font-size: var(--juce-grid-font-signal-5625);
   }
 
   .juce-grid-page__ops-summary-grid {
@@ -7861,7 +7891,7 @@
   }
 
   .juce-grid-page__title {
-    font-size: 1.375rem;
+    font-size: var(--juce-grid-font-signal-1375);
   }
 
   .juce-grid-page__signal-rail-groups {
@@ -8010,7 +8040,7 @@
   }
 
   .juce-grid-page__snapshot-status-metadata-value {
-    font-size: 0.74rem;
+    font-size: var(--juce-grid-font-signal-74);
   }
 
   .juce-grid-page__port-grid,
@@ -8098,7 +8128,7 @@
     border-radius: 0;
     background: var(--cds-layer, var(--surface));
     color: var(--cds-text-primary, var(--text));
-    font-size: 0.7rem;
+    font-size: var(--juce-grid-font-signal-70);
     font-weight: 600;
     text-align: center;
   }
@@ -8133,7 +8163,7 @@
     padding: 0.625rem 0.875rem;
     border-right: none;
     border-bottom: 1px solid var(--cds-border-subtle, var(--border));
-    font-size: 0.75rem;
+    font-size: var(--juce-grid-font-label-01);
   }
 
   .juce-grid-page__flow-card-drag-handle {
@@ -8145,7 +8175,7 @@
   }
 
   .juce-grid-page__signal-plugin-title {
-    font-size: 1.14rem;
+    font-size: var(--juce-grid-font-signal-114);
   }
 
   .juce-grid-page__signal-plugin-delete {
@@ -8211,7 +8241,7 @@
 
 .chain-assignment-modal__notice p {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
   line-height: 1.4;
 }
 
@@ -8264,7 +8294,7 @@
 
 .audio-nodes-modal__stat-value {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--juce-grid-font-support-150);
   line-height: 1;
   color: var(--cds-text-primary, var(--text-primary));
 }
@@ -8286,7 +8316,7 @@
 
 .audio-nodes-modal__muted {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--juce-grid-font-body-compact-01);
 }
 
 .audio-nodes-modal__state {

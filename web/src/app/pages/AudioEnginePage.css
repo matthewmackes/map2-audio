@@ -143,8 +143,7 @@
 .audio-engine-page__kv-label {
   color: var(--cds-text-helper);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .audio-engine-page__kv-value {
@@ -245,8 +244,7 @@
   color: var(--cds-text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .audio-engine-page__source-truth-node-label {
@@ -388,7 +386,7 @@
 }
 
 .audio-engine-page__latency-score-digits {
-  font-size: 1.75rem;
+  font-size: var(--audio-engine-page-font-stat, 1.75rem);
 }
 
 .audio-engine-page__latency-status {
@@ -401,7 +399,7 @@
 .audio-engine-page__latency-stat {
   color: var(--cds-text-primary);
   font-family: var(--cds-code-01-font-family, var(--font-mono));
-  font-size: 1.75rem;
+  font-size: var(--audio-engine-page-font-stat, 1.75rem);
   font-weight: 600;
   line-height: 1;
 }

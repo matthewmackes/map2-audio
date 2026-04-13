@@ -410,7 +410,7 @@ export function CPUStatusOverview() {
             <div style={{ padding: 12, background: 'rgba(100,181,246,0.08)', borderRadius: 8, border: '1px solid rgba(100,181,246,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
                 <Cpu size={14} style={{ color: '#64b5f6' }} />
-                <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Audio CPU</span>
+                <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, letterSpacing: '0.02em' }}>Audio CPU</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: juceStatus === 'critical' ? '#ff5252' : juceStatus === 'warning' ? '#ffa726' : '#4caf50' }}>
                 {juceMetrics.totalCpuPercent.toFixed(1)}%
@@ -429,7 +429,7 @@ export function CPUStatusOverview() {
             <div style={{ padding: 12, background: 'rgba(255,167,38,0.08)', borderRadius: 8, border: '1px solid rgba(255,167,38,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
                 <TrendUp size={14} style={{ color: '#ffa726' }} />
-                <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Peak</span>
+                <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, letterSpacing: '0.02em' }}>Peak</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: '#ffa726' }}>
                 {juceMetrics.peakCpuPercent.toFixed(1)}%
@@ -443,7 +443,7 @@ export function CPUStatusOverview() {
             <div style={{ padding: 12, background: 'rgba(76,175,80,0.08)', borderRadius: 8, border: '1px solid rgba(76,175,80,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
                 <Pulse size={14} style={{ color: '#4caf50' }} />
-                <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Headroom</span>
+                <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, letterSpacing: '0.02em' }}>Headroom</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: juceMetrics.headroomPercent < 20 ? '#ff5252' : juceMetrics.headroomPercent < 40 ? '#ffa726' : '#4caf50' }}>
                 {juceMetrics.headroomPercent.toFixed(0)}%
@@ -457,7 +457,7 @@ export function CPUStatusOverview() {
             <div style={{ padding: 12, background: 'rgba(171,71,188,0.08)', borderRadius: 8, border: '1px solid rgba(171,71,188,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
                 <Clock size={14} style={{ color: '#ab47bc' }} />
-                <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Callback</span>
+                <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, letterSpacing: '0.02em' }}>Callback</span>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#ab47bc' }}>
                 {juceMetrics.currentCallbackMs.toFixed(2)}ms
@@ -471,7 +471,7 @@ export function CPUStatusOverview() {
           {/* Per-Plugin CPU Breakdown */}
           {getTopConsumers(5).length > 0 && (
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(100,100,100,0.2)' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 10, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 10, letterSpacing: '0.02em' }}>
                 Top Plugin CPU Usage
               </div>
               <div className="stack" style={{ gap: 6 }}>
@@ -550,7 +550,7 @@ export function CPUStatusOverview() {
                     <div className="stack" style={{ gap: 10 }}>
                       {Object.entries(groupedActivities).map(([category, activities]) => (
                         <div key={category} style={{ gap: 4 }}>
-                          <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: 4 }}>
+                          <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', marginBottom: 4, letterSpacing: '0.02em' }}>
                             {category}
                           </div>
                           <div className="stack" style={{ gap: 4, marginLeft: 8 }}>

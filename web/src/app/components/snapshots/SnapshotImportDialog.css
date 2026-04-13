@@ -13,7 +13,7 @@
 .snapshot-import-dialog__formats p {
   margin: 0;
   color: var(--cds-text-secondary, #c6c6c6);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .snapshot-import-dialog__format-tags {
@@ -46,7 +46,7 @@
 
 .snapshot-import-dialog__result-details p {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--snapshot-import-dialog-font-detail, 0.8125rem);
   color: var(--cds-text-primary, #f4f4f4);
 }
 

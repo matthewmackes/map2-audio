@@ -70,7 +70,7 @@
   margin: 0;
   max-width: 60ch;
   color: var(--cds-text-secondary, rgba(244, 244, 244, 0.76));
-  font-size: var(--cds-body-01-font-size, var(--type-body));
+  font-size: var(--cds-body-01-font-size, var(--cds-body-01-font-size, 0.875rem));
   line-height: var(--cds-body-01-line-height, 1.5);
   text-wrap: pretty;
 }
@@ -172,13 +172,13 @@
 
 .page-header__brand-primary {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: var(--cds-label-01-font-size, var(--type-label));
+  font-size: var(--cds-label-01-font-size, var(--cds-label-01-font-size, 0.75rem));
   font-weight: 600;
 }
 
 .page-header__brand-secondary {
   color: var(--cds-text-secondary, rgba(244, 244, 244, 0.76));
-  font-size: var(--cds-helper-text-01-font-size, var(--type-caption));
+  font-size: var(--cds-helper-text-01-font-size, var(--cds-helper-text-01-font-size, 0.75rem));
 }
 
 @media (max-width: 960px) {

@@ -32,7 +32,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   padding: 6px 8px;
 }
 
@@ -54,9 +54,8 @@
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--interactive);
   padding: 5px 10px;
-  font-size: var(--type-caption);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   font-weight: 700;
   cursor: pointer;
 }
@@ -84,7 +83,7 @@
   align-items: center;
   gap: 8px;
   color: var(--text-primary);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-library__dump-track {
@@ -107,7 +106,7 @@
   background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
   color: var(--support-danger);
   padding: 8px 10px;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mpx1-library__table-wrap {
@@ -129,7 +128,7 @@
   border-bottom: 1px solid var(--interactive);
   padding: 8px;
   text-align: left;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--text-primary);
 }
 
@@ -138,9 +137,8 @@
   top: 0;
   z-index: 1;
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: var(--type-caption);
+  letter-spacing: 0.02em;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .mpx1-library__table tr.is-selected {
@@ -157,7 +155,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--text-primary);
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   padding: 4px 7px;
   cursor: pointer;
 }
@@ -171,7 +169,7 @@
 .mpx1-library__empty {
   padding: var(--cds-spacing-05, 1rem);
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 @media (max-width: 1100px) {

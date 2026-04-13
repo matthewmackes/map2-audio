@@ -414,8 +414,7 @@ function LiveDualGraphic({
         fontFamily: C.mono,
         fontSize: 10,
         color: C.muted,
-        letterSpacing: 0.6,
-        textTransform: 'uppercase',
+        letterSpacing: '0.02em',
       }}>
         {label}
       </span>
@@ -970,8 +969,7 @@ function AssignmentRow({
           border: `1px solid ${C.teal}44`,
           borderRadius: 3,
           padding: '1px 4px',
-          letterSpacing: 0.5,
-          textTransform: 'uppercase',
+          letterSpacing: '0.02em',
           flexShrink: 0,
         }}>
           MIDI
@@ -1204,7 +1202,7 @@ export function ExpressionView({
             </button>
 
             {highlightedCount > 0 && (
-              <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 }}>
+              <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 6 }}>
                 Linked to this plugin
               </div>
             )}
@@ -1219,7 +1217,7 @@ export function ExpressionView({
             ))}
 
             {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
-              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: highlightedCount > 0 ? 10 : 6 }}>
+              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: highlightedCount > 0 ? 10 : 6 }}>
                 {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
               </div>
             )}
@@ -1234,7 +1232,7 @@ export function ExpressionView({
             ))}
 
             {perfAssignments.length > 0 && (
-              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 10 }}>
+              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 10 }}>
                 Performance mode defaults
               </div>
             )}
@@ -1306,7 +1304,7 @@ export function ExpressionView({
         {/* Live Signal tab */}
         {activeTab === 'live' && (
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
+            <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em' }}>
               Live signal
             </div>
             <LiveDualGraphic
@@ -1371,7 +1369,7 @@ export function ExpressionView({
           </button>
 
           {highlightedCount > 0 && (
-            <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 }}>
+            <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 6 }}>
               Linked to this plugin
             </div>
           )}
@@ -1386,7 +1384,7 @@ export function ExpressionView({
           ))}
 
           {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: highlightedCount > 0 ? 10 : 6 }}>
+            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: highlightedCount > 0 ? 10 : 6 }}>
               {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
             </div>
           )}
@@ -1401,7 +1399,7 @@ export function ExpressionView({
           ))}
 
           {perfAssignments.length > 0 && (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 10 }}>
+            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 10 }}>
               Performance mode defaults
             </div>
           )}
@@ -1458,7 +1456,7 @@ export function ExpressionView({
           display: 'flex',
           flexDirection: 'column',
         }}>
-          <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
+          <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em' }}>
             Live signal
           </div>
           <LiveDualGraphic

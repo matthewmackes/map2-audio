@@ -457,7 +457,7 @@ export function EQCard({
           border: 1px solid #555;
           border-radius: 4px;
           color: #888;
-          font-size: 12px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           padding: 4px 10px;
           cursor: pointer;
           transition: all 0.2s;
@@ -489,13 +489,13 @@ export function EQCard({
 
         .eq-axis-label {
           fill: #666;
-          font-size: 9px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           font-family: var(--font-ui-tight);
         }
 
         .eq-band-number {
           fill: #fff;
-          font-size: 10px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           font-weight: 600;
           pointer-events: none;
         }
@@ -543,13 +543,13 @@ export function EQCard({
         }
 
         .eq-band-chip-freq {
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #aaa;
           font-family: var(--font-ui-tight);
         }
 
         .eq-band-chip-gain {
-          font-size: 10px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #666;
           font-family: var(--font-ui-tight);
         }
@@ -582,7 +582,7 @@ export function EQCard({
           align-items: center;
           margin-bottom: 12px;
           color: #fff;
-          font-size: 12px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           font-weight: 600;
         }
 
@@ -592,7 +592,7 @@ export function EQCard({
           border-radius: 4px;
           color: #fff;
           padding: 4px 8px;
-          font-size: 11px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           cursor: pointer;
         }
 
@@ -638,7 +638,7 @@ export function EQCard({
           border: 1px solid #444;
           border-radius: 3px;
           color: #666;
-          font-size: 9px;
+          font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           padding: 2px 6px;
           cursor: pointer;
         }

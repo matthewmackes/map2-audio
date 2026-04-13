@@ -116,7 +116,6 @@ function GateCardBase({
             fontSize: 11,
             fontWeight: 600,
             color: isOpen ? accentColor : '#fa4d56',
-            textTransform: 'uppercase',
             letterSpacing: '0.32px',
           }}>
             {isOpen ? 'PASSING' : 'GATING'}

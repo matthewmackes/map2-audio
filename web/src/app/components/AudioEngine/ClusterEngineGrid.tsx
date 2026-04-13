@@ -115,7 +115,7 @@ export function ClusterEngineGrid() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ color: C.text, fontSize: 14, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+        <div style={{ color: C.text, fontSize: 14, fontWeight: 700, letterSpacing: '0.02em' }}>
           Cluster Engine Overview
         </div>
         <div style={{ color: C.muted, fontSize: 12 }}>
@@ -156,7 +156,7 @@ export function ClusterEngineGrid() {
                   padding: '4px 8px',
                   fontSize: 11,
                   fontWeight: 700,
-                  textTransform: 'uppercase',
+                  letterSpacing: '0.02em',
                 }}>
                   {card.tone.label}
                 </div>
@@ -164,7 +164,7 @@ export function ClusterEngineGrid() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                 <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, textTransform: 'uppercase', marginBottom: 4 }}>Engine</div>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Engine</div>
                   <div style={{ color: card.status.running === false ? C.red : C.green, fontSize: 13, fontWeight: 700 }}>
                     {card.status.running === false ? 'Stopped' : 'Running'}
                   </div>
@@ -173,7 +173,7 @@ export function ClusterEngineGrid() {
                   </div>
                 </div>
                 <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, textTransform: 'uppercase', marginBottom: 4 }}>Latency</div>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Latency</div>
                   <div style={{ color: C.text, fontSize: 13, fontWeight: 700 }}>
                     {Number(card.status.latency_ms ?? 0).toFixed(2)} ms
                   </div>
@@ -203,7 +203,7 @@ export function ClusterEngineGrid() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
                 <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, textTransform: 'uppercase', marginBottom: 4 }}>XRuns</div>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Xruns</div>
                   <div style={{ color: Number(card.status.total_xruns ?? 0) > 0 ? C.red : C.green, fontSize: 14, fontWeight: 700 }}>
                     {card.status.total_xruns ?? 0}
                   </div>
@@ -212,7 +212,7 @@ export function ClusterEngineGrid() {
                   </div>
                 </div>
                 <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, textTransform: 'uppercase', marginBottom: 4 }}>Signal</div>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Signal</div>
                   <div style={{ color: card.status.signal_state === 'present' ? C.green : C.amber, fontSize: 13, fontWeight: 700 }}>
                     {card.status.signal_state ?? 'unknown'}
                   </div>
@@ -221,7 +221,7 @@ export function ClusterEngineGrid() {
                   </div>
                 </div>
                 <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, textTransform: 'uppercase', marginBottom: 4 }}>Buffer</div>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Buffer</div>
                   <div style={{ color: bufferHealth < 90 ? C.amber : C.green, fontSize: 14, fontWeight: 700 }}>
                     {bufferHealth.toFixed(0)}%
                   </div>

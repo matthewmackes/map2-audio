@@ -36,7 +36,7 @@
 }
 
 .intelfx-flow-toolbar__prog-num {
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--interactive);
@@ -45,7 +45,7 @@
 }
 
 .intelfx-flow-toolbar__prog-name {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   max-width: 140px;
   white-space: nowrap;
@@ -79,7 +79,7 @@
 }
 
 .intelfx-flow-toolbar__zoom-level {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-variant-numeric: tabular-nums;
   color: var(--interactive);
   min-width: 38px;
@@ -166,10 +166,9 @@
   position: absolute;
   left: 0;
   top: -18px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   pointer-events: none;
   user-select: none;
   color: var(--interactive);
@@ -190,11 +189,10 @@
 }
 
 .intelfx-flow__io-label {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.02em;
   color: var(--interactive);
-  text-transform: uppercase;
 }
 
 /* -- Effect Block Cards ----------------------------------------------------- */
@@ -261,7 +259,7 @@
 
 .intelfx-flow-card__name {
   flex: 1;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--block-accent);
@@ -281,7 +279,7 @@
   border: none;
   cursor: pointer;
   color: var(--block-accent);
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   opacity: 0.5;
   transition: opacity 0.12s;
   flex-shrink: 0;
@@ -299,7 +297,7 @@
 
 .intelfx-flow-card__key-param {
   padding: 0 8px 4px;
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
   white-space: nowrap;
   overflow: hidden;
@@ -308,9 +306,8 @@
 
 .intelfx-flow-card__category {
   padding: 0 8px 6px;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--block-accent) 50%, var(--interactive) 50%);
 }
 
@@ -363,7 +360,7 @@
   align-items: center;
   justify-content: center;
   color: var(--interactive);
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   min-height: 108px;
   padding: 16px;
   text-align: center;
@@ -389,16 +386,15 @@
 
 .intelfx-flow-sidebar__title {
   flex: 1;
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--block-accent);
 }
 
 .intelfx-flow-sidebar__category {
-  font-size: var(--type-caption);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  letter-spacing: 0.02em;
   color: var(--interactive);
 }
 
@@ -426,10 +422,9 @@
 }
 
 .intelfx-flow-sidebar__page-title {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.02em;
   color: var(--interactive);
   margin-bottom: 6px;
   padding-bottom: 3px;
@@ -443,7 +438,7 @@
 }
 
 .intelfx-flow-sidebar__empty-msg {
-  font-size: var(--type-label);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--interactive);
   text-align: center;
   padding: var(--cds-spacing-06, 1.5rem) 0;
@@ -482,11 +477,11 @@
 }
 
 .intelfx-flow-sidebar__toggle-name {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .intelfx-flow-sidebar__toggle-value {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   opacity: 0.65;
 }
 
@@ -511,13 +506,13 @@
 }
 
 .intelfx-flow-sidebar__label {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
   line-height: 1.2;
 }
 
 .intelfx-flow-sidebar__value {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--interactive);
   text-align: right;
   line-height: 1;
@@ -538,7 +533,7 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--border-radius-sm);
   color: var(--text-primary);
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 /* -- Chain notation bar ----------------------------------------------------- */
@@ -555,16 +550,15 @@
 }
 
 .intelfx-flow__chain-label {
-  font-size: var(--type-caption);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--interactive);
 }
 
 .intelfx-flow__chain-notation {
   font-family: var(--font-sans);
-  font-size: var(--type-body);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 700;
   color: var(--support-success);
   letter-spacing: 0.06em;

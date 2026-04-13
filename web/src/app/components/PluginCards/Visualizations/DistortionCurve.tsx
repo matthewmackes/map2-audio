@@ -199,7 +199,7 @@ export function DistortionCurve({
         y={padding.top + 10}
         fill={accentColor}
         fontSize={8}
-        style={{ textTransform: 'uppercase' }}
+        style={{ letterSpacing: '0.02em' }}
         opacity={0.7}
       >
         {type}
