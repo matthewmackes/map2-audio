@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1978** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1980** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d7eb1bbf`](https://github.com/matthewmackes/map2-audio/commit/d7eb1bbfe74f66b463398ed42073a709c709dd17) | Add outboard hardware live status rollups | Map2 Audio | 2026-04-13 |
+| [`f67cf442`](https://github.com/matthewmackes/map2-audio/commit/f67cf44245ad46adceb3c73ce0c99771e2dae6c2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`2f9eba42`](https://github.com/matthewmackes/map2-audio/commit/2f9eba42c7b2c40e5d3932da8234f3258307fd49) | Add outboard launcher desktop smoke | Map2 Audio | 2026-04-13 |
 | [`41436b4a`](https://github.com/matthewmackes/map2-audio/commit/41436b4a418fc994ac98eb7922a7eb0ed283006e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`1045a477`](https://github.com/matthewmackes/map2-audio/commit/1045a477d44dc79df887c9164eb04ca672884879) | Add unified outboard hardware workspace | Map2 Audio | 2026-04-13 |
 | [`5a0263e7`](https://github.com/matthewmackes/map2-audio/commit/5a0263e70d9f42f394db73cb309ee791b597042a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`3480828d`](https://github.com/matthewmackes/map2-audio/commit/3480828dd16dba41df751a45301eea867e6a4ff4) | Standardize workspace navigation with Carbon tree view | Map2 Audio | 2026-04-13 |
 | [`ac54c94a`](https://github.com/matthewmackes/map2-audio/commit/ac54c94aebd388189ad7623b596397a383fe98e0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`3f5d2aab`](https://github.com/matthewmackes/map2-audio/commit/3f5d2aabf5c4b77333db8eb1dd32aa0c3dd54425) | Finish typography debt burn-down and blocked-task review | Map2 Audio | 2026-04-13 |
-| [`b54e8e70`](https://github.com/matthewmackes/map2-audio/commit/b54e8e70943218c1eb9fda4206b8bd8b1b9c00b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
