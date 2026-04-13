@@ -23373,7 +23373,7 @@ Last updated: 2026-04-13 16:36 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T1004
-Status: [ ] Todo
+Status: [✓] Done
 Title: Establish and document a no-gradients UI rule across MAP2
 Description:
 - Goal / acceptance criteria: Add a project-level design rule stating that gradients are not permitted in UI elements or components, and update the relevant project guidance so future frontend work uses only solid colors or approved Carbon tokens for surfaces, controls, and decoration.
@@ -23382,8 +23382,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: updated project guidance, instruction references, and a restart-safe audit note identifying the current gradient hotspots to remove.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:29 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 16:39 EDT - Codex
+- Completion notes:
+  - Updated `.github/copilot-instructions.md` and `.gemini/instructions.md` with an explicit repository-wide no-gradient rule for live UI, covering CSS, inline styles, SVG gradient definitions, canvas gradients, and Tailwind-style gradient utility classes.
+  - Replaced the legacy styling example in both guidance documents so the canonical CSS sample now uses flat Carbon tokens instead of a gradient background, preventing the docs from contradicting the new rule.
+  - Added corresponding memory/update-log entries to both guidance documents so the rule is discoverable in future work and restart-safe across assistants.
+  - Recorded the current hotspot inventory that the cleanup tasks must remove next: `web/src/app/layout/AppShell.css`, `web/src/app/components/PageHeader.css`, `web/src/app/pages/OutboardHardwareShell.css`, `web/src/app/pages/posterFallbacks.css`, `web/src/app/pages/CPUPerformancePage.tsx`, `web/src/app/pages/CPUPerformancePage.css`, `web/src/app/pages/MOTURMEPage.tsx`, `web/src/app/components/Routing/ParallelRoutingPanel.tsx`, `web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx`, `web/src/app/components/Visualizations/*`, `web/src/app/data/categoryStyles*`, and related plugin/editor surfaces already surfaced by the repo-wide `rg` audit.
+  - No installer or environment artifacts changed because this task only updated project guidance and work tracking; it introduced no new runtime dependencies, services, or build requirements.
+- Validation:
+  - `rg -n "Flat Visual Rule|No-Gradient Requirement|No-Gradient UI Rule" .github/copilot-instructions.md .gemini/instructions.md docs/PROJECT_WORKLIST.md` -> PASS
+  - `rg -n "linear-gradient\\(#0a1628, #050d18\\)" .github/copilot-instructions.md .gemini/instructions.md` -> PASS (`0 matches`)
 
 ID: T1005
 Status: [ ] Todo

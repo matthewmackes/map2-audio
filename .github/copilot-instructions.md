@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 11, 2026 (continuous release helper documented)
+> **Last Updated**: April 13, 2026 (no-gradients UI rule documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -471,6 +471,13 @@ grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
 
 ## Web Development Guidelines
 
+### Flat Visual Rule
+
+- UI surfaces, controls, cards, headers, charts, and decorative shells must use solid fills or approved Carbon tokens only.
+- Do not introduce `linear-gradient`, `radial-gradient`, `conic-gradient`, Tailwind `bg-gradient-*`, SVG gradient definitions, or canvas gradient fills for live UI.
+- When emphasis is needed, use spacing, typography, borders, shadows, opacity, and token changes instead of gradients.
+- If a touched legacy surface still uses gradients, remove them as part of the work rather than preserving them by default.
+
 ### Carbon Conformance Gate (Mandatory)
 
 - UI source of truth is `docs/design/CARBON_CONFORMANCE_STANDARD.md`.
@@ -787,12 +794,17 @@ async def get_resource(id: int, session: Session = Depends(get_session)):
   gap: 16px;
   
   /* Visual */
-  background: linear-gradient(#0a1628, #050d18);
-  border: 1px solid rgba(0, 217, 255, 0.15);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
 }
 ```
 
-**3. Legacy Palette Note (Deprecated for New UI Work)**
+**3. No-Gradient Requirement**
+- Gradients are not permitted in current MAP2 UI surfaces or components.
+- Prefer Carbon background, layer, border, support, and text tokens.
+- If legacy code still contains gradients, track and remove them instead of copying the pattern into new work.
+
+**4. Legacy Palette Note (Deprecated for New UI Work)**
 ```css
 /* New/refactored surfaces should use Carbon tokens (example names). */
 /* Use the Carbon theme and layer tokens rather than hard-coded palette values. */
@@ -978,6 +990,14 @@ These files represent best practices and architectural patterns to follow:
 - **Diagnosis**: Vite tree-shaking correctly eliminates unused code
 - **Verification**: `grep -c 'searchTerm' dist/assets/ComponentName-*.js`
 - **Lesson**: Bundle hash only changes when actually-used code changes
+
+**89. No-Gradient UI Rule (MEDIUM)**
+- **Files**: `.github/copilot-instructions.md`, `.gemini/instructions.md`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Gradient styling had re-entered active web surfaces and even guidance examples, which made flat Carbon-aligned reviews inconsistent and let new gradient usage slip back into the product.
+- **Root Cause**: The repo had Carbon guidance, but no explicit rule banning gradients across CSS, inline styles, SVG, canvas, and theme tooling.
+- **Fix**: Add a project-wide no-gradient rule to the shared guidance, replace guidance examples that showed gradient backgrounds, and record the current hotspot inventory in the canonical worklist (`AppShell.css`, `PageHeader.css`, `OutboardHardwareShell.css`, `posterFallbacks.css`, `CPUPerformancePage*`, `MOTURMEPage.tsx`, routing panels, metering/visualization components, and category-style helpers/tests).
+- **Verification**: `rg -n "gradient|bg-gradient|linearGradient|createLinearGradient" .github/copilot-instructions.md .gemini/instructions.md docs/PROJECT_WORKLIST.md`
+- **Lesson**: “Use Carbon” is not strong enough on its own; the repo needs an explicit no-gradient rule so follow-on UI work fails closed.
 
 ### Server Management Gotchas
 
@@ -2025,6 +2045,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-13] - No-Gradient UI Rule
+- **Section**: Web Development Guidelines, Style & Architecture Rules, Gotchas & Learned Fixes (#89), Update Log
+- **Change**: Added the project-wide no-gradients UI rule, updated the styling example to use solid Carbon tokens, and recorded the current cleanup hotspots for follow-on tasks.
+- **Reason**: The design system needed an explicit repository rule so gradient styling stops re-entering active MAP2 UI surfaces.
+- **Impact**: Gives T1005-T1007 one canonical policy source and makes future frontend reviews fail closed on gradient usage.
+- **Files**: `.github/copilot-instructions.md`, `.gemini/instructions.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-11] - Continuous Release Helper
 - **Section**: Gotchas & Learned Fixes (#88), Quick Reference Commands, Update Log
