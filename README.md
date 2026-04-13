@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1974** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1976** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1045a477`](https://github.com/matthewmackes/map2-audio/commit/1045a477d44dc79df887c9164eb04ca672884879) | Add unified outboard hardware workspace | Map2 Audio | 2026-04-13 |
+| [`5a0263e7`](https://github.com/matthewmackes/map2-audio/commit/5a0263e70d9f42f394db73cb309ee791b597042a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`3480828d`](https://github.com/matthewmackes/map2-audio/commit/3480828dd16dba41df751a45301eea867e6a4ff4) | Standardize workspace navigation with Carbon tree view | Map2 Audio | 2026-04-13 |
 | [`ac54c94a`](https://github.com/matthewmackes/map2-audio/commit/ac54c94aebd388189ad7623b596397a383fe98e0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`3f5d2aab`](https://github.com/matthewmackes/map2-audio/commit/3f5d2aabf5c4b77333db8eb1dd32aa0c3dd54425) | Finish typography debt burn-down and blocked-task review | Map2 Audio | 2026-04-13 |
 | [`b54e8e70`](https://github.com/matthewmackes/map2-audio/commit/b54e8e70943218c1eb9fda4206b8bd8b1b9c00b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`83bdaa98`](https://github.com/matthewmackes/map2-audio/commit/83bdaa98d3234b1b2361eb0e62f72f05a6200a71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`a3b8b1e4`](https://github.com/matthewmackes/map2-audio/commit/a3b8b1e45b9fffa90c320efcbf5bdc053ec98b69) | Continue compact overlay type scale cleanup | Map2 Audio | 2026-04-13 |
-| [`02288092`](https://github.com/matthewmackes/map2-audio/commit/02288092a10b50b155646eb14c56d2841ebce638) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`bdac2bcf`](https://github.com/matthewmackes/map2-audio/commit/bdac2bcf3ced989f8ccb07f1504ea35c0fdf0fb0) | Continue dynamics card type scale cleanup | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
