@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1184** TypeScript | **136** C++/H | **143** Docs | **2055** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1184** TypeScript | **136** C++/H | **143** Docs | **2058** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2cf415af`](https://github.com/matthewmackes/map2-audio/commit/2cf415af359a1639d5a142baf776519a42c59372) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
+| [`88e48936`](https://github.com/matthewmackes/map2-audio/commit/88e489369f4c864552a19739cfca7b9a31e61e0d) | Ship T1004-subD-subC workspace start menu collapse | Map2 Audio | 2026-04-13 |
+| [`a516a2d0`](https://github.com/matthewmackes/map2-audio/commit/a516a2d037e430f3177cd903739851c66b8ac920) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`4544dddf`](https://github.com/matthewmackes/map2-audio/commit/4544dddffcd1af2494b89b5c2e66dfc2b381a62e) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`89579630`](https://github.com/matthewmackes/map2-audio/commit/89579630f1859ab4a631e9830cc6e16f643d378c) | Ship T1004-subD-subB workspace launcher repoint | Map2 Audio | 2026-04-13 |
 | [`32e925c3`](https://github.com/matthewmackes/map2-audio/commit/32e925c382a4ba9a22e4a47465614752259dadca) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`5459e00f`](https://github.com/matthewmackes/map2-audio/commit/5459e00f39dd56c1072819c01b4a85092becfd10) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`25b5a16f`](https://github.com/matthewmackes/map2-audio/commit/25b5a16f76830a13d7ea167676ee514a64144b55) | Ship T1004-subD-subA workspace legacy redirects | Map2 Audio | 2026-04-13 |
-| [`9112ed3a`](https://github.com/matthewmackes/map2-audio/commit/9112ed3a100d4c016ad25b2b30e99c6a5f00fa96) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`83c53904`](https://github.com/matthewmackes/map2-audio/commit/83c53904cc682068c2d6397bea086b64889c9f9c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`78f42e56`](https://github.com/matthewmackes/map2-audio/commit/78f42e56bc772d255b4cfa446cf2c0d87ee6c690) | Ship T1004-subD decomposition | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
