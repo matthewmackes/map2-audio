@@ -23722,9 +23722,45 @@ Subtasks:
         - Dependencies: T1004-subC-subA, T1004-subC-subB, T1004-subC-subC
         - Estimated effort: High
         - Required outputs: extracted artifact section body, canonical `/workspace/artifacts/*` routes, and focused artifact regressions.
-        Subtasks: None
+        Subtasks:
+          - ID: T1004-subC-subD-subA
+            Status: [>] In Progress
+            Title: Extract shared Audio Artifacts body + canonical route builders for `/workspace/artifacts`
+            Description:
+            - Goal / acceptance criteria: Parameterize `AudioArtifactsPage` route construction, lift the content/aside logic into a shared body component, and add `workspace-hub/artifacts` wrappers so the canonical overview route can mount real content inside `WorkspaceHubShell` without the legacy local shell chrome.
+            - Why it matters: The overview route/body split is the minimum safe cut that all later artifact route work depends on.
+            - Dependencies: T1004-subC-subC
+            - Estimated effort: Medium
+            - Required outputs: shared artifact route builders/body extraction, workspace overview wrapper, and focused route regression coverage.
+            Subtasks: None
+            Assigned to: Codex
+            Last updated: 2026-04-13 18:48 EDT - Codex
+          - ID: T1004-subC-subD-subB
+            Status: [ ] Todo
+            Title: Remount artifact discover mode at `/workspace/artifacts/discover`
+            Description:
+            - Goal / acceptance criteria: Extend the extracted artifact body so discover mode also runs at the canonical workspace path, preserving query-string behavior and the embedded intake workspace.
+            - Why it matters: The overview/body extraction is incomplete until the discover route stops depending on the legacy `/artifacts/discover` URL root.
+            - Dependencies: T1004-subC-subD-subA
+            - Estimated effort: Medium
+            - Required outputs: canonical workspace discover wrapper/route wiring and focused artifact route regression coverage.
+            Subtasks: None
+            Assigned to: Unassigned
+            Last updated: 2026-04-13 18:48 EDT - Codex
+          - ID: T1004-subC-subD-subC
+            Status: [ ] Todo
+            Title: Sweep remaining artifact path assumptions and delete the workspace placeholder
+            Description:
+            - Goal / acceptance criteria: Remove the last hard-coded artifact-path assumptions that block the hub remount, delete the workspace placeholder route, and prove both legacy and canonical artifact paths remain behaviorally aligned ahead of the redirect sweep.
+            - Why it matters: The migration is not restart-safe until canonical artifact routes are the real source of truth instead of a wrapper around placeholder scaffolding.
+            - Dependencies: T1004-subC-subD-subB
+            - Estimated effort: Medium
+            - Required outputs: placeholder deletion, final artifact path sweep, and focused App/audio-artifact regressions.
+            Subtasks: None
+            Assigned to: Unassigned
+            Last updated: 2026-04-13 18:48 EDT - Codex
         Assigned to: Codex
-        Last updated: 2026-04-13 18:45 EDT - Codex
+        Last updated: 2026-04-13 18:48 EDT - Codex
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
