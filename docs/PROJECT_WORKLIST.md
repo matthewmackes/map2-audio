@@ -23549,7 +23549,7 @@ Validation:
 - `npm --prefix web run build` -> PASS
 
 ID: T1004
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree
 Description:
 - Goal / acceptance criteria: Replace the four sibling workspace shells — Platforms (`PlatformModal.tsx`), Physical Surfaces (`PhysicalSurfacesShell.tsx`), Audio Artifacts (`AudioArtifactsPage.tsx`), and Outboard Hardware (`OutboardHardwareShell.tsx`) — with a single unified `WorkspaceHubShell` mounted at `/workspace/*` that renders one very flat, very simple left-hand navigation list uniting all four domains. The left-hand nav MUST be strictly flat — one depth level, no collapse/expand, no nesting, no icons, no status pills or badges inside nav labels, no meta blocks or callouts inside the nav surface, no localStorage expand state. Four plain-text dividers (Platforms / Physical Surfaces / Audio Artifacts / Outboard Hardware) separate the list, but dividers are unclickable and unfocusable. Active state is a left-border accent + background tint only. The nav is a brand-new component (`WorkspaceHubNav`) co-located with the shell — `UnifiedWorkspaceSideNav` must NOT be touched or extended, because its TreeView/meta/callout feature set actively fights the "very flat and very simple" requirement; existing callers (Cluster Dashboard, MIDI Hub Shell, etc.) continue using it unchanged. Each nav section exposes only its top destinations (target ceiling ~8 items per section, ~32 total) — overflow moves to per-section overview pages, not the nav. The four legacy shell files are deleted; their child pages (`PlatformWorkspacePage`, `HostMachinePage`, `AudioEnginePage`, `ThemePage`, `AboutPage`, `PlatformAdoptionPage`, `PhysicalSurfacesOverviewPage`, `PhysicalSurfaceUnitPage`, `OutboardHardwareOverviewPage`, `OutboardHardwareDevicePage`, and `AudioArtifactsPage`'s content-only body) are relocated under `web/src/app/pages/workspace-hub/` and re-mounted under the new shell. All legacy routes (`/platforms/*`, `/physical-surfaces/*`, `/artifacts`, `/artifacts/discover`, `/outboard-hardware/*`) become permanent redirects into the new `/workspace/*` canonical paths so external bookmarks keep working. Data fetching is consolidated into a new shell-level `useUnifiedWorkspaceData()` aggregator hook that fetches all four workspace summaries in parallel (reusing the existing `usePlatformShellData`, `enrichedPhysicalSurfacesApi`, `pluginsApi`/`irApi`/`namApi`/`soundfontApi`, and the static `OUTBOARD_HARDWARE_DEVICES` constant), with `staleTime: 10_000`, `refetchOnWindowFocus: false`, and per-section error isolation so one failing summary cannot blank the other three. The aggregator feeds content-area headers and metric tiles only — it never feeds the nav tree. The home start menu loses its four separate tiles (`/platforms/overview`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` all added to `START_MENU_EXCLUDED_ROUTES` in `HomeStartMenuOverlay.tsx`) and gains one featured "Workspaces" tile at `/workspace` registered in `FEATURED_ROUTE_SET` of `launcherCatalog.tsx`. Advanced Menu entries for the four workspaces are repointed to the new canonical paths but NOT removed, so operators can still deep-link into a specific section. Dedicated device routes (`/mpx1/*`, `/tesira/*`, `/intelfx/*`, `/mcu`, `/maschine`, `/labs/push-surface`, `/edirol-ua1000`, `/hotone-jogg`, `/launch-control`, `/midi-commander`) are NOT moved and are NOT absorbed — they remain standalone and are linked out to from the Outboard Hardware / Physical Surfaces section overview grids.
@@ -23597,6 +23597,66 @@ Description:
   - Legacy redirect routes are permanent — no cleanup task planned to remove them. They cost nothing and protect external bookmarks.
 - Licensing review: All touched files are MAP2-owned AGPL-covered repository artifacts; no third-party notices expected.
 - Plan reference: `/home/mm/.claude/plans/unified-workspace-hub.md`
-Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 - planning only (no implementation yet)
+Subtasks:
+  - ID: T1004-subA
+    Status: [>] In Progress
+    Title: Stand up WorkspaceHub shell, flat nav, and canonical /workspace route scaffold
+    Description:
+    - Goal / acceptance criteria: Introduce the new `WorkspaceHubShell`, `WorkspaceHubNav`, context scaffolding, and `/workspace/*` route parent with flat section dividers and placeholder child routes, without yet migrating section bodies or deleting legacy shells.
+    - Why it matters: The hub needs its own shell contract before any section migration or redirect sweep can proceed safely.
+    - Dependencies: None
+    - Estimated effort: High
+    - Required outputs: new shell/nav components, route parent wiring, initial shell tests, and validation evidence.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-13 18:42 EDT - Codex
+  - ID: T1004-subB
+    Status: [ ] Todo
+    Title: Add unified workspace data aggregator and platform-section extraction
+    Description:
+    - Goal / acceptance criteria: Build `useUnifiedWorkspaceData()`, extract `usePlatformShellData()`, and connect shell-level summary loading with per-section error isolation, stale-time policy, and no nav coupling.
+    - Why it matters: Section migration should land on top of one shared data contract rather than copying four old fetch paths into the new shell.
+    - Dependencies: T1004-subA
+    - Estimated effort: High
+    - Required outputs: aggregator/data hooks, tests, and shell summary integration.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 18:42 EDT - Codex
+  - ID: T1004-subC
+    Status: [ ] Todo
+    Title: Migrate section content trees under workspace-hub pages
+    Description:
+    - Goal / acceptance criteria: Relocate the four workspace section pages under `web/src/app/pages/workspace-hub/`, wire them into the hub shell, and keep dedicated device routes standalone.
+    - Why it matters: The hub only becomes real once operators can navigate the migrated sections from the flat nav.
+    - Dependencies: T1004-subA, T1004-subB
+    - Estimated effort: High
+    - Required outputs: relocated section files, nav item sources, and section-level regression updates.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 18:42 EDT - Codex
+  - ID: T1004-subD
+    Status: [ ] Todo
+    Title: Wire legacy redirects and launcher/menu consolidation
+    Description:
+    - Goal / acceptance criteria: Redirect all legacy workspace URLs into `/workspace/*`, repoint advanced menu entries, collapse the home/start featured tiles to one Workspaces entry, and preserve bookmark safety.
+    - Why it matters: Operators should discover the new hub through the canonical entry point without breaking legacy links.
+    - Dependencies: T1004-subA, T1004-subC
+    - Estimated effort: Medium
+    - Required outputs: redirect helpers/tests, menu/launcher updates, and smoke validation.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 18:42 EDT - Codex
+  - ID: T1004-subE
+    Status: [ ] Todo
+    Title: Delete legacy shells and sweep residual workspace route references
+    Description:
+    - Goal / acceptance criteria: Remove the superseded legacy shell files, repoint remaining hard-coded workspace links/page keys, and prove no dangling references remain.
+    - Why it matters: The migration is not complete until the old shell layer is gone and the repository only points at the new canonical workspace hub.
+    - Dependencies: T1004-subB, T1004-subC, T1004-subD
+    - Estimated effort: Medium
+    - Required outputs: file deletions, grep/reference cleanup, full regression evidence, and final smoke checks.
+    Subtasks: None
+    Assigned to: Unassigned
+    Last updated: 2026-04-13 18:42 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 18:42 EDT - Codex
