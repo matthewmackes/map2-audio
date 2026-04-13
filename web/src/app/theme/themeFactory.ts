@@ -14,7 +14,6 @@ export const baseWidgets = {
   'border-radius-md': '0px',
   'border-radius-lg': '4px',
   'border-width': '1px',
-  'surface-gradient': 'none',
   'glow-intensity': '0',
   'transition-speed': '0.12s',
 } as const;

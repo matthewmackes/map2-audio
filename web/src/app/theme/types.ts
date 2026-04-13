@@ -43,7 +43,6 @@ export interface ThemeWidgets {
   'border-radius-md': string;
   'border-radius-lg': string;
   'border-width': string;
-  'surface-gradient': string;
   'glow-intensity': string;
   'transition-speed': string;
 }

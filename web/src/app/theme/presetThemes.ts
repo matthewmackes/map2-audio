@@ -830,7 +830,7 @@ const win11Bloom = preset(
     'text-inverse': '#1a2533',
     'focus-ring': '#76d6ff',
   },
-  'Windows 11 Bloom — the signature blue-to-lavender wallpaper gradient as a full dark theme.',
+  'Windows 11 Bloom — a blue-to-lavender inspired flat dark theme.',
 );
 
 const win11Glow = preset(

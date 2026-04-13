@@ -17,8 +17,7 @@
   gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-strong) 88%, var(--cds-border-subtle));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer) 88%, #ffffff 12%) 0%, var(--cds-layer) 100%);
+  background: var(--cds-layer);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, #ffffff 72%, transparent),
     inset -1px -1px 0 color-mix(in srgb, var(--cds-shadow) 10%, transparent),
@@ -51,12 +50,7 @@
   gap: var(--cds-spacing-04);
   padding: 0.75rem 1rem;
   border: 1px solid var(--cds-border-subtle);
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--cds-layer-hover) 88%, var(--primary) 12%) 0%,
-      color-mix(in srgb, var(--cds-layer-hover) 92%, var(--accent) 8%) 100%
-    );
+  background: color-mix(in srgb, var(--cds-layer-hover) 88%, var(--primary) 12%);
   box-shadow: inset 1px 1px 0 color-mix(in srgb, #ffffff 65%, transparent);
 }
 
@@ -178,8 +172,7 @@
 .theme-page__catalog-block {
   padding: 0.55rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 88%, #ffffff 12%);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 90%, #ffffff 10%) 0%, var(--cds-layer) 100%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 90%, #ffffff 10%);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, #ffffff 56%, transparent),
     inset -1px -1px 0 color-mix(in srgb, var(--cds-shadow) 7%, transparent);
@@ -208,8 +201,7 @@
   padding: 0.55rem 0.65rem;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle) 92%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 92%, #ffffff 8%) 0%, var(--cds-layer) 100%);
+  background: var(--cds-layer);
   color: inherit;
   text-align: left;
   box-shadow:
@@ -218,8 +210,7 @@
 }
 
 .theme-page__catalog-item--active {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--primary) 12%, var(--cds-layer-hover)) 0%, color-mix(in srgb, var(--accent) 8%, var(--cds-layer)) 100%);
+  background: color-mix(in srgb, var(--primary) 12%, var(--cds-layer-hover));
   box-shadow:
     inset 3px 0 0 color-mix(in srgb, var(--primary) 58%, transparent),
     inset 1px 1px 0 color-mix(in srgb, #ffffff 40%, transparent),
@@ -261,9 +252,7 @@
   position: relative;
   min-block-size: 27rem;
   padding: 1rem;
-  background:
-    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--primary) 20%, transparent) 0%, transparent 18%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-hover) 94%, transparent) 0%, transparent 55%);
+  background: color-mix(in srgb, var(--cds-layer-hover) 94%, transparent);
 }
 
 .theme-page__desktop-scene--focused {
@@ -302,8 +291,7 @@
   inline-size: 0.9rem;
   block-size: 0.9rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-strong) 80%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, #ffffff 78%, transparent) 0%, var(--cds-layer-hover) 100%);
+  background: var(--cds-layer-hover);
   box-shadow: inset 1px 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
 }
 
@@ -485,8 +473,7 @@
   min-block-size: 2rem;
   padding: 0.4rem 0.7rem;
   border: 1px solid var(--cds-border-subtle);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, #ffffff 80%, var(--cds-layer)) 0%, var(--cds-layer) 100%);
+  background: var(--cds-layer);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, #ffffff 62%, transparent),
@@ -840,12 +827,7 @@
 }
 
 .theme-page__theme-card--suggested {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--cds-layer-hover) 92%, var(--primary) 8%) 0%,
-      color-mix(in srgb, var(--cds-layer) 95%, var(--accent) 5%) 100%
-    );
+  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--primary) 8%);
 }
 
 .theme-page__theme-card-head,
@@ -983,12 +965,7 @@
 }
 
 .theme-page__slot-card--overridden {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--cds-layer-hover) 90%, var(--accent) 10%) 0%,
-      color-mix(in srgb, var(--cds-layer) 96%, transparent) 100%
-    );
+  background: color-mix(in srgb, var(--cds-layer-hover) 90%, var(--accent) 10%);
 }
 
 .theme-page__slot-button {

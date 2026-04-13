@@ -393,7 +393,7 @@ export function ThemeChooserModal({ isOpen, onClose, onThemeChange }: ThemeChoos
                         <span
                           className="tcm-family-card__band"
                           style={{
-                            background: `linear-gradient(to right, ${Object.values(f.shades).join(', ')})`,
+                            background: hex,
                           }}
                           aria-hidden="true"
                         />

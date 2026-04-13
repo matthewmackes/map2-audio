@@ -97,23 +97,23 @@
   inline-size: 100%;
   block-size: 2.5rem;
   border: 1px solid var(--cds-border-subtle);
-  background: linear-gradient(135deg, var(--cds-layer) 0%, var(--cds-layer-selected) 100%);
+  background: var(--cds-layer-selected);
 }
 
 .theme-creator-dialog__preset-swatch--white {
-  background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
+  background: #ffffff;
 }
 
 .theme-creator-dialog__preset-swatch--g10 {
-  background: linear-gradient(135deg, #f4f4f4 0%, #e0e0e0 100%);
+  background: #f4f4f4;
 }
 
 .theme-creator-dialog__preset-swatch--g90 {
-  background: linear-gradient(135deg, #262626 0%, #525252 100%);
+  background: #262626;
 }
 
 .theme-creator-dialog__preset-swatch--g100 {
-  background: linear-gradient(135deg, #161616 0%, #393939 100%);
+  background: #161616;
 }
 
 .theme-creator-dialog__legacy-list {

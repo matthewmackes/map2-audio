@@ -1147,7 +1147,7 @@ export function ThemePage() {
                     >
                       <span
                         className="theme-page__family-band"
-                        style={{ background: `linear-gradient(to right, ${Object.values(family.shades).join(', ')})` }}
+                        style={{ background: family.shades[previewShade] }}
                         aria-hidden="true"
                       />
                       <span className="theme-page__family-copy">
@@ -1407,7 +1407,7 @@ export function ThemePage() {
                             className="theme-page__category-icon"
                             style={{
                               color: config.color,
-                              background: config.gradient,
+                              background: config.bg,
                             }}
                           >
                             <Icon size={18} />
@@ -1917,7 +1917,7 @@ function ThemeDesktopPreview({
     <div
       className={`theme-page__desktop-preview theme-page__desktop-preview--focus-${previewFocus}`}
       style={{
-        background: `linear-gradient(145deg, ${theme.colors['surface-2']} 0%, ${theme.colors.bg} 48%, ${theme.colors.surface} 100%)`,
+        background: theme.colors['surface-2'],
         borderColor: theme.colors.border,
         boxShadow: `0 24px 54px ${theme.colors['shadow-soft']}`,
       }}
@@ -1985,7 +1985,7 @@ function ThemeDesktopPreview({
             <div
               className="theme-page__desktop-window-bar"
               style={{
-                background: `linear-gradient(90deg, ${theme.colors.primary} 0%, ${theme.colors.accent} 100%)`,
+                background: theme.colors.primary,
                 color: theme.colors['text-inverse'],
               }}
             >

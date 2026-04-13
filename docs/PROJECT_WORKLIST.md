@@ -23408,7 +23408,7 @@ Assigned to: Unassigned
 Last updated: 2026-04-13 16:29 EDT - Codex
 
 ID: T1006
-Status: [ ] Todo
+Status: [✓] Done
 Title: Flatten theme configuration and editor surfaces to remove gradient concepts
 Description:
 - Goal / acceptance criteria: Remove or disable gradient-related theme properties, previews, and editor controls from the theme system, including configuration types, factory helpers, chooser/creator UIs, and any related state-management flows. All live theme previews must render with flat fills only.
@@ -23417,8 +23417,19 @@ Description:
 - Estimated effort: Medium
 - Required outputs: updated theme interfaces/types/factories, flat-only theme editor UI, regression coverage, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:29 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 16:43 EDT - Codex
+- Completion notes:
+  - Removed the obsolete theme widget contract field `surface-gradient` from `web/src/app/theme/types.ts` and `web/src/app/theme/themeFactory.ts`, so generated theme objects no longer expose a gradient-specific configuration slot.
+  - Flattened the theme editor and chooser previews by replacing gradient family bands, desktop-preview fills, title-bar fills, and creator preset swatches with solid palette/token-backed colors in `web/src/app/pages/ThemePage.tsx`, `web/src/app/pages/ThemePage.css`, `web/src/app/components/ThemeChooserModal.tsx`, and `web/src/app/components/ThemeCreatorDialog.css`.
+  - Updated the Theme page appearance-asset preview chip to use the existing flat category background token instead of the category gradient helper, keeping the editor surface aligned with the new no-gradient rule even before the wider category-style cleanup lands.
+  - Updated the `Windows 11 Bloom` preset description in `web/src/app/theme/presetThemes.ts` so the preset catalog no longer describes the theme system in gradient terms.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx src/app/components/ThemeCreatorDialog.test.tsx` -> PASS (`2 suites, 25 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `rg -n "gradient|bg-gradient|linearGradient|radialGradient" web/src/app/theme web/src/app/pages/ThemePage.tsx web/src/app/pages/ThemePage.css web/src/app/components/ThemeChooserModal.tsx web/src/app/components/ThemeCreatorDialog.css` -> PASS (`0 matches`)
 
 ID: T1007
 Status: [ ] Todo
