@@ -23881,8 +23881,62 @@ Subtasks:
     - Dependencies: T1004-subB, T1004-subC, T1004-subD
     - Estimated effort: Medium
     - Required outputs: file deletions, grep/reference cleanup, full regression evidence, and final smoke checks.
-    Subtasks: None
+    Subtasks:
+      - ID: T1004-subE-subA
+        Status: [✓] Done
+        Title: Remove dead legacy workspace entry imports and prefetch wiring
+        Description:
+        - Goal / acceptance criteria: Delete unused app-entry lazy imports for superseded legacy workspace shells/pages and repoint route prefetching at the canonical workspace hub modules.
+        - Why it matters: The migration is not complete while the main app shell still imports or prefetches entrypoints that no longer back real routes.
+        - Dependencies: T1004-subD
+        - Estimated effort: Low
+        - Required outputs: entry-layer cleanup, focused route regressions, and typecheck proof.
+        Subtasks: None
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:35 EDT - Codex
+        - Completion notes:
+          - Removed the unused legacy workspace shell/page lazy imports from `App.tsx`, so the main route tree no longer keeps dead workspace entry modules alive after the hub migration.
+          - Repointed `routePrefetch.ts` from the retired `PlatformWorkspacePage` entrypoint to the canonical workspace hub shell and platform section modules.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
+      - ID: T1004-subE-subB
+        Status: [ ] Todo
+        Title: Lift shared shell context/contracts out of the legacy physical-surfaces and outboard shell files
+        Description:
+        - Goal / acceptance criteria: Move the remaining shared types/constants needed by workspace-hub section pages into canonical route modules so the old shell files are no longer imported by active workspace pages.
+        - Why it matters: The legacy shell files cannot be deleted while canonical workspace routes still import their context types or shared device metadata.
+        - Dependencies: T1004-subE-subA
+        - Estimated effort: Medium
+        - Required outputs: shared module extraction, import rewiring, and focused route regressions.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 19:35 EDT - Codex
+      - ID: T1004-subE-subC
+        Status: [ ] Todo
+        Title: Delete the retired legacy workspace shell files and route-local tests
+        Description:
+        - Goal / acceptance criteria: Remove the superseded shell/page files and any route-local tests that only cover the deleted legacy entrypoints once the canonical workspace pages own the remaining behavior.
+        - Why it matters: File-level dead code and test scaffolding hide whether the repository still depends on the old shell layer.
+        - Dependencies: T1004-subE-subB
+        - Estimated effort: Medium
+        - Required outputs: file deletions, updated focused tests, and grep proof.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 19:35 EDT - Codex
+      - ID: T1004-subE-subD
+        Status: [ ] Todo
+        Title: Sweep residual canonical workspace references across shell/session/supporting surfaces
+        Description:
+        - Goal / acceptance criteria: Repoint remaining hard-coded legacy workspace route literals in supporting UI/session/prefetch/poster surfaces and prove the surviving legacy roots are only intentional redirect compatibility paths.
+        - Why it matters: The migration is not truly closed until the rest of the shell ecosystem stops treating legacy roots as first-class destinations.
+        - Dependencies: T1004-subE-subB
+        - Estimated effort: Medium
+        - Required outputs: reference sweep, grep evidence, and regression validation.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 19:35 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:33 EDT - Codex
+    Last updated: 2026-04-13 19:35 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex

@@ -9,7 +9,8 @@ function prefetchSnapshotEditor() {
 
 function prefetchPlatformWorkspace() {
   return Promise.allSettled([
-    import('./pages/PlatformWorkspacePage').then((module) => module),
+    import('./pages/WorkspaceHubShell').then((module) => module),
+    import('./pages/workspace-hub/platforms/PlatformWorkspaceSection').then((module) => module),
     import('./components/Platform/PlatformModal').then((module) => module),
   ])
 }
