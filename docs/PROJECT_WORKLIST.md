@@ -23395,7 +23395,7 @@ Last updated: 2026-04-13 16:39 EDT - Codex
   - `rg -n "linear-gradient\\(#0a1628, #050d18\\)" .github/copilot-instructions.md .gemini/instructions.md` -> PASS (`0 matches`)
 
 ID: T1005
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove gradient styling from CSS and inline UI surfaces across the web app
 Description:
 - Goal / acceptance criteria: Audit and replace all UI gradients used in CSS and inline React styles with solid Carbon-aligned colors or approved tokens, including routed pages, modals, plugin cards, buttons, decorative shells, and shared primitives. Exclude non-UI documentation prose and archival evidence artifacts unless they are used as current project guidance.
@@ -23426,6 +23426,11 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS (`2 suites, 7 tests`)
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
+Completion notes:
+- Completed the no-gradient web-app cleanup plan through `T1005-subA` to `T1005-subD`, flattening shared shell chrome, routed page hero surfaces, poster fallbacks, plugin/category helper contracts, and the remaining non-visualization shared panel shells across the current routed app.
+- The visualization-specific follow-on that depended on this work was then completed separately in `T1007`, so the app now has both the broad UI-surface cleanup (`T1005`) and the targeted visualization/guard cleanup (`T1007`) shipped together.
+- No installer or environment artifacts changed across `T1005` because the work introduced no new runtime dependencies, services, packages, or build requirements.
+Last updated: 2026-04-13 18:39 EDT - Codex
   - ID: T1005-subB
     Status: [✓] Done
     Title: Flatten routed page hero and poster fallback gradients
