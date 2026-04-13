@@ -20,7 +20,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--cds-layer-hover) 72%, transparent);
   color: var(--cds-text-secondary);
-  font-size: 0.6rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -40,7 +40,7 @@
 
 .node-nav-bar__fallback {
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   white-space: nowrap;
 }
 
@@ -141,7 +141,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.68rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
 }
 
@@ -151,7 +151,7 @@
 }
 
 .node-nav-chip__health-pct {
-  font-size: 0.58rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   opacity: 0.72;
