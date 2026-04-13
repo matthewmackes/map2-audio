@@ -1,8 +1,8 @@
 .juce-grid-page {
   --juce-grid-midi-led-color: #78a9ff;
   --juce-grid-midi-led-idle-color: #525252;
-  --juce-grid-led-panel-bg: color-mix(in srgb, var(--cds-layer-01, var(--surface-secondary, #f4f4f4)) 92%, #eef5ff 8%);
-  --juce-grid-led-panel-bg-hover: color-mix(in srgb, var(--cds-layer-01, var(--surface-secondary, #f4f4f4)) 86%, #e3efff 14%);
+  --juce-grid-led-panel-bg: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 92%, #eef5ff 8%);
+  --juce-grid-led-panel-bg-hover: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 86%, #e3efff 14%);
   --juce-grid-led-panel-border: color-mix(in srgb, var(--cds-border-subtle, var(--border, #c6c6c6)) 72%, var(--juce-grid-midi-led-color) 28%);
   display: flex;
   flex-direction: column;
@@ -85,7 +85,7 @@
   height: 3rem;
   flex-shrink: 0;
   color: var(--cds-icon-primary, var(--cds-icon-interactive, #78a9ff));
-  background: var(--cds-layer-02, color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, white 12%));
+  background: var(--cds-layer-hover, color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, white 12%));
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
 }
 
@@ -1291,12 +1291,12 @@
   gap: 0.875rem;
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-secondary, #f4f4f4)) 90%, #f7fbff 10%);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 90%, #f7fbff 10%);
   border-radius: 0.75rem;
 }
 
 .juce-grid-page__control-center-card--danger {
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-secondary, #f4f4f4)) 88%, #fff1f1 12%);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 88%, #fff1f1 12%);
 }
 
 .juce-grid-page__control-center-card-copy {
@@ -1344,8 +1344,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, var(--cds-layer, var(--surface))) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, var(--cds-background, var(--bg))) 100%
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 94%, var(--cds-layer, var(--surface))) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, var(--cds-background, var(--bg))) 100%
     );
 }
 
@@ -1775,7 +1775,7 @@
   gap: 0.875rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, var(--cds-background, var(--bg)));
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 96%, var(--cds-background, var(--bg)));
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
@@ -1797,7 +1797,7 @@
 }
 
 .juce-grid-page__chain-tile.is-active {
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, var(--cds-layer-01, var(--surface)));
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 94%, var(--cds-layer, var(--surface)));
   border-color: var(--interactive-active, #002d9c);
 }
 
@@ -2033,7 +2033,7 @@
 }
 
 .juce-grid-page__snapshot-status-channel-badge.is-warning.cds--tag {
-  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer-01, #262626));
+  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer, #262626));
   color: #f1c21b;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
@@ -2044,13 +2044,13 @@
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  background: color-mix(in srgb, #78a9ff 14%, var(--cds-layer-01, #262626));
+  background: color-mix(in srgb, #78a9ff 14%, var(--cds-layer, #262626));
   color: #78a9ff;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #78a9ff 26%, transparent);
 }
 
 .juce-grid-page__snapshot-status-monitoring-badge.is-warning.cds--tag {
-  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer-01, #262626));
+  background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer, #262626));
   color: #f1c21b;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
@@ -2063,7 +2063,7 @@
 
 .juce-grid-page__snapshot-status-channel-warning.cds--tag {
   border: 1px solid color-mix(in srgb, #f1c21b 48%, transparent);
-  background: color-mix(in srgb, #f1c21b 14%, var(--cds-layer-01, #262626));
+  background: color-mix(in srgb, #f1c21b 14%, var(--cds-layer, #262626));
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -2150,7 +2150,7 @@
   min-height: 3.25rem;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--cds-border-strong-01, #8d8d8d);
-  background: color-mix(in srgb, var(--cds-layer-02, #262626) 92%, #000000 8%);
+  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 92%, #000000 8%);
   color: var(--cds-text-primary, #f4f4f4);
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 600;
@@ -2211,7 +2211,7 @@
   min-block-size: 5.25rem;
   padding: 0.75rem 0.875rem;
   border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.16));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, black 8%);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, black 8%);
   resize: vertical;
 }
 
@@ -2245,7 +2245,7 @@
   width: 100%;
   padding: 0.75rem 0.875rem;
   border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.16));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, black 8%);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, black 8%);
 }
 
 .juce-grid-page__snapshot-status-go-live-checklist-head {
@@ -2382,7 +2382,7 @@
   margin: 0;
   padding: 0.75rem 0.875rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, rgba(255, 255, 255, 0.16)) 88%, #78a9ff 12%);
-  background: color-mix(in srgb, var(--cds-layer-01, #262626) 90%, black 10%);
+  background: color-mix(in srgb, var(--cds-layer, #262626) 90%, black 10%);
   list-style: none;
 }
 
@@ -2523,7 +2523,7 @@
   min-block-size: 2.5rem;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -2577,14 +2577,14 @@
   min-block-size: 2.5rem;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
 .juce-grid-page__snapshot-status-output-warning {
   inline-size: fit-content;
   border: 1px solid color-mix(in srgb, var(--cds-support-warning, #f1c21b) 52%, transparent);
-  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 16%, var(--cds-layer-01, #262626));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 16%, var(--cds-layer, #262626));
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -2685,7 +2685,7 @@
 .juce-grid-page__snapshot-status-metadata-shell {
   inline-size: 100%;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-secondary)) 92%, #000000 8%);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface-secondary)) 92%, #000000 8%);
   overflow: hidden;
 }
 
@@ -3157,7 +3157,7 @@
   min-width: 0;
   padding: 0.75rem 0.5rem;
   border: 1px solid color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 18%, var(--cds-border-subtle, var(--border)));
-  background: color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 6%, var(--cds-layer-01, var(--surface-secondary)));
+  background: color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 6%, var(--cds-layer, var(--surface-secondary)));
   border-radius: 0;
 }
 
@@ -3357,11 +3357,11 @@
 }
 
 .juce-grid-page__flow-card.is-path-dimmed {
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 90%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 90%, transparent);
 }
 
 .juce-grid-page__flow-card.is-path-live {
-  background: color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 6%, var(--cds-layer-01, var(--surface)));
+  background: color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 6%, var(--cds-layer, var(--surface)));
 }
 
 .juce-grid-page__flow-card {
@@ -3515,7 +3515,7 @@
   inline-size: min(100%, 16rem);
   padding: 0.35rem 0.5rem;
   border: 1px solid color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 50%, var(--cds-border-subtle, rgba(255, 255, 255, 0.16)));
-  background: var(--cds-layer-01, var(--surface));
+  background: var(--cds-layer, var(--surface));
   color: var(--cds-text-primary, var(--text-primary));
   font: inherit;
 }
@@ -4138,7 +4138,7 @@
   gap: 1rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__compact-section-header {
@@ -4198,7 +4198,7 @@
   gap: 1rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__bottom-editor-panel.is-touch-mode {
@@ -4517,13 +4517,13 @@
   gap: 1rem;
   min-block-size: 0;
   padding: 1rem;
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__selected-midi-grid {
   overflow: visible;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-hover, #393939);
   padding: 0;
 }
 
@@ -4591,7 +4591,7 @@
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   border-radius: 4px;
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-hover, #393939);
 }
 
 .juce-grid-page__selected-midi-eyebrow {
@@ -4623,7 +4623,7 @@
   overflow: hidden;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   border-radius: 4px;
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-hover, #393939);
 }
 
 .juce-grid-page__selected-midi-card-header {
@@ -4684,7 +4684,7 @@
   gap: 0.5rem;
   text-align: center;
   border: 1px dashed var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-hover, #393939);
 }
 
 .juce-grid-page__selected-midi-loading {
@@ -4868,7 +4868,7 @@
   min-height: 1.5rem;
   padding: 0.125rem 0.5rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, var(--surface-secondary));
+  background: var(--cds-layer, var(--surface-secondary));
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
@@ -4881,7 +4881,7 @@
   min-height: 2rem;
   padding: 0.25rem 0.7rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, var(--surface-secondary));
+  background: var(--cds-layer, var(--surface-secondary));
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   white-space: nowrap;
@@ -4889,25 +4889,25 @@
 
 .juce-grid-page__tablet-flow-status.is-live {
   border-color: color-mix(in srgb, var(--cds-support-success) 32%, var(--cds-border-subtle, var(--border)));
-  background: color-mix(in srgb, var(--cds-support-success) 10%, var(--cds-layer-01, var(--surface-secondary)));
+  background: color-mix(in srgb, var(--cds-support-success) 10%, var(--cds-layer, var(--surface-secondary)));
   color: var(--cds-support-success);
 }
 
 .juce-grid-page__tablet-flow-status.is-active {
   border-color: color-mix(in srgb, var(--cds-link-primary) 32%, var(--cds-border-subtle, var(--border)));
-  background: color-mix(in srgb, var(--cds-link-primary) 10%, var(--cds-layer-01, var(--surface-secondary)));
+  background: color-mix(in srgb, var(--cds-link-primary) 10%, var(--cds-layer, var(--surface-secondary)));
   color: var(--cds-link-primary);
 }
 
 .juce-grid-page__tablet-flow-status.is-inactive {
-  background: var(--cds-layer-01, var(--surface-secondary));
+  background: var(--cds-layer, var(--surface-secondary));
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
 .juce-grid-page__tablet-flow-details {
   padding: 0.875rem 1rem 0;
   border-top: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, var(--surface-secondary));
+  background: var(--cds-layer, var(--surface-secondary));
 }
 
 .juce-grid-page__tablet-flow-details-row {
@@ -5020,7 +5020,7 @@
   padding: 0.2rem 0.2rem 0.2rem 0.5rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: 4px;
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__tablet-launcher-page-readout {
@@ -5044,7 +5044,7 @@
   z-index: 23;
   overflow: hidden;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
 }
 
@@ -5079,7 +5079,7 @@
 .juce-grid-page__tablet-editor-body {
   overflow: auto;
   padding: 1rem;
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 @media (orientation: portrait) and (min-width: 769px) and (max-width: 1184px) {
@@ -5685,7 +5685,7 @@
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   border-radius: 0.25rem;
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__modal-copy {
@@ -5838,7 +5838,7 @@
 .juce-grid-page__shortcut-keys kbd {
   padding: 0.2rem 0.4rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
@@ -6695,7 +6695,7 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 90%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 90%,
     var(--juce-grid-signal-accent) 10%
   );
   transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
@@ -6704,8 +6704,8 @@
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-hero-image {
   background: color-mix(
     in srgb,
-    var(--cds-layer-01, var(--surface)) 88%,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 12%
+    var(--cds-layer, var(--surface)) 88%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 12%
   );
 }
 
@@ -6751,7 +6751,7 @@
   border-color: color-mix(in srgb, var(--cds-border-interactive, var(--cds-link-primary)) 34%, var(--cds-border-subtle, var(--border)));
   background: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 82%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 82%,
     var(--juce-grid-signal-accent) 18%
   );
 }
@@ -6836,8 +6836,8 @@
   border-radius: 0;
   background: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 84%,
-    var(--cds-layer-03, var(--surface-3, var(--surface-2, var(--surface)))) 16%
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 84%,
+    var(--cds-layer-selected, var(--surface-3, var(--surface-2, var(--surface)))) 16%
   );
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -6865,7 +6865,7 @@
 .juce-grid-page__signal-plugin-bypass:focus-visible {
   background: color-mix(
     in srgb,
-    var(--cds-layer-03, var(--surface-3, var(--surface-2, var(--surface)))) 88%,
+    var(--cds-layer-selected, var(--surface-3, var(--surface-2, var(--surface)))) 88%,
     var(--juce-grid-signal-accent) 12%
   );
   border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 76%, var(--cds-border-subtle, var(--border)));
@@ -6887,7 +6887,7 @@
 .juce-grid-page__signal-plugin-delete:focus-visible {
   background: color-mix(
     in srgb,
-    var(--cds-layer-03, var(--surface-3, var(--surface-2, var(--surface)))) 88%,
+    var(--cds-layer-selected, var(--surface-3, var(--surface-2, var(--surface)))) 88%,
     var(--cds-support-error, #da1e28) 12%
   );
 }
@@ -6923,8 +6923,8 @@
 .juce-grid-page__signal-plugin-card.is-bypassed:focus-visible .juce-grid-page__signal-plugin-hero-image {
   background: color-mix(
     in srgb,
-    var(--cds-layer-01, var(--surface)) 74%,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 26%
+    var(--cds-layer, var(--surface)) 74%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 26%
   );
 }
 
@@ -6954,7 +6954,7 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 90%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 90%,
     var(--cds-link-primary, #0f62fe) 10%
   );
   color: var(--cds-text-primary, var(--text-primary));
@@ -7305,7 +7305,7 @@
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--juce-grid-parameter-accent) 28%, var(--cds-border-subtle, var(--border)));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--juce-grid-parameter-accent) 8%, var(--cds-layer, #161616)) 0%, var(--cds-layer-01, #262626) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--juce-grid-parameter-accent) 8%, var(--cds-layer, #161616)) 0%, var(--cds-layer, #262626) 100%);
 }
 
 .juce-grid-page__parameter-editor-ir-preview-header {
@@ -7373,7 +7373,7 @@
   overflow: hidden;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   border-radius: 4px;
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-hover, #393939);
 }
 
 .juce-grid-page__parameter-group-header,
@@ -7410,7 +7410,7 @@
   padding: 0.875rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   border-radius: 4px;
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
 }
 
 .juce-grid-page__parameter-control-copy {
@@ -7627,7 +7627,7 @@
   left: 0;
   z-index: 95;
   border-top: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer, #262626);
   animation: juce-grid-page-slide-in-up 120ms ease;
   max-height: min(55vh, 34rem);
   overflow-y: auto;
@@ -8198,7 +8198,7 @@
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--cds-layer-accent, var(--cds-layer-02, #e0e0e0));
+  background: var(--cds-layer-accent, var(--cds-layer-hover, #e0e0e0));
   border-left: 3px solid var(--cds-interactive, #0f62fe);
   color: var(--cds-text-primary);
 }
@@ -8540,17 +8540,17 @@
 .app-shell--audio-grid .juce-grid-page__flow-card {
   --juce-grid-flow-bar-bg: color-mix(
     in srgb,
-    var(--cds-layer-01, var(--surface)) 86%,
+    var(--cds-layer, var(--surface)) 86%,
     var(--cds-background, var(--bg)) 14%
   );
   --juce-grid-flow-bar-bg-hover: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 88%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 88%,
     var(--flow-color, var(--cds-link-primary, #0f62fe)) 12%
   );
   --juce-grid-flow-bar-chip-bg: color-mix(
     in srgb,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 92%,
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 92%,
     var(--flow-color, var(--cds-link-primary, #0f62fe)) 8%
   );
   background: var(--juce-grid-flow-bar-bg);
@@ -8591,7 +8591,7 @@
   background: color-mix(
     in srgb,
     var(--juce-grid-flow-bar-bg) 84%,
-    var(--cds-layer-02, var(--surface-2, var(--surface))) 16%
+    var(--cds-layer-hover, var(--surface-2, var(--surface))) 16%
   ) !important;
   border-bottom: 1px solid color-mix(
     in srgb,

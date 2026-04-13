@@ -20271,7 +20271,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T866-subC
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Sweep route-local layer debt and document intentional exceptions
     Description:
     - Goal / acceptance criteria: Convert remaining software-only route families and document any fit-sensitive visual systems that intentionally keep local layer treatment.
@@ -20281,7 +20281,7 @@ Subtasks:
     - Required outputs: Route sweeps, exception notes, completion validation.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-12 15:59 EDT - Codex
+    Last updated: 2026-04-12 20:16 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-12 11:38 EDT - Codex
 - Progress notes:
@@ -20322,6 +20322,7 @@ Last updated: 2026-04-12 11:38 EDT - Codex
   - Continued `T866-subC` across the next one-off route/component surfaces in `web/src/app/theme/useTheme.test.ts`, `web/src/app/pages/midi-hub/MidiHubAreaPage.css`, `web/src/app/pages/McuPage.css`, `web/src/app/pages/LCDPage.css`, `web/src/app/components/library/LibrarySources.css`, `web/src/app/components/library/InstalledAssetsTable.css`, `web/src/app/components/SpecialSettingsDialog.css`, `web/src/app/components/ProductDetailDialog.css`, `web/src/app/components/Platform/PlatformInfoGuideSection.css`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspace.css`, `web/src/app/components/AvbRouting/AvbRoutingWorkspace.css`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.css`, `web/src/app/components/MPX1/MPX1MegaMenu.css`, `web/src/app/components/MidiHub/MidiPatchbay.tsx`, `web/src/app/components/NetworkDiscovery/NetworkDiscoveryWorkspaceGraph.tsx`, `web/src/app/components/MidiCluster/MidiClusterConnectionMatrix.css`, `web/src/app/components/ChainManagementCard.tsx`, `web/src/app/components/AvbRouting/AvbRoutingWorkspaceGraph.tsx`, `web/src/app/components/AudioEngine/JuceSourceTruthGraph.tsx`, `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspaceGraph.tsx`, and `web/src/app/components/AudioEngine/AudioEngineWorkspaceGraph.tsx`, replacing their remaining numeric layer tokens with contextual layer/selected tokens while preserving existing graph-card and helper-panel behavior.
   - Continued `T866-subC` across the remaining low-count shared and dialog surfaces in `web/src/app/components/PageHeader.css`, `web/src/app/components/modals/LiveRuntimePathsModal.css`, `web/src/app/components/Tesira/components/TesiraOnboardingWizard.css`, `web/src/app/components/Platform/PlatformModal.css`, `web/src/app/components/loaders/ModelManagerDialogs.css`, `web/src/app/components/PluginCards/Base/PluginCardShell.tsx`, `web/src/app/components/snapshots/SnapshotDeployModal.css`, `web/src/app/components/NumericInput/NumericInput.css`, `web/src/app/pages/AudioArtifactsPage.css`, `web/src/app/components/snapshots/SnapshotImportDialog.css`, and `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, replacing the remaining numeric layer and selected-layer aliases with contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens while preserving the existing dialog, table, and control-panel visual hierarchy.
   - Continued `T866-subC` through the next high-count software-only visual systems in `web/src/app/components/PluginCards/Base/carbonCardStyles.css`, `web/src/app/pages/HomePage.css`, and `web/src/app/components/HostMachine/HostMachine.css`, replacing their remaining numeric layer aliases in card shells, desktop/home overlays, toolbar/tabs, KPI panels, and host-machine section gradients with contextual `--cds-layer`, `--cds-layer-hover`, and `--cds-layer-selected` tokens while preserving the existing glassy/system-panel styling.
+  - Closed `T866-subC` by clearing the last numeric layer and selected-layer aliases from `web/src/app/pages/midi-hub/MidiHubAreaLayout.css` and `web/src/app/pages/SnapshotEditorPage.css`; `rg -n "var\\(--cds-layer-0[123]|var\\(--cds-layer-selected-0[123]" web/src/app` now returns no matches, so the route-local/shared-app Carbon layer cleanup is complete.
   - Current route-local inventory after this follow-up is down to `AboutPage.css` (`10`), `AudioEnginePage.css` (`9`), `AudioArtifactsPage.css` (`8`), `NodeNavChip.css` (`8`), `PhysicalSurfacesShell.css` (`6`), and `IntelFXLibrarian.css` (`6`); `ThemePage.css`, `MidiHubAreaLayout.css`, `PlatformModal.css`, and `ManagementWorkspace.css` are no longer in the ranked list.
   - Validation for this first route-level layer slice is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/components/Platform/PlatformModal.css web/src/app/components/ManagementWorkspace/ManagementWorkspace.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Validation for this Theme Page follow-up is green: `rg -n "var\\(--cds-layer-0[123]\\)" web/src/app/pages/ThemePage.css` -> PASS (no matches); `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
