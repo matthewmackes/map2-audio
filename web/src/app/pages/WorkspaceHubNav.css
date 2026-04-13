@@ -1,0 +1,76 @@
+.workspace-hub-nav {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--cds-layer, #161616) 94%, var(--cds-background, #0f0f0f));
+}
+
+.workspace-hub-nav__eyebrow {
+  margin: 0;
+  color: var(--cds-text-helper, #8d8d8d);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-hub-nav__title {
+  margin: 0.2rem 0 0;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  line-height: 1.2;
+}
+
+.workspace-hub-nav__copy {
+  margin: 0.35rem 0 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.5;
+}
+
+.workspace-hub-nav__section {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.workspace-hub-nav__section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.workspace-hub-nav__divider {
+  color: var(--cds-text-helper, #8d8d8d);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-hub-nav__link {
+  display: block;
+  padding: 0.72rem 0.85rem;
+  border-left: 3px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.workspace-hub-nav__link:hover,
+.workspace-hub-nav__link:focus-visible {
+  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 90%, var(--cds-link-primary, #0f62fe) 10%);
+  color: var(--cds-text-primary, #f4f4f4);
+  outline: none;
+}
+
+.workspace-hub-nav__link--active {
+  border-left-color: var(--cds-link-primary, #0f62fe);
+  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 86%, var(--cds-link-primary, #0f62fe) 14%);
+}

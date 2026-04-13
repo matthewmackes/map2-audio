@@ -1,0 +1,46 @@
+.workspace-hub-shell {
+  display: flex;
+  flex: 1;
+  min-height: 100%;
+}
+
+.workspace-hub-shell__frame {
+  align-items: stretch;
+}
+
+.workspace-hub-shell__sidebar,
+.workspace-hub-shell__content {
+  min-height: 100%;
+}
+
+.workspace-hub-shell__content-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.workspace-hub-shell__placeholder {
+  display: grid;
+  gap: 1rem;
+}
+
+.workspace-hub-shell__placeholder-card {
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--cds-layer, #161616) 94%, var(--cds-background, #0f0f0f));
+}
+
+.workspace-hub-shell__placeholder-card h2,
+.workspace-hub-shell__placeholder-card p {
+  margin: 0;
+}
+
+.workspace-hub-shell__placeholder-card h2 {
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+}
+
+.workspace-hub-shell__placeholder-card p {
+  color: var(--cds-text-secondary, #c6c6c6);
+  line-height: 1.5;
+}

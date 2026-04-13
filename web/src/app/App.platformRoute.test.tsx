@@ -66,6 +66,28 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
   },
 }))
 
+jest.mock('./pages/WorkspaceHubShell', () => ({
+  WorkspaceHubShell: () => {
+    const { Outlet, useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return (
+      <div data-testid="workspace-hub-shell">
+        <div data-testid="workspace-route">{`${location.pathname}${location.search}`}</div>
+        <Outlet />
+      </div>
+    )
+  },
+  WorkspaceHubIndexRedirect: () => {
+    const { Navigate } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    return <Navigate to="/workspace/platforms/overview" replace />
+  },
+  WorkspaceHubPlaceholder: ({ title }: { title: string }) => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-placeholder">{`${title}|${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/PerformanceBrainPage', () => ({
   PerformanceBrainPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -177,6 +199,24 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/adoption?state=claimable')
+  })
+
+  it('redirects the bare /workspace route into the workspace hub platforms overview scaffold', async () => {
+    window.history.pushState({}, '', '/workspace')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-placeholder')).toHaveTextContent('Platforms|/workspace/platforms/overview')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('keeps the new workspace hub outboard hardware scaffold route available inside AppShell', async () => {
+    window.history.pushState({}, '', '/workspace/outboard-hardware')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-placeholder')).toHaveTextContent('Outboard Hardware|/workspace/outboard-hardware')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
   it('redirects the retired Workspace Catalog route into the overview workspace', async () => {

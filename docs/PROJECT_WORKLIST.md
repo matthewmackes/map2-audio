@@ -23599,7 +23599,7 @@ Description:
 - Plan reference: `/home/mm/.claude/plans/unified-workspace-hub.md`
 Subtasks:
   - ID: T1004-subA
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Stand up WorkspaceHub shell, flat nav, and canonical /workspace route scaffold
     Description:
     - Goal / acceptance criteria: Introduce the new `WorkspaceHubShell`, `WorkspaceHubNav`, context scaffolding, and `/workspace/*` route parent with flat section dividers and placeholder child routes, without yet migrating section bodies or deleting legacy shells.
@@ -23609,9 +23609,18 @@ Subtasks:
     - Required outputs: new shell/nav components, route parent wiring, initial shell tests, and validation evidence.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-13 18:42 EDT - Codex
+    Last updated: 2026-04-13 18:55 EDT - Codex
+    Completion notes:
+    - Added `WorkspaceHubShell`, `WorkspaceHubNav`, `WorkspaceHubContext`, and the first flat-text `/workspace/*` scaffold under `web/src/app/pages/`, keeping the nav strictly one level deep with plain-text dividers and no reuse of `UnifiedWorkspaceSideNav`.
+    - Mounted the canonical `/workspace/*` route parent in `web/src/app/App.tsx` with a bare-route redirect to `/workspace/platforms/overview` plus placeholder routes for Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware, without yet migrating the old workspace section bodies.
+    - Added `web/src/app/pages/WorkspaceHubShell.test.tsx` and expanded `web/src/app/App.platformRoute.test.tsx` so the new shell scaffold and canonical route entry points are covered before deeper migration slices land.
+    - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    Validation:
+    - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS (`2 suites, 17 tests`; React Router future-flag and suspended-resource warnings only)
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS
   - ID: T1004-subB
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Add unified workspace data aggregator and platform-section extraction
     Description:
     - Goal / acceptance criteria: Build `useUnifiedWorkspaceData()`, extract `usePlatformShellData()`, and connect shell-level summary loading with per-section error isolation, stale-time policy, and no nav coupling.
@@ -23620,8 +23629,8 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: aggregator/data hooks, tests, and shell summary integration.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 18:42 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 18:55 EDT - Codex
   - ID: T1004-subC
     Status: [ ] Todo
     Title: Migrate section content trees under workspace-hub pages
