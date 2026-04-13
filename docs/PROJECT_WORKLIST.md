@@ -23807,9 +23807,45 @@ Subtasks:
     - Dependencies: T1004-subA, T1004-subC
     - Estimated effort: Medium
     - Required outputs: redirect helpers/tests, menu/launcher updates, and smoke validation.
-    Subtasks: None
+    Subtasks:
+      - ID: T1004-subD-subA
+        Status: [>] In Progress
+        Title: Redirect legacy workspace roots into canonical `/workspace/*` paths
+        Description:
+        - Goal / acceptance criteria: Add route helpers so `/platforms/*`, `/physical-surfaces/*`, `/artifacts*`, and `/outboard-hardware/*` forward into the canonical workspace hub paths while preserving params and query strings.
+        - Why it matters: Bookmark safety is the highest-risk redirect behavior and should land separately from menu/storefront rewiring.
+        - Dependencies: T1004-subC
+        - Estimated effort: Medium
+        - Required outputs: App route redirect wiring, helper coverage, and focused route regressions.
+        Subtasks: None
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:14 EDT - Codex
+      - ID: T1004-subD-subB
+        Status: [ ] Todo
+        Title: Repoint advanced menu and launcher catalog entries to one Workspaces entry
+        Description:
+        - Goal / acceptance criteria: Repoint advanced menu entries to `/workspace/*`, add the canonical `/workspace` launcher/storefront entry, and remove the four separate workspace routes from the featured catalog set.
+        - Why it matters: Canonical redirects are incomplete until the main launcher surfaces stop advertising the old route roots.
+        - Dependencies: T1004-subD-subA
+        - Estimated effort: Medium
+        - Required outputs: advanced-menu updates, launcher-catalog updates, and focused catalog/menu regressions.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 19:14 EDT - Codex
+      - ID: T1004-subD-subC
+        Status: [ ] Todo
+        Title: Collapse start-menu workspace tiles and sweep shell-facing route aliases
+        Description:
+        - Goal / acceptance criteria: Exclude the four legacy workspace routes from home/start-shell tile generation, keep one Workspaces launch path discoverable, and align the remaining shell-facing aliases with the canonical hub routes.
+        - Why it matters: The start menu and shell state are where operators still see duplicate workspace entry points after redirects/catalog updates land.
+        - Dependencies: T1004-subD-subB
+        - Estimated effort: Medium
+        - Required outputs: start-menu/shell presentation cleanup, focused UI regressions, and grep evidence for the remaining intentional legacy references.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 19:14 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:03 EDT - Codex
+    Last updated: 2026-04-13 19:14 EDT - Codex
   - ID: T1004-subE
     Status: [ ] Todo
     Title: Delete legacy shells and sweep residual workspace route references
