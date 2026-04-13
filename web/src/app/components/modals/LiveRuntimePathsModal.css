@@ -44,7 +44,7 @@
   align-items: flex-start;
   padding: 0.875rem 1rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 78%, #ffffff);
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface)) 88%, #000000);
+  background: color-mix(in srgb, var(--cds-layer-hover) 88%, #000000);
 }
 
 .live-runtime-paths-modal__mismatch-copy {
@@ -64,7 +64,7 @@
 .live-runtime-paths-modal__empty {
   padding: 1rem;
   border: 1px dashed var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, #000000);
+  background: color-mix(in srgb, var(--cds-layer) 92%, #000000);
 }
 
 .live-runtime-paths-modal__kicker,
@@ -89,7 +89,7 @@
   gap: 0.75rem;
   padding: 0.875rem 1rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 90%, #000000);
+  background: color-mix(in srgb, var(--cds-layer) 90%, #000000);
 }
 
 .live-runtime-paths-modal__row.is-degraded,
@@ -144,7 +144,7 @@
   min-width: 0;
   padding: 0.4375rem 0.625rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface)) 76%, #000000);
+  background: color-mix(in srgb, var(--cds-layer-hover) 76%, #000000);
 }
 
 .live-runtime-paths-modal__miniature-item.is-loop .live-runtime-paths-modal__miniature-chip {

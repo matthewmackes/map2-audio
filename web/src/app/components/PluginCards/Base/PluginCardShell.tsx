@@ -426,7 +426,7 @@ export function PluginCardShell({
           height: 28px;
           border: 1px solid var(--cds-border-subtle, #525252);
           border-radius: 4px;
-          background: var(--cds-layer-02, #262626);
+          background: var(--cds-layer-hover);
           color: var(--cds-text-secondary, #c6c6c6);
           cursor: pointer;
           transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -486,7 +486,7 @@ export function PluginCardShell({
           padding: 8px 16px;
           font-size: 11px;
           color: var(--cds-text-secondary, #a8a8a8);
-          background: var(--cds-layer-01, #1d1d1d);
+          background: var(--cds-layer);
           border-bottom: 1px solid var(--cds-border-subtle, #393939);
           line-height: 1.4;
           position: relative;
@@ -495,7 +495,7 @@ export function PluginCardShell({
 
         .plugin-card-visualization {
           padding: var(--card-padding);
-          background: var(--cds-layer-01, #1d1d1d);
+          background: var(--cds-layer);
           border-bottom: 1px solid var(--cds-border-subtle, #393939);
           position: relative;
           z-index: 1;

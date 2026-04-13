@@ -13,7 +13,7 @@
   gap: 1rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: linear-gradient(160deg, var(--cds-layer-01, #f4f4f4) 0%, var(--cds-layer-02, #ffffff) 100%);
+  background: linear-gradient(160deg, var(--cds-layer) 0%, var(--cds-layer-hover) 100%);
 }
 
 .tesira-onboarding-wizard__hero {
@@ -70,7 +70,7 @@
   align-items: flex-start;
   padding: 0.9rem;
   border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer-01, #f4f4f4);
+  background: var(--cds-layer);
   cursor: pointer;
   text-align: left;
 }
@@ -149,7 +149,7 @@
   align-items: flex-start;
   padding: 0.85rem;
   border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer-01, #f4f4f4);
+  background: var(--cds-layer);
   cursor: pointer;
   text-align: left;
 }
@@ -177,7 +177,7 @@
 
 .tesira-onboarding-wizard__verify-card {
   border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer-01, #f4f4f4);
+  background: var(--cds-layer);
   padding: 1rem;
 }
 

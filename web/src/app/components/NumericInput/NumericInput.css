@@ -5,8 +5,8 @@
       --cds-field-02,
       color-mix(
         in srgb,
-        var(--cds-layer-02, var(--surface-overlay, #f4f4f4)) 92%,
-        var(--cds-layer-01, var(--cds-background, var(--bg, #ffffff)))
+        var(--cds-layer-hover) 92%,
+        var(--cds-layer)
       )
     );
   --numeric-input-border:

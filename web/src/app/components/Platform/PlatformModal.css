@@ -218,7 +218,7 @@
 }
 
 .platform-shell__cp-item.is-selected {
-  background: var(--cds-layer-selected-01);
+  background: var(--cds-layer-selected);
   border-color: var(--cds-border-strong-01);
 }
 
@@ -245,7 +245,7 @@
 
 .platform-shell__cp-pin-btn.is-pinned {
   border-color: var(--cds-border-interactive);
-  background: var(--cds-layer-selected-01);
+  background: var(--cds-layer-selected);
   color: var(--cds-text-primary);
 }
 
@@ -762,7 +762,7 @@
 .platform-shell__table-row.is-interactive:hover,
 .platform-shell__table-row.is-interactive:focus-visible,
 .platform-shell__table-row.is-selected {
-  background: var(--cds-layer-selected-01);
+  background: var(--cds-layer-selected);
   outline: 2px solid var(--cds-focus, var(--cds-link-primary));
   outline-offset: -2px;
 }
@@ -770,7 +770,7 @@
 .platform-shell__table-container .platform-shell__table-row.is-interactive:hover > td,
 .platform-shell__table-container .platform-shell__table-row.is-interactive:focus-visible > td,
 .platform-shell__table-container .platform-shell__table-row.is-selected > td {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer-selected-01));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer-selected));
 }
 
 /* ── Cluster tabs ────────────────────────────────────────── */

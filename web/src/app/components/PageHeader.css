@@ -10,11 +10,11 @@
   background:
     linear-gradient(
       180deg,
-      var(--cds-layer-01, var(--cds-layer)) 0%,
+      var(--cds-layer) 0%,
       color-mix(
         in srgb,
-        var(--cds-layer-02, var(--cds-layer-hover)) 78%,
-        var(--cds-layer-01, var(--cds-layer)) 22%
+        var(--cds-layer-hover) 78%,
+        var(--cds-layer) 22%
       ) 100%
     );
   margin-bottom: var(--space-6);
@@ -97,7 +97,7 @@
   height: clamp(3rem, 5vw, 3.5rem);
   flex-shrink: 0;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle));
-  background: var(--cds-layer-02, var(--cds-layer-hover));
+  background: var(--cds-layer-hover);
   color: var(--cds-icon-primary, var(--cds-link-primary, var(--interactive)));
 }
 
@@ -145,8 +145,8 @@
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle));
   background: linear-gradient(
     180deg,
-    var(--cds-layer-02, var(--cds-layer-hover)) 0%,
-    color-mix(in srgb, var(--cds-layer-01, var(--cds-layer)) 82%, var(--cds-layer-02, var(--cds-layer-hover)) 18%) 100%
+    var(--cds-layer-hover) 0%,
+    color-mix(in srgb, var(--cds-layer) 82%, var(--cds-layer-hover) 18%) 100%
   );
 }
 
@@ -157,7 +157,7 @@
   height: 2.5rem;
   flex: 0 0 auto;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle));
-  background: color-mix(in srgb, var(--cds-link-primary, var(--interactive)) 10%, var(--cds-layer-02, var(--cds-layer-hover)));
+  background: color-mix(in srgb, var(--cds-link-primary, var(--interactive)) 10%, var(--cds-layer-hover));
 }
 
 .page-header__brand-mark {

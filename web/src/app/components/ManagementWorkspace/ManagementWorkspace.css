@@ -368,7 +368,7 @@
 }
 
 .management-workspace__table-row.is-highlighted > td {
-  background: color-mix(in srgb, var(--cds-support-success) 8%, var(--cds-layer-selected-01));
+  background: color-mix(in srgb, var(--cds-support-success) 8%, var(--cds-layer-selected));
 }
 
 .management-workspace__expanded-row {

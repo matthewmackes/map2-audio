@@ -41,7 +41,7 @@
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--cds-border-subtle, #525252);
-  background: var(--cds-layer-01, #262626);
+  background: var(--cds-layer);
 }
 
 .snapshot-import-dialog__result-details p {
