@@ -23714,7 +23714,7 @@ Subtasks:
         - `npm --prefix web run typecheck` -> PASS
         - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subD
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Extract Audio Artifacts section bodies under `workspace-hub` and remount them at `/workspace/artifacts/*`
         Description:
         - Goal / acceptance criteria: Split the `AudioArtifactsPage` shell/body boundary, relocate the content-facing section body under `web/src/app/pages/workspace-hub/artifacts/`, and mount canonical artifact routes inside the hub while keeping the existing data/query behavior intact.
@@ -23766,7 +23766,7 @@ Subtasks:
             - `npm --prefix web run typecheck` -> PASS
             - `npm --prefix web run build` -> PASS
           - ID: T1004-subC-subD-subC
-            Status: [>] In Progress
+            Status: [✓] Done
             Title: Sweep remaining artifact path assumptions and delete the workspace placeholder
             Description:
             - Goal / acceptance criteria: Remove the last hard-coded artifact-path assumptions that block the hub remount, delete the workspace placeholder route, and prove both legacy and canonical artifact paths remain behaviorally aligned ahead of the redirect sweep.
@@ -23776,13 +23776,30 @@ Subtasks:
             - Required outputs: placeholder deletion, final artifact path sweep, and focused App/audio-artifact regressions.
             Subtasks: None
             Assigned to: Codex
-            Last updated: 2026-04-13 18:59 EDT - Codex
+            Last updated: 2026-04-13 19:03 EDT - Codex
+            Completion notes:
+            - Switched the remaining artifact-path helpers in `web/src/app/App.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and `web/src/app/pages/SnapshotPublishPage.tsx` onto the shared route-builder contract so snapshot-related entry points now treat `/workspace/artifacts` as the first-class destination while the legacy `/artifacts` tree remains available for compatibility.
+            - Updated `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` so the snapshot workspace realtime cadence recognizes both legacy and canonical workspace artifact paths instead of only `/artifacts`.
+            - The artifact workspace placeholder had already been removed by the earlier overview/discover remount slices; this sweep closed the remaining internal path assumptions so the canonical workspace artifact routes are now the real source of truth ahead of the broader redirect/menu sweep.
+            - No installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+            Validation:
+            - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/SnapshotPublishPage.test.tsx` -> PASS (`3 suites, 28 tests`; React Router future-flag and suspended-resource warnings only)
+            - `npm --prefix web run typecheck` -> PASS
+            - `npm --prefix web run build` -> PASS
         Assigned to: Codex
-        Last updated: 2026-04-13 18:59 EDT - Codex
+        Last updated: 2026-04-13 19:03 EDT - Codex
+        Completion notes:
+        - Completed the three-step Audio Artifacts remount under `workspace-hub/artifacts`, covering the shared body extraction, canonical overview/discover route wrappers, and the final internal path sweep so `/workspace/artifacts/*` now serves as the canonical workspace source of truth.
+        - Preserved the legacy `/artifacts` surfaces for compatibility while switching the artifact page, snapshot flows, and snapshot workspace cadence onto shared route builders that understand both legacy and canonical paths.
+        - The broader legacy redirect/menu consolidation remains intentionally separate under `T1004-subD`.
+        Validation:
+        - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/SnapshotPublishPage.test.tsx` -> PASS (`3 suites, 28 tests`; React Router future-flag and suspended-resource warnings only)
+        - `npm --prefix web run typecheck` -> PASS
+        - `npm --prefix web run build` -> PASS
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Wire legacy redirects and launcher/menu consolidation
     Description:
     - Goal / acceptance criteria: Redirect all legacy workspace URLs into `/workspace/*`, repoint advanced menu entries, collapse the home/start featured tiles to one Workspaces entry, and preserve bookmark safety.
@@ -23791,8 +23808,8 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: redirect helpers/tests, menu/launcher updates, and smoke validation.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 18:42 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 19:03 EDT - Codex
   - ID: T1004-subE
     Status: [ ] Todo
     Title: Delete legacy shells and sweep residual workspace route references

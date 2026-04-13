@@ -33,6 +33,7 @@ import {
 import { useCommittedAudioState, useObservedAudioState } from '../../hooks/useAuthoritativeAudioState'
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
+import { ARTIFACTS_BASE_PATH, WORKSPACE_ARTIFACTS_BASE_PATH } from '../../pages/audioArtifactsRoutes'
 import {
   useClusterSnapshotRuntimeLiveState,
   useSnapshotActivationEvents,
@@ -214,7 +215,7 @@ export function SnapshotArtifactsWorkspace({
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importPayloadText, setImportPayloadText] = useState('')
   const [importBundleFile, setImportBundleFile] = useState<File | null>(null)
-  const routeActive = useRouteActive(['/artifacts'])
+  const routeActive = useRouteActive([ARTIFACTS_BASE_PATH, WORKSPACE_ARTIFACTS_BASE_PATH])
   const snapshotCadence = useRealtimeCadence({
     routeActive,
     visibleMs: 5_000,

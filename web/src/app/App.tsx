@@ -12,6 +12,7 @@ import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
 import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath } from './platform/routes'
 import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
 import { LoadingState } from './components/shared/LoadingState'
+import { buildArtifactsPath } from './pages/audioArtifactsRoutes'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -209,8 +210,7 @@ function LegacyArtifactsRedirect({ defaultCategory }: { defaultCategory?: string
   if (defaultCategory && !searchParams.has('category')) {
     searchParams.set('category', defaultCategory)
   }
-  const nextSearch = searchParams.toString()
-  return <Navigate to={nextSearch ? `/artifacts?${nextSearch}` : '/artifacts'} replace />
+  return <Navigate to={buildArtifactsPath(searchParams)} replace />
 }
 
 function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'audio-engine' | 'theme' | 'about' }) {

@@ -76,6 +76,7 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
+import { buildWorkspaceArtifactsPath } from './audioArtifactsRoutes'
 import {
   invalidateAuthorityAwareLiveSnapshot,
   removeRuntimeChainsFromLiveSnapshot,
@@ -1558,10 +1559,10 @@ export function SnapshotEditorPage() {
   const snapshotEntryRequired = committedAudioStateQuery.isSuccess && currentEditorSnapshotId === null
 
   const openArtifactsSnapshots = useCallback(() => {
-    navigate('/artifacts?category=snapshots')
+    navigate(buildWorkspaceArtifactsPath(new URLSearchParams({ category: 'snapshots' })))
   }, [navigate])
   const openArtifactsCategory = useCallback((category: string) => {
-    navigate(`/artifacts?category=${encodeURIComponent(category)}`)
+    navigate(buildWorkspaceArtifactsPath(new URLSearchParams({ category })))
   }, [navigate])
 
   const reopenSnapshotEntryPoint = useCallback(() => {

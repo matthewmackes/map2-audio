@@ -20,6 +20,7 @@ import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStri
 import { useToasts } from '../components/Toasts'
 import { useCommittedAudioState, useDesiredAudioState, useObservedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useSnapshotActivationEvents, useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
+import { buildWorkspaceArtifactsPath } from './audioArtifactsRoutes'
 import './SnapshotPublishPage.css'
 
 type PublishMode = 'guided' | 'advanced'
@@ -392,11 +393,11 @@ export function SnapshotPublishPage() {
 
   const handleRepair = (repairAction: PublishRepairAction) => {
     if (repairAction.id === 'install_plugin') {
-      navigate('/artifacts?category=lv2-plugins')
+      navigate(buildWorkspaceArtifactsPath(new URLSearchParams({ category: 'lv2-plugins' })))
       return
     }
     if (repairAction.id === 'restore_asset') {
-      navigate('/artifacts?category=snapshots')
+      navigate(buildWorkspaceArtifactsPath(new URLSearchParams({ category: 'snapshots' })))
       return
     }
     if (repairAction.id === 'select_available_device') {
