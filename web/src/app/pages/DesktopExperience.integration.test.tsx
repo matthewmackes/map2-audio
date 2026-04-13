@@ -256,6 +256,7 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
         <AppShell>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/workspace" element={<ShellStubPage testId="workspace-page">Unified Workspaces</ShellStubPage>} />
             <Route path="/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
             <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
@@ -340,15 +341,15 @@ describe('Desktop experience integration', () => {
     })
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Files/i }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Workspaces/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/artifacts')
-    expect(screen.getByTestId('artifacts-page')).toBeInTheDocument()
-    expect(screen.getByText('Program object')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Close Artifacts' })).toBeInTheDocument()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
+    expect(screen.getByTestId('workspace-page')).toBeInTheDocument()
+    expect(screen.getByText('Unified Workspaces')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Close Workspaces' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close Artifacts' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close Workspaces' }))
 
     await act(async () => {
       jest.advanceTimersByTime(50)
@@ -373,7 +374,7 @@ describe('Desktop experience integration', () => {
     expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
   })
 
-  it('uses the grouped Outboard Hardware launcher flow from the Start Menu into a device page', async () => {
+  it('keeps grouped workspace section launchers out of the Start Menu once Workspaces becomes canonical', async () => {
     renderDesktopExperience(['/'])
 
     await act(async () => {
@@ -381,28 +382,14 @@ describe('Desktop experience integration', () => {
     })
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    expect(screen.getByRole('menuitem', { name: /Outboard Hardware/i })).toBeInTheDocument()
+    expect(screen.queryByText('Outboard Hardware')).toBeNull()
+    expect(screen.queryByText('Audio Artifacts')).toBeNull()
+    expect(screen.queryByText('Physical Surfaces')).toBeNull()
+    expect(screen.getByRole('menuitem', { name: /Workspaces/i })).toBeInTheDocument()
 
     for (const label of ['Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
       expect(screen.queryByRole('menuitem', { name: new RegExp(label, 'i') })).toBeNull()
     }
-
-    fireEvent.click(screen.getByRole('menuitem', { name: /Outboard Hardware/i }))
-
-    await waitFor(() => expect(screen.getByTestId('route-probe')).toHaveTextContent('/outboard-hardware'))
-    expect(screen.getByRole('heading', { name: 'Outboard Hardware', level: 1 })).toBeInTheDocument()
-    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
-
-    const tesiraCardHeading = screen.getByRole('heading', { name: 'Tesira AVB', level: 2 })
-    const tesiraCard = tesiraCardHeading.closest('.cds--tile')
-    expect(tesiraCard).not.toBeNull()
-
-    fireEvent.click(within(tesiraCard as HTMLElement).getByRole('button', { name: 'Open in workspace' }))
-
-    await waitFor(() => expect(screen.getByTestId('route-probe')).toHaveTextContent('/outboard-hardware/biamp-tesira'))
-    expect(screen.getByRole('heading', { name: 'Tesira AVB' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open dedicated route' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Close Outboard' })).toBeInTheDocument()
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {

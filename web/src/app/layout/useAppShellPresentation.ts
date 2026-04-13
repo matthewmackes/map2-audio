@@ -8,7 +8,17 @@ import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
 
-const START_MENU_EXCLUDED_ROUTES = new Set(['/launch-control', '/midi-commander'])
+const START_MENU_EXCLUDED_ROUTES = new Set([
+  '/launch-control',
+  '/midi-commander',
+  '/platforms/overview',
+  '/artifacts',
+  '/physical-surfaces',
+  '/outboard-hardware',
+  '/workspace/artifacts',
+  '/workspace/physical-surfaces',
+  '/workspace/outboard-hardware',
+])
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(`${to}/`))
@@ -51,18 +61,8 @@ export function useAppShellPresentation({
         .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(item.route))
         .map((item) => ({
           route: item.route,
-          label:
-            item.route === '/platforms/overview'
-              ? 'Platforms'
-              : item.route === '/artifacts'
-                ? 'Files'
-                : item.label,
-          shortLabel:
-            item.route === '/platforms/overview'
-              ? 'Platforms'
-              : item.route === '/artifacts'
-                ? 'Files'
-                : item.shortLabel,
+          label: item.label,
+          shortLabel: item.shortLabel,
           icon: item.icon,
           description: item.description,
           color: item.color,
@@ -88,26 +88,7 @@ export function useAppShellPresentation({
               ...launcherItems,
             ]
 
-      const stageModeIndex = nextItems.findIndex((item) => item.route === '/perform')
-      const physicalSurfacesIndex = nextItems.findIndex((item) => item.route === '/physical-surfaces')
-      if (stageModeIndex === -1 || physicalSurfacesIndex === -1) {
-        return nextItems
-      }
-
-      const swappedItems = [...nextItems]
-      const currentStageMode = swappedItems[stageModeIndex]
-      const currentPhysicalSurfaces = swappedItems[physicalSurfacesIndex]
-
-      swappedItems[stageModeIndex] = {
-        ...currentPhysicalSurfaces,
-        featured: currentStageMode.featured,
-      }
-      swappedItems[physicalSurfacesIndex] = {
-        ...currentStageMode,
-        featured: currentPhysicalSurfaces.featured,
-      }
-
-      return swappedItems
+      return nextItems
     },
     [],
   )
@@ -129,12 +110,15 @@ export function useAppShellPresentation({
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
   const isDesktopRoute = pathname === '/'
-  const isPlatformWorkspaceRoute = pathname.startsWith('/platforms')
+  const isPlatformWorkspaceRoute = pathname === '/workspace' || pathname.startsWith('/workspace/')
   const isIntegratedWorkspaceRoute =
     isPlatformWorkspaceRoute
     || pathname.startsWith('/midi-hub')
+    || pathname.startsWith('/platforms')
     || pathname.startsWith('/artifacts')
     || pathname.startsWith('/audio-artifacts')
+    || pathname.startsWith('/physical-surfaces')
+    || pathname.startsWith('/outboard-hardware')
   const isAudioGridWorkspaceRoute = pathname === '/juce-grid' || pathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const shellClassName = `app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`

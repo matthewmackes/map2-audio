@@ -23799,7 +23799,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Wire legacy redirects and launcher/menu consolidation
     Description:
     - Goal / acceptance criteria: Redirect all legacy workspace URLs into `/workspace/*`, repoint advanced menu entries, collapse the home/start featured tiles to one Workspaces entry, and preserve bookmark safety.
@@ -23847,7 +23847,7 @@ Subtasks:
           - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/advancedMenuItems.test.ts src/app/data/launcherCatalog.test.tsx src/app/layout/AppShell.test.tsx` -> PASS
           - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subD-subC
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Collapse start-menu workspace tiles and sweep shell-facing route aliases
         Description:
         - Goal / acceptance criteria: Exclude the four legacy workspace routes from home/start-shell tile generation, keep one Workspaces launch path discoverable, and align the remaining shell-facing aliases with the canonical hub routes.
@@ -23857,11 +23857,23 @@ Subtasks:
         - Required outputs: start-menu/shell presentation cleanup, focused UI regressions, and grep evidence for the remaining intentional legacy references.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:28 EDT - Codex
+        Last updated: 2026-04-13 19:33 EDT - Codex
+        - Completion notes:
+          - Collapsed the shell/start-menu workspace launchers down to one canonical `Workspaces` entry by excluding the routed workspace section tiles from launcher generation in both shell presenters.
+          - Removed the old `Platforms` and `Files` tile relabeling logic and aligned shell integrated-workspace detection with `/workspace*` while still tolerating the legacy redirect roots during handoff.
+          - Updated shell and desktop integration regressions so the canonical start-menu flow opens `/workspace` and grouped workspace section launchers no longer appear as duplicate menu entries.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
+          - `rg -n \"'/platforms/overview'|'/artifacts'|'/physical-surfaces'|'/outboard-hardware'\" web/src/app/layout/useAppShellPresentation.ts web/src/app/pages/HomeStartMenuOverlay.tsx` -> PASS (legacy roots remain only in the explicit exclusion/compatibility lists)
     Assigned to: Codex
-    Last updated: 2026-04-13 19:28 EDT - Codex
+    Last updated: 2026-04-13 19:33 EDT - Codex
+    - Completion notes:
+      - Redirected the legacy workspace roots into `/workspace/*`, preserved bookmark/query safety, and then repointed the shell launcher/catalog surfaces so operators now enter through the canonical Workspace Hub.
+      - Collapsed duplicate workspace entries out of the start-menu layer, leaving one Workspaces launch path while preserving the dedicated hardware and performance routes that still belong outside the hub.
+      - Finished the full redirect/menu consolidation before deleting the superseded legacy shell layer, so the remaining route sweep can proceed without operator-facing ambiguity.
   - ID: T1004-subE
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Delete legacy shells and sweep residual workspace route references
     Description:
     - Goal / acceptance criteria: Remove the superseded legacy shell files, repoint remaining hard-coded workspace links/page keys, and prove no dangling references remain.
@@ -23870,7 +23882,7 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: file deletions, grep/reference cleanup, full regression evidence, and final smoke checks.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 18:42 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 19:33 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex

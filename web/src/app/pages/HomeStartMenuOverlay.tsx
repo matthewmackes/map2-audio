@@ -28,6 +28,13 @@ import { dispatchShellOpenRestartConfirmEvent } from '../layout/shellEvents'
 const START_MENU_EXCLUDED_ROUTES = new Set([
   '/launch-control',
   '/midi-commander',
+  '/platforms/overview',
+  '/artifacts',
+  '/physical-surfaces',
+  '/outboard-hardware',
+  '/workspace/artifacts',
+  '/workspace/physical-surfaces',
+  '/workspace/outboard-hardware',
   '/tesira',
   '/edirol-ua1000',
   '/hotone-jogg',
@@ -41,18 +48,8 @@ function buildStartMenuTileItems(): ShellNavigationRenderItem[] {
     .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(item.route))
     .map((item) => ({
       route: item.route,
-      label:
-        item.route === '/platforms/overview'
-          ? 'Platforms'
-          : item.route === '/artifacts'
-            ? 'Files'
-            : item.label,
-      shortLabel:
-        item.route === '/platforms/overview'
-          ? 'Platforms'
-          : item.route === '/artifacts'
-            ? 'Files'
-            : item.shortLabel,
+      label: item.label,
+      shortLabel: item.shortLabel,
       icon: item.icon,
       description: item.description,
       color: item.color,
@@ -78,16 +75,7 @@ function buildStartMenuTileItems(): ShellNavigationRenderItem[] {
           ...launcherItems,
         ]
 
-  const stageModeIndex = nextItems.findIndex((item) => item.route === '/perform')
-  const physicalSurfacesIndex = nextItems.findIndex((item) => item.route === '/physical-surfaces')
-  if (stageModeIndex === -1 || physicalSurfacesIndex === -1) return nextItems
-
-  const swappedItems = [...nextItems]
-  const currentStageMode = swappedItems[stageModeIndex]
-  const currentPhysicalSurfaces = swappedItems[physicalSurfacesIndex]
-  swappedItems[stageModeIndex] = { ...currentPhysicalSurfaces, featured: currentStageMode.featured }
-  swappedItems[physicalSurfacesIndex] = { ...currentStageMode, featured: currentPhysicalSurfaces.featured }
-  return swappedItems
+  return nextItems
 }
 
 // ── Snapshot editor icon lookup ──────────────────────────────────────────────
