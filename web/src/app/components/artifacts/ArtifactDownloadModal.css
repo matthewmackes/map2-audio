@@ -24,7 +24,7 @@
 
 .adm-embedded__eyebrow {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   color: var(--cds-text-secondary);
 }
@@ -40,7 +40,7 @@
 .adm-embedded__desc {
   margin: 0;
   max-width: 48rem;
-  font-size: 0.9rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.5;
   color: var(--cds-text-secondary);
 }
@@ -76,7 +76,7 @@
   align-items: center;
   gap: 0.5rem;
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 400;
   padding: 0.875rem 1rem;
   transition: color 110ms, border-color 110ms;
@@ -119,7 +119,7 @@
 
 .adm-progress-panel__title {
   color: var(--cds-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
 }
 
@@ -143,7 +143,7 @@
 }
 
 .adm-progress-panel__overall-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary);
   display: flex;
   justify-content: space-between;
@@ -188,7 +188,7 @@
 .adm-progress-panel__pct {
   min-width: 2.5rem;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   text-align: right;
 }
 
@@ -225,14 +225,14 @@
 }
 
 .adm-source-tile__name {
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   flex: 1;
   line-height: 1.3;
 }
 
 .adm-source-tile__meta {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary);
 }
 
@@ -248,7 +248,7 @@
 }
 
 .adm-tone3000__title {
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   color: var(--cds-text-primary);
 }
@@ -288,13 +288,13 @@
 }
 
 .adm-pack-item__name {
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   flex: 1;
 }
 
 .adm-pack-item__meta {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary);
 }
 

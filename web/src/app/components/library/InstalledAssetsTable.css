@@ -30,7 +30,7 @@
 
 .installed-assets-table-toolbar__title h3 {
   color: var(--cds-text-primary);
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   margin: 0;
 }
@@ -59,21 +59,21 @@
 
 .installed-assets-table__cluster-label {
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   margin: 0;
 }
 
 .installed-assets-table__cluster-node {
   color: var(--cds-text-primary);
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   margin: 0;
 }
 
 .installed-assets-table__cluster-description {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.45;
   margin: 0;
 }
@@ -96,7 +96,7 @@
 
 .installed-assets-table__column-settings p {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   margin: 0;
 }
 
@@ -209,7 +209,7 @@
 
 .installed-assets-mobile-details-grid div {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   overflow-wrap: anywhere;
 }
 
@@ -223,7 +223,7 @@
 
 .installed-assets-table__availability-card p {
   color: var(--cds-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.4;
   margin: 0;
 }
@@ -234,7 +234,7 @@
   color: var(--cds-text-secondary);
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   gap: 0.75rem;
   justify-content: space-between;
   padding: 0.75rem 1rem;
@@ -259,7 +259,7 @@
 
 .installed-assets-table__modal-body p {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.5;
   margin: 0;
 }
@@ -272,7 +272,7 @@
 
 .installed-assets-table__deploy-copy {
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   margin: 0;
 }
 
@@ -302,14 +302,14 @@
 
 .installed-assets-table__deploy-target p {
   color: var(--cds-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   margin: 0;
 }
 
 .installed-assets-table__deploy-target span {
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 @media (max-width: 1056px) {
