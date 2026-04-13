@@ -108,7 +108,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
       padding: 16,
     }}>
       <div style={{
-        background: 'linear-gradient(135deg, rgba(14, 22, 37, 0.95), rgba(20, 30, 50, 0.9))',
+        background: 'rgba(14, 22, 37, 0.96)',
         border: '1px solid rgba(37, 99, 235, 0.3)',
         borderRadius: 12,
         width: '100%',
@@ -247,7 +247,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                 style={{
                   padding: 12,
                   background: selectedPreset?.id === preset.id
-                    ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(0,0,0,0.4))'
+                    ? 'rgba(29, 78, 216, 0.24)'
                     : 'rgba(0, 0, 0, 0.2)',
                   border: selectedPreset?.id === preset.id
                     ? '2px solid rgba(37, 99, 235, 0.6)'

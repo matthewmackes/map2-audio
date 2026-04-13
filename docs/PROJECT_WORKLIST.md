@@ -23472,7 +23472,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T1005-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Flatten remaining non-visualization shared primitives and route panels
     Description:
     - Goal / acceptance criteria: Remove gradient use from remaining non-visualization shared UI primitives and route panels such as routing summaries, page transitions, node-context banners, and similar non-chart surfaces.
@@ -23481,8 +23481,19 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: flat non-visualization UI replacements and validation evidence.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 16:47 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 18:08 EDT - Codex
+    Completion notes:
+      - Flattened the viewport-policy gate in `web/src/app/components/ViewportPolicyGate.css` so the unsupported-viewport blocker uses a solid shell surface instead of a radial/vertical gradient stack.
+      - Flattened the shared node-context banner in `web/src/app/components/NodeContextBanner/NodeContextBanner.css`, the API observatory tab shell in `web/src/app/pages/ApiObservatory/ApiObservatoryTabPanel.tsx`, and the selected-state preset manager shell in `web/src/app/components/PresetsWindow.tsx`, removing decorative gradients from shared non-visualization panel surfaces.
+      - Flattened the Performance Brain workspace rail and summary/panel surfaces in `web/src/app/pages/PerformanceBrainPage.css` so that routed workspace primitives inherit flat Carbon-mixed fills instead of accent washes.
+      - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    Validation:
+      - `rg -n "linear-gradient|radial-gradient" web/src/app/components/ViewportPolicyGate.css web/src/app/components/NodeContextBanner/NodeContextBanner.css web/src/app/pages/ApiObservatory/ApiObservatoryTabPanel.tsx web/src/app/pages/PerformanceBrainPage.css web/src/app/components/PresetsWindow.tsx` -> no matches
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NodeContextBanner/NodeContextBanner.test.tsx` -> PASS (`1 suite, 5 tests`)
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PerformanceBrainPage.test.tsx src/app/components/NodeContextBanner/NodeContextBanner.test.tsx` -> FAIL due pre-existing hook-order/runtime issue in `PerformanceBrainPage.tsx` during import-handoff tests; unaffected by this CSS-only surface slice
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Codex
 Last updated: 2026-04-13 16:47 EDT - Codex
 

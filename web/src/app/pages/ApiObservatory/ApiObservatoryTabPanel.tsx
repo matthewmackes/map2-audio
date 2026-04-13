@@ -14,7 +14,7 @@ export function ApiObservatoryTabPanel({
       style={{
         borderRadius: 18,
         border: '1px solid rgba(139, 92, 246, 0.2)',
-        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(2, 6, 23, 0.98) 100%)',
+        background: 'rgba(9, 16, 28, 0.96)',
         padding: 24,
         display: 'flex',
         flexDirection: 'column',

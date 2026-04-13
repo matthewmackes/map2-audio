@@ -4,14 +4,7 @@
   gap: 1rem;
   min-height: 56px;
   padding: 0.85rem 1rem;
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--interactive) 16%, transparent), transparent 24%),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--surface-2) 94%, var(--bg)) 0%,
-      color-mix(in srgb, var(--surface-3) 92%, var(--bg)) 48%,
-      color-mix(in srgb, var(--surface) 96%, var(--bg)) 100%
-    );
+  background: color-mix(in srgb, var(--surface-2) 88%, var(--surface) 12%);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 72%, var(--interactive) 28%);
   border-radius: 1rem;
   color: var(--cds-text-primary);

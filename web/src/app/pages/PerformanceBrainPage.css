@@ -23,9 +23,7 @@
 }
 
 .brain-page__rail {
-  --workspace-side-nav-surface:
-    linear-gradient(180deg, rgba(15, 98, 254, 0.07), transparent 22%),
-    linear-gradient(180deg, var(--cds-layer), var(--cds-layer-hover));
+  --workspace-side-nav-surface: color-mix(in srgb, var(--cds-layer) 94%, var(--cds-link-primary, #0f62fe) 6%);
   --workspace-side-nav-surface-hover: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 6%, var(--cds-layer-hover));
   --workspace-side-nav-surface-selected: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 11%, var(--cds-layer-hover));
   position: sticky;
@@ -51,9 +49,7 @@
   gap: 0.55rem;
   padding: 1rem;
   border-radius: 1rem;
-  background:
-    radial-gradient(circle at top right, rgba(111, 220, 140, 0.08), transparent 35%),
-    linear-gradient(180deg, var(--cds-layer), var(--cds-layer-hover));
+  background: color-mix(in srgb, var(--cds-layer) 88%, var(--cds-layer-hover) 12%);
 }
 
 .brain-page__summary-eyebrow,

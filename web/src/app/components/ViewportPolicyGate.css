@@ -4,9 +4,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--primary) 16%, transparent), transparent 46%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
   color: var(--text-primary);
 }
 
