@@ -4,6 +4,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AudioArtifactsPage } from './AudioArtifactsPage'
+import {
+  WORKSPACE_ARTIFACTS_BASE_PATH,
+  buildWorkspaceArtifactsDiscoverPath,
+  buildWorkspaceArtifactsPath,
+} from './audioArtifactsRoutes'
 
 const mockUseCluster = jest.fn()
 const mockUseNodePageContext = jest.fn()
@@ -133,6 +138,59 @@ function renderArtifacts(initialEntry: string) {
             element={(
               <>
                 <AudioArtifactsPage discoverMode />
+                <LocationProbe />
+              </>
+            )}
+          />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+function renderWorkspaceArtifacts(initialEntry: string) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter
+        initialEntries={[initialEntry]}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <Routes>
+          <Route
+            path="/workspace/artifacts"
+            element={(
+              <>
+                <AudioArtifactsPage
+                  renderShell={false}
+                  buildLibraryPath={buildWorkspaceArtifactsPath}
+                  buildDiscoverPath={buildWorkspaceArtifactsDiscoverPath}
+                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH]}
+                />
+                <LocationProbe />
+              </>
+            )}
+          />
+          <Route
+            path="/workspace/artifacts/discover"
+            element={(
+              <>
+                <AudioArtifactsPage
+                  discoverMode
+                  renderShell={false}
+                  buildLibraryPath={buildWorkspaceArtifactsPath}
+                  buildDiscoverPath={buildWorkspaceArtifactsDiscoverPath}
+                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH]}
+                />
                 <LocationProbe />
               </>
             )}
@@ -276,6 +334,20 @@ describe('AudioArtifactsPage routed workspace', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Return to library' })[0])
 
     expect(await screen.findByTestId('location-probe')).toHaveTextContent('/artifacts?category=nam-models')
+  })
+
+  it('preserves canonical workspace paths when toggling between library and discover mode', async () => {
+    renderWorkspaceArtifacts('/workspace/artifacts?category=lv2-plugins')
+
+    expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Download & Discover' })[0])
+
+    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/workspace/artifacts/discover?category=lv2-plugins')
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Return to library' })[0])
+
+    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
   })
 
   it('uses Carbon loading feedback while plugin scans are running from the empty state', async () => {

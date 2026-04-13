@@ -105,6 +105,14 @@ jest.mock('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage', () =
   },
 }))
 
+jest.mock('./pages/workspace-hub/artifacts/WorkspaceArtifactsDiscoverPage', () => ({
+  WorkspaceArtifactsDiscoverPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-artifacts-discover-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet', () => ({
   WorkspaceOutboardHardwareOutlet: () => {
     const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -305,6 +313,15 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('mounts the migrated audio-artifacts discover route inside the workspace hub', async () => {
+    window.history.pushState({}, '', '/workspace/artifacts/discover?category=nam-models')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/workspace/artifacts/discover?category=nam-models')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 

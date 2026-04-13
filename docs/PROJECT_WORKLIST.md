@@ -23745,7 +23745,7 @@ Subtasks:
             - `npm --prefix web run typecheck` -> PASS
             - `npm --prefix web run build` -> PASS
           - ID: T1004-subC-subD-subB
-            Status: [>] In Progress
+            Status: [✓] Done
             Title: Remount artifact discover mode at `/workspace/artifacts/discover`
             Description:
             - Goal / acceptance criteria: Extend the extracted artifact body so discover mode also runs at the canonical workspace path, preserving query-string behavior and the embedded intake workspace.
@@ -23755,9 +23755,18 @@ Subtasks:
             - Required outputs: canonical workspace discover wrapper/route wiring and focused artifact route regression coverage.
             Subtasks: None
             Assigned to: Codex
-            Last updated: 2026-04-13 18:55 EDT - Codex
+            Last updated: 2026-04-13 18:59 EDT - Codex
+            Completion notes:
+            - Added `web/src/app/pages/workspace-hub/artifacts/WorkspaceArtifactsDiscoverPage.tsx` so the canonical `/workspace/artifacts/discover` route now mounts the extracted Audio Artifacts discover body inside `WorkspaceHubShell` instead of falling back to the legacy `/artifacts/discover` root.
+            - Updated `web/src/app/App.tsx` and `web/src/app/App.platformRoute.test.tsx` so the workspace hub routes now cover both `/workspace/artifacts` and `/workspace/artifacts/discover`.
+            - Extended `web/src/app/pages/AudioArtifactsPage.test.tsx` with a canonical workspace-path regression that proves the extracted artifact body preserves query-state when toggling between the workspace library and workspace discover routes.
+            - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+            Validation:
+            - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/pages/AudioArtifactsPage.test.tsx` -> PASS (`2 suites, 26 tests`; React Router future-flag and suspended-resource warnings only)
+            - `npm --prefix web run typecheck` -> PASS
+            - `npm --prefix web run build` -> PASS
           - ID: T1004-subC-subD-subC
-            Status: [ ] Todo
+            Status: [>] In Progress
             Title: Sweep remaining artifact path assumptions and delete the workspace placeholder
             Description:
             - Goal / acceptance criteria: Remove the last hard-coded artifact-path assumptions that block the hub remount, delete the workspace placeholder route, and prove both legacy and canonical artifact paths remain behaviorally aligned ahead of the redirect sweep.
@@ -23766,10 +23775,10 @@ Subtasks:
             - Estimated effort: Medium
             - Required outputs: placeholder deletion, final artifact path sweep, and focused App/audio-artifact regressions.
             Subtasks: None
-            Assigned to: Unassigned
-            Last updated: 2026-04-13 18:48 EDT - Codex
+            Assigned to: Codex
+            Last updated: 2026-04-13 18:59 EDT - Codex
         Assigned to: Codex
-        Last updated: 2026-04-13 18:55 EDT - Codex
+        Last updated: 2026-04-13 18:59 EDT - Codex
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
