@@ -257,7 +257,7 @@
 
 .pipewire-page__topology-arrow {
   color: var(--cds-icon-primary);
-  font-size: 1.125rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
 }
 
 .pipewire-page__cluster-summary {

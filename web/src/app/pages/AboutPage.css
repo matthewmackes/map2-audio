@@ -87,7 +87,7 @@
 
 .about-page__section-heading {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   line-height: 1.3;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -95,7 +95,7 @@
 
 .about-page__lead {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.7;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -119,7 +119,7 @@
 
 .about-page__agpl-title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.35;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -127,7 +127,7 @@
 
 .about-page__copy {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   line-height: 1.7;
   color: var(--cds-text-secondary);
 }
@@ -139,7 +139,7 @@
 
 .about-page__subheading {
   margin: 0.25rem 0 0;
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.3;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -150,7 +150,7 @@
   padding-left: 1.375rem;
   display: grid;
   gap: 0.35rem;
-  font-size: 0.75rem;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
   line-height: 1.65;
   color: var(--cds-text-secondary);
 }
@@ -161,7 +161,7 @@
 
 .about-page__note {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.6;
   font-style: italic;
   color: var(--cds-text-secondary);
@@ -169,7 +169,7 @@
 
 .about-page__timestamp {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.4;
   color: var(--cds-text-placeholder);
   text-transform: uppercase;
@@ -184,7 +184,7 @@
 
 .about-page__hero-heading {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
   line-height: 1.15;
   font-weight: 700;
   color: var(--cds-text-primary);
@@ -193,7 +193,7 @@
 .about-page__hero-copy {
   margin: 0;
   max-width: 44rem;
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.7;
   color: var(--cds-text-secondary);
 }
@@ -247,7 +247,7 @@
 .about-page__table-link {
   color: var(--cds-link-primary);
   text-decoration: none;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
 }
 
@@ -273,7 +273,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .about-page__truncate--compact {
@@ -281,7 +281,7 @@
 }
 
 .about-page__cell-copy {
-  font-size: 0.75rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--cds-text-secondary);
 }
 
@@ -338,14 +338,14 @@
 }
 
 .about-page__hardware-title {
-  font-size: 0.8125rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.35;
   font-weight: 600;
   color: var(--cds-text-primary);
 }
 
 .about-page__hardware-copy {
-  font-size: 0.6875rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.5;
   color: var(--cds-text-secondary);
 }
@@ -366,7 +366,7 @@
   }
 
   .about-page__hero-heading {
-    font-size: 1.25rem;
+    font-size: var(--cds-heading-03-font-size, 1.25rem);
   }
 
   .about-page__truncate,
