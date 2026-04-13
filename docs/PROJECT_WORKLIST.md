@@ -23724,7 +23724,7 @@ Subtasks:
         - Required outputs: extracted artifact section body, canonical `/workspace/artifacts/*` routes, and focused artifact regressions.
         Subtasks:
           - ID: T1004-subC-subD-subA
-            Status: [>] In Progress
+            Status: [✓] Done
             Title: Extract shared Audio Artifacts body + canonical route builders for `/workspace/artifacts`
             Description:
             - Goal / acceptance criteria: Parameterize `AudioArtifactsPage` route construction, lift the content/aside logic into a shared body component, and add `workspace-hub/artifacts` wrappers so the canonical overview route can mount real content inside `WorkspaceHubShell` without the legacy local shell chrome.
@@ -23734,9 +23734,18 @@ Subtasks:
             - Required outputs: shared artifact route builders/body extraction, workspace overview wrapper, and focused route regression coverage.
             Subtasks: None
             Assigned to: Codex
-            Last updated: 2026-04-13 18:48 EDT - Codex
+            Last updated: 2026-04-13 18:55 EDT - Codex
+            Completion notes:
+            - Added `web/src/app/pages/audioArtifactsRoutes.ts` so the artifact library and discover surfaces now share explicit legacy and canonical workspace path builders instead of hard-coded `/artifacts` strings.
+            - Parameterized `web/src/app/pages/AudioArtifactsPage.tsx` / `AudioArtifactsPage.css` with route-builder props and a shell-free embedded layout path, allowing the same artifact content, aside panels, and modal flows to run under either the legacy route shell or the unified workspace hub without introducing new runtime assumptions.
+            - Added `web/src/app/pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage.tsx` and updated `web/src/app/App.tsx` / `App.platformRoute.test.tsx` so `/workspace/artifacts` now mounts the real Audio Artifacts overview content inside `WorkspaceHubShell` instead of the placeholder scaffold.
+            - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+            Validation:
+            - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx src/app/pages/AudioArtifactsPage.test.tsx` -> PASS (`2 suites, 24 tests`; React Router future-flag and suspended-resource warnings only)
+            - `npm --prefix web run typecheck` -> PASS
+            - `npm --prefix web run build` -> PASS
           - ID: T1004-subC-subD-subB
-            Status: [ ] Todo
+            Status: [>] In Progress
             Title: Remount artifact discover mode at `/workspace/artifacts/discover`
             Description:
             - Goal / acceptance criteria: Extend the extracted artifact body so discover mode also runs at the canonical workspace path, preserving query-string behavior and the embedded intake workspace.
@@ -23745,8 +23754,8 @@ Subtasks:
             - Estimated effort: Medium
             - Required outputs: canonical workspace discover wrapper/route wiring and focused artifact route regression coverage.
             Subtasks: None
-            Assigned to: Unassigned
-            Last updated: 2026-04-13 18:48 EDT - Codex
+            Assigned to: Codex
+            Last updated: 2026-04-13 18:55 EDT - Codex
           - ID: T1004-subC-subD-subC
             Status: [ ] Todo
             Title: Sweep remaining artifact path assumptions and delete the workspace placeholder
@@ -23760,7 +23769,7 @@ Subtasks:
             Assigned to: Unassigned
             Last updated: 2026-04-13 18:48 EDT - Codex
         Assigned to: Codex
-        Last updated: 2026-04-13 18:48 EDT - Codex
+        Last updated: 2026-04-13 18:55 EDT - Codex
     Assigned to: Codex
     Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD

@@ -31,6 +31,7 @@ const PlatformWorkspaceSection = lazy(() => import('./pages/workspace-hub/platfo
 const WorkspacePhysicalSurfacesOutlet = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOutlet').then(m => ({ default: m.WorkspacePhysicalSurfacesOutlet })))
 const WorkspacePhysicalSurfacesOverviewPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage').then(m => ({ default: m.WorkspacePhysicalSurfacesOverviewPage })))
 const WorkspacePhysicalSurfaceUnitPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitPage').then(m => ({ default: m.WorkspacePhysicalSurfaceUnitPage })))
+const WorkspaceArtifactsOverviewPage = lazy(() => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage').then(m => ({ default: m.WorkspaceArtifactsOverviewPage })))
 const WorkspaceOutboardHardwareOutlet = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet').then(m => ({ default: m.WorkspaceOutboardHardwareOutlet })))
 const WorkspaceOutboardHardwareOverviewPage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage').then(m => ({ default: m.WorkspaceOutboardHardwareOverviewPage })))
 const WorkspaceOutboardHardwareDevicePage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage').then(m => ({ default: m.WorkspaceOutboardHardwareDevicePage })))
@@ -337,7 +338,7 @@ export function App() {
                                   </Route>
                                   <Route
                                     path="artifacts"
-                                    element={<WorkspaceHubPlaceholder sectionKey="artifacts" title="Audio Artifacts" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    element={<WorkspaceArtifactsOverviewPage />}
                                   />
                                   <Route
                                     path="outboard-hardware"

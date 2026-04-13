@@ -63,6 +63,11 @@ import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStri
 import { EmptyState } from '../components/shared/EmptyState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
+import {
+  ARTIFACTS_BASE_PATH,
+  buildArtifactsDiscoverPath,
+  buildArtifactsPath,
+} from './audioArtifactsRoutes'
 import './AudioArtifactsPage.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -569,9 +574,19 @@ function SkeletonRows({ columns, count = 8 }: { columns: number; count?: number 
 
 interface AudioArtifactsPageProps {
   discoverMode?: boolean
+  renderShell?: boolean
+  buildLibraryPath?: (search?: string | URLSearchParams | null) => string
+  buildDiscoverPath?: (search?: string | URLSearchParams | null) => string
+  routeActivePaths?: string[]
 }
 
-export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageProps) {
+export function AudioArtifactsPage({
+  discoverMode = false,
+  renderShell = true,
+  buildLibraryPath = buildArtifactsPath,
+  buildDiscoverPath = buildArtifactsDiscoverPath,
+  routeActivePaths = [ARTIFACTS_BASE_PATH],
+}: AudioArtifactsPageProps) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
@@ -624,20 +639,12 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   }, [setSearchParams])
 
   const openDiscoverRoute = useCallback(() => {
-    const currentSearch = searchParams.toString()
-    navigate({
-      pathname: '/artifacts/discover',
-      search: currentSearch ? `?${currentSearch}` : '',
-    })
-  }, [navigate, searchParams])
+    navigate(buildDiscoverPath(searchParams))
+  }, [buildDiscoverPath, navigate, searchParams])
 
   const closeDiscoverRoute = useCallback(() => {
-    const currentSearch = searchParams.toString()
-    navigate({
-      pathname: '/artifacts',
-      search: currentSearch ? `?${currentSearch}` : '',
-    }, { replace: true })
-  }, [navigate, searchParams])
+    navigate(buildLibraryPath(searchParams), { replace: true })
+  }, [buildLibraryPath, navigate, searchParams])
 
   const selectCategory = useCallback((id: ArtifactCategory) => {
     setSelectedItem(null)
@@ -653,15 +660,12 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
       nextSearch.set('category', id)
       nextSearch.set('page', '1')
       nextSearch.delete('q')
-      navigate({
-        pathname: '/artifacts',
-        search: `?${nextSearch.toString()}`,
-      })
+      navigate(buildLibraryPath(nextSearch))
       return
     }
 
     selectCategory(id)
-  }, [discoverMode, navigate, searchParams, selectCategory])
+  }, [buildLibraryPath, discoverMode, navigate, searchParams, selectCategory])
 
   // ── Staggered entry animation ─────────────────────────────────────────────
   useEffect(() => {
@@ -680,7 +684,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     pushGlobalToast(message, kind === 'warning' ? 'warn' : kind)
   }, [pushGlobalToast])
 
-  const artifactsRouteActive = useRouteActive(['/artifacts'])
+  const artifactsRouteActive = useRouteActive(routeActivePaths)
   const artifactsStatusCadence = useRealtimeCadence({
     routeActive: artifactsRouteActive,
     visibleMs: 10_000,
@@ -1039,7 +1043,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
       key: item.id,
       label: item.label,
       description: item.description,
-      to: `/artifacts?category=${item.id}`,
+      to: buildLibraryPath(new URLSearchParams({ category: item.id })),
       icon: item.icon,
       active: !discoverMode && item.id === activeCategory,
       onOpen: () => openCategoryRoute(item.id),
@@ -1051,7 +1055,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
         key: 'discover',
         label: 'Download & Discover',
         description: 'Open the route-native intake workspace for plugin packs, models, impulse responses, and SoundFonts.',
-        to: '/artifacts/discover',
+        to: buildDiscoverPath(),
         icon: CloudUpload,
         active: discoverMode,
         onOpen: openDiscoverRoute,
@@ -1061,7 +1065,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     ]
 
     return { primaryNavItems: items, utilityNavItems: utilities }
-  }, [activeCategory, discoverMode, openCategoryRoute, openDiscoverRoute, totalItems])
+  }, [activeCategory, buildDiscoverPath, buildLibraryPath, discoverMode, openCategoryRoute, openDiscoverRoute, totalItems])
 
   const artifactsContent = (
     <>
@@ -1384,44 +1388,8 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
     </>
   ) : undefined
 
-  return (
-    <section className="aap">
-      <ShellWindowTitleStrip />
-      <ShellWindowProvider value={null}>
-        <Layer className="aap__surface">
-          <WorkspacePageTemplate
-            className="aap__template"
-            windowClassName={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}
-            sidebarClassName={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}
-            contentClassName={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}
-            asideClassName="aap__aside"
-            sidebar={(
-              <UnifiedWorkspaceSideNav
-                ariaLabel="Artifact categories"
-                className="aap__carbon-sidenav"
-                eyebrow="Navigation"
-                title="Artifacts Library"
-                description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
-                items={primaryNavItems}
-                footerTitle="Utilities"
-                footerItems={utilityNavItems}
-                metaBlocks={[
-                  { key: 'current-node', label: 'Current node', value: selectedNodeLabel },
-                  { key: 'items-in-view', label: 'Items in view', value: discoverMode ? 'Discovery' : totalItems },
-                  { key: 'sync-queue', label: 'Sync queue', value: activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle' },
-                ]}
-                callout={{
-                  kind: 'info',
-                  text: 'Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.',
-                }}
-              />
-            )}
-            content={artifactsContent}
-            aside={artifactsAside}
-          />
-        </Layer>
-      </ShellWindowProvider>
-
+  const artifactsModals = (
+    <>
       {/* Upload modal */}
       <Modal
         open={uploadModalOpen}
@@ -1490,6 +1458,61 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
           </p>
         ) : null}
       </Modal>
+    </>
+  )
+
+  if (!renderShell) {
+    return (
+      <section className="aap aap--embedded">
+        <div className={`aap__embedded-layout${showArtifactsAside ? ' aap__embedded-layout--with-aside' : ''}`}>
+          <div className={`aap__embedded-content${tableAnimated ? ' aap__embedded-content--visible' : ''}`}>
+            {artifactsContent}
+          </div>
+          {artifactsAside ? <aside className="aap__embedded-aside">{artifactsAside}</aside> : null}
+        </div>
+        {artifactsModals}
+      </section>
+    )
+  }
+
+  return (
+    <section className="aap">
+      <ShellWindowTitleStrip />
+      <ShellWindowProvider value={null}>
+        <Layer className="aap__surface">
+          <WorkspacePageTemplate
+            className="aap__template"
+            windowClassName={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}
+            sidebarClassName={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}
+            contentClassName={`aap__content${tableAnimated ? ' aap__content--visible' : ''}`}
+            asideClassName="aap__aside"
+            sidebar={(
+              <UnifiedWorkspaceSideNav
+                ariaLabel="Artifact categories"
+                className="aap__carbon-sidenav"
+                eyebrow="Navigation"
+                title="Artifacts Library"
+                description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
+                items={primaryNavItems}
+                footerTitle="Utilities"
+                footerItems={utilityNavItems}
+                metaBlocks={[
+                  { key: 'current-node', label: 'Current node', value: selectedNodeLabel },
+                  { key: 'items-in-view', label: 'Items in view', value: discoverMode ? 'Discovery' : totalItems },
+                  { key: 'sync-queue', label: 'Sync queue', value: activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle' },
+                ]}
+                callout={{
+                  kind: 'info',
+                  text: 'Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.',
+                }}
+              />
+            )}
+            content={artifactsContent}
+            aside={artifactsAside}
+          />
+        </Layer>
+      </ShellWindowProvider>
+      {artifactsModals}
     </section>
   )
 }
