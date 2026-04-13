@@ -1,5 +1,5 @@
 import { Button, Tag, Tile } from '@carbon/react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
@@ -15,6 +15,8 @@ import {
 } from './OutboardHardwareShell'
 
 type StatusTagType = 'green' | 'red' | 'blue' | 'cool-gray' | 'warm-gray'
+type OutboardHardwareLiveStatusGroup = 'healthy' | 'attention' | 'offline'
+type StatusFilter = 'all' | OutboardHardwareLiveStatusGroup
 
 type LiveStatusFact = {
   label: string
@@ -22,6 +24,7 @@ type LiveStatusFact = {
 }
 
 type OutboardHardwareLiveStatus = {
+  group: OutboardHardwareLiveStatusGroup
   label: string
   type: StatusTagType
   summary: string
@@ -56,6 +59,7 @@ function buildInterfaceStatus(
 
   if (isLoading && !location && !error) {
     return {
+      group: 'attention',
       label: 'Refreshing',
       type: 'blue',
       summary: `Checking cluster inventory for ${displayName}.`,
@@ -65,6 +69,7 @@ function buildInterfaceStatus(
 
   if (location?.status === 'offline') {
     return {
+      group: 'offline',
       label: 'Node offline',
       type: 'red',
       summary: `${displayName} is assigned to ${nodeLabel ?? 'a cluster node'}, but that node is currently offline.`,
@@ -77,6 +82,7 @@ function buildInterfaceStatus(
 
   if (location) {
     return {
+      group: 'healthy',
       label: 'Detected',
       type: 'green',
       summary: `${displayName} is visible on ${nodeLabel ?? 'the cluster inventory'} and ready for its dedicated route.`,
@@ -89,6 +95,7 @@ function buildInterfaceStatus(
 
   if (error) {
     return {
+      group: 'attention',
       label: 'Inventory issue',
       type: 'red',
       summary: `Cluster inventory could not confirm ${displayName} right now.`,
@@ -97,6 +104,7 @@ function buildInterfaceStatus(
   }
 
   return {
+    group: 'offline',
     label: 'Not detected',
     type: 'cool-gray',
     summary: `${displayName} is not currently visible in the shared hardware inventory.`,
@@ -114,6 +122,7 @@ function buildRackStatus(
 
   if (!state && !error && !location) {
     return {
+      group: 'attention',
       label: 'Refreshing',
       type: 'blue',
       summary: `Checking live rack status for ${displayName}.`,
@@ -123,6 +132,7 @@ function buildRackStatus(
 
   if (location?.status === 'offline') {
     return {
+      group: 'offline',
       label: 'Node offline',
       type: 'red',
       summary: `${displayName} is assigned to ${nodeLabel ?? 'a cluster node'}, but that node is currently offline.`,
@@ -132,6 +142,7 @@ function buildRackStatus(
 
   if (state?.connected) {
     return {
+      group: 'healthy',
       label: 'Connected',
       type: 'green',
       summary: `${displayName} is responding${nodeLabel ? ` on ${nodeLabel}` : ''} and reports program ${state.current_program}.`,
@@ -145,6 +156,7 @@ function buildRackStatus(
 
   if (location) {
     return {
+      group: 'attention',
       label: 'Detected only',
       type: 'warm-gray',
       summary: `${displayName} is visible on ${nodeLabel ?? 'the cluster inventory'}, but the live control service is not currently connected.`,
@@ -157,6 +169,7 @@ function buildRackStatus(
 
   if (error) {
     return {
+      group: 'attention',
       label: 'Control issue',
       type: 'red',
       summary: `The live control hook for ${displayName} returned an error before the rack could be confirmed.`,
@@ -165,6 +178,7 @@ function buildRackStatus(
   }
 
   return {
+    group: 'offline',
     label: 'Not detected',
     type: 'cool-gray',
     summary: `${displayName} is not currently visible in inventory and is not reporting live control state.`,
@@ -175,6 +189,7 @@ function buildRackStatus(
 function buildTesiraStatus(devices: TesiraDeviceSummary[], isLoading: boolean, error: unknown): OutboardHardwareLiveStatus {
   if (isLoading && devices.length === 0 && !error) {
     return {
+      group: 'attention',
       label: 'Refreshing',
       type: 'blue',
       summary: 'Checking the Tesira fleet feed.',
@@ -184,6 +199,7 @@ function buildTesiraStatus(devices: TesiraDeviceSummary[], isLoading: boolean, e
 
   if (error && devices.length === 0) {
     return {
+      group: 'attention',
       label: 'Fleet issue',
       type: 'red',
       summary: 'The Tesira fleet query did not return any devices.',
@@ -193,6 +209,7 @@ function buildTesiraStatus(devices: TesiraDeviceSummary[], isLoading: boolean, e
 
   if (devices.length === 0) {
     return {
+      group: 'offline',
       label: 'Not discovered',
       type: 'cool-gray',
       summary: 'No Tesira units are currently discovered by the fleet query.',
@@ -214,6 +231,7 @@ function buildTesiraStatus(devices: TesiraDeviceSummary[], isLoading: boolean, e
           : 'Healthy'
 
   return {
+    group: stateType === 'green' ? 'healthy' : stateType === 'warm-gray' ? 'attention' : 'offline',
     label: stateLabel,
     type: stateType,
     summary: `${connectedCount}/${devices.length} Tesira devices connected${faultCount > 0 ? ` with ${pluralize(faultCount, 'fault')}` : ''}.`,
@@ -284,6 +302,17 @@ function useOutboardHardwareLiveStatus(): Record<string, OutboardHardwareLiveSta
   )
 }
 
+function matchesStatusFilter(status: OutboardHardwareLiveStatus, filter: StatusFilter): boolean {
+  return filter === 'all' || status.group === filter
+}
+
+function filterLabel(filter: StatusFilter): string {
+  if (filter === 'all') return 'All'
+  if (filter === 'healthy') return 'Healthy'
+  if (filter === 'attention') return 'Attention'
+  return 'Offline'
+}
+
 function OutboardHardwareCard({
   device,
   liveStatus,
@@ -346,20 +375,33 @@ function OutboardHardwareCard({
 export function OutboardHardwareOverviewPage() {
   const { devices } = useOutletContext<OutboardHardwareShellContextValue>()
   const liveStatusByDeviceId = useOutboardHardwareLiveStatus()
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
   const metrics = useMemo(() => ({
     total: devices.length,
-    avbMixers: devices.filter((device) => device.category === 'AVB DSP Mixer').length,
-    interfaces: devices.filter((device) => device.category === 'USB Audio Interface').length,
-    processors: devices.filter((device) => device.category === 'Multi-FX Processor').length,
-  }), [devices])
+    healthy: devices.filter((device) => liveStatusByDeviceId[device.deviceId]?.group === 'healthy').length,
+    attention: devices.filter((device) => liveStatusByDeviceId[device.deviceId]?.group === 'attention').length,
+    offline: devices.filter((device) => liveStatusByDeviceId[device.deviceId]?.group === 'offline').length,
+  }), [devices, liveStatusByDeviceId])
+
+  const filteredDevices = useMemo(
+    () => devices.filter((device) => matchesStatusFilter(liveStatusByDeviceId[device.deviceId], statusFilter)),
+    [devices, liveStatusByDeviceId, statusFilter],
+  )
 
   return (
     <div className="outboard-hardware-page">
       <PageHeader
         title="Outboard Hardware"
         subtitle="Unified routed shell for rack processors, AVB DSP hardware, and dedicated interface pages."
-        actions={<Tag type="blue">{metrics.total} devices</Tag>}
+        actions={
+          <div className="outboard-hardware-page__tag-row">
+            <Tag type="blue">{metrics.total} devices</Tag>
+            <Tag type="green">{metrics.healthy} healthy</Tag>
+            <Tag type="warm-gray">{metrics.attention} attention</Tag>
+            <Tag type="red">{metrics.offline} offline</Tag>
+          </div>
+        }
       />
 
       <div className="outboard-hardware-page__metrics">
@@ -369,19 +411,19 @@ export function OutboardHardwareOverviewPage() {
           <p className="outboard-hardware-page__body-copy">All currently curated outboard units exposed through the shared shell.</p>
         </Tile>
         <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">AVB DSP Mixer</p>
-          <h2>{metrics.avbMixers}</h2>
-          <p className="outboard-hardware-page__body-copy">Networked DSP infrastructure surfaces kept discoverable through one workspace.</p>
+          <p className="outboard-hardware-page__eyebrow">Healthy</p>
+          <h2>{metrics.healthy}</h2>
+          <p className="outboard-hardware-page__body-copy">Devices currently reporting a ready or connected posture from the shared rollup sources.</p>
         </Tile>
         <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">USB Audio Interface</p>
-          <h2>{metrics.interfaces}</h2>
-          <p className="outboard-hardware-page__body-copy">Interface-specific pages that stay routed directly while leaving the home launcher less crowded.</p>
+          <p className="outboard-hardware-page__eyebrow">Attention</p>
+          <h2>{metrics.attention}</h2>
+          <p className="outboard-hardware-page__body-copy">Devices that are partially reachable, refreshing, or need operator review before live use.</p>
         </Tile>
         <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Multi-FX Processor</p>
-          <h2>{metrics.processors}</h2>
-          <p className="outboard-hardware-page__body-copy">Dedicated rack processors that keep their deep editor routes intact.</p>
+          <p className="outboard-hardware-page__eyebrow">Offline</p>
+          <h2>{metrics.offline}</h2>
+          <p className="outboard-hardware-page__body-copy">Devices not currently discovered or assigned to nodes that are offline from the shared inventory view.</p>
         </Tile>
       </div>
 
@@ -402,19 +444,55 @@ export function OutboardHardwareOverviewPage() {
         </div>
       </Tile>
 
+      <Tile className="outboard-hardware-page__card">
+        <div className="outboard-hardware-page__card-head">
+          <div>
+            <p className="outboard-hardware-page__eyebrow">Status filter</p>
+            <h2>Focus the overview</h2>
+          </div>
+          <Tag type="cool-gray">
+            Showing {filteredDevices.length} of {metrics.total}
+          </Tag>
+        </div>
+        <p className="outboard-hardware-page__body-copy">
+          Filter the shared outboard grid by current readiness posture before opening the dedicated route for a deeper investigation.
+        </p>
+        <div className="outboard-hardware-page__action-row" role="group" aria-label="Outboard status filter">
+          {(['all', 'healthy', 'attention', 'offline'] as StatusFilter[]).map((filter) => (
+            <Button
+              key={filter}
+              kind={statusFilter === filter ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setStatusFilter(filter)}
+            >
+              {filterLabel(filter)}
+            </Button>
+          ))}
+        </div>
+      </Tile>
+
       <div className="outboard-hardware-page__unit-grid">
-        {devices.map((device) => (
-          <OutboardHardwareCard
-            key={device.deviceId}
-            device={device}
-            liveStatus={liveStatusByDeviceId[device.deviceId] ?? {
-              label: 'Unavailable',
-              type: 'cool-gray',
-              summary: 'Live status is not available for this device yet.',
-              facts: [],
-            }}
-          />
-        ))}
+        {filteredDevices.length === 0 ? (
+          <Tile className="outboard-hardware-page__card">
+            <p className="outboard-hardware-page__body-copy">
+              No outboard devices currently match the <strong>{filterLabel(statusFilter)}</strong> filter.
+            </p>
+          </Tile>
+        ) : (
+          filteredDevices.map((device) => (
+            <OutboardHardwareCard
+              key={device.deviceId}
+              device={device}
+              liveStatus={liveStatusByDeviceId[device.deviceId] ?? {
+                group: 'offline',
+                label: 'Unavailable',
+                type: 'cool-gray',
+                summary: 'Live status is not available for this device yet.',
+                facts: [],
+              }}
+            />
+          ))
+        )}
       </div>
     </div>
   )

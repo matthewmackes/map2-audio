@@ -76,7 +76,7 @@ describe('OutboardHardwareOverviewPage', () => {
           connected: true,
           serial_number: 'ABC123',
           firmware_version: '1.0.0',
-          fault_count: 0,
+          fault_count: 1,
           avb_stream_count: 4,
           ptp_state: 'slave',
           source_node_id: 'node-a',
@@ -135,18 +135,22 @@ describe('OutboardHardwareOverviewPage', () => {
     renderOverview()
 
     expect(screen.getByText('Total devices')).toBeInTheDocument()
-    expect(screen.getAllByText('AVB DSP Mixer').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('USB Audio Interface').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Multi-FX Processor').length).toBeGreaterThan(0)
     expect(screen.getByText('5 devices')).toBeInTheDocument()
+    expect(screen.getAllByText('Healthy').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Attention').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Offline').length).toBeGreaterThan(0)
+    expect(screen.getByText('2 healthy')).toBeInTheDocument()
+    expect(screen.getByText('1 attention')).toBeInTheDocument()
+    expect(screen.getByText('2 offline')).toBeInTheDocument()
   })
 
   it('surfaces live status rollups for the grouped device cards', () => {
     renderOverview()
 
     const tesiraStatus = screen.getByLabelText('Tesira AVB live status')
-    expect(within(tesiraStatus).getByText('Healthy')).toBeInTheDocument()
+    expect(within(tesiraStatus).getByText('Attention')).toBeInTheDocument()
     expect(within(tesiraStatus).getByText('1/1 connected')).toBeInTheDocument()
+    expect(within(tesiraStatus).getByText('1 fault')).toBeInTheDocument()
     expect(within(tesiraStatus).getByText('rack-a')).toBeInTheDocument()
 
     const mpx1Card = screen.getByRole('heading', { name: 'MPX1 Rack', level: 2 }).closest('.cds--tile')
@@ -156,6 +160,19 @@ describe('OutboardHardwareOverviewPage', () => {
     const intelfxStatus = screen.getByLabelText('IntelFX Rack live status')
     expect(within(intelfxStatus).getByText('Node offline')).toBeInTheDocument()
     expect(within(intelfxStatus).getByText('rack-c')).toBeInTheDocument()
+  })
+
+  it('filters the device grid by readiness state', () => {
+    renderOverview()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Offline' }))
+
+    expect(screen.queryByRole('heading', { name: 'Tesira AVB', level: 2 })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edirol UA-1000', level: 2 })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'MPX1 Rack', level: 2 })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'HoTone JoGG', level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'IntelFX Rack', level: 2 })).toBeInTheDocument()
+    expect(screen.getByText('Showing 2 of 5')).toBeInTheDocument()
   })
 
   it('opens the workspace detail page from a device card', () => {

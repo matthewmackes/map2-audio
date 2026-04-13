@@ -23303,3 +23303,157 @@ Last updated: 2026-04-13 15:53 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/__tests__/useDeviceLocation.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS (`6 suites, 18 tests`)
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
+
+ID: T1001
+Status: [✓] Done
+Title: Add aggregated readiness metrics and status filters to the Outboard Hardware overview
+Description:
+- Goal / acceptance criteria: Extend `/outboard-hardware` so the overview derives aggregate readiness counts from the existing live-status rollups and lets operators filter the device grid by status (`All`, `Healthy`, `Attention`, `Offline`, or equivalent) without adding any new backend API. Filtering and aggregate counts must stay frontend-only and remain covered by focused regression tests.
+- Why it matters: T1000 made each device card individually useful, but the overview still lacks the higher-level scan path operators need when they want to answer “what is healthy, what needs attention, and what is offline?” before opening a specific route.
+- Dependencies: T1000
+- Estimated effort: Low
+- Required outputs: aggregate readiness model, overview filter UI, filtered device grid behavior, focused frontend regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-13 16:26 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/OutboardHardwareOverviewPage.tsx` so each derived live-status rollup now carries a normalized readiness group (`healthy`, `attention`, `offline`), which allows the overview to compute aggregate readiness counts entirely from the existing frontend hook surfaces rather than introducing any backend summary API.
+  - Reworked the overview metric cards and header tags to show total, healthy, attention, and offline counts, giving operators an at-a-glance readiness scan before opening a specific rack or interface route.
+  - Added a frontend-only status filter panel with `All`, `Healthy`, `Attention`, and `Offline` options, then filtered the outboard grid in-place with an empty-state message when no devices match the selected readiness posture.
+  - Expanded `web/src/app/pages/OutboardHardwareOverviewPage.test.tsx` to cover the new readiness totals and filtered-grid behavior while preserving the existing dedicated-route launch coverage.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS (`5 suites, 15 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T1002
+Status: [ ] Todo
+Title: Add node-targeted launch affordances from Outboard Hardware rollups into dedicated routes
+Description:
+- Goal / acceptance criteria: Use the existing inventory/location data already shown in `/outboard-hardware` to help operators open the most relevant dedicated route with the correct node context or an explicit switch affordance, reducing the manual “find the right node after opening the device page” step. Keep the implementation frontend-only unless a smaller backend contract is proven necessary.
+- Why it matters: The new rollups tell operators where hardware is attached, but the dedicated route jump still relies on the operator carrying that node context manually.
+- Dependencies: T1000
+- Estimated effort: Medium
+- Required outputs: clarified route/node launch contract, focused implementation, regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:22 EDT - Codex
+
+ID: T1003
+Status: [ ] Todo
+Title: Add lightweight status-only rack hooks for MPX1 and IntelFX overview summaries
+Description:
+- Goal / acceptance criteria: Introduce lighter-weight frontend status hooks or fetch paths for MPX1 and IntelFX overview summaries so the Outboard Hardware overview does not need to bootstrap full editor-state hooks just to read rack connection posture and current program. The new hooks must preserve current behavior while reducing unnecessary query/bootstrap work.
+- Why it matters: T1000 reuses the existing hooks correctly, but the overview now pays for full rack-editor bootstrap behavior where a smaller status contract would be cleaner and cheaper.
+- Dependencies: T1000
+- Estimated effort: Medium
+- Required outputs: lightweight rack-status surface, overview integration, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:22 EDT - Codex
+
+ID: T1004
+Status: [ ] Todo
+Title: Establish and document a no-gradients UI rule across MAP2
+Description:
+- Goal / acceptance criteria: Add a project-level design rule stating that gradients are not permitted in UI elements or components, and update the relevant project guidance so future frontend work uses only solid colors or approved Carbon tokens for surfaces, controls, and decoration.
+- Why it matters: Gradient-heavy styling has re-entered multiple routed shells, theme tools, plugin cards, and docs; the design system needs one explicit repository rule so flat Carbon-aligned surfaces stay enforceable.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: updated project guidance, instruction references, and a restart-safe audit note identifying the current gradient hotspots to remove.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:29 EDT - Codex
+
+ID: T1005
+Status: [ ] Todo
+Title: Remove gradient styling from CSS and inline UI surfaces across the web app
+Description:
+- Goal / acceptance criteria: Audit and replace all UI gradients used in CSS and inline React styles with solid Carbon-aligned colors or approved tokens, including routed pages, modals, plugin cards, buttons, decorative shells, and shared primitives. Exclude non-UI documentation prose and archival evidence artifacts unless they are used as current project guidance.
+- Why it matters: The no-gradient rule is not meaningful unless the live web app stops shipping gradient surfaces today.
+- Dependencies: T1004
+- Estimated effort: High
+- Required outputs: codebase-wide gradient inventory, flat replacements, focused frontend regression updates where visuals are asserted, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:29 EDT - Codex
+
+ID: T1006
+Status: [ ] Todo
+Title: Flatten theme configuration and editor surfaces to remove gradient concepts
+Description:
+- Goal / acceptance criteria: Remove or disable gradient-related theme properties, previews, and editor controls from the theme system, including configuration types, factory helpers, chooser/creator UIs, and any related state-management flows. All live theme previews must render with flat fills only.
+- Why it matters: Even if the current CSS is cleaned up, the theme tooling will keep reintroducing gradients unless the configuration contract itself becomes flat-only.
+- Dependencies: T1004
+- Estimated effort: Medium
+- Required outputs: updated theme interfaces/types/factories, flat-only theme editor UI, regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:29 EDT - Codex
+
+ID: T1007
+Status: [ ] Todo
+Title: Remove gradient fills from visualizations and add regression guards against future gradient use
+Description:
+- Goal / acceptance criteria: Update live charting, SVG, canvas, and animation surfaces so they no longer use gradient fills or gradient-driven decorative effects, then add lightweight repository checks or focused tests that catch new gradient usage in current app code.
+- Why it matters: Charts, plugin-card SVGs, and theme previews still contain gradient definitions that bypass CSS cleanup alone, and the repository needs an enforceable guard to prevent regressions.
+- Dependencies: T1004, T1005, T1006
+- Estimated effort: Medium
+- Required outputs: flattened visualization surfaces, any necessary animation adjustments, guard/test coverage, and validation evidence.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 16:29 EDT - Codex
+
+ID: T1004
+Status: [ ] Todo
+Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree
+Description:
+- Goal / acceptance criteria: Replace the four sibling workspace shells — Platforms (`PlatformModal.tsx`), Physical Surfaces (`PhysicalSurfacesShell.tsx`), Audio Artifacts (`AudioArtifactsPage.tsx`), and Outboard Hardware (`OutboardHardwareShell.tsx`) — with a single unified `WorkspaceHubShell` mounted at `/workspace/*` that renders one very flat, very simple left-hand navigation list uniting all four domains. The left-hand nav MUST be strictly flat — one depth level, no collapse/expand, no nesting, no icons, no status pills or badges inside nav labels, no meta blocks or callouts inside the nav surface, no localStorage expand state. Four plain-text dividers (Platforms / Physical Surfaces / Audio Artifacts / Outboard Hardware) separate the list, but dividers are unclickable and unfocusable. Active state is a left-border accent + background tint only. The nav is a brand-new component (`WorkspaceHubNav`) co-located with the shell — `UnifiedWorkspaceSideNav` must NOT be touched or extended, because its TreeView/meta/callout feature set actively fights the "very flat and very simple" requirement; existing callers (Cluster Dashboard, MIDI Hub Shell, etc.) continue using it unchanged. Each nav section exposes only its top destinations (target ceiling ~8 items per section, ~32 total) — overflow moves to per-section overview pages, not the nav. The four legacy shell files are deleted; their child pages (`PlatformWorkspacePage`, `HostMachinePage`, `AudioEnginePage`, `ThemePage`, `AboutPage`, `PlatformAdoptionPage`, `PhysicalSurfacesOverviewPage`, `PhysicalSurfaceUnitPage`, `OutboardHardwareOverviewPage`, `OutboardHardwareDevicePage`, and `AudioArtifactsPage`'s content-only body) are relocated under `web/src/app/pages/workspace-hub/` and re-mounted under the new shell. All legacy routes (`/platforms/*`, `/physical-surfaces/*`, `/artifacts`, `/artifacts/discover`, `/outboard-hardware/*`) become permanent redirects into the new `/workspace/*` canonical paths so external bookmarks keep working. Data fetching is consolidated into a new shell-level `useUnifiedWorkspaceData()` aggregator hook that fetches all four workspace summaries in parallel (reusing the existing `usePlatformShellData`, `enrichedPhysicalSurfacesApi`, `pluginsApi`/`irApi`/`namApi`/`soundfontApi`, and the static `OUTBOARD_HARDWARE_DEVICES` constant), with `staleTime: 10_000`, `refetchOnWindowFocus: false`, and per-section error isolation so one failing summary cannot blank the other three. The aggregator feeds content-area headers and metric tiles only — it never feeds the nav tree. The home start menu loses its four separate tiles (`/platforms/overview`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` all added to `START_MENU_EXCLUDED_ROUTES` in `HomeStartMenuOverlay.tsx`) and gains one featured "Workspaces" tile at `/workspace` registered in `FEATURED_ROUTE_SET` of `launcherCatalog.tsx`. Advanced Menu entries for the four workspaces are repointed to the new canonical paths but NOT removed, so operators can still deep-link into a specific section. Dedicated device routes (`/mpx1/*`, `/tesira/*`, `/intelfx/*`, `/mcu`, `/maschine`, `/labs/push-surface`, `/edirol-ua1000`, `/hotone-jogg`, `/launch-control`, `/midi-commander`) are NOT moved and are NOT absorbed — they remain standalone and are linked out to from the Outboard Hardware / Physical Surfaces section overview grids.
+- Why it matters: Operators today see four disconnected workspace tiles on the home start menu and must context-switch between four URL roots. Each shell has forked its own header, breadcrumb wiring, page-key persistence, callout copy, and sidebar configuration despite reusing the same shared primitives. Uniting them under one shell with one flat nav: (a) gives operators a single discoverable entry point for workspace-class UIs, (b) makes cross-workspace navigation a single click instead of a return trip through the home start menu, (c) lets the shell chrome be owned by one file instead of four, (d) caps the home start menu tile growth, and (e) aligns with the T998/T1000 outboard-hardware consolidation pattern scaled up to the top workspace tier. The "very flat and very simple" nav contract is explicit and load-bearing — the current `UnifiedWorkspaceSideNav` TreeView is deliberately not reused because it carries expand/collapse, meta blocks, callouts, and status decor that would reintroduce the visual noise this task is trying to remove.
+- Dependencies: T997 (`UnifiedWorkspaceSideNav` shared primitive — kept intact for its current callers), T998 (Outboard Hardware workspace), T1000 (live-status rollups on outboard overview — reused by the new Outboard Hardware section inside the hub), T725 (launcher catalog storefront model), `web/src/app/pages/PhysicalSurfacesShell.tsx`, `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`, `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/pages/OutboardHardwareShell.tsx`, `web/src/app/pages/OutboardHardwareOverviewPage.tsx`, `web/src/app/pages/OutboardHardwareDevicePage.tsx`, `web/src/app/components/layout/WorkspacePageTemplate.tsx`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` (read-only reference), `web/src/map2/api.ts`, `web/src/map2/clients/physicalSurfaces.ts`, `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/launcherCatalog.tsx`, `web/src/app/pages/HomeStartMenuOverlay.tsx`, the Zustand platform stores (`usePlatformActions`, `usePlatformActiveLayer`, `usePlatformAlerts`, `usePlatformAnimationState`, `usePlatformSummaryMetrics`), and the NodeNavChip page-key system (`useNodePageContext`, `viewedNodeStore`).
+- Estimated effort: High
+- Required outputs:
+  - New shell + nav + aggregator:
+    - `web/src/app/pages/WorkspaceHubShell.tsx`, `WorkspaceHubShell.css`, `WorkspaceHubContext.ts`, `WorkspaceHubShell.test.tsx`
+    - `web/src/app/pages/WorkspaceHubNav.tsx`, `WorkspaceHubNav.css`, `WorkspaceHubNav.test.tsx` — brand-new strictly-flat nav component with one depth level, no icons, no badges, no collapse, no meta blocks, no callouts, plain-text dividers, `NavLink`-based active state, native keyboard navigation
+    - `web/src/app/hooks/useUnifiedWorkspaceData.ts`, `useUnifiedWorkspaceData.test.ts` — shell-level parallel aggregator with `staleTime: 10_000`, `refetchOnWindowFocus: false`, per-section error isolation
+    - `web/src/app/hooks/usePlatformShellData.ts` — extracted from the deleted PlatformModal
+  - Migrated section trees under `web/src/app/pages/workspace-hub/`:
+    - `platforms/PlatformsSection.tsx`, `platformsNavItems.ts`, plus relocated `HostMachinePage.tsx`, `AudioEnginePage.tsx`, `ThemePage.tsx`, `AboutPage.tsx`, `PlatformAdoptionPage.tsx`
+    - `physical-surfaces/PhysicalSurfacesOverviewPage.tsx` (relocated), `PhysicalSurfaceUnitPage.tsx` (relocated), `physicalSurfacesNavItems.ts`
+    - `artifacts/ArtifactsSection.tsx` (stripped of old shell chrome), `artifactsNavItems.ts`
+    - `outboard-hardware/OutboardHardwareOverviewPage.tsx` (relocated), `OutboardHardwareDevicePage.tsx` (relocated), `outboardHardwareCatalog.ts`
+    - `legacyRedirects.tsx`, `legacyRedirects.test.tsx` — helper components that read URL params and forward every legacy path to the new canonical `/workspace/*` path with params preserved
+  - Route wiring in `web/src/app/App.tsx`:
+    - Single `<Route path="/workspace/*" element={<WorkspaceHubShell />}>` parent with child routes for `platforms/:layer`, `physical-surfaces[/:surfaceId]`, `artifacts[/discover]`, `outboard-hardware[/:deviceId]`
+    - Legacy redirect routes for every old path, placed BEFORE the new parent route to ensure React Router v6 matches them first
+    - Lazy imports repointed; old lazy imports for the four shells removed
+  - Menu + launcher cleanup:
+    - `web/src/app/data/advancedMenuItems.ts` — repoint the existing `/platforms`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` entries to `/workspace/*` paths; add a new top-level "Workspaces" entry at `/workspace`
+    - `web/src/app/data/launcherCatalog.tsx` — add `/workspace` to `FEATURED_ROUTE_SET` with a storefront override (title, description, feature bullets); remove `/platforms/overview`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` from the featured set
+    - `web/src/app/pages/HomeStartMenuOverlay.tsx` — extend `START_MENU_EXCLUDED_ROUTES` with `/platforms/overview`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware`
+  - Navigation side-effect sweep: grep and repoint hard-coded `/platforms`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` references across `web/src/`; unify NodeNavChip page keys under `workspace/<section>` with a one-shot localStorage migration for `map2_viewed_nodes`; update breadcrumb builder entries; update `jest.mock` paths that target the deleted shells
+  - File deletions (contents migrated above):
+    - `web/src/app/components/Platform/PlatformModal.tsx` and `PlatformModal.test.tsx` (CSS kept only if still referenced)
+    - `web/src/app/pages/PhysicalSurfacesShell.tsx`, `PhysicalSurfacesShell.css`, `PhysicalSurfacesShell.test.tsx`
+    - `web/src/app/pages/OutboardHardwareShell.tsx`, `OutboardHardwareShell.css`, `OutboardHardwareShell.test.tsx`
+    - `web/src/app/pages/AudioArtifactsPage.tsx` (body migrated to `ArtifactsSection.tsx`)
+  - Content audit: each section's `navItems.ts` file is the single source of truth for what appears in the flat nav. Target ceiling ~8 items per section, ~32 total. Recommended starting lists — Platforms (6): Overview, Cluster Dashboard, Network Discovery, AVB Routing, Host Machine, Audio Engine; Physical Surfaces (1-3): Overview plus optional anchors; Audio Artifacts (7): Overview, LV2 Plugins, NAM Models, Cabinet IRs, Reverb IRs, Soundfonts, Snapshots; Outboard Hardware (3): Overview, Audio Interfaces, Multi-FX. Items trimmed here move to their section's Overview page.
+  - Validation evidence:
+    - `npm --prefix web run typecheck` PASS
+    - `npm --prefix web run build` PASS
+    - `npx jest --testPathPattern="WorkspaceHub|workspace-hub|useUnifiedWorkspaceData|HomeStartMenuOverlay|legacyRedirects" --no-coverage` PASS
+    - Full suite regression: `npm --prefix web test -- --runInBand` PASS with zero dangling references to deleted shells
+    - Production smoke (`npm run preview`, port 3000 - no dev server): four legacy tiles absent from home, single "Workspaces" tile present, every section navigable from the flat nav, every legacy URL redirects cleanly to its canonical `/workspace/*` path, dedicated device routes (`/mpx1`, `/tesira`, `/intelfx`, `/mcu`, `/maschine`, etc.) still load independently, NodeNavChip viewed-node state persists per section and does not bleed across sections, sidebar fits in ~240px without overflow on standard laptop viewports
+    - Grep sweep: `grep -rn "/platforms\|/physical-surfaces\|/artifacts\|/outboard-hardware" web/src/` — remaining hits only inside `legacyRedirects.tsx`, `advancedMenuItems.ts` (repointed), `HomeStartMenuOverlay.tsx` (exclusions), and dedicated device-route pages linking back
+- Scope exclusions:
+  - `UnifiedWorkspaceSideNav` is NOT touched or extended. Cluster Dashboard, MIDI Hub Shell, and any other current callers of that primitive are unaffected.
+  - Dedicated device routes are NOT absorbed into the hub — they keep their current URLs, file locations, and page logic.
+  - No backend API changes. The aggregator hook reuses existing frontend query functions.
+  - Legacy redirect routes are permanent — no cleanup task planned to remove them. They cost nothing and protect external bookmarks.
+- Licensing review: All touched files are MAP2-owned AGPL-covered repository artifacts; no third-party notices expected.
+- Plan reference: `/home/mm/.claude/plans/unified-workspace-hub.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 - planning only (no implementation yet)
