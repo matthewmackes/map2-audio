@@ -69,7 +69,8 @@ export function ExpressionOverlay({
           background: transparent;
           color: #9ca3af;
           font-family: var(--font-ui);
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size);
+          line-height: var(--cds-label-01-line-height);
           cursor: pointer;
           transition: all 0.15s ease;
           white-space: nowrap;
@@ -86,7 +87,8 @@ export function ExpressionOverlay({
           align-items: center;
           gap: 'var(--cds-spacing-03, 0.5rem)';
           font-family: var(--font-ui);
-          font-size: 14px;
+          font-size: var(--cds-heading-compact-01-font-size);
+          line-height: var(--cds-heading-compact-01-line-height);
           font-weight: 600;
           color: #f2f6ff;
         }

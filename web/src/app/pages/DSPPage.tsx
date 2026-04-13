@@ -383,7 +383,8 @@ const styles = `
     border: 1px solid #1e293b;
     border-radius: 6px;
     color: #6b7280;
-    font-size: 13px;
+    font-size: var(--cds-body-compact-01-font-size);
+    line-height: var(--cds-body-compact-01-line-height);
     padding: 8px 16px;
     cursor: pointer;
     transition: all 0.2s;
