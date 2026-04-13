@@ -28,7 +28,7 @@
   max-width: 100%;
   --effect-card-numeric-input-extra-width: 100px;
   overflow: hidden;
-  background: var(--cds-layer-01, var(--cds-layer, #262626));
+  background: var(--cds-layer, #262626);
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
   display: flex;
@@ -136,7 +136,7 @@
 
 .carbon-card-visualization {
   padding: var(--carbon-spacing-05);
-  background: var(--cds-layer-02, #262626);
+  background: var(--cds-layer-hover, #262626);
   border-bottom: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   display: flex;
   align-items: center;
@@ -163,7 +163,7 @@
 }
 
 .carbon-card-secondary-section {
-  background: var(--cds-layer-01, #1c1c1c);
+  background: var(--cds-layer, #1c1c1c);
   border-top: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
 }
 
@@ -177,7 +177,7 @@
   gap: var(--carbon-spacing-03);
   min-height: 40px;
   padding: var(--carbon-spacing-03) var(--carbon-spacing-05);
-  background: var(--cds-layer-02, #262626);
+  background: var(--cds-layer-hover, #262626);
   color: var(--cds-text-secondary, #c6c6c6);
   letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
   font-size: var(--cds-label-01-font-size, 0.75rem);
@@ -187,13 +187,13 @@
 
 .carbon-card-secondary-section-body {
   padding: var(--carbon-spacing-04) var(--carbon-spacing-05) var(--carbon-spacing-05);
-  background: var(--cds-layer-01, #1c1c1c);
+  background: var(--cds-layer, #1c1c1c);
 }
 
 /* ==================== Parameter Section ==================== */
 
 .carbon-param-section {
-  background: var(--cds-layer-02, #262626);
+  background: var(--cds-layer-hover, #262626);
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
   overflow: hidden;
@@ -287,7 +287,7 @@
   min-width: 0;
   min-height: 2.75rem;
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
-  background: var(--cds-field-02, var(--cds-layer-02, #262626));
+  background: var(--cds-field-02, var(--cds-layer-hover, #262626));
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
   display: flex;
@@ -328,7 +328,7 @@
   padding: 0 10px;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: 999px;
-  background: var(--cds-layer-01, #1c1c1c);
+  background: var(--cds-layer, #1c1c1c);
   color: var(--cds-text-secondary, #c6c6c6);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: var(--cds-label-01-line-height, 1rem);
@@ -360,7 +360,7 @@
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
-  background: color-mix(in srgb, var(--cds-layer-02, #262626) 82%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 82%, transparent);
 }
 
 .carbon-asset-selector-fact-label {
@@ -448,7 +448,7 @@
   padding: var(--carbon-spacing-03) var(--carbon-spacing-04);
   min-height: 32px;
   color: var(--cds-text-secondary, #c6c6c6);
-  background: var(--cds-layer-02, #262626);
+  background: var(--cds-layer-hover, #262626);
 }
 
 .carbon-card .cds--accordion__heading:hover {
@@ -475,7 +475,7 @@
 
 .carbon-card .cds--accordion__content {
   padding: var(--carbon-spacing-04);
-  background: var(--cds-layer-02, #262626);
+  background: var(--cds-layer-hover, #262626);
 }
 
 .carbon-card .carbon-card-accordion-item--more {
@@ -596,7 +596,7 @@
   padding: 0;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, #525252));
   border-radius: var(--carbon-card-radius);
-  background: var(--cds-layer-01, #1c1c1c);
+  background: var(--cds-layer, #1c1c1c);
   color: var(--cds-text-secondary, #c6c6c6);
   cursor: pointer;
   transition:

@@ -5,7 +5,7 @@
   padding: 3rem clamp(1.5rem, 3vw, 3rem) 2rem;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 22%, transparent) 0 0.9rem, transparent 0.9rem 100%),
-    linear-gradient(180deg, var(--cds-layer-02, #dde1e6) 0%, var(--cds-background, #f4f4f4) 100%);
+    linear-gradient(180deg, var(--cds-layer-hover, #dde1e6) 0%, var(--cds-background, #f4f4f4) 100%);
   color: var(--cds-text-primary, #161616);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -26,7 +26,7 @@
   min-height: clamp(4.75rem, 10vw, 6rem);
   padding: 0.9rem 1.15rem;
   border: 1px solid var(--cds-border-subtle, #c6c6c6);
-  background: var(--cds-layer-01, #ffffff);
+  background: var(--cds-layer, #ffffff);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 85%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
@@ -98,7 +98,7 @@
   min-inline-size: 2.75rem;
   min-block-size: 2.75rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 70%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 78%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 78%, transparent);
   color: var(--cds-icon-primary, #161616);
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 24px color-mix(in srgb, black 22%, transparent);
@@ -106,7 +106,7 @@
 
 .hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:hover,
 .hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
-  background: color-mix(in srgb, var(--cds-layer-01, #ffffff) 92%, var(--cds-link-primary, #0f62fe) 8%);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, var(--cds-link-primary, #0f62fe) 8%);
 }
 
 .hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
@@ -229,7 +229,7 @@
   max-height: 85vh;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
-  background: var(--cds-layer-01, #ffffff);
+  background: var(--cds-layer, #ffffff);
   box-shadow: none;
   animation: hp2-overlay-enter 180ms cubic-bezier(0.2, 0.84, 0.32, 1) both;
 }
@@ -254,7 +254,7 @@
   align-items: stretch;
   padding: 1.1rem 1.4rem 1rem;
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 82%, transparent);
-  background: var(--cds-layer-02, #f4f4f4);
+  background: var(--cds-layer-hover, #f4f4f4);
 }
 
 .hp2-overlay__header-main {
@@ -271,7 +271,7 @@
   width: 3.4rem;
   height: 3.4rem;
   border-radius: 0.7rem;
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer, #ffffff));
 }
 
 .hp2-overlay__header-icon {
@@ -322,7 +322,7 @@
 .hp2-overlay__header-action:hover,
 .hp2-overlay__header-action:focus-visible {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 28%, var(--cds-border-subtle, #c6c6c6));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer, #ffffff));
   outline: 2px solid var(--cds-focus, #0f62fe);
   outline-offset: 2px;
 }
@@ -334,7 +334,7 @@
   gap: 0.75rem;
   padding: 0.95rem 1.4rem 1rem;
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 76%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02, #f4f4f4) 58%, var(--cds-layer-01, #ffffff));
+  background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 58%, var(--cds-layer, #ffffff));
 }
 
 .hp2-overlay__summary-row {
@@ -366,7 +366,7 @@
   min-height: 1.9rem;
   padding: 0.35rem 0.7rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
-  background: var(--cds-layer-01, #ffffff);
+  background: var(--cds-layer, #ffffff);
   color: var(--cds-text-primary, var(--text-primary));
   font-size: 0.72rem;
   font-weight: 500;
@@ -410,13 +410,13 @@
 
 .hp2-overlay__device-tag.cds--tag {
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
-  background: var(--cds-layer-01, #ffffff);
+  background: var(--cds-layer, #ffffff);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
 .hp2-overlay__device-empty {
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
-  background: var(--cds-layer-01, #ffffff);
+  background: var(--cds-layer, #ffffff);
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
@@ -453,7 +453,7 @@
   min-height: 2.5rem;
   padding: 0 1rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 82%, transparent);
-  background: var(--cds-layer-02, #f4f4f4);
+  background: var(--cds-layer-hover, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
   font: inherit;
   font-size: 0.82rem;
@@ -465,7 +465,7 @@
 .hp2-overlay__power-button:focus-visible,
 .hp2-overlay__power-button.is-active {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 32%, var(--cds-border-subtle, #c6c6c6));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, var(--cds-layer-02, #f4f4f4));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, var(--cds-layer-hover, #f4f4f4));
   outline: 2px solid var(--cds-focus, #0f62fe);
   outline-offset: 2px;
 }
@@ -478,14 +478,14 @@
   min-height: 2.5rem;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 84%, transparent);
-  background: var(--cds-layer-02, #f4f4f4);
+  background: var(--cds-layer-hover, #f4f4f4);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
 .hp2-overlay__power-menu-trigger.cds--overflow-menu:hover,
 .hp2-overlay__power-menu-trigger.cds--overflow-menu:focus-visible,
 .hp2-overlay__power-menu-trigger.cds--overflow-menu.is-active {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, var(--cds-layer-02, #f4f4f4));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, var(--cds-layer-hover, #f4f4f4));
   outline: 2px solid var(--cds-focus, #0f62fe);
   outline-offset: 2px;
 }

@@ -37,8 +37,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, var(--cds-background, transparent) 8%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 84%, var(--cds-background, transparent) 16%) 100%
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, transparent) 8%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 84%, var(--cds-background, transparent) 16%) 100%
     );
 }
 
@@ -52,7 +52,7 @@
   min-width: min(24rem, 100%);
   padding: 1.5rem 1.75rem;
   text-align: center;
-  background: var(--cds-layer-01, var(--surface));
+  background: var(--cds-layer, var(--surface));
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 52%, transparent),
@@ -97,7 +97,7 @@
   text-align: center;
   color: var(--cds-text-helper, var(--text-tertiary));
   font-size: 0.8125rem;
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 88%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, transparent);
 }
 
 .hm-page__export-copy {
@@ -119,7 +119,7 @@
   gap: 16px;
   flex-wrap: wrap;
   padding: 0.9rem 1.1rem;
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 48%, transparent),
@@ -156,7 +156,7 @@
   font-size: 13px;
   line-height: 1.5;
   border-inline-start: 3px solid;
-  background: var(--cds-layer-01, var(--surface));
+  background: var(--cds-layer, var(--surface));
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 42%, transparent),
@@ -198,12 +198,12 @@
 }
 
 .hm-btn--ghost {
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 94%, transparent);
   color: var(--cds-text-primary, var(--text-primary));
 }
 
 .hm-btn--ghost:hover {
-  background: color-mix(in srgb, var(--cds-layer-03, var(--surface-3)) 96%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-selected, var(--surface-3)) 96%, transparent);
 }
 
 .hm-btn--ghost:disabled {
@@ -212,7 +212,7 @@
 }
 
 .hm-btn--active {
-  background: color-mix(in srgb, var(--cds-layer-selected, var(--surface-3)) 82%, var(--cds-layer-02, var(--surface-2)) 18%);
+  background: color-mix(in srgb, var(--cds-layer-selected, var(--surface-3)) 82%, var(--cds-layer-hover, var(--surface-2)) 18%);
   border-color: var(--interactive);
   color: var(--interactive);
 }
@@ -260,7 +260,7 @@
   flex-wrap: wrap;
   padding: 0.8rem 1rem;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 40%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
@@ -287,7 +287,7 @@
 }
 
 .hm-kpi-card {
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 94%, transparent);
   padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-06, 1.5rem) var(--cds-spacing-05, 1rem);
   min-height: 8rem;
 }
@@ -320,7 +320,7 @@
 
 .hm-tabs {
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 94%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 38%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
@@ -329,7 +329,7 @@
 .hm-tabs__nav {
   display: flex;
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface)) 94%, transparent);
   overflow-x: auto;
 }
 
@@ -360,13 +360,13 @@
 
 .hm-tabs__panel {
   padding: var(--cds-spacing-07, 2rem);
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 96%, transparent);
 }
 
 /* ── Section card (shared) ────────────────────────────────────── */
 
 .hm-section-card {
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-2)) 96%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface-2)) 96%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   padding: var(--cds-spacing-06, 1.5rem);
   box-shadow:
@@ -382,8 +382,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 68%, var(--cds-layer-01, var(--surface)) 32%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 68%, var(--cds-layer, var(--surface)) 32%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 96%, transparent) 100%
     );
 }
 
@@ -500,7 +500,7 @@
 .hm-cluster-table {
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 90%, transparent);
   overflow-x: auto;
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 96%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 96%, transparent);
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 44%, transparent),
     inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
@@ -517,8 +517,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 96%, white 4%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 96%, white 4%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
 }
@@ -537,7 +537,7 @@
 
 .hm-cluster-table__row {
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent);
 }
 
 .hm-cluster-table__row:last-child { border-bottom: none; }
@@ -643,7 +643,7 @@
 }
 
 .hm-fan-card {
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-3)) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: 12px;
   box-shadow:
@@ -720,7 +720,7 @@
 }
 
 .hm-disk-metric {
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-3)) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   box-shadow:
@@ -780,8 +780,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 66%, var(--cds-layer-01, var(--surface)) 34%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 66%, var(--cds-layer, var(--surface)) 34%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   border-inline-start: 3px solid color-mix(in srgb, var(--cds-border-strong, var(--border-strong)) 96%, transparent);
@@ -820,8 +820,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, white 10%, var(--cds-layer-02, var(--surface-3))) 0%,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 96%, transparent) 100%
+      color-mix(in srgb, white 10%, var(--cds-layer-hover, var(--surface-3))) 0%,
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-3)) 96%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   display: flex;
@@ -912,8 +912,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--interactive) 8%, var(--cds-layer-02, var(--surface-2))) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--interactive) 8%, var(--cds-layer-hover, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--interactive) 32%, transparent);
   border-inline-start: 3px solid color-mix(in srgb, var(--interactive) 96%, transparent);
@@ -950,8 +950,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, white 6%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   border-inline-start: 3px solid color-mix(in srgb, var(--cds-border-strong, var(--border)) 88%, transparent);
@@ -1038,8 +1038,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--interactive) 6%, var(--cds-layer-02, var(--surface-2))) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--interactive) 6%, var(--cds-layer-hover, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   padding: var(--cds-spacing-06, 1.5rem);
@@ -1064,7 +1064,7 @@
 @media (max-width: 560px) { .hm-guidelines__grid { grid-template-columns: 1fr; } }
 
 .hm-guideline-item {
-  background: color-mix(in srgb, var(--cds-layer-02, var(--surface-3)) 94%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-3)) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 86%, transparent);
   padding: 12px 14px;
   box-shadow:
@@ -1105,8 +1105,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--cds-layer-02, var(--surface-2)) 94%, white 6%) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 94%, white 6%) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   box-shadow:
     inset 1px 1px 0 color-mix(in srgb, white 36%, transparent),
@@ -1140,7 +1140,7 @@
 @media (max-width: 700px) { .hm-perf__kpis { grid-template-columns: repeat(2, 1fr); } }
 
 .hm-perf-tile {
-  background: color-mix(in srgb, var(--cds-layer-01, var(--surface-2)) 96%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, var(--surface-2)) 96%, transparent);
   padding: 16px 18px;
 }
 
@@ -1236,8 +1236,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--interactive) 5%, var(--cds-layer-02, var(--surface-2))) 0%,
-      color-mix(in srgb, var(--cds-layer-01, var(--surface)) 98%, transparent) 100%
+      color-mix(in srgb, var(--interactive) 5%, var(--cds-layer-hover, var(--surface-2))) 0%,
+      color-mix(in srgb, var(--cds-layer, var(--surface)) 98%, transparent) 100%
     );
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 88%, transparent);
   border-inline-start: 3px solid color-mix(in srgb, var(--interactive) 96%, transparent);
