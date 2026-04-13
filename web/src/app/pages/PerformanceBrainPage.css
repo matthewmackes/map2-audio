@@ -43,13 +43,13 @@
 }
 
 .brain-page__rail-title {
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 700;
 }
 
 .brain-page__rail-meta {
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -81,7 +81,7 @@
 
 .brain-page__rail-eyebrow {
   color: var(--cds-text-helper);
-  font-size: 0.7rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -113,7 +113,7 @@
 .brain-page__panel-title,
 .brain-page__toolbar-label {
   color: var(--cds-text-helper);
-  font-size: 0.72rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -224,7 +224,7 @@
 .brain-page__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .brain-page__table th,

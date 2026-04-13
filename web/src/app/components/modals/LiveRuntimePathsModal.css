@@ -36,7 +36,7 @@
 .live-runtime-paths-modal__row-copy p,
 .live-runtime-paths-modal__mismatch-copy > p:last-child {
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.4;
 }
 
@@ -69,7 +69,7 @@
 
 .live-runtime-paths-modal__kicker,
 .live-runtime-paths-modal__path-label {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -118,7 +118,7 @@
 
 .live-runtime-paths-modal__row-copy strong,
 .live-runtime-paths-modal__summary-main strong {
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   color: var(--cds-text-primary, var(--text-primary));
 }
@@ -173,7 +173,7 @@
 .live-runtime-paths-modal__miniature-label,
 .live-runtime-paths-modal__miniature-empty {
   color: var(--cds-text-primary, var(--text-primary));
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -230,7 +230,7 @@
 }
 
 .live-runtime-paths-modal__selector-label {
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   line-height: 1.2;
 }
