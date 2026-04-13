@@ -229,7 +229,7 @@
   place-items: center;
   background: var(--cds-link-primary);
   color: white;
-  font-size: 0.625rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
 }
 

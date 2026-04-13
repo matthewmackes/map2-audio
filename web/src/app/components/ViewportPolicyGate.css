@@ -74,7 +74,7 @@
   margin: 0;
   max-width: 40rem;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   line-height: 1.55;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .viewport-policy-screen__metric strong {
-  font-size: 1.25rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   letter-spacing: 0.04em;
 }
 
