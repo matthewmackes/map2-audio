@@ -490,7 +490,7 @@ export function MidiMappingDialog({
           background: rgba(0, 157, 154, 0.1);
           color: #009d9a;
           font-family: var(--font-ui);
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size, 0.75rem);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.15s ease;
@@ -508,7 +508,7 @@ export function MidiMappingDialog({
           display: flex;
           align-items: center;
           gap: 'var(--cds-spacing-04, 0.75rem)';
-          font-size: 16px;
+          font-size: var(--cds-heading-02-font-size, 1rem);
           font-weight: 600;
           color: #f2f6ff;
         }
@@ -544,7 +544,7 @@ export function MidiMappingDialog({
           background: rgba(255, 51, 51, 0.15);
           border-bottom: 1px solid rgba(255, 51, 51, 0.3);
           color: #ff6b6b;
-          font-size: 13px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
         }
 
         .midi-mapping-dialog-content {
@@ -558,7 +558,7 @@ export function MidiMappingDialog({
           padding: 40px 20px;
           text-align: center;
           color: #6b7280;
-          font-size: 14px;
+          font-size: var(--cds-heading-02-font-size, 1rem);
         }
 
         .midi-mapping-table {
@@ -626,7 +626,7 @@ export function MidiMappingDialog({
         }
 
         .param-name {
-          font-size: 13px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           color: #e0e0e0;
         }
 
@@ -637,7 +637,7 @@ export function MidiMappingDialog({
           border-radius: 4px;
           background: rgba(0, 0, 0, 0.3);
           color: #f2f6ff;
-          font-size: 13px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           text-align: center;
         }
 
@@ -658,7 +658,7 @@ export function MidiMappingDialog({
           border-radius: 4px;
           background: rgba(0, 0, 0, 0.3);
           color: #f2f6ff;
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size, 0.75rem);
           cursor: pointer;
         }
 
@@ -709,7 +709,7 @@ export function MidiMappingDialog({
         }
 
         .unsaved-indicator {
-          font-size: 12px;
+          font-size: var(--cds-label-01-font-size, 0.75rem);
           color: var(--warning, #ffaa00);
         }
 
@@ -726,7 +726,7 @@ export function MidiMappingDialog({
           padding: 8px 16px;
           border: none;
           border-radius: 6px;
-          font-size: 13px;
+          font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.15s ease;

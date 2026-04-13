@@ -174,11 +174,11 @@ export function ReportingTab() {
       .meta { color: #94a3b8; margin-bottom: 20px; }
       .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
       .card { border: 1px solid #334155; border-radius: 8px; padding: 12px; background: #111827; }
-      .label { color: #94a3b8; font-size: 12px; }
-      .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+      .label { color: #94a3b8; font-size: 0.75rem; }
+      .value { font-size: 1.75rem; font-weight: 700; margin-top: 6px; }
       table { width: 100%; border-collapse: collapse; background: #111827; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
-      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: 13px; }
-      th { color: #94a3b8; font-weight: 600; font-size: 11px; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #1e293b; font-size: 0.875rem; }
+      th { color: #94a3b8; font-weight: 600; font-size: 0.75rem; }
     </style>
   </head>
   <body>
@@ -230,11 +230,11 @@ export function ReportingTab() {
       .muted { color: #6b7280; margin-bottom: 20px; }
       .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
       .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; background: #f9fafb; }
-      .k { font-size: 12px; color: #6b7280; }
-      .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+      .k { font-size: 0.75rem; color: #6b7280; }
+      .v { font-size: 1.75rem; font-weight: 700; margin-top: 4px; }
       table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
-      th { font-size: 11px; color: #6b7280; }
+      th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 0.875rem; }
+      th { font-size: 0.75rem; color: #6b7280; }
     </style>
   </head>
   <body>
