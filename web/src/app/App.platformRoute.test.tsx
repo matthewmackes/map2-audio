@@ -66,6 +66,14 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
   },
 }))
 
+jest.mock('./pages/workspace-hub/platforms/PlatformWorkspaceSection', () => ({
+  PlatformWorkspaceSection: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-platform-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/WorkspaceHubShell', () => ({
   WorkspaceHubShell: () => {
     const { Outlet, useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -206,7 +214,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-placeholder')).toHaveTextContent('Platforms|/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 

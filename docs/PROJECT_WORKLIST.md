@@ -23651,7 +23651,7 @@ Subtasks:
     - Required outputs: relocated section files, nav item sources, and section-level regression updates.
     Subtasks:
       - ID: T1004-subC-subA
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Move the Platforms route body under `workspace-hub` and remount it at `/workspace/platforms/*`
         Description:
         - Goal / acceptance criteria: Relocate the routed Platforms body into `web/src/app/pages/workspace-hub/platforms/`, preserve the existing layer/panel navigation behavior, and mount the canonical Platforms section inside `WorkspaceHubShell` without removing the legacy `/platforms/*` route yet.
@@ -23661,9 +23661,18 @@ Subtasks:
         - Required outputs: relocated Platforms page, `/workspace/platforms/*` route wiring, and focused route regression coverage.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 18:08 EDT - Codex
+        Last updated: 2026-04-13 18:10 EDT - Codex
+        Completion notes:
+        - Added `web/src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.tsx` as the relocated Platforms route body, preserving the existing `PlatformModalContent` layer/panel navigation while switching the canonical in-section path builder to `/workspace/platforms/*`.
+        - Extended `web/src/app/platform/routes.ts` with workspace-hub platform path helpers and redirect-builder injection so the new Platforms section can reuse the existing alias resolution behavior without breaking the legacy `/platforms/*` route contract.
+        - Rewired `web/src/app/App.tsx` so `/workspace/platforms/:workspace` now mounts the relocated Platforms body instead of the placeholder, and updated route tests to prove the canonical workspace entry path resolves into the real Platforms section.
+        - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+        Validation:
+        - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS (`2 suites, 18 tests`; React Router future-flag and suspended-resource warnings only)
+        - `npm --prefix web run typecheck` -> PASS
+        - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subB
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Move Physical Surfaces pages under `workspace-hub` and remount them at `/workspace/physical-surfaces/*`
         Description:
         - Goal / acceptance criteria: Relocate the overview and unit pages into `web/src/app/pages/workspace-hub/physical-surfaces/`, wire them to the hub shell context, and keep all dedicated controller routes standalone.
@@ -23672,8 +23681,8 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: relocated Physical Surfaces pages, canonical `/workspace/physical-surfaces/*` routes, and focused page regressions.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 18:08 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 18:10 EDT - Codex
       - ID: T1004-subC-subC
         Status: [ ] Todo
         Title: Move Outboard Hardware pages under `workspace-hub` and remount them at `/workspace/outboard-hardware/*`
@@ -23699,7 +23708,7 @@ Subtasks:
         Assigned to: Unassigned
         Last updated: 2026-04-13 18:08 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 18:08 EDT - Codex
+    Last updated: 2026-04-13 18:10 EDT - Codex
   - ID: T1004-subD
     Status: [ ] Todo
     Title: Wire legacy redirects and launcher/menu consolidation

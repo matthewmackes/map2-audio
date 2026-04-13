@@ -27,6 +27,7 @@ const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => 
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
 const PlatformWorkspacePage = lazy(() => import('./pages/PlatformWorkspacePage').then(m => ({ default: m.PlatformWorkspacePage })))
+const PlatformWorkspaceSection = lazy(() => import('./pages/workspace-hub/platforms/PlatformWorkspaceSection').then(m => ({ default: m.PlatformWorkspaceSection })))
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const WorkspaceHubPlaceholder = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubPlaceholder })))
@@ -318,8 +319,8 @@ export function App() {
                                 <Route path="/workspace/*" element={<WorkspaceHubShell />}>
                                   <Route index element={<WorkspaceHubIndexRedirect />} />
                                   <Route
-                                    path="platforms/overview"
-                                    element={<WorkspaceHubPlaceholder sectionKey="platforms" title="Platforms" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    path="platforms/:workspace"
+                                    element={<PlatformWorkspaceSection />}
                                   />
                                   <Route
                                     path="physical-surfaces"

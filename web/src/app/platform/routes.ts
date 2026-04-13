@@ -2,6 +2,8 @@ import { isStandalonePanel, type StandalonePanel } from '../data/platformMenuIte
 import { isPlatformLayerId, type PlatformLayerId } from './model'
 
 export type PlatformWorkspaceId = PlatformLayerId | StandalonePanel
+export const PLATFORM_WORKSPACE_BASE_PATH = '/platforms'
+export const WORKSPACE_HUB_PLATFORM_BASE_PATH = '/workspace/platforms'
 
 const LEGACY_PLATFORM_LAYER_REDIRECTS: Record<string, PlatformLayerId> = {
   'single-node': 'management',
@@ -12,8 +14,19 @@ export function isPlatformWorkspaceId(value: string | null | undefined): value i
   return isPlatformLayerId(value) || isStandalonePanel(value)
 }
 
+function buildPlatformWorkspacePathForBase(
+  basePath: string,
+  workspace: PlatformWorkspaceId = 'overview',
+): string {
+  return `${basePath}/${workspace}`
+}
+
 export function buildPlatformWorkspacePath(workspace: PlatformWorkspaceId = 'overview'): string {
-  return `/platforms/${workspace}`
+  return buildPlatformWorkspacePathForBase(PLATFORM_WORKSPACE_BASE_PATH, workspace)
+}
+
+export function buildWorkspaceHubPlatformPath(workspace: PlatformWorkspaceId = 'overview'): string {
+  return buildPlatformWorkspacePathForBase(WORKSPACE_HUB_PLATFORM_BASE_PATH, workspace)
 }
 
 function normalizeSearchValue(value: string | null | undefined): string | null {
@@ -60,7 +73,10 @@ export function resolvePlatformWorkspaceTarget(workspace: string | null | undefi
   return null
 }
 
-export function buildLegacyPlatformWorkspaceRedirectPath(workspace: string | null | undefined): string | null {
+export function buildLegacyPlatformWorkspaceRedirectPath(
+  workspace: string | null | undefined,
+  buildPath: (workspace: PlatformWorkspaceId) => string = buildPlatformWorkspacePath,
+): string | null {
   if (!workspace) {
     return null
   }
@@ -70,17 +86,20 @@ export function buildLegacyPlatformWorkspaceRedirectPath(workspace: string | nul
   }
 
   const redirectedLayer = LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
-  return redirectedLayer ? buildPlatformWorkspacePath(redirectedLayer) : null
+  return redirectedLayer ? buildPath(redirectedLayer) : null
 }
 
-export function buildLegacyPlatformRedirectPath(searchParams: URLSearchParams): string | null {
+export function buildLegacyPlatformRedirectPath(
+  searchParams: URLSearchParams,
+  buildPath: (workspace: PlatformWorkspaceId) => string = buildPlatformWorkspacePath,
+): string | null {
   const layer = searchParams.get('layer')
   const panel = searchParams.get('panel')
   const redirectedLayer = layer ? LEGACY_PLATFORM_LAYER_REDIRECTS[layer] ?? layer : layer
   const target = panel && isStandalonePanel(panel)
-    ? buildPlatformWorkspacePath(panel)
+    ? buildPath(panel)
     : redirectedLayer && isPlatformLayerId(redirectedLayer)
-      ? buildPlatformWorkspacePath(redirectedLayer)
+      ? buildPath(redirectedLayer)
       : null
 
   if (!target) {
