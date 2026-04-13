@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1983** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1986** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`214eec68`](https://github.com/matthewmackes/map2-audio/commit/214eec6803eec9c93a62dd22e3eeb39dbc805938) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
+| [`0434011b`](https://github.com/matthewmackes/map2-audio/commit/0434011b29eae5bc7d630a26f2ba59b7985e7dad) | Ship T1002 node-targeted outboard route launches | Map2 Audio | 2026-04-13 |
+| [`6898f36c`](https://github.com/matthewmackes/map2-audio/commit/6898f36c1b3c377064b344af9d330dc6615ce2aa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`e232b835`](https://github.com/matthewmackes/map2-audio/commit/e232b8351016fe6cd64acae112af1fb807211b0a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`5704f2dd`](https://github.com/matthewmackes/map2-audio/commit/5704f2dd7af0e5752d9c02b8c49b392ee64c3279) | Ship T1001 outboard readiness metrics and filters | Map2 Audio | 2026-04-13 |
 | [`d87e3a4a`](https://github.com/matthewmackes/map2-audio/commit/d87e3a4a8b26decf6c6658cd7cff0c94dada2095) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`d7eb1bbf`](https://github.com/matthewmackes/map2-audio/commit/d7eb1bbfe74f66b463398ed42073a709c709dd17) | Add outboard hardware live status rollups | Map2 Audio | 2026-04-13 |
 | [`f67cf442`](https://github.com/matthewmackes/map2-audio/commit/f67cf44245ad46adceb3c73ce0c99771e2dae6c2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`2f9eba42`](https://github.com/matthewmackes/map2-audio/commit/2f9eba42c7b2c40e5d3932da8234f3258307fd49) | Add outboard launcher desktop smoke | Map2 Audio | 2026-04-13 |
-| [`41436b4a`](https://github.com/matthewmackes/map2-audio/commit/41436b4a418fc994ac98eb7922a7eb0ed283006e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`1045a477`](https://github.com/matthewmackes/map2-audio/commit/1045a477d44dc79df887c9164eb04ca672884879) | Add unified outboard hardware workspace | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
