@@ -1,9 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Activity, Book, Branch, Categories, Music, Play, SettingsAdjust, Waveform } from '@carbon/icons-react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
+import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MPX1/programNumber'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -90,6 +91,7 @@ function findParamByCandidates(params: MPX1RegistryParam[] | undefined, candidat
 
 export function MPX1Page() {
   const location = useLocation()
+  const navigate = useNavigate()
   const activeSection = sectionFromPath(location.pathname)
   const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
   const { location: deviceLocation, isLoading: locationLoading } = useDeviceLocation('lexicon-mpx1')
@@ -200,6 +202,20 @@ export function MPX1Page() {
     setLcdText,
   }), [activeSection, apiNodeId, currentProgramName, lcdText, mpx1])
 
+  const navigationItems = useMemo<UnifiedWorkspaceSideNavItem[]>(
+    () => SIDEBAR_SECTIONS.map((section) => ({
+      key: section.id,
+      label: section.label,
+      description: `MPX1 ${section.label.toLowerCase()} workspace for the current program, routing, and performance state.`,
+      to: section.to,
+      icon: section.icon,
+      active: activeSection === section.id,
+      onOpen: () => navigate(section.to),
+      meta: activeSection === section.id ? 'Current' : undefined,
+    })),
+    [activeSection, navigate],
+  )
+
   const renderShell = (content: React.ReactNode) => (
     <>
       <ShellWindowTitleStrip />
@@ -265,23 +281,26 @@ export function MPX1Page() {
     <MPX1PageContext.Provider value={contextValue}>
       {renderShell(
         <>
-          <aside className="mpx1-shell__sidebar" aria-label="MPX1 section navigation">
-            {SIDEBAR_SECTIONS.map((section) => {
-              const SectionIcon = section.icon
-              return (
-                <NavLink
-                  key={section.id}
-                  to={section.to}
-                  title={section.label}
-                  aria-label={section.label}
-                  className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
-                  style={{ '--section-accent': section.color } as React.CSSProperties}
-                >
-                  <SectionIcon size={18} aria-hidden />
-                </NavLink>
-              )
-            })}
-          </aside>
+          <UnifiedWorkspaceSideNav
+            ariaLabel="MPX1 section navigation"
+            className="mpx1-shell__sidebar"
+            eyebrow="Rack editor"
+            title="Lexicon MPX-1"
+            description="One tree for front-panel control, deep editing, MIDI mapping, libraries, performance, diagnostics, and signal flow."
+            items={navigationItems}
+            metaBlocks={[
+              { key: 'mpx1-node', label: 'Node', value: selectedNode?.hostname ?? selectedNodeId },
+              { key: 'mpx1-program', label: 'Program', value: `${formatMpx1ProgramNumber(currentProgram)} ${currentProgramName}` },
+              { key: 'mpx1-link', label: 'Connection', value: mpx1.state?.connected ? 'Online' : 'Offline' },
+            ]}
+            callout={{
+              kind: remoteSelected ? 'warning' : 'info',
+              text: remoteSelected
+                ? `Control is proxied to ${selectedNode?.hostname ?? selectedNodeId}.`
+                : 'Direct local control path is active for the MPX-1 rack.',
+            }}
+            storageKey="mpx1-rack"
+          />
 
           <div className="mpx1-shell__main">
             {remoteSelected ? (

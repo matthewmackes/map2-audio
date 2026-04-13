@@ -6,46 +6,21 @@
 
   min-height: calc(100vh - 56px);
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
   background: var(--surface);
 }
 
 .mpx1-shell__sidebar {
-  width: 56px;
   border-right: 1px solid var(--mpx1-shell-border);
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-03, 0.5rem);
-}
-
-.mpx1-shell__sidebar-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 0;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
-}
-
-.mpx1-shell__sidebar-btn:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-3);
-  color: var(--text-primary);
-}
-
-.mpx1-shell__sidebar-btn.is-active {
-  border-color: var(--interactive);
-  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
-  color: var(--text-primary);
-  box-shadow: none;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  min-height: calc(100vh - 56px);
+  --workspace-side-nav-border: color-mix(in srgb, var(--border) 88%, transparent);
+  --workspace-side-nav-surface:
+    linear-gradient(180deg, color-mix(in srgb, var(--interactive) 9%, var(--surface)) 0%, var(--surface) 100%);
+  --workspace-side-nav-surface-hover: color-mix(in srgb, var(--interactive) 6%, var(--surface-2));
+  --workspace-side-nav-surface-selected: color-mix(in srgb, var(--interactive) 12%, var(--surface-2));
 }
 
 .mpx1-shell__main {
@@ -266,22 +241,10 @@
   }
 
   .mpx1-shell__sidebar {
-    width: 100%;
     border-right: 0;
     border-bottom: 1px solid var(--mpx1-shell-border);
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 8px;
-    scroll-snap-type: x mandatory;
-  }
-
-  .mpx1-shell__sidebar-btn {
-    flex: 0 0 auto;
-    min-height: 44px;
-    min-width: 44px;
-    scroll-snap-align: start;
+    position: static;
+    min-height: 0;
   }
 
   .mpx1-shell__content {

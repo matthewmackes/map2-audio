@@ -122,7 +122,7 @@
     inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
 }
 
-.platform-shell__sidebar .workspace-side-nav__item {
+.platform-shell__sidebar .workspace-side-nav__tree .workspace-side-nav__node {
   background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--platform-shell-surface) 8%);
   border-top: 1px solid var(--platform-shell-border-light);
   border-left: 1px solid var(--platform-shell-border-light);
@@ -133,17 +133,17 @@
     inset -1px -1px 0 color-mix(in srgb, black 7%, transparent);
 }
 
-.platform-shell__sidebar .workspace-side-nav__item.is-selected {
+.platform-shell__sidebar .workspace-side-nav__tree .workspace-side-nav__node.is-selected {
   border-right-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 46%, var(--platform-shell-border-strong));
   border-bottom-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 54%, var(--platform-shell-border-strong));
 }
 
-.platform-shell__sidebar .workspace-side-nav__item.is-utility {
+.platform-shell__sidebar .workspace-side-nav__tree .workspace-side-nav__node.is-utility {
   border-right-color: color-mix(in srgb, var(--cds-support-success) 26%, var(--platform-shell-border-strong));
 }
 
-.platform-shell__sidebar .workspace-side-nav__item.is-utility:hover,
-.platform-shell__sidebar .workspace-side-nav__item.is-utility.is-selected {
+.platform-shell__sidebar .workspace-side-nav__tree .workspace-side-nav__node.is-utility:hover,
+.platform-shell__sidebar .workspace-side-nav__tree .workspace-side-nav__node.is-utility.is-selected {
   background: color-mix(in srgb, var(--cds-support-success) 14%, var(--cds-layer-hover));
   border-right-color: color-mix(in srgb, var(--cds-support-success) 42%, var(--platform-shell-border-strong));
   border-bottom-color: color-mix(in srgb, var(--cds-support-success) 44%, var(--platform-shell-border-strong));
@@ -887,10 +887,6 @@
     order: -1;
   }
 
-  .platform-shell__sidebar .workspace-side-nav__list,
-  .platform-shell__sidebar .workspace-side-nav__footer {
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  }
 }
 
 @media (max-width: 960px) {
@@ -898,18 +894,9 @@
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .platform-shell__sidebar .workspace-side-nav__list,
-  .platform-shell__sidebar .workspace-side-nav__footer {
-    grid-template-columns: 1fr;
-  }
-
-  .platform-shell__sidebar .workspace-side-nav__item {
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .platform-shell__sidebar .workspace-side-nav__item-main {
-    padding: 0.72rem 0.75rem;
+  .platform-shell__sidebar .workspace-side-nav__tree .cds--tree-node__label {
+    padding-block: 0.72rem;
+    padding-inline-end: 0.75rem;
   }
 }
 

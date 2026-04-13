@@ -27,6 +27,7 @@ import {
 } from '../data/categoryStyles'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
@@ -777,7 +778,10 @@ export function ThemePage() {
     activeCategoryTriggerRef.current?.focus({ preventScroll: true })
   }
 
+  const [activeNavSection, setActiveNavSection] = useState<string>(THEME_PAGE_SECTION_IDS.library)
+
   const scrollToSection = (sectionId: string) => {
+    setActiveNavSection(sectionId)
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -796,6 +800,30 @@ export function ThemePage() {
     }
   })()
 
+  const themeSectionNavItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => {
+    const iconBySectionId: Record<string, typeof PaintBrush> = {
+      [THEME_PAGE_SECTION_IDS.library]: Search,
+      [THEME_PAGE_SECTION_IDS.preview]: PaintBrush,
+      [THEME_PAGE_SECTION_IDS.colorScheme]: PaintBrush,
+      [THEME_PAGE_SECTION_IDS.font]: Checkmark,
+      [THEME_PAGE_SECTION_IDS.tokenStudio]: Settings,
+      [THEME_PAGE_SECTION_IDS.appearanceAssets]: Accessibility,
+      [THEME_PAGE_SECTION_IDS.personalization]: Loop,
+      [THEME_PAGE_SECTION_IDS.behavior]: Settings,
+    }
+
+    return THEME_PAGE_SECTION_LINKS.map((section) => ({
+      key: section.id,
+      label: section.label,
+      description: `Jump to the ${section.label.toLowerCase()} editor section in the Theme workspace.`,
+      to: `#${section.id}`,
+      icon: iconBySectionId[section.id] ?? PaintBrush,
+      active: activeNavSection === section.id,
+      onOpen: () => scrollToSection(section.id),
+      meta: activeNavSection === section.id ? 'Current' : undefined,
+    }))
+  }, [activeNavSection])
+
   const desktopThemeDialog = (
     <>
       <header className="theme-page__route-head">
@@ -812,52 +840,62 @@ export function ThemePage() {
       </header>
 
       <section className="theme-page__desktop-dialog">
-        <nav className="theme-page__section-nav" aria-label="Theme sections">
-          {THEME_PAGE_SECTION_LINKS.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              className="theme-page__section-nav-link"
-              onClick={() => scrollToSection(section.id)}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
+        <div className="theme-page__workspace-shell">
+          <UnifiedWorkspaceSideNav
+            ariaLabel="Theme sections"
+            className="theme-page__tree-nav"
+            eyebrow="Appearance editor"
+            title="Theme"
+            description="One tree for library, preview, color, type, tokens, assets, personalization, and behavior tuning."
+            items={themeSectionNavItems}
+            metaBlocks={[
+              { key: 'theme-active', label: 'Active theme', value: activeThemeLabel },
+              { key: 'theme-carbon', label: 'Carbon base', value: carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme) },
+              { key: 'theme-preview', label: 'Preview focus', value: previewFocusLabel },
+            ]}
+            callout={{
+              kind: draftDirty ? 'warning' : 'info',
+              text: draftDirty
+                ? 'Draft theme edits are active in preview and not yet committed to the live shell.'
+                : 'The live shell theme matches the values shown in this workspace.',
+            }}
+            storageKey="theme-workspace"
+          />
 
-        <div className="theme-page__desktop-titlebar">
-          <div className="theme-page__desktop-titlecopy">
-            <strong>Desktop Themes</strong>
-            <span>Preview the active shell, load a preset or direction, then tune tokens and assets from the same editor.</span>
-          </div>
-          <div className="theme-page__desktop-titlemeta">
-            <div className="theme-page__section-tags">
-              <Tag type="blue" size="sm">{activeThemeLabel}</Tag>
-              <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme)}</Tag>
-              <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
-              <Tag type={draftDirty ? 'warm-gray' : 'green'} size="sm">
-                {draftDirty ? 'Draft preview active' : 'Live shell'}
-              </Tag>
+          <div className="theme-page__workspace-content">
+            <div className="theme-page__desktop-titlebar">
+              <div className="theme-page__desktop-titlecopy">
+                <strong>Desktop Themes</strong>
+                <span>Preview the active shell, load a preset or direction, then tune tokens and assets from the same editor.</span>
+              </div>
+              <div className="theme-page__desktop-titlemeta">
+                <div className="theme-page__section-tags">
+                  <Tag type="blue" size="sm">{activeThemeLabel}</Tag>
+                  <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme)}</Tag>
+                  <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
+                  <Tag type={draftDirty ? 'warm-gray' : 'green'} size="sm">
+                    {draftDirty ? 'Draft preview active' : 'Live shell'}
+                  </Tag>
+                </div>
+                <div className="theme-page__desktop-titlecontrols" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
             </div>
-            <div className="theme-page__desktop-titlecontrols" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-        </div>
 
-        <div className="theme-page__desktop-main">
-          <div className="theme-page__desktop-column theme-page__desktop-column--library">
-            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.library}>
-              <legend>Theme selection</legend>
-              <div className="theme-page__catalog-grid">
-                <section className="theme-page__catalog-block">
-                  <div className="theme-page__dialog-subhead">
-                    <strong>Core Carbon themes</strong>
-                    <Tag type="cool-gray" size="sm">{CORE_THEME_IDS.length}</Tag>
-                  </div>
-                  <div className="theme-page__catalog-list">
+            <div className="theme-page__desktop-main">
+              <div className="theme-page__desktop-column theme-page__desktop-column--library">
+                <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.library}>
+                  <legend>Theme selection</legend>
+                  <div className="theme-page__catalog-grid">
+                    <section className="theme-page__catalog-block">
+                      <div className="theme-page__dialog-subhead">
+                        <strong>Core Carbon themes</strong>
+                        <Tag type="cool-gray" size="sm">{CORE_THEME_IDS.length}</Tag>
+                      </div>
+                      <div className="theme-page__catalog-list">
                     {CORE_THEME_IDS.map((coreId) => {
                       const coreTheme = builtInThemes[coreId]
                       const active = !draftDirty && themeId === coreId
@@ -883,21 +921,21 @@ export function ThemePage() {
                         </button>
                       )
                     })}
-                  </div>
-                </section>
+                      </div>
+                    </section>
 
-                {PRESET_THEME_GROUPS.map((group) => (
-                  <section key={group.label} className="theme-page__catalog-block">
-                    <div className="theme-page__dialog-subhead">
-                      <strong>{group.label}</strong>
-                      <Tag type="teal" size="sm">{group.tag}</Tag>
-                      <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
-                    </div>
-                    <ThemeCatalogVirtualList
-                      ids={group.ids.filter((pid) => builtInThemes[pid])}
-                      themeId={themeId}
-                      draftDirty={draftDirty}
-                      onSelect={requestThemeSelection}
+                    {PRESET_THEME_GROUPS.map((group) => (
+                      <section key={group.label} className="theme-page__catalog-block">
+                        <div className="theme-page__dialog-subhead">
+                          <strong>{group.label}</strong>
+                          <Tag type="teal" size="sm">{group.tag}</Tag>
+                          <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
+                        </div>
+                        <ThemeCatalogVirtualList
+                          ids={group.ids.filter((pid) => builtInThemes[pid])}
+                          themeId={themeId}
+                          draftDirty={draftDirty}
+                          onSelect={requestThemeSelection}
                     />
                   </section>
                 ))}
@@ -1796,6 +1834,8 @@ export function ThemePage() {
           <button type="button" className="theme-page__footer-link" onClick={() => scrollToSection(THEME_PAGE_SECTION_IDS.appearanceAssets)}>
             {overriddenCategoryCount + pluginOverrideCount} appearance override{overriddenCategoryCount + pluginOverrideCount === 1 ? '' : 's'}
           </button>
+        </div>
+          </div>
         </div>
       </section>
     </>

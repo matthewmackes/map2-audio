@@ -422,9 +422,9 @@ describe('PlatformModalContent', () => {
 
     expect(screen.getByText('System setup')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Control Panel' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open Overview' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open Theme' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Open Program Catalog' })).toBeNull()
+    expect(screen.getByRole('treeitem', { name: 'Open Overview' })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: 'Open Theme' })).toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: 'Open Program Catalog' })).toBeNull()
   })
 
   it('keeps utility workspaces grouped at the bottom of the rail with utility styling', () => {
@@ -439,8 +439,11 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    const nav = screen.getByLabelText('Platforms interface navigation')
-    const navLabels = within(nav).getAllByRole('link').map((link) => link.getAttribute('aria-label'))
+    const nav = screen.getByRole('tree', { name: 'Platforms interface navigation' })
+    const navLabels = within(nav)
+      .getAllByRole('treeitem')
+      .map((item) => item.getAttribute('aria-label'))
+      .filter((label): label is string => Boolean(label?.startsWith('Open ')))
 
     expect(navLabels.slice(0, 2)).toEqual(['Open Overview', 'Open Audio Engine'])
     expect(navLabels.slice(-3)).toEqual([
@@ -450,9 +453,9 @@ describe('PlatformModalContent', () => {
     ])
 
     for (const label of ['Open Host Machine', 'Open Theme', 'Open Platform Guide']) {
-      expect(screen.getByRole('link', { name: label }).closest('.workspace-side-nav__item')).toHaveClass('is-utility')
+      expect(screen.getByRole('treeitem', { name: label })).toHaveClass('is-utility')
     }
-    expect(screen.getByRole('link', { name: 'Open Audio Engine' }).closest('.workspace-side-nav__item')).not.toHaveClass('is-utility')
+    expect(screen.getByRole('treeitem', { name: 'Open Audio Engine' })).not.toHaveClass('is-utility')
   })
 
   it('removes the launcher organizer entry from the Platforms rail', () => {
@@ -467,8 +470,8 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.queryByRole('link', { name: 'Open Launchers' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Open Program Catalog' })).toBeNull()
+    expect(screen.queryByRole('treeitem', { name: 'Open Launchers' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: 'Open Program Catalog' })).toBeNull()
   })
 
   it('opens the update progress modal and triggers the management update workflow', () => {

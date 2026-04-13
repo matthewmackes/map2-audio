@@ -23205,3 +23205,40 @@ Last updated: 2026-04-12 16:08 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Platform/PlatformModal.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/MidiHubPage.test.tsx` -> PASS (`4 suites, 20 tests`)
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
+
+ID: T998
+Status: [ ] Todo
+Title: Unified Outboard-Hardware workspace — consolidate Tesira, Edirol, Hotone, IntelFX, MPX1 into one shell
+Description:
+- Goal / acceptance criteria: Introduce a new `/outboard-hardware/*` Carbon workspace that mirrors the Physical Surfaces shell pattern and collects the five heterogeneous outboard-hardware surfaces — Tesira AVB, Edirol UA-1000, HoTone JoGG, IntelFX Rack, and MPX1 Rack — under a single overview + per-device detail shell. The workspace must reuse `WorkspacePageTemplate`, `UnifiedWorkspaceSideNav`, and the Physical Surfaces overview/tile layout conventions. Each device card must expose two navigation actions: "Open in workspace" (→ `/outboard-hardware/:deviceId`) and "Open dedicated route" (→ the existing `/tesira`, `/edirol-ua1000`, `/hotone-jogg`, `/mpx1`, `/intelfx` routes, which remain fully intact). A new "Outboard Hardware" tile must appear on the home start menu (via `FEATURED_ROUTE_SET` in `launcherCatalog.tsx`) and the five individual device routes must be removed from the home start menu by extending `START_MENU_EXCLUDED_ROUTES` in `HomeStartMenuOverlay.tsx` — matching the precedent already set for `/launch-control` and `/midi-commander`. Advanced Menu entries and the workspace catalog entries for the five devices remain untouched so they stay discoverable through those surfaces. Device metadata is a static frontend catalog constant (no new backend API needed) since live status continues to be rendered by each dedicated route's existing hooks.
+- Why it matters: The five outboard hardware surfaces currently live as five independent compact tiles in the home start menu's "All Workspaces" section with no grouping. As more hardware lands, the start-menu grid keeps growing and loses its hierarchy. Physical Surfaces already established the pattern for consolidating heterogeneous hardware under one workspace shell while preserving dedicated per-device editing routes — this task applies the same pattern to outboard gear, cleans up the home start menu, and gives operators a single discoverable entry point for rack/mixer/interface hardware.
+- Dependencies: T932 (MCU dedicated-route pattern), T725 (launcher catalog storefront model), `web/src/app/pages/PhysicalSurfacesShell.tsx`, `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`, `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`, `web/src/app/pages/PhysicalSurfacesShell.css`, `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx`, `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/launcherCatalog.tsx`, `web/src/app/pages/HomeStartMenuOverlay.tsx`, and the existing dedicated routes at `/tesira/*`, `/edirol-ua1000`, `/hotone-jogg`, `/mpx1/*`, `/intelfx/*`.
+- Estimated effort: Medium
+- Required outputs:
+  - New files:
+    - `web/src/app/pages/OutboardHardwareShell.tsx` — shell with local `OUTBOARD_HARDWARE_DEVICES` catalog constant, `UnifiedWorkspaceSideNav` wiring, and `STANDALONE_ROUTE_BY_DEVICE_ID` resolver mirroring the physical-surfaces footer "Dedicated Routes" pattern.
+    - `web/src/app/pages/OutboardHardwareShell.css` — scoped styles (`.outboard-hardware-page`, `.outboard-hardware-page__unit-grid`, metric strip) adapted from `PhysicalSurfacesShell.css`.
+    - `web/src/app/pages/OutboardHardwareOverviewPage.tsx` — metric tile strip (total devices + counts by category: AVB DSP Mixer / USB Audio Interface / Multi-FX Processor) + 2-column responsive Carbon `<Tile>` grid with device cards.
+    - `web/src/app/pages/OutboardHardwareDevicePage.tsx` — per-device detail page with identity header, capability/spec breakdown from the local catalog, and primary CTA linking to the device's dedicated route.
+    - `web/src/app/pages/OutboardHardwareShell.test.tsx`, `OutboardHardwareOverviewPage.test.tsx`, `OutboardHardwareDevicePage.test.tsx` — focused regression coverage (render, nav lists five devices + Overview, `:deviceId` resolution, dedicated-route button targets, unknown-id empty state).
+  - Edited files:
+    - `web/src/app/App.tsx` — three `lazy()` imports near the physical-surfaces imports and a `<Route path="/outboard-hardware/*">` block with index + `:deviceId` child routes, placed after the physical-surfaces route block.
+    - `web/src/app/data/advancedMenuItems.ts` — new entry for `/outboard-hardware` modeled on the `/physical-surfaces` entry (lines 202-215): `homeSection: 'Hardware'`, `kind: 'link'`, `maturity: 'beta'`, `showOnHome: false`, `pinnable: false`, icon from `@carbon/icons-react` (`Chip`/`Rack` candidate). Existing entries for the five devices are left in place.
+    - `web/src/app/data/launcherCatalog.tsx` — add `/outboard-hardware` to `FEATURED_ROUTE_SET` (lines 90-95) so it renders as a Pinned hero tile. Optional storefront override with title, description, feature bullets consistent with T725.
+    - `web/src/app/pages/HomeStartMenuOverlay.tsx` — extend `START_MENU_EXCLUDED_ROUTES` (line 28) with `/tesira`, `/edirol-ua1000`, `/hotone-jogg`, `/mpx1`, `/intelfx`.
+  - Device catalog mapping (single source of truth, defined inline in `OutboardHardwareShell.tsx`):
+    - `biamp-tesira` → `/tesira` (AVB DSP Mixer)
+    - `edirol-ua1000` → `/edirol-ua1000` (USB Audio Interface)
+    - `hotone-jogg` → `/hotone-jogg` (USB Audio Interface)
+    - `lexicon-mpx1` → `/mpx1` (Multi-FX Processor)
+    - `eventide-intelfx` → `/intelfx` (Multi-FX Processor)
+  - Validation evidence: `npm --prefix web run typecheck`, `npm --prefix web run build`, `npx jest --testPathPattern=OutboardHardware --no-coverage`, `npx jest --testPathPattern=HomeStartMenuOverlay --no-coverage`, and a production smoke pass through `npm run preview` on port 3000 confirming: five device tiles gone from home, new Outboard Hardware tile pinned on home, overview lists all five devices, each "Open in workspace" navigates to the correct `:deviceId`, each "Open dedicated route" lands on the unchanged existing dedicated route, Physical Surfaces workspace still renders correctly, Advanced Menu and `/platforms/workspace-catalog` still list the individual devices.
+- Scope exclusions:
+  - No changes to any backend service, device driver, or dedicated-route page internals.
+  - No new backend summary API — device metadata is a frontend constant.
+  - No removal of the five device entries from `advancedMenuItems.ts` or the workspace catalog — only the home start menu surface is pruned.
+- Licensing review: All touched files are MAP2-owned AGPL-covered repository artifacts; no third-party notices expected.
+- Plan reference: `.claude/plans/fluttering-singing-mountain.md`
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-04-13 - planning only (no implementation yet)

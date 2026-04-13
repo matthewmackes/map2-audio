@@ -6,14 +6,14 @@ import {
   useMemo,
   useState,
   type ComponentType,
-  type CSSProperties,
   type ReactNode,
 } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Book, Branch, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification } from '@carbon/react'
 
 import { IntelFXStatusBar } from '../components/IntelFX/IntelFXStatusBar'
+import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { formatIntelFXProgramName, formatIntelFXProgramNumber } from '../components/IntelFX/programNumber'
 import { useIntelFXState, type IntelFXRegistryParam, type UseIntelFXStateResult } from '../../map2/intelfxApi'
 import { EmptyState } from '../components/shared/EmptyState'
@@ -111,6 +111,7 @@ function findParamByCandidates(params: IntelFXRegistryParam[] | undefined, candi
 
 export function IntelFXPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const activeSection = sectionFromPath(location.pathname)
   const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
   const { location: deviceLocation, isLoading: locationLoading } = useDeviceLocation('rocktron-intelfx')
@@ -211,6 +212,20 @@ export function IntelFXPage() {
     onToggleBypass: handleToggleBypass,
   }), [activeSection, apiNodeId, currentProgramName, lcdText, intelfx, bypassState, handleToggleBypass])
 
+  const navigationItems = useMemo<UnifiedWorkspaceSideNavItem[]>(
+    () => SIDEBAR_SECTIONS.map((section) => ({
+      key: section.id,
+      label: section.label,
+      description: `IntelFX ${section.label.toLowerCase()} workspace for the current rack program and routing state.`,
+      to: section.to,
+      icon: section.icon,
+      active: activeSection === section.id,
+      onOpen: () => navigate(section.to),
+      meta: activeSection === section.id ? 'Current' : undefined,
+    })),
+    [activeSection, navigate],
+  )
+
   const renderShell = (content: ReactNode) => (
     <>
       <ShellWindowTitleStrip />
@@ -289,23 +304,26 @@ export function IntelFXPage() {
     <IntelFXPageContext.Provider value={contextValue}>
       {renderShell(
         <>
-          <aside className="intelfx-shell__sidebar" aria-label="IntelFX section navigation">
-            {SIDEBAR_SECTIONS.map((section) => {
-              const SectionIcon = section.icon
-              return (
-                <NavLink
-                  key={section.id}
-                  to={section.to}
-                  title={section.label}
-                  aria-label={section.label}
-                  className={({ isActive }) => `intelfx-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
-                  style={{ '--section-accent': section.color } as CSSProperties}
-                >
-                  <SectionIcon size={18} aria-hidden />
-                </NavLink>
-              )
-            })}
-          </aside>
+          <UnifiedWorkspaceSideNav
+            ariaLabel="IntelFX section navigation"
+            className="intelfx-shell__sidebar"
+            eyebrow="Rack editor"
+            title="Rocktron IntelFX"
+            description="One tree for panel control, deep editing, MIDI mapping, libraries, live performance, diagnostics, and signal flow."
+            items={navigationItems}
+            metaBlocks={[
+              { key: 'intelfx-node', label: 'Node', value: selectedNode?.hostname ?? selectedNodeId },
+              { key: 'intelfx-program', label: 'Program', value: `${formatIntelFXProgramNumber(currentProgram)} ${currentProgramName}` },
+              { key: 'intelfx-link', label: 'Connection', value: intelfx.state?.connected ? 'Online' : 'Offline' },
+            ]}
+            callout={{
+              kind: remoteSelected ? 'warning' : 'info',
+              text: remoteSelected
+                ? `Control is proxied to ${selectedNode?.hostname ?? selectedNodeId}.`
+                : 'Direct local control path is active for the IntelFX rack.',
+            }}
+            storageKey="intelfx-rack"
+          />
 
           <div className="intelfx-shell__main">
             {remoteSelected ? (

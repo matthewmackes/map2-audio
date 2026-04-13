@@ -183,7 +183,7 @@ describe('ThemePage', () => {
   it('renders the dedicated Theme platform workspace as a unified editor workflow', () => {
     renderThemePage()
 
-    expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Theme', level: 1 })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Desktop Themes' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Scheme' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Preview target' })).toBeTruthy()
@@ -428,7 +428,7 @@ describe('ThemePage', () => {
     const previewSection = document.getElementById('theme-preview')
     const scrollSpy = jest.spyOn(previewSection as HTMLElement, 'scrollIntoView')
 
-    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }))
+    fireEvent.click(screen.getByRole('treeitem', { name: /open preview/i }))
 
     expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
   })
