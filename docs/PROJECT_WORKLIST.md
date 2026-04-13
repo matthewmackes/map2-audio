@@ -23672,7 +23672,7 @@ Subtasks:
         - `npm --prefix web run typecheck` -> PASS
         - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subB
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Move Physical Surfaces pages under `workspace-hub` and remount them at `/workspace/physical-surfaces/*`
         Description:
         - Goal / acceptance criteria: Relocate the overview and unit pages into `web/src/app/pages/workspace-hub/physical-surfaces/`, wire them to the hub shell context, and keep all dedicated controller routes standalone.
@@ -23682,9 +23682,18 @@ Subtasks:
         - Required outputs: relocated Physical Surfaces pages, canonical `/workspace/physical-surfaces/*` routes, and focused page regressions.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 18:10 EDT - Codex
+        Last updated: 2026-04-13 18:12 EDT - Codex
+        Completion notes:
+        - Added the workspace-hub Physical Surfaces route wrappers under `web/src/app/pages/workspace-hub/physical-surfaces/`, including a shared outlet that maps the hub aggregator data back into the existing physical-surface page contract so the canonical `/workspace/physical-surfaces/*` routes now mount the real overview and unit pages inside `WorkspaceHubShell`.
+        - Parameterized the shared Physical Surfaces page bodies with explicit route builders in `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`, `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`, and `web/src/app/pages/physicalSurfacesRoutes.ts`, so the canonical hub pages stay on `/workspace/physical-surfaces/*` while the legacy `/physical-surfaces/*` tree keeps its current behavior.
+        - Updated `web/src/app/App.tsx` and `web/src/app/App.platformRoute.test.tsx` so the new canonical Physical Surfaces overview route is exercised through the hub shell instead of the placeholder scaffold.
+        - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+        Validation:
+        - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (`1 suite, 16 tests`; React Router future-flag and suspended-resource warnings only)
+        - `npm --prefix web run typecheck` -> PASS
+        - `npm --prefix web run build` -> PASS
       - ID: T1004-subC-subC
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Move Outboard Hardware pages under `workspace-hub` and remount them at `/workspace/outboard-hardware/*`
         Description:
         - Goal / acceptance criteria: Relocate the overview and device pages into `web/src/app/pages/workspace-hub/outboard-hardware/`, preserve the dedicated device routes, and keep the overview live-status rollups intact inside the hub.
@@ -23693,8 +23702,8 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: relocated Outboard Hardware pages, canonical `/workspace/outboard-hardware/*` routes, and focused page regressions.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 18:08 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 18:12 EDT - Codex
       - ID: T1004-subC-subD
         Status: [ ] Todo
         Title: Extract Audio Artifacts section bodies under `workspace-hub` and remount them at `/workspace/artifacts/*`
@@ -23708,7 +23717,7 @@ Subtasks:
         Assigned to: Unassigned
         Last updated: 2026-04-13 18:08 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 18:10 EDT - Codex
+    Last updated: 2026-04-13 18:12 EDT - Codex
   - ID: T1004-subD
     Status: [ ] Todo
     Title: Wire legacy redirects and launcher/menu consolidation

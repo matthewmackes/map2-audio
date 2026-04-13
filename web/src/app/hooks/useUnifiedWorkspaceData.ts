@@ -29,7 +29,11 @@ export interface UnifiedWorkspaceSectionSummary {
 export interface UnifiedWorkspaceData {
   summaries: Record<UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary>
   orderedSummaries: UnifiedWorkspaceSectionSummary[]
-  physicalSurfacesSummary: EnrichedPhysicalSurfacesSummary | null
+  physicalSurfaces: {
+    summary: EnrichedPhysicalSurfacesSummary | null
+    isLoading: boolean
+    isError: boolean
+  }
 }
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
@@ -316,7 +320,11 @@ export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
         summaries.artifacts,
         summaries['outboard-hardware'],
       ],
-      physicalSurfacesSummary: physicalSurfacesQuery.data?.summary ?? null,
+      physicalSurfaces: {
+        summary: physicalSurfacesQuery.data?.summary ?? null,
+        isLoading: physicalSurfacesQuery.isLoading,
+        isError: physicalSurfacesQuery.isError,
+      },
     }
   }, [
     cabinetsQuery.data,

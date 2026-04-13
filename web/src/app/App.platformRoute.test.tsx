@@ -74,6 +74,29 @@ jest.mock('./pages/workspace-hub/platforms/PlatformWorkspaceSection', () => ({
   },
 }))
 
+jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOutlet', () => ({
+  WorkspacePhysicalSurfacesOutlet: () => {
+    const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    return <Outlet />
+  },
+}))
+
+jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage', () => ({
+  WorkspacePhysicalSurfacesOverviewPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-physical-surfaces-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
+jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitPage', () => ({
+  WorkspacePhysicalSurfaceUnitPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="workspace-physical-surface-unit-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/WorkspaceHubShell', () => ({
   WorkspaceHubShell: () => {
     const { Outlet, useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -224,6 +247,15 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('workspace-placeholder')).toHaveTextContent('Outboard Hardware|/workspace/outboard-hardware')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('mounts the migrated physical-surfaces overview inside the workspace hub', async () => {
+    window.history.pushState({}, '', '/workspace/physical-surfaces')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-physical-surfaces-route')).toHaveTextContent('/workspace/physical-surfaces')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 

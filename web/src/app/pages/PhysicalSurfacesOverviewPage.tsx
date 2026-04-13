@@ -8,6 +8,7 @@ import {
   resolvePhysicalSurfaceStandaloneRoute,
   type PhysicalSurfacesShellContextValue,
 } from './PhysicalSurfacesShell'
+import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
   if (status === 'online') return 'green'
@@ -40,7 +41,13 @@ function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
   }
 }
 
-function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
+function UnitCard({
+  unit,
+  buildUnitPath,
+}: {
+  unit: EnrichedPhysicalSurfaceUnit
+  buildUnitPath: (surfaceId?: string | null) => string
+}) {
   const navigate = useNavigate()
   const standaloneRoute = resolvePhysicalSurfaceStandaloneRoute(unit.unit_id, unit.specialized_route)
 
@@ -82,7 +89,7 @@ function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
         </ul>
       </div>
       <div className="physical-surfaces-page__action-row">
-        <Button kind="ghost" size="sm" onClick={() => navigate(`/physical-surfaces/${unit.unit_id}`)}>
+        <Button kind="ghost" size="sm" onClick={() => navigate(buildUnitPath(unit.unit_id))}>
           Open Surface Page
         </Button>
         {standaloneRoute ? (
@@ -95,7 +102,11 @@ function UnitCard({ unit }: { unit: EnrichedPhysicalSurfaceUnit }) {
   )
 }
 
-export function PhysicalSurfacesOverviewPage() {
+export function PhysicalSurfacesOverviewPage({
+  buildUnitPath = buildPhysicalSurfacesPath,
+}: {
+  buildUnitPath?: (surfaceId?: string | null) => string
+}) {
   const { summary, isLoading } = useOutletContext<PhysicalSurfacesShellContextValue>()
 
   const metrics = useMemo(() => overviewMetric(summary), [summary])
@@ -177,7 +188,7 @@ export function PhysicalSurfacesOverviewPage() {
 
       <div className="physical-surfaces-page__unit-grid">
         {(summary?.units ?? []).map((unit) => (
-          <UnitCard key={unit.unit_id} unit={unit} />
+          <UnitCard key={unit.unit_id} unit={unit} buildUnitPath={buildUnitPath} />
         ))}
       </div>
     </div>

@@ -72,7 +72,11 @@ function buildWorkspaceData(): UnifiedWorkspaceData {
       },
     },
     orderedSummaries: [],
-    physicalSurfacesSummary: null,
+    physicalSurfaces: {
+      summary: null,
+      isLoading: false,
+      isError: false,
+    },
   }
 
   return {

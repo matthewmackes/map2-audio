@@ -107,6 +107,7 @@ describe('useUnifiedWorkspaceData', () => {
     expect(result.current.summaries.artifacts.detail).toContain('1 native plugin')
     expect(result.current.summaries.artifacts.detail).toContain('NAM active')
     expect(result.current.summaries['outboard-hardware'].metric).toBe('5 devices')
+    expect(result.current.physicalSurfaces.summary?.units).toHaveLength(2)
   })
 
   it('isolates failing artifact queries to the artifact summary', async () => {

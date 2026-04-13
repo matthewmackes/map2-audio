@@ -7,6 +7,7 @@ import { PageHeader } from '../components/PageHeader'
 import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
 import type { EnrichedPhysicalSurfaceMatch } from '../../map2/types'
 import type { PhysicalSurfacesShellContextValue } from './PhysicalSurfacesShell'
+import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
   if (status === 'online') return 'green'
@@ -27,7 +28,11 @@ function matchLabel(match: EnrichedPhysicalSurfaceMatch) {
   return parts.join(' • ') || 'Unnamed match'
 }
 
-export function PhysicalSurfaceUnitPage() {
+export function PhysicalSurfaceUnitPage({
+  buildUnitPath = buildPhysicalSurfacesPath,
+}: {
+  buildUnitPath?: (surfaceId?: string | null) => string
+}) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { surfaceId } = useParams<{ surfaceId: string }>()
@@ -45,6 +50,7 @@ export function PhysicalSurfaceUnitPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['enriched-physical-surfaces', 'summary'] })
+      await queryClient.invalidateQueries({ queryKey: ['workspace-hub', 'physical-surfaces', 'summary'] })
     },
   })
 
@@ -147,11 +153,11 @@ export function PhysicalSurfaceUnitPage() {
           <p className="physical-surfaces-page__body-copy">{unit.firmware_posture.detail}</p>
           <div className="physical-surfaces-page__action-row">
             {unit.specialized_route ? (
-              <Button kind="secondary" size="sm" onClick={() => navigate(unit.specialized_route ?? `/physical-surfaces/${unit.unit_id}`)}>
+              <Button kind="secondary" size="sm" onClick={() => navigate(unit.specialized_route ?? buildUnitPath(unit.unit_id))}>
                 Open Existing Route
               </Button>
             ) : null}
-            <Button kind="ghost" size="sm" onClick={() => navigate('/physical-surfaces')}>
+            <Button kind="ghost" size="sm" onClick={() => navigate(buildUnitPath())}>
               Back to Overview
             </Button>
           </div>
