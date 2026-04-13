@@ -33,7 +33,7 @@
   border: 1px solid var(--cds-border-subtle);
   background: var(--cds-layer);
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   cursor: pointer;
   transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
@@ -63,7 +63,7 @@
   height: 1.25rem;
   border-radius: 50%;
   background: var(--cds-layer);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   color: var(--cds-text-primary);
 }
@@ -122,7 +122,7 @@
   display: flex;
   align-items: center;
   gap: var(--cds-spacing-02);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--cds-text-secondary);
 }
 
@@ -144,7 +144,7 @@
   border: 1px solid var(--cds-border-subtle);
   background: var(--cds-layer);
   color: var(--cds-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   cursor: pointer;
   transition: border-color 0.12s;
 }
@@ -221,7 +221,7 @@
 }
 
 .tcm-family-card__name {
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-primary);
   flex: 1;
   text-align: left;
@@ -267,7 +267,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.875rem;
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   cursor: default;
 }
@@ -277,11 +277,11 @@
 }
 
 .tcm-preview__text {
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .tcm-preview__status {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 /* ── Customize step ─────────────────────────────────────────── */
@@ -297,7 +297,7 @@
 .tcm-customize-desc {
   margin: 0 0 var(--cds-spacing-03);
   color: var(--cds-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   max-inline-size: 40rem;
 }
 
@@ -333,7 +333,7 @@
   border: none;
   cursor: pointer;
   color: var(--cds-text-primary);
-  font-size: 0.8125rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   text-align: left;
   transition: background 0.1s;
 }
@@ -443,7 +443,7 @@
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 3px;
-  font-size: 0.625rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-helper);
   text-align: center;
   margin-block-start: 2px;
@@ -457,7 +457,7 @@
 }
 
 .tcm-slot-picker__hex {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-family: var(--font-mono);
   color: var(--cds-text-secondary);
 }
@@ -472,7 +472,7 @@
   border: 1px solid var(--cds-border-strong);
   border-block-end-width: 2px;
   color: var(--cds-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-family: inherit;
   outline: 2px solid transparent;
   outline-offset: 2px;

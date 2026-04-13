@@ -44,7 +44,7 @@
 
 .management-workspace__section-title {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   margin: 0;
 }
@@ -104,7 +104,7 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 96%, white 4%), var(--management-shell-surface));
   color: var(--cds-text-secondary);
-  font-size: 0.62rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
@@ -196,7 +196,7 @@
 
 .management-workspace__graph-node-eyebrow,
 .management-workspace__graph-node-tone {
-  font-size: 0.62rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
@@ -210,7 +210,7 @@
 
 .management-workspace__graph-node-label {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.95rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   line-height: 1.25;
 }
@@ -218,14 +218,14 @@
 .management-workspace__graph-node-caption {
   margin-top: 0.4rem;
   color: var(--cds-text-secondary);
-  font-size: 0.76rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.35;
 }
 
 .management-workspace__graph-node-metric {
   margin-top: 0.75rem;
   color: color-mix(in srgb, var(--management-graph-node-accent) 90%, var(--cds-text-primary));
-  font-size: 0.76rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
 }
 
@@ -298,20 +298,20 @@
 
 .management-workspace__snapshot-head p {
   color: var(--cds-text-secondary);
-  font-size: 0.58rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
   margin: 0;
 }
 
 .management-workspace__snapshot-tile strong {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1.35rem;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
   font-weight: 600;
 }
 
 .management-workspace__snapshot-tile span {
   color: var(--cds-text-primary);
-  font-size: 0.9rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
 }
 
@@ -337,7 +337,7 @@
 
 .management-workspace__table-container .cds--data-table-header__title {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }
 
@@ -399,7 +399,7 @@
 }
 
 .management-workspace__expanded-card-head h4 {
-  font-size: 0.95rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   margin: 0;
 }
@@ -417,12 +417,12 @@
 
 .management-workspace__detail-list dt {
   color: var(--cds-text-secondary);
-  font-size: 0.72rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   margin: 0 0 0.2rem;
 }
 
 .management-workspace__detail-list dd {
-  font-size: 0.88rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.4;
   margin: 0;
   overflow-wrap: anywhere;
@@ -430,7 +430,7 @@
 
 .management-workspace__footer-note {
   color: var(--cds-text-secondary);
-  font-size: 0.84rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
   margin: 0;
 }

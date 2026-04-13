@@ -20182,6 +20182,7 @@ Last updated: 2026-04-11 21:48 EDT - Codex
   - Validation for this shared-shell follow-up is green: `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS.
   - Started the next bounded `T863` slice in `web/src/app/components/Platform/PlatformModal.css`, replacing the remaining literal and calc-based control-panel, table-header, node-detail, and update-progress font sizes with Carbon productive type tokens while preserving the existing platform-menu scaling behavior.
   - Continued `T863` with an aggressive low-risk route-local copy sweep in `web/src/app/pages/AudioArtifactsPage.css`, `web/src/app/pages/PipeWirePage.css`, `web/src/app/pages/ThemePage.css`, and `web/src/app/pages/AboutPage.css`, replacing the remaining literal body/label/heading sizes in those text-heavy surfaces with Carbon productive type tokens while avoiding the fit-sensitive canvas/device artwork files.
+  - Continued the same low-risk batch in `web/src/app/components/ThemeChooserModal.css` and `web/src/app/components/ManagementWorkspace/ManagementWorkspace.css`, replacing the remaining literal body/helper/heading sizes in modal copy, graph-node labels, snapshot tiles, and table-detail text with Carbon productive type tokens while leaving the responsive `clamp()` typography in MIDI Hub and other fit-sensitive headings for a dedicated pass.
 
 ID: T864
 Status: [✓] Done
