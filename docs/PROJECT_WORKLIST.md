@@ -23649,9 +23649,57 @@ Subtasks:
     - Dependencies: T1004-subA, T1004-subB
     - Estimated effort: High
     - Required outputs: relocated section files, nav item sources, and section-level regression updates.
-    Subtasks: None
+    Subtasks:
+      - ID: T1004-subC-subA
+        Status: [>] In Progress
+        Title: Move the Platforms route body under `workspace-hub` and remount it at `/workspace/platforms/*`
+        Description:
+        - Goal / acceptance criteria: Relocate the routed Platforms body into `web/src/app/pages/workspace-hub/platforms/`, preserve the existing layer/panel navigation behavior, and mount the canonical Platforms section inside `WorkspaceHubShell` without removing the legacy `/platforms/*` route yet.
+        - Why it matters: Platforms has the deepest route contract and sets the pattern for the rest of the migration.
+        - Dependencies: T1004-subA, T1004-subB
+        - Estimated effort: Medium
+        - Required outputs: relocated Platforms page, `/workspace/platforms/*` route wiring, and focused route regression coverage.
+        Subtasks: None
+        Assigned to: Codex
+        Last updated: 2026-04-13 18:08 EDT - Codex
+      - ID: T1004-subC-subB
+        Status: [ ] Todo
+        Title: Move Physical Surfaces pages under `workspace-hub` and remount them at `/workspace/physical-surfaces/*`
+        Description:
+        - Goal / acceptance criteria: Relocate the overview and unit pages into `web/src/app/pages/workspace-hub/physical-surfaces/`, wire them to the hub shell context, and keep all dedicated controller routes standalone.
+        - Why it matters: Physical Surfaces already has a clean summary contract and is the next-lowest-risk migration once the Platforms pattern is proven.
+        - Dependencies: T1004-subC-subA
+        - Estimated effort: Medium
+        - Required outputs: relocated Physical Surfaces pages, canonical `/workspace/physical-surfaces/*` routes, and focused page regressions.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 18:08 EDT - Codex
+      - ID: T1004-subC-subC
+        Status: [ ] Todo
+        Title: Move Outboard Hardware pages under `workspace-hub` and remount them at `/workspace/outboard-hardware/*`
+        Description:
+        - Goal / acceptance criteria: Relocate the overview and device pages into `web/src/app/pages/workspace-hub/outboard-hardware/`, preserve the dedicated device routes, and keep the overview live-status rollups intact inside the hub.
+        - Why it matters: Outboard Hardware is already partially consolidated and should follow the same canonical route pattern as Physical Surfaces.
+        - Dependencies: T1004-subC-subA
+        - Estimated effort: Medium
+        - Required outputs: relocated Outboard Hardware pages, canonical `/workspace/outboard-hardware/*` routes, and focused page regressions.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 18:08 EDT - Codex
+      - ID: T1004-subC-subD
+        Status: [ ] Todo
+        Title: Extract Audio Artifacts section bodies under `workspace-hub` and remount them at `/workspace/artifacts/*`
+        Description:
+        - Goal / acceptance criteria: Split the `AudioArtifactsPage` shell/body boundary, relocate the content-facing section body under `web/src/app/pages/workspace-hub/artifacts/`, and mount canonical artifact routes inside the hub while keeping the existing data/query behavior intact.
+        - Why it matters: Audio Artifacts is the largest single section and is safer once the smaller section moves establish the route/container pattern.
+        - Dependencies: T1004-subC-subA, T1004-subC-subB, T1004-subC-subC
+        - Estimated effort: High
+        - Required outputs: extracted artifact section body, canonical `/workspace/artifacts/*` routes, and focused artifact regressions.
+        Subtasks: None
+        Assigned to: Unassigned
+        Last updated: 2026-04-13 18:08 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 18:02 EDT - Codex
+    Last updated: 2026-04-13 18:08 EDT - Codex
   - ID: T1004-subD
     Status: [ ] Todo
     Title: Wire legacy redirects and launcher/menu consolidation
