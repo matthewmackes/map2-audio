@@ -44,7 +44,7 @@
   border-radius: 999px;
   padding: 0.4rem 0.7rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .plugin-appearance__preview-card {
@@ -59,7 +59,7 @@
 .plugin-appearance__preview-card p {
   margin: 0.2rem 0 0;
   color: var(--cds-text-secondary);
-  font-size: 0.82rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .plugin-appearance__preview-card--icon,
@@ -110,14 +110,14 @@
 }
 
 .plugin-appearance__icon-option span {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   text-align: center;
 }
 
 .plugin-appearance__helper-copy,
 .plugin-appearance__error-copy {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
 .plugin-appearance__helper-copy {

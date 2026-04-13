@@ -117,11 +117,11 @@ export function generatePDFHTML(
     tr:hover { background-color: #f9fafb; }
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
     .stat-box { background: #f3f4f6; padding: 15px; border-radius: 8px; }
-    .stat-label { font-size: 12px; color: #666; font-weight: 600; }
-    .stat-value { font-size: 24px; font-weight: 700; color: #3b82f6; }
+    .stat-label { font-size: 0.75rem; color: #666; font-weight: 600; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #3b82f6; }
     .warning { background-color: #fef3c7; }
     .critical { background-color: #fee2e2; }
-    .footer { margin-top: 40px; font-size: 12px; color: #999; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+    .footer { margin-top: 40px; font-size: 0.75rem; color: #999; border-top: 1px solid #e5e7eb; padding-top: 20px; }
   </style>
 </head>
 <body>

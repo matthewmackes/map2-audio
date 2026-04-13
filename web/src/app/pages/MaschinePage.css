@@ -28,7 +28,7 @@
 
 .maschine-page__panel-head h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
 }
 
 .maschine-page__panel-copy {
@@ -52,7 +52,7 @@
 }
 
 .maschine-page__kv-grid dt {
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   color: var(--cds-text-secondary);
 }
 
@@ -113,7 +113,7 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .maschine-page__lcd-canvas {

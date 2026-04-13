@@ -27,7 +27,7 @@
 .mcu-page__eyebrow {
   margin: 0 0 0.25rem;
   color: var(--cds-text-helper);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -52,7 +52,7 @@
 
 .mcu-page__kv-grid dt {
   color: var(--cds-text-helper);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   margin: 0 0 0.125rem;
 }
 
@@ -140,7 +140,7 @@
 .mcu-page__fader-value {
   font-family: var(--cds-code-01-font-family);
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .mcu-page__transport-grid {
