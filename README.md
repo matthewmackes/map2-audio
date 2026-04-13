@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1956** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1157** TypeScript | **136** C++/H | **143** Docs | **1959** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b3c8d2be`](https://github.com/matthewmackes/map2-audio/commit/b3c8d2be290670ab45790df9ed8bf62a58796c2d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
+| [`d71dfb72`](https://github.com/matthewmackes/map2-audio/commit/d71dfb7219f58e7dd3db4952b790ce8ee83a6eee) | Continue compact overlay type scale cleanup | Map2 Audio | 2026-04-13 |
+| [`6bf58023`](https://github.com/matthewmackes/map2-audio/commit/6bf58023414585c530d0fbbae0eafd28eaa2ef9a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`948e7459`](https://github.com/matthewmackes/map2-audio/commit/948e7459576f7dea42b9a0e125795a7810ea9753) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`3742e8d7`](https://github.com/matthewmackes/map2-audio/commit/3742e8d713e1b3ec81c583bc8fd503f947820f91) | Continue route and graph type scale cleanup | Map2 Audio | 2026-04-13 |
 | [`87fa7060`](https://github.com/matthewmackes/map2-audio/commit/87fa7060baaff3ab07b38fc2830da0946b1e69e0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`bf1a0dac`](https://github.com/matthewmackes/map2-audio/commit/bf1a0dacda375a5e470dd8a1bde8b9f6133a8153) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`a1d2b06f`](https://github.com/matthewmackes/map2-audio/commit/a1d2b06f34fcd6b39ee8f06a38aab36b51d3d622) | Continue small surface type scale cleanup | Map2 Audio | 2026-04-13 |
-| [`bc7f11af`](https://github.com/matthewmackes/map2-audio/commit/bc7f11afd20d50c357b8d09489d7c80ffb70beb6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`1d7cb1dc`](https://github.com/matthewmackes/map2-audio/commit/1d7cb1dcfba6c78d8cfef210617cf73d03528afe) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`eff37537`](https://github.com/matthewmackes/map2-audio/commit/eff3753757ffb69cee7cfbcefe76467c60852ad1) | Continue reporting and dialog type scale cleanup | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
