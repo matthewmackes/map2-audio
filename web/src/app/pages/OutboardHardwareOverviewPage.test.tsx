@@ -7,6 +7,8 @@ const mockUseTesiraDevices = jest.fn()
 const mockUseDeviceLocation = jest.fn()
 const mockUseMPX1State = jest.fn()
 const mockUseIntelFXState = jest.fn()
+const mockUseMPX1OverviewStatus = jest.fn()
+const mockUseIntelFXOverviewStatus = jest.fn()
 const mockUseCluster = jest.fn()
 
 jest.mock('../theme', () => ({
@@ -28,10 +30,12 @@ jest.mock('../hooks/useDeviceLocation', () => ({
 
 jest.mock('../../map2/mpx1Api', () => ({
   useMPX1State: (...args: unknown[]) => mockUseMPX1State(...args),
+  useMPX1OverviewStatus: (...args: unknown[]) => mockUseMPX1OverviewStatus(...args),
 }))
 
 jest.mock('../../map2/intelfxApi', () => ({
   useIntelFXState: (...args: unknown[]) => mockUseIntelFXState(...args),
+  useIntelFXOverviewStatus: (...args: unknown[]) => mockUseIntelFXOverviewStatus(...args),
 }))
 
 jest.mock('../contexts/useCluster', () => ({
@@ -135,13 +139,51 @@ describe('OutboardHardwareOverviewPage', () => {
         error: null,
       }
     })
-    mockUseMPX1State.mockReturnValue({
+    mockUseMPX1OverviewStatus.mockReturnValue({
       state: { connected: true, current_program: 42, rtmidi_available: true },
+      isLoading: false,
       error: null,
+      refresh: jest.fn(),
+    })
+    mockUseIntelFXOverviewStatus.mockReturnValue({
+      state: { connected: false, current_program: 0, rtmidi_available: false },
+      isLoading: false,
+      error: null,
+      refresh: jest.fn(),
+    })
+    mockUseMPX1State.mockReturnValue({
+      state: null,
+      shadow: {},
+      registry: null,
+      programs: [],
+      wsState: 'disconnected',
+      isConnected: false,
+      lastEvent: null,
+      pendingParamIds: [],
+      error: null,
+      refresh: jest.fn(),
+      refreshPrograms: jest.fn(),
+      setParam: jest.fn(),
+      setParams: jest.fn(),
+      setProgram: jest.fn(),
+      clearError: jest.fn(),
     })
     mockUseIntelFXState.mockReturnValue({
-      state: { connected: false, current_program: 0, rtmidi_available: false },
+      state: null,
+      shadow: {},
+      registry: null,
+      programs: [],
+      wsState: 'disconnected',
+      isConnected: false,
+      lastEvent: null,
+      pendingParamIds: [],
       error: null,
+      refresh: jest.fn(),
+      refreshPrograms: jest.fn(),
+      setParam: jest.fn(),
+      setParams: jest.fn(),
+      setProgram: jest.fn(),
+      clearError: jest.fn(),
     })
   })
 
@@ -174,6 +216,10 @@ describe('OutboardHardwareOverviewPage', () => {
     const intelfxStatus = screen.getByLabelText('IntelFX Rack live status')
     expect(within(intelfxStatus).getByText('Node offline')).toBeInTheDocument()
     expect(within(intelfxStatus).getByText('rack-c')).toBeInTheDocument()
+    expect(mockUseMPX1OverviewStatus).toHaveBeenCalled()
+    expect(mockUseIntelFXOverviewStatus).toHaveBeenCalled()
+    expect(mockUseMPX1State).not.toHaveBeenCalled()
+    expect(mockUseIntelFXState).not.toHaveBeenCalled()
   })
 
   it('filters the device grid by readiness state', () => {

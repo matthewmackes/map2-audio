@@ -6,8 +6,8 @@ import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
 import type { TesiraDeviceSummary } from '../components/Tesira/types'
 import { type DeviceLocation, useDeviceLocation } from '../hooks/useDeviceLocation'
 import { PageHeader } from '../components/PageHeader'
-import { useIntelFXState, type IntelFXState } from '../../map2/intelfxApi'
-import { useMPX1State, type MPX1State } from '../../map2/mpx1Api'
+import { useIntelFXOverviewStatus, type IntelFXState } from '../../map2/intelfxApi'
+import { useMPX1OverviewStatus, type MPX1State } from '../../map2/mpx1Api'
 import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareDevice,
@@ -256,13 +256,13 @@ function useOutboardHardwareLiveStatus(): Record<string, OutboardHardwareLiveSta
   const joggLocation = useDeviceLocation('hotone-jogg')
   const mpx1Location = useDeviceLocation('lexicon-mpx1')
   const intelfxLocation = useDeviceLocation('rocktron-intelfx')
-  const mpx1 = useMPX1State({
-    autoConnectWs: false,
+  const mpx1 = useMPX1OverviewStatus({
+    enabled: true,
     pollIntervalMs: 15_000,
     nodeId: mpx1Location.location?.nodeId ?? null,
   })
-  const intelfx = useIntelFXState({
-    autoConnectWs: false,
+  const intelfx = useIntelFXOverviewStatus({
+    enabled: true,
     pollIntervalMs: 15_000,
     nodeId: intelfxLocation.location?.nodeId ?? null,
   })

@@ -23351,7 +23351,7 @@ Last updated: 2026-04-13 16:33 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T1003
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add lightweight status-only rack hooks for MPX1 and IntelFX overview summaries
 Description:
 - Goal / acceptance criteria: Introduce lighter-weight frontend status hooks or fetch paths for MPX1 and IntelFX overview summaries so the Outboard Hardware overview does not need to bootstrap full editor-state hooks just to read rack connection posture and current program. The new hooks must preserve current behavior while reducing unnecessary query/bootstrap work.
@@ -23360,8 +23360,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: lightweight rack-status surface, overview integration, focused regression coverage, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 16:22 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 16:36 EDT - Codex
+- Completion notes:
+  - Added lightweight polling hooks in `web/src/map2/mpx1Api.ts` and `web/src/map2/intelfxApi.ts` that fetch only the rack `getState()` payload needed for overview summaries, without bootstrapping registry, program catalog, shadow-state, or websocket/editor flows.
+  - Switched `web/src/app/pages/OutboardHardwareOverviewPage.tsx` to the new overview hooks so the shared outboard grid keeps the same connected/program/offline summaries while avoiding the heavier dedicated-page hook path.
+  - Expanded `web/src/app/pages/OutboardHardwareOverviewPage.test.tsx` to prove the overview now uses the lightweight rack hooks and no longer touches the full editor-state hooks for MPX1 or IntelFX.
+  - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because the task introduced no new runtime dependencies, services, or deployment requirements.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx` -> PASS (`1 suite, 6 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T1004
 Status: [ ] Todo

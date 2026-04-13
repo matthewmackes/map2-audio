@@ -144,6 +144,19 @@ export interface MPX1Health {
   last_heartbeat?: number
 }
 
+export interface UseMPX1OverviewStatusOptions {
+  nodeId?: string | null
+  enabled?: boolean
+  pollIntervalMs?: number
+}
+
+export interface UseMPX1OverviewStatusResult {
+  state: MPX1State | null
+  error: string | null
+  isLoading: boolean
+  refresh: () => Promise<void>
+}
+
 export interface MPX1TrafficEvent {
   timestamp: number
   type: string
@@ -607,6 +620,55 @@ export interface UseMPX1StateOptions {
   maxReconnectAttempts?: number
   nodeId?: string | null
   pollIntervalMs?: number
+}
+
+export function useMPX1OverviewStatus({
+  nodeId,
+  enabled = true,
+  pollIntervalMs = 15_000,
+}: UseMPX1OverviewStatusOptions = {}): UseMPX1OverviewStatusResult {
+  const [state, setState] = useState<MPX1State | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(enabled)
+
+  const refresh = useCallback(async () => {
+    if (!enabled) {
+      setState(null)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const nextState = await mpx1Api.getState(nodeId)
+      setState(nextState)
+      setError(null)
+    } catch (err) {
+      setState(null)
+      setError(getErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [enabled, nodeId])
+
+  useEffect(() => {
+    void refresh()
+
+    if (!enabled || pollIntervalMs <= 0) {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      void refresh()
+    }, pollIntervalMs)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [enabled, pollIntervalMs, refresh])
+
+  return { state, error, isLoading, refresh }
 }
 
 export interface UseMPX1StateResult {

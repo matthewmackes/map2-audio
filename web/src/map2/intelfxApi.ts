@@ -151,6 +151,19 @@ export interface IntelFXHealth {
   simulator?: boolean
 }
 
+export interface UseIntelFXOverviewStatusOptions {
+  nodeId?: string | null
+  enabled?: boolean
+  pollIntervalMs?: number
+}
+
+export interface UseIntelFXOverviewStatusResult {
+  state: IntelFXState | null
+  error: string | null
+  isLoading: boolean
+  refresh: () => Promise<void>
+}
+
 export interface IntelFXTrafficEvent {
   timestamp: number
   type: string
@@ -725,6 +738,55 @@ export interface UseIntelFXStateOptions {
   maxReconnectAttempts?: number
   nodeId?: string | null
   pollIntervalMs?: number
+}
+
+export function useIntelFXOverviewStatus({
+  nodeId,
+  enabled = true,
+  pollIntervalMs = 15_000,
+}: UseIntelFXOverviewStatusOptions = {}): UseIntelFXOverviewStatusResult {
+  const [state, setState] = useState<IntelFXState | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(enabled)
+
+  const refresh = useCallback(async () => {
+    if (!enabled) {
+      setState(null)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const nextState = await intelfxApi.getState(nodeId)
+      setState(nextState)
+      setError(null)
+    } catch (err) {
+      setState(null)
+      setError(getErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [enabled, nodeId])
+
+  useEffect(() => {
+    void refresh()
+
+    if (!enabled || pollIntervalMs <= 0) {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      void refresh()
+    }, pollIntervalMs)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [enabled, pollIntervalMs, refresh])
+
+  return { state, error, isLoading, refresh }
 }
 
 export interface UseIntelFXStateResult {
