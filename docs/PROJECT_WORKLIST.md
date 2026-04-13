@@ -23620,7 +23620,7 @@ Subtasks:
     - `npm --prefix web run typecheck` -> PASS
     - `npm --prefix web run build` -> PASS
   - ID: T1004-subB
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Add unified workspace data aggregator and platform-section extraction
     Description:
     - Goal / acceptance criteria: Build `useUnifiedWorkspaceData()`, extract `usePlatformShellData()`, and connect shell-level summary loading with per-section error isolation, stale-time policy, and no nav coupling.
@@ -23630,9 +23630,18 @@ Subtasks:
     - Required outputs: aggregator/data hooks, tests, and shell summary integration.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-13 18:55 EDT - Codex
+    Last updated: 2026-04-13 18:02 EDT - Codex
+    Completion notes:
+    - Added `web/src/app/hooks/useUnifiedWorkspaceData.ts` to aggregate platform, physical-surface, artifact, and outboard summary data in parallel with `staleTime: 10_000`, `refetchOnWindowFocus: false`, and section-local error handling so a failing artifact query does not blank the rest of the hub.
+    - Expanded `usePlatformShellData()` so its realtime cadence remains active under `/workspace/*`, then threaded the new summary contract through `WorkspaceHubContext`, `WorkspaceHubShell`, and the placeholder headers so the shell now renders shared metric tiles and per-section summary copy above the route body without coupling any of that state to the flat nav.
+    - Added focused regression coverage in `web/src/app/hooks/useUnifiedWorkspaceData.test.tsx` and extended `web/src/app/pages/WorkspaceHubShell.test.tsx` so the shell-level summary strip and per-section error-isolation contract are locked before content migration starts.
+    - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    Validation:
+    - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useUnifiedWorkspaceData.test.tsx src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS (`3 suites, 19 tests`; React Router future-flag and suspended-resource warnings only)
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS
   - ID: T1004-subC
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Migrate section content trees under workspace-hub pages
     Description:
     - Goal / acceptance criteria: Relocate the four workspace section pages under `web/src/app/pages/workspace-hub/`, wire them into the hub shell, and keep dedicated device routes standalone.
@@ -23641,8 +23650,8 @@ Subtasks:
     - Estimated effort: High
     - Required outputs: relocated section files, nav item sources, and section-level regression updates.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 18:42 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 18:02 EDT - Codex
   - ID: T1004-subD
     Status: [ ] Todo
     Title: Wire legacy redirects and launcher/menu consolidation

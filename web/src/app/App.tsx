@@ -319,19 +319,19 @@ export function App() {
                                   <Route index element={<WorkspaceHubIndexRedirect />} />
                                   <Route
                                     path="platforms/overview"
-                                    element={<WorkspaceHubPlaceholder title="Platforms" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    element={<WorkspaceHubPlaceholder sectionKey="platforms" title="Platforms" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
                                   />
                                   <Route
                                     path="physical-surfaces"
-                                    element={<WorkspaceHubPlaceholder title="Physical Surfaces" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    element={<WorkspaceHubPlaceholder sectionKey="physical-surfaces" title="Physical Surfaces" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
                                   />
                                   <Route
                                     path="artifacts"
-                                    element={<WorkspaceHubPlaceholder title="Audio Artifacts" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    element={<WorkspaceHubPlaceholder sectionKey="artifacts" title="Audio Artifacts" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
                                   />
                                   <Route
                                     path="outboard-hardware"
-                                    element={<WorkspaceHubPlaceholder title="Outboard Hardware" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
+                                    element={<WorkspaceHubPlaceholder sectionKey="outboard-hardware" title="Outboard Hardware" subtitle="Overview scaffold for the upcoming unified workspace hub." />}
                                   />
                                 </Route>
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />

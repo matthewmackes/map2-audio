@@ -7,6 +7,7 @@ import {
   WorkspaceHubPlaceholder,
   WorkspaceHubShell,
 } from './WorkspaceHubShell'
+import type { UnifiedWorkspaceData } from '../hooks/useUnifiedWorkspaceData'
 
 jest.mock('../theme', () => ({
   useTheme: () => ({
@@ -24,7 +25,72 @@ jest.mock('../components/shared/ShellWindowTitleStrip', () => ({
   ShellWindowTitleStrip: () => null,
 }))
 
+const mockUseUnifiedWorkspaceData = jest.fn<UnifiedWorkspaceData, []>()
+
+jest.mock('../hooks/useUnifiedWorkspaceData', () => ({
+  useUnifiedWorkspaceData: () => mockUseUnifiedWorkspaceData(),
+}))
+
+function buildWorkspaceData(): UnifiedWorkspaceData {
+  const data: UnifiedWorkspaceData = {
+    summaries: {
+      platforms: {
+        key: 'platforms',
+        label: 'Platforms',
+        metric: '6 metrics',
+        detail: '4 layers · 1 alert',
+        tone: 'warning',
+        isLoading: false,
+        isError: false,
+      },
+      'physical-surfaces': {
+        key: 'physical-surfaces',
+        label: 'Physical Surfaces',
+        metric: '3 units',
+        detail: '1 notification · 2 online units',
+        tone: 'positive',
+        isLoading: false,
+        isError: false,
+      },
+      artifacts: {
+        key: 'artifacts',
+        label: 'Audio Artifacts',
+        metric: '12 assets',
+        detail: '2 native plugins · 4 soundfonts',
+        tone: 'positive',
+        isLoading: false,
+        isError: false,
+      },
+      'outboard-hardware': {
+        key: 'outboard-hardware',
+        label: 'Outboard Hardware',
+        metric: '5 devices',
+        detail: '3 hardware classes · 2 audio interfaces',
+        tone: 'info',
+        isLoading: false,
+        isError: false,
+      },
+    },
+    orderedSummaries: [],
+    physicalSurfacesSummary: null,
+  }
+
+  return {
+    ...data,
+    orderedSummaries: [
+      data.summaries.platforms,
+      data.summaries['physical-surfaces'],
+      data.summaries.artifacts,
+      data.summaries['outboard-hardware'],
+    ],
+  }
+}
+
 describe('WorkspaceHubShell', () => {
+  beforeEach(() => {
+    mockUseUnifiedWorkspaceData.mockImplementation(buildWorkspaceData)
+  })
+
   it('redirects the bare /workspace route into the platforms overview scaffold', async () => {
     render(
       <MemoryRouter initialEntries={['/workspace']}>
@@ -33,7 +99,7 @@ describe('WorkspaceHubShell', () => {
             <Route index element={<WorkspaceHubIndexRedirect />} />
             <Route
               path="platforms/overview"
-              element={<WorkspaceHubPlaceholder title="Platforms" subtitle="Overview scaffold" />}
+              element={<WorkspaceHubPlaceholder sectionKey="platforms" title="Platforms" subtitle="Overview scaffold" />}
             />
           </Route>
         </Routes>
@@ -42,6 +108,9 @@ describe('WorkspaceHubShell', () => {
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Overview', current: 'page' })).toHaveAttribute('href', '/workspace/platforms/overview')
+    expect(screen.getByLabelText('Workspace summaries')).toBeInTheDocument()
+    expect(screen.getAllByText('6 metrics')).toHaveLength(2)
+    expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
   it('renders flat section dividers and keeps the targeted workspace link active', async () => {
@@ -51,7 +120,7 @@ describe('WorkspaceHubShell', () => {
           <Route path="/workspace/*" element={<WorkspaceHubShell />}>
             <Route
               path="outboard-hardware"
-              element={<WorkspaceHubPlaceholder title="Outboard Hardware" subtitle="Overview scaffold" />}
+              element={<WorkspaceHubPlaceholder sectionKey="outboard-hardware" title="Outboard Hardware" subtitle="Overview scaffold" />}
             />
           </Route>
         </Routes>

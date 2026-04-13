@@ -6,10 +6,12 @@ import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplat
 import { PageHeader } from '../components/PageHeader'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import { useTheme } from '../theme'
+import { useUnifiedWorkspaceData, type UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
 import {
   WorkspaceHubContext,
   type WorkspaceHubContextValue,
   type WorkspaceHubNavSection,
+  useWorkspaceHubContext,
 } from './WorkspaceHubContext'
 import { WorkspaceHubNav } from './WorkspaceHubNav'
 import './WorkspaceHubShell.css'
@@ -44,13 +46,27 @@ export function WorkspaceHubIndexRedirect() {
 export function WorkspaceHubPlaceholder({
   title,
   subtitle,
+  sectionKey,
 }: {
   title: string
   subtitle: string
+  sectionKey: UnifiedWorkspaceSectionSummary['key']
 }) {
+  const { summaries } = useWorkspaceHubContext()
+  const summary = summaries[sectionKey]
+
   return (
     <div className="workspace-hub-shell__placeholder">
-      <PageHeader title={title} subtitle={subtitle} />
+      <PageHeader
+        title={title}
+        subtitle={subtitle}
+        actions={(
+          <div className="workspace-hub-shell__header-metrics" aria-label={`${title} summary`}>
+            <span className="workspace-hub-shell__header-metric">{summary.metric}</span>
+            <span className="workspace-hub-shell__header-detail">{summary.detail}</span>
+          </div>
+        )}
+      />
       <div className="workspace-hub-shell__placeholder-card">
         <h2>Migration pending</h2>
         <p>
@@ -66,7 +82,14 @@ export function WorkspaceHubShell() {
   const location = useLocation()
   const { theme } = useTheme()
   const resolvedTheme = theme.carbonTheme ?? 'g100'
-  const contextValue = useMemo<WorkspaceHubContextValue>(() => ({ navSections: WORKSPACE_HUB_SECTIONS }), [])
+  const workspaceData = useUnifiedWorkspaceData()
+  const contextValue = useMemo<WorkspaceHubContextValue>(
+    () => ({
+      navSections: WORKSPACE_HUB_SECTIONS,
+      summaries: workspaceData.summaries,
+    }),
+    [workspaceData.summaries],
+  )
 
   return (
     <GlobalTheme theme={resolvedTheme}>
@@ -82,6 +105,18 @@ export function WorkspaceHubShell() {
               sidebar={<WorkspaceHubNav sections={WORKSPACE_HUB_SECTIONS} />}
               content={
                 <main className="workspace-hub-shell__content-body" key={location.pathname}>
+                  <section className="workspace-hub-shell__summary-grid" aria-label="Workspace summaries">
+                    {workspaceData.orderedSummaries.map((summary) => (
+                      <article
+                        key={summary.key}
+                        className={`workspace-hub-shell__summary-card workspace-hub-shell__summary-card--${summary.tone}`}
+                      >
+                        <p className="workspace-hub-shell__summary-label">{summary.label}</p>
+                        <h2 className="workspace-hub-shell__summary-metric">{summary.metric}</h2>
+                        <p className="workspace-hub-shell__summary-detail">{summary.detail}</p>
+                      </article>
+                    ))}
+                  </section>
                   <Outlet />
                 </main>
               }

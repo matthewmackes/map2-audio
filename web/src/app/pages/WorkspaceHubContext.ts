@@ -1,5 +1,7 @@
 import { createContext, useContext } from 'react'
 
+import type { UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
+
 export interface WorkspaceHubNavItem {
   key: string
   label: string
@@ -14,6 +16,7 @@ export interface WorkspaceHubNavSection {
 
 export interface WorkspaceHubContextValue {
   navSections: WorkspaceHubNavSection[]
+  summaries: Record<UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary>
 }
 
 export const WorkspaceHubContext = createContext<WorkspaceHubContextValue | null>(null)

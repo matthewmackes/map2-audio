@@ -197,7 +197,7 @@ function pushNotification(
 }
 
 export function usePlatformShellData(): PlatformShellData {
-  const platformRouteActive = useRouteActive(['/platforms'])
+  const platformRouteActive = useRouteActive(['/platforms', '/workspace'])
   const platformFastCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,
