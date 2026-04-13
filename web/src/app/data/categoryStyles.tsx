@@ -9,7 +9,6 @@ type IconProps = { size?: number; style?: CSSProperties; className?: string }
 export interface CategoryConfig {
   color: string
   bg: string
-  gradient: string
   icon: ComponentType<IconProps>
 }
 
@@ -17,8 +16,6 @@ interface CategoryPaletteDefinition {
   color: string
   icon: ComponentType<IconProps>
   bgAlpha?: number
-  gradientStartAlpha?: number
-  gradientEndAlpha?: number
 }
 
 export const CATEGORY_COLOR_OVERRIDE_STORAGE_KEY = 'map2.category-color-overrides.v1'
@@ -77,13 +74,10 @@ function rgba(hex: string, alpha: number): string {
 function createCategoryConfig(definition: CategoryPaletteDefinition): CategoryConfig {
   const color = normalizeHexColor(definition.color) ?? '#94a3b8'
   const bgAlpha = definition.bgAlpha ?? 0.15
-  const gradientStartAlpha = definition.gradientStartAlpha ?? Math.min(bgAlpha + 0.01, 0.2)
-  const gradientEndAlpha = definition.gradientEndAlpha ?? 0.04
 
   return {
     color,
     bg: rgba(color, bgAlpha),
-    gradient: `linear-gradient(135deg, ${rgba(color, gradientStartAlpha)} 0%, ${rgba(color, gradientEndAlpha)} 100%)`,
     icon: definition.icon,
   }
 }
@@ -151,7 +145,7 @@ const CATEGORY_DEFINITIONS: Record<string, CategoryPaletteDefinition> = {
   lexicon: { color: '#c8a951', icon: getWrappedEffectIcon('lexicon') },
   Hardware: { color: '#c8a951', icon: getWrappedEffectIcon('hardware') },
   Effect: { color: carbon.gray40, icon: getWrappedEffectIcon('effect') },
-  default: { color: '#94a3b8', icon: getWrappedEffectIcon('plugin'), bgAlpha: 0.12, gradientStartAlpha: 0.12, gradientEndAlpha: 0.03 },
+  default: { color: '#94a3b8', icon: getWrappedEffectIcon('plugin'), bgAlpha: 0.12 },
 }
 
 export const CATEGORY_CONFIG: Record<string, CategoryConfig> = Object.fromEntries(

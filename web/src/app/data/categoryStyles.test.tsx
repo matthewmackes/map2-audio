@@ -16,7 +16,7 @@ describe('categoryStyles', () => {
     expect(getCategoryConfig('Dynamics').color).toBe('#33b1ff')
     expect(getCategoryConfig('Delay').color).toBe('#78a9ff')
     expect(getCategoryConfig('Reverb').color).toBe('#be95ff')
-    expect(getCategoryConfig('Dynamics').gradient).toContain('linear-gradient')
+    expect(getCategoryConfig('Dynamics').bg).toContain('51, 177, 255')
   })
 
   it('persists and applies overrides for resolved category keys', () => {

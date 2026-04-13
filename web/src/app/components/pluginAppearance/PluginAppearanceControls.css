@@ -83,6 +83,7 @@
   border-radius: 1rem;
   padding: 1rem;
   min-block-size: 5rem;
+  border: 1px solid transparent;
   color: #f4f4f4;
 }
 

@@ -94,7 +94,14 @@ export function PluginColorPicker({
         <div className="plugin-appearance__preview-chip" style={{ background: rgbaFromPluginAppearanceColor(variants.accent, 0.16), color: variants.accent, borderColor: rgbaFromPluginAppearanceColor(variants.accent, 0.35) }}>
           Plugin Accent
         </div>
-        <div className="plugin-appearance__preview-shell" style={{ background: `linear-gradient(135deg, ${variants.dark} 0%, ${variants.accent} 58%, ${variants.light} 100%)` }}>
+        <div
+          className="plugin-appearance__preview-shell"
+          style={{
+            background: variants.dark,
+            borderColor: rgbaFromPluginAppearanceColor(variants.accent, 0.28),
+            boxShadow: `inset 0 0 0 1px ${rgbaFromPluginAppearanceColor(variants.light, 0.16)}`,
+          }}
+        >
           <strong>Preview</strong>
           <span>Chip and card accent</span>
         </div>

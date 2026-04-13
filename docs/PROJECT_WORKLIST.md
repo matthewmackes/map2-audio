@@ -23450,7 +23450,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `npm --prefix web run build` -> PASS
   - ID: T1005-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Flatten category and plugin appearance helper gradients
     Description:
     - Goal / acceptance criteria: Remove gradient-producing helpers and preview surfaces from category-style and plugin-appearance utilities so shared editor/plugin surfaces no longer reintroduce gradient fills through helper contracts.
@@ -23459,8 +23459,18 @@ Subtasks:
     - Estimated effort: Medium
     - Required outputs: updated helper contracts, dependent surface updates, and validation evidence.
     Subtasks: None
-    Assigned to: Unassigned
-    Last updated: 2026-04-13 16:47 EDT - Codex
+    Assigned to: Codex
+    Last updated: 2026-04-13 17:53 EDT - Codex
+    Completion notes:
+      - Removed the unused `gradient` field from the shared `CategoryConfig` contract in `web/src/app/data/categoryStyles.tsx`, along with the associated gradient-start/end helper inputs, so category helpers now expose only flat color and background values.
+      - Updated `web/src/app/components/pluginAppearance/PluginColorPicker.tsx` and `web/src/app/components/pluginAppearance/PluginAppearanceControls.css` so the plugin appearance preview shell uses a flat dark surface with accent border treatments instead of a three-stop helper gradient.
+      - Refreshed `web/src/app/data/categoryStyles.test.tsx` to assert the flat helper background values and retained the existing plugin appearance picker regression coverage.
+      - Build validation refreshed generated release metadata in `VERSION` and `version.json`; no installer or environment artifacts changed because this task introduced no new runtime dependencies, services, or build requirements.
+    Validation:
+      - `rg -n "gradient" web/src/app/data/categoryStyles.tsx web/src/app/components/pluginAppearance/PluginColorPicker.tsx web/src/app/components/pluginAppearance/PluginAppearanceControls.css` -> no matches
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/categoryStyles.test.tsx src/app/components/pluginAppearance/PluginColorPicker.test.tsx` -> PASS (`2 suites, 4 tests`)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T1005-subD
     Status: [ ] Todo
     Title: Flatten remaining non-visualization shared primitives and route panels
