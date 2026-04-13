@@ -23261,7 +23261,7 @@ Last updated: 2026-04-13 15:36 EDT - Codex
   - Licensing review: touched `web/src`, `VERSION`, `version.json`, and `docs/PROJECT_WORKLIST.md` artifacts remain MAP2-owned AGPL-covered repository files; no new third-party notices or ownership gaps were introduced.
 
 ID: T999
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add browser-level smoke coverage for the grouped Outboard Hardware launcher flow
 Description:
 - Goal / acceptance criteria: Add an automated browser-level smoke that proves the home Start Menu shows the new `Outboard Hardware` launcher, hides the five individual outboard device tiles there, and can navigate through `/outboard-hardware` into at least one device detail page without regressing the existing shell chrome.
@@ -23270,8 +23270,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Browser smoke/test harness updates, route assertions for Start Menu → `/outboard-hardware` → device detail flow, and validation evidence.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-04-13 15:36 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-13 15:51 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/DesktopExperience.integration.test.tsx` to route the real `/outboard-hardware/*` shell inside the desktop/AppShell integration harness, instead of inventing a second browser-smoke stack.
+  - Added one browser-level launcher smoke that boots the home desktop, opens the Start Menu, proves the grouped `Outboard Hardware` launcher is present while the five dedicated outboard device tiles are absent there, routes into `/outboard-hardware`, and drills into the Tesira device detail page through the real workspace UI.
+  - Updated the desktop integration hook mocks to include `useClusterHardwareInventory`, keeping the existing shell integration suite compatible with the current Start Menu interface-summary dependencies.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS (`5 suites, 13 tests`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T1000
 Status: [ ] Todo

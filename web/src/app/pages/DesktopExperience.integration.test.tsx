@@ -7,6 +7,9 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from '../layout/AppShell'
 import { HomePage } from './HomePage'
+import { OutboardHardwareDevicePage } from './OutboardHardwareDevicePage'
+import { OutboardHardwareOverviewPage } from './OutboardHardwareOverviewPage'
+import { OutboardHardwareShell } from './OutboardHardwareShell'
 
 const mockUpdateSettings = jest.fn()
 const mockRestartBackend = jest.fn()
@@ -35,6 +38,11 @@ jest.mock('../hooks/useSpecialSettings', () => ({
 }))
 
 jest.mock('../hooks/useDeviceLocation', () => ({
+  useClusterHardwareInventory: () => ({
+    data: { nodes: {} },
+    isLoading: false,
+    error: null,
+  }),
   useHardwareMenuLocations: () => ({
     locationsByRoute: mockHardwareLocationNotes,
   }),
@@ -188,6 +196,10 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/" element={<HomePage />} />
             <Route path="/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
+            <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
+              <Route index element={<OutboardHardwareOverviewPage />} />
+              <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
+            </Route>
             <Route path="/platforms/theme" element={<ShellStubPage testId="theme-page">Theme Settings</ShellStubPage>} />
           </Routes>
           <LocationProbe />
@@ -288,6 +300,38 @@ describe('Desktop experience integration', () => {
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/perform')
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
     expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
+  })
+
+  it('uses the grouped Outboard Hardware launcher flow from the Start Menu into a device page', async () => {
+    renderDesktopExperience(['/'])
+
+    await act(async () => {
+      jest.advanceTimersByTime(4000)
+    })
+
+    fireEvent.click(screen.getByLabelText('Open platform menu'))
+    expect(screen.getByRole('menuitem', { name: /Outboard Hardware/i })).toBeInTheDocument()
+
+    for (const label of ['Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
+      expect(screen.queryByRole('menuitem', { name: new RegExp(label, 'i') })).toBeNull()
+    }
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /Outboard Hardware/i }))
+
+    await waitFor(() => expect(screen.getByTestId('route-probe')).toHaveTextContent('/outboard-hardware'))
+    expect(screen.getByRole('heading', { name: 'Outboard Hardware', level: 1 })).toBeInTheDocument()
+    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
+
+    const tesiraCardHeading = screen.getByRole('heading', { name: 'Tesira AVB', level: 2 })
+    const tesiraCard = tesiraCardHeading.closest('.cds--tile')
+    expect(tesiraCard).not.toBeNull()
+
+    fireEvent.click(within(tesiraCard as HTMLElement).getByRole('button', { name: 'Open in workspace' }))
+
+    await waitFor(() => expect(screen.getByTestId('route-probe')).toHaveTextContent('/outboard-hardware/biamp-tesira'))
+    expect(screen.getByRole('heading', { name: 'Tesira AVB' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open dedicated route' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Close Outboard' })).toBeInTheDocument()
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {
