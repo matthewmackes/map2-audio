@@ -212,21 +212,21 @@ describe('App routing', () => {
     expect(screen.queryByTestId('app-shell')).toBeNull()
   })
 
-  it('redirects legacy /platform query routes into the canonical /platforms workspace path', async () => {
+  it('redirects legacy /platform query routes into the canonical /workspace/platforms workspace path', async () => {
     window.history.pushState({}, '', '/platform?layer=overview')
 
     render(<App />)
 
-    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 
-  it('redirects legacy /audio-artifacts into the canonical /artifacts route', async () => {
+  it('redirects legacy /audio-artifacts into the canonical /workspace/artifacts route', async () => {
     window.history.pushState({}, '', '/audio-artifacts?category=lv2-plugins')
 
     render(<App />)
 
-    expect(await screen.findByTestId('artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins|discover=no')
+    expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
   })
 
   it('does not keep /audio-table as a routed surface after the platforms hard cut', async () => {
@@ -255,20 +255,20 @@ describe('App routing', () => {
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 
-  it('redirects the bare /platforms route into the overview workspace', async () => {
+  it('redirects the bare /platforms route into the canonical workspace hub overview', async () => {
     window.history.pushState({}, '', '/platforms')
 
     render(<App />)
 
-    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
   })
 
-  it('keeps the dedicated Platforms adoption route on the canonical workspace path', async () => {
+  it('redirects the legacy Platforms adoption route into the workspace hub path', async () => {
     window.history.pushState({}, '', '/platforms/adoption?state=claimable')
 
     render(<App />)
 
-    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/adoption?state=claimable')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/adoption?state=claimable')
   })
 
   it('redirects the bare /workspace route into the workspace hub platforms overview scaffold', async () => {
@@ -307,6 +307,15 @@ describe('App routing', () => {
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
+  it('redirects the legacy physical-surfaces overview into the workspace hub path', async () => {
+    window.history.pushState({}, '', '/physical-surfaces')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-physical-surfaces-route')).toHaveTextContent('/workspace/physical-surfaces')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
   it('mounts the migrated audio-artifacts overview inside the workspace hub', async () => {
     window.history.pushState({}, '', '/workspace/artifacts?category=lv2-plugins')
 
@@ -325,12 +334,30 @@ describe('App routing', () => {
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
-  it('redirects the retired Workspace Catalog route into the overview workspace', async () => {
+  it('redirects the legacy artifacts discover route into the workspace hub path', async () => {
+    window.history.pushState({}, '', '/artifacts/discover?category=nam-models')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/workspace/artifacts/discover?category=nam-models')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('redirects the legacy outboard-hardware device route into the workspace hub path', async () => {
+    window.history.pushState({}, '', '/outboard-hardware/lexicon-mpx1')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-outboard-hardware-device-route')).toHaveTextContent('/workspace/outboard-hardware/lexicon-mpx1')
+    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+  })
+
+  it('redirects the retired Workspace Catalog route into the canonical workspace hub overview', async () => {
     window.history.pushState({}, '', '/platforms/workspace-catalog')
 
     render(<App />)
 
-    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
   })
 
   it('retires the legacy SynthForge route back to the desktop landing page', async () => {

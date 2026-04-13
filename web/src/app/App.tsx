@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DataTableSkeleton, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
@@ -9,10 +9,12 @@ import { ToastProvider, useToasts } from './components/Toasts'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
-import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath } from './platform/routes'
+import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath, buildWorkspaceHubPlatformPath } from './platform/routes'
 import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
 import { LoadingState } from './components/shared/LoadingState'
-import { buildArtifactsPath } from './pages/audioArtifactsRoutes'
+import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
+import { buildWorkspacePhysicalSurfacesPath } from './pages/physicalSurfacesRoutes'
+import { buildWorkspaceOutboardHardwarePath } from './pages/outboardHardwareRoutes'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -188,7 +190,7 @@ function RouteBoundary({
 
 function HomeEntryRoute() {
   const location = useLocation()
-  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search))
+  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search), buildWorkspaceHubPlatformPath)
 
   if (redirectTarget) {
     return <Navigate to={redirectTarget} replace />
@@ -199,9 +201,9 @@ function HomeEntryRoute() {
 
 function LegacyPlatformRedirect() {
   const location = useLocation()
-  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search))
+  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search), buildWorkspaceHubPlatformPath)
 
-  return <Navigate to={redirectTarget ?? buildPlatformWorkspacePath('overview')} replace />
+  return <Navigate to={redirectTarget ?? buildWorkspaceHubPlatformPath('overview')} replace />
 }
 
 function LegacyArtifactsRedirect({ defaultCategory }: { defaultCategory?: string }) {
@@ -210,13 +212,46 @@ function LegacyArtifactsRedirect({ defaultCategory }: { defaultCategory?: string
   if (defaultCategory && !searchParams.has('category')) {
     searchParams.set('category', defaultCategory)
   }
-  return <Navigate to={buildArtifactsPath(searchParams)} replace />
+  return <Navigate to={buildWorkspaceArtifactsPath(searchParams)} replace />
+}
+
+function LegacyArtifactsDiscoverRedirect() {
+  const location = useLocation()
+  return <Navigate to={buildWorkspaceArtifactsDiscoverPath(location.search)} replace />
 }
 
 function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'audio-engine' | 'theme' | 'about' }) {
   const location = useLocation()
   const search = location.search || ''
   return <Navigate to={`${buildPlatformWorkspacePath(panel)}${search}`} replace />
+}
+
+function LegacyPlatformWorkspaceRedirect() {
+  const location = useLocation()
+  const params = useParams<{ workspace?: string }>()
+  const redirectedTarget = buildLegacyPlatformRedirectPath(
+    new URLSearchParams(location.search),
+    buildWorkspaceHubPlatformPath,
+  )
+
+  if (redirectedTarget) {
+    return <Navigate to={redirectedTarget} replace />
+  }
+
+  const workspace = params.workspace
+  return <Navigate to={`${buildWorkspaceHubPlatformPath((workspace as any) ?? 'overview')}${location.search || ''}`} replace />
+}
+
+function LegacyPhysicalSurfacesRedirect() {
+  const location = useLocation()
+  const params = useParams<{ surfaceId?: string }>()
+  return <Navigate to={`${buildWorkspacePhysicalSurfacesPath(params.surfaceId)}${location.search || ''}`} replace />
+}
+
+function LegacyOutboardHardwareRedirect() {
+  const location = useLocation()
+  const params = useParams<{ deviceId?: string }>()
+  return <Navigate to={`${buildWorkspaceOutboardHardwarePath(params.deviceId)}${location.search || ''}`} replace />
 }
 
 function PlatformStatusHeartbeat() {
@@ -321,9 +356,9 @@ export function App() {
                             <Routes>
                                 <Route path="/" element={<HomeEntryRoute />} />
                                 <Route path="/platform" element={<LegacyPlatformRedirect />} />
-                                <Route path="/platforms" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
-                                <Route path="/platforms/workspace-catalog" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
-                                <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
+                                <Route path="/platforms" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
+                                <Route path="/platforms/workspace-catalog" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
+                                <Route path="/platforms/:workspace" element={<LegacyPlatformWorkspaceRedirect />} />
                                 <Route path="/workspace/*" element={<WorkspaceHubShell />}>
                                   <Route index element={<WorkspaceHubIndexRedirect />} />
                                   <Route
@@ -365,19 +400,15 @@ export function App() {
                                 <Route path="/plugins" element={<LegacyArtifactsRedirect defaultCategory="lv2-plugins" />} />
                                 <Route path="/library" element={<LegacyArtifactsRedirect />} />
                                 <Route path="/audio-artifacts" element={<LegacyArtifactsRedirect />} />
-                                <Route path="/artifacts" element={<AudioArtifactsPage />} />
-                                <Route path="/artifacts/discover" element={<AudioArtifactsPage discoverMode />} />
+                                <Route path="/artifacts" element={<LegacyArtifactsRedirect />} />
+                                <Route path="/artifacts/discover" element={<LegacyArtifactsDiscoverRedirect />} />
                                 <Route path="/midi" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub-2" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub" element={<Navigate to="/midi-hub/connections" replace />} />
-                                <Route path="/physical-surfaces/*" element={<PhysicalSurfacesShell />}>
-                                  <Route index element={<PhysicalSurfacesOverviewPage />} />
-                                  <Route path=":surfaceId" element={<PhysicalSurfaceUnitPage />} />
-                                </Route>
-                                <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
-                                  <Route index element={<OutboardHardwareOverviewPage />} />
-                                  <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
-                                </Route>
+                                <Route path="/physical-surfaces" element={<LegacyPhysicalSurfacesRedirect />} />
+                                <Route path="/physical-surfaces/:surfaceId" element={<LegacyPhysicalSurfacesRedirect />} />
+                                <Route path="/outboard-hardware" element={<LegacyOutboardHardwareRedirect />} />
+                                <Route path="/outboard-hardware/:deviceId" element={<LegacyOutboardHardwareRedirect />} />
                                 <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />

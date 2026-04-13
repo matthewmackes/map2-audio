@@ -23809,7 +23809,7 @@ Subtasks:
     - Required outputs: redirect helpers/tests, menu/launcher updates, and smoke validation.
     Subtasks:
       - ID: T1004-subD-subA
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Redirect legacy workspace roots into canonical `/workspace/*` paths
         Description:
         - Goal / acceptance criteria: Add route helpers so `/platforms/*`, `/physical-surfaces/*`, `/artifacts*`, and `/outboard-hardware/*` forward into the canonical workspace hub paths while preserving params and query strings.
@@ -23819,9 +23819,16 @@ Subtasks:
         - Required outputs: App route redirect wiring, helper coverage, and focused route regressions.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:14 EDT - Codex
+        Last updated: 2026-04-13 19:20 EDT - Codex
+        - Completion notes:
+          - Redirected the legacy `/platform`, `/platforms/*`, `/physical-surfaces/*`, `/artifacts*`, `/plugins`, `/library`, and `/outboard-hardware/*` entry points into the canonical `/workspace/*` hub routes instead of remounting the legacy shells.
+          - Preserved route params and query strings across the redirect layer, including legacy platform layer mapping and the `/artifacts/discover` query passthrough into `/workspace/artifacts/discover`.
+          - Updated focused app-route regressions so bookmark safety is covered before the menu/catalog consolidation work starts.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subD-subB
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Repoint advanced menu and launcher catalog entries to one Workspaces entry
         Description:
         - Goal / acceptance criteria: Repoint advanced menu entries to `/workspace/*`, add the canonical `/workspace` launcher/storefront entry, and remove the four separate workspace routes from the featured catalog set.
@@ -23830,8 +23837,8 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: advanced-menu updates, launcher-catalog updates, and focused catalog/menu regressions.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 19:14 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:20 EDT - Codex
       - ID: T1004-subD-subC
         Status: [ ] Todo
         Title: Collapse start-menu workspace tiles and sweep shell-facing route aliases
@@ -23845,7 +23852,7 @@ Subtasks:
         Assigned to: Unassigned
         Last updated: 2026-04-13 19:14 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:14 EDT - Codex
+    Last updated: 2026-04-13 19:20 EDT - Codex
   - ID: T1004-subE
     Status: [ ] Todo
     Title: Delete legacy shells and sweep residual workspace route references
