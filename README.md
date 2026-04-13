@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1992** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **1995** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`436c6f15`](https://github.com/matthewmackes/map2-audio/commit/436c6f159c5bb26ad5a3df6a978d85f51f522f62) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
+| [`3bdd56c2`](https://github.com/matthewmackes/map2-audio/commit/3bdd56c20f45544f494d1e2d858767ae82a53086) | Ship T1006 flat theme configuration surfaces | Map2 Audio | 2026-04-13 |
+| [`b79081a8`](https://github.com/matthewmackes/map2-audio/commit/b79081a8c3c3ece43b7dcf34a2e64b6e4b10afbd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`ea7f7a40`](https://github.com/matthewmackes/map2-audio/commit/ea7f7a40ec7927e2996ffe2c693f22e21eed4f9c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`62b3c456`](https://github.com/matthewmackes/map2-audio/commit/62b3c45642dec88c4240d6fe0a8eb4f56cbf0ace) | Ship T1004 no-gradients UI rule guidance | Map2 Audio | 2026-04-13 |
 | [`8c2650ce`](https://github.com/matthewmackes/map2-audio/commit/8c2650ce59b10ba63260423de422fcfe89e4b8d7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`94e382be`](https://github.com/matthewmackes/map2-audio/commit/94e382be66d72f9e2811018517fb55157edcbc0f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`8187fae2`](https://github.com/matthewmackes/map2-audio/commit/8187fae2c94165a6f45c759d3fb54895405f24e8) | Ship T1003 lightweight outboard rack status hooks | Map2 Audio | 2026-04-13 |
-| [`8f9acaa4`](https://github.com/matthewmackes/map2-audio/commit/8f9acaa4edebac4d91689f030962bfdc8a5cc216) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`214eec68`](https://github.com/matthewmackes/map2-audio/commit/214eec6803eec9c93a62dd22e3eeb39dbc805938) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`0434011b`](https://github.com/matthewmackes/map2-audio/commit/0434011b29eae5bc7d630a26f2ba59b7985e7dad) | Ship T1002 node-targeted outboard route launches | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
