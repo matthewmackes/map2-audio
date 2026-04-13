@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **2001** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1164** TypeScript | **136** C++/H | **143** Docs | **2004** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ff59984e`](https://github.com/matthewmackes/map2-audio/commit/ff59984efaa733609273091cdaae84c3e04d18e9) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
+| [`7dcfcc13`](https://github.com/matthewmackes/map2-audio/commit/7dcfcc135123026adb2988b9c7108770f9bba7cf) | Ship T1005-subC flatten category helper contracts | Map2 Audio | 2026-04-13 |
+| [`368ee50c`](https://github.com/matthewmackes/map2-audio/commit/368ee50cf99a9c710f8b96f60a1230752871f852) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`7cc99fa7`](https://github.com/matthewmackes/map2-audio/commit/7cc99fa787a5584b2f6d35f254099cbc656a609a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`74e7f658`](https://github.com/matthewmackes/map2-audio/commit/74e7f658ac2ffb868d50f90beca223492d18419e) | Ship T1005-subB flat routed page hero surfaces | Map2 Audio | 2026-04-13 |
 | [`ec50b653`](https://github.com/matthewmackes/map2-audio/commit/ec50b653189f52402affa40fe7467b072c7ea875) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
 | [`60f7330a`](https://github.com/matthewmackes/map2-audio/commit/60f7330ad3870c650cfc2fedb486cf3f948bfe9c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`6e024a30`](https://github.com/matthewmackes/map2-audio/commit/6e024a30749b36a54c7de3f08c3a28668bc9c90b) | Ship T1005-subA flat shared shell gradients | Map2 Audio | 2026-04-13 |
-| [`4ea5b530`](https://github.com/matthewmackes/map2-audio/commit/4ea5b53060edd5befbb085468d972b5e6a2e8402) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-13 |
-| [`436c6f15`](https://github.com/matthewmackes/map2-audio/commit/436c6f159c5bb26ad5a3df6a978d85f51f522f62) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`3bdd56c2`](https://github.com/matthewmackes/map2-audio/commit/3bdd56c20f45544f494d1e2d858767ae82a53086) | Ship T1006 flat theme configuration surfaces | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
