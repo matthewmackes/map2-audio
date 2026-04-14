@@ -161,6 +161,9 @@ class PTPMonitor(Singleton):
             if not output:
                 return None
 
+            if "CURRENT_DATA_SET" not in output:
+                return None
+
             # Parse pmc output
             # Example:
             #   CURRENT_DATA_SET
@@ -175,6 +178,10 @@ class PTPMonitor(Singleton):
             offset_ns = float(offset_match.group(1)) if offset_match else None
             delay_ns = float(delay_match.group(1)) if delay_match else None
             steps_removed = int(steps_match.group(1)) if steps_match else None
+
+            if offset_ns is None and delay_ns is None and steps_removed is None:
+                logger.debug("pmc returned no usable CURRENT_DATA_SET fields; falling back to journal parsing")
+                return None
 
             # Determine state based on steps removed
             if steps_removed is not None:
@@ -232,9 +239,11 @@ class PTPMonitor(Singleton):
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=2.0)
             output = stdout.decode()
 
-            # Look for state changes: "port 1: LISTENING to SLAVE on MASTER_CLOCK_SELECTED"
-            state_match = re.search(r'port \d+: \w+ to (\w+)', output)
-            state = state_match.group(1) if state_match else None
+            # Look for state changes such as:
+            # "port 1: LISTENING to SLAVE on MASTER_CLOCK_SELECTED"
+            # "port 1 (enp11s0): LISTENING to MASTER on ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES"
+            state_matches = re.findall(r'port \d+(?: \([^)]+\))?: \w+ to (\w+)', output)
+            state = state_matches[-1] if state_matches else None
 
             # Look for offset: "master offset        -123 s2 freq  +12345 path delay       456"
             offset_match = re.search(r'master offset\s+(-?\d+)', output)

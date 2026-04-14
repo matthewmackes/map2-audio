@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (MAP2 PTP service-name gotcha documented)
+> **Last Updated**: April 14, 2026 (PTP monitor fallback parsing documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1022,6 +1022,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Treat `map2-ptp4l.service` as the canonical service check when validating AVB readiness on MAP2 hosts, and record blocker notes against that managed unit instead of the generic service name.
 - **Verification**: `systemctl is-active map2-ptp4l.service`; `systemctl status map2-ptp4l.service --no-pager -n 20`; `curl -sf http://127.0.0.1:8080/api/avb/status`
 - **Lesson**: When reconciling MAP2 service readiness with the live host, verify the repo-managed systemd unit names first; generic distro service names can make healthy MAP2 probes look wrong.
+
+**93. PTP Monitor Must Reject Echo-Only `pmc` Replies And Parse Interface-Qualified Journal Transitions**
+- **Files**: `app/services/avb/ptp_monitor.py`, `tests/test_ptp_monitor.py`
+- **Problem**: `/api/avb/ptp/status` could return `state: UNKNOWN` on an active host because the `pmc` path accepted a zero-exit reply containing only `sending: GET CURRENT_DATA_SET`, and the journal fallback regex did not match MAP2 log lines like `port 1 (enp11s0): LISTENING to MASTER ...`.
+- **Root Cause**: The monitor treated any non-empty `pmc` stdout as usable and the fallback regex only handled the older `port 1: ...` log shape without interface qualifiers.
+- **Fix**: Reject `pmc` `CURRENT_DATA_SET` replies that do not contain any usable fields, then fall back to journal parsing; update the journal regex to accept interface-qualified port transitions and use the latest transition in the window.
+- **Verification**: `pytest -q tests/test_ptp_monitor.py`; `PYTHONPATH=/home/mm/map2-audio python3 - <<'PY' ... from app.routes.avb import get_ptp_status ... PY`
+- **Lesson**: For linuxptp integrations, a successful command invocation is not enough; treat command-echo-only output as no data and keep log parsers aligned with the host’s real service log format.
 
 ### Server Management Gotchas
 
@@ -2069,6 +2077,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - PTP Monitor Fallback Parsing
+- **Section**: Gotchas & Learned Fixes (#93), Update Log
+- **Change**: Documented that the PTP monitor must reject echo-only `pmc` replies and must parse interface-qualified `ptp4l` journal transitions.
+- **Reason**: Active MAP2 hosts were surfacing `state: UNKNOWN` even though the managed PTP service had clear journal state transitions.
+- **Impact**: Future AVB blocker work should see concrete `MASTER`/`FAULTY` style PTP states instead of opaque `UNKNOWN` results when `pmc` has no usable dataset fields.
+- **Files**: `.github/copilot-instructions.md`, `app/services/avb/ptp_monitor.py`, `tests/test_ptp_monitor.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - MAP2 PTP Service Name Clarification
 - **Section**: Gotchas & Learned Fixes (#92), Update Log

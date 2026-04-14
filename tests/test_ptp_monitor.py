@@ -91,6 +91,26 @@ async def test_query_pmc_skips_invocation_when_no_writable_runtime_socket_is_ava
     assert status is None
 
 
+@pytest.mark.asyncio
+async def test_query_pmc_rejects_echo_only_output_without_dataset_fields(monkeypatch):
+    monitor = ptp_monitor.PTPMonitor()
+
+    monkeypatch.setattr(ptp_monitor.shutil, "which", lambda tool: "/usr/sbin/pmc" if tool == "pmc" else None)
+
+    async def _fake_run_pmc_query(command: str):
+        if command == "GET CURRENT_DATA_SET":
+            return "sending: GET CURRENT_DATA_SET\nCURRENT_DATA_SET\n"
+        if command == "GET PARENT_DATA_SET":
+            return "sending: GET PARENT_DATA_SET\nPARENT_DATA_SET\n"
+        raise AssertionError(f"unexpected pmc command: {command}")
+
+    monkeypatch.setattr(monitor, "_run_pmc_query", _fake_run_pmc_query)
+
+    status = await monitor._query_pmc()
+
+    assert status is None
+
+
 def test_get_ptp_monitor_uses_shared_singleton_getter():
     ptp_monitor.PTPMonitor.reset_instance()
 
@@ -102,3 +122,45 @@ def test_get_ptp_monitor_uses_shared_singleton_getter():
         assert ptp_monitor.PTPMonitor.has_instance() is True
     finally:
         ptp_monitor.PTPMonitor.reset_instance()
+
+
+@pytest.mark.asyncio
+async def test_parse_journal_handles_interface_qualified_port_state_transitions(monkeypatch):
+    monitor = ptp_monitor.PTPMonitor()
+
+    async def _fake_create_subprocess_exec(*args, **kwargs):
+        return _FakeProcess(
+            stdout=(
+                "Apr 14 14:14:19 MAP2-TESTBED ptp4l[1877]: port 1 (enp11s0): FAULTY to LISTENING on INIT_COMPLETE\n"
+                "Apr 14 14:14:27 MAP2-TESTBED ptp4l[1877]: port 1 (enp11s0): LISTENING to MASTER on ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n"
+                "Apr 14 14:14:48 MAP2-TESTBED ptp4l[1877]: port 1 (enp11s0): MASTER to FAULTY on FAULT_DETECTED (FT_UNSPECIFIED)\n"
+            )
+        )
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _fake_create_subprocess_exec)
+
+    status = await monitor._parse_journal()
+
+    assert status is not None
+    assert status.available is True
+    assert status.state == "FAULTY"
+
+
+@pytest.mark.asyncio
+async def test_parse_journal_prefers_latest_transition_when_multiple_states_exist(monkeypatch):
+    monitor = ptp_monitor.PTPMonitor()
+
+    async def _fake_create_subprocess_exec(*args, **kwargs):
+        return _FakeProcess(
+            stdout=(
+                "Apr 14 14:03:47 MAP2-TESTBED ptp4l[1877]: port 1 (enp11s0): FAULTY to LISTENING on INIT_COMPLETE\n"
+                "Apr 14 14:03:54 MAP2-TESTBED ptp4l[1877]: port 1 (enp11s0): LISTENING to MASTER on ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES\n"
+            )
+        )
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _fake_create_subprocess_exec)
+
+    status = await monitor._parse_journal()
+
+    assert status is not None
+    assert status.state == "MASTER"

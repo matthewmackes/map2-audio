@@ -7524,6 +7524,26 @@ Last updated: 2026-04-14 22:52 EDT - Codex
   - Follow-up verification showed the canonical managed service is `map2-ptp4l.service`, and it is active on the current host.
   - The earlier mismatch came from checking the generic distro `ptp4l.service`, which MAP2 does not use here, so no backend readiness change was required.
 
+ID: T2280
+Status: [✓] Done
+Title: Diagnose and tighten AVB PTP state reporting for active MAP2 hosts
+Description:
+- Goal / acceptance criteria: Determine why `/api/avb/status` still reports PTP state `UNKNOWN` on a host with active `map2-ptp4l.service`, and either fix the reporting path or document the exact remaining runtime limitation with regression coverage if code changes are needed.
+- Why it matters: AVB blocker decisions depend on accurate PTP visibility; `UNKNOWN` hides whether the host is merely idle, self-mastering, or actually faulting.
+- Dependencies: T2278
+- Estimated effort: Medium
+- Required outputs: root-cause analysis, any probe/parser fix, updated tests, and validation evidence.
+Assigned to: Codex
+Last updated: 2026-04-14 23:00 EDT - Codex
+- Completion notes:
+  - Traced the `UNKNOWN` PTP state to two parser issues in `app/services/avb/ptp_monitor.py`: the journal fallback did not match MAP2's interface-qualified `ptp4l` transition logs, and the `pmc` path accepted echo-only `CURRENT_DATA_SET` replies that contained no usable fields.
+  - Updated the journal fallback to parse `port 1 (enp11s0): LISTENING to MASTER ...` style transitions and to use the latest observed transition from the journal window instead of the first match.
+  - Hardened `_query_pmc()` so it rejects empty/non-dataset `CURRENT_DATA_SET` replies and falls back to journal parsing when `pmc` returns only command echo text.
+  - Live verification on the current host now reports PTP state `MASTER` instead of `UNKNOWN`, which clarifies that the remaining AVB blocker is peer discovery / engine binding rather than missing PTP state visibility.
+- Validation:
+  - `pytest -q tests/test_ptp_monitor.py` -> PASS
+  - `PYTHONPATH=/home/mm/map2-audio python3 - <<'PY' ... from app.routes.avb import get_ptp_status ... PY` -> PASS (`state: MASTER`)
+
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
 ## AVB
@@ -7543,7 +7563,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - Software prep, wrappers, and false-pass hardening are complete in the archive.
   - Current host still reports AVB operational on `enp11s0`, so the old “no NIC” assumption remains cleared.
-  - Refreshed evidence on 2026-04-14 still shows `/api/avb/avdecc/entities` empty, no active streams, `map2-ptp4l.service` active, and `/api/avb/status` reporting PTP state `UNKNOWN` rather than a peer-locked grandmaster.
+  - Refreshed evidence on 2026-04-14 still shows `/api/avb/avdecc/entities` empty, no active streams, `map2-ptp4l.service` active, and `/api/avb/status` now resolving to `MASTER`; the remaining blocker is still lack of a discovered peer/grandmaster-locked AVB bench plus missing engine-bound AVB readiness.
   - Unblock path: the shortest route is a two-node AVB bench using the existing Intel `igb` host plus one AVB-capable peer (second MAP2 node or Tesira unit), ideally through a TSN switch but direct-link smoke testing is still useful to prove peer discovery and PTP lock before the full matrix.
   - Source archive references: `T004` in `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
