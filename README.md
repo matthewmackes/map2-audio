@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1193** TypeScript | **136** C++/H | **143** Docs | **2130** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1194** TypeScript | **136** C++/H | **143** Docs | **2132** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`651731f0`](https://github.com/matthewmackes/map2-audio/commit/651731f01d9d57f75d380e1c4c5752e0f09d949e) | feat: replace shell chrome with global tree nav | Map2 Audio | 2026-04-14 |
+| [`4211dd12`](https://github.com/matthewmackes/map2-audio/commit/4211dd12f1446a72367b17d7dba288b9a43c6552) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`cd3c4b06`](https://github.com/matthewmackes/map2-audio/commit/cd3c4b06fa12a8056f79aae5f372be0c9b8cc588) | feat: ship pending shell and workspace updates | Map2 Audio | 2026-04-14 |
 | [`7e3981c1`](https://github.com/matthewmackes/map2-audio/commit/7e3981c18e59e4b82cfc3c265da59c8e3e8abc8a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`2f9394a4`](https://github.com/matthewmackes/map2-audio/commit/2f9394a44c256e62d2d89b166d552bedc95b9727) | add workspace hub nav filter | Map2 Audio | 2026-04-14 |
 | [`45efdd00`](https://github.com/matthewmackes/map2-audio/commit/45efdd00f088097eab62c275234151999ac90b53) | split home page style modules | Map2 Audio | 2026-04-14 |
 | [`29a51699`](https://github.com/matthewmackes/map2-audio/commit/29a5169995242192c225b8f2a9dfd082872ca0d5) | audit home shell accessibility states | Map2 Audio | 2026-04-14 |
 | [`dddae61c`](https://github.com/matthewmackes/map2-audio/commit/dddae61c04d1756c4db73c8d2bcf9a3a71f8e249) | normalize shared shell chrome copy | Map2 Audio | 2026-04-14 |
-| [`dadf59d4`](https://github.com/matthewmackes/map2-audio/commit/dadf59d46dd7519bb0d3e6fde75a03003ffff1ed) | add physical surfaces page coverage | Map2 Audio | 2026-04-14 |
-| [`bb1fca56`](https://github.com/matthewmackes/map2-audio/commit/bb1fca5692b2433c2a7b4d69e19b7393115121b5) | remove obsolete home start overlay | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
