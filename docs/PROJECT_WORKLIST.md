@@ -24962,7 +24962,7 @@ Last updated: 2026-04-14 14:08 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2267
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add browser-level visual snapshots for the new home shell
 Description:
 - Goal / acceptance criteria: Capture snapshot or screenshot-based regression coverage for the Carbon home shell across its minimal and cinematic modes.
@@ -24971,7 +24971,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: visual snapshot harness or screenshot suite, baseline artifacts, and documentation for update flow.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 22:31 EDT - Codex
+- Completion notes:
+  - Added `scripts/run_home_visual_smoke.mjs`, a Playwright-driven visual harness that serves `web/dist`, stubs the home-shell API and WebSocket contracts, and captures deterministic screenshots for minimal and cinematic landing modes.
+  - Added `docs/HOME_VISUAL_SMOKE.md` plus `web/package.json` scripts so the browser runtime install flow and smoke execution path are documented alongside the existing workspace visual smoke harness.
+  - Expanded the harness mocks to include realtime telemetry inputs (`/api/pipewire/status`, `/api/engine/cpu`, `/api/v2/latency/jitter-stats`) and hardened failure reporting with captured browser errors and debug screenshots, because the home shell now depends on those platform layers to render.
+  - The passing baseline for this slice is recorded under `artifacts/visual-smoke/home/2026-04-14T21-06-10.082Z/`.
+- Validation:
+  - `npm --prefix web run build` -> PASS
+  - `npm --prefix web run visual:home-smoke -- --skip-build` -> PASS
 
 ID: T2268
 Status: [✓] Done

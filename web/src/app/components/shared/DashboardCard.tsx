@@ -30,7 +30,7 @@ export function DashboardCard(props: StaticDashboardCardProps | InteractiveDashb
     const { children, className, interactive: _interactive, ...rest } = props
     return (
       <ClickableTile
-        {...rest}
+        {...(rest as ClickableTileProps)}
         className={joinClasses('dashboard-card', 'dashboard-card--interactive', className)}
       >
         {children}
@@ -41,7 +41,7 @@ export function DashboardCard(props: StaticDashboardCardProps | InteractiveDashb
   const { children, className, interactive: _interactive, ...rest } = props
   return (
     <Tile
-      {...rest}
+      {...(rest as TileProps)}
       className={joinClasses('dashboard-card', className)}
     >
       {children}

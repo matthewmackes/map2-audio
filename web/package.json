@@ -17,6 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
     "version:sync": "python3 ../scripts/generate_platform_version.py",
+    "visual:home-smoke": "node ../scripts/run_home_visual_smoke.mjs",
+    "visual:home-smoke:install": "playwright install chromium",
     "visual:workspace-smoke": "node ../scripts/run_workspace_visual_smoke.mjs",
     "visual:workspace-smoke:install": "playwright install chromium"
   },

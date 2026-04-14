@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 13, 2026 (no-gradients UI rule documented)
+> **Last Updated**: April 14, 2026 (home visual smoke telemetry mocks documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -998,6 +998,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Add a project-wide no-gradient rule to the shared guidance, replace guidance examples that showed gradient backgrounds, and record the current hotspot inventory in the canonical worklist (`AppShell.css`, `PageHeader.css`, `OutboardHardwareShell.css`, `posterFallbacks.css`, `CPUPerformancePage*`, `MOTURMEPage.tsx`, routing panels, metering/visualization components, and category-style helpers/tests).
 - **Verification**: `rg -n "gradient|bg-gradient|linearGradient|createLinearGradient" .github/copilot-instructions.md .gemini/instructions.md docs/PROJECT_WORKLIST.md`
 - **Lesson**: “Use Carbon” is not strong enough on its own; the repo needs an explicit no-gradient rule so follow-on UI work fails closed.
+
+**90. Home Visual Smoke Harnesses Must Mock Realtime Telemetry Layers**
+- **Files**: `scripts/run_home_visual_smoke.mjs`, `docs/HOME_VISUAL_SMOKE.md`
+- **Problem**: The home visual smoke run could build and serve `web/dist` successfully yet still time out waiting for `[data-testid="home-shell"]`, because the rendered app crashed behind the error boundary before the shell mounted.
+- **Root Cause**: The landing page now depends on PipeWire, CPU, and latency telemetry through `useShellSummaryData()` / `useLatencyPressure()`, but the first harness only mocked shell-navigation endpoints and omitted `/api/pipewire/status`, `/api/engine/cpu`, and `/api/v2/latency/jitter-stats`.
+- **Fix**: Stub those realtime telemetry endpoints in the smoke harness and record browser console/page errors plus a failure screenshot when the home shell selector never appears.
+- **Verification**: `npm --prefix web run build`; `npm --prefix web run visual:home-smoke -- --skip-build`
+- **Lesson**: Browser-level smoke coverage for shell surfaces must mock every platform layer they transitively read, not just the obvious page-local APIs.
 
 ### Server Management Gotchas
 
@@ -2045,6 +2053,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - Home Visual Smoke Telemetry Mocks
+- **Section**: Gotchas & Learned Fixes (#90), Update Log
+- **Change**: Documented that the home visual smoke harness must mock realtime PipeWire, CPU, and latency telemetry, and that the harness should emit browser-error evidence when the shell fails to mount.
+- **Reason**: The Carbon home shell now pulls transitive platform telemetry during render, so partial API mocks produce a crash rather than a visible shell.
+- **Impact**: Future visual-smoke work can avoid false selector timeouts and debug missing-platform-layer mocks faster.
+- **Files**: `.github/copilot-instructions.md`, `scripts/run_home_visual_smoke.mjs`, `docs/HOME_VISUAL_SMOKE.md`
 
 ### [2026-04-13] - No-Gradient UI Rule
 - **Section**: Web Development Guidelines, Style & Architecture Rules, Gotchas & Learned Fixes (#89), Update Log
