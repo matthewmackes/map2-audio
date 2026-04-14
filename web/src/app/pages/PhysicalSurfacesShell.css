@@ -74,15 +74,10 @@
   place-items: center;
 }
 
-.physical-surfaces-page__metrics,
 .physical-surfaces-page__unit-grid,
 .physical-surfaces-page__dual-grid {
   display: grid;
   gap: var(--cds-spacing-05);
-}
-
-.physical-surfaces-page__metrics {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .physical-surfaces-page__unit-grid {
@@ -93,7 +88,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.physical-surfaces-page__metric-card,
 .physical-surfaces-page__card,
 .physical-surfaces-page__host-note {
   display: grid;
@@ -117,7 +111,6 @@
   letter-spacing: 0.02em;
 }
 
-.physical-surfaces-page__metric-card h2,
 .physical-surfaces-page__card h2 {
   margin: 0;
   font-size: clamp(1.25rem, 2vw, 1.8rem);
@@ -238,7 +231,6 @@
 }
 
 @media (max-width: 1180px) {
-  .physical-surfaces-page__metrics,
   .physical-surfaces-page__unit-grid,
   .physical-surfaces-page__dual-grid,
   .physical-surfaces-page__zone-grid {

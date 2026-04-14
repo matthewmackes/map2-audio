@@ -69,15 +69,10 @@
   gap: var(--cds-spacing-06);
 }
 
-.outboard-hardware-page__metrics,
 .outboard-hardware-page__unit-grid,
 .outboard-hardware-page__dual-grid {
   display: grid;
   gap: var(--cds-spacing-05);
-}
-
-.outboard-hardware-page__metrics {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .outboard-hardware-page__unit-grid,
@@ -85,7 +80,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.outboard-hardware-page__metric-card,
 .outboard-hardware-page__card {
   display: grid;
   align-content: start;
@@ -108,7 +102,6 @@
   letter-spacing: 0.02em;
 }
 
-.outboard-hardware-page__metric-card h2,
 .outboard-hardware-page__card h2 {
   margin: 0;
   font-size: clamp(1.25rem, 2vw, 1.8rem);
@@ -148,7 +141,6 @@
 }
 
 @media (max-width: 1180px) {
-  .outboard-hardware-page__metrics,
   .outboard-hardware-page__unit-grid,
   .outboard-hardware-page__dual-grid {
     grid-template-columns: 1fr;

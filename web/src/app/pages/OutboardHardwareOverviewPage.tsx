@@ -529,29 +529,6 @@ export function OutboardHardwareOverviewPage({
         }
       />
 
-      <div className="outboard-hardware-page__metrics">
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Total devices</p>
-          <h2>{metrics.total}</h2>
-          <p className="outboard-hardware-page__body-copy">All currently curated outboard units exposed through the shared shell.</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Healthy</p>
-          <h2>{metrics.healthy}</h2>
-          <p className="outboard-hardware-page__body-copy">Devices currently reporting a ready or connected posture from the shared rollup sources.</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Attention</p>
-          <h2>{metrics.attention}</h2>
-          <p className="outboard-hardware-page__body-copy">Devices that are partially reachable, refreshing, or need operator review before live use.</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Offline</p>
-          <h2>{metrics.offline}</h2>
-          <p className="outboard-hardware-page__body-copy">Devices not currently discovered or assigned to nodes that are offline from the shared inventory view.</p>
-        </Tile>
-      </div>
-
       <div className="outboard-hardware-page__action-row" role="group" aria-label="Outboard status filter">
         <Tag type="cool-gray">
           Showing {filteredDevices.length} of {metrics.total}

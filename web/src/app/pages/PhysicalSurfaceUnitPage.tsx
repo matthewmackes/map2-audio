@@ -80,48 +80,15 @@ export function PhysicalSurfaceUnitPage({
         eyebrow="Physical Surfaces"
         title={unit.display_name}
         subtitle={unit.status_reason}
-        actions={<Tag type={statusTagType(unit.status)}>{unit.status}</Tag>}
+        actions={
+          <div className="physical-surfaces-page__tag-row">
+            <Tag type={statusTagType(unit.status)}>{unit.status}</Tag>
+            <Tag type="blue">{unit.host_detected ? 'Host detected' : 'Host not detected'}</Tag>
+            <Tag type="cool-gray">{unit.capabilities.length} capabilities</Tag>
+            <Tag type="cool-gray">{unit.matched_midi_devices.length} MIDI Hub matches</Tag>
+          </div>
+        }
       />
-
-      <div className="physical-surfaces-page__metrics">
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Status</p>
-          <h2>{unit.status}</h2>
-          <p className="physical-surfaces-page__body-copy">{unit.status_reason}</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Host Detection</p>
-          <h2>{unit.host_detected ? 'Yes' : 'No'}</h2>
-          <p className="physical-surfaces-page__body-copy">USB and kernel sound/MIDI probes are both considered when resolving device-family presence.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Capabilities</p>
-          <h2>{unit.capabilities.length}</h2>
-          <p className="physical-surfaces-page__body-copy">Declared capabilities currently modeled for this device family in the shared stack.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Specialized Route</p>
-          <h2>{unit.specialized_route ? 'Present' : 'Unified only'}</h2>
-          <p className="physical-surfaces-page__body-copy">
-            {unit.specialized_route
-              ? `An existing dedicated route is available at ${unit.specialized_route}.`
-              : 'This family currently lives only inside the new shared shell.'}
-          </p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Current View</p>
-          <h2>{unit.view_state.current_view_label}</h2>
-          <p className="physical-surfaces-page__body-copy">
-            Source: {unit.view_state.current_view_source}
-            {unit.view_state.is_override_active ? ' • operator override active' : ''}
-          </p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">MIDI Hub Matches</p>
-          <h2>{unit.matched_midi_devices.length}</h2>
-          <p className="physical-surfaces-page__body-copy">Profile-matched local devices currently associated with this family in the shared MIDI Hub inventory.</p>
-        </Tile>
-      </div>
 
       <div className="physical-surfaces-page__dual-grid">
         <Tile className="physical-surfaces-page__card">

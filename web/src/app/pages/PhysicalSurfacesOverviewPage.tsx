@@ -22,22 +22,13 @@ function overviewMetric(summary: PhysicalSurfacesShellContextValue['summary']) {
     return {
       online: 0,
       detected: 0,
-      planned: 0,
-      usbDevices: 0,
-      soundCards: 0,
-      midiHubDevices: 0,
     }
   }
   const online = summary.units.filter((unit) => unit.status === 'online').length
   const detected = summary.units.filter((unit) => unit.status === 'detected').length
-  const planned = summary.units.filter((unit) => unit.status === 'planned').length
   return {
     online,
     detected,
-    planned,
-    usbDevices: summary.host_observations.usb_devices.length,
-    soundCards: summary.host_observations.sound_cards.length,
-    midiHubDevices: summary.host_observations.midi_hub_devices.length,
   }
 }
 
@@ -122,36 +113,14 @@ export function PhysicalSurfacesOverviewPage({
         eyebrow="Physical Surfaces"
         title="Physical Surfaces"
         subtitle="Controller families, transport layers, and device-specific surfaces"
-        actions={<Tag type="blue">{summary?.units.length ?? 0} units</Tag>}
+        actions={
+          <div className="physical-surfaces-page__tag-row">
+            <Tag type="green">{metrics.online} online</Tag>
+            <Tag type="blue">{metrics.detected} detected</Tag>
+            <Tag type="blue">{summary?.units.length ?? 0} units</Tag>
+          </div>
+        }
       />
-
-      <div className="physical-surfaces-page__metrics">
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Online</p>
-          <h2>{metrics.online}</h2>
-          <p className="physical-surfaces-page__body-copy">Units currently reporting an active shared-stack runtime.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Detected</p>
-          <h2>{metrics.detected}</h2>
-          <p className="physical-surfaces-page__body-copy">Units matched by the host probe but not yet fully active in the richer runtime.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">USB Devices</p>
-          <h2>{metrics.usbDevices}</h2>
-          <p className="physical-surfaces-page__body-copy">USB devices visible to the shared hardware probe.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">Sound Cards</p>
-          <h2>{metrics.soundCards}</h2>
-          <p className="physical-surfaces-page__body-copy">ALSA sound-card or MIDI-capable kernel paths seen through sysfs and procfs.</p>
-        </Tile>
-        <Tile className="physical-surfaces-page__metric-card">
-          <p className="physical-surfaces-page__eyebrow">MIDI Hub Devices</p>
-          <h2>{metrics.midiHubDevices}</h2>
-          <p className="physical-surfaces-page__body-copy">Profile-matched local devices currently visible through the shared MIDI Hub inventory.</p>
-        </Tile>
-      </div>
 
       {summary?.host_observations.maschinen_mk1_host_note ? (
         <Tile className="physical-surfaces-page__host-note">

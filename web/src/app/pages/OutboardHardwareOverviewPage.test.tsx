@@ -191,11 +191,11 @@ describe('OutboardHardwareOverviewPage', () => {
   it('shows the grouped hardware counts on the overview page', () => {
     renderOverview()
 
-    expect(screen.getByText('Total devices')).toBeInTheDocument()
+    expect(screen.queryByText('Total devices')).not.toBeInTheDocument()
     expect(screen.getByText('5 devices')).toBeInTheDocument()
-    expect(screen.getAllByText('Healthy').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Attention').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Offline').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Healthy' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Attention' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Offline' })).toBeInTheDocument()
     expect(screen.getByText('2 healthy')).toBeInTheDocument()
     expect(screen.getByText('1 attention')).toBeInTheDocument()
     expect(screen.getByText('2 offline')).toBeInTheDocument()

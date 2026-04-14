@@ -24197,7 +24197,7 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
       - No dedicated `PhysicalSurfacesOverviewPage` or `PhysicalSurfaceUnitPage` test files currently exist in `web/src/app/pages`, so this slice relied on typecheck plus the existing outboard/audio-artifacts/workspace-hub coverage.
   - ID: T1006-subC
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Consolidate redundant metric card grids
     Description:
     - Goal / acceptance criteria: Remove duplicate metric grids from Outboard Hardware and Physical Surfaces pages that repeat data already shown in the workspace hub shell summary cards.
@@ -24214,7 +24214,15 @@ Subtasks:
       6. Run typecheck and page tests.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 09:27 EDT - Codex
+    - Completion notes:
+      - Removed the duplicate `.outboard-hardware-page__metrics` and `.physical-surfaces-page__metrics` grids from both overview/detail pages so `/workspace/*` no longer repeats shell-summary data in separate metric tiles.
+      - Moved the essential overview counts into compact header tags on `OutboardHardwareOverviewPage.tsx` and `PhysicalSurfacesOverviewPage.tsx`, and surfaced the key unit facts for detail pages through header tags instead of oversized metric cards.
+      - Deleted the now-unused metrics-grid and metric-card CSS selectors from `OutboardHardwareShell.css` and `PhysicalSurfacesShell.css`, then updated the outboard overview test to assert the new compact tag presentation.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
+      - `WorkspaceHubShell.test.tsx` continues to emit the existing React Router future-flag warnings during Jest, but the suite passed unchanged.
   - ID: T1006-subD
     Status: [✓] Done
     Title: Hide raw JSON debug blocks behind disclosure accordions

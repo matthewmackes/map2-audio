@@ -59,31 +59,15 @@ export function OutboardHardwareDevicePage({
         eyebrow="Outboard Hardware"
         title={device.displayName}
         subtitle="Rack processors, AVB hardware, and audio interfaces"
-        actions={<Tag type={categoryTagType(device.category)}>{device.category}</Tag>}
+        actions={
+          <div className="outboard-hardware-page__tag-row">
+            <Tag type={categoryTagType(device.category)}>{device.category}</Tag>
+            <Tag type="cool-gray">{device.protocols.length} protocols</Tag>
+            <Tag type="cool-gray">{device.capabilities.length} capabilities</Tag>
+            {dedicatedRoute ? <Tag type="blue">Dedicated route</Tag> : null}
+          </div>
+        }
       />
-
-      <div className="outboard-hardware-page__metrics">
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Hardware class</p>
-          <h2>{device.category}</h2>
-          <p className="outboard-hardware-page__body-copy">{device.operatorFocus}</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Dedicated route</p>
-          <h2>{dedicatedRoute ?? 'None'}</h2>
-          <p className="outboard-hardware-page__body-copy">The specialized route remains the canonical live-control surface for this device family.</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Protocols</p>
-          <h2>{device.protocols.length}</h2>
-          <p className="outboard-hardware-page__body-copy">{device.connectionModel}</p>
-        </Tile>
-        <Tile className="outboard-hardware-page__metric-card">
-          <p className="outboard-hardware-page__eyebrow">Capabilities</p>
-          <h2>{device.capabilities.length}</h2>
-          <p className="outboard-hardware-page__body-copy">{device.capabilitySummary}</p>
-        </Tile>
-      </div>
 
       <div className="outboard-hardware-page__dual-grid">
         <Tile className="outboard-hardware-page__card">
