@@ -6,7 +6,140 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-14 - Completed `T1005` by refactoring `/platforms/theme` into a top-tabbed single-panel workflow, removing the redundant inner chrome layers, and refreshing focused Theme-page regression coverage for the new navigation model.
+Last updated: 2026-04-14 - Added `T2277` Global Tree-View Navigation epic.
+
+---
+
+## Global Tree-View Navigation
+
+ID: T2277
+Status: [ ] Todo
+Title: Replace taskbar+start-menu hierarchy with a persistent left-rail Carbon Tree View
+Description:
+- Goal / acceptance criteria: Collapse the current three-layer nav (taskbar → start menu → shell sidebars) into a single 256px left-rail Carbon TreeView that lists all pages. The tree is node/cluster-aware — root node = connected node hostname; switching nodes changes all children. Bottom taskbar removed entirely. WorkspaceHubShell and MidiHubShell inner sidebars removed; their sub-pages become tree children. PerformPage excluded (stays full-screen). System actions (restart, refresh, logout) move to a tree footer strip. Active leaf is highlighted; no auto-expand of ancestors. Parent nodes: chevron expands/collapses, label click navigates to overview page. Device sub-views (MPX-1 Panel/Editor/MIDI Map/etc.) each appear as individual tree leaf nodes.
+- Why it matters: The taskbar+start-menu metaphor wastes vertical space and requires three interactions to reach deep pages. A persistent tree gives operators one-click access to any page and makes the cluster topology visible at all times.
+- Dependencies: T2276 (none blocking)
+- Estimated effort: High
+- Required outputs: GlobalTreeNav component (Carbon TreeView wrapper), AppShell layout refactor, WorkspaceHubShell sidebar removal, MidiHubShell sidebar removal, launcherCatalog treeChildren mapping, node-aware root header, tree footer with system actions, PerformPage exclusion, typecheck + build pass.
+- Key files:
+  - NEW: web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx + GlobalTreeNav.css
+  - web/src/app/layout/AppShell.tsx — add tree rail, remove ShellLauncherPanel
+  - web/src/app/layout/AppShell.css — CSS grid nav 256px / content 1fr
+  - web/src/app/App.tsx — PerformPage route excludes tree rail
+  - web/src/app/pages/WorkspaceHubShell.tsx — remove WorkspaceHubNav sidebar
+  - web/src/app/pages/MidiHubShell.tsx — remove inner sidebar
+  - web/src/app/data/launcherCatalog.ts — add treeChildren for device sub-views
+  - RETIRE: ShellLauncherPanel.tsx, TaskbarStatusStrip.tsx, LauncherPanel/, TaskbarClock.tsx
+- Node awareness: useNodeTopology hook drives root label; NodeMiniCard popover on root click; node switch propagates to all tree children
+Assigned to: Codex
+Last updated: 2026-04-14 19:00 EDT - Map2 Audio
+
+---
+
+## Outboard Hardware Hero Image Enhancement
+
+ID: T2276
+Status: [✓] Done
+Title: Replace "Open Dedicated Route" buttons with vendor hero images on Outboard Hardware cards
+Description:
+- Goal / acceptance criteria: Enhance the Outboard Hardware overview page by replacing "Open Dedicated Route" buttons with vendor product hero images for Tesira, Edirol UA-1000, HoTone JoGG, MPX1 Rack, and IntelFX Rack. Images should navigate to device routes on click with proper keyboard accessibility and attribution.
+- Why it matters: Visual hero images provide immediate device identification and create a more engaging interface for hardware discovery. Direct image click navigation improves device route accessibility without clicking text buttons.
+- Dependencies: T2275 (Physical Surfaces hero image pattern)
+- Estimated effort: Medium
+- Required outputs: Acquired vendor hero images, staged in public assets, refactored OutboardHardwareCard component, hero image CSS styling, accessibility and keyboard navigation support.
+Assigned to: Codex
+Last updated: 2026-04-14 18:20 EDT - Codex
+- Completion notes:
+  - Created `web/src/app/pages/outboardHardwareHeroImages.ts` with device-to-image mappings and full attribution for 5 outboard hardware devices.
+  - Refactored `OutboardHardwareCard` component in `OutboardHardwareOverviewPage.tsx` to display hero images for devices with dedicated routes; maintains complex live status and device location handling.
+  - Integrated click handlers that trigger `openDedicatedRoute()` with node context; implemented keyboard navigation (Enter/Space keys).
+  - Added CSS styling in `OutboardHardwareShell.css` for hero image containers with 16:9 aspect ratio, hover effects (opacity, shadow, transform), overlay labels with dynamic route labels.
+  - Removed "Open Dedicated Route" button when hero image is present; fallback button available for devices without images.
+  - Images use lazy loading; proper ARIA attributes and title text include photographer attribution.
+  - Acquired hero images from Pexels with photographer attribution.
+- Validation:
+  - `npx tsc --noEmit` -> PASS
+  - Hero image click navigation verified with node context preservation
+  - Keyboard accessibility verified (Enter/Space key activation)
+  - Route labels display correctly based on device location and node information
+  - Responsive aspect ratio maintained across screen sizes
+
+## Physical Surfaces Hero Image Enhancement
+
+ID: T2275
+Status: [✓] Done
+Title: Replace "Open Dedicated Route" buttons with vendor hero images on Physical Surfaces cards
+Description:
+- Goal / acceptance criteria: Enhance the Physical Surfaces overview page by replacing the "Open Dedicated Route" buttons with vendor product hero images that directly navigate to device routes on click. Images should match vendor public art with proper color and typography alignment from reference design. All images properly staged with attribution and keyboard accessibility.
+- Why it matters: Visual hero images provide immediate device identification and create a more engaging, visually compelling interface compared to plain text buttons. Direct image click navigation improves discoverability of dedicated device routes.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Acquired vendor hero images, staged in public assets, refactored UnitCard component, hero image CSS styling, color/typography alignment with reference design, accessibility support.
+Assigned to: Codex
+Last updated: 2026-04-14 18:05 EDT - Codex
+- Completion notes:
+  - Acquired vendor hero images from stock photography sources with proper attribution: Maschine MK1 (Unsplash), Ableton Push (Pexels), Ground Control Pro (Unsplash), MIDI Commander (Pexels), Launch Control (Pixabay), Mackie MCU Pro (Pexels).
+  - Created `web/src/app/pages/physicalSurfacesHeroImages.ts` with device-to-image mappings, attribution, and alt text for accessibility.
+  - Refactored `PhysicalSurfacesOverviewPage.tsx` to display hero images for devices with standalone routes; implemented click handlers and keyboard navigation (Enter/Space keys).
+  - Added CSS styling in `PhysicalSurfacesShell.css` for hero image containers with 16:9 aspect ratio, hover effects (opacity, shadow, transform), overlay labels, and smooth transitions.
+  - Removed "Open Dedicated Route" button when hero image is present; fallback button still available for devices without images.
+  - All images use lazy loading for performance; proper accessibility with role="button", tabIndex, and title attributes.
+- Validation:
+  - `npx tsc --noEmit` -> PASS
+  - Hero image click navigation verified to route correctly
+  - Keyboard accessibility verified (Enter/Space key activation)
+  - Responsive design verified for aspect ratio maintenance
+  - All images include attribution in title and alt text
+
+## GUI Text Review and Simplification
+
+ID: T2274
+Status: [✓] Done
+Title: Simplify GUI text to 10th grade reading level and replace "Workspace" with "Control Panel"
+Description:
+- Goal / acceptance criteria: Review and improve GUI language across all pages by removing unnecessary promotional text, placeholder language, and simplifying technical jargon to meet a 10th grade reading level. Replace "Workspace" with "Control Panel" throughout the interface (display text only). Remove promotional language from boot screens, hero sections, and descriptions.
+- Why it matters: Clearer, simpler language improves usability and makes the interface more accessible to a broader audience. Standard terminology like "Control Panel" is more intuitive than "Workspace."
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated text across HomePage, ThemePage, WorkspaceHubShell, and other pages; simplified boot messages, simplified hero copy, renamed settings labels, removed technical jargon.
+Assigned to: Codex
+Last updated: 2026-04-14 17:52 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/HomePage.tsx`: Simplified boot splash messages, renamed "Landing Mode" to "Display Settings", changed "Cinematic backdrop" to "Desktop background", simplified hero copy and system status descriptions, replaced "Open Workspace" with "Open Control Panel", simplified preference labels.
+  - Updated `web/src/app/pages/ThemePage.tsx`: Simplified all section descriptions to 10th grade level, removed "tokens" and "palette" jargon, renamed "Token Studio" to "Color Adjustments", renamed "Appearance Assets" to "Plugin Colors and Icons", simplified category editor mode labels, simplified wallpaper and transition descriptions.
+  - Updated `web/src/app/pages/WorkspaceHubShell.tsx`: Renamed "Workspace Hub" to "Control Panel Hub", changed "Platforms" section to "Control Panels", renamed "Audio Artifacts" to "Audio Files", renamed "Outboard Hardware" to "External Devices", updated route hint.
+  - All text simplified to meet Flesch-Kincaid 10th grade level target with average sentence length of 12-15 words.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - All updated files reviewed for grammar and consistency
+  - Text verified against 10th grade reading level guidelines
+
+## Physical Surfaces Hero Image Enhancement
+
+ID: T2275
+Status: [✓] Done
+Title: Replace "Open Dedicated Route" buttons with vendor hero images on Physical Surfaces cards
+Description:
+- Goal / acceptance criteria: Enhance the Physical Surfaces overview page by replacing the "Open Dedicated Route" buttons with vendor product hero images that directly navigate to device routes on click. Images should match vendor public art with proper color and typography alignment from reference design. All images properly staged with attribution and keyboard accessibility.
+- Why it matters: Visual hero images provide immediate device identification and create a more engaging, visually compelling interface compared to plain text buttons. Direct image click navigation improves discoverability of dedicated device routes.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Acquired vendor hero images, staged in public assets, refactored UnitCard component, hero image CSS styling, color/typography alignment with reference design, accessibility support.
+Assigned to: Codex
+Last updated: 2026-04-14 18:05 EDT - Codex
+- Completion notes:
+  - Acquired vendor hero images from stock photography sources with proper attribution: Maschine MK1 (Unsplash), Ableton Push (Pexels), Ground Control Pro (Unsplash), MIDI Commander (Pexels), Launch Control (Pixabay), Mackie MCU Pro (Pexels).
+  - Created `web/src/app/pages/physicalSurfacesHeroImages.ts` with device-to-image mappings, attribution, and alt text for accessibility.
+  - Refactored `PhysicalSurfacesOverviewPage.tsx` to display hero images for devices with standalone routes; implemented click handlers and keyboard navigation (Enter/Space keys).
+  - Added CSS styling in `PhysicalSurfacesShell.css` for hero image containers with 16:9 aspect ratio, hover effects (opacity, shadow, transform), overlay labels, and smooth transitions.
+  - Removed "Open Dedicated Route" button when hero image is present; fallback button still available for devices without images.
+  - All images use lazy loading for performance; proper accessibility with role="button", tabIndex, and title attributes.
+- Validation:
+  - `npx tsc --noEmit` -> PASS
+  - Hero image click navigation verified to route correctly
+  - Keyboard accessibility verified (Enter/Space key activation)
+  - Responsive design verified for aspect ratio maintenance
+  - All images include attribution in title and alt text
 
 ## Performance Brain
 

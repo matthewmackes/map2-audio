@@ -101,16 +101,16 @@ export function HomePage() {
             <img src={map2Logo} alt="MAP2 logo" className="hp2-boot__mark" />
           </div>
           <h1 className="hp2-boot__title">{MAP2_PLATFORM_NAME}</h1>
-          <p className="hp2-boot__subtitle">Initializing the Carbon-governed pre-Warp desktop session and restoring platform context.</p>
+          <p className="hp2-boot__subtitle">Starting up and restoring your settings.</p>
         </div>
         <div className="hp2-boot__progress" role="status" aria-live="polite">
           <InlineLoading
             status="active"
-            description="Restoring workplace shell"
+            description="Restoring your desktop"
             iconDescription="Boot in progress"
           />
           <p className="hp2-boot__progress-copy">
-            Bringing the Carbon shell online and restoring the last desktop session state.
+            Loading your desktop and settings.
           </p>
         </div>
       </section>
@@ -163,9 +163,9 @@ export function HomePage() {
           <Column lg={10} md={8} sm={4} className="hp2-home-shell__main">
             <Tile className="hp2-home-shell__hero">
               <p className="hp2-home-shell__eyebrow">Home</p>
-              <h1 className="hp2-home-shell__title">MAP2 Workplace Shell</h1>
+              <h1 className="hp2-home-shell__title">Desktop Control Panel</h1>
               <p className="hp2-home-shell__lede">
-                Launch the core MAP2 workspaces from a single Carbon landing surface with fast access to editing, routing, performance, and system operations.
+                Access your tools: editing, routing, performance, and system controls.
               </p>
               <div className="hp2-home-shell__hero-actions">
                 <Button
@@ -174,7 +174,7 @@ export function HomePage() {
                   onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
                   onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
                 >
-                  Open Workspace
+                  Open Control Panel
                 </Button>
                 <Button
                   kind="tertiary"
@@ -197,9 +197,9 @@ export function HomePage() {
               </div>
             </Tile>
 
-            <section className="hp2-home-shell__workspace-sections" aria-label="Workspace launch grid">
+            <section className="hp2-home-shell__workspace-sections" aria-label="Control Panel shortcuts">
               {groupedStartMenuTileItems.map((section) => (
-                <section key={section.group} className="hp2-home-shell__workspace-section" aria-label={`${section.group} launchers`}>
+                <section key={section.group} className="hp2-home-shell__workspace-section" aria-label={`${section.group} shortcuts`}>
                   <div className="hp2-home-shell__workspace-section-head">
                     <p className="hp2-home-shell__eyebrow">{section.group}</p>
                   </div>
@@ -255,9 +255,9 @@ export function HomePage() {
               <div className="hp2-home-shell__rail-card-head">
                 <div>
                   <p className="hp2-home-shell__eyebrow">System Status</p>
-                  <h2>Node, interfaces, and platform health</h2>
+                  <h2>System health and devices</h2>
                 </div>
-                <span className="hp2-home-shell__rail-card-link">Open workspace</span>
+                <span className="hp2-home-shell__rail-card-link">Open control panel</span>
               </div>
               <SystemSummary
                 classNamePrefix="map2-launcher"
@@ -271,8 +271,8 @@ export function HomePage() {
             <Tile className="hp2-home-shell__rail-card">
               <div className="hp2-home-shell__rail-card-head">
                 <div>
-                  <p className="hp2-home-shell__eyebrow">Landing Mode</p>
-                  <h2>Presentation preferences</h2>
+                  <p className="hp2-home-shell__eyebrow">Display Settings</p>
+                  <h2>Visual preferences</h2>
                 </div>
                 <Button
                   kind="ghost"
@@ -284,21 +284,21 @@ export function HomePage() {
                   Open theme settings
                 </Button>
               </div>
-              <div className="hp2-home-shell__preference-list">
+                <div className="hp2-home-shell__preference-list">
                 <div>
-                  <strong>Backdrop</strong>
-                  <p>{landingPreferences.cinematicBackdropEnabled ? `Cinematic ${wallpaper.mode}` : 'Minimal product shell'}</p>
+                  <strong>Desktop Background</strong>
+                  <p>{landingPreferences.cinematicBackdropEnabled ? `Custom ${wallpaper.mode}` : 'Simple dark'}</p>
                 </div>
                 <div>
-                  <strong>Boot splash</strong>
-                  <p>{landingPreferences.bootSplashEnabled ? 'Enabled for this browser' : 'Disabled by default'}</p>
+                  <strong>Startup Screen</strong>
+                  <p>{landingPreferences.bootSplashEnabled ? 'On' : 'Off'}</p>
                 </div>
               </div>
               <div className="hp2-home-shell__preference-toggles">
                 <Toggle
                   id="home-landing-cinematic-backdrop"
                   size="sm"
-                  labelText="Cinematic backdrop"
+                  labelText="Desktop background"
                   labelA="Off"
                   labelB="On"
                   toggled={landingPreferences.cinematicBackdropEnabled}
@@ -309,7 +309,7 @@ export function HomePage() {
                 <Toggle
                   id="home-landing-boot-splash"
                   size="sm"
-                  labelText="Boot splash"
+                  labelText="Startup screen"
                   labelA="Off"
                   labelB="On"
                   toggled={landingPreferences.bootSplashEnabled}

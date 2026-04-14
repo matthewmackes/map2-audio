@@ -70,7 +70,7 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
   return [
     {
       key: 'platforms',
-      label: 'Platforms',
+      label: 'Control Panels',
       items: platformPanelItems.map((item) => {
         const workspace = item.target.panel ?? item.target.layer ?? 'overview'
         return {
@@ -83,7 +83,7 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
     },
     {
       key: 'physical-surfaces',
-      label: 'Physical Surfaces',
+      label: 'Surfaces',
       items: [
         {
           key: 'physical-surfaces-overview',
@@ -101,7 +101,7 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
     },
     {
       key: 'artifacts',
-      label: 'Audio Artifacts',
+      label: 'Audio Files',
       items: [
         ...ARTIFACT_CATEGORY_ITEMS.map((item) => buildWorkspaceArtifactsNavItem(item.key, item.label, item.category)),
         {
@@ -114,7 +114,7 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
     },
     {
       key: 'outboard-hardware',
-      label: 'Outboard Hardware',
+      label: 'External Devices',
       items: [
         {
           key: 'outboard-hardware-overview',
@@ -153,9 +153,9 @@ export function WorkspaceHubShell() {
   )
   const shellWindowContext = useMemo<ShellWindowContextValue>(
     () => ({
-      title: 'Workspace Hub',
+      title: 'Control Panel Hub',
       titleIcon: MapOs2DrivesIcon,
-      routeHint: 'workspace / hub',
+      routeHint: 'control panel / hub',
       accentColor: 'var(--cds-support-warning)',
       onClose: () => navigate('/'),
     }),

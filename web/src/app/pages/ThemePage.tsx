@@ -812,7 +812,7 @@ export function ThemePage() {
           <div>
             <h1 className="theme-page__title">Theme</h1>
             <p className="theme-page__subtitle">
-              Focus one theme task at a time: pick a shell, inspect the preview, then tune tokens, assets, and behavior from dedicated top tabs.
+              Choose your theme, preview it, and adjust colors and settings.
             </p>
           </div>
         </div>
@@ -1173,7 +1173,7 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
           <div>
             <h2 className="theme-page__section-title">Desktop Themes</h2>
             <p className="theme-page__section-copy">
-              Load a core shell, browse presets, test a suggested direction, or save the current draft as a reusable custom theme.
+              Pick a theme, browse options, try suggestions, or save your own.
             </p>
           </div>
           <div className="theme-page__section-tags">
@@ -1369,9 +1369,9 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
       <section id={`${THEME_PAGE_SECTION_IDS.preview}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.preview}-tab`} role="tabpanel">
         <div className="theme-page__panel-header">
           <div>
-            <h2 className="theme-page__section-title">Desktop Themes</h2>
+            <h2 className="theme-page__section-title">Preview</h2>
             <p className="theme-page__section-copy">
-              The preview mirrors the desktop-theme workflow directly: desktop scene, active window, inactive window, and message box.
+              See how your theme looks on the desktop and in windows.
             </p>
           </div>
           <div className="theme-page__section-tags">
@@ -1438,7 +1438,7 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
         <div className="theme-page__panel-header">
           <div>
             <h2 className="theme-page__section-title">Scheme</h2>
-            <p className="theme-page__section-copy">Choose the Carbon shell baseline used for the preview windows and routed chrome.</p>
+            <p className="theme-page__section-copy">Choose how dark or light your theme should be.</p>
           </div>
           <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftBase)}</Tag>
         </div>
@@ -1471,8 +1471,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
       <section id={`${THEME_PAGE_SECTION_IDS.font}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.font}-tab`} role="tabpanel">
         <div className="theme-page__typography-panel">
           <div className="theme-page__dialog-group">
-            <h2 className="theme-page__section-title">Accent family</h2>
-            <p className="theme-page__section-copy">Retain token-based color editing, but group the family choices like a modern palette instead of a left rail.</p>
+            <h2 className="theme-page__section-title">Color Family</h2>
+            <p className="theme-page__section-copy">Choose your accent color.</p>
             <div className="theme-page__family-grid theme-page__family-grid--dialog" role="radiogroup" aria-label="Accent family">
               {CARBON_COLOR_FAMILIES.map((family) => {
                 const previewShade = draftBase === 'g100' || draftBase === 'g90' ? 50 : 60
@@ -1502,8 +1502,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
           <div className="theme-page__dialog-group">
             <div className="theme-page__panel-header">
               <div>
-                <h2 className="theme-page__section-title">Platform GUI font</h2>
-                <p className="theme-page__section-copy">Font changes stay live, but now live on their own tab instead of a stacked sidebar block.</p>
+                <h2 className="theme-page__section-title">Font</h2>
+                <p className="theme-page__section-copy">Choose how text looks.</p>
               </div>
               <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
             </div>
@@ -1543,8 +1543,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
         <div className="theme-page__dialog-group theme-page__dialog-group--wide">
           <div className="theme-page__dialog-head">
             <div>
-              <h2 className="theme-page__section-title">Token studio</h2>
-              <p className="theme-page__section-copy">Tune semantic shell tokens from grouped lists, then open a family and shade picker inline.</p>
+              <h2 className="theme-page__section-title">Color Adjustments</h2>
+              <p className="theme-page__section-copy">Fine-tune the colors for backgrounds, text, and highlights.</p>
             </div>
             <Tag type={draftOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
               {draftOverrideCount > 0 ? `${draftOverrideCount} overrides` : 'No overrides'}
@@ -1643,9 +1643,9 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
         <div className="theme-page__dialog-group theme-page__dialog-group--wide">
           <div className="theme-page__dialog-head">
             <div>
-              <h2 className="theme-page__section-title">Appearance assets</h2>
+              <h2 className="theme-page__section-title">Plugin Colors and Icons</h2>
               <p className="theme-page__section-copy">
-                Keep shared category accents and per-plugin icon or color overrides grouped together without mixing them into the shell chooser.
+                Change how plugins look in your theme.
               </p>
             </div>
             <div className="theme-page__section-tags">
@@ -1661,14 +1661,14 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
           <div className="theme-page__editor-mode-grid" role="group" aria-label="Appearance assets mode">
             <Button kind={categoryEditorMode === 'categories' ? 'primary' : 'tertiary'} onClick={() => onSetCategoryEditorMode('categories')}>
               <span className="theme-page__editor-mode-copy">
-                <strong>Category accents</strong>
-                <span>Shared palette used by cards, chips, and browser badges.</span>
+                <strong>Category Colors</strong>
+                <span>Colors used for different types of items.</span>
               </span>
             </Button>
             <Button kind={categoryEditorMode === 'plugins' ? 'primary' : 'tertiary'} onClick={() => onSetCategoryEditorMode('plugins')}>
               <span className="theme-page__editor-mode-copy">
-                <strong>Plugin overrides</strong>
-                <span>Per-plugin icon, accent, and description overrides.</span>
+                <strong>Plugin Appearance</strong>
+                <span>Change each plugin's icon and colors.</span>
               </span>
             </Button>
           </div>
@@ -1870,8 +1870,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
         <div className="theme-page__dialog-group theme-page__dialog-group--wide">
           <div className="theme-page__dialog-head">
             <div>
-              <h2 className="theme-page__section-title">Desktop personalization</h2>
-              <p className="theme-page__section-copy">Control the desktop wallpaper and jump back to the desktop workflow from one focused panel.</p>
+              <h2 className="theme-page__section-title">Desktop Personalization</h2>
+              <p className="theme-page__section-copy">Change your desktop background and other display settings.</p>
             </div>
             <div className="theme-page__section-tags">
               <Tag type="cool-gray" size="sm">
@@ -1890,15 +1890,15 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
               <div className="theme-page__motion-head">
                 <PaintBrush size={20} aria-hidden />
                 <div>
-                  <strong>Wallpaper source</strong>
-                  <p>Choose the platform hero wallpaper, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
+                  <strong>Desktop Background</strong>
+                  <p>Pick the default image, use your theme color, or upload your own.</p>
                 </div>
               </div>
               <div className="theme-page__option-list" role="radiogroup" aria-label="Desktop wallpaper source">
                 {([
-                  ['default-image', 'Platform hero', 'Use the platform hero icon over a black desktop background.'],
-                  ['solid-theme', 'Theme solid color', 'Use the active Carbon theme background color as the desktop wallpaper.'],
-                  ['uploaded-image', 'Uploaded image', 'Use a custom image stored locally in this browser.'],
+                   ['default-image', 'Default Image', 'Use the standard background image.'],
+                   ['solid-theme', 'Theme Color', 'Use your theme background color.'],
+                   ['uploaded-image', 'Upload Image', 'Use your own background image.'],
                 ] as const).map(([id, label, description]) => {
                   const active = desktopWallpaper.mode === id
 
@@ -2029,8 +2029,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
               <div className="theme-page__motion-head">
                 <Loop size={20} aria-hidden />
                 <div>
-                  <strong>Page transition style</strong>
-                  <p>Choose how supported shell routes animate. Reduced motion still forces the minimal fade.</p>
+                  <strong>Page Transitions</strong>
+                  <p>Choose how pages move when you switch between them.</p>
                 </div>
               </div>
               <div className="theme-page__option-list" role="radiogroup" aria-label="Page transition style">
@@ -2057,8 +2057,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
               <div className="theme-page__motion-head">
                 <Settings size={20} aria-hidden />
                 <div>
-                  <strong>Special Settings Menu</strong>
-                  <p>Keep native-plugin visibility controls and related utility behavior outside the shell-theme tokens.</p>
+                  <strong>Plugin Visibility</strong>
+                  <p>Hide or show plugins in the interface.</p>
                 </div>
               </div>
               <div className="theme-page__motion-actions">

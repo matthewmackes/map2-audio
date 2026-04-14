@@ -43,8 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     isAudioGridWorkspaceRoute,
     isDesktopRoute,
     isIntegratedWorkspaceRoute,
-    launcherSummaryItems,
-    platformStatusLabels,
+    taskbarPillItems,
     shellAccentColor,
     shellClassName,
     shellRouteHint,
@@ -139,10 +138,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           launcherRef={navMenuRef}
           navOpen={navOpen}
           powerMenuOpen={powerMenuOpen}
-          launcherSummaryItems={launcherSummaryItems}
           pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
-          platformStatusLabels={platformStatusLabels}
+          taskbarPillItems={taskbarPillItems}
           startMenuTileItems={startMenuTileItems}
+          onOpenTaskbarPill={navigate}
           onToggleMenu={launcherActions.onToggleMenu}
           onTogglePowerMenu={launcherActions.onTogglePowerMenu}
           onCloseMenus={launcherActions.onCloseMenus}

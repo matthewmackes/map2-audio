@@ -2,29 +2,31 @@ import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
 import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
+import type { TaskbarPillItem } from './useAppShellPresentation'
 
 type TaskbarStatusStripProps = {
-  launcherSummaryItems: string[]
   pendingPushConfirmation: PushSurfacePendingConfirmation | null
-  platformStatusLabels: string[]
+  pillItems: TaskbarPillItem[]
+  onOpenPill: (route: string) => void
 }
 
 export function TaskbarStatusStrip({
-  launcherSummaryItems,
   pendingPushConfirmation,
-  platformStatusLabels,
+  pillItems,
+  onOpenPill,
 }: TaskbarStatusStripProps) {
   return (
     <div className="window-taskbar__status-strip" aria-label="Shell status">
-      {launcherSummaryItems.map((item) => (
-        <span key={item} className="window-taskbar__pill window-taskbar__pill--info">
-          {item}
-        </span>
-      ))}
-      {platformStatusLabels.map((label) => (
-        <span key={label} className="window-taskbar__pill window-taskbar__pill--status">
-          {label}
-        </span>
+      {pillItems.map((item) => (
+        <button
+          key={`${item.tone}-${item.label}`}
+          type="button"
+          className={`window-taskbar__pill window-taskbar__pill--${item.tone}`}
+          onClick={() => onOpenPill(item.route)}
+          title={`Open ${item.label}`}
+        >
+          {item.label}
+        </button>
       ))}
       {pendingPushConfirmation ? (
         <PushConfirmationNoticePill pendingConfirmation={pendingPushConfirmation} />

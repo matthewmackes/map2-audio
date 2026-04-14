@@ -225,6 +225,7 @@ describe('AppShell taskbar shell', () => {
 
     expect(container.querySelector('.window-title-strip')).toBeNull()
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
+    expect(screen.queryByText('Start')).toBeNull()
     expect(screen.getByTestId('taskbar-clock')).toBeInTheDocument()
   })
 
@@ -290,7 +291,7 @@ describe('AppShell taskbar shell', () => {
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
 
-    expect(screen.getAllByText('Mackes Audio Platform')).toHaveLength(2)
+    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
     expect(screen.getByText('Platform 0000000000000001')).toBeInTheDocument()
     expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
     expect(screen.getByText('map2-host')).toBeInTheDocument()
@@ -561,6 +562,19 @@ describe('AppShell taskbar shell', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /Device\(s\) Manager/i }))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/management')
+  })
+
+  it('routes taskbar status pills into their corresponding Platforms subwindows', () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'AVB: operational' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/avb-routing')
   })
 
   it('moves focus into the launcher panel and restores it to the trigger when the panel closes', () => {

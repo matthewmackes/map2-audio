@@ -10,6 +10,7 @@ import {
   type PhysicalSurfacesShellContextValue,
 } from './physicalSurfacesShared'
 import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
+import { getHeroImageForUnit } from './physicalSurfacesHeroImages'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
   if (status === 'online') return 'green'
@@ -42,6 +43,20 @@ function UnitCard({
 }) {
   const navigate = useNavigate()
   const standaloneRoute = resolvePhysicalSurfaceStandaloneRoute(unit.unit_id, unit.specialized_route)
+  const heroImage = getHeroImageForUnit(unit.unit_id)
+
+  const handleHeroImageClick = () => {
+    if (standaloneRoute) {
+      navigate(standaloneRoute)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((e.key === 'Enter' || e.key === ' ') && standaloneRoute) {
+      e.preventDefault()
+      navigate(standaloneRoute)
+    }
+  }
 
   return (
     <Tile className="physical-surfaces-page__card" key={unit.unit_id}>
@@ -77,11 +92,31 @@ function UnitCard({
           ))}
         </ul>
       </div>
+      {standaloneRoute && heroImage ? (
+        <div
+          className="physical-surfaces-page__hero-image-container"
+          onClick={handleHeroImageClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          title={`View ${unit.display_name} - ${heroImage.attribution}`}
+        >
+          <img
+            src={heroImage.imagePath}
+            alt={heroImage.alt}
+            className="physical-surfaces-page__hero-image"
+            loading="lazy"
+          />
+          <div className="physical-surfaces-page__hero-image-overlay">
+            <span className="physical-surfaces-page__hero-image-label">View Dedicated Route</span>
+          </div>
+        </div>
+      ) : null}
       <div className="physical-surfaces-page__action-row">
         <Button kind="ghost" size="sm" onClick={() => navigate(buildUnitPath(unit.unit_id))}>
           Open Surface Page
         </Button>
-        {standaloneRoute ? (
+        {standaloneRoute && !heroImage ? (
           <Button kind="secondary" size="sm" onClick={() => navigate(standaloneRoute)}>
             Open Dedicated Route
           </Button>

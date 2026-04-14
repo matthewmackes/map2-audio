@@ -16,6 +16,7 @@ import {
 } from './outboardHardwareShared'
 import { useCluster } from '../contexts/useCluster'
 import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
+import { getHeroImageForDevice } from './outboardHardwareHeroImages'
 
 type StatusTagType = 'green' | 'red' | 'blue' | 'cool-gray' | 'warm-gray'
 type OutboardHardwareLiveStatusGroup = 'healthy' | 'attention' | 'offline'
@@ -400,12 +401,26 @@ function OutboardHardwareCard({
 }) {
   const navigate = useNavigate()
   const { setActiveNode } = useCluster()
+  const heroImage = getHeroImageForDevice(device.deviceId)
   const dedicatedRoute = routeTarget?.path ?? resolveOutboardHardwareStandaloneRoute(device.deviceId)
 
   const openDedicatedRoute = () => {
     if (!routeTarget) return
     setActiveNode(routeTarget.nodeId)
     navigate(routeTarget.path)
+  }
+
+  const handleHeroImageClick = () => {
+    if (routeTarget) {
+      openDedicatedRoute()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((e.key === 'Enter' || e.key === ' ') && routeTarget) {
+      e.preventDefault()
+      openDedicatedRoute()
+    }
   }
 
   return (
@@ -442,11 +457,31 @@ function OutboardHardwareCard({
           </Tag>
         ))}
       </div>
+      {routeTarget && heroImage ? (
+        <div
+          className="outboard-hardware-page__hero-image-container"
+          onClick={handleHeroImageClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          title={`View ${device.displayName} - ${heroImage.attribution}`}
+        >
+          <img
+            src={heroImage.imagePath}
+            alt={heroImage.alt}
+            className="outboard-hardware-page__hero-image"
+            loading="lazy"
+          />
+          <div className="outboard-hardware-page__hero-image-overlay">
+            <span className="outboard-hardware-page__hero-image-label">{routeTarget.label}</span>
+          </div>
+        </div>
+      ) : null}
       <div className="outboard-hardware-page__action-row">
         <Button kind="ghost" size="sm" onClick={() => navigate(buildDevicePath(device.deviceId))}>
           Open in workspace
         </Button>
-        {dedicatedRoute ? (
+        {dedicatedRoute && !heroImage ? (
           <Button kind="secondary" size="sm" onClick={openDedicatedRoute}>
             {routeTarget?.label ?? 'Open dedicated route'}
           </Button>

@@ -3,12 +3,12 @@ import type { CSSProperties, RefObject } from 'react'
 
 import { TaskbarClock } from '../components/TaskbarClock'
 import {
-  MAP2_PLATFORM_NAME,
   Map2BrandMark,
 } from '../components/branding/map2Branding'
 import { type ShellNavigationRenderItem } from './NavigationItems'
 import { LauncherPanel } from './LauncherPanel/LauncherPanel'
 import { TaskbarStatusStrip } from './TaskbarStatusStrip'
+import type { TaskbarPillItem } from './useAppShellPresentation'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
 import type { LauncherInterfaceSummary } from './useLauncherInterfaceSummary'
@@ -21,10 +21,10 @@ export function ShellLauncherPanel({
   launcherRef,
   navOpen,
   powerMenuOpen,
-  launcherSummaryItems,
   pendingPushConfirmation,
-  platformStatusLabels,
+  taskbarPillItems,
   startMenuTileItems,
+  onOpenTaskbarPill,
   onToggleMenu,
   onTogglePowerMenu,
   onCloseMenus,
@@ -37,10 +37,10 @@ export function ShellLauncherPanel({
   launcherRef: RefObject<HTMLDivElement | null>
   navOpen: boolean
   powerMenuOpen: boolean
-  launcherSummaryItems: string[]
   pendingPushConfirmation: PushSurfacePendingConfirmation | null
-  platformStatusLabels: string[]
+  taskbarPillItems: TaskbarPillItem[]
   startMenuTileItems: StartMenuTileItem[]
+  onOpenTaskbarPill: (route: string) => void
   onToggleMenu: () => void
   onTogglePowerMenu: () => void
   onCloseMenus: () => void
@@ -75,8 +75,6 @@ export function ShellLauncherPanel({
               <span className="window-taskbar__start-mark" aria-hidden="true">
                 <Map2BrandMark className="window-taskbar__start-mark-icon" />
               </span>
-              <span className="window-taskbar__start-label">Start</span>
-              <span className="window-taskbar__start-system">{MAP2_PLATFORM_NAME}</span>
             </button>
 
             {navOpen ? (
@@ -105,9 +103,9 @@ export function ShellLauncherPanel({
           </div>
 
           <TaskbarStatusStrip
-            launcherSummaryItems={launcherSummaryItems}
             pendingPushConfirmation={pendingPushConfirmation}
-            platformStatusLabels={platformStatusLabels}
+            pillItems={taskbarPillItems}
+            onOpenPill={onOpenTaskbarPill}
           />
         </div>
 

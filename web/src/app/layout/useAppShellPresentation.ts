@@ -4,9 +4,16 @@ import { MAP2_PLATFORM_VERSION, Map2BrandMark } from '../components/branding/map
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { allPinnableNavigationItems, allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { buildStartMenuItems } from './startMenuItems'
+import { buildWorkspaceHubPlatformPath } from '../platform/routes'
 
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
+
+export type TaskbarPillItem = {
+  label: string
+  route: string
+  tone: 'info' | 'status'
+}
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(`${to}/`))
@@ -79,6 +86,38 @@ export function useAppShellPresentation({
       hostInfo?.hostname ?? 'Host unavailable',
     ],
     platformStatusLabels: [platformStatus.avb.label, platformStatus.avdecc.label, platformStatus.nodes.label],
+    taskbarPillItems: [
+      {
+        label: `Platform ${MAP2_PLATFORM_VERSION}`,
+        route: buildWorkspaceHubPlatformPath('overview'),
+        tone: 'info',
+      },
+      {
+        label: hostInfo?.os_version ?? hostInfo?.kernel_version ?? 'OS version unavailable',
+        route: buildWorkspaceHubPlatformPath('host-machine'),
+        tone: 'info',
+      },
+      {
+        label: hostInfo?.hostname ?? 'Host unavailable',
+        route: buildWorkspaceHubPlatformPath('host-machine'),
+        tone: 'info',
+      },
+      {
+        label: platformStatus.avb.label,
+        route: buildWorkspaceHubPlatformPath('avb-routing'),
+        tone: 'status',
+      },
+      {
+        label: platformStatus.avdecc.label,
+        route: buildWorkspaceHubPlatformPath('network-discovery'),
+        tone: 'status',
+      },
+      {
+        label: platformStatus.nodes.label,
+        route: buildWorkspaceHubPlatformPath('cluster-dashboard'),
+        tone: 'status',
+      },
+    ] satisfies TaskbarPillItem[],
     shellAccentColor: currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)',
     shellClassName,
     shellRouteHint: formatShellRouteHint(canonicalPathname),
