@@ -62,3 +62,4 @@ juce-engine/**/build*/
 juce-engine/IntelliFX8VoiceChorusPlugin/
 juce-engine/TweedBassmanPlugin/
 data/repair-backups/
+artifacts/visual-smoke/

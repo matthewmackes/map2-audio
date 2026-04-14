@@ -24706,7 +24706,7 @@ Last updated: 2026-04-14 10:05 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2254
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build a browser-driven visual verification harness for all `/workspace/*` routes
 Description:
 - Goal / acceptance criteria: Add a repeatable browser-level visual smoke harness that exercises each workspace route and captures the post-polish layout as a regression guard.
@@ -24715,7 +24715,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: automated route smoke or screenshot harness, baseline artifacts or assertions, and documentation on how to run it.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 20:29 EDT - Codex
+- Completion notes:
+  - Added a browser-driven workspace capture runner in `scripts/run_workspace_visual_smoke.mjs` that builds and serves `web/dist`, stubs the shell-facing API/WebSocket contracts needed for deterministic rendering, visits every canonical `/workspace/*` route, and writes one full-page screenshot plus a JSON summary per route.
+  - Added `web` scripts and Playwright as a dev-only dependency in `web/package.json`, documented the install/run flow in `docs/WORKSPACE_VISUAL_SMOKE.md`, and ignored generated evidence under `artifacts/visual-smoke/` so the harness stays repeatable without polluting the tree.
+  - Fixed the latent `HomePage.tsx` landing-tile type narrowing issue uncovered by the production build so the new browser harness and standard web build both run cleanly.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/data/launcherCatalog.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `npm --prefix web run visual:workspace-smoke -- --skip-build` -> PASS (`artifacts/visual-smoke/workspace/2026-04-14T20-27-15.536Z`)
 
 ID: T2255
 Status: [✓] Done

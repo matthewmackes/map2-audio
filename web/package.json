@@ -16,7 +16,9 @@
     "start:prod": "npm run build && npm run serve",
     "typecheck": "tsc --noEmit",
     "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
-    "version:sync": "python3 ../scripts/generate_platform_version.py"
+    "version:sync": "python3 ../scripts/generate_platform_version.py",
+    "visual:workspace-smoke": "node ../scripts/run_workspace_visual_smoke.mjs",
+    "visual:workspace-smoke:install": "playwright install chromium"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.21",
@@ -66,6 +68,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "playwright": "^1.55.1",
     "@tanstack/react-query-devtools": "^5.59.0",
     "@types/dagre": "^0.7.53",
     "@types/react": "^19.0.8",

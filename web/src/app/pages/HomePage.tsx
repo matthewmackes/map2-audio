@@ -53,6 +53,12 @@ function resolveHomeGroup(route: string): typeof HOME_GROUP_ORDER[number] {
   return 'Device Operations'
 }
 
+function resolveHomeGroupValue(homeGroup: string | undefined, route: string): typeof HOME_GROUP_ORDER[number] {
+  return HOME_GROUP_ORDER.includes(homeGroup as typeof HOME_GROUP_ORDER[number])
+    ? homeGroup as typeof HOME_GROUP_ORDER[number]
+    : resolveHomeGroup(route)
+}
+
 export function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -89,6 +95,7 @@ export function HomePage() {
         if (startMenuTile) {
           return [{
             ...startMenuTile,
+            homeGroup: resolveHomeGroupValue(startMenuTile.homeGroup, startMenuTile.route),
             size: tile.size,
           }]
         }
@@ -113,6 +120,7 @@ export function HomePage() {
 
       const fallbackTiles: HomeLaunchTile[] = startMenuTileItems.map((item) => ({
         ...item,
+        homeGroup: resolveHomeGroupValue(item.homeGroup, item.route),
         size: 'medium',
       }))
 
