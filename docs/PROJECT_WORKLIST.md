@@ -7482,6 +7482,48 @@ Last updated: 2026-03-29 20:28 EDT - Codex
 
 As of 2026-04-02 06:57 EDT, the remaining product backlog is still predominantly blocker-driven, but `T676` through `T681` now capture concrete prerequisite slices that can be executed locally to reduce `T647`'s controller-display blocker surface while the deeper runtime and HIL items below remain blocked.
 
+ID: T2278
+Status: [✓] Done
+Title: Refresh AVB and Tesira blocker evidence against the current host
+Description:
+- Goal / acceptance criteria: Re-check the current host for AVB/Tesira-adjacent hardware, API, and PTP readiness so the remaining blocked tasks reflect 2026-04-14 reality instead of stale lab assumptions.
+- Why it matters: The canonical worklist currently has no unblocked feature tasks left, so the highest-value next slice is reducing blocker uncertainty and documenting any real unblock movement.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: fresh local evidence, updated blocker notes for the affected tasks, and explicit confirmation of what is still missing.
+Assigned to: Codex
+Last updated: 2026-04-14 22:49 EDT - Codex
+- Completion notes:
+  - Re-checked the current host on 2026-04-14 and confirmed both `enp11s0` and `enp0s25` are up, while the backend remains active and `/api/avb/status` still reports AVB operational on `enp11s0`.
+  - Confirmed the AVB blocker has not materially cleared: `/api/avb/avdecc/entities` is still empty and PTP state is still `UNKNOWN`. Follow-up checks showed MAP2 correctly uses `map2-ptp4l.service` rather than the generic distro `ptp4l.service`, so readiness reporting remains internally consistent even though the generic unit is inactive.
+  - Refreshed local audio inventory evidence: capture/playback devices now include `Jogg USB Audio`, onboard `HDA Intel PCH`, HDMI playback, and `UA-20`.
+  - Queried `/api/tesira/devices` and confirmed the configured Tesira fleet inventory is present, but every discovered device remains `connected: false` with no AVB streams or PTP state, so Tesira release blockers are now specifically about live reachability/HIL proof rather than missing configuration records.
+- Validation:
+  - `ip -brief link` -> PASS
+  - `arecord -l` -> PASS
+  - `aplay -l` -> PASS
+  - `curl -sf http://127.0.0.1:8080/api/avb/status` -> PASS
+  - `curl -sf http://127.0.0.1:8080/api/avb/avdecc/entities` -> PASS
+  - `curl -sf http://127.0.0.1:8080/api/tesira/devices` -> PASS
+  - `systemctl is-active map2-ptp4l.service` -> `active`
+  - `systemctl is-active ptp4l` -> `inactive` (generic unit unused by MAP2)
+  - `systemctl is-active map2-backend.service` -> `active`
+
+ID: T2279
+Status: [~] Cancelled
+Title: Reconcile AVB readiness `ptp4l` service detection with live system state
+Description:
+- Goal / acceptance criteria: Fix the AVB readiness probe so `/api/avb/status` does not report `ptp4l_running` when the host service is inactive, and add regression coverage for the service/probe decision path.
+- Why it matters: Blocker and operator decisions depend on truthful AVB/PTP readiness reporting; a false-positive `ptp4l_running` signal hides the real reason AVB certification remains blocked.
+- Dependencies: T2278
+- Estimated effort: Medium
+- Required outputs: readiness probe fix, updated tests, and validation evidence.
+Assigned to: Codex
+Last updated: 2026-04-14 22:52 EDT - Codex
+- Cancelled notes:
+  - Follow-up verification showed the canonical managed service is `map2-ptp4l.service`, and it is active on the current host.
+  - The earlier mismatch came from checking the generic distro `ptp4l.service`, which MAP2 does not use here, so no backend readiness change was required.
+
 Archive: Completed and otherwise non-blocked work has been moved to `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
 ## AVB
@@ -7500,8 +7542,8 @@ Assigned to: Lab + Codex
 Last updated: 2026-03-29 20:26 EDT - Codex
 - Blocked notes:
   - Software prep, wrappers, and false-pass hardening are complete in the archive.
-  - Current host now reports AVB operational on `enp11s0` with `ptp4l` running, so the old “no NIC” assumption is cleared.
-  - Remaining blocker is still hardware-in-the-loop: `/api/avb/avdecc/entities` is empty, there are no active streams, and PTP state is `UNKNOWN` rather than locked to a peer grandmaster.
+  - Current host still reports AVB operational on `enp11s0`, so the old “no NIC” assumption remains cleared.
+  - Refreshed evidence on 2026-04-14 still shows `/api/avb/avdecc/entities` empty, no active streams, `map2-ptp4l.service` active, and `/api/avb/status` reporting PTP state `UNKNOWN` rather than a peer-locked grandmaster.
   - Unblock path: the shortest route is a two-node AVB bench using the existing Intel `igb` host plus one AVB-capable peer (second MAP2 node or Tesira unit), ideally through a TSN switch but direct-link smoke testing is still useful to prove peer discovery and PTP lock before the full matrix.
   - Source archive references: `T004` in `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
 
@@ -7521,7 +7563,8 @@ Assigned to: Codex + Lab
 Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Runner, runbook, and tests are complete in the archive.
-  - Remaining blocker is strictly live Tesira hardware and loop topology availability.
+  - Refreshed evidence on 2026-04-14 shows the configured Tesira fleet inventory still present at `/api/tesira/devices`, but every listed device remains `connected: false` with no AVB streams or PTP state.
+  - Remaining blocker is therefore still live Tesira hardware reachability plus effects-loop topology availability, not missing software discovery/config records.
   - Unblock path: fold this into one scheduled Tesira certification bench with `T365`, `T065-subG`, and `T072` so the same hardware session produces latency, churn, compile/deploy, control-plane, and soak evidence.
   - Source archive references: `T030`, `T030-subA`.
 
@@ -7549,6 +7592,7 @@ Assigned to: Codex + Lab
 Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Automated checks are already complete in the archive.
+  - Refreshed evidence on 2026-04-14 still shows empty AVDECC discovery, PTP `UNKNOWN`, and Tesira fleet entries that are configured but disconnected.
   - Remaining blocker is missing live Tesira/AVB/PTP lab evidence.
   - Unblock path: once a Tesira AVB bench is available, run this as the umbrella evidence-collection task for `T030`, `T072`, and `T365`, reusing the archived automation packet and only collecting the missing HIL artifacts.
 ID: T065-subH
@@ -7586,7 +7630,7 @@ Assigned to: Codex + Lab
 Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Precheck runner and runbook are complete in the archive.
-  - Current host still lacks connected Tesira devices in scope, active AVB streams, and stable AVB/PTP lock.
+  - Refreshed evidence on 2026-04-14 still lacks connected Tesira devices in scope, active AVB streams, and stable AVB/PTP lock even though configured Tesira device records still exist in the fleet API.
   - Unblock path: execute this as the single combined Tesira bench campaign after `T065-subG`/`T030` are ready: establish AVB discovery and PTP lock first, then compile/deploy, live-control-under-streaming, and multi-unit reliability/soak in one preserved hardware session so the same evidence bundle closes `T072`, `T030`, and `T365`.
 
 ID: T076
@@ -7603,7 +7647,7 @@ Assigned to: Codex + Lab
 Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Manual-package deployment runner and runbook are complete in the archive.
-  - Remaining blocker is the real two-unit Tesira deployment session.
+  - Refreshed evidence on 2026-04-14 still shows only disconnected Tesira fleet records and no active AVB/PTP session, so the real two-unit Tesira deployment session remains the blocker.
 
 ID: T350
 Status: [✓] Done

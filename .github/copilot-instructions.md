@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (recent-destinations pinned-route typing documented)
+> **Last Updated**: April 14, 2026 (MAP2 PTP service-name gotcha documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1014,6 +1014,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Narrow the union with `'homeSection' in pinnableItem` and fall back to the explicit `'Platform'` group when the recent-destination source is a platform-pinned item.
 - **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts`; `npm --prefix web run build`
 - **Lesson**: For navigation helpers that mix launcher, hardware, and platform-pinned records, production build typechecks may be stricter than local `tsc --noEmit`; narrow every union branch before reading shared-looking fields.
+
+**92. MAP2 AVB Readiness Tracks `map2-ptp4l.service`, Not The Generic `ptp4l.service`**
+- **Files**: `app/services/avb/readiness.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: A blocker refresh initially looked like a backend bug because `systemctl is-active ptp4l` returned `inactive` while `/api/avb/status` still reported `ptp4l_running`.
+- **Root Cause**: MAP2 manages PTP through `map2-ptp4l.service`; checking the generic distro `ptp4l.service` reports the wrong unit and creates a false mismatch during diagnostics.
+- **Fix**: Treat `map2-ptp4l.service` as the canonical service check when validating AVB readiness on MAP2 hosts, and record blocker notes against that managed unit instead of the generic service name.
+- **Verification**: `systemctl is-active map2-ptp4l.service`; `systemctl status map2-ptp4l.service --no-pager -n 20`; `curl -sf http://127.0.0.1:8080/api/avb/status`
+- **Lesson**: When reconciling MAP2 service readiness with the live host, verify the repo-managed systemd unit names first; generic distro service names can make healthy MAP2 probes look wrong.
 
 ### Server Management Gotchas
 
@@ -2061,6 +2069,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - MAP2 PTP Service Name Clarification
+- **Section**: Gotchas & Learned Fixes (#92), Update Log
+- **Change**: Documented that AVB readiness on MAP2 hosts should be checked against `map2-ptp4l.service`, not the generic `ptp4l.service`.
+- **Reason**: A blocker-refresh investigation surfaced an apparent readiness mismatch that turned out to be a service-name assumption error rather than a backend bug.
+- **Impact**: Future AVB/PTP diagnostics should stop misclassifying healthy MAP2-managed PTP services as broken.
+- **Files**: `.github/copilot-instructions.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - Recent Destinations Pinned-Route Narrowing
 - **Section**: Gotchas & Learned Fixes (#91), Update Log
