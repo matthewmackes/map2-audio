@@ -351,7 +351,7 @@ describe('Desktop experience integration', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(container.querySelector('.shell-launcher')).toBeNull()
+    expect(container.querySelector('.window-taskbar')).toBeTruthy()
   })
 
   it('opens the Start Menu, navigates through it, and closes after routing', async () => {
@@ -404,7 +404,7 @@ describe('Desktop experience integration', () => {
     await waitFor(() => expect(screen.getByText('Restarting backend')).toBeInTheDocument())
   })
 
-  it('starts Perform in fullscreen and restores the launcher after Escape', async () => {
+  it('starts Perform in fullscreen and restores the taskbar after Escape', async () => {
     const { container } = renderDesktopExperience(['/perform'])
 
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()

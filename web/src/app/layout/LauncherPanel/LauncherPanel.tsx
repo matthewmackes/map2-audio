@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
 import './LauncherPanel.css'
@@ -8,18 +8,43 @@ import {
   Map2BrandMark,
 } from '../../components/branding/map2Branding'
 import { NavigationItems, type ShellNavigationRenderItem } from '../NavigationItems'
-import { SystemSummary } from '../SystemSummary'
-import type { PushSurfacePendingConfirmation } from '../../../map2/clients/pushSurface'
 import type { LauncherInterfaceSummary } from '../useLauncherInterfaceSummary'
 
 type LauncherPanelVariant = 'home' | 'workspace'
 
+type DeviceListProps = {
+  launcherInterfaceSummary: LauncherInterfaceSummary
+  kind: 'audioInterfaces' | 'midiInterfaces'
+  emptyLabel: string
+  detectingLabel: string
+}
+
+function LauncherDeviceList({
+  launcherInterfaceSummary,
+  kind,
+  emptyLabel,
+  detectingLabel,
+}: DeviceListProps) {
+  const items = launcherInterfaceSummary[kind]
+
+  if (launcherInterfaceSummary.isLoading && items.length === 0) {
+    return <span className="map2-launcher__device-empty">{detectingLabel}</span>
+  }
+
+  if (items.length === 0) {
+    return <span className="map2-launcher__device-empty">{emptyLabel}</span>
+  }
+
+  return items.map((name) => (
+    <Tag key={`${kind}-${name}`} className="map2-launcher__device-tag" size="sm" type="cool-gray">
+      {name}
+    </Tag>
+  ))
+}
+
 type LauncherPanelProps = {
   variant: LauncherPanelVariant
   launcherInterfaceSummary: LauncherInterfaceSummary
-  launcherSummaryItems: string[]
-  pendingPushConfirmation: PushSurfacePendingConfirmation | null
-  platformStatusLabels: string[]
   startMenuTileItems: ShellNavigationRenderItem[]
   powerMenuOpen: boolean
   panelRef: RefObject<HTMLDivElement | null>
@@ -34,9 +59,6 @@ type LauncherPanelProps = {
 export function LauncherPanel({
   variant,
   launcherInterfaceSummary,
-  launcherSummaryItems,
-  pendingPushConfirmation,
-  platformStatusLabels,
   startMenuTileItems,
   powerMenuOpen,
   panelRef,
@@ -66,16 +88,32 @@ export function LauncherPanel({
         </div>
       </div>
 
-      <SystemSummary
-        classNamePrefix="map2-launcher"
-        launcherInterfaceSummary={launcherInterfaceSummary}
-        launcherSummaryItems={launcherSummaryItems}
-        pendingPushConfirmation={pendingPushConfirmation}
-        platformStatusLabels={platformStatusLabels}
-      />
-
       <div className="map2-launcher__body">
         <NavigationItems items={startMenuTileItems} onNavigate={onNavigate} variant="launcher" />
+        <div className="map2-launcher__device-summary" aria-label="Detected interfaces">
+          <div className="map2-launcher__device-group">
+            <span className="map2-launcher__device-heading">Audio Interfaces</span>
+            <div className="map2-launcher__device-list">
+              <LauncherDeviceList
+                launcherInterfaceSummary={launcherInterfaceSummary}
+                kind="audioInterfaces"
+                detectingLabel="Detecting audio interfaces..."
+                emptyLabel="No audio interfaces detected"
+              />
+            </div>
+          </div>
+          <div className="map2-launcher__device-group">
+            <span className="map2-launcher__device-heading">MIDI Interfaces</span>
+            <div className="map2-launcher__device-list">
+              <LauncherDeviceList
+                launcherInterfaceSummary={launcherInterfaceSummary}
+                kind="midiInterfaces"
+                detectingLabel="Detecting MIDI interfaces..."
+                emptyLabel="No MIDI interfaces detected"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="map2-launcher__footer">

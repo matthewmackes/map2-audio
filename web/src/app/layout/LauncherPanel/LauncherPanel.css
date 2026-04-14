@@ -177,6 +177,9 @@
 }
 
 .map2-launcher__body {
+  display: grid;
+  align-content: start;
+  gap: var(--cds-spacing-05, 1rem);
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   overflow-y: auto;
 }

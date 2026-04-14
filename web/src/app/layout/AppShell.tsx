@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     websocketStatus,
   })
   const showPerformFullscreen = location.pathname === '/perform' && performFullscreen
-  const showLauncherShell = !showPerformFullscreen && !isDesktopRoute
+  const showLauncherShell = !showPerformFullscreen
   const { handleCloseCurrentApp } = useRunningRoutes({
     pathname: location.pathname,
     isDesktopRoute,
@@ -113,8 +113,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className={`${showLauncherShell ? shellClassName : shellClassName.replace(' app-shell--windowed', '')}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}`}
-      style={!isDesktopRoute ? { '--window-shell-accent': shellAccentColor } as CSSProperties : undefined}
+      className={`${shellClassName}${showPerformFullscreen ? ' app-shell--perform-fullscreen' : ''}`}
+      style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
     >
       <main className="app-content app-content--full">
         <ShellWindowProvider value={isDesktopRoute ? null : shellWindowContext}>

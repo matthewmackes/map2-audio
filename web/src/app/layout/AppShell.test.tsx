@@ -110,7 +110,7 @@ function ShellAwareContent() {
   )
 }
 
-describe('AppShell floating launcher shell', () => {
+describe('AppShell taskbar shell', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
@@ -215,7 +215,7 @@ describe('AppShell floating launcher shell', () => {
     jest.useRealTimers()
   })
 
-  it('renders the floating launcher on the landing route without a titlebar', () => {
+  it('renders the persistent taskbar on the landing route without a titlebar', () => {
     const { container } = renderInRouter(
       <AppShell>
         <ShellAwareContent />
@@ -224,9 +224,11 @@ describe('AppShell floating launcher shell', () => {
     )
 
     expect(container.querySelector('.window-title-strip')).toBeNull()
+    expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
+    expect(screen.getByTestId('taskbar-clock')).toBeInTheDocument()
   })
 
-  it('renders non-landing routes with the title strip and the floating launcher', () => {
+  it('renders non-landing routes with the title strip and the persistent taskbar', () => {
     const { container } = renderInRouter(
       <AppShell>
         <ShellAwareContent />
@@ -237,7 +239,7 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
-    expect(container.querySelector('.static-hero-icon-launcher__btn')).toBeTruthy()
+    expect(container.querySelector('.window-taskbar')).toBeTruthy()
   })
 
   it('closes the current app back to the desktop route', async () => {
@@ -287,7 +289,7 @@ describe('AppShell floating launcher shell', () => {
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
 
-    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
+    expect(screen.getAllByText('Mackes Audio Platform')).toHaveLength(2)
     expect(screen.getByText('Platform 0000000000000001')).toBeInTheDocument()
     expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
     expect(screen.getByText('map2-host')).toBeInTheDocument()
@@ -685,6 +687,8 @@ describe('AppShell floating launcher shell', () => {
     const pill = screen.getByRole('status', { name: /Instance switch pending on push-stage-left/i })
     expect(pill).toHaveTextContent('Push confirm')
     expect(pill).toHaveTextContent('Instance switch')
-    expect(screen.getByTestId('node-nav-bar').previousElementSibling).toBe(pill)
+    const statusStrip = pill.closest('.window-taskbar__status-strip')
+    expect(statusStrip).toBeTruthy()
+    expect(screen.getByTestId('node-nav-bar').closest('.window-taskbar__pill')?.previousElementSibling).toBe(pill)
   })
 })

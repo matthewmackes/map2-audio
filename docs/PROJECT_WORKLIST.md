@@ -24769,3 +24769,23 @@ Description:
 - Required outputs: persisted recent-route model, home-shell UI, privacy-safe storage behavior, and focused regression coverage.
 Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2272
+Status: [✓] Done
+Title: Rebuild the shared Start/taskbar shell around an XP-style left rail and persistent Carbon taskbar
+Description:
+- Goal / acceptance criteria: Add a persistent Carbon-styled taskbar across the shell with a far-left Start launcher, horizontal status/information pills on the left side of the bar, and the clock on the right. Rework the Start menu so it opens upward from the taskbar, fills the left side while leaving room for the taskbar, and uses an XP-era width/profile without reintroducing non-Carbon styling.
+- Why it matters: The current home surface still carries the status cluster inside the menu itself and does not present a stable shell/taskbar model across routes, which weakens operator orientation and makes the Start surface feel disconnected from the routed shell.
+- Dependencies: T2240, T2248, T2256
+- Estimated effort: High
+- Required outputs: shared taskbar/start-menu shell updates, home/routed shell rewiring, responsive CSS updates, focused home/app-shell regression coverage, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-14 11:34 EDT - Codex
+- Completion notes:
+  - Reworked the shared shell launcher into a persistent taskbar in `web/src/app/layout/ShellLauncherPanel.tsx` / `AppShell.tsx`, with the Start control fixed at far left, the shell status/info strip moved into the taskbar, and the clock isolated on the right.
+  - Added `web/src/app/layout/TaskbarStatusStrip.tsx` so platform metadata, status pills, Push confirmation state, node control, and latency all live in one horizontal strip instead of inside the Start panel.
+  - Simplified `web/src/app/layout/LauncherPanel/LauncherPanel.tsx` so the Start menu no longer renders the pill summary/clock block, while still retaining device inventory lists and the canonical launcher navigation.
+  - Retuned `web/src/app/layout/AppShell.css` and `web/src/app/pages/HomePage.css` so the taskbar is always present in the shell, the Start menu opens upward with an XP-like width and full left-side height, and the landing page leaves bottom clearance for the new persistent bar.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS

@@ -137,7 +137,7 @@
 .hp2-home-shell__content.cds--content {
   position: relative;
   z-index: 1;
-  padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-06, 1.5rem)) var(--cds-spacing-06, 1.5rem) var(--cds-spacing-06, 1.5rem);
+  padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-06, 1.5rem)) var(--cds-spacing-06, 1.5rem) calc(var(--window-taskbar-height, 2.6rem) + var(--cds-spacing-06, 1.5rem)) var(--cds-spacing-06, 1.5rem);
 }
 
 .hp2-home-shell__grid {
@@ -276,7 +276,7 @@
 
 @media (max-width: 42rem) {
   .hp2-home-shell__content.cds--content {
-    padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-05, 1rem)) var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
+    padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-05, 1rem)) var(--cds-spacing-05, 1rem) calc(var(--window-taskbar-height, 2.6rem) + var(--cds-spacing-05, 1rem)) var(--cds-spacing-05, 1rem);
   }
 
   .hp2-home-shell__title {
