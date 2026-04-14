@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1194** TypeScript | **136** C++/H | **143** Docs | **2134** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1194** TypeScript | **136** C++/H | **144** Docs | **2136** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,11 +176,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-14 |
+| [Workspace Visual Smoke](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_VISUAL_SMOKE.md) | 2026-04-14 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-10 |
 | [MAP2 FAQ: Simple Consumer Version](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_CONSUMER_11TH_GRADE_2026-04-10.md) | 2026-04-10 |
 | [MAP2 FAQ: What Is the MAP Platform and How Different Music Users Could Use It](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_MARKET_ALIGNED_2026-04-10.md) | 2026-04-10 |
 | [MAP2 Audio Platform — Backend Architecture Audit v2](https://github.com/matthewmackes/map2-audio/blob/master/docs/BACKEND_AUDIT_V2.md) | 2026-04-07 |
-| [Enriched MIDI Physical Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/ENRICHED_MIDI_PHYSICAL_SURFACES_ARCHITECTURE.md) | 2026-04-07 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`41a1b049`](https://github.com/matthewmackes/map2-audio/commit/41a1b04918c563b186c406b10304c1bd7343f694) | test: add workspace visual smoke harness | Map2 Audio | 2026-04-14 |
+| [`9bc324b8`](https://github.com/matthewmackes/map2-audio/commit/9bc324b8acb9ad76aa0440f4841fcf352519ee70) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`c650f0c8`](https://github.com/matthewmackes/map2-audio/commit/c650f0c8dcecea13f0947ce5ceac214d2b621eaa) | feat: personalize home landing tiles | Map2 Audio | 2026-04-14 |
 | [`95fd31ff`](https://github.com/matthewmackes/map2-audio/commit/95fd31ff68194a1f0b1a7266289ed5b0a36c51e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`651731f0`](https://github.com/matthewmackes/map2-audio/commit/651731f01d9d57f75d380e1c4c5752e0f09d949e) | feat: replace shell chrome with global tree nav | Map2 Audio | 2026-04-14 |
 | [`4211dd12`](https://github.com/matthewmackes/map2-audio/commit/4211dd12f1446a72367b17d7dba288b9a43c6552) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`cd3c4b06`](https://github.com/matthewmackes/map2-audio/commit/cd3c4b06fa12a8056f79aae5f372be0c9b8cc588) | feat: ship pending shell and workspace updates | Map2 Audio | 2026-04-14 |
 | [`7e3981c1`](https://github.com/matthewmackes/map2-audio/commit/7e3981c18e59e4b82cfc3c265da59c8e3e8abc8a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`2f9394a4`](https://github.com/matthewmackes/map2-audio/commit/2f9394a44c256e62d2d89b166d552bedc95b9727) | add workspace hub nav filter | Map2 Audio | 2026-04-14 |
-| [`45efdd00`](https://github.com/matthewmackes/map2-audio/commit/45efdd00f088097eab62c275234151999ac90b53) | split home page style modules | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
