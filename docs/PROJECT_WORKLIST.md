@@ -24705,7 +24705,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2264
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add dedicated tests for `PhysicalSurfacesOverviewPage` and `PhysicalSurfaceUnitPage`
 Description:
 - Goal / acceptance criteria: Introduce focused page tests for the physical-surfaces overview and detail pages so future polish work is not forced to rely on typecheck plus adjacent workspace/outboard suites.
@@ -24714,7 +24714,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: new page tests covering header state, empty states, detail sections, and no-console-error validation.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:42 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/pages/PhysicalSurfacesOverviewPage.test.tsx` to cover the overview header metrics, host-observation card, unit-card actions, empty-state rendering, and a no-console-error baseline.
+  - Added `web/src/app/pages/PhysicalSurfaceUnitPage.test.tsx` to cover the routed detail sections, fixed-view mutation path, and the not-found fallback state using the real workspace outlet context.
+  - Kept the new suites scoped to the physical-surfaces workspace so future page polish no longer depends on indirect coverage from adjacent workspace-hub or outboard-hardware tests.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PhysicalSurfacesOverviewPage.test.tsx src/app/pages/PhysicalSurfaceUnitPage.test.tsx` -> PASS
 
 ID: T2265
 Status: [✓] Done
