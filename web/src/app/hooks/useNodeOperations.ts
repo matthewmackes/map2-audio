@@ -14,6 +14,8 @@ import {
   fetchUpdateApplicationVersion,
   triggerUpdateApplication,
 } from './updateApplicationApi'
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
+import { PLATFORM_WORKSPACE_BASE_PATH } from '../platform/routes'
 import { useRealtimeCadence } from './useRealtimeCadence'
 import { useRouteActive } from './useRouteActive'
 
@@ -238,7 +240,15 @@ export interface NodeOperationsData {
 
 export function useNodeOperations(): NodeOperationsData {
   const qc = useQueryClient()
-  const platformRouteActive = useRouteActive(['/platforms'])
+  const platformRouteActive = useRouteActive((pathname) => {
+    const canonicalPathname = canonicalizeNavigationRoute(pathname)
+    return (
+      canonicalPathname === '/workspace'
+      || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
+      || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
+    )
+  })
   const platformFastCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

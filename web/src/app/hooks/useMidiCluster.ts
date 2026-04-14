@@ -2,15 +2,26 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { midiClusterApi, type MidiClusterClock, type MidiClusterConnection, type MidiClusterEndpoint, type MidiClusterHealth, type MidiClusterNode, type MidiClusterSummary } from '../../map2/api'
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
+import { PLATFORM_WORKSPACE_BASE_PATH } from '../platform/routes'
 import { useRealtimeCadence } from './useRealtimeCadence'
 import { useRouteActive } from './useRouteActive'
 import useMidiClusterEvents from './useMidiClusterEvents'
 
 const QUERY_BASE = ['midi-cluster'] as const
-const MIDI_CLUSTER_ROUTE_PATTERNS = ['/platforms']
 
 function useMidiClusterCadence(visibleMs: number, hiddenMs: number, inactiveMs: number | false = false) {
-  const routeActive = useRouteActive(MIDI_CLUSTER_ROUTE_PATTERNS)
+  const routeActive = useRouteActive((pathname) => {
+    const canonicalPathname = canonicalizeNavigationRoute(pathname)
+    return (
+      canonicalPathname === '/midi-hub'
+      || canonicalPathname.startsWith('/midi-hub/')
+      || canonicalPathname === '/workspace'
+      || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
+      || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
+    )
+  })
   return useRealtimeCadence({
     routeActive,
     visibleMs,

@@ -19,9 +19,11 @@ import {
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsApi } from '../../map2/api'
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import type { SystemMetrics, MetricsSummary } from '../../map2/types'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
+import { PLATFORM_WORKSPACE_BASE_PATH } from '../platform/routes'
 import { LegacyButton } from './shared/LegacyButton'
 import { LegacyTile } from './shared/LegacyTile'
 import { LoadingState } from './shared/LoadingState'
@@ -95,7 +97,15 @@ export function PlatformCapabilities() {
   const [_loading, setLoading] = useState(true)
   const [runningTest, setRunningTest] = useState(false)
   const queryClient = useQueryClient()
-  const platformRouteActive = useRouteActive(['/platforms'])
+  const platformRouteActive = useRouteActive((pathname) => {
+    const canonicalPathname = canonicalizeNavigationRoute(pathname)
+    return (
+      canonicalPathname === '/workspace'
+      || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
+      || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
+    )
+  })
   const servicesCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

@@ -20,7 +20,7 @@ import { useHostMachineInfo } from '../hooks/useHostMachine'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from './homeDesktopSession'
 import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
-import { allRouteNavigationItems } from '../data/advancedMenuItems'
+import { allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { dispatchShellOpenRestartConfirmEvent } from '../layout/shellEvents'
 
 // ── Build start menu tile items (same logic as useAppShellPresentation) ──────
@@ -28,13 +28,9 @@ import { dispatchShellOpenRestartConfirmEvent } from '../layout/shellEvents'
 const START_MENU_EXCLUDED_ROUTES = new Set([
   '/launch-control',
   '/midi-commander',
-  '/platforms/overview',
-  '/artifacts',
-  '/physical-surfaces',
-  '/outboard-hardware',
+  '/workspace',
   '/workspace/artifacts',
   '/workspace/physical-surfaces',
-  '/workspace/outboard-hardware',
   '/tesira',
   '/edirol-ua1000',
   '/hotone-jogg',
@@ -45,7 +41,7 @@ const START_MENU_EXCLUDED_ROUTES = new Set([
 function buildStartMenuTileItems(): ShellNavigationRenderItem[] {
   const launcherItems = launcherCatalogDisplayItems
     .filter((item) => item.route !== '/')
-    .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(item.route))
+    .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(canonicalizeNavigationRoute(item.route)))
     .map((item) => ({
       route: item.route,
       label: item.label,

@@ -14,7 +14,6 @@ const START_MENU_EXCLUDED_ROUTES = new Set([
   '/workspace',
   '/workspace/artifacts',
   '/workspace/physical-surfaces',
-  '/workspace/outboard-hardware',
 ])
 
 function isRouteMatch(pathname: string, to: string): boolean {

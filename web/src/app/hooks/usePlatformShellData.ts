@@ -13,6 +13,7 @@ import {
   wwwApi,
 } from '../../map2/api'
 import { useViewedNode } from '../stores/viewedNodeStore'
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import type { NodeSummary } from '../types/node'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import type { NetworkStatus, WWWStatus } from '../../map2/types'
@@ -28,6 +29,7 @@ import type {
   PlatformTableRow,
 } from '../platform/model'
 import { PLATFORM_LAYER_META, makePlatformHealthRecord } from '../platform/model'
+import { PLATFORM_WORKSPACE_BASE_PATH } from '../platform/routes'
 import type {
   PlatformVersionInfo,
   UpdateStatusInfo,
@@ -197,7 +199,15 @@ function pushNotification(
 }
 
 export function usePlatformShellData(): PlatformShellData {
-  const platformRouteActive = useRouteActive(['/platforms', '/workspace'])
+  const platformRouteActive = useRouteActive((pathname) => {
+    const canonicalPathname = canonicalizeNavigationRoute(pathname)
+    return (
+      canonicalPathname === '/workspace'
+      || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
+      || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
+    )
+  })
   const platformFastCadence = useRealtimeCadence({
     routeActive: platformRouteActive,
     visibleMs: 5_000,

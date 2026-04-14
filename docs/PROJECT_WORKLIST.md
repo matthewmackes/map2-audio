@@ -23549,7 +23549,7 @@ Validation:
 - `npm --prefix web run build` -> PASS
 
 ID: T1004
-Status: [>] In Progress
+Status: [✓] Done
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree
 Description:
 - Goal / acceptance criteria: Replace the four sibling workspace shells — Platforms (`PlatformModal.tsx`), Physical Surfaces (`PhysicalSurfacesShell.tsx`), Audio Artifacts (`AudioArtifactsPage.tsx`), and Outboard Hardware (`OutboardHardwareShell.tsx`) — with a single unified `WorkspaceHubShell` mounted at `/workspace/*` that renders one very flat, very simple left-hand navigation list uniting all four domains. The left-hand nav MUST be strictly flat — one depth level, no collapse/expand, no nesting, no icons, no status pills or badges inside nav labels, no meta blocks or callouts inside the nav surface, no localStorage expand state. Four plain-text dividers (Platforms / Physical Surfaces / Audio Artifacts / Outboard Hardware) separate the list, but dividers are unclickable and unfocusable. Active state is a left-border accent + background tint only. The nav is a brand-new component (`WorkspaceHubNav`) co-located with the shell — `UnifiedWorkspaceSideNav` must NOT be touched or extended, because its TreeView/meta/callout feature set actively fights the "very flat and very simple" requirement; existing callers (Cluster Dashboard, MIDI Hub Shell, etc.) continue using it unchanged. Each nav section exposes only its top destinations (target ceiling ~8 items per section, ~32 total) — overflow moves to per-section overview pages, not the nav. The four legacy shell files are deleted; their child pages (`PlatformWorkspacePage`, `HostMachinePage`, `AudioEnginePage`, `ThemePage`, `AboutPage`, `PlatformAdoptionPage`, `PhysicalSurfacesOverviewPage`, `PhysicalSurfaceUnitPage`, `OutboardHardwareOverviewPage`, `OutboardHardwareDevicePage`, and `AudioArtifactsPage`'s content-only body) are relocated under `web/src/app/pages/workspace-hub/` and re-mounted under the new shell. All legacy routes (`/platforms/*`, `/physical-surfaces/*`, `/artifacts`, `/artifacts/discover`, `/outboard-hardware/*`) become permanent redirects into the new `/workspace/*` canonical paths so external bookmarks keep working. Data fetching is consolidated into a new shell-level `useUnifiedWorkspaceData()` aggregator hook that fetches all four workspace summaries in parallel (reusing the existing `usePlatformShellData`, `enrichedPhysicalSurfacesApi`, `pluginsApi`/`irApi`/`namApi`/`soundfontApi`, and the static `OUTBOARD_HARDWARE_DEVICES` constant), with `staleTime: 10_000`, `refetchOnWindowFocus: false`, and per-section error isolation so one failing summary cannot blank the other three. The aggregator feeds content-area headers and metric tiles only — it never feeds the nav tree. The home start menu loses its four separate tiles (`/platforms/overview`, `/physical-surfaces`, `/artifacts`, `/outboard-hardware` all added to `START_MENU_EXCLUDED_ROUTES` in `HomeStartMenuOverlay.tsx`) and gains one featured "Workspaces" tile at `/workspace` registered in `FEATURED_ROUTE_SET` of `launcherCatalog.tsx`. Advanced Menu entries for the four workspaces are repointed to the new canonical paths but NOT removed, so operators can still deep-link into a specific section. Dedicated device routes (`/mpx1/*`, `/tesira/*`, `/intelfx/*`, `/mcu`, `/maschine`, `/labs/push-surface`, `/edirol-ua1000`, `/hotone-jogg`, `/launch-control`, `/midi-commander`) are NOT moved and are NOT absorbed — they remain standalone and are linked out to from the Outboard Hardware / Physical Surfaces section overview grids.
@@ -23641,7 +23641,7 @@ Subtasks:
     - `npm --prefix web run typecheck` -> PASS
     - `npm --prefix web run build` -> PASS
   - ID: T1004-subC
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Migrate section content trees under workspace-hub pages
     Description:
     - Goal / acceptance criteria: Relocate the four workspace section pages under `web/src/app/pages/workspace-hub/`, wire them into the hub shell, and keep dedicated device routes standalone.
@@ -23797,7 +23797,10 @@ Subtasks:
         - `npm --prefix web run typecheck` -> PASS
         - `npm --prefix web run build` -> PASS
     Assigned to: Codex
-    Last updated: 2026-04-13 18:12 EDT - Codex
+    Last updated: 2026-04-13 21:04 EDT - Codex
+    Completion notes:
+    - Completed the full section-content migration so Platforms, Physical Surfaces, Outboard Hardware, and Audio Artifacts now mount under `workspace-hub` at canonical `/workspace/*` routes while their legacy roots remain compatibility paths.
+    - Preserved dedicated device routes and section-specific behavior during the remount, allowing the later redirect/menu and shell-deletion sweeps to proceed without breaking deep links or operator workflows.
   - ID: T1004-subD
     Status: [✓] Done
     Title: Wire legacy redirects and launcher/menu consolidation
@@ -23939,7 +23942,7 @@ Subtasks:
           - `npm --prefix web run typecheck` -> PASS
           - `rg -n \"PhysicalSurfacesShell|OutboardHardwareShell\" web/src/app -g '*.ts*'` -> PASS (only retained CSS filenames and shared type names remain)
       - ID: T1004-subE-subD
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Sweep residual canonical workspace references across shell/session/supporting surfaces
         Description:
         - Goal / acceptance criteria: Repoint remaining hard-coded legacy workspace route literals in supporting UI/session/prefetch/poster surfaces and prove the surviving legacy roots are only intentional redirect compatibility paths.
@@ -23947,9 +23950,8 @@ Subtasks:
         - Dependencies: T1004-subE-subB
         - Estimated effort: Medium
         - Required outputs: reference sweep, grep evidence, and regression validation.
-        Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:46 EDT - Codex
+        Last updated: 2026-04-13 21:04 EDT - Codex
         - Progress notes:
           - Repointed the default special-settings landing tile, poster manifest workspace posters, page-transition audio-artifact scope matching, node-display page-key mapping, and home-card workspace profiles toward canonical `/workspace*` routes.
           - Remaining residual sweep work is now concentrated in compatibility helpers, redirect metadata, and tests that still exercise intentional legacy aliases.
@@ -23975,7 +23977,7 @@ Subtasks:
               - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/homeDesktopSession.test.ts src/app/pages/SnapshotPublishPage.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS
               - `npm --prefix web run typecheck` -> PASS
           - ID: T1004-subE-subD-subB
-            Status: [>] In Progress
+            Status: [✓] Done
             Title: Reduce legacy workspace aliases in helper and compatibility surfaces
             Description:
             - Goal / acceptance criteria: Repoint remaining helper/catalog/session-support surfaces toward canonical `/workspace/*` routes where they still act as primary destinations, while preserving only explicit redirect-compatibility mappings where legacy roots must remain supported.
@@ -24004,7 +24006,7 @@ Subtasks:
                   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PageTransition.test.tsx src/app/data/launcherCatalog.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
                   - `npm --prefix web run typecheck` -> PASS
               - ID: T1004-subE-subD-subB-subB
-                Status: [>] In Progress
+                Status: [✓] Done
                 Title: Collapse remaining overlay, route-active, and compatibility fixture aliases
                 Description:
                 - Goal / acceptance criteria: Reduce the last non-redirect legacy workspace literals in overlays, route-active helpers, and targeted compatibility fixtures/tests, leaving only explicit redirect definitions and documented alias maps.
@@ -24013,9 +24015,27 @@ Subtasks:
                 - Estimated effort: Medium
                 - Required outputs: remaining compatibility cleanup, focused regressions, and final grep evidence for `T1004-subE-subD`.
                 Subtasks: None
+                Assigned to: Codex
+                Last updated: 2026-04-13 21:04 EDT - Codex
+                - Completion notes:
+                  - Repointed `HomeStartMenuOverlay` and the route-activity helpers in `usePlatformShellData`, `useNodeOperations`, `PlatformCapabilities`, and `useMidiCluster` to canonical-first matching, so the shell stops polling and filtering based on retired workspace roots.
+                  - Preserved the grouped Outboard Hardware launcher while still excluding the dedicated device pages, matching the canonical workspace-hub navigation model rather than the legacy per-device tile sprawl.
+                  - Final grep evidence now leaves legacy literals concentrated in explicit redirect routes (`App.tsx`), alias/compatibility maps (`advancedMenuItems.ts`, route-base helpers), and a small number of tests that intentionally verify those aliases.
+                - Validation:
+                  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomeStartMenuOverlay.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+                  - `npm --prefix web run typecheck` -> PASS
             Assigned to: Codex
-            Last updated: 2026-04-13 20:57 EDT - Codex
+            Last updated: 2026-04-13 21:04 EDT - Codex
+            - Completion notes:
+              - Finished the helper and secondary-shell cleanup by moving start-menu/overlay filtering and route-activity polling onto canonical-first route matching.
+              - Residual legacy literals are now limited to explicit redirect definitions, route-base compatibility helpers, canonical alias maps, and targeted compatibility tests rather than active shell/support surfaces.
+        - Completion notes:
+          - Closed the residual shell/session/support-surface sweep by canonicalizing fixture, helper, overlay, and route-activity behavior around `/workspace/*`.
+          - Final grep evidence leaves the old workspace roots only in explicit redirect compatibility paths, route-base constants/helpers, alias normalization maps, and tests that intentionally cover those compatibility seams.
     Assigned to: Codex
-    Last updated: 2026-04-13 20:57 EDT - Codex
+    Last updated: 2026-04-13 21:04 EDT - Codex
+    - Completion notes:
+      - Deleted the retired legacy shell files, extracted the remaining shared contracts, and completed the residual route/reference sweep so the canonical Workspace Hub now owns the migrated workspace family.
+      - Residual legacy literals are now limited to explicit redirect definitions, route-base compatibility helpers, alias maps, and targeted tests that intentionally validate those compatibility seams.
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
