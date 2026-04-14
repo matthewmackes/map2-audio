@@ -24611,7 +24611,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2258
-Status: [ ] Todo
+Status: [✓] Done
 Title: Retire the unused home-only start overlay once the landing shell fully replaces it
 Description:
 - Goal / acceptance criteria: Audit and remove `HomeStartMenuOverlay` and any home-route-only launcher remnants if they are no longer part of the intended product experience after the Carbon landing rewrite.
@@ -24620,7 +24620,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: usage audit, safe deletions or formal retention notes, and updated Home/start-menu tests.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:34 EDT - Codex
+- Completion notes:
+  - Audited runtime references to `HomeStartMenuOverlay` and confirmed the component and its dedicated suite were no longer used anywhere in the routed shell after the persistent taskbar/start-menu rewrite.
+  - Deleted the obsolete `web/src/app/pages/HomeStartMenuOverlay.tsx` implementation and its Jest coverage so the repo now carries a single active start-menu surface instead of a dead home-only duplicate.
+  - Revalidated the home and app-shell suites to ensure removing the overlay did not regress the active landing or taskbar behavior.
+- Validation:
+  - `rg -n "HomeStartMenuOverlay" web/src/app` -> PASS (no matches)
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2259
 Status: [ ] Todo
