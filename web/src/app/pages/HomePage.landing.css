@@ -162,6 +162,17 @@
   gap: var(--cds-spacing-06, 1.5rem);
 }
 
+.hp2-home-shell__recent-strip {
+  display: grid;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.hp2-home-shell__recent-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cds-spacing-05, 1rem);
+}
+
 .hp2-home-shell__workspace-section {
   display: grid;
   gap: var(--cds-spacing-04, 0.75rem);
@@ -186,6 +197,13 @@
   min-height: 13rem;
 }
 
+.hp2-home-shell__recent-card.cds--tile {
+  min-height: 10.5rem;
+  padding: var(--cds-spacing-05, 1rem);
+  text-decoration: none;
+  color: inherit;
+}
+
 .hp2-home-shell__workspace-tile.cds--tile.hp2-home-shell__workspace-tile--small {
   min-height: 10.5rem;
 }
@@ -197,6 +215,8 @@
 
 .hp2-home-shell__workspace-tile.cds--tile:hover,
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
+.hp2-home-shell__recent-card.cds--tile:hover,
+.hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:hover,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-subtle, #c6c6c6));
@@ -204,6 +224,7 @@
 }
 
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
+.hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
   outline: 2px solid var(--cds-focus, #0f62fe);
   outline-offset: 3px;
@@ -236,6 +257,24 @@
   display: grid;
   gap: var(--cds-spacing-03, 0.5rem);
   align-content: start;
+}
+
+.hp2-home-shell__recent-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.hp2-home-shell__recent-card-group,
+.hp2-home-shell__recent-card-route {
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.hp2-home-shell__recent-card-route {
+  margin-top: auto;
+  word-break: break-word;
 }
 
 .hp2-home-shell__rail-card-head {
@@ -357,6 +396,7 @@
   .hp2-root__backdrop,
   .hp2-home-shell__hero,
   .hp2-home-shell__rail-card,
+  .hp2-home-shell__recent-card.cds--tile,
   .hp2-home-shell__workspace-tile.cds--tile {
     animation: none;
     transition: none;
@@ -372,6 +412,7 @@
 .hp2-root[data-reduced-effects='true'] .hp2-root__backdrop,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__hero,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__rail-card,
+.hp2-root[data-reduced-effects='true'] .hp2-home-shell__recent-card.cds--tile,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__workspace-tile.cds--tile {
   animation: none;
   transition: none;
@@ -392,6 +433,7 @@
   .hp2-home-shell__masthead,
   .hp2-home-shell__hero,
   .hp2-home-shell__rail-card,
+  .hp2-home-shell__recent-card.cds--tile,
   .hp2-home-shell__workspace-tile.cds--tile {
     border-color: var(--cds-border-strong-01, #8d8d8d);
     background: var(--cds-layer, #ffffff);
@@ -404,6 +446,7 @@
 }
 
 @media (max-width: 66rem) {
+  .hp2-home-shell__recent-grid,
   .hp2-home-shell__workspace-strip {
     grid-template-columns: 1fr;
   }

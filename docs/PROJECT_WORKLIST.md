@@ -25039,7 +25039,7 @@ Last updated: 2026-04-14 13:54 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2271
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add an operator-facing “recent destinations” strip to the home shell
 Description:
 - Goal / acceptance criteria: Surface a small recent-destinations strip on the home shell that reflects the last few visited canonical routes and lets the operator jump back quickly.
@@ -25048,7 +25048,16 @@ Description:
 - Estimated effort: High
 - Required outputs: persisted recent-route model, home-shell UI, privacy-safe storage behavior, and focused regression coverage.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 22:42 EDT - Codex
+- Completion notes:
+  - Expanded `web/src/app/pages/homeShellNavigation.ts` from a single recent-route flag into a session-scoped bounded route history with legacy-key fallback, route normalization, and operator-facing destination metadata resolution across launcher cards, workspace tree children, and pinnable platform routes.
+  - Updated `web/src/app/layout/AppShell.tsx` to write pathname plus search so recent destinations can preserve canonical sub-routes such as themed pages, workspace artifact categories, and other query-backed landing targets.
+  - Added a dedicated recent-destinations strip to `web/src/app/pages/HomePage.tsx` / `HomePage.landing.css`, rendering compact interactive cards near the top of the landing shell so operators can jump back into recently used destinations without reopening the full nav tree.
+  - Added focused regression coverage in `web/src/app/pages/homeShellNavigation.test.ts` and extended `web/src/app/pages/HomePage.test.tsx` to prove storage ordering, legacy fallback, recent-strip rendering, and strip navigation behavior.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ID: T2272
 Status: [✓] Done

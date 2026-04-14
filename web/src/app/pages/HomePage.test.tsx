@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
@@ -448,9 +448,36 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    const recentTile = await screen.findByRole('link', { name: /Brain/i })
+    const recentTile = (await screen.findAllByRole('link', { name: /Brain/i })).find(
+      (link) => link.getAttribute('data-recent-route') === 'true',
+    )
+    expect(recentTile).toBeDefined()
+    if (!recentTile) {
+      throw new Error('Expected a recent Brain workspace tile')
+    }
     expect(recentTile).toHaveAttribute('data-recent-route', 'true')
     expect(recentTile).toHaveTextContent('Recent')
+  })
+
+  it('renders a recent-destinations strip from session-scoped route history', async () => {
+    window.sessionStorage.setItem(
+      'map2:home-shell-recent-routes',
+      JSON.stringify([
+        '/platforms/theme',
+        '/brain',
+        '/midi-hub/connections',
+      ]),
+    )
+
+    renderHome()
+
+    const recentStrip = await screen.findByLabelText('Recent destinations')
+    expect(within(recentStrip).getByRole('link', { name: /Theme/i })).toBeInTheDocument()
+    expect(within(recentStrip).getByRole('link', { name: /Brain/i })).toBeInTheDocument()
+    expect(within(recentStrip).getByRole('link', { name: /Connections/i })).toBeInTheDocument()
+
+    fireEvent.click(within(recentStrip).getByRole('link', { name: /Theme/i }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
   })
 
   it('persists operator-facing landing preferences from the home rail toggles', async () => {

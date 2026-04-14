@@ -18,7 +18,7 @@ import { useShellSummaryData } from '../layout/useShellSummaryData'
 import { DashboardCard } from '../components/shared/DashboardCard'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { getLauncherRoutePresentation, type LandingTileSize } from '../data/launcherCatalog'
-import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
+import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentDestinations, readHomeShellRecentRoute } from './homeShellNavigation'
 import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.boot.css'
 import './HomePage.landing.css'
@@ -146,6 +146,7 @@ export function HomePage() {
   const quickLaunchSearchRef = useRef<HTMLInputElement | null>(null)
   const deferredQuickLaunchQuery = useDeferredValue(quickLaunchQuery)
   const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
+  const recentDestinations = useMemo(() => readHomeShellRecentDestinations(), [location.key])
   const {
     startMenuTileItems,
   } = useAppShellPresentation({
@@ -435,6 +436,40 @@ export function HomePage() {
                 <span>Search every main destination</span>
               </div>
             </DashboardCard>
+
+            {recentDestinations.length > 0 ? (
+              <section className="hp2-home-shell__recent-strip" aria-label="Recent destinations">
+                <div className="hp2-home-shell__workspace-section-head">
+                  <p className="hp2-home-shell__eyebrow">Recent destinations</p>
+                </div>
+                <div className="hp2-home-shell__recent-grid">
+                  {recentDestinations.map((destination) => (
+                    <DashboardCard
+                      key={destination.route}
+                      interactive
+                      className="hp2-home-shell__recent-card"
+                      href={destination.route}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        navigateHomeShellRoute(navigate, destination.route)
+                      }}
+                      onMouseEnter={() => prefetchHomeShellRoute(destination.route)}
+                      onFocus={() => prefetchHomeShellRoute(destination.route)}
+                    >
+                      <div className="hp2-home-shell__recent-card-head dashboard-card__header">
+                        <Tag type="purple">Recent</Tag>
+                        <span className="hp2-home-shell__recent-card-group">{destination.group}</span>
+                      </div>
+                      <div className="hp2-home-shell__workspace-copy">
+                        <h2 className="dashboard-card__title">{destination.label}</h2>
+                        <p className="dashboard-card__body-copy">{destination.description}</p>
+                      </div>
+                      <span className="hp2-home-shell__recent-card-route">{destination.route}</span>
+                    </DashboardCard>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section className="hp2-home-shell__workspace-sections" aria-label="Control Panel shortcuts">
               {groupedStartMenuTileItems.map((section) => (

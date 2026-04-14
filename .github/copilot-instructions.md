@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (home visual smoke telemetry mocks documented)
+> **Last Updated**: April 14, 2026 (recent-destinations pinned-route typing documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1006,6 +1006,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Stub those realtime telemetry endpoints in the smoke harness and record browser console/page errors plus a failure screenshot when the home shell selector never appears.
 - **Verification**: `npm --prefix web run build`; `npm --prefix web run visual:home-smoke -- --skip-build`
 - **Lesson**: Browser-level smoke coverage for shell surfaces must mock every platform layer they transitively read, not just the obvious page-local APIs.
+
+**91. Recent-Destination Helpers Must Narrow Platform Pinned Routes Before Reading `homeSection`**
+- **Files**: `web/src/app/pages/homeShellNavigation.ts`
+- **Problem**: The recent-destinations helper passed `npm --prefix web run typecheck` but failed the production build because `findPinnableNavigationItem()` can return `PlatformPinnedNavItem`, which does not expose `homeSection`.
+- **Root Cause**: The helper treated all pinnable navigation records as if they shared the `ShellNavigationItem`/`HardwareInterfaceMenuItem` shape, but platform-pinned routes only guarantee `label`, `description`, and `route`.
+- **Fix**: Narrow the union with `'homeSection' in pinnableItem` and fall back to the explicit `'Platform'` group when the recent-destination source is a platform-pinned item.
+- **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts`; `npm --prefix web run build`
+- **Lesson**: For navigation helpers that mix launcher, hardware, and platform-pinned records, production build typechecks may be stricter than local `tsc --noEmit`; narrow every union branch before reading shared-looking fields.
 
 ### Server Management Gotchas
 
@@ -2053,6 +2061,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - Recent Destinations Pinned-Route Narrowing
+- **Section**: Gotchas & Learned Fixes (#91), Update Log
+- **Change**: Documented that recent-destination helpers must narrow `PlatformPinnedNavItem` before reading `homeSection`, and recorded the verified fallback grouping rule.
+- **Reason**: The recent-destinations home-shell slice exposed a production-build-only type error after mixing launcher, hardware, and platform-pinned route records.
+- **Impact**: Future navigation-memory work should stop failing late in `npm --prefix web run build` when a platform route joins a broader navigation union.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/homeShellNavigation.ts`
 
 ### [2026-04-14] - Home Visual Smoke Telemetry Mocks
 - **Section**: Gotchas & Learned Fixes (#90), Update Log

@@ -78,8 +78,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [closeShellMenus, setRestartConfirmOpen])
 
   useEffect(() => {
-    writeHomeShellRecentRoute(location.pathname)
-  }, [location.pathname])
+    writeHomeShellRecentRoute(`${location.pathname}${location.search}`)
+  }, [location.pathname, location.search])
 
   return (
     <div
