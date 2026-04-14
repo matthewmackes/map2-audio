@@ -319,7 +319,12 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ViewportPolicyGate>
-        <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
           <ClusterProvider>
             <ToastProvider>
               <PlatformStatusHeartbeat />
@@ -477,7 +482,7 @@ export function App() {
               </ErrorBoundary>
             </ToastProvider>
           </ClusterProvider>
-        </BrowserRouter>
+    </BrowserRouter>
       </ViewportPolicyGate>
       <Suspense fallback={null}>
         <ReactQueryDevtools initialIsOpen={false} />

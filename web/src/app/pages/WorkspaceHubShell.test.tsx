@@ -105,7 +105,13 @@ describe('WorkspaceHubShell', () => {
 
   it('redirects the bare /workspace route into the platforms overview scaffold', async () => {
     render(
-      <MemoryRouter initialEntries={['/workspace']}>
+      <MemoryRouter
+        initialEntries={['/workspace']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route path="/workspace/*" element={<WorkspaceHubShell />}>
             <Route index element={<WorkspaceHubIndexRedirect />} />
@@ -130,7 +136,13 @@ describe('WorkspaceHubShell', () => {
 
   it('renders full imported section nav entries and keeps the targeted workspace link active', async () => {
     render(
-      <MemoryRouter initialEntries={['/workspace/artifacts?category=snapshots']}>
+      <MemoryRouter
+        initialEntries={['/workspace/artifacts?category=snapshots']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route path="/workspace/*" element={<WorkspaceHubShell />}>
             <Route

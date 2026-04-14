@@ -24547,7 +24547,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2255
-Status: [ ] Todo
+Status: [✓] Done
 Title: Suppress React Router future-flag warnings in workspace-shell test harnesses
 Description:
 - Goal / acceptance criteria: Update the workspace-shell test harnesses to opt into the v7 future flags so the focused Jest runs stop emitting known deprecation warnings.
@@ -24556,7 +24556,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: updated test routers, clean Jest console output for the affected suites, and no behavioral regressions.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 09:59 EDT - Codex
+- Completion notes:
+  - Opted the main `BrowserRouter` in `web/src/app/App.tsx` into the React Router v7 future flags so route suites mounting the real app shell no longer emit the known deprecation warnings by default.
+  - Updated the remaining plain `MemoryRouter` harnesses in `web/src/app/pages/WorkspaceHubShell.test.tsx` to pass the same future flags, removing the workspace-shell warning noise from focused Jest runs.
+  - The affected suites are now warning-clean for the React Router future flags; the only remaining console noise in `App.platformRoute.test.tsx` is a separate Suspense `act(...)` warning and should be tracked independently.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
 
 ID: T2256
 Status: [ ] Todo
