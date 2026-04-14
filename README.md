@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1191** TypeScript | **136** C++/H | **143** Docs | **2128** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1193** TypeScript | **136** C++/H | **143** Docs | **2130** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cd3c4b06`](https://github.com/matthewmackes/map2-audio/commit/cd3c4b06fa12a8056f79aae5f372be0c9b8cc588) | feat: ship pending shell and workspace updates | Map2 Audio | 2026-04-14 |
+| [`7e3981c1`](https://github.com/matthewmackes/map2-audio/commit/7e3981c18e59e4b82cfc3c265da59c8e3e8abc8a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`2f9394a4`](https://github.com/matthewmackes/map2-audio/commit/2f9394a44c256e62d2d89b166d552bedc95b9727) | add workspace hub nav filter | Map2 Audio | 2026-04-14 |
 | [`45efdd00`](https://github.com/matthewmackes/map2-audio/commit/45efdd00f088097eab62c275234151999ac90b53) | split home page style modules | Map2 Audio | 2026-04-14 |
 | [`29a51699`](https://github.com/matthewmackes/map2-audio/commit/29a5169995242192c225b8f2a9dfd082872ca0d5) | audit home shell accessibility states | Map2 Audio | 2026-04-14 |
 | [`dddae61c`](https://github.com/matthewmackes/map2-audio/commit/dddae61c04d1756c4db73c8d2bcf9a3a71f8e249) | normalize shared shell chrome copy | Map2 Audio | 2026-04-14 |
 | [`dadf59d4`](https://github.com/matthewmackes/map2-audio/commit/dadf59d46dd7519bb0d3e6fde75a03003ffff1ed) | add physical surfaces page coverage | Map2 Audio | 2026-04-14 |
 | [`bb1fca56`](https://github.com/matthewmackes/map2-audio/commit/bb1fca5692b2433c2a7b4d69e19b7393115121b5) | remove obsolete home start overlay | Map2 Audio | 2026-04-14 |
-| [`5ac969d9`](https://github.com/matthewmackes/map2-audio/commit/5ac969d983a89b1db980a8334924b06ec4e606b2) | restore workspace hub title strip | Map2 Audio | 2026-04-14 |
-| [`63c9a74a`](https://github.com/matthewmackes/map2-audio/commit/63c9a74a562dca4e1ec65383c6e6d2081f7db9f8) | group home shell launch tiles by workflow | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
