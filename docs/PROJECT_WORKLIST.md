@@ -24464,3 +24464,281 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 
 Assigned to: Codex
 Last updated: 2026-04-14 09:45 EDT - Codex
+
+## Proposed Next Backlog
+
+ID: T2249
+Status: [ ] Todo
+Title: Add operator-facing controls for home landing preferences
+Description:
+- Goal / acceptance criteria: Expose `homeLandingPreferences` controls in the UI so operators can toggle the cinematic backdrop and boot splash without editing local storage manually.
+- Why it matters: `T2242` moved those behaviors behind explicit preferences, but they are not yet discoverable or manageable from the product itself.
+- Dependencies: T2242
+- Estimated effort: Medium
+- Required outputs: updated Theme or Home settings UI, persisted preference wiring, focused `HomePage` and settings regression coverage.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2250
+Status: [ ] Todo
+Title: Remove stale `WorkspaceHubPlaceholder` lazy import and route wiring from `App.tsx`
+Description:
+- Goal / acceptance criteria: Delete the dead `WorkspaceHubPlaceholder` lazy import and any residual route references now that the placeholder component has been removed from `WorkspaceHubShell.tsx`.
+- Why it matters: The repo still carries an obvious dead import path after the workspace-hub cleanup, which is a maintenance hazard and a sign the route tree is not fully reconciled.
+- Dependencies: T1006
+- Estimated effort: Low
+- Required outputs: `App.tsx` cleanup, route-regression validation, grep proof that no `WorkspaceHubPlaceholder` references remain.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2251
+Status: [ ] Todo
+Title: Personalize the home launch grid from Special Settings landing-tile configuration
+Description:
+- Goal / acceptance criteria: Replace the fixed home launch-tile ordering with Special Settings-backed landing-tile configuration so operators can promote or hide home destinations intentionally.
+- Why it matters: The new Carbon home shell is currently cleaner, but it is less operator-personal than the previous desktop metaphor because the launch grid is fully static.
+- Dependencies: T2242, T2243
+- Estimated effort: Medium
+- Required outputs: settings-to-grid mapping, persistence wiring, updated home-shell tests, and no duplicate navigation models.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2252
+Status: [ ] Todo
+Title: Add semantic launch-group sections to the home shell grid
+Description:
+- Goal / acceptance criteria: Organize the home launch grid into clear operator-facing groups such as Workspace, Performance, MIDI, and Device Operations while preserving the Carbon tile treatment.
+- Why it matters: The landing shell is visually cleaner now, but the flat tile list still makes route relationships harder to scan than they need to be.
+- Dependencies: T2242
+- Estimated effort: Medium
+- Required outputs: grouped home layout, copy refinement, responsive CSS updates, and focused HomePage regression updates.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2253
+Status: [ ] Todo
+Title: Add direct summary-card navigation from the workspace hub hero grid
+Description:
+- Goal / acceptance criteria: Make the workspace-hub summary cards actionable so operators can click or keyboard-activate each summary card to jump into the corresponding section.
+- Why it matters: The workspace hub now looks coherent, but the top summary band is still informational only and misses an obvious product-navigation affordance.
+- Dependencies: T1006
+- Estimated effort: Low
+- Required outputs: interactive summary-card treatment, accessibility states, and `WorkspaceHubShell` test coverage for keyboard and mouse navigation.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2254
+Status: [ ] Todo
+Title: Build a browser-driven visual verification harness for all `/workspace/*` routes
+Description:
+- Goal / acceptance criteria: Add a repeatable browser-level visual smoke harness that exercises each workspace route and captures the post-polish layout as a regression guard.
+- Why it matters: `T1006-subJ` required browser verification, but the repo still relies mostly on typecheck plus component Jest coverage rather than a route-level visual harness.
+- Dependencies: T1006
+- Estimated effort: Medium
+- Required outputs: automated route smoke or screenshot harness, baseline artifacts or assertions, and documentation on how to run it.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2255
+Status: [ ] Todo
+Title: Suppress React Router future-flag warnings in workspace-shell test harnesses
+Description:
+- Goal / acceptance criteria: Update the workspace-shell test harnesses to opt into the v7 future flags so the focused Jest runs stop emitting known deprecation warnings.
+- Why it matters: The tests are passing, but the persistent warnings add noise and hide real regressions during repeated workspace-shell validation.
+- Dependencies: T1006
+- Estimated effort: Low
+- Required outputs: updated test routers, clean Jest console output for the affected suites, and no behavioral regressions.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2256
+Status: [ ] Todo
+Title: Unify home and workspace shell status-data composition into a shared hook
+Description:
+- Goal / acceptance criteria: Extract a shared hook that composes host info, platform status, push-confirmation state, and launcher-interface summary for both the home shell and workspace launcher surfaces.
+- Why it matters: The home shell now reuses `SystemSummary`, but its data assembly is still duplicated across `HomePage`, `HomeStartMenuOverlay`, and `AppShell`.
+- Dependencies: T2248
+- Estimated effort: Medium
+- Required outputs: shared hook/module, consumer rewiring, and focused regression coverage around both home and workspace shell surfaces.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2257
+Status: [ ] Todo
+Title: Add explicit loading and error affordances to `SystemSummary`
+Description:
+- Goal / acceptance criteria: Extend `SystemSummary` so host status, platform metrics, and interface groups present a deliberate loading and degraded-state treatment instead of silently collapsing to empty labels.
+- Why it matters: The summary component is now shared across more surfaces, which makes its current optimistic-only rendering path too brittle for operator trust.
+- Dependencies: T2248
+- Estimated effort: Medium
+- Required outputs: component-state model updates, presentational variants, and targeted tests for loading/error/fallback states.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2258
+Status: [ ] Todo
+Title: Retire the unused home-only start overlay once the landing shell fully replaces it
+Description:
+- Goal / acceptance criteria: Audit and remove `HomeStartMenuOverlay` and any home-route-only launcher remnants if they are no longer part of the intended product experience after the Carbon landing rewrite.
+- Why it matters: The new home shell no longer opens the overlay, so the repo may now carry a partially obsolete secondary home-navigation surface.
+- Dependencies: T2242, T2256
+- Estimated effort: Medium
+- Required outputs: usage audit, safe deletions or formal retention notes, and updated Home/start-menu tests.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2259
+Status: [ ] Todo
+Title: Add a command-palette style quick launcher to the home shell
+Description:
+- Goal / acceptance criteria: Provide a keyboard-first quick-launch affordance on the home shell that searches the canonical launch destinations and navigates directly to the selected route.
+- Why it matters: The new home shell is stronger visually, but power users lost the fast “open and jump” rhythm the old launcher overlay implicitly provided.
+- Dependencies: T2242, T2243
+- Estimated effort: High
+- Required outputs: searchable launcher UI, keyboard handling, route prefetch integration, and focused accessibility/regression tests.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2260
+Status: [ ] Todo
+Title: Add route-aware active-state styling to home launch tiles
+Description:
+- Goal / acceptance criteria: When the operator returns home, tiles that correspond to the current or most recently active workspace should render a clear active or recent-state treatment.
+- Why it matters: The Carbon launch grid currently behaves like a static dashboard instead of a shell entry surface with awareness of current operator context.
+- Dependencies: T2242
+- Estimated effort: Low
+- Required outputs: active-state logic, tile styling updates, and HomePage regression assertions.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2261
+Status: [ ] Todo
+Title: Deep-link the home shell rail cards into their corresponding management surfaces
+Description:
+- Goal / acceptance criteria: Make the status and preference cards on the right rail link to their canonical destination pages such as Theme, host management, or workspace summaries.
+- Why it matters: The rail currently presents useful context but leaves the operator to infer where to go next for action.
+- Dependencies: T2242
+- Estimated effort: Low
+- Required outputs: card CTA wiring, accessible link/button treatment, and route-focused regression coverage.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2262
+Status: [ ] Todo
+Title: Normalize sentence-case and support-copy tone across remaining shared shell chrome
+Description:
+- Goal / acceptance criteria: Audit the remaining shared shell labels, eyebrow copy, metric labels, and utility captions for forced uppercase or engineering-voice wording, then align them to the new product-tone baseline.
+- Why it matters: Recent home/workspace work improved the big surfaces, but residual shell copy debt still leaks into secondary chrome and breaks consistency.
+- Dependencies: T2242, T1006
+- Estimated effort: Medium
+- Required outputs: copy/CSS updates on the affected shared shell surfaces and focused visual/text regression validation.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2263
+Status: [ ] Todo
+Title: Build a shared clickable dashboard-card primitive for home and workspace summaries
+Description:
+- Goal / acceptance criteria: Extract a reusable Carbon card primitive for summary/dashboard surfaces so the home launch tiles and workspace summary cards stop maintaining parallel structural/styling patterns.
+- Why it matters: The new home shell and polished workspace hub now share a product language, but they still express it through duplicated tile/card patterns.
+- Dependencies: T2242, T2253
+- Estimated effort: Medium
+- Required outputs: shared component or styling primitive, consumer rewiring, and focused regression coverage.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2264
+Status: [ ] Todo
+Title: Add dedicated tests for `PhysicalSurfacesOverviewPage` and `PhysicalSurfaceUnitPage`
+Description:
+- Goal / acceptance criteria: Introduce focused page tests for the physical-surfaces overview and detail pages so future polish work is not forced to rely on typecheck plus adjacent workspace/outboard suites.
+- Why it matters: Multiple recent slices touched those pages, and the worklist repeatedly had to note the absence of direct regression coverage.
+- Dependencies: T1006
+- Estimated effort: Medium
+- Required outputs: new page tests covering header state, empty states, detail sections, and no-console-error validation.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2265
+Status: [ ] Todo
+Title: Add dedicated regression coverage for `WorkspaceSectionHeader`
+Description:
+- Goal / acceptance criteria: Add direct component coverage for `WorkspaceSectionHeader` so its compact title/eyebrow/actions contract is validated independently of page-level consumers.
+- Why it matters: The header is now a shared primitive for the workspace hub, but it currently has no component-level regression harness.
+- Dependencies: T1006-subB
+- Estimated effort: Low
+- Required outputs: new component tests covering title hierarchy, optional fields, and responsive action rendering expectations.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2266
+Status: [ ] Todo
+Title: Add a workspace-hub search/filter rail for section navigation
+Description:
+- Goal / acceptance criteria: Provide a lightweight search or filter affordance in the workspace hub sidebar so long section lists like Audio Artifacts and Physical Surfaces are easier to navigate.
+- Why it matters: The sidebar is cleaner now, but it is still purely static navigation and can get dense as more routes and units are added.
+- Dependencies: T1006, T2253
+- Estimated effort: Medium
+- Required outputs: searchable nav UI, matching/filter logic, and `WorkspaceHubShell` regression updates.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2267
+Status: [ ] Todo
+Title: Add browser-level visual snapshots for the new home shell
+Description:
+- Goal / acceptance criteria: Capture snapshot or screenshot-based regression coverage for the Carbon home shell across its minimal and cinematic modes.
+- Why it matters: The landing page was substantially redesigned, but the current regression suite is still mostly structural and interaction-focused rather than visual.
+- Dependencies: T2242
+- Estimated effort: Medium
+- Required outputs: visual snapshot harness or screenshot suite, baseline artifacts, and documentation for update flow.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2268
+Status: [ ] Todo
+Title: Decompose remaining `HomePage.css` into co-located landing-shell style modules
+Description:
+- Goal / acceptance criteria: Split the remaining mixed-purpose home stylesheet into focused, co-located style modules for boot splash, landing shell, and any retained overlay/launcher chrome.
+- Why it matters: The home route changed fundamentally under `T2242`, but its CSS file still carries legacy eras and mixed ownership in one place.
+- Dependencies: T2242, T2258
+- Estimated effort: Medium
+- Required outputs: stylesheet decomposition, import rewiring, and no visual regressions in the home shell or retained launcher surfaces.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2269
+Status: [ ] Todo
+Title: Replace fixed home-shell CTA routing with route-prefetch-aware navigation helpers
+Description:
+- Goal / acceptance criteria: Route the home-shell CTA buttons and tiles through a shared prefetch-aware navigation helper so the landing surface warms likely destinations consistently.
+- Why it matters: The canonical launcher surfaces already prefetch routes, but the new home-shell tiles and hero CTAs currently navigate directly.
+- Dependencies: T2242, T2243
+- Estimated effort: Low
+- Required outputs: helper extraction or reuse, HomePage rewiring, and targeted regression validation around navigation behavior.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2270
+Status: [ ] Todo
+Title: Expose home-shell launch tiles to reduced-motion and high-contrast theme audits
+Description:
+- Goal / acceptance criteria: Audit and refine the home-shell tile interactions, focus states, and background/backdrop treatments under reduced-motion and high-contrast conditions.
+- Why it matters: The landing shell now uses layered backdrop and card effects that should be explicitly verified against the project’s accessibility and theme standards.
+- Dependencies: T2242
+- Estimated effort: Medium
+- Required outputs: CSS/accessibility refinements, focused tests where feasible, and audit notes in the worklist.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
+
+ID: T2271
+Status: [ ] Todo
+Title: Add an operator-facing “recent destinations” strip to the home shell
+Description:
+- Goal / acceptance criteria: Surface a small recent-destinations strip on the home shell that reflects the last few visited canonical routes and lets the operator jump back quickly.
+- Why it matters: The home shell should behave like a real shell entry surface, and recent-route memory would restore some of the workflow continuity lost with the old desktop metaphor.
+- Dependencies: T2242, T2260
+- Estimated effort: High
+- Required outputs: persisted recent-route model, home-shell UI, privacy-safe storage behavior, and focused regression coverage.
+Assigned to: Codex
+Last updated: 2026-04-14 09:50 EDT - Codex
