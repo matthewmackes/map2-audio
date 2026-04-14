@@ -12,12 +12,12 @@ jest.mock('../theme', () => ({
   }),
 }))
 
-const { OutboardHardwareShell } =
-  jest.requireActual('./OutboardHardwareShell') as typeof import('./OutboardHardwareShell')
 const { OutboardHardwareOverviewPage } =
   jest.requireActual('./OutboardHardwareOverviewPage') as typeof import('./OutboardHardwareOverviewPage')
 const { OutboardHardwareDevicePage } =
   jest.requireActual('./OutboardHardwareDevicePage') as typeof import('./OutboardHardwareDevicePage')
+const { WorkspaceOutboardHardwareOutlet } =
+  jest.requireActual('./workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet') as typeof import('./workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet')
 
 function renderDevice(initialEntry: string) {
   return render(
@@ -29,7 +29,7 @@ function renderDevice(initialEntry: string) {
       }}
     >
       <Routes>
-        <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
+        <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
           <Route index element={<OutboardHardwareOverviewPage />} />
           <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
         </Route>
@@ -45,7 +45,7 @@ function renderDevice(initialEntry: string) {
 
 describe('OutboardHardwareDevicePage', () => {
   it('renders the dedicated route CTA for a known device', () => {
-    renderDevice('/outboard-hardware/eventide-intelfx')
+    renderDevice('/workspace/outboard-hardware/eventide-intelfx')
 
     expect(screen.getByRole('heading', { name: 'IntelFX Rack' })).toBeInTheDocument()
     expect(screen.getByText('Identity and routing metadata')).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('OutboardHardwareDevicePage', () => {
   })
 
   it('renders a not-found state for unknown device ids', () => {
-    renderDevice('/outboard-hardware/unknown-unit')
+    renderDevice('/workspace/outboard-hardware/unknown-unit')
 
     expect(screen.getByRole('heading', { name: 'Outboard Hardware Unit Not Found' })).toBeInTheDocument()
     expect(screen.getByText('Back to overview')).toBeInTheDocument()

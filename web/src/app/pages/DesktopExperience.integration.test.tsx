@@ -9,7 +9,7 @@ import { AppShell } from '../layout/AppShell'
 import { HomePage } from './HomePage'
 import { OutboardHardwareDevicePage } from './OutboardHardwareDevicePage'
 import { OutboardHardwareOverviewPage } from './OutboardHardwareOverviewPage'
-import { OutboardHardwareShell } from './OutboardHardwareShell'
+import { WorkspaceOutboardHardwareOutlet } from './workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet'
 
 const mockUpdateSettings = jest.fn()
 const mockRestartBackend = jest.fn()
@@ -259,7 +259,7 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/workspace" element={<ShellStubPage testId="workspace-page">Unified Workspaces</ShellStubPage>} />
             <Route path="/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
-            <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
+            <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
               <Route index element={<OutboardHardwareOverviewPage />} />
               <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
             </Route>
@@ -361,7 +361,7 @@ describe('Desktop experience integration', () => {
   })
 
   it('opens the Start Menu, navigates through it, and closes after routing', async () => {
-    renderDesktopExperience(['/artifacts'])
+    renderDesktopExperience(['/workspace'])
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
     expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
@@ -393,7 +393,7 @@ describe('Desktop experience integration', () => {
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {
-    renderDesktopExperience(['/artifacts'])
+    renderDesktopExperience(['/workspace'])
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
     fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))

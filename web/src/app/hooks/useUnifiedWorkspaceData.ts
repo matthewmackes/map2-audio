@@ -6,7 +6,7 @@ import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysical
 import type { EnrichedPhysicalSurfacesSummary, IRStatus, NAMModelsResponse, NAMStatus, PluginsResponse } from '../../map2/types'
 import type { SoundFontListResponse } from '../types/library'
 import { usePlatformShellData } from './usePlatformShellData'
-import { OUTBOARD_HARDWARE_DEVICES } from '../pages/OutboardHardwareShell'
+import { OUTBOARD_HARDWARE_DEVICES } from '../pages/outboardHardwareShared'
 
 export type UnifiedWorkspaceSectionKey =
   | 'platforms'

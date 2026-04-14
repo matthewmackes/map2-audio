@@ -2,6 +2,7 @@ import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { buildWorkspaceOutboardHardwarePath } from './outboardHardwareRoutes'
 
 const mockUseTesiraDevices = jest.fn()
 const mockUseDeviceLocation = jest.fn()
@@ -42,14 +43,14 @@ jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 
-const { OutboardHardwareShell } =
-  jest.requireActual('./OutboardHardwareShell') as typeof import('./OutboardHardwareShell')
 const { OutboardHardwareOverviewPage } =
   jest.requireActual('./OutboardHardwareOverviewPage') as typeof import('./OutboardHardwareOverviewPage')
 const { OutboardHardwareDevicePage } =
   jest.requireActual('./OutboardHardwareDevicePage') as typeof import('./OutboardHardwareDevicePage')
+const { WorkspaceOutboardHardwareOutlet } =
+  jest.requireActual('./workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet') as typeof import('./workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet')
 
-function renderOverview(initialEntry = '/outboard-hardware') {
+function renderOverview(initialEntry = '/workspace/outboard-hardware') {
   return render(
     <MemoryRouter
       initialEntries={[initialEntry]}
@@ -59,8 +60,8 @@ function renderOverview(initialEntry = '/outboard-hardware') {
       }}
     >
       <Routes>
-        <Route path="/outboard-hardware/*" element={<OutboardHardwareShell />}>
-          <Route index element={<OutboardHardwareOverviewPage />} />
+        <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
+          <Route index element={<OutboardHardwareOverviewPage buildDevicePath={buildWorkspaceOutboardHardwarePath} />} />
           <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
         </Route>
         <Route path="/tesira/*" element={<div>Tesira route</div>} />

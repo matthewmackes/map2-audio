@@ -23920,7 +23920,7 @@ Subtasks:
           - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
           - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subE-subC
-        Status: [>] In Progress
+        Status: [✓] Done
         Title: Delete the retired legacy workspace shell files and route-local tests
         Description:
         - Goal / acceptance criteria: Remove the superseded shell/page files and any route-local tests that only cover the deleted legacy entrypoints once the canonical workspace pages own the remaining behavior.
@@ -23930,9 +23930,16 @@ Subtasks:
         - Required outputs: file deletions, updated focused tests, and grep proof.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:39 EDT - Codex
+        Last updated: 2026-04-13 19:43 EDT - Codex
+        - Completion notes:
+          - Deleted the retired `PhysicalSurfacesShell.tsx` and `OutboardHardwareShell.tsx` legacy shell modules plus their shell-only route tests after moving the remaining consumers onto canonical workspace-hub outlets and shared data modules.
+          - Rewired the remaining outboard desktop/test harnesses and the unified workspace data hook so they no longer import the deleted shell files.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
+          - `rg -n \"PhysicalSurfacesShell|OutboardHardwareShell\" web/src/app -g '*.ts*'` -> PASS (only retained CSS filenames and shared type names remain)
       - ID: T1004-subE-subD
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Sweep residual canonical workspace references across shell/session/supporting surfaces
         Description:
         - Goal / acceptance criteria: Repoint remaining hard-coded legacy workspace route literals in supporting UI/session/prefetch/poster surfaces and prove the surviving legacy roots are only intentional redirect compatibility paths.
@@ -23941,9 +23948,9 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: reference sweep, grep evidence, and regression validation.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 19:35 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:43 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:39 EDT - Codex
+    Last updated: 2026-04-13 19:43 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
