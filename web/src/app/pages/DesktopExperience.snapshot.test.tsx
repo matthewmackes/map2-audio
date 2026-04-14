@@ -35,6 +35,11 @@ jest.mock('../hooks/useDeviceLocation', () => ({
   useHardwareMenuLocations: () => ({
     locationsByRoute: mockHardwareLocationNotes,
   }),
+  useClusterHardwareInventory: () => ({
+    data: { devices: [] },
+    isLoading: false,
+    error: null,
+  }),
 }))
 
 jest.mock('../hooks/useNodePageContext', () => ({
@@ -155,7 +160,7 @@ function renderSnapshotHarness(initialEntries: string[] = ['/']) {
         <AppShell>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/artifacts" element={<div data-testid="artifacts-page">Audio Artifacts Workspace</div>} />
+            <Route path="/workspace/artifacts" element={<div data-testid="artifacts-page">Audio Artifacts Workspace</div>} />
           </Routes>
         </AppShell>
       </MemoryRouter>
@@ -239,7 +244,7 @@ describe('Desktop experience visual snapshots', () => {
   })
 
   it('matches the taskbar and Start Menu shell', () => {
-    const { container } = renderSnapshotHarness(['/artifacts'])
+    const { container } = renderSnapshotHarness(['/workspace/artifacts'])
     fireEvent.click(screen.getByLabelText('Open platform menu'))
 
     expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()

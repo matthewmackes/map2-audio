@@ -83,7 +83,7 @@ describe('homeDesktopSession', () => {
       const state = {
         version: 2,
         bootCompletedAt: '2026-04-06T13:00:00.000Z',
-        runningRoutes: ['/artifacts', '/mpx1'],
+        runningRoutes: ['/workspace/artifacts', '/mpx1'],
         currentRoute: '/mpx1',
       }
       window.localStorage.setItem(HOME_DESKTOP_SESSION_STORAGE_KEY, JSON.stringify(state))
@@ -97,8 +97,8 @@ describe('homeDesktopSession', () => {
       const state = {
         version: 2,
         bootCompletedAt: '2026-04-06T13:00:00.000Z',
-        runningRoutes: ['/artifacts'],
-        currentRoute: '/artifacts',
+        runningRoutes: ['/workspace/artifacts'],
+        currentRoute: '/workspace/artifacts',
       }
       writeHomeDesktopSession(state)
 
@@ -144,30 +144,30 @@ describe('homeDesktopSession', () => {
 
   describe('updateHomeDesktopSession', () => {
     it('returns null when no session exists', () => {
-      expect(updateHomeDesktopSession({ runningRoutes: ['/artifacts'] })).toBeNull()
+      expect(updateHomeDesktopSession({ runningRoutes: ['/workspace/artifacts'] })).toBeNull()
     })
 
     it('updates persisted running routes and current route after boot', () => {
       completeHomeDesktopBoot(new Date('2026-04-06T13:00:00.000Z'))
 
       expect(updateHomeDesktopSession({
-        runningRoutes: ['/intelfx', '/artifacts'],
-        currentRoute: '/artifacts',
+        runningRoutes: ['/intelfx', '/workspace/artifacts'],
+        currentRoute: '/workspace/artifacts',
       })).toEqual({
         version: 2,
         bootCompletedAt: '2026-04-06T13:00:00.000Z',
-        runningRoutes: ['/intelfx', '/artifacts'],
-        currentRoute: '/artifacts',
+        runningRoutes: ['/intelfx', '/workspace/artifacts'],
+        currentRoute: '/workspace/artifacts',
       })
     })
 
     it('preserves existing values when patch is partial', () => {
       completeHomeDesktopBoot(new Date('2026-04-06T13:00:00.000Z'))
-      updateHomeDesktopSession({ runningRoutes: ['/artifacts'], currentRoute: '/artifacts' })
+      updateHomeDesktopSession({ runningRoutes: ['/workspace/artifacts'], currentRoute: '/workspace/artifacts' })
 
       // Only update currentRoute
       const result = updateHomeDesktopSession({ currentRoute: '/mpx1' })
-      expect(result?.runningRoutes).toEqual(['/artifacts'])
+      expect(result?.runningRoutes).toEqual(['/workspace/artifacts'])
       expect(result?.currentRoute).toBe('/mpx1')
     })
   })

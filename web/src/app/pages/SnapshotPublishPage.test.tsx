@@ -116,7 +116,7 @@ function renderPage(initialPath = '/snapshots/12/publish') {
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route path="/snapshot-editor" element={<div>Editor route</div>} />
-          <Route path="/artifacts" element={<div>Artifacts route</div>} />
+          <Route path="/workspace/artifacts" element={<div>Artifacts route</div>} />
           <Route path="/snapshots/:snapshotId/publish" element={<SnapshotPublishPage />} />
         </Routes>
       </MemoryRouter>

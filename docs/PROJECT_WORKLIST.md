@@ -23952,8 +23952,41 @@ Subtasks:
         Last updated: 2026-04-13 19:46 EDT - Codex
         - Progress notes:
           - Repointed the default special-settings landing tile, poster manifest workspace posters, page-transition audio-artifact scope matching, node-display page-key mapping, and home-card workspace profiles toward canonical `/workspace*` routes.
-          - Remaining residual sweep work is now concentrated in session/test fixtures and a few compatibility helpers that still intentionally mention legacy roots.
+          - Remaining residual sweep work is now concentrated in compatibility helpers, redirect metadata, and tests that still exercise intentional legacy aliases.
+        Subtasks:
+          - ID: T1004-subE-subD-subA
+            Status: [✓] Done
+            Title: Canonicalize workspace session and snapshot test fixtures
+            Description:
+            - Goal / acceptance criteria: Repoint the remaining home-desktop session fixtures, snapshot publish route stubs, and desktop snapshot harness routes to canonical `/workspace/*` destinations so the migration tests stop treating legacy artifact roots as primary.
+            - Why it matters: The residual sweep cannot be trusted while core session/snapshot harnesses still encode the retired artifact route as the expected steady-state destination.
+            - Dependencies: T1004-subE-subB
+            - Estimated effort: Low
+            - Required outputs: updated test fixtures, refreshed snapshots, and focused regression evidence.
+            Subtasks: None
+            Assigned to: Codex
+            Last updated: 2026-04-13 20:50 EDT - Codex
+            - Completion notes:
+              - Repointed `homeDesktopSession.test.ts`, `SnapshotPublishPage.test.tsx`, and the desktop snapshot harness to canonical `/workspace/artifacts` routes instead of the retired `/artifacts` root.
+              - Added the missing `useClusterHardwareInventory` mock in the desktop snapshot harness so the canonical AppShell dependency surface matches production behavior.
+              - Refreshed the desktop snapshot outputs after the route canonicalization so the visual shell expectations now lock the workspace-hub pathing.
+            - Validation:
+              - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/DesktopExperience.snapshot.test.tsx -u` -> PASS
+              - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/homeDesktopSession.test.ts src/app/pages/SnapshotPublishPage.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx` -> PASS
+              - `npm --prefix web run typecheck` -> PASS
+          - ID: T1004-subE-subD-subB
+            Status: [>] In Progress
+            Title: Reduce legacy workspace aliases in helper and compatibility surfaces
+            Description:
+            - Goal / acceptance criteria: Repoint remaining helper/catalog/session-support surfaces toward canonical `/workspace/*` routes where they still act as primary destinations, while preserving only explicit redirect-compatibility mappings where legacy roots must remain supported.
+            - Why it matters: The migration is not closed while helper layers still treat legacy roots as first-class destinations instead of compatibility aliases.
+            - Dependencies: T1004-subE-subD-subA
+            - Estimated effort: Medium
+            - Required outputs: helper/catalog cleanup, focused route/support regressions, and updated grep evidence.
+            Subtasks: None
+            Assigned to: Codex
+            Last updated: 2026-04-13 20:50 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:46 EDT - Codex
+    Last updated: 2026-04-13 20:50 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
