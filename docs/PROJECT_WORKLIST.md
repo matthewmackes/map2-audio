@@ -24649,7 +24649,7 @@ Last updated: 2026-04-14 09:55 EDT - Codex
   - `rg -n "WorkspaceHubPlaceholder" web/src/app` -> PASS (test mock only)
 
 ID: T2251
-Status: [ ] Todo
+Status: [✓] Done
 Title: Personalize the home launch grid from Special Settings landing-tile configuration
 Description:
 - Goal / acceptance criteria: Replace the fixed home launch-tile ordering with Special Settings-backed landing-tile configuration so operators can promote or hide home destinations intentionally.
@@ -24658,7 +24658,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: settings-to-grid mapping, persistence wiring, updated home-shell tests, and no duplicate navigation models.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 21:00 EDT - Codex
+- Completion notes:
+  - Rewired `web/src/app/pages/HomePage.tsx` to build the home launch grid from Special Settings `landingTiles`, preserving a fixed fallback only when no configured tiles exist and carrying tile-size metadata through to the rendered Carbon tiles.
+  - Added a catalog-layer `getLauncherRoutePresentation()` helper in `web/src/app/data/launcherCatalog.tsx` so home personalization can render valid canonical routes such as `/midi-hub` even when those routes stay excluded from the storefront catalog.
+  - Updated `web/src/app/pages/HomePage.landing.css` and `HomePage.test.tsx` so configured tile sizes affect layout, unconfigured destinations disappear from the landing grid, and the preference toggles continue to persist correctly.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/data/launcherCatalog.test.tsx` -> PASS
 
 ID: T2252
 Status: [✓] Done

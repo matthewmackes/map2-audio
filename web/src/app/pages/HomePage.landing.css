@@ -163,6 +163,15 @@
   min-height: 13rem;
 }
 
+.hp2-home-shell__workspace-tile.cds--tile.hp2-home-shell__workspace-tile--small {
+  min-height: 10.5rem;
+}
+
+.hp2-home-shell__workspace-tile.cds--tile.hp2-home-shell__workspace-tile--large {
+  min-height: 15rem;
+  grid-column: span 2;
+}
+
 .hp2-home-shell__workspace-tile.cds--tile:hover,
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:hover,
@@ -302,6 +311,10 @@
 @media (max-width: 66rem) {
   .hp2-home-shell__workspace-strip {
     grid-template-columns: 1fr;
+  }
+
+  .hp2-home-shell__workspace-tile.cds--tile.hp2-home-shell__workspace-tile--large {
+    grid-column: auto;
   }
 }
 

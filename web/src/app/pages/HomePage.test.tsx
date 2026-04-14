@@ -7,7 +7,6 @@ import { HomePage } from './HomePage'
 import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 import { HOME_LANDING_PREFERENCES_STORAGE_KEY } from './homeLandingPreferences'
-import { MAP2_PLATFORM_VERSION } from '../components/branding/map2Branding'
 import { resetPrefetchedRoutesForTests } from '../routePrefetch'
 
 const originalFetch = global.fetch
@@ -17,7 +16,12 @@ const mockSpecialSettingsState = {
     hiddenPlugins: [],
     menuLocation: 'hidden' as const,
     pinnedRoutes: [],
-    landingTiles: [] as Array<{ route: string; size: 'small' | 'medium' | 'large' }>,
+    landingTiles: [
+      { route: '/workspace', size: 'large' as const },
+      { route: '/brain', size: 'medium' as const },
+      { route: '/midi-hub', size: 'medium' as const },
+      { route: '/perform', size: 'small' as const },
+    ],
   },
   isLoading: false,
   error: null,
@@ -233,7 +237,12 @@ describe('HomePage landing', () => {
       hiddenPlugins: [],
       menuLocation: 'hidden',
       pinnedRoutes: [],
-      landingTiles: [],
+      landingTiles: [
+        { route: '/workspace', size: 'large' },
+        { route: '/brain', size: 'medium' },
+        { route: '/midi-hub', size: 'medium' },
+        { route: '/perform', size: 'small' },
+      ],
     }
     mockSpecialSettingsState.isLoading = false
     mockSpecialSettingsState.updateSettings.mockReset()
@@ -260,15 +269,15 @@ describe('HomePage landing', () => {
 
     expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
-    expect(screen.getByRole('status')).toHaveTextContent('Restoring workplace shell')
-    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent('Restoring your desktop')
+    expect(screen.queryByText('Desktop Control Panel')).toBeNull()
     expect(screen.queryByTestId('home-shell')).toBeNull()
 
     finishBootSplash()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -277,7 +286,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
     expect(screen.getByText('Carbon landing')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
@@ -382,26 +391,48 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders the workspace launch grid and navigates through the hero actions', async () => {
+  it('renders the settings-backed home launch grid and navigates through the hero actions', async () => {
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
     expect(screen.getByText('Workspace')).toBeInTheDocument()
     expect(screen.getByText('Performance')).toBeInTheDocument()
     expect(screen.getByText('MIDI')).toBeInTheDocument()
-    expect(screen.getByText('Device Operations')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Device\(s\) Manager/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Snapshot Editor/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Advanced MIDI/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Workspaces/i })).toHaveAttribute('data-tile-size', 'large')
+    expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'medium')
+    expect(screen.getByRole('link', { name: /MIDI Hub/i })).toHaveAttribute('data-tile-size', 'medium')
+    expect(screen.getByRole('link', { name: /Stage Mode/i })).toHaveAttribute('data-tile-size', 'small')
+    expect(screen.queryByRole('link', { name: /Snapshot Editor/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Device\(s\) Manager/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Workspace' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open Control Panel' }))
     expect(screen.getByTestId('location-probe').textContent).toBe('/workspace/platforms/overview')
+  })
+
+  it('hides unconfigured home destinations when landing tiles are reduced in special settings', async () => {
+    mockSpecialSettingsState.settings = {
+      enabled: true,
+      hiddenPlugins: [],
+      menuLocation: 'hidden',
+      pinnedRoutes: [],
+      landingTiles: [
+        { route: '/workspace', size: 'medium' },
+        { route: '/brain', size: 'large' },
+      ],
+    }
+
+    renderHome()
+
+    expect(await screen.findByRole('link', { name: /Workspaces/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'large')
+    expect(screen.queryByRole('link', { name: /MIDI Hub/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Stage Mode/i })).toBeNull()
   })
 
   it('deep-links the landing system-status rail card into the workspace surfaces', async () => {
     renderHome()
 
-    fireEvent.click(await screen.findByRole('link', { name: /Node, interfaces, and platform health/i }))
+    fireEvent.click(await screen.findByRole('link', { name: /System Status System health and devices/i }))
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/workspace/platforms/overview')
   })
 
@@ -413,20 +444,20 @@ describe('HomePage landing', () => {
   })
 
   it('marks the most recently active workspace tile when returning home', async () => {
-    window.sessionStorage.setItem('map2:home-shell-recent-route', '/snapshot-editor')
+    window.sessionStorage.setItem('map2:home-shell-recent-route', '/brain')
 
     renderHome()
 
-    const snapshotTile = await screen.findByRole('link', { name: /Snapshot Editor/i })
-    expect(snapshotTile).toHaveAttribute('data-recent-route', 'true')
-    expect(snapshotTile).toHaveTextContent('Recent')
+    const recentTile = await screen.findByRole('link', { name: /Brain/i })
+    expect(recentTile).toHaveAttribute('data-recent-route', 'true')
+    expect(recentTile).toHaveTextContent('Recent')
   })
 
   it('persists operator-facing landing preferences from the home rail toggles', async () => {
     renderHome()
 
-    const backdropToggle = await screen.findByRole('switch', { name: /Cinematic backdrop/i })
-    const splashToggle = screen.getByRole('switch', { name: /Boot splash/i })
+    const backdropToggle = await screen.findByRole('switch', { name: /Desktop background/i })
+    const splashToggle = screen.getByRole('switch', { name: /Startup screen/i })
 
     fireEvent.click(backdropToggle)
     fireEvent.click(splashToggle)
@@ -435,15 +466,15 @@ describe('HomePage landing', () => {
       cinematicBackdropEnabled: true,
       bootSplashEnabled: true,
     })
-    expect(screen.getByText(/Cinematic default-image/i)).toBeInTheDocument()
-    expect(screen.getByText('Enabled for this browser')).toBeInTheDocument()
+    expect(screen.getByText(/Custom default-image/i)).toBeInTheDocument()
+    expect(backdropToggle).toHaveAttribute('aria-checked', 'true')
+    expect(splashToggle).toHaveAttribute('aria-checked', 'true')
   })
 
   it('shows the shared system summary in the landing side rail', async () => {
     renderHome()
 
     expect(await screen.findByLabelText('System summary')).toBeInTheDocument()
-    expect(screen.getByText(`Platform ${MAP2_PLATFORM_VERSION}`)).toBeInTheDocument()
     expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
     expect(screen.getByText('map2-host')).toBeInTheDocument()
     expect(screen.getByText('AVB: operational')).toBeInTheDocument()

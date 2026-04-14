@@ -66,6 +66,10 @@ export interface LauncherCatalogItem extends LauncherCatalogCoreItem {
   treeChildren?: LauncherCatalogTreeChild[]
 }
 
+export interface LauncherRoutePresentation extends LauncherCatalogCoreItem {
+  treeChildren?: LauncherCatalogTreeChild[]
+}
+
 type RouteLauncherSource = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 type StorefrontOverride = Partial<Pick<
   LauncherCatalogItem,
@@ -539,6 +543,35 @@ export const launcherCatalogByRoute = new Map(
   launcherCatalogItems.map((item) => [item.route, item] as const),
 )
 
+const launcherRoutePresentationByRoute = new Map<string, LauncherRoutePresentation>()
+
+for (const item of platformPinnedItems) {
+  const routePresentation = toLauncherCatalogItem(item, 'platforms')
+  launcherRoutePresentationByRoute.set(routePresentation.route, {
+    ...routePresentation,
+    treeChildren: LAUNCHER_STOREFRONT_OVERRIDES[routePresentation.route]?.treeChildren,
+  })
+}
+
+for (const item of allRouteNavigationItems) {
+  const routePresentation = toLauncherCatalogItem(item, isLabsCatalogRoute(item) ? 'labs' : 'core')
+  if (!launcherRoutePresentationByRoute.has(routePresentation.route)) {
+    launcherRoutePresentationByRoute.set(routePresentation.route, {
+      ...routePresentation,
+      treeChildren: LAUNCHER_STOREFRONT_OVERRIDES[routePresentation.route]?.treeChildren,
+    })
+  }
+}
+
+for (const item of HOME_ONLY_LAUNCHERS) {
+  if (!launcherRoutePresentationByRoute.has(item.route)) {
+    launcherRoutePresentationByRoute.set(item.route, {
+      ...item,
+      treeChildren: LAUNCHER_STOREFRONT_OVERRIDES[item.route]?.treeChildren,
+    })
+  }
+}
+
 export function getLauncherCatalogItem(route: string | null | undefined): LauncherCatalogItem | null {
   if (!route) {
     return null
@@ -546,6 +579,20 @@ export function getLauncherCatalogItem(route: string | null | undefined): Launch
 
   const normalizedRoute = canonicalizeNavigationRoute(route.trim())
   return launcherCatalogByRoute.get(normalizedRoute) ?? null
+}
+
+export function getLauncherRoutePresentation(route: string | null | undefined): LauncherRoutePresentation | null {
+  if (!route) {
+    return null
+  }
+
+  const normalizedRoute = canonicalizeNavigationRoute(route.trim())
+  const launcherItem = launcherCatalogByRoute.get(normalizedRoute)
+  if (launcherItem) {
+    return launcherItem
+  }
+
+  return launcherRoutePresentationByRoute.get(normalizedRoute) ?? null
 }
 
 export function getLauncherCatalogTreeChildren(route: string | null | undefined): LauncherCatalogTreeChild[] {

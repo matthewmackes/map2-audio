@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState, type ComponentType } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
 import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile, Toggle } from '@carbon/react'
@@ -13,11 +13,13 @@ import { readHomeLandingPreferences, updateHomeLandingPreferences } from './home
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
 import { useAppShellPresentation } from '../layout/useAppShellPresentation'
 import { SystemSummary } from '../layout/SystemSummary'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import { getLauncherRoutePresentation, type LandingTileSize } from '../data/launcherCatalog'
 import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
 import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.boot.css'
@@ -26,6 +28,31 @@ import './HomePage.landing.css'
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 const HOME_GROUP_ORDER = ['Workspace', 'Performance', 'MIDI', 'Device Operations'] as const
 
+type HomeLaunchTile = {
+  route: string
+  label: string
+  shortLabel: string
+  homeGroup: typeof HOME_GROUP_ORDER[number]
+  description: string
+  icon: ComponentType<any>
+  color: string
+  maturity: 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
+  size: LandingTileSize
+}
+
+function resolveHomeGroup(route: string): typeof HOME_GROUP_ORDER[number] {
+  if (route === '/workspace' || route.startsWith('/workspace/')) {
+    return 'Workspace'
+  }
+  if (route === '/brain' || route === '/perform') {
+    return 'Performance'
+  }
+  if (route === '/midi-hub') {
+    return 'MIDI'
+  }
+  return 'Device Operations'
+}
+
 export function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -33,6 +60,7 @@ export function HomePage() {
   const { data: hostInfo } = useHostMachineInfo()
   const websocketConnection = useWebSocketConnection()
   const platformStatus = useHomePlatformStatus()
+  const specialSettings = useSpecialSettings()
   const launcherInterfaceSummary = useLauncherInterfaceSummary(true)
   const pendingPushConfirmationQuery = usePushConfirmation(undefined, {
     refetchInterval: 15_000,
@@ -53,13 +81,51 @@ export function HomePage() {
     websocketStatus: websocketConnection.status,
   })
   const groupedStartMenuTileItems = useMemo(
-    () => HOME_GROUP_ORDER
-      .map((group) => ({
-        group,
-        items: startMenuTileItems.filter((item) => item.homeGroup === group),
+    () => {
+      const startMenuTileByRoute = new Map(startMenuTileItems.map((item) => [item.route, item] as const))
+
+      const configuredTiles: HomeLaunchTile[] = specialSettings.settings?.landingTiles.flatMap((tile) => {
+        const startMenuTile = startMenuTileByRoute.get(tile.route)
+        if (startMenuTile) {
+          return [{
+            ...startMenuTile,
+            size: tile.size,
+          }]
+        }
+
+        const launcherItem = getLauncherRoutePresentation(tile.route)
+        if (!launcherItem) {
+          return []
+        }
+
+        return [{
+          route: launcherItem.route,
+          label: launcherItem.heroTitle,
+          shortLabel: launcherItem.shortLabel ?? launcherItem.label,
+          homeGroup: resolveHomeGroup(launcherItem.route),
+          description: launcherItem.description,
+          icon: launcherItem.icon,
+          color: launcherItem.color,
+          maturity: launcherItem.maturity,
+          size: tile.size,
+        }]
+      }) ?? []
+
+      const fallbackTiles: HomeLaunchTile[] = startMenuTileItems.map((item) => ({
+        ...item,
+        size: 'medium',
       }))
-      .filter((section) => section.items.length > 0),
-    [startMenuTileItems],
+
+      const resolvedTiles = configuredTiles.length > 0 ? configuredTiles : fallbackTiles
+
+      return HOME_GROUP_ORDER
+        .map((group) => ({
+          group,
+          items: resolvedTiles.filter((item) => item.homeGroup === group),
+        }))
+        .filter((section) => section.items.length > 0)
+    },
+    [specialSettings.settings?.landingTiles, startMenuTileItems],
   )
 
   useEffect(() => {
@@ -210,7 +276,7 @@ export function HomePage() {
                       return (
                         <ClickableTile
                           key={item.route}
-                          className={`hp2-home-shell__workspace-tile${isRecent ? ' is-recent' : ''}`}
+                          className={`hp2-home-shell__workspace-tile hp2-home-shell__workspace-tile--${item.size}${isRecent ? ' is-recent' : ''}`}
                           href={item.route}
                           onClick={(event) => {
                             event.preventDefault()
@@ -219,6 +285,7 @@ export function HomePage() {
                           onMouseEnter={() => prefetchHomeShellRoute(item.route)}
                           onFocus={() => prefetchHomeShellRoute(item.route)}
                           data-recent-route={isRecent ? 'true' : 'false'}
+                          data-tile-size={item.size}
                         >
                           <div className="hp2-home-shell__workspace-tile-head">
                             <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
