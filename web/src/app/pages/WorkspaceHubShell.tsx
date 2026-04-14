@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { GlobalTheme, Theme } from '@carbon/react'
 
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
@@ -130,12 +130,28 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
   ]
 }
 
+function buildSummaryDestination(summary: UnifiedWorkspaceSectionSummary): string {
+  switch (summary.key) {
+    case 'platforms':
+      return buildWorkspaceHubPlatformPath('overview')
+    case 'physical-surfaces':
+      return buildWorkspacePhysicalSurfacesPath()
+    case 'artifacts':
+      return buildWorkspaceArtifactsPath()
+    case 'outboard-hardware':
+      return buildWorkspaceOutboardHardwarePath()
+    default:
+      return '/workspace/platforms/overview'
+  }
+}
+
 export function WorkspaceHubIndexRedirect() {
   return <Navigate to="/workspace/platforms/overview" replace />
 }
 
 export function WorkspaceHubShell() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { theme } = useTheme()
   const resolvedTheme = theme.carbonTheme ?? 'g100'
   const workspaceData = useUnifiedWorkspaceData()
@@ -164,14 +180,17 @@ export function WorkspaceHubShell() {
                 <main className="workspace-hub-shell__content-body">
                   <section className="workspace-hub-shell__summary-grid" aria-label="Workspace summaries">
                     {workspaceData.orderedSummaries.map((summary) => (
-                      <article
+                      <button
                         key={summary.key}
+                        type="button"
                         className={`workspace-hub-shell__summary-card workspace-hub-shell__summary-card--${summary.tone}`}
+                        onClick={() => navigate(buildSummaryDestination(summary))}
+                        aria-label={`Open ${summary.label}`}
                       >
                         <p className="workspace-hub-shell__summary-label">{summary.label}</p>
                         <h2 className="workspace-hub-shell__summary-metric">{summary.metric}</h2>
                         <p className="workspace-hub-shell__summary-detail">{summary.detail}</p>
-                      </article>
+                      </button>
                     ))}
                   </section>
                   <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>

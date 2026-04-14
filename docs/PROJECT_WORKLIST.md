@@ -24523,7 +24523,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2253
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add direct summary-card navigation from the workspace hub hero grid
 Description:
 - Goal / acceptance criteria: Make the workspace-hub summary cards actionable so operators can click or keyboard-activate each summary card to jump into the corresponding section.
@@ -24532,7 +24532,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: interactive summary-card treatment, accessibility states, and `WorkspaceHubShell` test coverage for keyboard and mouse navigation.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 10:05 EDT - Codex
+- Completion notes:
+  - Made the workspace-hub summary cards directly actionable in `web/src/app/pages/WorkspaceHubShell.tsx` by mapping each summary key to its canonical section route and rendering the cards as full-surface buttons with native keyboard activation.
+  - Updated `WorkspaceHubShell.css` so the now-interactive summary cards preserve the existing visual treatment while adding hover and focus-visible affordances appropriate for product navigation.
+  - Extended `WorkspaceHubShell.test.tsx` with a direct navigation assertion so the summary band is now covered as both an information surface and a route-entry surface.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2254
 Status: [ ] Todo

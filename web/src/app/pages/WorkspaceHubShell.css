@@ -47,11 +47,26 @@
 }
 
 .workspace-hub-shell__summary-card {
+  display: grid;
+  gap: 0;
+  width: 100%;
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.08));
   border-left-width: 0.35rem;
   border-radius: 1rem;
   background: color-mix(in srgb, var(--cds-layer, #161616) 94%, var(--cds-background, #0f0f0f));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workspace-hub-shell__summary-card:hover {
+  background: color-mix(in srgb, var(--cds-layer-hover, #e8eaed) 88%, var(--cds-layer, #ffffff));
+}
+
+.workspace-hub-shell__summary-card:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
 }
 
 .workspace-hub-shell__summary-card--positive {

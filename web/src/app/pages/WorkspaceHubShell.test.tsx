@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import {
@@ -164,5 +164,34 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute('href', '/workspace/artifacts/discover')
     expect(screen.getByRole('link', { name: 'Tesira AVB' })).toHaveAttribute('href', '/workspace/outboard-hardware/biamp-tesira')
     expect(screen.getByRole('link', { name: 'MPX1 Rack' })).toHaveAttribute('href', '/workspace/outboard-hardware/lexicon-mpx1')
+  })
+
+  it('navigates when a workspace summary card is activated', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={['/workspace/artifacts?category=snapshots']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <Routes>
+          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
+            <Route
+              path="artifacts"
+              element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
+            />
+            <Route
+              path="physical-surfaces"
+              element={<WorkspaceStubSection title="Physical Surfaces" summaryLabel="1 notification · 2 online units" />}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Physical Surfaces' }))
+
+    expect(await screen.findByRole('heading', { name: 'Physical Surfaces' })).toBeInTheDocument()
   })
 })
