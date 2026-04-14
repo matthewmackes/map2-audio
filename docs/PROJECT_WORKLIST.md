@@ -23936,7 +23936,7 @@ Subtasks:
       - Collapsed duplicate workspace entries out of the start-menu layer, leaving one Workspaces launch path while preserving the dedicated hardware and performance routes that still belong outside the hub.
       - Finished the full redirect/menu consolidation before deleting the superseded legacy shell layer, so the remaining route sweep can proceed without operator-facing ambiguity.
   - ID: T1004-subE
-    Status: [>] In Progress
+    Status: [✓] Done
     Title: Delete legacy shells and sweep residual workspace route references
     Description:
     - Goal / acceptance criteria: Remove the superseded legacy shell files, repoint remaining hard-coded workspace links/page keys, and prove no dangling references remain.
@@ -24093,7 +24093,7 @@ Subtasks:
           - Closed the residual shell/session/support-surface sweep by canonicalizing fixture, helper, overlay, and route-activity behavior around `/workspace/*`.
           - Final grep evidence leaves the old workspace roots only in explicit redirect compatibility paths, route-base constants/helpers, alias normalization maps, and tests that intentionally cover those compatibility seams.
     Assigned to: Codex
-    Last updated: 2026-04-13 21:04 EDT - Codex
+    Last updated: 2026-04-14 09:47 EDT - Codex
     - Completion notes:
       - Deleted the retired legacy shell files, extracted the remaining shared contracts, and completed the residual route/reference sweep so the canonical Workspace Hub now owns the migrated workspace family.
       - Residual legacy literals are now limited to explicit redirect definitions, route-base compatibility helpers, alias maps, and targeted tests that intentionally validate those compatibility seams.
@@ -24125,7 +24125,7 @@ Last updated: 2026-04-14 12:40 EDT - Codex
 ## Workspace Hub UI Unification
 
 ID: T1006
-Status: [>] In Progress
+Status: [✓] Done
 Title: Unify the `/workspace/*` area into one cohesive, world-class interface
 Description:
 - Goal / acceptance criteria: Eliminate all placeholder tiles, redundant metric grids, engineering-internal copy, raw JSON debug blocks, inconsistent card styling, and duplicate page headers across the four workspace sections (Platforms, Physical Surfaces, Audio Artifacts, Outboard Hardware) so the entire `/workspace/*` area looks and feels like a single professional product surface rather than a patchwork of migration slices.
@@ -24419,7 +24419,13 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx` -> PASS
       - `WorkspaceHubShell.test.tsx` still emits the existing React Router future-flag warnings during Jest, but the suite passed unchanged.
 Assigned to: Codex
-Last updated: 2026-04-14 13:00 EDT - Architect
+Last updated: 2026-04-14 09:47 EDT - Codex
+- Completion notes:
+  - Completed the full workspace-hub polish track across all planned subtasks: removed scaffold copy, normalized embedded page imports and tile radii, compacted page headers, reduced tag noise, hid debug payloads behind accordions, tightened Audio Artifacts when embedded, removed redundant metrics grids, and finished the final spacing/transition/empty-state pass.
+  - The `/workspace/*` area now presents as one cohesive Carbon surface with consistent header density, restrained tag usage, shared empty states, route-swap animation, and no user-visible migration internals.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - Focused Jest coverage completed across `WorkspaceHubShell`, `OutboardHardwareOverviewPage`, `OutboardHardwareDevicePage`, and `AudioArtifactsPage` during the subtask slices.
 
 ## Landing Page Carbon Cleanup
 
