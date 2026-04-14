@@ -24773,7 +24773,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2268
-Status: [ ] Todo
+Status: [✓] Done
 Title: Decompose remaining `HomePage.css` into co-located landing-shell style modules
 Description:
 - Goal / acceptance criteria: Split the remaining mixed-purpose home stylesheet into focused, co-located style modules for boot splash, landing shell, and any retained overlay/launcher chrome.
@@ -24782,7 +24782,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: stylesheet decomposition, import rewiring, and no visual regressions in the home shell or retained launcher surfaces.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 14:01 EDT - Codex
+- Completion notes:
+  - Split the former monolithic `web/src/app/pages/HomePage.css` into `HomePage.boot.css` and `HomePage.landing.css`, separating the boot-splash surface from the active landing-shell styling now that the home-only overlay has been retired.
+  - Updated `web/src/app/pages/HomePage.tsx` to import the new co-located style modules directly, leaving the landing route with clearer ownership boundaries between boot and product-shell presentation.
+  - Revalidated the routed home shell so the CSS decomposition did not change the boot flow, landing layout, or persistent taskbar integration.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2269
 Status: [✓] Done

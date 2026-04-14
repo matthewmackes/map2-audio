@@ -20,7 +20,8 @@ import { SystemSummary } from '../layout/SystemSummary'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
 import '../layout/LauncherPanel/LauncherPanel.css'
-import './HomePage.css'
+import './HomePage.boot.css'
+import './HomePage.landing.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 const HOME_GROUP_ORDER = ['Workspace', 'Performance', 'MIDI', 'Device Operations'] as const
