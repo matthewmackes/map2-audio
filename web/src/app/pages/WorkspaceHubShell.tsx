@@ -25,9 +25,7 @@ import {
   type WorkspaceHubContextValue,
   type WorkspaceHubNavItem,
   type WorkspaceHubNavSection,
-  useWorkspaceHubContext,
 } from './WorkspaceHubContext'
-import { WorkspaceHubNav } from './WorkspaceHubNav'
 import './WorkspaceHubShell.css'
 
 const ARTIFACT_CATEGORY_ITEMS: Array<{ key: string; label: string; category: string | null }> = [
@@ -172,10 +170,8 @@ export function WorkspaceHubShell() {
               <WorkspacePageTemplate
                 className="workspace-hub-shell__template"
                 windowClassName="workspace-hub-shell__frame"
-                sidebarClassName="workspace-hub-shell__sidebar"
                 contentClassName="workspace-hub-shell__content"
-                stickySidebar
-                sidebar={<WorkspaceHubNav sections={navSections} />}
+                sidebar={null}
                 content={
                   <main className="workspace-hub-shell__content-body">
                     <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>

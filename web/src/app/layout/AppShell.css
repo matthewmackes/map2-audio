@@ -115,15 +115,20 @@
   padding: 0;
 }
 
+.app-shell__frame {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.app-content--with-global-tree {
+  min-width: 0;
+  min-height: 100vh;
+}
+
 /* Border overlay and padding modifiers removed — content is full-width and flat. */
 
 .app-shell--windowed {
-  --window-taskbar-height: 5.2rem;
-  --window-taskbar-control-height: 4rem;
-  --window-taskbar-latency-height: 3.8rem;
-  --window-shell-launcher-size: 0rem;
-  --window-shell-launcher-offset: 0rem;
-  --window-shell-launcher-clearance: calc(var(--window-taskbar-height) + var(--cds-spacing-03, 0.5rem));
   --app-window-titlebar-height: 2.3rem;
   --window-shell-gap: 0;
   --window-shell-border: var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28));
@@ -133,7 +138,7 @@
   --window-shell-titlebar-border: color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent);
   --window-shell-titlebar-contrast: var(--cds-text-primary, var(--text-primary));
   --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer, #ffffff));
-  --window-shell-usable-height: calc(100vh - var(--window-taskbar-height));
+  --window-shell-usable-height: 100vh;
 }
 
 /* Windowed padding overrides consolidated — content is always full-width now. */
@@ -142,9 +147,9 @@
 
 .mobile-connection-banner {
   position: fixed;
-  left: var(--cds-spacing-04, 0.75rem);
+  left: calc(16rem + var(--cds-spacing-04, 0.75rem));
   right: var(--cds-spacing-04, 0.75rem);
-  bottom: calc(var(--window-shell-launcher-clearance) + var(--cds-spacing-03, 0.5rem));
+  bottom: var(--cds-spacing-04, 0.75rem);
   z-index: 41;
   display: flex;
   align-items: center;
@@ -162,6 +167,17 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+@media (max-width: 880px) {
+  .app-shell__frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .mobile-connection-banner {
+    left: var(--cds-spacing-04, 0.75rem);
+  }
 }
 
 .shell-launcher {

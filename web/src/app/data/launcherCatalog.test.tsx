@@ -1,6 +1,7 @@
 import {
   ensureRequiredHomeLauncher,
   getLauncherCatalogItem,
+  getLauncherCatalogTreeChildren,
   getLauncherCatalogMaturityLabel,
   normalizeLandingTiles,
   prioritizeRequiredHomeLauncher,
@@ -117,5 +118,24 @@ describe('launcherCatalog', () => {
 
   it('renames hardware-blocked maturity for storefront presentation', () => {
     expect(getLauncherCatalogMaturityLabel('hardware-blocked')).toBe('Hardware Not Detected')
+  })
+
+  it('exports tree-child navigation metadata for catalog and nav-only parent routes', () => {
+    expect(getLauncherCatalogTreeChildren('/workspace')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ route: '/workspace/platforms/overview', label: 'Overview' }),
+        expect.objectContaining({ route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' }),
+      ]),
+    )
+
+    expect(getLauncherCatalogTreeChildren('/midi-hub')).toEqual([
+      { route: '/midi-hub/connections', label: 'Connections' },
+      { route: '/midi-hub/presets', label: 'Presets' },
+      { route: '/midi-hub/transport', label: 'Transport' },
+      { route: '/midi-hub/events', label: 'Events' },
+      { route: '/midi-hub/processing', label: 'Processing' },
+      { route: '/midi-hub/network', label: 'Network' },
+      { route: '/midi-hub/lab', label: 'Lab' },
+    ])
   })
 })

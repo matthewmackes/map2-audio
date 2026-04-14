@@ -34,6 +34,11 @@ export interface LauncherCatalogDocumentLink {
   name: string
 }
 
+export interface LauncherCatalogTreeChild {
+  route: string
+  label: string
+}
+
 interface LauncherCatalogCoreItem {
   route: string
   label: string
@@ -58,12 +63,13 @@ export interface LauncherCatalogItem extends LauncherCatalogCoreItem {
   technicalSpecs: LauncherCatalogTechnicalSpec[]
   availabilityNote: string
   documentLinks: LauncherCatalogDocumentLink[]
+  treeChildren?: LauncherCatalogTreeChild[]
 }
 
 type RouteLauncherSource = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 type StorefrontOverride = Partial<Pick<
   LauncherCatalogItem,
-  'storefrontCollections' | 'featureBullets' | 'technicalSpecs' | 'availabilityNote' | 'documentLinks'
+  'storefrontCollections' | 'featureBullets' | 'technicalSpecs' | 'availabilityNote' | 'documentLinks' | 'treeChildren'
 >>
 
 const AUDIO_INTERFACE_DEVICE_TYPES = new Set(['edirol-ua1000', 'hotone-jogg', 'generic-interface'])
@@ -120,6 +126,40 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
+    treeChildren: [
+      { route: '/workspace/platforms/overview', label: 'Overview' },
+      { route: '/workspace/platforms/management', label: 'Device Manager' },
+      { route: '/workspace/platforms/audio-engine', label: 'Audio Engine' },
+      { route: '/workspace/platforms/avb-routing', label: 'AVB Routing' },
+      { route: '/workspace/platforms/network-discovery', label: 'Network Discovery' },
+      { route: '/workspace/platforms/cluster-dashboard', label: 'Cluster Dashboard' },
+      { route: '/workspace/platforms/adoption', label: 'Adoption' },
+      { route: '/workspace/platforms/host-machine', label: 'Host Machine' },
+      { route: '/workspace/platforms/theme', label: 'Theme' },
+      { route: '/workspace/platforms/about', label: 'About' },
+      { route: '/workspace/physical-surfaces', label: 'Physical Surfaces' },
+      { route: '/workspace/physical-surfaces/maschine-mk1', label: 'Maschine MK1' },
+      { route: '/workspace/physical-surfaces/ableton-push', label: 'Ableton Push' },
+      { route: '/workspace/physical-surfaces/ground-control-pro', label: 'Ground Control Pro' },
+      { route: '/workspace/physical-surfaces/midi-commander', label: 'MIDI Commander' },
+      { route: '/workspace/physical-surfaces/novation-launch-control', label: 'Launch Control' },
+      { route: '/workspace/physical-surfaces/mackie-mcu-pro', label: 'MCU Pro' },
+      { route: '/workspace/artifacts', label: 'Audio Artifacts' },
+      { route: '/workspace/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
+      { route: '/workspace/artifacts?category=nam-models', label: 'NAM Models' },
+      { route: '/workspace/artifacts?category=cabinet-irs', label: 'Cabinet IRs' },
+      { route: '/workspace/artifacts?category=reverb-irs', label: 'Reverb IRs' },
+      { route: '/workspace/artifacts?category=soundfonts', label: 'SoundFonts' },
+      { route: '/workspace/artifacts?category=native-juce', label: 'Native JUCE' },
+      { route: '/workspace/artifacts?category=snapshots', label: 'Snapshots' },
+      { route: '/workspace/artifacts/discover', label: 'Discover' },
+      { route: '/workspace/outboard-hardware', label: 'Outboard Hardware' },
+      { route: '/workspace/outboard-hardware/tesira', label: 'Tesira AVB' },
+      { route: '/workspace/outboard-hardware/edirol-ua1000', label: 'Edirol UA-1000' },
+      { route: '/workspace/outboard-hardware/hotone-jogg', label: 'HoTone JoGG' },
+      { route: '/workspace/outboard-hardware/mpx1-rack', label: 'MPX-1 Rack' },
+      { route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' },
+    ],
   },
   '/workspace/artifacts': {
     featureBullets: [
@@ -171,6 +211,47 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     documentLinks: [
       { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
       { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
+    ],
+  },
+  '/brain': {
+    treeChildren: [
+      { route: '/brain', label: 'Overview' },
+      { route: '/brain?import_source=drums', label: 'Drum-Machine' },
+      { route: '/brain?import_source=synthforge', label: 'SynthForge' },
+    ],
+  },
+  '/midi-hub': {
+    treeChildren: [
+      { route: '/midi-hub/connections', label: 'Connections' },
+      { route: '/midi-hub/presets', label: 'Presets' },
+      { route: '/midi-hub/transport', label: 'Transport' },
+      { route: '/midi-hub/events', label: 'Events' },
+      { route: '/midi-hub/processing', label: 'Processing' },
+      { route: '/midi-hub/network', label: 'Network' },
+      { route: '/midi-hub/lab', label: 'Lab' },
+    ],
+  },
+  '/mpx1': {
+    treeChildren: [
+      { route: '/mpx1/panel', label: 'Panel' },
+      { route: '/mpx1/editor', label: 'Editor' },
+      { route: '/mpx1/midi-map', label: 'MIDI Map' },
+      { route: '/mpx1/matrix', label: 'Matrix' },
+      { route: '/mpx1/library', label: 'Library' },
+      { route: '/mpx1/perform', label: 'Perform' },
+      { route: '/mpx1/diag', label: 'Diagnostics' },
+      { route: '/mpx1/flow', label: 'Signal Flow' },
+    ],
+  },
+  '/intelfx': {
+    treeChildren: [
+      { route: '/intelfx/panel', label: 'Panel' },
+      { route: '/intelfx/editor', label: 'Editor' },
+      { route: '/intelfx/midi-map', label: 'MIDI Map' },
+      { route: '/intelfx/library', label: 'Library' },
+      { route: '/intelfx/perform', label: 'Perform' },
+      { route: '/intelfx/diag', label: 'Diagnostics' },
+      { route: '/intelfx/flow', label: 'Signal Flow' },
     ],
   },
   '/lcd': {
@@ -374,6 +455,7 @@ function enrichLauncherCatalogItem(item: LauncherCatalogCoreItem): LauncherCatal
       ...buildDefaultDocumentLinks(item),
       ...(override?.documentLinks ?? []),
     ]),
+    treeChildren: override?.treeChildren,
   }
 }
 
@@ -464,6 +546,15 @@ export function getLauncherCatalogItem(route: string | null | undefined): Launch
 
   const normalizedRoute = canonicalizeNavigationRoute(route.trim())
   return launcherCatalogByRoute.get(normalizedRoute) ?? null
+}
+
+export function getLauncherCatalogTreeChildren(route: string | null | undefined): LauncherCatalogTreeChild[] {
+  if (!route) {
+    return []
+  }
+
+  const normalizedRoute = canonicalizeNavigationRoute(route.trim())
+  return LAUNCHER_STOREFRONT_OVERRIDES[normalizedRoute]?.treeChildren ?? launcherCatalogByRoute.get(normalizedRoute)?.treeChildren ?? []
 }
 
 export function isLandingTileSize(value: string | null | undefined): value is LandingTileSize {

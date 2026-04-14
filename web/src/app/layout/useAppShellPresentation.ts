@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
 
-import { MAP2_PLATFORM_VERSION, Map2BrandMark } from '../components/branding/map2Branding'
+import { Map2BrandMark } from '../components/branding/map2Branding'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { allPinnableNavigationItems, allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { buildStartMenuItems } from './startMenuItems'
-import { buildWorkspaceHubPlatformPath } from '../platform/routes'
 
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
@@ -28,28 +27,24 @@ function formatShellRouteHint(pathname: string): string {
   return segments.join(' / ')
 }
 
-type HostInfoLike = {
-  hostname?: string | null
-  kernel_version?: string | null
-  os_version?: string | null
-} | null | undefined
-
 type UseAppShellPresentationOptions = {
-  hostInfo: HostInfoLike
+  hostInfo?: {
+    hostname?: string | null
+    kernel_version?: string | null
+    os_version?: string | null
+  } | null
   pathname: string
-  platformStatus: HomePlatformStatus
-  websocketStatus: string
+  platformStatus?: HomePlatformStatus
+  websocketStatus?: string
 }
 
 export function useAppShellPresentation({
   hostInfo,
   pathname,
   platformStatus,
-  websocketStatus,
 }: UseAppShellPresentationOptions) {
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(pathname)
   const canonicalPathname = useMemo(() => canonicalizeNavigationRoute(pathname), [pathname])
-
   const startMenuTileItems = useMemo<StartMenuTileItem[]>(() => buildStartMenuItems(), [])
 
   const currentShellItem = useMemo(() => {
@@ -61,7 +56,6 @@ export function useAppShellPresentation({
     return candidates[0] ?? null
   }, [canonicalPathname])
 
-  const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
   const isDesktopRoute = pathname === '/'
   const isPlatformWorkspaceRoute = canonicalPathname === '/workspace' || canonicalPathname.startsWith('/workspace/')
   const isIntegratedWorkspaceRoute =
@@ -70,7 +64,7 @@ export function useAppShellPresentation({
     || canonicalPathname.startsWith('/platforms')
   const isAudioGridWorkspaceRoute = pathname === '/juce-grid' || pathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
-  const shellClassName = `app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
+  const shellClassName = `app-shell${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
 
   return {
     currentShellItem,
@@ -81,49 +75,17 @@ export function useAppShellPresentation({
     isTabletTouchRoute,
     isThemedWorkspaceRoute,
     launcherSummaryItems: [
-      `Platform ${MAP2_PLATFORM_VERSION}`,
       hostInfo?.os_version ?? hostInfo?.kernel_version ?? 'OS version unavailable',
       hostInfo?.hostname ?? 'Host unavailable',
     ],
-    platformStatusLabels: [platformStatus.avb.label, platformStatus.avdecc.label, platformStatus.nodes.label],
-    taskbarPillItems: [
-      {
-        label: `Platform ${MAP2_PLATFORM_VERSION}`,
-        route: buildWorkspaceHubPlatformPath('overview'),
-        tone: 'info',
-      },
-      {
-        label: hostInfo?.os_version ?? hostInfo?.kernel_version ?? 'OS version unavailable',
-        route: buildWorkspaceHubPlatformPath('host-machine'),
-        tone: 'info',
-      },
-      {
-        label: hostInfo?.hostname ?? 'Host unavailable',
-        route: buildWorkspaceHubPlatformPath('host-machine'),
-        tone: 'info',
-      },
-      {
-        label: platformStatus.avb.label,
-        route: buildWorkspaceHubPlatformPath('avb-routing'),
-        tone: 'status',
-      },
-      {
-        label: platformStatus.avdecc.label,
-        route: buildWorkspaceHubPlatformPath('network-discovery'),
-        tone: 'status',
-      },
-      {
-        label: platformStatus.nodes.label,
-        route: buildWorkspaceHubPlatformPath('cluster-dashboard'),
-        tone: 'status',
-      },
-    ] satisfies TaskbarPillItem[],
+    platformStatusLabels: platformStatus
+      ? [platformStatus.avb.label, platformStatus.avdecc.label, platformStatus.nodes.label]
+      : [],
     shellAccentColor: currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)',
     shellClassName,
     shellRouteHint: formatShellRouteHint(canonicalPathname),
     shellWindowIcon: currentShellItem?.icon ?? Map2BrandMark,
     shellWorkspaceLabel: currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace',
-    showMobileConnectionBanner,
     startMenuTileItems,
   }
 }

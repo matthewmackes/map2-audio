@@ -1,47 +1,15 @@
 .midi-hub-shell {
-  --workspace-shell-scale: 1.4;
-  --workspace-page-template-padding-block: calc(2rem * var(--workspace-shell-scale));
-  --workspace-page-template-padding-inline: calc(2.5rem * var(--workspace-shell-scale));
-  --workspace-page-template-gap: calc(1.25rem * var(--workspace-shell-scale));
-  --workspace-page-template-sidebar-min: 16rem;
-  --workspace-page-template-sidebar-max: 20rem;
+  --workspace-page-template-padding-block: var(--cds-spacing-06);
+  --workspace-page-template-padding-inline: clamp(1rem, 0.7rem + 1vw, 1.75rem);
+  --workspace-page-template-gap: var(--cds-spacing-06);
   min-height: 100%;
   color: var(--cds-text-primary);
   background: var(--cds-background);
 }
 
 .midi-hub-shell__frame {
-  align-items: stretch;
-  min-height: calc(100vh - 9rem);
-}
-
-.midi-hub-shell__sidebar {
-  min-width: 0;
-  height: calc(100vh - 7rem);
-}
-
-.midi-hub-shell__sidenav {
-  height: 100%;
-}
-
-.midi-hub-shell__nav-dot {
-  width: 0.625rem;
-  height: 0.625rem;
-  border-radius: 999px;
-  background: var(--cds-border-strong-01);
-}
-
-.midi-hub-shell__nav-dot--active,
-.midi-hub-shell__nav-dot--green {
-  background: var(--cds-support-success);
-}
-
-.midi-hub-shell__nav-dot--blue {
-  background: var(--cds-link-primary);
-}
-
-.midi-hub-shell__nav-dot--warm-gray {
-  background: var(--cds-border-strong-01);
+  align-items: start;
+  min-height: calc(100vh - 6rem);
 }
 
 .midi-hub-shell__content {
@@ -76,19 +44,5 @@
   .midi-hub-shell {
     --workspace-page-template-padding-block: var(--cds-spacing-04);
     --workspace-page-template-padding-inline: var(--cds-spacing-05);
-  }
-
-  .midi-hub-shell__frame {
-    grid-template-columns: 1fr;
-    row-gap: var(--cds-spacing-06);
-  }
-
-  .midi-hub-shell__sidebar {
-    position: static;
-    height: auto;
-  }
-
-  .midi-hub-shell__sidenav {
-    height: auto;
   }
 }

@@ -8,15 +8,12 @@
   --workspace-page-template-padding-block: var(--cds-spacing-05);
   --workspace-page-template-padding-inline: clamp(1rem, 0.7rem + 1vw, 1.75rem);
   --workspace-page-template-gap: var(--cds-spacing-06);
-  --workspace-page-template-sidebar-min: 13.5rem;
-  --workspace-page-template-sidebar-max: 16rem;
 }
 
 .workspace-hub-shell__frame {
   align-items: stretch;
 }
 
-.workspace-hub-shell__sidebar,
 .workspace-hub-shell__content {
   min-height: 100%;
 }
