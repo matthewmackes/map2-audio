@@ -1,0 +1,218 @@
+.map2-launcher__panel {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 92%, transparent);
+  background: var(--cds-layer, #ffffff);
+  box-shadow: none;
+}
+
+.map2-launcher__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cds-spacing-04, 0.75rem);
+  align-items: start;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 82%, transparent);
+  background: var(--cds-layer-hover, #f4f4f4);
+}
+
+.map2-launcher__header-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cds-spacing-04, 0.75rem);
+  min-width: 0;
+}
+
+.map2-launcher__header-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--map2-launcher-accent, var(--cds-link-primary, #0f62fe)) 10%, var(--cds-layer, #ffffff));
+}
+
+.map2-launcher__header-icon {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+
+.map2-launcher__header-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.map2-launcher__header-copy strong {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.map2-launcher__summary {
+  display: grid;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 58%, var(--cds-layer, #ffffff));
+}
+
+.map2-launcher__summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.map2-launcher__summary-meta-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.15;
+}
+
+.map2-launcher__summary-row {
+  min-width: 0;
+}
+
+.map2-launcher__summary-row--node-status {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+  flex-wrap: wrap;
+}
+
+.map2-launcher__summary-row--metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.map2-launcher__summary-row .node-nav-bar,
+.map2-launcher__summary-row .node-nav-bar__chips {
+  max-width: 100%;
+}
+
+.map2-launcher__summary-row .window-taskbar__clock {
+  min-width: auto;
+  padding-left: 0;
+}
+
+.map2-launcher__summary-row .topbar-pro__latency-pressure {
+  min-width: 5.25rem;
+}
+
+.map2-launcher__status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.map2-launcher__status-list span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 500;
+}
+
+.map2-launcher__device-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.map2-launcher__device-group {
+  display: grid;
+  gap: var(--cds-spacing-03, 0.5rem);
+  min-width: 0;
+}
+
+.map2-launcher__device-heading {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.map2-launcher__device-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-02, 0.25rem);
+  min-width: 0;
+}
+
+.map2-launcher__device-tag.cds--tag,
+.map2-launcher__device-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  max-width: 100%;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
+  line-height: 1.15;
+}
+
+.map2-launcher__device-tag.cds--tag {
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.map2-launcher__device-empty {
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.map2-launcher__body {
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  overflow-y: auto;
+}
+
+.map2-launcher__footer {
+  margin-top: auto;
+  padding: 0 var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
+}
+
+.map2-launcher__power-root {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.map2-launcher__power-menu-trigger.cds--overflow-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)) 84%, transparent);
+  background: var(--cds-layer-hover, #f4f4f4);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.map2-launcher__power-menu-trigger.cds--overflow-menu:hover,
+.map2-launcher__power-menu-trigger.cds--overflow-menu:focus-visible,
+.map2-launcher__power-menu-trigger.cds--overflow-menu.is-active {
+  background: color-mix(in srgb, var(--map2-launcher-accent, var(--cds-link-primary, #0f62fe)) 16%, var(--cds-layer-hover, #f4f4f4));
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+.map2-launcher__power-menu-trigger .cds--overflow-menu__icon {
+  width: 1rem;
+  height: 1rem;
+}

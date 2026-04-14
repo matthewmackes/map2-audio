@@ -24363,7 +24363,7 @@ Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLau
 - [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
 - [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
 - [x] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
-- [ ] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
+- [x] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
 - [x] T2246 — Swap the custom power menu for Carbon `OverflowMenu` only; delete the `.hp2-overlay__power-button` CSS block (~40 lines) and the unused `.hp2-window__eyebrow` class.
 - [x] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
 - [x] T2248 — Extract a presentational `<SystemSummary>` component (platform version, OS/hostname, AVB/AVDECC status, detected audio/MIDI interfaces) and reuse it on both the landing grid and the workspace `LauncherPanel`. Align with the Unified Node Pill Directive — do not reintroduce a second node-identity surface.
@@ -24382,6 +24382,8 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 - T2240: added `web/src/app/layout/LauncherPanel/LauncherPanel.tsx` as the shared home/workspace launcher surface, then rewired `HomeStartMenuOverlay` and `ShellLauncherPanel` to delegate the shared header, summary, navigation body, and power-menu action chrome to that single component while preserving their wrapper-specific backdrop and trigger behavior.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2245: collapsed the shared launcher internals onto the new `map2-launcher__*` namespace in `LauncherPanel`, moved the shared launcher-surface styling into `web/src/app/layout/LauncherPanel/LauncherPanel.css`, and removed the obsolete `hp2-overlay__*` / `shell-launcher__*` inner-panel selectors from `HomePage.css` and `AppShell.css` while keeping only wrapper-specific positioning rules in those files.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 13:55 EDT - Codex
+Last updated: 2026-04-14 14:08 EDT - Codex

@@ -2,6 +2,7 @@ import type { RefObject } from 'react'
 import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
+import './LauncherPanel.css'
 import {
   MAP2_PLATFORM_NAME,
   Map2BrandMark,
@@ -12,11 +13,6 @@ import type { PushSurfacePendingConfirmation } from '../../../map2/clients/pushS
 import type { LauncherInterfaceSummary } from '../useLauncherInterfaceSummary'
 
 type LauncherPanelVariant = 'home' | 'workspace'
-
-const PANEL_CLASSNAME_PREFIX: Record<LauncherPanelVariant, 'hp2-overlay' | 'shell-launcher'> = {
-  home: 'hp2-overlay',
-  workspace: 'shell-launcher',
-}
 
 type LauncherPanelProps = {
   variant: LauncherPanelVariant
@@ -51,44 +47,42 @@ export function LauncherPanel({
   onPowerMenuOpen,
   onPowerMenuClose,
 }: LauncherPanelProps) {
-  const classNamePrefix = PANEL_CLASSNAME_PREFIX[variant]
-
   return (
     <Layer
       id="shell-launcher-panel"
-      className={`${classNamePrefix}__panel`}
+      className={`${variant === 'home' ? 'hp2-overlay__panel' : 'shell-launcher__panel'} map2-launcher__panel`}
       role="menu"
       aria-label="Platform menu"
       ref={panelRef}
     >
-      <div className={`${classNamePrefix}__header`}>
-        <div className={`${classNamePrefix}__header-main`}>
-          <div className={`${classNamePrefix}__header-mark`} aria-hidden="true">
-            <Map2BrandMark className={`${classNamePrefix}__header-icon`} />
+      <div className="map2-launcher__header">
+        <div className="map2-launcher__header-main">
+          <div className="map2-launcher__header-mark" aria-hidden="true">
+            <Map2BrandMark className="map2-launcher__header-icon" />
           </div>
-          <div className={`${classNamePrefix}__header-copy`}>
+          <div className="map2-launcher__header-copy">
             <strong>{MAP2_PLATFORM_NAME}</strong>
           </div>
         </div>
       </div>
 
       <SystemSummary
-        classNamePrefix={classNamePrefix}
+        classNamePrefix="map2-launcher"
         launcherInterfaceSummary={launcherInterfaceSummary}
         launcherSummaryItems={launcherSummaryItems}
         pendingPushConfirmation={pendingPushConfirmation}
         platformStatusLabels={platformStatusLabels}
       />
 
-      <div className={`${classNamePrefix}__body`}>
+      <div className="map2-launcher__body">
         <NavigationItems items={startMenuTileItems} onNavigate={onNavigate} variant="launcher" />
       </div>
 
-      <div className={`${classNamePrefix}__footer`}>
-        <div className={`${classNamePrefix}__power-root`}>
+      <div className="map2-launcher__footer">
+        <div className="map2-launcher__power-root">
           <OverflowMenu
             aria-label="Power actions"
-            className={`${classNamePrefix}__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
+            className={`map2-launcher__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
             direction="top"
             flipped
             iconDescription="Power actions"

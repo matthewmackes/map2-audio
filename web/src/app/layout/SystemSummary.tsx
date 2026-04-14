@@ -8,7 +8,7 @@ import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurf
 import type { LauncherInterfaceSummary } from './useLauncherInterfaceSummary'
 
 type SystemSummaryProps = {
-  classNamePrefix: 'hp2-overlay' | 'shell-launcher'
+  classNamePrefix: 'map2-launcher'
   launcherInterfaceSummary: LauncherInterfaceSummary
   launcherSummaryItems: string[]
   pendingPushConfirmation: PushSurfacePendingConfirmation | null
