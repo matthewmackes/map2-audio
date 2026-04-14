@@ -24766,7 +24766,7 @@ Last updated: 2026-04-14 21:19 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2257
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add explicit loading and error affordances to `SystemSummary`
 Description:
 - Goal / acceptance criteria: Extend `SystemSummary` so host status, platform metrics, and interface groups present a deliberate loading and degraded-state treatment instead of silently collapsing to empty labels.
@@ -24775,7 +24775,16 @@ Description:
 - Estimated effort: Medium
 - Required outputs: component-state model updates, presentational variants, and targeted tests for loading/error/fallback states.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 21:33 EDT - Codex
+- Completion notes:
+  - Extended `useLauncherInterfaceSummary.ts` and `useShellSummaryData.ts` so the shared summary model now carries explicit host loading/error state, platform status items with their underlying severity, and interface-scan degradation messages instead of flattening everything to optimistic strings.
+  - Updated `SystemSummary.tsx` to render deliberate loading chips, warning-styled platform pills, degraded interface notes, and explicit “scan unavailable” fallbacks when host or interface queries fail.
+  - Refined `LauncherPanel/LauncherPanel.css` to visually distinguish loading/error host metadata, warned/off platform status pills, and degraded interface notices without changing the surrounding shell layout.
+  - Added `web/src/app/layout/SystemSummary.test.tsx` and revalidated the home/desktop shared surfaces so the new loading and degraded states are covered both directly and through the routed shell.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/SystemSummary.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2258
 Status: [✓] Done

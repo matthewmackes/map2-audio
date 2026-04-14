@@ -77,6 +77,17 @@
   line-height: 1.15;
 }
 
+.map2-launcher__summary-meta-item--loading {
+  border-style: dashed;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-launcher__summary-meta-item--error {
+  border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 52%, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)));
+  background: color-mix(in srgb, var(--cds-support-error, #da1e28) 8%, var(--cds-layer, #ffffff));
+  color: var(--cds-text-error, #a2191f);
+}
+
 .map2-launcher__summary-row {
   min-width: 0;
 }
@@ -127,6 +138,29 @@
   font-weight: 500;
 }
 
+.map2-launcher__status-item--loading {
+  border-style: dashed;
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-launcher__status-item--warn {
+  border-color: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 56%, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 14%, var(--cds-layer, #ffffff));
+}
+
+.map2-launcher__status-item--off {
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-launcher__summary-note {
+  padding: var(--cds-spacing-02, 0.25rem) var(--cds-spacing-03, 0.5rem);
+  border-left: 3px solid var(--cds-support-warning, #f1c21b);
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 10%, var(--cds-layer, #ffffff));
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.3;
+}
+
 .map2-launcher__device-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -174,6 +208,12 @@
   background: var(--cds-layer, #ffffff);
   color: var(--cds-text-secondary, var(--text-secondary));
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.map2-launcher__device-empty--error {
+  border-color: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 54%, var(--map2-launcher-border, var(--cds-border-subtle, #c6c6c6)));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 10%, var(--cds-layer, #ffffff));
+  color: var(--cds-text-primary, var(--text-primary));
 }
 
 .map2-launcher__body {

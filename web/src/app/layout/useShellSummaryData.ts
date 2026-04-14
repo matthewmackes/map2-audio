@@ -17,10 +17,11 @@ export type ShellSummaryData = {
     kernel_version?: string | null
     os_version?: string | null
   } | null
+  hostSummaryItems: string[]
+  hostSummaryState: 'ready' | 'loading' | 'error'
   platformStatus: ReturnType<typeof useHomePlatformStatus>
+  platformStatusItems: Array<ReturnType<typeof useHomePlatformStatus>[keyof ReturnType<typeof useHomePlatformStatus>]>
   launcherInterfaceSummary: ReturnType<typeof useLauncherInterfaceSummary>
-  launcherSummaryItems: string[]
-  platformStatusLabels: string[]
   pendingPushConfirmation: Awaited<ReturnType<typeof usePushConfirmation>>['data'] extends { pending_confirmation?: infer T } ? T | null : null
 }
 
@@ -30,7 +31,8 @@ export function useShellSummaryData({
   pushConfirmationNodeId,
   pushConfirmationRefetchInterval = 15_000,
 }: UseShellSummaryDataOptions) {
-  const { data: hostInfo } = useHostMachineInfo()
+  const hostInfoQuery = useHostMachineInfo()
+  const { data: hostInfo } = hostInfoQuery
   const platformStatus = useHomePlatformStatus()
   const launcherInterfaceSummary = useLauncherInterfaceSummary(navOpen)
   const pendingPushConfirmationQuery = usePushConfirmation(pushConfirmationNodeId, {
@@ -41,13 +43,22 @@ export function useShellSummaryData({
     pathname,
     platformStatus,
   })
+  const hostSummaryState =
+    hostInfoQuery.isError ? 'error' : hostInfoQuery.isLoading && !hostInfo ? 'loading' : 'ready'
+  const hostSummaryItems =
+    hostSummaryState === 'loading'
+      ? ['Detecting OS version...', 'Detecting host name...']
+      : hostSummaryState === 'error'
+        ? ['Host OS unavailable', 'Host name unavailable']
+        : presentation.launcherSummaryItems
 
   return {
     hostInfo: hostInfo ?? null,
+    hostSummaryItems,
+    hostSummaryState,
     platformStatus,
     launcherInterfaceSummary,
-    launcherSummaryItems: presentation.launcherSummaryItems,
-    platformStatusLabels: presentation.platformStatusLabels,
+    platformStatusItems: [platformStatus.avb, platformStatus.avdecc, platformStatus.nodes],
     pendingPushConfirmation: pendingPushConfirmationQuery.data?.pending_confirmation ?? null,
   } satisfies ShellSummaryData
 }

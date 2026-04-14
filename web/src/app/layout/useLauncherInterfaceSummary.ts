@@ -35,6 +35,7 @@ export type LauncherInterfaceSummary = {
   audioInterfaces: string[]
   midiInterfaces: string[]
   isLoading: boolean
+  errorMessage: string | null
 }
 
 const EMPTY_INTERFACE_TRANSITION_DELAY_MS = 1200
@@ -156,6 +157,7 @@ async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
   return {
     audioInterfaces,
     midiInterfaces,
+    errorMessage: null,
     isLoading: false,
   }
 }
@@ -241,10 +243,14 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
     || query.error != null
     || hardwareInventoryQuery.dataUpdatedAt > 0
     || hardwareInventoryQuery.error != null
+  const errorMessage =
+    (query.error instanceof Error ? query.error.message : null)
+    ?? (hardwareInventoryQuery.error instanceof Error ? hardwareInventoryQuery.error.message : null)
 
   return {
     audioInterfaces,
     midiInterfaces,
+    errorMessage,
     isLoading: !hasResolvedOnce && (
       query.isLoading
       || query.isFetching
