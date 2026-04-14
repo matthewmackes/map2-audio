@@ -257,7 +257,7 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/workspace" element={<ShellStubPage testId="workspace-page">Unified Workspaces</ShellStubPage>} />
-            <Route path="/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
+            <Route path="/workspace/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
             <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
               <Route index element={<OutboardHardwareOverviewPage />} />

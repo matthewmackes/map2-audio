@@ -6,6 +6,12 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-rou
 import { PageTransition } from './PageTransition'
 import { useEffectsSettingsStore } from '../stores/effectsSettingsStore'
 
+jest.mock('../performance/devDiagnostics', () => ({
+  markRouteRenderReady: jest.fn(),
+  markRouteRenderStart: jest.fn(),
+  reportRouteRequestVolume: jest.fn(),
+}))
+
 function setMatchMedia(matches: boolean) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -29,7 +35,7 @@ function TransitionHarness() {
   return (
     <>
       <div data-testid="transition-pathname">{location.pathname}</div>
-      <button type="button" onClick={() => navigate('/audio-artifacts')}>Go Audio Artifacts</button>
+      <button type="button" onClick={() => navigate('/workspace/artifacts')}>Go Audio Artifacts</button>
       <button type="button" onClick={() => navigate('/midi-hub/connections')}>Go MIDI Connections</button>
       <button type="button" onClick={() => navigate('/midi-hub/presets')}>Go MIDI Presets</button>
       <button type="button" onClick={() => navigate('/expression')}>Go Expression</button>
@@ -79,7 +85,7 @@ describe('PageTransition', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
 
-    expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/audio-artifacts')
+    expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/workspace/artifacts')
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--block')
     expect(document.querySelectorAll('.landing-route-transition__block-icon').length).toBeGreaterThan(0)
 

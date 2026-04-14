@@ -1,3 +1,4 @@
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import type { NodeIdentity, NodeRole, NodeStatus, NodeSummary } from '../types/node'
 
 export type NodeRolePresence = 'LOCAL' | 'VIEW' | 'PEER'
@@ -128,40 +129,39 @@ export function getHealthPercentTone(percent: number): 'good' | 'warn' | 'critic
 }
 
 export function pageKeyFromPathname(pathname: string): string | null {
-  if (pathname === '/') {
+  const canonicalPathname = canonicalizeNavigationRoute(pathname)
+
+  if (canonicalPathname === '/') {
     return NODE_PAGE_KEYS.home
   }
-  if (pathname.startsWith('/engine')) {
+  if (canonicalPathname.startsWith('/engine')) {
     return NODE_PAGE_KEYS.audioEngine
   }
-  if (pathname === '/workspace' || pathname.startsWith('/workspace/')) {
+  if (canonicalPathname === '/workspace' || canonicalPathname.startsWith('/workspace/')) {
     return NODE_PAGE_KEYS.platform
   }
-  if (pathname.startsWith('/artifacts')) {
+  if (canonicalPathname.startsWith('/plugins')) {
     return NODE_PAGE_KEYS.lv2Plugins
   }
-  if (pathname.startsWith('/plugins')) {
-    return NODE_PAGE_KEYS.lv2Plugins
-  }
-  if (pathname.startsWith('/dsp')) {
+  if (canonicalPathname.startsWith('/dsp')) {
     return NODE_PAGE_KEYS.dsp
   }
-  if (pathname.startsWith('/chains')) {
+  if (canonicalPathname.startsWith('/chains')) {
     return NODE_PAGE_KEYS.chains
   }
-  if (pathname.startsWith('/midi-hub')) {
+  if (canonicalPathname.startsWith('/midi-hub')) {
     return NODE_PAGE_KEYS.midiHub
   }
-  if (pathname.startsWith('/platform')) {
+  if (canonicalPathname.startsWith('/platform')) {
     return NODE_PAGE_KEYS.platform
   }
-  if (pathname.startsWith('/platforms')) {
+  if (canonicalPathname.startsWith('/platforms')) {
     return NODE_PAGE_KEYS.platform
   }
-  if (pathname.startsWith('/labs')) {
+  if (canonicalPathname.startsWith('/labs')) {
     return NODE_PAGE_KEYS.labs
   }
-  if (pathname.startsWith('/nodes')) {
+  if (canonicalPathname.startsWith('/nodes')) {
     return NODE_PAGE_KEYS.nodes
   }
   return null

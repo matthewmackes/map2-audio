@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
 import { MapClusterFabricIcon } from './icons/map'
+import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { markRouteRenderReady, markRouteRenderStart, reportRouteRequestVolume } from '../performance/devDiagnostics'
 import './PageTransition.css'
@@ -42,27 +43,25 @@ const TRANSITION_BLOCKS = Array.from({ length: TRANSITION_BLOCK_COUNT }, (_, ind
 }))
 
 export function getLandingTransitionScope(pathname: string): TransitionScope | null {
-  if (pathname === '/') {
+  const canonicalPathname = canonicalizeNavigationRoute(pathname)
+
+  if (canonicalPathname === '/') {
     return { id: 'home' }
   }
 
-  if (
-    pathname.startsWith('/audio-artifacts')
-    || pathname.startsWith('/artifacts')
-    || pathname.startsWith('/workspace/artifacts')
-  ) {
+  if (canonicalPathname === '/workspace/artifacts' || canonicalPathname.startsWith('/workspace/artifacts/')) {
     return { id: 'audio-artifacts' }
   }
 
-  if (pathname.startsWith('/juce-grid')) {
+  if (canonicalPathname.startsWith('/juce-grid')) {
     return { id: 'juce-grid' }
   }
 
   if (
-    pathname === '/midi'
-    || pathname === '/midi-hub'
-    || pathname === '/midi-hub-2'
-    || pathname.startsWith('/midi-hub/')
+    canonicalPathname === '/midi'
+    || canonicalPathname === '/midi-hub'
+    || canonicalPathname === '/midi-hub-2'
+    || canonicalPathname.startsWith('/midi-hub/')
   ) {
     return { id: 'midi-hub' }
   }

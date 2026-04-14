@@ -1,3 +1,4 @@
+import { canonicalizeNavigationRoute } from './advancedMenuItems'
 import type { HardwareInterfaceMenuItem, NavigationMaturityState, ShellNavigationItem } from './advancedMenuItems'
 
 type HomeItem = ShellNavigationItem | HardwareInterfaceMenuItem
@@ -10,19 +11,6 @@ export interface HomeCardProfile {
 }
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
-  '/platform': {
-    summary: 'Main Platforms workspace for overview, audio-engine, management, AVB, cluster, discovery, and utility workspaces in one routed shell.',
-    capabilities: [
-      'Quick access to platform pages from one side menu',
-      'One path for overview, audio-engine, management, AVB, cluster, and discovery views',
-      'Direct links to each platform page',
-      'Shared layout across platform screens',
-      'Clear labels and icons across platform tools',
-      'Less jumping around during setup and troubleshooting',
-    ],
-    learnMore: 'Open Platforms when you want one place for the main system tools without opening extra popups or separate flows.',
-    bestFor: 'System setup and monitoring',
-  },
   '/workspace': {
     summary: 'Unified Workspace Hub for platform posture, physical surfaces, audio artifacts, and outboard hardware from one routed shell.',
     capabilities: [
@@ -35,19 +23,6 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     ],
     learnMore: 'Open Workspaces when you want the canonical MAP2 hub for supervisory platform views and the migrated routed workspace families.',
     bestFor: 'Unified workspace launch and monitoring',
-  },
-  '/platforms/overview': {
-    summary: 'Main Platforms workspace for overview, audio-engine, management, AVB, cluster, discovery, and utility workspaces in one routed shell.',
-    capabilities: [
-      'Quick access to platform pages from one side menu',
-      'One path for overview, audio-engine, management, AVB, cluster, and discovery views',
-      'Direct links to each platform page',
-      'Shared layout across platform screens',
-      'Clear labels and icons across platform tools',
-      'Less jumping around during setup and troubleshooting',
-    ],
-    learnMore: 'Open Platforms when you want one place for the main system tools without opening extra popups or separate flows.',
-    bestFor: 'System setup and monitoring',
   },
   '/labs': {
     summary: 'Standalone Labs landing page for experimental, advanced, and hardware-sensitive MAP2 workflows.',
@@ -203,19 +178,6 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     ],
     learnMore: 'Use LV2 Plugins when curating your processing toolbox, validating plugin footprint, or planning chain revisions.',
     bestFor: 'Plugin catalog operations',
-  },
-  '/artifacts': {
-    summary: 'Shared library for plugins, models, impulse responses, SoundFonts, and other audio files used by MAP2.',
-    capabilities: [
-      'Browse installed LV2 plugins',
-      'Check what files are available on each node',
-      'Manage impulse responses and NAM models',
-      'See assets across the system',
-      'Confirm that needed files are installed',
-      'Keep asset handling in one place',
-    ],
-    learnMore: 'Use Audio Artifacts when you need to find, review, or manage the sound files and plugins used by the system.',
-    bestFor: 'Plugin and asset library work',
   },
   '/workspace/artifacts': {
     summary: 'Shared library for plugins, models, impulse responses, SoundFonts, and other audio files used by MAP2.',
@@ -464,7 +426,8 @@ export function resolveHomeCardProfile(item: HomeItem): HomeCardProfile {
     return exact
   }
 
-  const byRoute = PROFILE_BY_KEY[item.to]
+  const canonicalRoute = canonicalizeNavigationRoute(getRoutePathname(item.to))
+  const byRoute = PROFILE_BY_KEY[canonicalRoute]
   if (byRoute) {
     return byRoute
   }

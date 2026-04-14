@@ -23983,10 +23983,39 @@ Subtasks:
             - Dependencies: T1004-subE-subD-subA
             - Estimated effort: Medium
             - Required outputs: helper/catalog cleanup, focused route/support regressions, and updated grep evidence.
-            Subtasks: None
+            Subtasks:
+              - ID: T1004-subE-subD-subB-subA
+                Status: [✓] Done
+                Title: Canonicalize helper route matching for workspace shell support surfaces
+                Description:
+                - Goal / acceptance criteria: Route PageTransition, shell-presentation, node-display, home-card profile resolution, and their focused harnesses through the canonical navigation alias map so `/workspace/*` is treated as the primary destination while legacy roots remain aliases only.
+                - Why it matters: These support surfaces shape operator-facing shell behavior; leaving legacy literals as the first lookup path preserves the old mental model even after redirects exist.
+                - Dependencies: T1004-subE-subD-subA
+                - Estimated effort: Low
+                - Required outputs: helper lookups updated, focused tests, and grep evidence.
+                Subtasks: None
+                Assigned to: Codex
+                Last updated: 2026-04-13 20:57 EDT - Codex
+                - Completion notes:
+                  - Rewired `PageTransition`, `useAppShellPresentation`, `nodeDisplay`, and `homeCardProfiles` to resolve workspace-era aliases through `canonicalizeNavigationRoute()` instead of encoding legacy artifact/platform roots as first-class helper matches.
+                  - Updated the focused helper harnesses so PageTransition, launcher-catalog assertions, and desktop integration fixtures now exercise canonical `/workspace/artifacts` navigation while preserving alias normalization coverage where needed.
+                  - Post-change grep evidence shows the remaining legacy literals are concentrated in explicit redirect routes, compatibility maps, and a smaller set of overlay/test surfaces rather than the helper logic that drives the active shell.
+                - Validation:
+                  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PageTransition.test.tsx src/app/data/launcherCatalog.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
+                  - `npm --prefix web run typecheck` -> PASS
+              - ID: T1004-subE-subD-subB-subB
+                Status: [>] In Progress
+                Title: Collapse remaining overlay, route-active, and compatibility fixture aliases
+                Description:
+                - Goal / acceptance criteria: Reduce the last non-redirect legacy workspace literals in overlays, route-active helpers, and targeted compatibility fixtures/tests, leaving only explicit redirect definitions and documented alias maps.
+                - Why it matters: The helper layer is now canonical-first, but a few secondary shell surfaces still advertise or probe the retired roots directly.
+                - Dependencies: T1004-subE-subD-subB-subA
+                - Estimated effort: Medium
+                - Required outputs: remaining compatibility cleanup, focused regressions, and final grep evidence for `T1004-subE-subD`.
+                Subtasks: None
             Assigned to: Codex
-            Last updated: 2026-04-13 20:50 EDT - Codex
+            Last updated: 2026-04-13 20:57 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 20:50 EDT - Codex
+    Last updated: 2026-04-13 20:57 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex

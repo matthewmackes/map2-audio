@@ -19,7 +19,7 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ label: 'Launch path', value: '/workspace' }),
       ]),
     })
-    expect(getLauncherCatalogItem('/artifacts')).toMatchObject({
+    expect(getLauncherCatalogItem('/workspace/artifacts')).toMatchObject({
       heroTitle: 'Audio Artifacts',
       landingEligible: true,
       navEligible: true,

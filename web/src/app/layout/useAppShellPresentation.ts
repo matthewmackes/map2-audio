@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import { MAP2_PLATFORM_VERSION, Map2BrandMark } from '../components/branding/map2Branding'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
-import { allPinnableNavigationItems, allRouteNavigationItems } from '../data/advancedMenuItems'
+import { allPinnableNavigationItems, allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
 
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
@@ -11,10 +11,7 @@ import type { StartMenuTileItem } from './ShellLauncherPanel'
 const START_MENU_EXCLUDED_ROUTES = new Set([
   '/launch-control',
   '/midi-commander',
-  '/platforms/overview',
-  '/artifacts',
-  '/physical-surfaces',
-  '/outboard-hardware',
+  '/workspace',
   '/workspace/artifacts',
   '/workspace/physical-surfaces',
   '/workspace/outboard-hardware',
@@ -53,12 +50,13 @@ export function useAppShellPresentation({
   websocketStatus,
 }: UseAppShellPresentationOptions) {
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(pathname)
+  const canonicalPathname = useMemo(() => canonicalizeNavigationRoute(pathname), [pathname])
 
   const startMenuTileItems = useMemo<StartMenuTileItem[]>(
     () => {
       const launcherItems = launcherCatalogDisplayItems
         .filter((item) => item.route !== '/')
-        .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(item.route))
+        .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(canonicalizeNavigationRoute(item.route)))
         .map((item) => ({
           route: item.route,
           label: item.label,
@@ -102,23 +100,19 @@ export function useAppShellPresentation({
   const currentShellItem = useMemo(() => {
     const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
       .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
-      .filter((item) => isRouteMatch(pathname, item.to))
+      .filter((item) => isRouteMatch(canonicalPathname, item.to))
       .sort((left, right) => right.to.length - left.to.length)
 
     return candidates[0] ?? null
-  }, [pathname])
+  }, [canonicalPathname])
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
   const isDesktopRoute = pathname === '/'
-  const isPlatformWorkspaceRoute = pathname === '/workspace' || pathname.startsWith('/workspace/')
+  const isPlatformWorkspaceRoute = canonicalPathname === '/workspace' || canonicalPathname.startsWith('/workspace/')
   const isIntegratedWorkspaceRoute =
     isPlatformWorkspaceRoute
-    || pathname.startsWith('/midi-hub')
-    || pathname.startsWith('/platforms')
-    || pathname.startsWith('/artifacts')
-    || pathname.startsWith('/audio-artifacts')
-    || pathname.startsWith('/physical-surfaces')
-    || pathname.startsWith('/outboard-hardware')
+    || canonicalPathname.startsWith('/midi-hub')
+    || canonicalPathname.startsWith('/platforms')
   const isAudioGridWorkspaceRoute = pathname === '/juce-grid' || pathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const shellClassName = `app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
@@ -140,7 +134,7 @@ export function useAppShellPresentation({
     platformStatusLabels: [platformStatus.avb.label, platformStatus.avdecc.label, platformStatus.nodes.label],
     shellAccentColor: currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)',
     shellClassName,
-    shellRouteHint: formatShellRouteHint(pathname),
+    shellRouteHint: formatShellRouteHint(canonicalPathname),
     shellWindowIcon: currentShellItem?.icon ?? Map2BrandMark,
     shellWorkspaceLabel: currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace',
     showMobileConnectionBanner,
