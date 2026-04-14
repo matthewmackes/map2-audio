@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2166** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1197** TypeScript | **136** C++/H | **145** Docs | **2169** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,11 +176,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [Home Visual Smoke](https://github.com/matthewmackes/map2-audio/blob/master/docs/HOME_VISUAL_SMOKE.md) | 2026-04-14 |
+| [MAP2 Mobile Responsive Audit & Implementation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MOBILE_RESPONSIVE_PROMPT.md) | 2026-04-14 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-14 |
 | [Workspace Visual Smoke](https://github.com/matthewmackes/map2-audio/blob/master/docs/WORKSPACE_VISUAL_SMOKE.md) | 2026-04-14 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-10 |
 | [MAP2 FAQ: Simple Consumer Version](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_CONSUMER_11TH_GRADE_2026-04-10.md) | 2026-04-10 |
-| [MAP2 FAQ: What Is the MAP Platform and How Different Music Users Could Use It](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_MARKET_ALIGNED_2026-04-10.md) | 2026-04-10 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d420c253`](https://github.com/matthewmackes/map2-audio/commit/d420c2536377c014d928d81a90b2254a8428e4f6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
+| [`5f4a95d5`](https://github.com/matthewmackes/map2-audio/commit/5f4a95d5803b29fe0a528d1c7d0658865ec0a984) | refactor: remove retired dsp utility pages | Map2 Audio | 2026-04-14 |
+| [`bb8507cc`](https://github.com/matthewmackes/map2-audio/commit/bb8507cc123c7a4fce380a479829da8f8b36c57d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`82ca0145`](https://github.com/matthewmackes/map2-audio/commit/82ca0145168bf9b514d335f361782621306d9520) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`a7f81d76`](https://github.com/matthewmackes/map2-audio/commit/a7f81d762269e31f5bbc40c2cfcbc2d4df354f5a) | feat: retire dsp and cpu performance routes | Map2 Audio | 2026-04-14 |
 | [`bd5f231d`](https://github.com/matthewmackes/map2-audio/commit/bd5f231d7d4aea459ed861c8e42382d31969100e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`b5019635`](https://github.com/matthewmackes/map2-audio/commit/b5019635122b76ef7fa996eeb388f6d187cbd738) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`08a1251d`](https://github.com/matthewmackes/map2-audio/commit/08a1251dd0278aa5dc4655b8298d1219e14bca80) | fix: tighten ptp monitor fallback parsing | Map2 Audio | 2026-04-14 |
-| [`ef772863`](https://github.com/matthewmackes/map2-audio/commit/ef77286364bc59a9e9bc22ecd99cb0c0dc2bfd11) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`584113c6`](https://github.com/matthewmackes/map2-audio/commit/584113c6e53c04ead96ca6a1110e0d76aee1a44c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
-| [`fe71220b`](https://github.com/matthewmackes/map2-audio/commit/fe71220b11fd04df0f25c1f25f3b1057dfb34773) | docs: refresh avb and tesira blocker evidence | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
