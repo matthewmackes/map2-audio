@@ -117,13 +117,44 @@
 
 .app-shell__frame {
   display: grid;
-  grid-template-columns: 16rem minmax(0, 1fr);
+  grid-template-columns: var(--global-tree-width, 16rem) minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 160ms ease;
 }
 
 .app-content--with-global-tree {
+  position: relative;
   min-width: 0;
   min-height: 100vh;
+}
+
+.app-shell__nav-pin-toggle {
+  position: sticky;
+  top: var(--cds-spacing-05, 1rem);
+  left: var(--cds-spacing-05, 1rem);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  margin: var(--cds-spacing-05, 1rem);
+  padding: 0.45rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--cds-link-primary, #0f62fe) 34%, var(--cds-border-strong-01, #8d8d8d));
+  background: color-mix(in srgb, var(--cds-layer, #161616) 92%, var(--cds-background, #000000));
+  color: var(--cds-text-primary, #f4f4f4);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-shell__nav-pin-toggle:hover {
+  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-strong-01, #8d8d8d));
+  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer, #161616));
+}
+
+.app-shell__nav-pin-toggle:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
 }
 
 /* Border overlay and padding modifiers removed — content is full-width and flat. */
@@ -147,7 +178,7 @@
 
 .mobile-connection-banner {
   position: fixed;
-  left: calc(16rem + var(--cds-spacing-04, 0.75rem));
+  left: calc(var(--global-tree-banner-left-offset, 16rem) + var(--cds-spacing-04, 0.75rem));
   right: var(--cds-spacing-04, 0.75rem);
   bottom: var(--cds-spacing-04, 0.75rem);
   z-index: 41;
@@ -173,6 +204,11 @@
   .app-shell__frame {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-shell__nav-pin-toggle {
+    position: static;
+    margin: var(--cds-spacing-03, 0.5rem);
   }
 
   .mobile-connection-banner {

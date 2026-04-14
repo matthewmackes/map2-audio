@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
@@ -17,10 +17,27 @@ import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
 import { GlobalTreeNav } from './GlobalTreeNav/GlobalTreeNav'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
+
+const GLOBAL_NAV_PINNED_STORAGE_KEY = 'map2:global-nav:pinned'
+
+function readGlobalNavPinned(): boolean {
+  if (typeof window === 'undefined') {
+    return true
+  }
+
+  try {
+    const raw = window.localStorage.getItem(GLOBAL_NAV_PINNED_STORAGE_KEY)
+    return raw == null ? true : raw !== 'false'
+  } catch {
+    return true
+  }
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { status: websocketStatus } = useWebSocketConnection()
+  const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readGlobalNavPinned())
   const closeShellMenus = useCallback(() => {}, [])
   const {
     isDesktopRoute,
@@ -81,18 +98,47 @@ export function AppShell({ children }: { children: ReactNode }) {
     writeHomeShellRecentRoute(`${location.pathname}${location.search}`)
   }, [location.pathname, location.search])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    try {
+      window.localStorage.setItem(GLOBAL_NAV_PINNED_STORAGE_KEY, globalNavPinned ? 'true' : 'false')
+    } catch {
+      // Ignore storage failures in restricted browser contexts.
+    }
+  }, [globalNavPinned])
+
   return (
     <div
       className={shellClassName}
-      style={{ '--window-shell-accent': shellAccentColor } as CSSProperties}
+      style={{
+        '--window-shell-accent': shellAccentColor,
+        '--global-tree-width': globalNavPinned ? '16rem' : '0rem',
+        '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '0rem',
+      } as CSSProperties}
     >
       <div className="app-shell__frame">
-        <GlobalTreeNav
-          onLogOut={() => returnHomeDesktopToBoot()}
-          onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
-          onRefreshPage={() => reloadHomeDesktopShell()}
-        />
+        {globalNavPinned ? (
+          <GlobalTreeNav
+            isPinned={globalNavPinned}
+            onLogOut={() => returnHomeDesktopToBoot()}
+            onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
+            onRefreshPage={() => reloadHomeDesktopShell()}
+            onTogglePinned={() => setGlobalNavPinned(false)}
+          />
+        ) : null}
         <main className="app-content app-content--with-global-tree">
+          {!globalNavPinned ? (
+            <button
+              type="button"
+              className="app-shell__nav-pin-toggle"
+              aria-label="Pin Navigation"
+              onClick={() => setGlobalNavPinned(true)}
+            >
+              Pin Navigation
+            </button>
+          ) : null}
           <ShellWindowProvider value={isDesktopRoute ? null : shellWindowContext}>
             <PageTransition>{children}</PageTransition>
           </ShellWindowProvider>

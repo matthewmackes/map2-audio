@@ -7607,6 +7607,27 @@ Last updated: 2026-04-14 23:33 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (with existing React suspended-resource `act(...)` warnings)
   - `npm --prefix web run build` -> PASS
 
+ID: T2283
+Status: [✓] Done
+Title: Add a shared pin toggle for the left global navigation rail
+Description:
+- Goal / acceptance criteria: Add a pin/unpin control for the persistent left global navigation so operators can hide the rail and restore it from the shared shell without page-specific wiring.
+- Why it matters: The user wants direct control over the left rail’s visibility across all routed GUI pages.
+- Dependencies: T2277
+- Estimated effort: Medium
+- Required outputs: shared shell state, rail toggle UI, focused regression coverage, and validation.
+Assigned to: Codex
+Last updated: 2026-04-14 23:55 EDT - Codex
+- Completion notes:
+  - Added a shared pin/unpin control for the left global navigation rail by moving the pinned state into `web/src/app/layout/AppShell.tsx`, persisting it in local storage, and exposing `Unpin Navigation` in the rail plus a `Pin Navigation` restore button when the rail is hidden.
+  - Updated `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx` and `GlobalTreeNav.css` so the control lives in the rail header and does not require per-page wiring.
+  - Updated `web/src/app/layout/AppShell.css` so the shell frame and reconnect banner respond to the rail being hidden without breaking the routed content area.
+  - Extended `web/src/app/layout/AppShell.test.tsx` with a focused regression that unpins and re-pins the rail and verifies the shared shell behavior.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+
 ## Tesira
 
 ID: T030

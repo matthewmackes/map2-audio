@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (retired route cleanup closure documented)
+> **Last Updated**: April 14, 2026 (global navigation pin toggle documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1046,6 +1046,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Delete the retired page files once no runtime imports remain, repoint any remaining operator-facing deep links to supported surfaces, remove obsolete page-key branches, and refresh active documentation inventories so they match the live route table.
 - **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx`; `npm --prefix web run build`; `rg -n '/dsp|/cpu-performance|DSPPage|CPUPerformancePage' web/src docs --glob '!web/dist/**' --glob '!docs/archive/**' --glob '!docs/fit-for-purpose-evidence/**'`
 - **Lesson**: A redirect is only the first half of route retirement. Finish the dead-file, deep-link, helper, and active-doc cleanup or the platform will keep describing pages that no longer exist.
+
+**96. Global Navigation Pinning Belongs In `AppShell`, Not In Individual Pages**
+- **Files**: `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.css`
+- **Problem**: A left-rail pin/unpin control can easily become a page-local hack that hides one page’s sidebar while leaving the rest of the shell geometry and floating banners unchanged.
+- **Root Cause**: The pinned state affects the shell grid, the rail itself, and fixed shell overlays such as the reconnect banner, so the behavior spans more than the nav component alone.
+- **Fix**: Keep the persisted pin state in `AppShell`, derive shell layout widths from that single source of truth, and let `GlobalTreeNav` expose only the toggle UI. When unpinned, render the restore control from `AppShell` so the rail can be brought back without page-specific code.
+- **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx`; `npm --prefix web run build`
+- **Lesson**: For shared shell controls, put state where the shell geometry lives. The nav component should render the control, but `AppShell` should own the pinned/unpinned layout contract.
 
 ### Server Management Gotchas
 
@@ -2093,6 +2101,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - Global Navigation Pin Toggle
+- **Section**: Gotchas & Learned Fixes (#96), Update Log
+- **Change**: Documented that the global-navigation pin state must live in `AppShell`, with the rail exposing the toggle UI and the shell owning the layout response.
+- **Reason**: The new left-rail pin/unpin control affects shell width, reconnect-banner positioning, and the restore affordance, which all sit above individual pages.
+- **Impact**: Future shell-nav tweaks should stay centralized instead of scattering width and visibility rules through page components.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.css`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - Retired Route Cleanup Closure
 - **Section**: Gotchas & Learned Fixes (#95), Update Log

@@ -35,9 +35,11 @@ import {
 import './GlobalTreeNav.css'
 
 type GlobalTreeNavProps = {
+  isPinned: boolean
   onLogOut: () => void
   onOpenRestartConfirm: () => void
   onRefreshPage: () => void
+  onTogglePinned: () => void
 }
 
 type TreeItemDefinition = {
@@ -315,9 +317,11 @@ function syncNodeScope(setViewedNode: (pageKey: string, nodeId: string) => void,
 }
 
 export function GlobalTreeNav({
+  isPinned,
   onLogOut,
   onOpenRestartConfirm,
   onRefreshPage,
+  onTogglePinned,
 }: GlobalTreeNavProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -357,7 +361,18 @@ export function GlobalTreeNav({
     <Layer className="global-tree-nav__layer">
       <aside className="global-tree-nav" aria-label="Global navigation tree">
         <div className="global-tree-nav__header">
-          <p className="global-tree-nav__eyebrow">Global Navigation</p>
+          <div className="global-tree-nav__header-row">
+            <p className="global-tree-nav__eyebrow">Global Navigation</p>
+            <button
+              type="button"
+              className="global-tree-nav__pin-button"
+              aria-label={isPinned ? 'Unpin Navigation' : 'Pin Navigation'}
+              aria-pressed={isPinned}
+              onClick={onTogglePinned}
+            >
+              {isPinned ? 'Unpin Navigation' : 'Pin Navigation'}
+            </button>
+          </div>
           <Popover
             align="bottom-start"
             caret

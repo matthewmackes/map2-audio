@@ -249,4 +249,27 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     expect(screen.getByText('Restart backend')).toBeInTheDocument()
   })
+
+  it('lets the operator unpin and re-pin the global navigation rail', async () => {
+    const { container } = renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/brain'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unpin Navigation' }))
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Global navigation tree')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Pin Navigation' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pin Navigation' }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+      expect(container.querySelector('.global-tree-nav')).toBeTruthy()
+    })
+  })
 })
