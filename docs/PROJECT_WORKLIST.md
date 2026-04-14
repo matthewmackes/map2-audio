@@ -24480,7 +24480,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2250
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove stale `WorkspaceHubPlaceholder` lazy import and route wiring from `App.tsx`
 Description:
 - Goal / acceptance criteria: Delete the dead `WorkspaceHubPlaceholder` lazy import and any residual route references now that the placeholder component has been removed from `WorkspaceHubShell.tsx`.
@@ -24489,7 +24489,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: `App.tsx` cleanup, route-regression validation, grep proof that no `WorkspaceHubPlaceholder` references remain.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 09:55 EDT - Codex
+- Completion notes:
+  - Removed the dead `WorkspaceHubPlaceholder` lazy import from `web/src/app/App.tsx` now that the placeholder component has been fully deleted from `WorkspaceHubShell.tsx`.
+  - Verified the remaining `WorkspaceHubPlaceholder` string only exists in the route test mock surface, not in runtime code paths.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS
+  - `rg -n "WorkspaceHubPlaceholder" web/src/app` -> PASS (test mock only)
 
 ID: T2251
 Status: [ ] Todo

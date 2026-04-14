@@ -39,7 +39,6 @@ const WorkspaceOutboardHardwareOverviewPage = lazy(() => import('./pages/workspa
 const WorkspaceOutboardHardwareDevicePage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage').then(m => ({ default: m.WorkspaceOutboardHardwareDevicePage })))
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
-const WorkspaceHubPlaceholder = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubPlaceholder })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
