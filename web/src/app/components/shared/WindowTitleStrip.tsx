@@ -29,7 +29,7 @@ export function WindowTitleStrip({
           <TitleIcon width={16} height={16} className="window-title-strip__icon" />
         </span>
         <div className="window-title-strip__copy">
-          <span className="window-title-strip__eyebrow">Program object</span>
+          <span className="window-title-strip__eyebrow">Workspace surface</span>
           <div className="window-title-strip__title-row">
             <strong className="window-title-strip__title">{title}</strong>
             <span className="window-title-strip__meta">{routeHint}</span>

@@ -24681,7 +24681,7 @@ Last updated: 2026-04-14 12:58 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2262
-Status: [ ] Todo
+Status: [✓] Done
 Title: Normalize sentence-case and support-copy tone across remaining shared shell chrome
 Description:
 - Goal / acceptance criteria: Audit the remaining shared shell labels, eyebrow copy, metric labels, and utility captions for forced uppercase or engineering-voice wording, then align them to the new product-tone baseline.
@@ -24690,7 +24690,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: copy/CSS updates on the affected shared shell surfaces and focused visual/text regression validation.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:47 EDT - Codex
+- Completion notes:
+  - Reworded the shared window title strip eyebrow from the old engineering-voice label to `Workspace surface`, keeping the standard shell chrome but aligning it with the product-tone baseline.
+  - Updated the workspace-hub sidebar eyebrow/title copy and removed forced uppercase treatment from the shared hub eyebrow/divider styling so section labels now read naturally in sentence case.
+  - Renamed the taskbar warning pill eyebrow to `Push confirmation` and extended `AppShell.test.tsx` so the text regression now stays covered alongside the shared title-strip wording.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2263
 Status: [ ] Todo

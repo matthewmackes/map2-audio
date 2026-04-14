@@ -12,8 +12,7 @@
   color: var(--cds-text-helper, #8d8d8d);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .workspace-hub-nav__title {
@@ -39,8 +38,7 @@
   color: var(--cds-text-helper, #8d8d8d);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .workspace-hub-nav__link {

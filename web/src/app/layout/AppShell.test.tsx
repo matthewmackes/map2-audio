@@ -238,6 +238,7 @@ describe('AppShell taskbar shell', () => {
 
     expect(screen.getByLabelText('Open platform menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
+    expect(container.querySelector('.window-title-strip__eyebrow')).toHaveTextContent('Workspace surface')
     expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
     expect(container.querySelector('.window-taskbar')).toBeTruthy()
   })
@@ -685,7 +686,7 @@ describe('AppShell taskbar shell', () => {
     fireEvent.click(screen.getByLabelText('Open platform menu'))
 
     const pill = screen.getByRole('status', { name: /Instance switch pending on push-stage-left/i })
-    expect(pill).toHaveTextContent('Push confirm')
+    expect(pill).toHaveTextContent('Push confirmation')
     expect(pill).toHaveTextContent('Instance switch')
     const statusStrip = pill.closest('.window-taskbar__status-strip')
     expect(statusStrip).toBeTruthy()

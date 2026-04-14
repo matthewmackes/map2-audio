@@ -18,8 +18,8 @@ export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
   return (
     <nav className={joinClasses('workspace-hub-nav', className)} aria-label="Workspace hub navigation">
       <div>
-        <p className="workspace-hub-nav__eyebrow">Workspace Hub</p>
-        <h1 className="workspace-hub-nav__title">Workspace</h1>
+        <p className="workspace-hub-nav__eyebrow">Workspace hub</p>
+        <h1 className="workspace-hub-nav__title">Workspace areas</h1>
       </div>
 
       {sections.map((section) => (

@@ -32,7 +32,7 @@ export function PushConfirmationNoticePill({
       aria-label={title}
       title={title}
     >
-      <span className="push-confirmation-pill__eyebrow">Push confirm</span>
+      <span className="push-confirmation-pill__eyebrow">Push confirmation</span>
       <span className="push-confirmation-pill__body">
         {actionLabel} • {deviceLabel}
       </span>
