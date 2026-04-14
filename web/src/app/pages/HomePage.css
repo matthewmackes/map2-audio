@@ -207,6 +207,22 @@
   gap: var(--cds-spacing-04, 0.75rem);
 }
 
+.hp2-home-shell__workspace-sections {
+  display: grid;
+  gap: var(--cds-spacing-06, 1.5rem);
+}
+
+.hp2-home-shell__workspace-section {
+  display: grid;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.hp2-home-shell__workspace-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .hp2-home-shell__workspace-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

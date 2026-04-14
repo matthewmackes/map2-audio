@@ -386,6 +386,10 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(screen.getByText('Workspace')).toBeInTheDocument()
+    expect(screen.getByText('Performance')).toBeInTheDocument()
+    expect(screen.getByText('MIDI')).toBeInTheDocument()
+    expect(screen.getByText('Device Operations')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Device\(s\) Manager/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Snapshot Editor/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Advanced MIDI/i })).toBeInTheDocument()

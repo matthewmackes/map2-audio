@@ -8,6 +8,7 @@ type StartMenuDefinition = {
   route: string
   label: string
   shortLabel: string
+  homeGroup: string
   description: string
 }
 
@@ -17,6 +18,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: buildWorkspaceHubPlatformPath('management'),
     label: 'Device(s) Manager',
     shortLabel: 'Device(s) Manager',
+    homeGroup: 'Device Operations',
     description: 'Open the unified platform device-management surface for host posture, discovery, adoption, and hardware readiness.',
   },
   {
@@ -24,6 +26,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: '/snapshot-editor',
     label: 'Snapshot Editor',
     shortLabel: 'Snapshot Editor',
+    homeGroup: 'Workspace',
     description: 'Open the snapshot-first editing surface for graph state, routing, plugin work, and recall operations.',
   },
   {
@@ -31,6 +34,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: '/midi-hub/connections',
     label: 'Advanced MIDI',
     shortLabel: 'Advanced MIDI',
+    homeGroup: 'MIDI',
     description: 'Open the MIDI control and routing shell for connections, presets, transport, network, and diagnostics.',
   },
   {
@@ -38,6 +42,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: '/brain',
     label: 'Brain',
     shortLabel: 'Brain',
+    homeGroup: 'Performance',
     description: 'Open the performance brain workspace for sequencing, triggering, routing, and live control.',
   },
   {
@@ -45,6 +50,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: '/brain?import_source=drums',
     label: 'Drum-Machine',
     shortLabel: 'Drum-Machine',
+    homeGroup: 'Performance',
     description: 'Open the brain workflow seeded from the drum-machine import path for rehearsal and pattern-driven rhythm work.',
   },
   {
@@ -52,6 +58,7 @@ const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
     route: '/brain?import_source=synthforge',
     label: 'SynthForge',
     shortLabel: 'SynthForge',
+    homeGroup: 'Performance',
     description: 'Open the brain workflow seeded from the SynthForge import path for instrument and sampler-driven performance work.',
   },
 ]
@@ -72,6 +79,7 @@ export function buildStartMenuItems(): ShellNavigationRenderItem[] {
       route: definition.route,
       label: definition.label,
       shortLabel: definition.shortLabel,
+      homeGroup: definition.homeGroup,
       icon: source.icon,
       description: definition.description,
       color: source.color,

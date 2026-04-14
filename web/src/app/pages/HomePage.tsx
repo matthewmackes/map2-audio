@@ -23,6 +23,7 @@ import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
+const HOME_GROUP_ORDER = ['Workspace', 'Performance', 'MIDI', 'Device Operations'] as const
 
 export function HomePage() {
   const location = useLocation()
@@ -50,6 +51,15 @@ export function HomePage() {
     platformStatus,
     websocketStatus: websocketConnection.status,
   })
+  const groupedStartMenuTileItems = useMemo(
+    () => HOME_GROUP_ORDER
+      .map((group) => ({
+        group,
+        items: startMenuTileItems.filter((item) => item.homeGroup === group),
+      }))
+      .filter((section) => section.items.length > 0),
+    [startMenuTileItems],
+  )
 
   useEffect(() => {
     if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
@@ -185,38 +195,47 @@ export function HomePage() {
               </div>
             </Tile>
 
-            <section className="hp2-home-shell__workspace-strip" aria-label="Workspace launch grid">
-              {startMenuTileItems.map((item) => {
-                const Icon = item.icon
-                const isRecent = isHomeShellTileRecent(recentRoute, item.route)
-                return (
-                  <ClickableTile
-                    key={item.route}
-                    className={`hp2-home-shell__workspace-tile${isRecent ? ' is-recent' : ''}`}
-                    href={item.route}
-                    onClick={(event) => {
-                      event.preventDefault()
-                      navigateHomeShellRoute(navigate, item.route)
-                    }}
-                    onMouseEnter={() => prefetchHomeShellRoute(item.route)}
-                    onFocus={() => prefetchHomeShellRoute(item.route)}
-                    data-recent-route={isRecent ? 'true' : 'false'}
-                  >
-                    <div className="hp2-home-shell__workspace-tile-head">
-                      <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
-                        <Icon size={20} aria-hidden />
-                      </span>
-                      <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
-                        {isRecent ? 'Recent' : item.shortLabel}
-                      </Tag>
-                    </div>
-                    <div className="hp2-home-shell__workspace-copy">
-                      <h2>{item.label}</h2>
-                      <p>{item.description}</p>
-                    </div>
-                  </ClickableTile>
-                )
-              })}
+            <section className="hp2-home-shell__workspace-sections" aria-label="Workspace launch grid">
+              {groupedStartMenuTileItems.map((section) => (
+                <section key={section.group} className="hp2-home-shell__workspace-section" aria-label={`${section.group} launchers`}>
+                  <div className="hp2-home-shell__workspace-section-head">
+                    <p className="hp2-home-shell__eyebrow">{section.group}</p>
+                  </div>
+                  <div className="hp2-home-shell__workspace-strip">
+                    {section.items.map((item) => {
+                      const Icon = item.icon
+                      const isRecent = isHomeShellTileRecent(recentRoute, item.route)
+                      return (
+                        <ClickableTile
+                          key={item.route}
+                          className={`hp2-home-shell__workspace-tile${isRecent ? ' is-recent' : ''}`}
+                          href={item.route}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            navigateHomeShellRoute(navigate, item.route)
+                          }}
+                          onMouseEnter={() => prefetchHomeShellRoute(item.route)}
+                          onFocus={() => prefetchHomeShellRoute(item.route)}
+                          data-recent-route={isRecent ? 'true' : 'false'}
+                        >
+                          <div className="hp2-home-shell__workspace-tile-head">
+                            <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
+                              <Icon size={20} aria-hidden />
+                            </span>
+                            <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
+                              {isRecent ? 'Recent' : item.shortLabel}
+                            </Tag>
+                          </div>
+                          <div className="hp2-home-shell__workspace-copy">
+                            <h2>{item.label}</h2>
+                            <p>{item.description}</p>
+                          </div>
+                        </ClickableTile>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
             </section>
           </Column>
 

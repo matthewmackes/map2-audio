@@ -24518,7 +24518,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2252
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add semantic launch-group sections to the home shell grid
 Description:
 - Goal / acceptance criteria: Organize the home launch grid into clear operator-facing groups such as Workspace, Performance, MIDI, and Device Operations while preserving the Carbon tile treatment.
@@ -24527,7 +24527,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: grouped home layout, copy refinement, responsive CSS updates, and focused HomePage regression updates.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:22 EDT - Codex
+- Completion notes:
+  - Added `homeGroup` metadata to the canonical start-menu item model in `web/src/app/layout/startMenuItems.ts` so the home shell can group destinations without introducing a second launch taxonomy.
+  - Reworked `web/src/app/pages/HomePage.tsx` / `.css` to render grouped launch sections for Workspace, Performance, MIDI, and Device Operations while preserving the existing Carbon tile treatment and recent-route highlighting.
+  - Extended `web/src/app/pages/HomePage.test.tsx` to verify the new section headings render alongside the expected launch destinations.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2253
 Status: [✓] Done

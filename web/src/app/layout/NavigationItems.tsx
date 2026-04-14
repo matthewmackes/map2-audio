@@ -10,6 +10,7 @@ export type ShellNavigationRenderItem = {
   route: string
   label: string
   shortLabel: string
+  homeGroup?: string
   icon: ComponentType<{ size?: number; ariaHidden?: boolean } | SVGProps<SVGSVGElement>>
   description: string
   color: string
