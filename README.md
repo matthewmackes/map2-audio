@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1182** TypeScript | **136** C++/H | **143** Docs | **2085** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1183** TypeScript | **136** C++/H | **143** Docs | **2087** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`613dcbca`](https://github.com/matthewmackes/map2-audio/commit/613dcbca5c78eed958222f18871c37dae68b1aa0) | T1010 tighten workspace hub layout usage | Map2 Audio | 2026-04-14 |
+| [`edd4070d`](https://github.com/matthewmackes/map2-audio/commit/edd4070d175c7f87ff186392e8214519f74afe41) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`25aa4c0c`](https://github.com/matthewmackes/map2-audio/commit/25aa4c0c922ed1c935ff29e59f42e72de131df66) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`ab817dae`](https://github.com/matthewmackes/map2-audio/commit/ab817dae61c2da98b4dbeb1218e15724b067c239) | Remove duplicate Platforms control panel strip in Workspa... | Map2 Audio | 2026-04-14 |
 | [`f9d0c192`](https://github.com/matthewmackes/map2-audio/commit/f9d0c192b0791ce99344c6c1f5d7f2fe196e5477) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`7df3e778`](https://github.com/matthewmackes/map2-audio/commit/7df3e778f3f87fbb511fd2d410a9afd32ef6ff52) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`27041938`](https://github.com/matthewmackes/map2-audio/commit/27041938dac686ab02235162f88b6b1102404dff) | Fix Workspace Hub left navigation inventory | Map2 Audio | 2026-04-14 |
 | [`a8de97ee`](https://github.com/matthewmackes/map2-audio/commit/a8de97eea09c674112813c80b77aa0699fe7bec3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`6cfb7489`](https://github.com/matthewmackes/map2-audio/commit/6cfb74897618af76c2372cc0c00acb23e02335c2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`dbfaf49f`](https://github.com/matthewmackes/map2-audio/commit/dbfaf49f31438b4c8e86c30aac8fb175441c10c6) | Ship T1004-subE-subD-subB-subB workspace alias cleanup | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
