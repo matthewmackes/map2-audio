@@ -24358,7 +24358,7 @@ Last updated: 2026-04-14 13:00 EDT - Architect
 Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLauncherPanel), remove dead/leftover code, and bring the surface into alignment with the IBM Carbon Design System per `docs/design/CARBON_CONFORMANCE_STANDARD.md`. Plan file: `.claude/plans/mossy-orbiting-sun.md`.
 
 - [x] T2239 — Delete dead launcher components (`HeroIconLauncher.tsx`/`.css`, `SpinningCubeLauncher.tsx`/`.css`). Verify no imports first (`grep -rn 'HeroIconLauncher\|SpinningCubeLauncher' web/src`). Keep only `StaticHeroIconLauncher`.
-- [ ] T2240 — Unify `HomeStartMenuOverlay` and `ShellLauncherPanel` into a single `<LauncherPanel variant="home"|"workspace">` under `web/src/app/layout/LauncherPanel/`. Eliminates duplicated system-summary, device listing, power menu, and focus-trap code.
+- [x] T2240 — Unify `HomeStartMenuOverlay` and `ShellLauncherPanel` into a single `<LauncherPanel variant="home"|"workspace">` under `web/src/app/layout/LauncherPanel/`. Eliminates duplicated system-summary, device listing, power menu, and focus-trap code.
 - [x] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
 - [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
 - [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
@@ -24380,6 +24380,8 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 - T2244: replaced the launcher and landing-page hardcoded spacing values in `web/src/app/layout/AppShell.css` and `web/src/app/pages/HomePage.css` with Carbon spacing tokens for overlay padding, launcher header/summary gaps, footer spacing, and wallpaper grid sizing, preserving the existing layout while aligning the surface with Carbon token usage.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2240: added `web/src/app/layout/LauncherPanel/LauncherPanel.tsx` as the shared home/workspace launcher surface, then rewired `HomeStartMenuOverlay` and `ShellLauncherPanel` to delegate the shared header, summary, navigation body, and power-menu action chrome to that single component while preserving their wrapper-specific backdrop and trigger behavior.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 13:48 EDT - Codex
+Last updated: 2026-04-14 13:55 EDT - Codex

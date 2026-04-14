@@ -1,14 +1,8 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
-import { Power } from '@carbon/icons-react'
 
-import {
-  MAP2_PLATFORM_NAME,
-  MAP2_PLATFORM_VERSION,
-  Map2BrandMark,
-} from '../components/branding/map2Branding'
-import { NavigationItems, type ShellNavigationRenderItem } from '../layout/NavigationItems'
-import { SystemSummary } from '../layout/SystemSummary'
+import { MAP2_PLATFORM_VERSION } from '../components/branding/map2Branding'
+import { type ShellNavigationRenderItem } from '../layout/NavigationItems'
+import { LauncherPanel } from '../layout/LauncherPanel/LauncherPanel'
 import { buildStartMenuItems } from '../layout/startMenuItems'
 import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -91,60 +85,22 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
         onClick={onClose}
         aria-hidden="true"
       />
-      <Layer
-        id="shell-launcher-panel"
-        className="hp2-overlay__panel"
-        role="menu"
-        aria-label="Platform menu"
-        ref={panelRef}
-      >
-        {/* Header */}
-        <div className="hp2-overlay__header">
-          <div className="hp2-overlay__header-main">
-            <div className="hp2-overlay__header-mark" aria-hidden="true">
-              <Map2BrandMark className="hp2-overlay__header-icon" />
-            </div>
-            <div className="hp2-overlay__header-copy">
-              <strong>{MAP2_PLATFORM_NAME}</strong>
-            </div>
-          </div>
-        </div>
-
-        <SystemSummary
-          classNamePrefix="hp2-overlay"
-          launcherInterfaceSummary={launcherInterfaceSummary}
-          launcherSummaryItems={launcherSummaryItems}
-          pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
-          platformStatusLabels={platformStatusLabels}
-        />
-
-        {/* Navigation Tiles */}
-        <div className="hp2-overlay__body">
-          <NavigationItems items={startMenuTileItems} onNavigate={handleNavigate} variant="launcher" />
-        </div>
-
-        {/* Footer / Power */}
-        <div className="hp2-overlay__footer">
-          <div className="hp2-overlay__power-root">
-            <OverflowMenu
-              aria-label="Power actions"
-              className={`hp2-overlay__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
-              direction="top"
-              flipped
-              iconDescription="Power actions"
-              onClose={() => setPowerMenuOpen(false)}
-              onOpen={() => setPowerMenuOpen(true)}
-              open={powerMenuOpen}
-              renderIcon={Power}
-              size="md"
-            >
-              <OverflowMenuItem itemText="Restart backend" onClick={handleOpenRestartConfirm} />
-              <OverflowMenuItem itemText="Refresh desktop" onClick={handleRefreshPage} />
-              <OverflowMenuItem itemText="Log out" onClick={handleLogOut} />
-            </OverflowMenu>
-          </div>
-        </div>
-      </Layer>
+      <LauncherPanel
+        variant="home"
+        launcherInterfaceSummary={launcherInterfaceSummary}
+        launcherSummaryItems={launcherSummaryItems}
+        pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
+        platformStatusLabels={platformStatusLabels}
+        startMenuTileItems={startMenuTileItems}
+        powerMenuOpen={powerMenuOpen}
+        panelRef={panelRef}
+        onNavigate={handleNavigate}
+        onOpenRestartConfirm={handleOpenRestartConfirm}
+        onRefreshPage={handleRefreshPage}
+        onLogOut={handleLogOut}
+        onPowerMenuOpen={() => setPowerMenuOpen(true)}
+        onPowerMenuClose={() => setPowerMenuOpen(false)}
+      />
     </div>
   )
 }

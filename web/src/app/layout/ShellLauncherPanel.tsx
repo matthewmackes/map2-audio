@@ -1,15 +1,9 @@
 import { useRef } from 'react'
 import type { CSSProperties, RefObject } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
-import { Power } from '@carbon/icons-react'
 
-import {
-  MAP2_PLATFORM_NAME,
-  Map2BrandMark,
-} from '../components/branding/map2Branding'
 import { StaticHeroIconLauncher } from './StaticHeroIconLauncher'
-import { NavigationItems, type ShellNavigationRenderItem } from './NavigationItems'
-import { SystemSummary } from './SystemSummary'
+import { type ShellNavigationRenderItem } from './NavigationItems'
+import { LauncherPanel } from './LauncherPanel/LauncherPanel'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
 import type { LauncherInterfaceSummary } from './useLauncherInterfaceSummary'
@@ -68,65 +62,30 @@ export function ShellLauncherPanel({
         />
 
         {navOpen ? (
-          <Layer
-            id="shell-launcher-panel"
-            className="shell-launcher__panel"
-            role="menu"
-            aria-label="Platform menu"
-            ref={launcherPanelRef}
-          >
-            <div className="shell-launcher__header">
-              <div className="shell-launcher__header-main">
-                <div className="shell-launcher__header-mark" aria-hidden="true">
-                  <Map2BrandMark className="shell-launcher__header-icon" />
-                </div>
-                <div className="shell-launcher__header-copy">
-                  <strong>{MAP2_PLATFORM_NAME}</strong>
-                </div>
-              </div>
-            </div>
-
-            <SystemSummary
-              classNamePrefix="shell-launcher"
-              launcherInterfaceSummary={launcherInterfaceSummary}
-              launcherSummaryItems={launcherSummaryItems}
-              pendingPushConfirmation={pendingPushConfirmation}
-              platformStatusLabels={platformStatusLabels}
-            />
-
-            <div className="shell-launcher__body">
-              <NavigationItems items={startMenuTileItems} onNavigate={onCloseMenus} variant="launcher" />
-            </div>
-
-            <div className="shell-launcher__footer">
-              <div className="shell-launcher__power-root">
-                <OverflowMenu
-                  aria-label="Power actions"
-                  className={`shell-launcher__power-menu-trigger${powerMenuOpen ? ' is-active' : ''}`}
-                  direction="top"
-                  flipped
-                  iconDescription="Power actions"
-                  onClose={() => {
-                    if (powerMenuOpen) {
-                      onTogglePowerMenu()
-                    }
-                  }}
-                  onOpen={() => {
-                    if (!powerMenuOpen) {
-                      onTogglePowerMenu()
-                    }
-                  }}
-                  open={powerMenuOpen}
-                  renderIcon={Power}
-                  size="md"
-                >
-                  <OverflowMenuItem itemText="Restart backend" onClick={onOpenRestartConfirm} />
-                  <OverflowMenuItem itemText="Refresh desktop" onClick={onRefreshPage} />
-                  <OverflowMenuItem itemText="Log out" onClick={onLogOut} />
-                </OverflowMenu>
-              </div>
-            </div>
-          </Layer>
+          <LauncherPanel
+            variant="workspace"
+            launcherInterfaceSummary={launcherInterfaceSummary}
+            launcherSummaryItems={launcherSummaryItems}
+            pendingPushConfirmation={pendingPushConfirmation}
+            platformStatusLabels={platformStatusLabels}
+            startMenuTileItems={startMenuTileItems}
+            powerMenuOpen={powerMenuOpen}
+            panelRef={launcherPanelRef}
+            onNavigate={onCloseMenus}
+            onOpenRestartConfirm={onOpenRestartConfirm}
+            onRefreshPage={onRefreshPage}
+            onLogOut={onLogOut}
+            onPowerMenuOpen={() => {
+              if (!powerMenuOpen) {
+                onTogglePowerMenu()
+              }
+            }}
+            onPowerMenuClose={() => {
+              if (powerMenuOpen) {
+                onTogglePowerMenu()
+              }
+            }}
+          />
         ) : null}
       </div>
     </div>
