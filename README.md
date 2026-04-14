@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1183** TypeScript | **136** C++/H | **143** Docs | **2091** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1190** TypeScript | **136** C++/H | **143** Docs | **2115** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`1690b8d0`](https://github.com/matthewmackes/map2-audio/commit/1690b8d0eda8ba461004f31ab474d33540bd853f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`3db031ad`](https://github.com/matthewmackes/map2-audio/commit/3db031ad96769b8a20156086dc4ce335c35d0c26) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
-| [`f8937c6e`](https://github.com/matthewmackes/map2-audio/commit/f8937c6e393795fd637c233aa2585b756bbdf5e9) | Refine theme workspace tabs and home shell polish | Map2 Audio | 2026-04-14 |
-| [`10f89a48`](https://github.com/matthewmackes/map2-audio/commit/10f89a48c9feab80f4037b1143b0b859671ae05b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`613dcbca`](https://github.com/matthewmackes/map2-audio/commit/613dcbca5c78eed958222f18871c37dae68b1aa0) | T1010 tighten workspace hub layout usage | Map2 Audio | 2026-04-14 |
-| [`edd4070d`](https://github.com/matthewmackes/map2-audio/commit/edd4070d175c7f87ff186392e8214519f74afe41) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`25aa4c0c`](https://github.com/matthewmackes/map2-audio/commit/25aa4c0c922ed1c935ff29e59f42e72de131df66) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
-| [`ab817dae`](https://github.com/matthewmackes/map2-audio/commit/ab817dae61c2da98b4dbeb1218e15724b067c239) | Remove duplicate Platforms control panel strip in Workspa... | Map2 Audio | 2026-04-14 |
+| [`875d6827`](https://github.com/matthewmackes/map2-audio/commit/875d6827bdceadc4ae4491386a60cac98d72258d) | add persistent carbon xp-style taskbar shell | Map2 Audio | 2026-04-14 |
+| [`ded68423`](https://github.com/matthewmackes/map2-audio/commit/ded68423cf6d0a8a2e7fb8de2656678bbbc6e4f7) | make workspace summary cards navigable | Map2 Audio | 2026-04-14 |
+| [`89628b51`](https://github.com/matthewmackes/map2-audio/commit/89628b51796029bbd9d027e0de341887330a9d3b) | add workspace section header regression coverage | Map2 Audio | 2026-04-14 |
+| [`3798f194`](https://github.com/matthewmackes/map2-audio/commit/3798f19411a214899f8a2f793537c3655d3705f4) | enable router future flags in workspace tests | Map2 Audio | 2026-04-14 |
+| [`2bc125ea`](https://github.com/matthewmackes/map2-audio/commit/2bc125eac7bd252ac76e7a7542389172af061aa6) | remove stale workspace hub placeholder import | Map2 Audio | 2026-04-14 |
+| [`eb72d42c`](https://github.com/matthewmackes/map2-audio/commit/eb72d42cc0a0c394e7f75e3d2ace36e8a5e5714d) | seed next 23 frontend backlog tasks | Map2 Audio | 2026-04-14 |
+| [`615f247d`](https://github.com/matthewmackes/map2-audio/commit/615f247d2c0310967f2ef67e8f87fbd57b4fa42e) | close completed workspace migration worklist parents | Map2 Audio | 2026-04-14 |
+| [`bb273104`](https://github.com/matthewmackes/map2-audio/commit/bb273104ca347bc8c3b9b016cdfafc7fb882f24d) | replace landing desktop with carbon home shell | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
