@@ -24365,7 +24365,7 @@ Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLau
 - [ ] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
 - [ ] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
 - [x] T2246 — Swap the custom power menu for Carbon `OverflowMenu` only; delete the `.hp2-overlay__power-button` CSS block (~40 lines) and the unused `.hp2-window__eyebrow` class.
-- [ ] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
+- [x] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
 - [x] T2248 — Extract a presentational `<SystemSummary>` component (platform version, OS/hostname, AVB/AVDECC status, detected audio/MIDI interfaces) and reuse it on both the landing grid and the workspace `LauncherPanel`. Align with the Unified Node Pill Directive — do not reintroduce a second node-identity surface.
 
 Completion notes (2026-04-14 13:19 EDT - Codex):
@@ -24376,6 +24376,8 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 - T2241: extracted `web/src/app/hooks/useFocusTrap.ts`, replaced the duplicated launcher/start-menu focus-trap implementations with the shared hook, and added focused hook coverage in `web/src/app/hooks/useFocusTrap.test.tsx`.
 - T2248: extracted `web/src/app/layout/SystemSummary.tsx` so launcher metadata, status pills, node pill, and detected interface lists render from one presentational component in both the landing start menu and workspace launcher panel without introducing a second node-identity surface.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useFocusTrap.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2247: replaced the boot splash `ProgressBar` with Carbon `InlineLoading`, added explicit `role="status"` / `aria-live="polite"` semantics to the splash footer, and refreshed the HomePage regression to assert the new loading announcement without changing boot timing behavior.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 13:37 EDT - Codex
+Last updated: 2026-04-14 13:42 EDT - Codex

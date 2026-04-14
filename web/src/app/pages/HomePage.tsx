@@ -2,7 +2,7 @@ import type { MouseEvent } from 'react'
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Maximize, Minimize } from '@carbon/icons-react'
-import { Button, Menu, MenuItem, ProgressBar } from '@carbon/react'
+import { Button, InlineLoading, Menu, MenuItem } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -128,13 +128,15 @@ export function HomePage() {
           <h1 className="hp2-boot__title">{MAP2_PLATFORM_NAME}</h1>
           <p className="hp2-boot__subtitle">Initializing the Carbon-governed pre-Warp desktop session and restoring platform context.</p>
         </div>
-        <div className="hp2-boot__progress">
-          <ProgressBar
-            label="Boot progress"
-            helperText="Restoring workplace shell"
-            hideLabel
-            value={null}
+        <div className="hp2-boot__progress" role="status" aria-live="polite">
+          <InlineLoading
+            status="active"
+            description="Restoring workplace shell"
+            iconDescription="Boot in progress"
           />
+          <p className="hp2-boot__progress-copy">
+            Bringing the Carbon shell online and restoring the last desktop session state.
+          </p>
         </div>
       </section>
     )

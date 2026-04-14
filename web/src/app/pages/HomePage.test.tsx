@@ -268,6 +268,7 @@ describe('HomePage landing', () => {
 
     expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.getByRole('status')).toHaveTextContent('Restoring workplace shell')
     expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
     expect(screen.queryByTestId('home-desktop')).toBeNull()
 
