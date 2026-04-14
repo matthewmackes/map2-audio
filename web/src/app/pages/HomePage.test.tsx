@@ -8,6 +8,7 @@ import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 import { HOME_LANDING_PREFERENCES_STORAGE_KEY } from './homeLandingPreferences'
 import { MAP2_PLATFORM_VERSION } from '../components/branding/map2Branding'
+import { resetPrefetchedRoutesForTests } from '../routePrefetch'
 
 const originalFetch = global.fetch
 const mockSpecialSettingsState = {
@@ -238,6 +239,8 @@ describe('HomePage landing', () => {
     mockSpecialSettingsState.updateSettings.mockReset()
     mockReducedEffectsPreference.prefersReducedMotion = false
     mockReducedEffectsPreference.shouldReduceEffects = false
+    window.sessionStorage.clear()
+    resetPrefetchedRoutesForTests()
   })
 
   afterEach(() => {
@@ -389,6 +392,30 @@ describe('HomePage landing', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Workspace' }))
     expect(screen.getByTestId('location-probe').textContent).toBe('/workspace/platforms/overview')
+  })
+
+  it('deep-links the landing system-status rail card into the workspace surfaces', async () => {
+    renderHome()
+
+    fireEvent.click(await screen.findByRole('link', { name: /Node, interfaces, and platform health/i }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/workspace/platforms/overview')
+  })
+
+  it('deep-links the landing preferences rail card into theme settings', async () => {
+    renderHome()
+
+    fireEvent.click(await screen.findByRole('link', { name: /Presentation preferences/i }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
+  })
+
+  it('marks the most recently active workspace tile when returning home', async () => {
+    window.sessionStorage.setItem('map2:home-shell-recent-route', '/snapshot-editor')
+
+    renderHome()
+
+    const snapshotTile = await screen.findByRole('link', { name: /Snapshot Editor/i })
+    expect(snapshotTile).toHaveAttribute('data-recent-route', 'true')
+    expect(snapshotTile).toHaveTextContent('Recent')
   })
 
   it('shows the shared system summary in the landing side rail', async () => {

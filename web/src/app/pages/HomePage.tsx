@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
 import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import {
@@ -18,12 +18,14 @@ import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSumma
 import { useAppShellPresentation } from '../layout/useAppShellPresentation'
 import { SystemSummary } from '../layout/SystemSummary'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
 import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 
 export function HomePage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { shouldReduceEffects } = useReducedEffectsPreference()
   const { data: hostInfo } = useHostMachineInfo()
@@ -37,6 +39,7 @@ export function HomePage() {
   const landingPreferences = useMemo(() => readHomeLandingPreferences(), [])
   const shouldShowSplash = useMemo(() => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(), [landingPreferences.bootSplashEnabled])
   const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
+  const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
   const {
     launcherSummaryItems,
     platformStatusLabels,
@@ -136,9 +139,9 @@ export function HomePage() {
         <HeaderGlobalBar>
           <Tag type="blue">Carbon landing</Tag>
           <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
-            <OverflowMenuItem itemText="Open Workspace" onClick={() => navigate('/workspace/platforms/overview')} />
-            <OverflowMenuItem itemText="Display settings" onClick={() => navigate('/platforms/theme')} />
-            <OverflowMenuItem itemText="About MAP2" onClick={() => navigate('/platforms/about')} />
+            <OverflowMenuItem itemText="Open Workspace" onClick={() => navigateHomeShellRoute(navigate, '/workspace/platforms/overview')} />
+            <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
+            <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
           </OverflowMenu>
         </HeaderGlobalBar>
       </Header>
@@ -153,13 +156,30 @@ export function HomePage() {
                 Launch the core MAP2 workspaces from a single Carbon landing surface with fast access to editing, routing, performance, and system operations.
               </p>
               <div className="hp2-home-shell__hero-actions">
-                <Button renderIcon={ArrowRight} onClick={() => navigate('/workspace/platforms/overview')}>
+                <Button
+                  renderIcon={ArrowRight}
+                  onClick={() => navigateHomeShellRoute(navigate, '/workspace/platforms/overview')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
+                  onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
+                >
                   Open Workspace
                 </Button>
-                <Button kind="tertiary" renderIcon={Launch} onClick={() => navigate('/snapshot-editor')}>
+                <Button
+                  kind="tertiary"
+                  renderIcon={Launch}
+                  onClick={() => navigateHomeShellRoute(navigate, '/snapshot-editor')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/snapshot-editor')}
+                  onFocus={() => prefetchHomeShellRoute('/snapshot-editor')}
+                >
                   Open Snapshot Editor
                 </Button>
-                <Button kind="ghost" renderIcon={Settings} onClick={() => navigate('/platforms/theme')}>
+                <Button
+                  kind="ghost"
+                  renderIcon={Settings}
+                  onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/platforms/theme')}
+                  onFocus={() => prefetchHomeShellRoute('/platforms/theme')}
+                >
                   Display settings
                 </Button>
               </div>
@@ -168,22 +188,26 @@ export function HomePage() {
             <section className="hp2-home-shell__workspace-strip" aria-label="Workspace launch grid">
               {startMenuTileItems.map((item) => {
                 const Icon = item.icon
+                const isRecent = isHomeShellTileRecent(recentRoute, item.route)
                 return (
                   <ClickableTile
                     key={item.route}
-                    className="hp2-home-shell__workspace-tile"
+                    className={`hp2-home-shell__workspace-tile${isRecent ? ' is-recent' : ''}`}
                     href={item.route}
                     onClick={(event) => {
                       event.preventDefault()
-                      navigate(item.route)
+                      navigateHomeShellRoute(navigate, item.route)
                     }}
+                    onMouseEnter={() => prefetchHomeShellRoute(item.route)}
+                    onFocus={() => prefetchHomeShellRoute(item.route)}
+                    data-recent-route={isRecent ? 'true' : 'false'}
                   >
                     <div className="hp2-home-shell__workspace-tile-head">
                       <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
                         <Icon size={20} aria-hidden />
                       </span>
                       <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
-                        {item.shortLabel}
+                        {isRecent ? 'Recent' : item.shortLabel}
                       </Tag>
                     </div>
                     <div className="hp2-home-shell__workspace-copy">
@@ -197,12 +221,22 @@ export function HomePage() {
           </Column>
 
           <Column lg={6} md={8} sm={4} className="hp2-home-shell__rail">
-            <Tile className="hp2-home-shell__rail-card hp2-home-shell__rail-card--summary">
+            <ClickableTile
+              className="hp2-home-shell__rail-card hp2-home-shell__rail-card--summary"
+              href="/workspace/platforms/overview"
+              onClick={(event) => {
+                event.preventDefault()
+                navigateHomeShellRoute(navigate, '/workspace/platforms/overview')
+              }}
+              onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
+              onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
+            >
               <div className="hp2-home-shell__rail-card-head">
                 <div>
                   <p className="hp2-home-shell__eyebrow">System Status</p>
                   <h2>Node, interfaces, and platform health</h2>
                 </div>
+                <span className="hp2-home-shell__rail-card-link">Open workspace</span>
               </div>
               <SystemSummary
                 classNamePrefix="map2-launcher"
@@ -211,14 +245,24 @@ export function HomePage() {
                 pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
                 platformStatusLabels={platformStatusLabels}
               />
-            </Tile>
+            </ClickableTile>
 
-            <Tile className="hp2-home-shell__rail-card">
+            <ClickableTile
+              className="hp2-home-shell__rail-card"
+              href="/platforms/theme"
+              onClick={(event) => {
+                event.preventDefault()
+                navigateHomeShellRoute(navigate, '/platforms/theme')
+              }}
+              onMouseEnter={() => prefetchHomeShellRoute('/platforms/theme')}
+              onFocus={() => prefetchHomeShellRoute('/platforms/theme')}
+            >
               <div className="hp2-home-shell__rail-card-head">
                 <div>
                   <p className="hp2-home-shell__eyebrow">Landing Mode</p>
                   <h2>Presentation preferences</h2>
                 </div>
+                <span className="hp2-home-shell__rail-card-link">Open theme settings</span>
               </div>
               <div className="hp2-home-shell__preference-list">
                 <div>
@@ -230,7 +274,7 @@ export function HomePage() {
                   <p>{landingPreferences.bootSplashEnabled ? 'Enabled for this browser' : 'Disabled by default'}</p>
                 </div>
               </div>
-            </Tile>
+            </ClickableTile>
           </Column>
         </Grid>
       </Content>

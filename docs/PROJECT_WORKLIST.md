@@ -24621,7 +24621,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2260
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add route-aware active-state styling to home launch tiles
 Description:
 - Goal / acceptance criteria: When the operator returns home, tiles that correspond to the current or most recently active workspace should render a clear active or recent-state treatment.
@@ -24630,10 +24630,17 @@ Description:
 - Estimated effort: Low
 - Required outputs: active-state logic, tile styling updates, and HomePage regression assertions.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 12:58 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/pages/homeShellNavigation.ts` and `AppShell.tsx` route-tracking so the shell records the last non-home route in session storage whenever operators leave the landing page.
+  - Updated `web/src/app/pages/HomePage.tsx` / `.css` so launch tiles now detect when they match the most recently active routed workspace and render a clearer recent-state treatment instead of behaving like a static dashboard.
+  - Extended `web/src/app/pages/HomePage.test.tsx` to verify the recent route marker appears on the matching tile after returning home.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2261
-Status: [ ] Todo
+Status: [✓] Done
 Title: Deep-link the home shell rail cards into their corresponding management surfaces
 Description:
 - Goal / acceptance criteria: Make the status and preference cards on the right rail link to their canonical destination pages such as Theme, host management, or workspace summaries.
@@ -24642,7 +24649,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: card CTA wiring, accessible link/button treatment, and route-focused regression coverage.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 12:58 EDT - Codex
+- Completion notes:
+  - Reworked the right-rail cards in `web/src/app/pages/HomePage.tsx` into clickable Carbon tiles that route directly to the canonical management surfaces instead of remaining informational-only.
+  - Wired the system-status card to the workspace hub and the presentation-preferences card to the theme workspace, while adding inline CTA copy to make the destination explicit.
+  - Added route-focused assertions in `web/src/app/pages/HomePage.test.tsx` proving both rail cards navigate to the correct surfaces.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2262
 Status: [ ] Todo
@@ -24735,7 +24749,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2269
-Status: [ ] Todo
+Status: [✓] Done
 Title: Replace fixed home-shell CTA routing with route-prefetch-aware navigation helpers
 Description:
 - Goal / acceptance criteria: Route the home-shell CTA buttons and tiles through a shared prefetch-aware navigation helper so the landing surface warms likely destinations consistently.
@@ -24744,7 +24758,14 @@ Description:
 - Estimated effort: Low
 - Required outputs: helper extraction or reuse, HomePage rewiring, and targeted regression validation around navigation behavior.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 12:58 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/pages/homeShellNavigation.ts` as the shared helper for home-shell route prefetch and navigation so the hero CTAs, landing menu actions, launch tiles, and rail cards all route through the same contract.
+  - Rewired `web/src/app/pages/HomePage.tsx` so its buttons and clickable tiles prefetch on hover/focus before navigating, instead of calling `navigate(...)` directly.
+  - Kept the helper scoped to the home shell so the landing page now benefits from the same route-warming behavior as the canonical launcher surfaces without duplicating prefetch logic inline.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2270
 Status: [ ] Todo

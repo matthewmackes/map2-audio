@@ -19,6 +19,7 @@ import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { useLauncherInterfaceSummary } from './useLauncherInterfaceSummary'
 import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
+import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 export function AppShell({ children }: { children: ReactNode }) {
@@ -110,6 +111,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener(SHELL_OPEN_RESTART_CONFIRM_EVENT, handleOpenRestartConfirm)
     }
   }, [closeShellMenus, setRestartConfirmOpen])
+
+  useEffect(() => {
+    writeHomeShellRecentRoute(location.pathname)
+  }, [location.pathname])
 
   return (
     <div
