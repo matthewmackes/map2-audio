@@ -24233,7 +24233,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - No dedicated `PhysicalSurfaceUnitPage` or physical-surfaces shell/page test files currently exist in `web/src/app/pages`, so this slice relied on typecheck validation and explicit worklist tracking of the remaining test-coverage gap.
   - ID: T1006-subE
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Unify card border-radius and tile styling across workspace sections
     Description:
     - Goal / acceptance criteria: All Carbon `Tile` elements inside the workspace hub content area use consistent `border-radius: 1rem` styling, matching the shell summary cards and nav sidebar.
@@ -24253,7 +24253,13 @@ Subtasks:
       4. Open each workspace route in the browser and visually verify all tiles have consistent rounded corners.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:37 EDT - Codex
+    - Completion notes:
+      - Added a scoped `.workspace-hub-shell__content .cds--tile { border-radius: 1rem; }` override in `WorkspaceHubShell.css` so embedded workspace tiles now align with the hub summary cards and sidebar radius.
+      - Updated `AudioArtifactsPage.css` so `.aap__table-tile`, `.aap-detail-panel`, and `.aap-sync-drawer` explicitly use the same `1rem` radius instead of falling back to a mismatched default.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/AudioArtifactsPage.test.tsx` -> PASS
   - ID: T1006-subF
     Status: [✓] Done
     Title: Clean up workspace hub navigation sidebar text and density

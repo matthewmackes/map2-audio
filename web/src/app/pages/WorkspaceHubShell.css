@@ -21,6 +21,10 @@
   min-height: 100%;
 }
 
+.workspace-hub-shell__content .cds--tile {
+  border-radius: 1rem;
+}
+
 .workspace-hub-shell__content-body {
   display: grid;
   gap: 0.8rem;

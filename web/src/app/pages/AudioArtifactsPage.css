@@ -221,6 +221,7 @@
 }
 
 .aap__table-tile {
+  border-radius: 1rem;
   padding: 0 !important;
   overflow: hidden;
   min-width: 0;
@@ -310,6 +311,7 @@
 
 .aap-detail-panel,
 .aap-sync-drawer {
+  border-radius: 1rem;
   padding: 0 !important;
   min-width: 0;
 }
