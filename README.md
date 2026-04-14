@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1194** TypeScript | **136** C++/H | **144** Docs | **2136** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1195** TypeScript | **136** C++/H | **144** Docs | **2139** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b5c850bb`](https://github.com/matthewmackes/map2-audio/commit/b5c850bb921189affca7617f067e2bc1b3fe551a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
+| [`2497bd0a`](https://github.com/matthewmackes/map2-audio/commit/2497bd0aed7485ce4afc1a703221ba37e6cdb922) | refactor shared shell summary data | Map2 Audio | 2026-04-14 |
+| [`315aaefa`](https://github.com/matthewmackes/map2-audio/commit/315aaefa91e87c398ef92e572e03be57c4b4e481) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`41a1b049`](https://github.com/matthewmackes/map2-audio/commit/41a1b04918c563b186c406b10304c1bd7343f694) | test: add workspace visual smoke harness | Map2 Audio | 2026-04-14 |
 | [`9bc324b8`](https://github.com/matthewmackes/map2-audio/commit/9bc324b8acb9ad76aa0440f4841fcf352519ee70) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`c650f0c8`](https://github.com/matthewmackes/map2-audio/commit/c650f0c8dcecea13f0947ce5ceac214d2b621eaa) | feat: personalize home landing tiles | Map2 Audio | 2026-04-14 |
 | [`95fd31ff`](https://github.com/matthewmackes/map2-audio/commit/95fd31ff68194a1f0b1a7266289ed5b0a36c51e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`651731f0`](https://github.com/matthewmackes/map2-audio/commit/651731f01d9d57f75d380e1c4c5752e0f09d949e) | feat: replace shell chrome with global tree nav | Map2 Audio | 2026-04-14 |
-| [`4211dd12`](https://github.com/matthewmackes/map2-audio/commit/4211dd12f1446a72367b17d7dba288b9a43c6552) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`cd3c4b06`](https://github.com/matthewmackes/map2-audio/commit/cd3c4b06fa12a8056f79aae5f372be0c9b8cc588) | feat: ship pending shell and workspace updates | Map2 Audio | 2026-04-14 |
-| [`7e3981c1`](https://github.com/matthewmackes/map2-audio/commit/7e3981c18e59e4b82cfc3c265da59c8e3e8abc8a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
