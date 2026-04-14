@@ -47,14 +47,16 @@ type TreeItemDefinition = {
   route?: string
   icon?: ComponentType<any>
   children?: TreeItemDefinition[]
+  isGroupHeader?: boolean
 }
 
 const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
-  '/workspace',
   '/snapshot-editor',
+  'INSTRUMENTS_GROUP_HEADER',
   '/brain',
+  'HARDWARE_GROUP_HEADER',
   '/midi-hub',
   '/chains',
   '/dsp',
@@ -73,6 +75,7 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/lcd',
   '/cpu-performance',
   '/welcome',
+  '/workspace',
 ] as const
 
 const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
@@ -103,6 +106,11 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/snapshot-editor': 'Snapshot Editor',
   '/labs/push-surface': 'Push Surface',
   '/ground-control-pro': 'Ground Control Pro',
+}
+
+const GROUP_HEADER_LABELS: Record<string, string> = {
+  'INSTRUMENTS_GROUP_HEADER': 'Instruments',
+  'HARDWARE_GROUP_HEADER': 'Hardware',
 }
 
 function normalizeTarget(target: string): string {
@@ -169,24 +177,41 @@ function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): 
 }
 
 function buildTreeItems(): TreeItemDefinition[] {
-  return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
+  const items: TreeItemDefinition[] = []
+  
+  for (const route of TOP_LEVEL_ROUTE_ORDER) {
+    // Handle group headers
+    if (route.endsWith('_GROUP_HEADER')) {
+      const label = GROUP_HEADER_LABELS[route]
+      if (label) {
+        items.push({
+          id: route,
+          label,
+          isGroupHeader: true,
+        })
+      }
+      continue
+    }
+
     const launcherItem = getLauncherCatalogItem(route)
     const navigationItem = findNavigationItem(route)
     const label = resolveTreeLabel(route, launcherItem?.heroTitle ?? navigationItem?.label)
 
     if (!label) {
-      return []
+      continue
     }
 
     const children = getLauncherCatalogTreeChildren(route).map((child) => buildChildTreeItem(route, child))
-    return [{
+    items.push({
       id: route,
       label,
       route: children.length > 0 ? children[0]?.route ?? route : normalizeTarget(route),
       icon: TREE_ICON_OVERRIDES[route] ?? launcherItem?.icon ?? navigationItem?.icon,
       children,
-    }]
-  })
+    })
+  }
+  
+  return items
 }
 
 function findActiveNodeId(items: TreeItemDefinition[], pathname: string, search: string): string | null {
@@ -239,6 +264,15 @@ function renderTreeItems(
   }
 
   return items.map((item) => {
+    // Render group headers as non-interactive elements
+    if (item.isGroupHeader) {
+      return (
+        <div key={item.id} className="global-tree-nav__group-header">
+          {item.label}
+        </div>
+      )
+    }
+
     const selected = item.id === activeNodeId
 
     if (item.children?.length) {

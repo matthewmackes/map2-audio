@@ -130,6 +130,16 @@
   color: inherit;
 }
 
+.global-tree-nav__group-header {
+  padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: var(--cds-spacing-03, 0.5rem);
+}
+
 .global-tree-nav__tree-node.is-selected > .cds--tree-node__label .global-tree-nav__node-copy {
   background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, transparent);
   color: var(--cds-text-primary, #f4f4f4);

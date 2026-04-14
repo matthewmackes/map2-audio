@@ -32,17 +32,19 @@ Description:
   - RETIRE: ShellLauncherPanel.tsx, TaskbarStatusStrip.tsx, LauncherPanel/, TaskbarClock.tsx
 - Node awareness: useNodeTopology hook drives root label; NodeMiniCard popover on root click; node switch propagates to all tree children
 Assigned to: Codex
-Last updated: 2026-04-14 20:27 EDT - Codex
+Last updated: 2026-04-14 22:11 EDT - Codex
 - Completion notes:
   - Added `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx` and `GlobalTreeNav.css`, replacing the bottom launcher/taskbar shell with a persistent 256px Carbon TreeView rail that covers Home, Control Panel, Snapshot Editor, Brain, MIDI Hub, hardware routes, and MPX-1/IntelFX sub-views.
   - Added launcher tree-child metadata in `web/src/app/data/launcherCatalog.tsx`, including nav-only parents such as `/midi-hub`, so the rail can expose routed children even when a parent is intentionally hidden from the storefront catalog.
   - Refactored `AppShell.tsx` and `AppShell.css` to render the left rail plus content grid, move restart/refresh/logout into the rail footer, and keep node-aware selection available from a root node selector popover.
   - Removed the inner sidebar ownership from `WorkspaceHubShell.tsx` and `MidiHubShell.tsx`; their routed pages now render as content-only shells under the shared global tree rail.
   - Replaced the old AppShell taskbar/start-menu tests with focused global-rail regressions and added launcher-catalog coverage for exported tree children.
+  - Follow-up polish grouped the rail into explicit `Instruments` and `Hardware` sections with non-interactive headers so the long top-level tree scans more clearly without changing the underlying route model.
 - Validation:
   - `npm --prefix web run typecheck` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx` -> PASS
   - `npm --prefix web run build` -> PASS
+  - Follow-up validation: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
 
 ---
 
