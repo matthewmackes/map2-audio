@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (legacy utility route retirement documented)
+> **Last Updated**: April 14, 2026 (retired route cleanup closure documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1038,6 +1038,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: When retiring or reparenting a utility route, remove the old page from `App.tsx`, remove any stale top-level tree ordering/icon overrides in `GlobalTreeNav.tsx`, and add the surviving nested destination through the parent route’s `treeChildren` metadata in `launcherCatalog.tsx`. Redirect retired legacy URLs to the approved replacement instead of leaving dead standalone pages mounted.
 - **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx src/app/App.platformRoute.test.tsx`; `npm --prefix web run build`
 - **Lesson**: On MAP2’s global rail shell, route retirement is cross-layer. If router, tree ordering, and launcher tree metadata do not change together, the platform becomes internally inconsistent.
+
+**95. Retired Platform Routes Need Dead-File, Deep-Link, And Inventory Cleanup After Redirect Cutover**
+- **Files**: `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/PerformPage.tsx`, `web/src/app/utils/nodeDisplay.ts`, `docs/MOBILE_RESPONSIVE_PROMPT.md`, `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`, `docs/design/CARBON_ROUTE_COMPONENT_INVENTORY.md`
+- **Problem**: Even after `/dsp` and `/cpu-performance` were removed from the router and tree, operators could still hit stale deep links from About/Perform, and active route-inventory docs still advertised the retired pages as supported surfaces.
+- **Root Cause**: Redirect cutover handled route resolution, but dead page files, supporting link targets, page-key helpers, and inventory docs were left behind as a separate consistency layer.
+- **Fix**: Delete the retired page files once no runtime imports remain, repoint any remaining operator-facing deep links to supported surfaces, remove obsolete page-key branches, and refresh active documentation inventories so they match the live route table.
+- **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx`; `npm --prefix web run build`; `rg -n '/dsp|/cpu-performance|DSPPage|CPUPerformancePage' web/src docs --glob '!web/dist/**' --glob '!docs/archive/**' --glob '!docs/fit-for-purpose-evidence/**'`
+- **Lesson**: A redirect is only the first half of route retirement. Finish the dead-file, deep-link, helper, and active-doc cleanup or the platform will keep describing pages that no longer exist.
 
 ### Server Management Gotchas
 
@@ -2085,6 +2093,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - Retired Route Cleanup Closure
+- **Section**: Gotchas & Learned Fixes (#95), Update Log
+- **Change**: Documented that retired platform routes still need dead-file deletion, supported deep-link replacements, helper cleanup, and active route-inventory updates after redirect cutover.
+- **Reason**: `/dsp` and `/cpu-performance` remained visible through About/Perform links and active docs even after the shell/router cleanup landed.
+- **Impact**: Future route retirements should close the full consistency loop instead of stopping at redirects and nav removal.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/PerformPage.tsx`, `web/src/app/utils/nodeDisplay.ts`, `docs/MOBILE_RESPONSIVE_PROMPT.md`, `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`, `docs/design/CARBON_ROUTE_COMPONENT_INVENTORY.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - Legacy Utility Route Retirement
 - **Section**: Gotchas & Learned Fixes (#94), Update Log

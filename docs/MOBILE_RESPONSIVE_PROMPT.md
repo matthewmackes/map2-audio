@@ -38,12 +38,10 @@ Review every page below. For each, the route, primary file, and UI patterns are 
 | `/library` | `pages/LibraryPage.tsx` | InstalledAssetsTable, IR/NAM loader dialogs, upload dialog |
 | `/midi` | `pages/MIDIPage.tsx` | MIDI mapping table, binding editor, curve display |
 | `/juce-grid` | `pages/JuceGridPage.tsx` | Supported JUCE signal-flow editor — nodes, routing, automation, MIDI mapping, snapshots |
-| `/dsp` | `pages/DSPPage.tsx` | Audio processing metrics, charts |
 | `/edirol-ua1000` | `pages/EdirolUA1000Page.tsx` | Audio interface config form |
 | `/motu-rme` | `pages/MOTURMEPage.tsx` | Audio interface config form |
 | `/hotone-jogg` | `pages/HoToneJoGGPage.tsx` | Audio interface config form |
 | `/host-machine` | `pages/HostMachinePage.tsx` | System info cards, controls |
-| `/cpu-performance` | `pages/CPUPerformancePage.tsx` | CPU profiling, metrics charts |
 | `/engine` | `pages/AudioEnginePage.tsx` | JUCE engine status, controls |
 | `/metering` | `pages/MeteringPage.tsx` | Real-time VU/peak meters via WebSocket |
 | `/pipewire` | `pages/PipeWirePage.tsx` | Audio server status, node list |

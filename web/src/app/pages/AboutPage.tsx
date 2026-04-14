@@ -991,13 +991,13 @@ export function AboutPage() {
             </h2>
           </div>
           <div className="about-page__hardware-grid">
-            <NavLink to="/cpu-performance" className="about-page__hardware-card">
+            <NavLink to="/host-machine" className="about-page__hardware-card">
               <Chip size={28} className="about-page__hardware-icon" />
               <div className="about-page__hardware-title">
-                CPU Performance Guide
+                Host Machine Status
               </div>
               <div className="about-page__hardware-copy">
-                Compare Intel generations & capacity
+                Review hardware and operating-system details
               </div>
             </NavLink>
 
@@ -1025,13 +1025,13 @@ export function AboutPage() {
               </div>
             </button>
 
-            <NavLink to="/cpu-performance" className="about-page__hardware-card">
+            <NavLink to="/engine" className="about-page__hardware-card">
               <ChartLine size={28} className="about-page__hardware-icon" />
               <div className="about-page__hardware-title">
-                Does CPU Matter?
+                Audio Engine Status
               </div>
               <div className="about-page__hardware-copy">
-                Performance gains by generation
+                Open runtime CPU, latency, and health controls
               </div>
             </NavLink>
           </div>

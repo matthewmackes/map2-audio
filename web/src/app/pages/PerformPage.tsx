@@ -793,7 +793,7 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
       <div
         style={{ ...seg, cursor: health.cpuPct > 90 ? 'pointer' : 'default' }}
         onClick={() => {
-          if (health.cpuPct > 90) window.open('/cpu-performance', '_blank', 'noopener')
+          if (health.cpuPct > 90) window.open('/engine', '_blank', 'noopener')
         }}
       >
         <span style={{ color: cpuColor }}>CPU {Math.round(health.cpuPct)}%</span>

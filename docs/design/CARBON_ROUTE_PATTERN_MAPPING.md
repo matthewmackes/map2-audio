@@ -37,12 +37,10 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/juce-grid` | `web/src/app/pages/JuceGridPage.tsx` | Signal-flow editor workspace | `Grid`, `Accordion`, `Toolbar pattern`, `Popover`, `Modal` |
 | `/grid` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |
 | `/grid-3d` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |
-| `/dsp` | `web/src/app/pages/DSPPage.tsx` | Signal processing control panel | `Tabs`, `DataTable`, `NumberInput`, `Slider`, `Toggle` |
 | `/edirol-ua1000` | `web/src/app/pages/EdirolUA1000Page.tsx` | Hardware profile dashboard | `Tile`, `DataTable`, `Tag`, `InlineNotification` |
 | `/motu-rme` | `web/src/app/pages/MOTURMEPage.tsx` | Hardware profile dashboard | `Tile`, `DataTable`, `Tag`, `InlineNotification` |
 | `/hotone-jogg` | `web/src/app/pages/HoToneJoGGPage.tsx` | Hardware profile dashboard | `Tile`, `DataTable`, `Tag`, `InlineNotification` |
 | `/host-machine` | `web/src/app/pages/HostMachinePage.tsx` | System health dashboard | `Grid`, `Tile`, `DataTable`, `ProgressBar`, `Tag` |
-| `/cpu-performance` | `web/src/app/pages/CPUPerformancePage.tsx` | Metrics and benchmark report | `Grid`, `DataTable`, charts + `Tag` severity labels |
 | `/engine` | `web/src/app/pages/AudioEnginePage.tsx` | Realtime engine operations panel | `Tabs`, `Tile`, `NumberInput`, `Toggle`, `InlineNotification` |
 | `/metering` | `web/src/app/pages/MeteringPage.tsx` | Telemetry dashboard | `Grid`, `Tile`, chart pattern wrappers, `Tag` |
 | `/pipewire` | `web/src/app/pages/PipeWirePage.tsx` | Runtime status + controls | `DataTable`, `InlineNotification`, `Modal`, `CodeSnippet` pattern |

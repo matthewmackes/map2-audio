@@ -7,7 +7,6 @@ export const NODE_PAGE_KEYS = {
   home: 'home',
   audioEngine: 'audio-engine',
   lv2Plugins: 'lv2-plugins',
-  dsp: 'dsp',
   chains: 'chains',
   midiHub: 'midi-hub',
   labs: 'labs',
@@ -142,9 +141,6 @@ export function pageKeyFromPathname(pathname: string): string | null {
   }
   if (canonicalPathname.startsWith('/plugins')) {
     return NODE_PAGE_KEYS.lv2Plugins
-  }
-  if (canonicalPathname.startsWith('/dsp')) {
-    return NODE_PAGE_KEYS.dsp
   }
   if (canonicalPathname.startsWith('/chains')) {
     return NODE_PAGE_KEYS.chains

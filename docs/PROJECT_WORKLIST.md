@@ -7586,6 +7586,27 @@ Last updated: 2026-04-14 23:19 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
   - `npm --prefix web run build` -> PASS
 
+ID: T2282
+Status: [✓] Done
+Title: Remove stale platform references to retired DSP and CPU utility pages
+Description:
+- Goal / acceptance criteria: Finish the `/dsp` and `/cpu-performance` retirement by removing dead page files, stale deep links, node-display assumptions, and active route-inventory docs that still present those pages as first-class platform surfaces.
+- Why it matters: A task is not complete if any required platform layer remains inconsistent; hidden-but-documented pages and dead links still misrepresent the platform.
+- Dependencies: T2281
+- Estimated effort: Medium
+- Required outputs: link cleanup, dead-file retirement, route-doc refresh, and focused validation.
+Assigned to: Codex
+Last updated: 2026-04-14 23:33 EDT - Codex
+- Completion notes:
+  - Removed the dead routed page implementations `web/src/app/pages/DSPPage.tsx` and `web/src/app/pages/CPUPerformancePage.tsx` plus the unused `CPUPerformancePage.css` stylesheet, completing the frontend-side retirement after the router redirect cutover.
+  - Repointed remaining live platform links so `AboutPage.tsx` now sends operators to supported `Host Machine` and `Audio Engine` surfaces, and `PerformPage.tsx` now opens `/engine` instead of the removed CPU route when CPU pressure is high.
+  - Simplified `web/src/app/utils/nodeDisplay.ts` by removing the retired DSP page-key branch so node-context helpers no longer describe a page that cannot exist.
+  - Refreshed active route inventory docs in `docs/MOBILE_RESPONSIVE_PROMPT.md`, `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`, and `docs/design/CARBON_ROUTE_COMPONENT_INVENTORY.md` so the platform documentation no longer lists `/dsp` or `/cpu-performance` as first-class routes.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (with existing React suspended-resource `act(...)` warnings)
+  - `npm --prefix web run build` -> PASS
+
 ## Tesira
 
 ID: T030
