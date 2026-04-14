@@ -24161,7 +24161,7 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx` -> PASS
       - No dedicated `PhysicalSurfacesOverviewPage` test file currently exists in `web/src/app/pages`, so this slice relied on typecheck plus the existing workspace-hub and outboard coverage.
   - ID: T1006-subB
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Unify page headers across all workspace sections with a compact treatment
     Description:
     - Goal / acceptance criteria: Replace the oversized `PageHeader` instances inside `/workspace/*` routes with a consistent, compact section header that does not duplicate the brand block, removes the CSS `::before` "Platform workspace" eyebrow, and uses consistent typography sizing across all four sections.
@@ -24187,7 +24187,15 @@ Subtasks:
       7. Run typecheck and all affected page tests after changes.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 09:25 EDT - Codex
+    - Completion notes:
+      - Added the new compact `WorkspaceSectionHeader` component in `web/src/app/components/shared/WorkspaceSectionHeader.tsx` / `.css`, using the lighter border-only shell, 3px top accent bar, compact typography, and optional eyebrow/actions slot required for embedded `/workspace/*` sections.
+      - Replaced the heavyweight `PageHeader` usage in `OutboardHardwareOverviewPage.tsx`, `OutboardHardwareDevicePage.tsx`, `PhysicalSurfacesOverviewPage.tsx`, and `PhysicalSurfaceUnitPage.tsx` with the shared compact header, while also tightening the user-facing titles/subtitles for the outboard and physical-surfaces pages.
+      - Scoped `web/src/app/components/PageHeader.css` so the legacy `"Platform workspace"` pseudo-eyebrow no longer appears inside `.workspace-hub-shell__content`, which keeps the remaining `PageHeader` consumers intact outside the workspace hub.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/AudioArtifactsPage.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
+      - No dedicated `PhysicalSurfacesOverviewPage` or `PhysicalSurfaceUnitPage` test files currently exist in `web/src/app/pages`, so this slice relied on typecheck plus the existing outboard/audio-artifacts/workspace-hub coverage.
   - ID: T1006-subC
     Status: [ ] Todo
     Title: Consolidate redundant metric card grids
@@ -24344,7 +24352,7 @@ Subtasks:
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
       - No dedicated `PhysicalSurfacesOverviewPage` or `PhysicalSurfaceUnitPage` test files currently exist in `web/src/app/pages`, so this slice relied on typecheck plus existing workspace-hub/outboard coverage.
   - ID: T1006-subI
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Tighten embedded AudioArtifacts layout inside the workspace hub
     Description:
     - Goal / acceptance criteria: When `AudioArtifactsPage` renders with `renderShell={false}` inside the workspace hub, the header is compact (no icon box, `<h2>` instead of `<h1>`, no subtitle), and the category header omits the description line.
@@ -24362,7 +24370,13 @@ Subtasks:
       3. Run typecheck and audio artifacts page tests.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 09:25 EDT - Codex
+    - Completion notes:
+      - Tightened the embedded `AudioArtifactsPage` header path so `renderShell={false}` now suppresses the icon box, renders the title as `<h2 className="aap__title">`, and omits the redundant subtitle copy that duplicated the workspace-hub context.
+      - Trimmed the embedded category header path so the description paragraph is only rendered in the standalone shell, leaving just the category title and right-side status/action tags inside `/workspace/audio-artifacts`.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/AudioArtifactsPage.test.tsx` -> PASS
   - ID: T1006-subJ
     Status: [ ] Todo
     Title: Final visual polish pass — spacing, transitions, empty states, typography

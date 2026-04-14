@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { PageHeader } from '../components/PageHeader'
+import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
 import type { EnrichedPhysicalSurfaceMatch } from '../../map2/types'
 import type { PhysicalSurfacesShellContextValue } from './physicalSurfacesShared'
@@ -65,7 +65,8 @@ export function PhysicalSurfaceUnitPage({
   if (!unit) {
     return (
       <div className="physical-surfaces-page">
-        <PageHeader
+        <WorkspaceSectionHeader
+          eyebrow="Physical Surfaces"
           title="Physical Surface Not Found"
           subtitle="The requested unit is not present in the shared stack summary."
         />
@@ -75,9 +76,10 @@ export function PhysicalSurfaceUnitPage({
 
   return (
     <div className="physical-surfaces-page">
-      <PageHeader
+      <WorkspaceSectionHeader
+        eyebrow="Physical Surfaces"
         title={unit.display_name}
-        subtitle="Shared physical-surface detail page inside Enriched_MIDI_Physical_Surfaces."
+        subtitle={unit.status_reason}
         actions={<Tag type={statusTagType(unit.status)}>{unit.status}</Tag>}
       />
 

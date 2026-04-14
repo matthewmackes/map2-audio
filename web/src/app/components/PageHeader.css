@@ -105,6 +105,11 @@
   font-weight: 600;
 }
 
+.workspace-hub-shell__content .page-header__copy::before {
+  content: none;
+  display: none;
+}
+
 .page-header__aside {
   display: flex;
   flex-direction: column;

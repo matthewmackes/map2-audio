@@ -2,7 +2,7 @@ import { Button, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 
-import { PageHeader } from '../components/PageHeader'
+import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareShellContextValue,
@@ -32,7 +32,8 @@ export function OutboardHardwareDevicePage({
   if (!device) {
     return (
       <div className="outboard-hardware-page">
-        <PageHeader
+        <WorkspaceSectionHeader
+          eyebrow="Outboard Hardware"
           title="Outboard Hardware Unit Not Found"
           subtitle="The requested device is not part of the routed outboard-hardware catalog."
         />
@@ -54,9 +55,10 @@ export function OutboardHardwareDevicePage({
 
   return (
     <div className="outboard-hardware-page">
-      <PageHeader
+      <WorkspaceSectionHeader
+        eyebrow="Outboard Hardware"
         title={device.displayName}
-        subtitle="Shared identity and routing page inside the Outboard Hardware workspace."
+        subtitle="Rack processors, AVB hardware, and audio interfaces"
         actions={<Tag type={categoryTagType(device.category)}>{device.category}</Tag>}
       />
 

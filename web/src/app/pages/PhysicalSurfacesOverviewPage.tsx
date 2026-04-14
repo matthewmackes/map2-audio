@@ -2,7 +2,7 @@ import { Button, Loading, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
-import { PageHeader } from '../components/PageHeader'
+import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
 import {
   resolvePhysicalSurfaceStandaloneRoute,
@@ -118,9 +118,10 @@ export function PhysicalSurfacesOverviewPage({
 
   return (
     <div className="physical-surfaces-page">
-      <PageHeader
-        title="Enriched_MIDI_Physical_Surfaces"
-        subtitle="Unified MAP2 workspace for advanced controller families, host detection, richer transport layers, and device-specific subpages."
+      <WorkspaceSectionHeader
+        eyebrow="Physical Surfaces"
+        title="Physical Surfaces"
+        subtitle="Controller families, transport layers, and device-specific surfaces"
         actions={<Tag type="blue">{summary?.units.length ?? 0} units</Tag>}
       />
 

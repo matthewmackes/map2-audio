@@ -1071,18 +1071,22 @@ export function AudioArtifactsPage({
     <>
       <div className="aap__header">
         <div className="aap__header-left">
-          <div className="aap__header-icon" aria-hidden="true">
-            <Catalog size={32} />
-          </div>
+          {renderShell ? (
+            <div className="aap__header-icon" aria-hidden="true">
+              <Catalog size={32} />
+            </div>
+          ) : null}
           <div>
-            <h1 className="aap__title">Audio Artifacts</h1>
-            <p className="aap__subtitle">
-              {discoverMode
-                ? 'Route-native discovery for plugin packs, models, impulse responses, and SoundFonts.'
-                : isClusterMode
-                  ? `${CATEGORIES.length} artifact types · node-aware · ${nodes.length} nodes`
-                  : `${CATEGORIES.length} artifact types — plugins, models, IRs, and instruments`}
-            </p>
+            {renderShell ? <h1 className="aap__title">Audio Artifacts</h1> : <h2 className="aap__title">Audio Artifacts</h2>}
+            {renderShell ? (
+              <p className="aap__subtitle">
+                {discoverMode
+                  ? 'Route-native discovery for plugin packs, models, impulse responses, and SoundFonts.'
+                  : isClusterMode
+                    ? `${CATEGORIES.length} artifact types · node-aware · ${nodes.length} nodes`
+                    : `${CATEGORIES.length} artifact types — plugins, models, IRs, and instruments`}
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="aap__header-actions">
@@ -1171,7 +1175,7 @@ export function AudioArtifactsPage({
           <div className="aap__category-header">
             <div className="aap__category-header-left">
               <h2 className="aap__category-title">{category.label}</h2>
-              <p className="aap__category-desc">{category.description}</p>
+              {renderShell ? <p className="aap__category-desc">{category.description}</p> : null}
             </div>
             <div className="aap__category-header-right">
               <Tag type="cool-gray">{selectedNodeLabel}</Tag>

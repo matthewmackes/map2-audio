@@ -5,7 +5,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
 import type { TesiraDeviceSummary } from '../components/Tesira/types'
 import { type DeviceLocation, useDeviceLocation } from '../hooks/useDeviceLocation'
-import { PageHeader } from '../components/PageHeader'
+import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { useIntelFXOverviewStatus, type IntelFXState } from '../../map2/intelfxApi'
 import { useMPX1OverviewStatus, type MPX1State } from '../../map2/mpx1Api'
 import {
@@ -515,9 +515,10 @@ export function OutboardHardwareOverviewPage({
 
   return (
     <div className="outboard-hardware-page">
-      <PageHeader
+      <WorkspaceSectionHeader
+        eyebrow="Outboard Hardware"
         title="Outboard Hardware"
-        subtitle="Unified routed shell for rack processors, AVB DSP hardware, and dedicated interface pages."
+        subtitle="Rack processors, AVB hardware, and audio interfaces"
         actions={
           <div className="outboard-hardware-page__tag-row">
             <Tag type="blue">{metrics.total} devices</Tag>
