@@ -24428,7 +24428,7 @@ Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLau
 - [x] T2239 — Delete dead launcher components (`HeroIconLauncher.tsx`/`.css`, `SpinningCubeLauncher.tsx`/`.css`). Verify no imports first (`grep -rn 'HeroIconLauncher\|SpinningCubeLauncher' web/src`). Keep only `StaticHeroIconLauncher`.
 - [x] T2240 — Unify `HomeStartMenuOverlay` and `ShellLauncherPanel` into a single `<LauncherPanel variant="home"|"workspace">` under `web/src/app/layout/LauncherPanel/`. Eliminates duplicated system-summary, device listing, power menu, and focus-trap code.
 - [x] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
-- [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
+- [x] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
 - [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
 - [x] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
 - [x] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
@@ -24452,6 +24452,9 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 - T2245: collapsed the shared launcher internals onto the new `map2-launcher__*` namespace in `LauncherPanel`, moved the shared launcher-surface styling into `web/src/app/layout/LauncherPanel/LauncherPanel.css`, and removed the obsolete `hp2-overlay__*` / `shell-launcher__*` inner-panel selectors from `HomePage.css` and `AppShell.css` while keeping only wrapper-specific positioning rules in those files.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2242: replaced the home-route desktop metaphor in `web/src/app/pages/HomePage.tsx` / `.css` with a Carbon landing shell built from a header, hero, `ClickableTile` workspace grid, and right-rail system status cards, while reusing the canonical launcher/start-menu data and `SystemSummary` surface instead of inventing a second nav model.
+- T2242: added `web/src/app/pages/homeLandingPreferences.ts` and moved the old cinematic wallpaper / boot splash behind explicit local preferences so the default `/` experience is the new product landing while preserving opt-in access to the legacy backdrop treatment.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 14:08 EDT - Codex
+Last updated: 2026-04-14 09:45 EDT - Codex

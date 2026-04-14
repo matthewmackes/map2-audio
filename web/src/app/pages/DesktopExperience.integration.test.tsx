@@ -336,15 +336,8 @@ describe('Desktop experience integration', () => {
   it('flows from boot splash to desktop to app open to close back to desktop', async () => {
     const { container } = renderDesktopExperience(['/'])
 
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.queryByTestId('home-desktop')).toBeNull()
-
-    await act(async () => {
-      jest.advanceTimersByTime(4000)
-    })
-
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click((await screen.findByText('Brain', { selector: '.start-menu-strip-item__label' })).closest('a') as HTMLElement)
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    fireEvent.click(container.querySelector('a[href="/brain"]') as HTMLElement)
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/brain')
     expect(screen.getByRole('button', { name: 'Close Brain' })).toBeInTheDocument()
@@ -357,7 +350,7 @@ describe('Desktop experience integration', () => {
     })
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
-    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(container.querySelector('.shell-launcher')).toBeNull()
   })
 
@@ -374,21 +367,18 @@ describe('Desktop experience integration', () => {
     expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
   })
 
-  it('keeps only the canonical strip launchers in the Start Menu', async () => {
-    renderDesktopExperience(['/'])
+  it('keeps only the canonical landing launch tiles on the home shell', async () => {
+    const { container } = renderDesktopExperience(['/'])
 
-    await act(async () => {
-      jest.advanceTimersByTime(4000)
-    })
-
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
     for (const label of ['Device(s) Manager', 'Snapshot Editor', 'Advanced MIDI', 'Brain', 'Drum-Machine', 'SynthForge']) {
-      expect(screen.getByText(label, { selector: '.start-menu-strip-item__label' })).toBeInTheDocument()
+      expect(await screen.findByText(label, { selector: '.hp2-home-shell__workspace-copy h2' })).toBeInTheDocument()
     }
 
     for (const label of ['Outboard Hardware', 'Audio Artifacts', 'Physical Surfaces', 'Workspaces', 'Stage Mode', 'Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
-      expect(screen.queryByRole('menuitem', { name: new RegExp(label, 'i') })).toBeNull()
+      expect(screen.queryByRole('link', { name: new RegExp(label, 'i') })).toBeNull()
     }
+
+    expect(container.querySelectorAll('.hp2-home-shell__workspace-tile')).toHaveLength(6)
   })
 
   it('runs refresh, logout, and restart actions from the Power menu', async () => {

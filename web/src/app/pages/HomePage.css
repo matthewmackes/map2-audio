@@ -73,179 +73,217 @@
 }
 
 .hp2-root {
+  position: relative;
   min-height: 100%;
   color: var(--cds-text-primary, #161616);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
-.hp2-desktop {
-  position: relative;
-  min-height: calc(100vh - var(--window-taskbar-height, 2.1rem));
-  overflow: hidden;
-  background: #000;
-}
-
-.hp2-desktop__controls {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost {
-  min-inline-size: 2.75rem;
-  min-block-size: 2.75rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 70%, transparent);
-  background: color-mix(in srgb, var(--cds-layer, #ffffff) 78%, transparent);
-  color: var(--cds-icon-primary, #161616);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 24px color-mix(in srgb, black 22%, transparent);
-}
-
-.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:hover,
-.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
-  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, var(--cds-link-primary, #0f62fe) 8%);
-}
-
-.hp2-desktop__fullscreen-toggle.cds--btn--icon-only.cds--btn--ghost:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
-  outline-offset: 2px;
-}
-
-.hp2-desktop__wallpaper {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  opacity: 0.14;
-  filter: grayscale(1) contrast(0.9) saturate(0.5);
-  mix-blend-mode: multiply;
-  display: block;
-}
-
-.hp2-desktop__hero-wallpaper {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-
-.hp2-desktop__default-wallpaper-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  opacity: 0.72;
-  filter: contrast(1.02) saturate(0.96);
-  display: block;
-}
-
-.hp2-desktop--uploaded-image .hp2-desktop__wallpaper {
-  opacity: 0.2;
-  filter: grayscale(0.6) contrast(0.92) saturate(0.6);
-}
-
-.hp2-desktop__underlay {
-  position: absolute;
-  inset: 0;
+.hp2-root--landing {
+  min-height: min(100vh, 100dvh);
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.26) 100%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: auto, calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)), calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem));
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 14%, transparent) 0%, transparent 42%),
+    linear-gradient(180deg, var(--cds-layer-hover, #dde1e6) 0%, var(--cds-background, #f4f4f4) 100%);
+  overflow: hidden;
+}
+
+.hp2-root__wallpaper,
+.hp2-root__default-wallpaper,
+.hp2-root__backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.hp2-root__wallpaper,
+.hp2-root__default-wallpaper {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.hp2-root__wallpaper {
+  opacity: 0.16;
+  filter: grayscale(0.72) contrast(0.92) saturate(0.72);
+  mix-blend-mode: multiply;
+}
+
+.hp2-root__default-wallpaper {
+  opacity: 0.22;
+  filter: saturate(0.82) contrast(1.02);
+}
+
+.hp2-root__backdrop {
+  background:
+    linear-gradient(180deg, rgba(244, 244, 244, 0.84) 0%, rgba(244, 244, 244, 0.94) 100%),
+    linear-gradient(90deg, rgba(15, 98, 254, 0.05) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(15, 98, 254, 0.04) 1px, transparent 1px);
+  background-size:
+    auto,
+    calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)),
+    calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem));
   pointer-events: none;
 }
 
-.hp2-desktop__context-menu {
-  z-index: 20;
+.hp2-home-shell__masthead {
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, transparent);
+  backdrop-filter: blur(14px);
 }
 
-/* ============================================================================
-   Corner Start Launcher
-   ============================================================================ */
-
-.hp2-desktop__start-launcher {
-  position: absolute;
-  left: var(--window-shell-launcher-offset, clamp(1rem, 2vw, 1.5rem));
-  bottom: var(--window-shell-launcher-offset, clamp(1rem, 2vw, 1.5rem));
-  z-index: 10;
+.hp2-home-shell__content.cds--content {
+  position: relative;
+  z-index: 1;
+  padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-06, 1.5rem)) var(--cds-spacing-06, 1.5rem) var(--cds-spacing-06, 1.5rem);
 }
 
-/* ============================================================================
-   Start Menu Overlay
-   ============================================================================ */
+.hp2-home-shell__grid {
+  row-gap: var(--cds-spacing-06, 1.5rem);
+}
 
-.hp2-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
+.hp2-home-shell__main,
+.hp2-home-shell__rail {
   display: grid;
-  align-items: end;
-  justify-items: start;
+  gap: var(--cds-spacing-06, 1.5rem);
+}
+
+.hp2-home-shell__hero,
+.hp2-home-shell__rail-card,
+.hp2-home-shell__workspace-tile.cds--tile {
+  display: grid;
+  gap: var(--cds-spacing-05, 1rem);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.hp2-home-shell__hero,
+.hp2-home-shell__rail-card {
   padding: var(--cds-spacing-06, 1.5rem);
 }
 
-.hp2-overlay__backdrop {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, black 58%, transparent);
-  backdrop-filter: blur(8px);
-  cursor: pointer;
+.hp2-home-shell__hero {
+  align-content: start;
+  min-height: 19rem;
 }
 
-.hp2-overlay__panel {
-  --map2-launcher-border: var(--cds-border-subtle, #c6c6c6);
-  --map2-launcher-accent: var(--cds-link-primary, #0f62fe);
-  position: relative;
-  width: clamp(18rem, 34vw, 24rem);
-  max-width: calc(100vw - 3rem);
-  max-height: min(46rem, calc(100vh - 3rem));
-  animation: hp2-overlay-enter 180ms cubic-bezier(0.2, 0.84, 0.32, 1) both;
+.hp2-home-shell__eyebrow {
+  margin: 0;
+  color: var(--cds-text-helper, #6f6f6f);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-@keyframes hp2-overlay-enter {
-  0% {
-    opacity: 0;
-    transform: scale(0.96) translateY(1rem);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+.hp2-home-shell__title,
+.hp2-home-shell__rail-card h2,
+.hp2-home-shell__workspace-copy h2 {
+  margin: 0;
 }
 
-/* ── Responsive ───────────────────────────────────────────────────────────── */
+.hp2-home-shell__title {
+  font-size: clamp(2.2rem, 4vw, 3.75rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.hp2-home-shell__lede,
+.hp2-home-shell__workspace-copy p,
+.hp2-home-shell__preference-list p {
+  margin: 0;
+  color: var(--cds-text-secondary, #525252);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.55;
+}
+
+.hp2-home-shell__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.hp2-home-shell__workspace-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.hp2-home-shell__workspace-tile.cds--tile {
+  padding: var(--cds-spacing-05, 1rem);
+  text-decoration: none;
+  color: inherit;
+  min-height: 13rem;
+}
+
+.hp2-home-shell__workspace-tile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.hp2-home-shell__workspace-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-hover, #f4f4f4));
+  color: var(--home-tile-accent, var(--cds-link-primary, #0f62fe));
+}
+
+.hp2-home-shell__workspace-copy {
+  display: grid;
+  gap: var(--cds-spacing-03, 0.5rem);
+  align-content: start;
+}
+
+.hp2-home-shell__rail-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.hp2-home-shell__rail-card--summary .map2-launcher__summary {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hp2-home-shell__preference-list {
+  display: grid;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.hp2-home-shell__preference-list strong {
+  display: block;
+  margin-bottom: var(--cds-spacing-02, 0.25rem);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
 
 @media (max-width: 66rem) {
-  .hp2-overlay__panel {
-    width: min(42vw, calc(100vw - 3rem));
+  .hp2-home-shell__workspace-strip {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 42rem) {
-
-  .hp2-overlay {
-    padding: 1rem;
+  .hp2-home-shell__content.cds--content {
+    padding: calc(var(--cds-shell-header-height, 3rem) + var(--cds-spacing-05, 1rem)) var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
   }
 
-  .hp2-overlay__panel {
-    width: calc(100vw - 2rem);
-    max-height: calc(100vh - 2rem);
+  .hp2-home-shell__title {
+    font-size: clamp(1.75rem, 9vw, 2.6rem);
   }
 
-  .hp2-overlay .map2-launcher__header,
-  .hp2-overlay .map2-launcher__summary,
-  .hp2-overlay .map2-launcher__body,
-  .hp2-overlay .map2-launcher__footer {
-    padding-left: 1rem;
-    padding-right: 1rem;
+  .hp2-home-shell__hero-actions {
+    display: grid;
   }
 }

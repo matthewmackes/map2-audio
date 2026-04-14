@@ -6,11 +6,10 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
+import { HOME_LANDING_PREFERENCES_STORAGE_KEY } from './homeLandingPreferences'
+import { MAP2_PLATFORM_VERSION } from '../components/branding/map2Branding'
 
 const originalFetch = global.fetch
-const originalFullscreenElementDescriptor = Object.getOwnPropertyDescriptor(document, 'fullscreenElement')
-const originalExitFullscreenDescriptor = Object.getOwnPropertyDescriptor(document, 'exitFullscreen')
-const originalRequestFullscreenDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'requestFullscreen')
 const mockSpecialSettingsState = {
   settings: {
     enabled: true,
@@ -95,6 +94,32 @@ jest.mock('../hooks/useHomePlatformStatus', () => ({
     avb: { label: 'AVB: operational', state: 'ok' },
     avdecc: { label: 'AVDECC: 1 entity', state: 'ok' },
     nodes: { label: 'Nodes: 1 active', state: 'ok' },
+  }),
+}))
+
+jest.mock('../hooks/useHostMachine', () => ({
+  useHostMachineInfo: () => ({
+    data: {
+      hostname: 'map2-host',
+      kernel_version: '6.9.0-rt',
+      os_version: 'Fedora Linux 42',
+    },
+  }),
+}))
+
+jest.mock('../hooks/usePushConfirmation', () => ({
+  usePushConfirmation: () => ({
+    data: {
+      pending_confirmation: null,
+    },
+  }),
+}))
+
+jest.mock('../layout/useLauncherInterfaceSummary', () => ({
+  useLauncherInterfaceSummary: () => ({
+    audioInterfaces: ['RME Fireface UFX'],
+    midiInterfaces: ['Express 128'],
+    isLoading: false,
   }),
 }))
 
@@ -195,10 +220,6 @@ function finishBootSplash() {
 }
 
 describe('HomePage landing', () => {
-  let mockFullscreenElement: Element | null
-  let exitFullscreenMock: jest.Mock<Promise<void>, []>
-  let requestFullscreenMock: jest.Mock<Promise<void>, []>
-
   beforeEach(() => {
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserverMock }).ResizeObserver = ResizeObserverMock
@@ -217,28 +238,6 @@ describe('HomePage landing', () => {
     mockSpecialSettingsState.updateSettings.mockReset()
     mockReducedEffectsPreference.prefersReducedMotion = false
     mockReducedEffectsPreference.shouldReduceEffects = false
-    mockFullscreenElement = null
-    exitFullscreenMock = jest.fn(async () => {
-      mockFullscreenElement = null
-      document.dispatchEvent(new Event('fullscreenchange'))
-    })
-    requestFullscreenMock = jest.fn(async function requestFullscreen(this: Element) {
-      mockFullscreenElement = this
-      document.dispatchEvent(new Event('fullscreenchange'))
-    })
-
-    Object.defineProperty(document, 'fullscreenElement', {
-      configurable: true,
-      get: () => mockFullscreenElement,
-    })
-    Object.defineProperty(document, 'exitFullscreen', {
-      configurable: true,
-      value: exitFullscreenMock,
-    })
-    Object.defineProperty(Element.prototype, 'requestFullscreen', {
-      configurable: true,
-      value: requestFullscreenMock,
-    })
   })
 
   afterEach(() => {
@@ -246,58 +245,45 @@ describe('HomePage landing', () => {
     jest.clearAllTimers()
     jest.useRealTimers()
     ;(globalThis as { fetch?: typeof fetch }).fetch = originalFetch
-    if (originalFullscreenElementDescriptor) {
-      Object.defineProperty(document, 'fullscreenElement', originalFullscreenElementDescriptor)
-    } else {
-      delete (document as Document & { fullscreenElement?: Element | null }).fullscreenElement
-    }
-    if (originalExitFullscreenDescriptor) {
-      Object.defineProperty(document, 'exitFullscreen', originalExitFullscreenDescriptor)
-    } else {
-      delete (document as Document & { exitFullscreen?: () => Promise<void> }).exitFullscreen
-    }
-    if (originalRequestFullscreenDescriptor) {
-      Object.defineProperty(Element.prototype, 'requestFullscreen', originalRequestFullscreenDescriptor)
-    } else {
-      delete (Element.prototype as Element & { requestFullscreen?: () => Promise<void> }).requestFullscreen
-    }
   })
 
-  it('shows the boot splash on first visit, then persists desktop session state', async () => {
+  it('shows the boot splash only when the landing preference opts into it', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: true, cinematicBackdropEnabled: false }),
+    )
+
     renderHome()
 
     expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
     expect(screen.getByRole('status')).toHaveTextContent('Restoring workplace shell')
     expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
-    expect(screen.queryByTestId('home-desktop')).toBeNull()
+    expect(screen.queryByTestId('home-shell')).toBeNull()
 
     finishBootSplash()
 
-    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
-    expect(screen.queryByText('MAP2 Workplace Shell')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
-  it('opens the centered platform menu on the desktop and restores focus when closed', async () => {
+  it('renders the Carbon landing shell immediately by default', async () => {
     renderHome()
 
-    finishBootSplash()
-
-    const launcherButton = await screen.findByRole('button', { name: 'Open platform menu' })
-    fireEvent.click(launcherButton)
-
-    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Power actions' })).toBeInTheDocument()
-
-    fireEvent.keyDown(window, { key: 'Escape' })
-
-    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Open platform menu' })).toHaveFocus()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(screen.getByText('Carbon landing')).toBeInTheDocument()
+    expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
-  it('skips the boot splash when desktop session state already exists', async () => {
+  it('skips the opt-in boot splash when desktop session state already exists', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: true, cinematicBackdropEnabled: false }),
+    )
     window.localStorage.setItem(
       HOME_DESKTOP_SESSION_STORAGE_KEY,
       JSON.stringify({ version: 1, bootCompletedAt: '2026-04-06T13:00:00.000Z' }),
@@ -305,31 +291,31 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
   })
 
-  it('skips the boot splash immediately when reduced motion is preferred', async () => {
+  it('skips the opt-in boot splash immediately when reduced motion is preferred', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: true, cinematicBackdropEnabled: false }),
+    )
     mockReducedEffectsPreference.prefersReducedMotion = true
     mockReducedEffectsPreference.shouldReduceEffects = true
 
     renderHome()
 
-    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
   it('renders the landing shell without the legacy desktop object surface', async () => {
     renderHome()
-    finishBootSplash()
 
-    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-wallpaper-mode', 'minimal')
     expect(screen.queryByText('Program Manager')).toBeNull()
     expect(screen.queryByText('System Setup')).toBeNull()
-    expect(screen.queryByText('Platforms')).toBeNull()
-    expect(screen.queryByText('1 node online')).toBeNull()
-    expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
     expect(screen.queryByText('Desktop Objects')).toBeNull()
     expect(screen.queryByText('Selected Desktop Object')).toBeNull()
     expect(screen.queryByText('Pinned Object Directory')).toBeNull()
@@ -337,95 +323,87 @@ describe('HomePage landing', () => {
     expect(screen.queryByText('MAP2 desktop session')).toBeNull()
     expect(screen.queryByText('Operator shortcuts')).toBeNull()
     expect(screen.queryByText('Program Catalog')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open platform menu' })).toBeNull()
   })
 
-  it('renders the default wallpaper hero treatment when no desktop wallpaper preference exists', async () => {
+  it('renders the minimal product shell by default without cinematic wallpaper assets', async () => {
     renderHome()
-    finishBootSplash()
 
-    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'default-image')
+    expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-wallpaper-mode', 'minimal')
+    expect(screen.queryByTestId('home-desktop-default-wallpaper-image')).toBeNull()
+    expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
+  })
+
+  it('renders the default wallpaper hero treatment only when the cinematic backdrop preference is enabled', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: false, cinematicBackdropEnabled: true }),
+    )
+
+    renderHome()
+
+    expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-wallpaper-mode', 'default-image')
     expect(screen.getByTestId('home-desktop-default-wallpaper-image')).toBeInTheDocument()
     expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
   })
 
-  it('supports a solid theme wallpaper mode without rendering the default image', async () => {
+  it('supports a solid theme wallpaper mode when the cinematic backdrop preference is enabled', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: false, cinematicBackdropEnabled: true }),
+    )
     window.localStorage.setItem(
       HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
       JSON.stringify({ version: 1, mode: 'solid-theme' }),
     )
 
     renderHome()
-    finishBootSplash()
 
-    expect(await screen.findByTestId('home-desktop')).toHaveAttribute('data-wallpaper-mode', 'solid-theme')
+    expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-wallpaper-mode', 'solid-theme')
     expect(screen.queryByTestId('home-desktop-wallpaper-image')).toBeNull()
+    expect(screen.queryByTestId('home-desktop-default-wallpaper-image')).toBeNull()
   })
 
-  it('supports an uploaded wallpaper image stored in localStorage', async () => {
+  it('supports an uploaded wallpaper image stored in localStorage when the cinematic backdrop preference is enabled', async () => {
+    window.localStorage.setItem(
+      HOME_LANDING_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({ version: 1, bootSplashEnabled: false, cinematicBackdropEnabled: true }),
+    )
     window.localStorage.setItem(
       HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
       JSON.stringify({ version: 1, mode: 'uploaded-image', imageDataUrl: 'data:image/png;base64,abc123' }),
     )
 
     renderHome()
-    finishBootSplash()
 
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders a fullscreen toggle button on the desktop surface', async () => {
+  it('renders the workspace launch grid and navigates through the hero actions', async () => {
     renderHome()
-    finishBootSplash()
 
-    expect(await screen.findByRole('button', { name: 'Enter browser fullscreen' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'MAP2 Workplace Shell' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Device\(s\) Manager/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Snapshot Editor/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Advanced MIDI/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Workspace' }))
+    expect(screen.getByTestId('location-probe').textContent).toBe('/workspace/platforms/overview')
   })
 
-  it('toggles browser fullscreen from the home desktop control', async () => {
+  it('shows the shared system summary in the landing side rail', async () => {
     renderHome()
-    finishBootSplash()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Enter browser fullscreen' }))
-    expect(requestFullscreenMock).toHaveBeenCalledTimes(1)
-    expect(requestFullscreenMock.mock.instances[0]).toBe(document.documentElement)
-    expect(await screen.findByRole('button', { name: 'Exit browser fullscreen' })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Exit browser fullscreen' }))
-    expect(exitFullscreenMock).toHaveBeenCalledTimes(1)
-    expect(await screen.findByRole('button', { name: 'Enter browser fullscreen' })).toBeInTheDocument()
+    expect(await screen.findByLabelText('System summary')).toBeInTheDocument()
+    expect(screen.getByText(`Platform ${MAP2_PLATFORM_VERSION}`)).toBeInTheDocument()
+    expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
+    expect(screen.getByText('map2-host')).toBeInTheDocument()
+    expect(screen.getByText('AVB: operational')).toBeInTheDocument()
+    expect(screen.getByText('AVDECC: 1 entity')).toBeInTheDocument()
+    expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
+    expect(screen.getByText('RME Fireface UFX')).toBeInTheDocument()
+    expect(screen.getByText('Express 128')).toBeInTheDocument()
+    expect(screen.getByTestId('node-nav-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('taskbar-clock')).toBeInTheDocument()
   })
-
-  it('opens the wallpaper context menu and routes its actions', async () => {
-    renderHome()
-    finishBootSplash()
-
-    fireEvent.contextMenu(await screen.findByTestId('home-desktop'), { clientX: 80, clientY: 120 })
-    act(() => {
-      jest.runOnlyPendingTimers()
-    })
-
-    expect(screen.getByRole('menu', { name: 'Desktop context menu' })).toBeInTheDocument()
-    expect(screen.getAllByRole('menuitem')).toHaveLength(3)
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Display settings' }))
-    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/theme')
-  })
-
-  it('moves focus into the desktop context menu and restores it on Escape', async () => {
-    renderHome()
-    finishBootSplash()
-
-    const desktop = await screen.findByTestId('home-desktop')
-
-    fireEvent.contextMenu(desktop, { clientX: 80, clientY: 120 })
-    act(() => {
-      jest.runOnlyPendingTimers()
-    })
-
-    const menu = screen.getByRole('menu', { name: 'Desktop context menu' })
-    expect(screen.getByRole('menuitem', { name: 'Refresh' })).toHaveFocus()
-
-    fireEvent.keyDown(menu, { key: 'Escape' })
-    expect(screen.queryByRole('menu', { name: 'Desktop context menu' })).toBeNull()
-    expect(desktop).toHaveFocus()
-  })
-
 })

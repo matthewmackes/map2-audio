@@ -1,8 +1,7 @@
-import type { MouseEvent } from 'react'
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Maximize, Minimize } from '@carbon/icons-react'
-import { Button, InlineLoading, Menu, MenuItem } from '@carbon/react'
+import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
+import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -10,29 +9,50 @@ import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
+import { readHomeLandingPreferences } from './homeLandingPreferences'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
-import { StaticHeroIconLauncher } from '../layout/StaticHeroIconLauncher'
-import { HomeStartMenuOverlay } from './HomeStartMenuOverlay'
+import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
+import { useHostMachineInfo } from '../hooks/useHostMachine'
+import { usePushConfirmation } from '../hooks/usePushConfirmation'
+import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
+import { useAppShellPresentation } from '../layout/useAppShellPresentation'
+import { SystemSummary } from '../layout/SystemSummary'
+import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 
-interface WallpaperContextMenuState {
-  x: number
-  y: number
-}
-
 export function HomePage() {
   const navigate = useNavigate()
   const { shouldReduceEffects } = useReducedEffectsPreference()
-  const [showBootSplash, setShowBootSplash] = useState(() => shouldShowHomeBootSplash())
-  const [contextMenu, setContextMenu] = useState<WallpaperContextMenuState | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(() => Boolean(document.fullscreenElement))
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { data: hostInfo } = useHostMachineInfo()
+  const websocketConnection = useWebSocketConnection()
+  const platformStatus = useHomePlatformStatus()
+  const launcherInterfaceSummary = useLauncherInterfaceSummary(true)
+  const pendingPushConfirmationQuery = usePushConfirmation(undefined, {
+    refetchInterval: 15_000,
+  })
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
-  const restoreFocusRef = useRef<HTMLElement | null>(null)
-  const cubeButtonRef = useRef<HTMLButtonElement | null>(null)
-  const fullscreenAvailable = typeof document.documentElement.requestFullscreen === 'function'
+  const landingPreferences = useMemo(() => readHomeLandingPreferences(), [])
+  const shouldShowSplash = useMemo(() => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(), [landingPreferences.bootSplashEnabled])
+  const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
+  const {
+    launcherSummaryItems,
+    platformStatusLabels,
+    startMenuTileItems,
+  } = useAppShellPresentation({
+    hostInfo: hostInfo ?? null,
+    pathname: '/',
+    platformStatus,
+    websocketStatus: websocketConnection.status,
+  })
+
+  useEffect(() => {
+    if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
+      completeHomeDesktopBoot()
+    }
+  }, [landingPreferences.bootSplashEnabled])
 
   useEffect(() => {
     if (!showBootSplash) {
@@ -59,65 +79,6 @@ export function HomePage() {
     }
   }, [showBootSplash, shouldReduceEffects])
 
-  useEffect(() => {
-    if (!contextMenu) {
-      restoreFocusRef.current?.focus()
-    }
-  }, [contextMenu])
-
-  useEffect(() => {
-    const syncFullscreenState = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-
-    document.addEventListener('fullscreenchange', syncFullscreenState)
-    return () => {
-      document.removeEventListener('fullscreenchange', syncFullscreenState)
-    }
-  }, [])
-
-  const openWallpaperMenu = (event: MouseEvent<HTMLElement>) => {
-    event.preventDefault()
-    restoreFocusRef.current = event.currentTarget
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-    })
-  }
-
-  const handleRefreshDesktop = () => {
-    setContextMenu(null)
-    window.location.reload()
-  }
-
-  const handleOpenDesktopRoute = (route: string) => {
-    setContextMenu(null)
-    navigate(route)
-  }
-
-  const handleToggleFullscreen = async () => {
-    if (!fullscreenAvailable) {
-      return
-    }
-
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-
-    await document.documentElement.requestFullscreen()
-  }
-
-  const handleToggleCubeMenu = () => {
-    setMenuOpen((prev) => !prev)
-  }
-
-  const handleCloseMenu = () => {
-    setMenuOpen(false)
-    // Return focus to the cube button after closing
-    cubeButtonRef.current?.focus()
-  }
-
   if (showBootSplash) {
     return (
       <section className="hp2-boot" aria-label="MAP2 boot splash">
@@ -143,79 +104,136 @@ export function HomePage() {
   }
 
   return (
-    <div className="hp2-root">
-      <section
-        className={`hp2-desktop hp2-desktop--${wallpaper.mode}`}
-        data-testid="home-desktop"
-        data-wallpaper-mode={wallpaper.mode}
-        onContextMenu={openWallpaperMenu}
-        tabIndex={-1}
-      >
-        <div className="hp2-desktop__controls">
-          <Button
-            type="button"
-            kind="ghost"
-            size="sm"
-            hasIconOnly
-            className="hp2-desktop__fullscreen-toggle"
-            renderIcon={isFullscreen ? Minimize : Maximize}
-            iconDescription={isFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
-            tooltipPosition="left"
-            tooltipAlignment="center"
-            disabled={!fullscreenAvailable}
-            onClick={() => {
-              void handleToggleFullscreen()
-            }}
-          />
-        </div>
-        {wallpaper.mode === 'uploaded-image' && wallpaper.imageDataUrl ? (
-          <img
-            src={wallpaper.imageDataUrl}
-            alt=""
-            className="hp2-desktop__wallpaper"
-            data-testid="home-desktop-wallpaper-image"
-            aria-hidden="true"
-          />
-        ) : null}
-        {wallpaper.mode === 'default-image' ? (
-          <div className="hp2-desktop__hero-wallpaper" aria-hidden="true">
-            <img
-              src={defaultWallpaperImage}
-              alt=""
-              className="hp2-desktop__default-wallpaper-image"
-              data-testid="home-desktop-default-wallpaper-image"
-            />
-          </div>
-        ) : null}
-        <div className="hp2-desktop__underlay" aria-hidden="true" />
+    <div
+      className={`hp2-root hp2-root--landing${landingPreferences.cinematicBackdropEnabled ? ` hp2-root--${wallpaper.mode}` : ' hp2-root--minimal'}`}
+      data-testid="home-shell"
+      data-wallpaper-mode={landingPreferences.cinematicBackdropEnabled ? wallpaper.mode : 'minimal'}
+    >
+      {landingPreferences.cinematicBackdropEnabled && wallpaper.mode === 'uploaded-image' && wallpaper.imageDataUrl ? (
+        <img
+          src={wallpaper.imageDataUrl}
+          alt=""
+          className="hp2-root__wallpaper"
+          data-testid="home-desktop-wallpaper-image"
+          aria-hidden="true"
+        />
+      ) : null}
+      {landingPreferences.cinematicBackdropEnabled && wallpaper.mode === 'default-image' ? (
+        <img
+          src={defaultWallpaperImage}
+          alt=""
+          className="hp2-root__default-wallpaper"
+          data-testid="home-desktop-default-wallpaper-image"
+          aria-hidden="true"
+        />
+      ) : null}
+      <div className="hp2-root__backdrop" aria-hidden="true" />
 
-        <div className="hp2-desktop__start-launcher">
-          <StaticHeroIconLauncher
-            isActive={menuOpen}
-            buttonRef={cubeButtonRef}
-            onClick={handleToggleCubeMenu}
-          />
-        </div>
+      <Header aria-label="MAP2 home shell" className="hp2-home-shell__masthead">
+        <HeaderName href="/" prefix="">
+          {MAP2_PLATFORM_NAME}
+        </HeaderName>
+        <HeaderGlobalBar>
+          <Tag type="blue">Carbon landing</Tag>
+          <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
+            <OverflowMenuItem itemText="Open Workspace" onClick={() => navigate('/workspace/platforms/overview')} />
+            <OverflowMenuItem itemText="Display settings" onClick={() => navigate('/platforms/theme')} />
+            <OverflowMenuItem itemText="About MAP2" onClick={() => navigate('/platforms/about')} />
+          </OverflowMenu>
+        </HeaderGlobalBar>
+      </Header>
 
-        {contextMenu ? (
-          <Menu
-            className="hp2-desktop__context-menu"
-            label="Desktop context menu"
-            onClose={() => setContextMenu(null)}
-            open
-            size="sm"
-            x={contextMenu.x}
-            y={contextMenu.y}
-          >
-            <MenuItem label="Refresh" onClick={handleRefreshDesktop} />
-            <MenuItem label="Display settings" onClick={() => handleOpenDesktopRoute('/platforms/theme')} />
-            <MenuItem label="About" onClick={() => handleOpenDesktopRoute('/platforms/about')} />
-          </Menu>
-        ) : null}
-      </section>
+      <Content className="hp2-home-shell__content">
+        <Grid className="hp2-home-shell__grid" condensed>
+          <Column lg={10} md={8} sm={4} className="hp2-home-shell__main">
+            <Tile className="hp2-home-shell__hero">
+              <p className="hp2-home-shell__eyebrow">Home</p>
+              <h1 className="hp2-home-shell__title">MAP2 Workplace Shell</h1>
+              <p className="hp2-home-shell__lede">
+                Launch the core MAP2 workspaces from a single Carbon landing surface with fast access to editing, routing, performance, and system operations.
+              </p>
+              <div className="hp2-home-shell__hero-actions">
+                <Button renderIcon={ArrowRight} onClick={() => navigate('/workspace/platforms/overview')}>
+                  Open Workspace
+                </Button>
+                <Button kind="tertiary" renderIcon={Launch} onClick={() => navigate('/snapshot-editor')}>
+                  Open Snapshot Editor
+                </Button>
+                <Button kind="ghost" renderIcon={Settings} onClick={() => navigate('/platforms/theme')}>
+                  Display settings
+                </Button>
+              </div>
+            </Tile>
 
-      {/* Centered Start Menu Overlay */}
-      <HomeStartMenuOverlay open={menuOpen} onClose={handleCloseMenu} />
+            <section className="hp2-home-shell__workspace-strip" aria-label="Workspace launch grid">
+              {startMenuTileItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <ClickableTile
+                    key={item.route}
+                    className="hp2-home-shell__workspace-tile"
+                    href={item.route}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      navigate(item.route)
+                    }}
+                  >
+                    <div className="hp2-home-shell__workspace-tile-head">
+                      <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
+                        <Icon size={20} aria-hidden />
+                      </span>
+                      <Tag type={item.maturity === 'stable' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
+                        {item.shortLabel}
+                      </Tag>
+                    </div>
+                    <div className="hp2-home-shell__workspace-copy">
+                      <h2>{item.label}</h2>
+                      <p>{item.description}</p>
+                    </div>
+                  </ClickableTile>
+                )
+              })}
+            </section>
+          </Column>
+
+          <Column lg={6} md={8} sm={4} className="hp2-home-shell__rail">
+            <Tile className="hp2-home-shell__rail-card hp2-home-shell__rail-card--summary">
+              <div className="hp2-home-shell__rail-card-head">
+                <div>
+                  <p className="hp2-home-shell__eyebrow">System Status</p>
+                  <h2>Node, interfaces, and platform health</h2>
+                </div>
+              </div>
+              <SystemSummary
+                classNamePrefix="map2-launcher"
+                launcherInterfaceSummary={launcherInterfaceSummary}
+                launcherSummaryItems={launcherSummaryItems}
+                pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
+                platformStatusLabels={platformStatusLabels}
+              />
+            </Tile>
+
+            <Tile className="hp2-home-shell__rail-card">
+              <div className="hp2-home-shell__rail-card-head">
+                <div>
+                  <p className="hp2-home-shell__eyebrow">Landing Mode</p>
+                  <h2>Presentation preferences</h2>
+                </div>
+              </div>
+              <div className="hp2-home-shell__preference-list">
+                <div>
+                  <strong>Backdrop</strong>
+                  <p>{landingPreferences.cinematicBackdropEnabled ? `Cinematic ${wallpaper.mode}` : 'Minimal product shell'}</p>
+                </div>
+                <div>
+                  <strong>Boot splash</strong>
+                  <p>{landingPreferences.bootSplashEnabled ? 'Enabled for this browser' : 'Disabled by default'}</p>
+                </div>
+              </div>
+            </Tile>
+          </Column>
+        </Grid>
+      </Content>
     </div>
   )
 }
