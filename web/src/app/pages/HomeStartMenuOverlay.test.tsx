@@ -81,7 +81,7 @@ describe('HomeStartMenuOverlay', () => {
     })
   })
 
-  it('shows the grouped Outboard Hardware launcher and removes the five dedicated device tiles', () => {
+  it('shows the canonical tall-strip launcher set and removes legacy workspace/device entries', () => {
     render(
       <MemoryRouter
         future={{
@@ -93,8 +93,11 @@ describe('HomeStartMenuOverlay', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('menuitem', { name: /Outboard Hardware/i })).toBeInTheDocument()
-    for (const label of ['Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
+    for (const label of ['Device(s) Manager', 'Snapshot Editor', 'Advanced MIDI', 'Brain', 'Drum-Machine', 'SynthForge']) {
+      expect(screen.getByText(label, { selector: '.start-menu-strip-item__label' })).toBeInTheDocument()
+    }
+
+    for (const label of ['Outboard Hardware', 'Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack', 'Stage Mode', 'Workspaces']) {
       expect(screen.queryByRole('menuitem', { name: new RegExp(label, 'i') })).not.toBeInTheDocument()
     }
   })

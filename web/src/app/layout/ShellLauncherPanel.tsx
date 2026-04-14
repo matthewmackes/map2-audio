@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { CSSProperties, ComponentType, RefObject, SVGProps } from 'react'
+import type { CSSProperties, RefObject } from 'react'
 import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
@@ -28,11 +28,9 @@ export function ShellLauncherPanel({
   pendingPushConfirmation,
   platformStatusLabels,
   startMenuTileItems,
-  SnapshotEditorIcon,
   onToggleMenu,
   onTogglePowerMenu,
   onCloseMenus,
-  onOpenSnapshotEditor,
   onOpenRestartConfirm,
   onRefreshPage,
   onLogOut,
@@ -46,11 +44,9 @@ export function ShellLauncherPanel({
   pendingPushConfirmation: PushSurfacePendingConfirmation | null
   platformStatusLabels: string[]
   startMenuTileItems: StartMenuTileItem[]
-  SnapshotEditorIcon: ComponentType<SVGProps<SVGSVGElement>> | null
   onToggleMenu: () => void
   onTogglePowerMenu: () => void
   onCloseMenus: () => void
-  onOpenSnapshotEditor: () => void
   onOpenRestartConfirm: () => void
   onRefreshPage: () => void
   onLogOut: () => void
@@ -143,18 +139,6 @@ export function ShellLauncherPanel({
                   ))}
                 </div>
               </div>
-              {SnapshotEditorIcon ? (
-                <button
-                  type="button"
-                  className="shell-launcher__header-action"
-                  role="menuitem"
-                  aria-label="Open Snapshot Editor"
-                  title="Open Snapshot Editor"
-                  onClick={onOpenSnapshotEditor}
-                >
-                  <SnapshotEditorIcon aria-hidden />
-                </button>
-              ) : null}
             </div>
 
             <div className="shell-launcher__system-summary" aria-label="System summary">

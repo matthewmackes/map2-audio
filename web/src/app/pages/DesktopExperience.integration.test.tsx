@@ -258,6 +258,9 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/" element={<HomePage />} />
             <Route path="/workspace" element={<ShellStubPage testId="workspace-page">Unified Workspaces</ShellStubPage>} />
             <Route path="/workspace/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
+            <Route path="/workspace/platforms/management" element={<ShellStubPage testId="platform-management-page">Device(s) Manager</ShellStubPage>} />
+            <Route path="/snapshot-editor" element={<ShellStubPage testId="snapshot-editor-page">Snapshot Editor</ShellStubPage>} />
+            <Route path="/brain" element={<ShellStubPage testId="brain-page">Brain</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
             <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
               <Route index element={<OutboardHardwareOverviewPage />} />
@@ -341,15 +344,13 @@ describe('Desktop experience integration', () => {
     })
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Workspaces/i }))
+    fireEvent.click((await screen.findByText('Brain', { selector: '.start-menu-strip-item__label' })).closest('a') as HTMLElement)
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
-    expect(screen.getByTestId('workspace-page')).toBeInTheDocument()
-    expect(screen.getByText('Unified Workspaces')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Close Workspaces' })).toBeInTheDocument()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/brain')
+    expect(screen.getByRole('button', { name: 'Close Brain' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close Workspaces' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close Brain' }))
 
     await act(async () => {
       jest.advanceTimersByTime(50)
@@ -365,16 +366,15 @@ describe('Desktop experience integration', () => {
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
     expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /Stage Mode/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Snapshot Editor/i })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /Stage Mode/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Snapshot Editor/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/perform')
-    expect(screen.getByTestId('perform-page')).toBeInTheDocument()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
     expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
   })
 
-  it('keeps grouped workspace section launchers out of the Start Menu once Workspaces becomes canonical', async () => {
+  it('keeps only the canonical strip launchers in the Start Menu', async () => {
     renderDesktopExperience(['/'])
 
     await act(async () => {
@@ -382,12 +382,11 @@ describe('Desktop experience integration', () => {
     })
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    expect(screen.queryByText('Outboard Hardware')).toBeNull()
-    expect(screen.queryByText('Audio Artifacts')).toBeNull()
-    expect(screen.queryByText('Physical Surfaces')).toBeNull()
-    expect(screen.getByRole('menuitem', { name: /Workspaces/i })).toBeInTheDocument()
+    for (const label of ['Device(s) Manager', 'Snapshot Editor', 'Advanced MIDI', 'Brain', 'Drum-Machine', 'SynthForge']) {
+      expect(screen.getByText(label, { selector: '.start-menu-strip-item__label' })).toBeInTheDocument()
+    }
 
-    for (const label of ['Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
+    for (const label of ['Outboard Hardware', 'Audio Artifacts', 'Physical Surfaces', 'Workspaces', 'Stage Mode', 'Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
       expect(screen.queryByRole('menuitem', { name: new RegExp(label, 'i') })).toBeNull()
     }
   })

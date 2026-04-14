@@ -277,7 +277,7 @@ describe('AppShell floating launcher shell', () => {
     expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
   })
 
-  it('shows the merged floating menu with header, system summary, and launcher tiles', async () => {
+  it('shows the tall start-menu strip with tightened summary and canonical launchers', async () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -307,27 +307,20 @@ describe('AppShell floating launcher shell', () => {
       expect(screen.queryByText('Virtual Input 1')).not.toBeInTheDocument()
     })
     expect(mockFetch.mock.calls.filter(([input]) => String(input).includes('/audio/status'))).toHaveLength(1)
-    expect(screen.getByText('Workspaces')).toBeInTheDocument()
+    expect(screen.queryByText('Pinned')).not.toBeInTheDocument()
+    expect(screen.queryByText('All Workspaces')).not.toBeInTheDocument()
     expect(screen.queryByText('Audio Artifacts')).not.toBeInTheDocument()
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Show more launchers/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toBeInTheDocument()
-    expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(6)
+    expect(screen.getAllByRole('menuitem')).toHaveLength(6)
 
-    const heroSection = container.querySelector('.shell-launcher__hero-section')
-    const compactSection = container.querySelector('.shell-launcher__compact-section')
-    expect(heroSection).toBeTruthy()
-    expect(compactSection).toBeTruthy()
-    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Advanced MIDI/ })).toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Workspaces/ })).toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).getByRole('menuitem', { name: /Stage Mode/ })).toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Tesira AVB/ })).not.toBeInTheDocument()
-    expect(within(heroSection as HTMLElement).queryByRole('menuitem', { name: /Audio Artifacts/ })).not.toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Stage Mode/ })).not.toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).getByRole('menuitem', { name: /Tesira AVB/ })).toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Audio Artifacts/ })).not.toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /Launch Control/ })).not.toBeInTheDocument()
-    expect(within(compactSection as HTMLElement).queryByRole('menuitem', { name: /MIDI Commander/ })).not.toBeInTheDocument()
+    const navStrip = container.querySelector('.shell-launcher__nav-strip')
+    expect(navStrip).toBeTruthy()
+    for (const label of ['Device(s) Manager', 'Snapshot Editor', 'Advanced MIDI', 'Brain', 'Drum-Machine', 'SynthForge']) {
+      expect(within(navStrip as HTMLElement).getByText(label, { selector: '.start-menu-strip-item__label' })).toBeInTheDocument()
+    }
+    expect(within(navStrip as HTMLElement).queryByRole('menuitem', { name: /Stage Mode/i })).not.toBeInTheDocument()
+    expect(within(navStrip as HTMLElement).queryByRole('menuitem', { name: /Workspaces/i })).not.toBeInTheDocument()
+    expect(within(navStrip as HTMLElement).queryByRole('menuitem', { name: /Tesira AVB/i })).not.toBeInTheDocument()
   })
 
   it('shows empty interface copy when no physical audio or MIDI interfaces are detected', async () => {
@@ -539,7 +532,7 @@ describe('AppShell floating launcher shell', () => {
     expect(midiRefresh).toBe(2)
   })
 
-  it('routes the header snapshot editor action through the existing audio grid entry point', () => {
+  it('routes the Snapshot Editor strip item through the canonical snapshot editor route', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -548,12 +541,12 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Snapshot Editor/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/juce-grid')
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
   })
 
-  it('routes launcher tiles as direct links', () => {
+  it('routes Device(s) Manager into the unified platforms management workspace', () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -562,9 +555,9 @@ describe('AppShell floating launcher shell', () => {
     )
 
     fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('menuitem', { name: /Workspaces/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /Device\(s\) Manager/i }))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/management')
   })
 
   it('moves focus into the launcher panel and restores it to the trigger when the panel closes', () => {
@@ -579,7 +572,7 @@ describe('AppShell floating launcher shell', () => {
     launcherTrigger.focus()
     fireEvent.click(launcherTrigger)
 
-    expect(screen.getByRole('menuitem', { name: 'Open Snapshot Editor' })).toHaveFocus()
+    expect(screen.getByRole('menuitem', { name: /Device\(s\) Manager/i })).toHaveFocus()
 
     fireEvent.keyDown(window, { key: 'Escape' })
 

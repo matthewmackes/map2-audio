@@ -1,6 +1,4 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
-import type { ComponentType, SVGProps } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
@@ -14,72 +12,13 @@ import { LatencyPressureShellReadout } from '../components/LatencyPressureShellR
 import { TaskbarClock } from '../components/TaskbarClock'
 import { PushConfirmationNoticePill } from '../layout/PushConfirmationNoticePill'
 import { NavigationItems, type ShellNavigationRenderItem } from '../layout/NavigationItems'
+import { buildStartMenuItems } from '../layout/startMenuItems'
 import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
 import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from './homeDesktopSession'
-import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
-import { allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { dispatchShellOpenRestartConfirmEvent } from '../layout/shellEvents'
-
-// ── Build start menu tile items (same logic as useAppShellPresentation) ──────
-
-const START_MENU_EXCLUDED_ROUTES = new Set([
-  '/launch-control',
-  '/midi-commander',
-  '/workspace',
-  '/workspace/artifacts',
-  '/workspace/physical-surfaces',
-  '/tesira',
-  '/edirol-ua1000',
-  '/hotone-jogg',
-  '/mpx1',
-  '/intelfx',
-])
-
-function buildStartMenuTileItems(): ShellNavigationRenderItem[] {
-  const launcherItems = launcherCatalogDisplayItems
-    .filter((item) => item.route !== '/')
-    .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(canonicalizeNavigationRoute(item.route)))
-    .map((item) => ({
-      route: item.route,
-      label: item.label,
-      shortLabel: item.shortLabel,
-      icon: item.icon,
-      description: item.description,
-      color: item.color,
-      maturity: item.maturity,
-      featured: item.route === '/tesira' ? false : item.storefrontCollections.includes('featured'),
-    }))
-
-  const advancedMidiItem = allRouteNavigationItems.find((item) => item.to === '/midi-hub')
-  const nextItems =
-    !advancedMidiItem || launcherItems.some((item) => item.route === '/midi-hub')
-      ? launcherItems
-      : [
-          {
-            route: '/midi-hub',
-            label: 'Advanced MIDI',
-            shortLabel: 'Advanced MIDI',
-            icon: advancedMidiItem.icon,
-            description: advancedMidiItem.description,
-            color: advancedMidiItem.color,
-            maturity: advancedMidiItem.maturity,
-            featured: true,
-          } satisfies ShellNavigationRenderItem,
-          ...launcherItems,
-        ]
-
-  return nextItems
-}
-
-// ── Snapshot editor icon lookup ──────────────────────────────────────────────
-
-function findSnapshotEditorIcon(): ComponentType<SVGProps<SVGSVGElement>> | null {
-  const item = allRouteNavigationItems.find((navItem) => navItem.to === '/juce-grid')
-  return (item?.icon as ComponentType<SVGProps<SVGSVGElement>>) ?? null
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -89,7 +28,6 @@ interface HomeStartMenuOverlayProps {
 }
 
 export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProps) {
-  const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
 
   const launcherInterfaceSummary = useLauncherInterfaceSummary(open)
@@ -99,8 +37,7 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
     refetchInterval: 15_000,
   })
 
-  const startMenuTileItems = useMemo(buildStartMenuTileItems, [])
-  const SnapshotEditorIcon = useMemo(findSnapshotEditorIcon, [])
+  const startMenuTileItems = useMemo<ShellNavigationRenderItem[]>(() => buildStartMenuItems(), [])
 
   const launcherSummaryItems = useMemo(
     () => [
@@ -173,11 +110,6 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
 
   const handleNavigate = () => onClose()
 
-  const handleOpenSnapshotEditor = () => {
-    onClose()
-    navigate('/juce-grid')
-  }
-
   const handleOpenRestartConfirm = () => {
     setPowerMenuOpen(false)
     onClose()
@@ -221,18 +153,6 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
               ))}
             </div>
           </div>
-          {SnapshotEditorIcon ? (
-            <button
-              type="button"
-              className="hp2-overlay__header-action"
-              role="menuitem"
-              aria-label="Open Snapshot Editor"
-              title="Open Snapshot Editor"
-              onClick={handleOpenSnapshotEditor}
-            >
-              <SnapshotEditorIcon aria-hidden />
-            </button>
-          ) : null}
         </div>
 
         {/* System Summary */}

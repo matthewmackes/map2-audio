@@ -5,7 +5,6 @@ import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDe
 type UseShellLauncherActionsOptions = {
   closeShellMenus: () => void
   navOpen: boolean
-  navigate: (to: string) => void
   setNavOpen: (open: boolean) => void
   setPowerMenuOpen: (value: boolean | ((current: boolean) => boolean)) => void
   setRestartConfirmOpen: (open: boolean) => void
@@ -14,7 +13,6 @@ type UseShellLauncherActionsOptions = {
 export function useShellLauncherActions({
   closeShellMenus,
   navOpen,
-  navigate,
   setNavOpen,
   setPowerMenuOpen,
   setRestartConfirmOpen,
@@ -30,10 +28,6 @@ export function useShellLauncherActions({
         setPowerMenuOpen(false)
         setRestartConfirmOpen(true)
       },
-      onOpenSnapshotEditor: () => {
-        closeShellMenus()
-        navigate('/juce-grid')
-      },
       onRefreshPage: () => {
         closeShellMenus()
         reloadHomeDesktopShell()
@@ -46,6 +40,6 @@ export function useShellLauncherActions({
         setPowerMenuOpen((current) => !current)
       },
     }),
-    [closeShellMenus, navOpen, navigate, setNavOpen, setPowerMenuOpen, setRestartConfirmOpen],
+    [closeShellMenus, navOpen, setNavOpen, setPowerMenuOpen, setRestartConfirmOpen],
   )
 }

@@ -3,17 +3,10 @@ import { useMemo } from 'react'
 import { MAP2_PLATFORM_VERSION, Map2BrandMark } from '../components/branding/map2Branding'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import { allPinnableNavigationItems, allRouteNavigationItems, canonicalizeNavigationRoute } from '../data/advancedMenuItems'
-import { launcherCatalogDisplayItems } from '../data/launcherCatalog'
+import { buildStartMenuItems } from './startMenuItems'
 
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
-
-const START_MENU_EXCLUDED_ROUTES = new Set([
-  '/launch-control',
-  '/midi-commander',
-  '/workspace/artifacts',
-  '/workspace/physical-surfaces',
-])
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(`${to}/`))
@@ -50,50 +43,7 @@ export function useAppShellPresentation({
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(pathname)
   const canonicalPathname = useMemo(() => canonicalizeNavigationRoute(pathname), [pathname])
 
-  const startMenuTileItems = useMemo<StartMenuTileItem[]>(
-    () => {
-      const launcherItems = launcherCatalogDisplayItems
-        .filter((item) => item.route !== '/')
-        .filter((item) => !START_MENU_EXCLUDED_ROUTES.has(canonicalizeNavigationRoute(item.route)))
-        .map((item) => ({
-          route: item.route,
-          label: item.label,
-          shortLabel: item.shortLabel,
-          icon: item.icon,
-          description: item.description,
-          color: item.color,
-          maturity: item.maturity,
-          featured: item.route === '/tesira' ? false : item.storefrontCollections.includes('featured'),
-        }))
-
-      const advancedMidiItem = allRouteNavigationItems.find((item) => item.to === '/midi-hub')
-      const nextItems
-        = !advancedMidiItem || launcherItems.some((item) => item.route === '/midi-hub')
-          ? launcherItems
-          : [
-              {
-                route: '/midi-hub',
-                label: 'Advanced MIDI',
-                shortLabel: 'Advanced MIDI',
-                icon: advancedMidiItem.icon,
-                description: advancedMidiItem.description,
-                color: advancedMidiItem.color,
-                maturity: advancedMidiItem.maturity,
-                featured: true,
-              } satisfies StartMenuTileItem,
-              ...launcherItems,
-            ]
-
-      return nextItems
-    },
-    [],
-  )
-
-  const snapshotEditorNavItem = useMemo(
-    () =>
-      [...allPinnableNavigationItems, ...allRouteNavigationItems].find((item) => item.to === '/juce-grid'),
-    [],
-  )
+  const startMenuTileItems = useMemo<StartMenuTileItem[]>(() => buildStartMenuItems(), [])
 
   const currentShellItem = useMemo(() => {
     const candidates = [...allPinnableNavigationItems, ...allRouteNavigationItems]
@@ -116,7 +66,6 @@ export function useAppShellPresentation({
   const shellClassName = `app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
 
   return {
-    SnapshotEditorIcon: snapshotEditorNavItem?.icon ?? null,
     currentShellItem,
     isAudioGridWorkspaceRoute,
     isDesktopRoute,

@@ -24121,3 +24121,258 @@ Last updated: 2026-04-14 12:40 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx` -> PASS (`22 passed`)
 - Licensing review:
   - Touched Theme page source, stylesheet, test, and worklist artifacts remain MAP2-owned repository files covered by the project AGPLv3 policy; no new third-party notices or ownership overrides were introduced in this slice.
+
+## Workspace Hub UI Unification
+
+ID: T1006
+Status: [ ] Todo
+Title: Unify the `/workspace/*` area into one cohesive, world-class interface
+Description:
+- Goal / acceptance criteria: Eliminate all placeholder tiles, redundant metric grids, engineering-internal copy, raw JSON debug blocks, inconsistent card styling, and duplicate page headers across the four workspace sections (Platforms, Physical Surfaces, Audio Artifacts, Outboard Hardware) so the entire `/workspace/*` area looks and feels like a single professional product surface rather than a patchwork of migration slices.
+- Why it matters: The workspace hub was assembled incrementally through migration slices. Each section still carries scaffolding text, architectural explainer tiles, over-verbose descriptions, and its own visual identity (different border-radius, spacing scales, header treatments). The result is visually noisy, inconsistent, and unprofessional. Users should see one unified workspace — not five competing sub-products.
+- Dependencies: T1005, T716
+- Estimated effort: High
+- Required outputs: Updated page components, CSS files, shared header component or `PageHeader` compact variant, focused regression tests for each modified page, visual browser verification, and worklist validation notes.
+Subtasks:
+  - ID: T1006-subA
+    Status: [ ] Todo
+    Title: Remove all placeholder and scaffolding tiles from the workspace hub
+    Description:
+    - Goal / acceptance criteria: Delete every "Migration pending", "Flat scaffold", and architectural-explainer tile across the workspace area so no engineering-internal copy is visible to end users.
+    - Why it matters: These tiles were interim scaffolding from the migration and communicate nothing to operators. They add visual clutter and make the workspace look unfinished.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated source files, removed dead code, passing typecheck and existing tests.
+    - Detailed instructions:
+      1. In `web/src/app/pages/WorkspaceHubShell.tsx`: Delete the entire `WorkspaceHubPlaceholder` component definition (lines ~138-171) and remove all imports/exports of it. Search the codebase for any usages of `WorkspaceHubPlaceholder` and remove those call sites.
+      2. In `web/src/app/pages/WorkspaceHubNav.tsx` lines 23-25: Delete the `<p className="workspace-hub-nav__copy">` element that reads "Flat scaffold for the upcoming consolidated workspace shell. Section bodies migrate in later slices." Remove the corresponding CSS class `.workspace-hub-nav__copy` from `WorkspaceHubNav.css`.
+      3. In `web/src/app/pages/OutboardHardwareOverviewPage.tsx` lines ~555-570: Delete the "Workspace contract" `<Tile>` that contains "One shell, five preserved routes" and its child copy/tags ("Home tile grouped", "Advanced Menu preserved", "Dedicated routes intact").
+      4. In `web/src/app/pages/OutboardHardwareOverviewPage.tsx` lines ~572-597: Delete the "Status filter" wrapper `<Tile>` that contains the heading "Focus the overview" and the explanatory copy. Keep the filter `<Button>` group but move it inline — render it directly inside the section header or as a standalone `<div>` with `role="group"` above the device grid, without the enclosing Tile/card wrapper.
+      5. In `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx` lines ~158-180: Delete the "Shared operator contract / Synth-first surface rules" `<Tile>` and its child tags and note list. This is internal contract description with no end-user value.
+      6. After each deletion, run `npm --prefix web run typecheck` and the relevant page tests to confirm no runtime errors.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subB
+    Status: [ ] Todo
+    Title: Unify page headers across all workspace sections with a compact treatment
+    Description:
+    - Goal / acceptance criteria: Replace the oversized `PageHeader` instances inside `/workspace/*` routes with a consistent, compact section header that does not duplicate the brand block, removes the CSS `::before` "Platform workspace" eyebrow, and uses consistent typography sizing across all four sections.
+    - Why it matters: Currently each section uses `PageHeader` differently — some render the brand mark, some don't, some have huge titles, and some embed their own icon+title blocks. The sidebar nav already provides section context, making nested heavyweight headers redundant and noisy.
+    - Dependencies: T1006-subA
+    - Estimated effort: Medium
+    - Required outputs: New `WorkspaceSectionHeader` component (or `PageHeader` with `compact` prop), updated page files, updated CSS, passing tests.
+    - Detailed instructions:
+      1. Create a new lightweight component `web/src/app/components/shared/WorkspaceSectionHeader.tsx` (or add a `compact` boolean prop to the existing `PageHeader`). The compact variant should render:
+         - An optional eyebrow `<span>` (e.g., section name like "Physical Surfaces")
+         - A single `<h1>` with `font-size: var(--cds-heading-03-font-size, 1.25rem)` — NOT the current `clamp(1.9rem, 3vw, 2.5rem)` oversized treatment
+         - An optional `<p>` subtitle in `var(--cds-body-compact-01-font-size)`
+         - An optional right-side `actions` slot for inline tags/buttons
+         - NO brand block (`page-header__brand`), NO `::before` pseudo-element, NO oversized padding
+         - Compact padding: `1rem 1.25rem`
+         - Consistent border: `1px solid var(--cds-border-subtle-01)`, `border-radius: 1rem`
+         - A thin `3px` top accent bar using `var(--cds-border-interactive)` (the existing `::before` approach, but only the top bar, no side gradient)
+      2. In `web/src/app/pages/OutboardHardwareOverviewPage.tsx` and `OutboardHardwareDevicePage.tsx`: Replace `<PageHeader>` with the new compact variant. Change subtitle from "Unified routed shell for rack processors, AVB DSP hardware, and dedicated interface pages." to "Rack processors, AVB hardware, and audio interfaces".
+      3. In `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`: Replace `<PageHeader>` with compact variant. Change title from "Enriched_MIDI_Physical_Surfaces" to "Physical Surfaces". Change subtitle from "Unified MAP2 workspace for advanced controller families, host detection, richer transport layers, and device-specific subpages." to "Controller families, transport layers, and device-specific surfaces".
+      4. In `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`: Replace `<PageHeader>` with compact variant. Change subtitle from "Shared physical-surface detail page inside Enriched_MIDI_Physical_Surfaces." to just the unit's `status_reason` value.
+      5. In `web/src/app/pages/AudioArtifactsPage.tsx` (when `renderShell={false}`): Remove the `aap__header-icon` element (the `<Catalog size={32}>` square). Change the `<h1 className="aap__title">` to `<h2>`. Remove the `<p className="aap__subtitle">` paragraph. Remove the `<p className="aap__category-desc">` paragraph from the category header — keep only the category title and the right-side tags.
+      6. In `web/src/app/components/PageHeader.css`: Remove or scope the `.page-header__copy::before` pseudo-element (the hardcoded "Platform workspace" text) so it does not appear inside `/workspace/*` routes. If `PageHeader` is still used elsewhere and needs the eyebrow, scope it with a `:not(.workspace-hub-shell__content *)` selector or similar.
+      7. Run typecheck and all affected page tests after changes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subC
+    Status: [ ] Todo
+    Title: Consolidate redundant metric card grids
+    Description:
+    - Goal / acceptance criteria: Remove duplicate metric grids from Outboard Hardware and Physical Surfaces pages that repeat data already shown in the workspace hub shell summary cards.
+    - Why it matters: The shell renders a 4-card summary grid above every page. Individual pages then render their own 4-6 metric cards with overlapping information (device counts, online/offline status, etc.). This creates visual redundancy and makes pages feel bloated.
+    - Dependencies: T1006-subB
+    - Estimated effort: Low
+    - Required outputs: Updated page components with metric grids removed, status counts moved to header tags, passing tests.
+    - Detailed instructions:
+      1. In `web/src/app/pages/OutboardHardwareOverviewPage.tsx`: Delete the entire `.outboard-hardware-page__metrics` grid (the 4 `<Tile>` metric cards: "Total devices", "Healthy", "Attention", "Offline"). Move the 4 status counts into the `actions` slot of the section header (from T1006-subB) as inline `<Tag>` elements: `<Tag type="blue">{total} devices</Tag>`, `<Tag type="green">{healthy} healthy</Tag>`, `<Tag type="warm-gray">{attention} attention</Tag>`, `<Tag type="red">{offline} offline</Tag>`. These tags already exist in the current `PageHeader` actions — just make sure they survive the header swap.
+      2. In `web/src/app/pages/OutboardHardwareDevicePage.tsx`: Delete the `.outboard-hardware-page__metrics` grid (4 metric cards: "Hardware class", "Dedicated route", "Protocols", "Capabilities"). These facts are already visible as tags and in the device card body — they don't need a dedicated metric row.
+      3. In `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`: Delete the `.physical-surfaces-page__metrics` grid (5 metric cards: "Online", "Detected", "USB Devices", "Sound Cards", "MIDI Hub Devices"). The shell-level summary card already covers unit counts. Add a compact inline tag row to the section header actions: `<Tag type="green">{online} online</Tag>`, `<Tag type="blue">{detected} detected</Tag>`, `<Tag type="blue">{units.length} units</Tag>`.
+      4. In `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`: Delete the `.physical-surfaces-page__metrics` grid (6 metric cards). The unit-specific facts (status, host detection, capabilities count, specialized route, current view, MIDI hub matches) should be displayed as a compact tag row or a definition list inside the first card body — not as a separate oversized metric row.
+      5. Clean up corresponding CSS grid rules (`.outboard-hardware-page__metrics`, `.physical-surfaces-page__metrics`) from `OutboardHardwareShell.css` and `PhysicalSurfacesShell.css` if no longer referenced.
+      6. Run typecheck and page tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subD
+    Status: [ ] Todo
+    Title: Hide raw JSON debug blocks behind disclosure accordions
+    Description:
+    - Goal / acceptance criteria: Wrap raw `JSON.stringify` `<pre>` blocks in Physical Surface unit pages inside collapsed Carbon `AccordionItem` elements so debug data is available to power users but hidden from the default view.
+    - Why it matters: Raw JSON dumps on a production UI page look unfinished and overwhelm the visual hierarchy. These are useful for debugging but should not be front-and-center.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated `PhysicalSurfaceUnitPage.tsx` with `Accordion`/`AccordionItem` wrappers, passing tests.
+    - Detailed instructions:
+      1. In `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`:
+         - Import `Accordion` and `AccordionItem` from `@carbon/react`.
+         - Find `<pre className="physical-surfaces-page__pre">{JSON.stringify(unit.service_state, null, 2)}</pre>` (line ~304). Wrap it in: `<Accordion><AccordionItem title="Raw service state">{...pre block...}</AccordionItem></Accordion>`.
+         - Find `<pre className="physical-surfaces-page__pre">{JSON.stringify(unit.surface_lab.snapshot, null, 2)}</pre>` (line ~252). Wrap it in: `<Accordion><AccordionItem title="Lab snapshot data">{...pre block...}</AccordionItem></Accordion>`.
+      2. Style the accordion items to match the workspace card aesthetic: add `border-radius: 1rem` override and consistent background treatment.
+      3. Run typecheck and verify the accordions expand/collapse correctly.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subE
+    Status: [ ] Todo
+    Title: Unify card border-radius and tile styling across workspace sections
+    Description:
+    - Goal / acceptance criteria: All Carbon `Tile` elements inside the workspace hub content area use consistent `border-radius: 1rem` styling, matching the shell summary cards and nav sidebar.
+    - Why it matters: The workspace hub shell and nav use `border-radius: 1rem`, but embedded section pages use the Carbon default (sharp corners). This inconsistency breaks the visual unity.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Updated `WorkspaceHubShell.css` with a scoped Tile override, removal of conflicting per-page overrides, visual verification.
+    - Detailed instructions:
+      1. In `web/src/app/pages/WorkspaceHubShell.css`, add a scoped override rule:
+         ```css
+         .workspace-hub-shell__content .cds--tile {
+           border-radius: 1rem;
+         }
+         ```
+      2. In `web/src/app/pages/OutboardHardwareShell.css` and `web/src/app/pages/PhysicalSurfacesShell.css`: Review for any explicit `border-radius` rules on `.cds--tile` or page card classes that conflict. Remove them if they set a different radius.
+      3. In `web/src/app/pages/AudioArtifactsPage.css`: Check `.aap__table-tile`, `.aap-detail-panel`, `.aap-sync-drawer` — if they set `border-radius` to anything other than `1rem`, update or remove the override so the scoped rule takes effect.
+      4. Open each workspace route in the browser and visually verify all tiles have consistent rounded corners.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subF
+    Status: [ ] Todo
+    Title: Clean up workspace hub navigation sidebar text and density
+    Description:
+    - Goal / acceptance criteria: Simplify the workspace hub sidebar title and remove engineering-internal copy so it reads as polished product navigation.
+    - Why it matters: The current sidebar displays "Unified Workspaces" as its title and includes a paragraph about "flat scaffold" and "later slices" — this is engineering language that leaked into the UI.
+    - Dependencies: T1006-subA (the copy removal overlaps — ensure subA handles the `<p>` removal; this subtask handles the title and spacing refinements)
+    - Estimated effort: Low
+    - Required outputs: Updated `WorkspaceHubNav.tsx` and `WorkspaceHubNav.css`.
+    - Detailed instructions:
+      1. In `web/src/app/pages/WorkspaceHubNav.tsx`: Change `<h1 className="workspace-hub-nav__title">Unified Workspaces</h1>` to `<h1 className="workspace-hub-nav__title">Workspace</h1>`.
+      2. Confirm the `<p className="workspace-hub-nav__copy">` element was already removed in T1006-subA. If not, remove it here.
+      3. In `web/src/app/pages/WorkspaceHubNav.css`: Change `.workspace-hub-nav__link` padding from `0.72rem 0.85rem` to `0.85rem 0.85rem` for better touch targets and visual breathing room.
+      4. Remove the `.workspace-hub-nav__copy` CSS class rule if it still exists.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subG
+    Status: [ ] Todo
+    Title: Normalize CSS variable scoping and remove orphaned shell imports
+    Description:
+    - Goal / acceptance criteria: Remove the `--workspace-shell-scale` multiplier pattern from embedded workspace pages and clean up orphaned CSS file imports from workspace-hub outlet wrappers.
+    - Why it matters: Pages embedded inside the workspace hub inherit the hub shell's spacing. The per-page `--workspace-shell-scale` multipliers were designed for standalone shell rendering and create unexpected oversized spacing when nested inside the hub.
+    - Dependencies: T1006-subE
+    - Estimated effort: Low
+    - Required outputs: Updated outlet wrapper files (removed CSS imports), updated page CSS files (removed or scoped `--workspace-shell-scale` rules), passing typecheck.
+    - Detailed instructions:
+      1. In `web/src/app/pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage.tsx` and `WorkspaceOutboardHardwareDevicePage.tsx`: Remove the line `import '../../OutboardHardwareShell.css'`. The page-level class `.outboard-hardware-page` has its own layout rules that don't depend on the shell wrapper.
+      2. In `web/src/app/pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage.tsx` and `WorkspacePhysicalSurfaceUnitPage.tsx`: Remove the line `import '../../PhysicalSurfacesShell.css'`.
+      3. Verify that `.outboard-hardware-page` and `.physical-surfaces-page` classes have sufficient standalone CSS rules for gap/spacing. If any layout breaks because these classes depended on parent shell variables, add the necessary gap/padding rules directly to those page classes, scoped under `.workspace-hub-shell__content`:
+         ```css
+         .workspace-hub-shell__content .outboard-hardware-page,
+         .workspace-hub-shell__content .physical-surfaces-page {
+           gap: var(--cds-spacing-06);
+         }
+         ```
+      4. Run typecheck and verify layout in the browser.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subH
+    Status: [ ] Todo
+    Title: Reduce tag spam across Outboard Hardware and Physical Surfaces pages
+    Description:
+    - Goal / acceptance criteria: Remove tags that display internal route paths, architectural contract labels, and layout-mode identifiers. Keep only tags that communicate user-actionable state: online/offline status, device counts, and match counts.
+    - Why it matters: Several pages display 8-12+ tags per card, many of which show internal route paths (e.g., `<Tag type="purple">/intelfx</Tag>`) or architectural notes (e.g., "Home tile grouped"). This creates visual noise and communicates nothing to operators.
+    - Dependencies: T1006-subA (the "Workspace contract" tile removal handles some of these)
+    - Estimated effort: Low
+    - Required outputs: Updated page components with tag spam removed, passing tests.
+    - Detailed instructions:
+      1. In `web/src/app/pages/OutboardHardwareOverviewPage.tsx`, inside the `OutboardHardwareCard` component:
+         - Remove the `{dedicatedRoute ? <Tag type="purple">{dedicatedRoute}</Tag> : null}` tag from the capabilities tag row (line ~443). Route paths are internal and not user-facing.
+         - The device card should show: category tag, status tag, status fact tags, up to 4 capability tags, and action buttons. No route path tags.
+      2. In `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx`, inside the `UnitCard` component:
+         - Remove `<Tag type="blue">{unit.view_state.page_layout_mode}</Tag>` — layout mode is internal.
+         - Remove `<Tag type="green">{unit.surface_lab.access}</Tag>` — access level is internal.
+         - Remove `{standaloneRoute ? <Tag type="purple">{standaloneRoute}</Tag> : null}` — route path is internal.
+         - Keep: status tag, capability tags (up to 4), MIDI Hub match count tag.
+      3. In `web/src/app/pages/PhysicalSurfaceUnitPage.tsx`:
+         - In the "Fixed views" section, review the per-view presentation key:value tags (`{Object.entries(view.presentation ?? {}).map(...)}`). If presentation entries are low-level internal identifiers, remove the tag rendering. If they are user-meaningful (e.g., "color: blue"), keep them but limit to 3-4 per view.
+      4. Run typecheck and page tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subI
+    Status: [ ] Todo
+    Title: Tighten embedded AudioArtifacts layout inside the workspace hub
+    Description:
+    - Goal / acceptance criteria: When `AudioArtifactsPage` renders with `renderShell={false}` inside the workspace hub, the header is compact (no icon box, `<h2>` instead of `<h1>`, no subtitle), and the category header omits the description line.
+    - Why it matters: The Audio Artifacts page has its own icon+title+subtitle header block that duplicates context already provided by the workspace hub sidebar nav. Inside the hub, it should defer to the hub's navigation for context and keep its own header minimal.
+    - Dependencies: T1006-subB
+    - Estimated effort: Low
+    - Required outputs: Updated `AudioArtifactsPage.tsx` with conditional compact rendering, passing tests.
+    - Detailed instructions:
+      1. In `web/src/app/pages/AudioArtifactsPage.tsx`, inside the `artifactsContent` JSX block (line ~1072):
+         - When `renderShell` is `false`, conditionally skip the `<div className="aap__header-icon">` element (the `<Catalog size={32}>` square).
+         - When `renderShell` is `false`, change `<h1 className="aap__title">` to `<h2 className="aap__title">`.
+         - When `renderShell` is `false`, skip the `<p className="aap__subtitle">` element.
+      2. In the category header section (line ~1171):
+         - When `renderShell` is `false`, skip the `<p className="aap__category-desc">` element. Keep the category title and the right-side tags (node label, item count, refresh button).
+      3. Run typecheck and audio artifacts page tests.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+  - ID: T1006-subJ
+    Status: [ ] Todo
+    Title: Final visual polish pass — spacing, transitions, empty states, typography
+    Description:
+    - Goal / acceptance criteria: After completing subtasks A through I, perform a full visual review of every `/workspace/*` route and fix any remaining inconsistencies in spacing, typography, transitions, and empty-state presentation.
+    - Why it matters: Individual subtasks address specific issues, but integration of all changes may reveal new inconsistencies or orphaned styles. A final sweep ensures the workspace presents as one polished, world-class interface.
+    - Dependencies: T1006-subA through T1006-subI
+    - Estimated effort: Medium
+    - Required outputs: CSS adjustments, visual browser verification of every workspace route, passing full test suite.
+    - Detailed instructions:
+      1. Open each `/workspace/*` route in the browser and verify:
+         a. No orphaned placeholder text, "Migration pending" labels, or engineering-internal copy is visible.
+         b. All Carbon `Tile` elements have consistent `border-radius: 1rem`.
+         c. No raw JSON is visible by default — only behind disclosure accordions.
+         d. Section headers are compact and consistent — no brand blocks, no oversized titles.
+         e. No duplicate metric grids between the shell summary and page content.
+         f. Tag usage is restrained — no route paths, no architectural labels.
+      2. Verify page transitions: Ensure `PageTransition` or equivalent animation is applied to the `<Outlet>` in `WorkspaceHubShell` for smooth section swaps. If not present, add a fade/slide transition using `framer-motion` `AnimatePresence` keyed on `location.pathname`.
+      3. Audit empty states: Ensure all sections use the shared `EmptyState` component (`web/src/app/components/shared/EmptyState.tsx`) rather than custom inline empty markup. If any section renders its own empty placeholder, replace it with `<EmptyState>`.
+      4. Typography audit: All section titles inside the workspace hub content should use `var(--cds-heading-03-font-size, 1.25rem)`. Card sub-headings should use `var(--cds-heading-02-font-size, 1rem)`. Body copy should use `var(--cds-body-compact-01-font-size, 0.875rem)`. Fix any outliers.
+      5. Spacing audit: Ensure consistent `gap: var(--cds-spacing-06)` (or `1.5rem`) between major content blocks across all sections. The current mix of `0.8rem`, `1rem`, `var(--cds-spacing-05)`, and `var(--cds-spacing-06)` should be normalized to one value inside the workspace hub content.
+      6. Run the full frontend test suite: `npm --prefix web run typecheck && CI=1 npm --prefix web test -- --runInBand`.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-14 13:00 EDT - Architect
+Assigned to: Codex
+Last updated: 2026-04-14 13:00 EDT - Architect
+
+## Landing Page Carbon Cleanup
+
+Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLauncherPanel), remove dead/leftover code, and bring the surface into alignment with the IBM Carbon Design System per `docs/design/CARBON_CONFORMANCE_STANDARD.md`. Plan file: `.claude/plans/mossy-orbiting-sun.md`.
+
+- [x] T2239 — Delete dead launcher components (`HeroIconLauncher.tsx`/`.css`, `SpinningCubeLauncher.tsx`/`.css`). Verify no imports first (`grep -rn 'HeroIconLauncher\|SpinningCubeLauncher' web/src`). Keep only `StaticHeroIconLauncher`.
+- [ ] T2240 — Unify `HomeStartMenuOverlay` and `ShellLauncherPanel` into a single `<LauncherPanel variant="home"|"workspace">` under `web/src/app/layout/LauncherPanel/`. Eliminates duplicated system-summary, device listing, power menu, and focus-trap code.
+- [ ] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
+- [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
+- [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
+- [ ] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
+- [ ] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
+- [x] T2246 — Swap the custom power menu for Carbon `OverflowMenu` only; delete the `.hp2-overlay__power-button` CSS block (~40 lines) and the unused `.hp2-window__eyebrow` class.
+- [ ] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
+- [ ] T2248 — Extract a presentational `<SystemSummary>` component (platform version, OS/hostname, AVB/AVDECC status, detected audio/MIDI interfaces) and reuse it on both the landing grid and the workspace `LauncherPanel`. Align with the Unified Node Pill Directive — do not reintroduce a second node-identity surface.
+
+Completion notes (2026-04-14 13:19 EDT - Codex):
+- T2239: deleted the unused `HeroIconLauncher` and `SpinningCubeLauncher` component/CSS pairs and verified only `StaticHeroIconLauncher` remains referenced in the landing and shell flows.
+- T2243: extracted the canonical start-menu definitions into `web/src/app/layout/startMenuItems.ts`, then rewired `HomeStartMenuOverlay`, `useAppShellPresentation`, and related tests to consume the shared typed builder instead of duplicating inline menu logic.
+- T2246: finished the Carbon `OverflowMenu` migration for both launcher surfaces and removed the stale `.hp2-overlay__power-button`, `.shell-launcher__power-button`, and `.hp2-window__eyebrow` CSS blocks.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+
+Assigned to: Codex
+Last updated: 2026-04-14 13:19 EDT - Codex

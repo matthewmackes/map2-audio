@@ -39,7 +39,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   } = useAppShellState({ pathname: location.pathname })
   const launcherInterfaceSummary = useLauncherInterfaceSummary(navOpen)
   const {
-    SnapshotEditorIcon,
     isAudioGridWorkspaceRoute,
     isDesktopRoute,
     isIntegratedWorkspaceRoute,
@@ -84,7 +83,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const launcherActions = useShellLauncherActions({
     closeShellMenus,
     navOpen,
-    navigate,
     setNavOpen,
     setPowerMenuOpen,
     setRestartConfirmOpen,
@@ -140,11 +138,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
           platformStatusLabels={platformStatusLabels}
           startMenuTileItems={startMenuTileItems}
-          SnapshotEditorIcon={SnapshotEditorIcon}
           onToggleMenu={launcherActions.onToggleMenu}
           onTogglePowerMenu={launcherActions.onTogglePowerMenu}
           onCloseMenus={launcherActions.onCloseMenus}
-          onOpenSnapshotEditor={launcherActions.onOpenSnapshotEditor}
           onOpenRestartConfirm={launcherActions.onOpenRestartConfirm}
           onRefreshPage={launcherActions.onRefreshPage}
           onLogOut={launcherActions.onLogOut}
