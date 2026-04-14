@@ -308,7 +308,7 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-reduced-effects', 'true')
     expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })

@@ -24804,7 +24804,7 @@ Last updated: 2026-04-14 12:58 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2270
-Status: [ ] Todo
+Status: [✓] Done
 Title: Expose home-shell launch tiles to reduced-motion and high-contrast theme audits
 Description:
 - Goal / acceptance criteria: Audit and refine the home-shell tile interactions, focus states, and background/backdrop treatments under reduced-motion and high-contrast conditions.
@@ -24813,7 +24813,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: CSS/accessibility refinements, focused tests where feasible, and audit notes in the worklist.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:54 EDT - Codex
+- Completion notes:
+  - Exposed the reduced-effects state on the home-shell root in `web/src/app/pages/HomePage.tsx` so the surface now has a deterministic DOM contract for accessibility-aware rendering and tests.
+  - Hardened `web/src/app/pages/HomePage.css` with explicit focus-visible states for the launch tiles and rail cards, plus reduced-motion and high-contrast overrides for the layered backdrop, blur treatment, and card chrome.
+  - Extended `web/src/app/pages/HomePage.test.tsx` so the reduced-motion boot-splash path now also proves the home shell advertises `data-reduced-effects="true"` when the accessibility preference is active.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2271
 Status: [ ] Todo

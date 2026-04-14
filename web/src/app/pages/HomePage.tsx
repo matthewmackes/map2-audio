@@ -121,6 +121,7 @@ export function HomePage() {
       className={`hp2-root hp2-root--landing${landingPreferences.cinematicBackdropEnabled ? ` hp2-root--${wallpaper.mode}` : ' hp2-root--minimal'}`}
       data-testid="home-shell"
       data-wallpaper-mode={landingPreferences.cinematicBackdropEnabled ? wallpaper.mode : 'minimal'}
+      data-reduced-effects={shouldReduceEffects ? 'true' : 'false'}
     >
       {landingPreferences.cinematicBackdropEnabled && wallpaper.mode === 'uploaded-image' && wallpaper.imageDataUrl ? (
         <img

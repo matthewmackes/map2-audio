@@ -159,6 +159,7 @@
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
   background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, transparent);
   backdrop-filter: blur(14px);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
 
 .hp2-home-shell__hero,
@@ -236,6 +237,20 @@
   min-height: 13rem;
 }
 
+.hp2-home-shell__workspace-tile.cds--tile:hover,
+.hp2-home-shell__workspace-tile.cds--tile:focus-visible,
+.hp2-home-shell__rail-card.cds--tile:hover,
+.hp2-home-shell__rail-card.cds--tile:focus-visible {
+  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-subtle, #c6c6c6));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-link-primary, #0f62fe) 18%, transparent);
+}
+
+.hp2-home-shell__workspace-tile.cds--tile:focus-visible,
+.hp2-home-shell__rail-card.cds--tile:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 3px;
+}
+
 .hp2-home-shell__workspace-tile.cds--tile.is-recent {
   border-color: color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 56%, var(--cds-border-subtle, #c6c6c6));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 22%, transparent);
@@ -304,6 +319,58 @@
   display: block;
   margin-bottom: var(--cds-spacing-02, 0.25rem);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp2-root__wallpaper,
+  .hp2-root__default-wallpaper,
+  .hp2-root__backdrop,
+  .hp2-home-shell__hero,
+  .hp2-home-shell__rail-card,
+  .hp2-home-shell__workspace-tile.cds--tile {
+    animation: none;
+    transition: none;
+  }
+
+  .hp2-home-shell__masthead {
+    backdrop-filter: none;
+  }
+}
+
+.hp2-root[data-reduced-effects='true'] .hp2-root__wallpaper,
+.hp2-root[data-reduced-effects='true'] .hp2-root__default-wallpaper,
+.hp2-root[data-reduced-effects='true'] .hp2-root__backdrop,
+.hp2-root[data-reduced-effects='true'] .hp2-home-shell__hero,
+.hp2-root[data-reduced-effects='true'] .hp2-home-shell__rail-card,
+.hp2-root[data-reduced-effects='true'] .hp2-home-shell__workspace-tile.cds--tile {
+  animation: none;
+  transition: none;
+}
+
+.hp2-root[data-reduced-effects='true'] .hp2-home-shell__masthead {
+  backdrop-filter: none;
+}
+
+@media (prefers-contrast: more) {
+  .hp2-root__backdrop {
+    background:
+      linear-gradient(180deg, rgba(244, 244, 244, 0.96) 0%, rgba(244, 244, 244, 1) 100%),
+      linear-gradient(90deg, rgba(15, 98, 254, 0.12) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(15, 98, 254, 0.1) 1px, transparent 1px);
+  }
+
+  .hp2-home-shell__masthead,
+  .hp2-home-shell__hero,
+  .hp2-home-shell__rail-card,
+  .hp2-home-shell__workspace-tile.cds--tile {
+    border-color: var(--cds-border-strong-01, #8d8d8d);
+    background: var(--cds-layer, #ffffff);
+    backdrop-filter: none;
+  }
+
+  .hp2-home-shell__rail-card-link {
+    text-decoration: underline;
+  }
 }
 
 @media (max-width: 66rem) {
