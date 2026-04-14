@@ -24249,7 +24249,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-14 13:00 EDT - Architect
   - ID: T1006-subF
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Clean up workspace hub navigation sidebar text and density
     Description:
     - Goal / acceptance criteria: Simplify the workspace hub sidebar title and remove engineering-internal copy so it reads as polished product navigation.
@@ -24264,7 +24264,13 @@ Subtasks:
       4. Remove the `.workspace-hub-nav__copy` CSS class rule if it still exists.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:18 EDT - Codex
+    - Completion notes:
+      - Changed the workspace hub sidebar title from `Unified Workspaces` to `Workspace` and increased the nav-link padding to `0.85rem 0.85rem` so the sidebar reads more like product navigation and has better touch-target spacing.
+      - Confirmed the scaffold paragraph removed in T1006-subA stayed deleted, so the sidebar no longer exposes migration-copy to operators.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
   - ID: T1006-subG
     Status: [ ] Todo
     Title: Normalize CSS variable scoping and remove orphaned shell imports
