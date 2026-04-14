@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import type { WorkspaceHubNavSection } from './WorkspaceHubContext'
@@ -14,6 +15,25 @@ function joinClasses(...parts: Array<string | false | null | undefined>) {
 
 export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
   const location = useLocation()
+  const [filterValue, setFilterValue] = useState('')
+  const normalizedFilter = filterValue.trim().toLocaleLowerCase()
+  const filteredSections = useMemo(
+    () => sections
+      .map((section) => {
+        if (!normalizedFilter) {
+          return section
+        }
+
+        const sectionMatch = section.label.toLocaleLowerCase().includes(normalizedFilter)
+        const items = sectionMatch
+          ? section.items
+          : section.items.filter((item) => item.label.toLocaleLowerCase().includes(normalizedFilter))
+
+        return { ...section, items }
+      })
+      .filter((section) => section.items.length > 0),
+    [normalizedFilter, sections],
+  )
 
   return (
     <nav className={joinClasses('workspace-hub-nav', className)} aria-label="Workspace hub navigation">
@@ -22,7 +42,21 @@ export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
         <h1 className="workspace-hub-nav__title">Workspace areas</h1>
       </div>
 
-      {sections.map((section) => (
+      <div className="workspace-hub-nav__filter">
+        <label className="workspace-hub-nav__filter-label" htmlFor="workspace-hub-nav-filter">
+          Filter workspace areas
+        </label>
+        <input
+          id="workspace-hub-nav-filter"
+          className="workspace-hub-nav__filter-input"
+          type="search"
+          value={filterValue}
+          onChange={(event) => setFilterValue(event.target.value)}
+          placeholder="Search sections and pages"
+        />
+      </div>
+
+      {filteredSections.map((section) => (
         <div key={section.key} className="workspace-hub-nav__section">
           <div className="workspace-hub-nav__divider" aria-hidden="true">{section.label}</div>
           {section.items.map((item) => (
@@ -44,6 +78,10 @@ export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
           ))}
         </div>
       ))}
+
+      {filteredSections.length === 0 ? (
+        <p className="workspace-hub-nav__empty">No workspace areas match that filter.</p>
+      ) : null}
     </nav>
   )
 }

@@ -164,6 +164,34 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByRole('link', { name: 'MPX1 Rack' })).toHaveAttribute('href', '/workspace/outboard-hardware/lexicon-mpx1')
   })
 
+  it('filters the workspace sidebar sections and entries from the nav search field', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={['/workspace/artifacts?category=snapshots']}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <Routes>
+          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
+            <Route
+              path="artifacts"
+              element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('Filter workspace areas'), { target: { value: 'snap' } })
+
+    expect(await screen.findByRole('link', { name: 'Snapshots', current: 'page' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Audio Engine' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Platforms', { selector: '.workspace-hub-nav__divider' })).not.toBeInTheDocument()
+    expect(screen.getByText('Audio Artifacts', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
+  })
+
   it('closes the workspace hub shell back to home from the standard title bar', async () => {
     render(
       <MemoryRouter

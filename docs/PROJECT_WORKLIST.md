@@ -24749,7 +24749,7 @@ Last updated: 2026-04-14 10:02 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/shared/WorkspaceSectionHeader.test.tsx` -> PASS
 
 ID: T2266
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add a workspace-hub search/filter rail for section navigation
 Description:
 - Goal / acceptance criteria: Provide a lightweight search or filter affordance in the workspace hub sidebar so long section lists like Audio Artifacts and Physical Surfaces are easier to navigate.
@@ -24758,7 +24758,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: searchable nav UI, matching/filter logic, and `WorkspaceHubShell` regression updates.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 14:08 EDT - Codex
+- Completion notes:
+  - Added a lightweight sidebar filter field in `web/src/app/pages/WorkspaceHubNav.tsx` so operators can narrow workspace sections and route entries by label without leaving the hub shell.
+  - Updated `WorkspaceHubNav.css` with the new filter control styling and an explicit empty-result message so the search state remains legible inside the existing dark Carbon sidebar.
+  - Extended `web/src/app/pages/WorkspaceHubShell.test.tsx` to prove the filter hides unrelated sections while preserving matching route entries such as `Snapshots`.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2267
 Status: [ ] Todo
