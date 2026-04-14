@@ -281,6 +281,24 @@
   background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 58%, var(--cds-layer, #ffffff));
 }
 
+.hp2-overlay__summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hp2-overlay__summary-meta-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.15;
+}
+
 .hp2-overlay__summary-row {
   min-width: 0;
 }

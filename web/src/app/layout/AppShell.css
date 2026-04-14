@@ -328,12 +328,30 @@
   white-space: nowrap;
 }
 
-.shell-launcher__system-summary {
+.shell-launcher__summary {
   display: grid;
   gap: 0.55rem;
   padding: 0.7rem 0.95rem 0.8rem;
   border-bottom: 1px solid color-mix(in srgb, var(--window-shell-border) 76%, transparent);
   background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 58%, var(--cds-layer, #ffffff));
+}
+
+.shell-launcher__summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.shell-launcher__summary-meta-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 78%, transparent);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.15;
 }
 
 .shell-launcher__summary-row {
@@ -405,13 +423,13 @@
   min-width: 5.25rem;
 }
 
-.shell-launcher__summary-status-list {
+.shell-launcher__status-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.shell-launcher__summary-status-list span {
+.shell-launcher__status-list span {
   display: inline-flex;
   align-items: center;
   min-height: 1.65rem;

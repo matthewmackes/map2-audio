@@ -24359,20 +24359,23 @@ Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLau
 
 - [x] T2239 — Delete dead launcher components (`HeroIconLauncher.tsx`/`.css`, `SpinningCubeLauncher.tsx`/`.css`). Verify no imports first (`grep -rn 'HeroIconLauncher\|SpinningCubeLauncher' web/src`). Keep only `StaticHeroIconLauncher`.
 - [ ] T2240 — Unify `HomeStartMenuOverlay` and `ShellLauncherPanel` into a single `<LauncherPanel variant="home"|"workspace">` under `web/src/app/layout/LauncherPanel/`. Eliminates duplicated system-summary, device listing, power menu, and focus-trap code.
-- [ ] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
+- [x] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
 - [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
 - [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
 - [ ] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
 - [ ] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
 - [x] T2246 — Swap the custom power menu for Carbon `OverflowMenu` only; delete the `.hp2-overlay__power-button` CSS block (~40 lines) and the unused `.hp2-window__eyebrow` class.
 - [ ] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
-- [ ] T2248 — Extract a presentational `<SystemSummary>` component (platform version, OS/hostname, AVB/AVDECC status, detected audio/MIDI interfaces) and reuse it on both the landing grid and the workspace `LauncherPanel`. Align with the Unified Node Pill Directive — do not reintroduce a second node-identity surface.
+- [x] T2248 — Extract a presentational `<SystemSummary>` component (platform version, OS/hostname, AVB/AVDECC status, detected audio/MIDI interfaces) and reuse it on both the landing grid and the workspace `LauncherPanel`. Align with the Unified Node Pill Directive — do not reintroduce a second node-identity surface.
 
 Completion notes (2026-04-14 13:19 EDT - Codex):
 - T2239: deleted the unused `HeroIconLauncher` and `SpinningCubeLauncher` component/CSS pairs and verified only `StaticHeroIconLauncher` remains referenced in the landing and shell flows.
 - T2243: extracted the canonical start-menu definitions into `web/src/app/layout/startMenuItems.ts`, then rewired `HomeStartMenuOverlay`, `useAppShellPresentation`, and related tests to consume the shared typed builder instead of duplicating inline menu logic.
 - T2246: finished the Carbon `OverflowMenu` migration for both launcher surfaces and removed the stale `.hp2-overlay__power-button`, `.shell-launcher__power-button`, and `.hp2-window__eyebrow` CSS blocks.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2241: extracted `web/src/app/hooks/useFocusTrap.ts`, replaced the duplicated launcher/start-menu focus-trap implementations with the shared hook, and added focused hook coverage in `web/src/app/hooks/useFocusTrap.test.tsx`.
+- T2248: extracted `web/src/app/layout/SystemSummary.tsx` so launcher metadata, status pills, node pill, and detected interface lists render from one presentational component in both the landing start menu and workspace launcher panel without introducing a second node-identity surface.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useFocusTrap.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 13:19 EDT - Codex
+Last updated: 2026-04-14 13:37 EDT - Codex

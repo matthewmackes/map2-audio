@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
 import {
@@ -7,13 +7,11 @@ import {
   MAP2_PLATFORM_VERSION,
   Map2BrandMark,
 } from '../components/branding/map2Branding'
-import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
-import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
-import { TaskbarClock } from '../components/TaskbarClock'
-import { PushConfirmationNoticePill } from '../layout/PushConfirmationNoticePill'
 import { NavigationItems, type ShellNavigationRenderItem } from '../layout/NavigationItems'
+import { SystemSummary } from '../layout/SystemSummary'
 import { buildStartMenuItems } from '../layout/startMenuItems'
 import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
 import { usePushConfirmation } from '../hooks/usePushConfirmation'
@@ -60,51 +58,11 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
     if (!open) setPowerMenuOpen(false)
   }, [open])
 
-  // Focus trap
-  useEffect(() => {
-    if (!open) return undefined
-
-    const panel = panelRef.current
-    if (!panel) return undefined
-
-    // Focus first focusable on open
-    const firstFocusable = panel.querySelector<HTMLElement>(
-      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-    )
-    firstFocusable?.focus()
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        onClose()
-        return
-      }
-
-      if (event.key !== 'Tab' || !panel) return
-
-      const focusable = Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1)
-
-      if (focusable.length === 0) return
-
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  useFocusTrap({
+    enabled: open,
+    containerRef: panelRef,
+    onEscape: onClose,
+  })
 
   if (!open) return null
 
@@ -148,65 +106,17 @@ export function HomeStartMenuOverlay({ open, onClose }: HomeStartMenuOverlayProp
             </div>
             <div className="hp2-overlay__header-copy">
               <strong>{MAP2_PLATFORM_NAME}</strong>
-              {launcherSummaryItems.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
             </div>
           </div>
         </div>
 
-        {/* System Summary */}
-        <div className="hp2-overlay__summary" aria-label="System summary">
-          <div className="hp2-overlay__summary-row hp2-overlay__summary-row--node-status">
-            <PushConfirmationNoticePill
-              pendingConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
-            />
-            <NodeNavBar />
-          </div>
-          <div className="hp2-overlay__summary-row hp2-overlay__summary-row--metrics">
-            <LatencyPressureShellReadout />
-            <TaskbarClock />
-          </div>
-          <div className="hp2-overlay__status-list" aria-label="Platform status">
-            {platformStatusLabels.map((label) => (
-              <span key={label}>{label}</span>
-            ))}
-          </div>
-          <div className="hp2-overlay__device-summary" aria-label="Detected interfaces">
-            <div className="hp2-overlay__device-group">
-              <span className="hp2-overlay__device-heading">Audio Interfaces</span>
-              <div className="hp2-overlay__device-list">
-                {launcherInterfaceSummary.isLoading && launcherInterfaceSummary.audioInterfaces.length === 0 ? (
-                  <span className="hp2-overlay__device-empty">Detecting audio interfaces...</span>
-                ) : launcherInterfaceSummary.audioInterfaces.length > 0 ? (
-                  launcherInterfaceSummary.audioInterfaces.map((name) => (
-                    <Tag key={name} className="hp2-overlay__device-tag" size="sm" type="cool-gray">
-                      {name}
-                    </Tag>
-                  ))
-                ) : (
-                  <span className="hp2-overlay__device-empty">No audio interfaces detected</span>
-                )}
-              </div>
-            </div>
-            <div className="hp2-overlay__device-group">
-              <span className="hp2-overlay__device-heading">MIDI Interfaces</span>
-              <div className="hp2-overlay__device-list">
-                {launcherInterfaceSummary.isLoading && launcherInterfaceSummary.midiInterfaces.length === 0 ? (
-                  <span className="hp2-overlay__device-empty">Detecting MIDI interfaces...</span>
-                ) : launcherInterfaceSummary.midiInterfaces.length > 0 ? (
-                  launcherInterfaceSummary.midiInterfaces.map((name) => (
-                    <Tag key={name} className="hp2-overlay__device-tag" size="sm" type="cool-gray">
-                      {name}
-                    </Tag>
-                  ))
-                ) : (
-                  <span className="hp2-overlay__device-empty">No MIDI interfaces detected</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SystemSummary
+          classNamePrefix="hp2-overlay"
+          launcherInterfaceSummary={launcherInterfaceSummary}
+          launcherSummaryItems={launcherSummaryItems}
+          pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
+          platformStatusLabels={platformStatusLabels}
+        />
 
         {/* Navigation Tiles */}
         <div className="hp2-overlay__body">
