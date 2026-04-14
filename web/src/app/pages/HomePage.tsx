@@ -182,7 +182,7 @@ export function HomePage() {
                       <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
                         <Icon size={20} aria-hidden />
                       </span>
-                      <Tag type={item.maturity === 'stable' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
+                      <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
                         {item.shortLabel}
                       </Tag>
                     </div>
