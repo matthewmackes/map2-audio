@@ -43,3 +43,28 @@ export function readHomeLandingPreferences(): HomeLandingPreferences {
   }
 }
 
+export function writeHomeLandingPreferences(preferences: HomeLandingPreferences) {
+  if (typeof window === 'undefined') {
+    return preferences
+  }
+
+  const normalized = normalizeHomeLandingPreferences(preferences)
+
+  try {
+    window.localStorage.setItem(HOME_LANDING_PREFERENCES_STORAGE_KEY, JSON.stringify(normalized))
+  } catch {
+    // Ignore local-storage persistence failures and keep the in-memory value.
+  }
+
+  return normalized
+}
+
+export function updateHomeLandingPreferences(
+  updates: Partial<Omit<HomeLandingPreferences, 'version'>>,
+): HomeLandingPreferences {
+  return writeHomeLandingPreferences({
+    ...readHomeLandingPreferences(),
+    ...updates,
+    version: 1,
+  })
+}

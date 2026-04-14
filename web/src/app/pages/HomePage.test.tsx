@@ -404,7 +404,7 @@ describe('HomePage landing', () => {
   it('deep-links the landing preferences rail card into theme settings', async () => {
     renderHome()
 
-    fireEvent.click(await screen.findByRole('link', { name: /Presentation preferences/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Open theme settings/i }))
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
   })
 
@@ -416,6 +416,23 @@ describe('HomePage landing', () => {
     const snapshotTile = await screen.findByRole('link', { name: /Snapshot Editor/i })
     expect(snapshotTile).toHaveAttribute('data-recent-route', 'true')
     expect(snapshotTile).toHaveTextContent('Recent')
+  })
+
+  it('persists operator-facing landing preferences from the home rail toggles', async () => {
+    renderHome()
+
+    const backdropToggle = await screen.findByRole('switch', { name: /Cinematic backdrop/i })
+    const splashToggle = screen.getByRole('switch', { name: /Boot splash/i })
+
+    fireEvent.click(backdropToggle)
+    fireEvent.click(splashToggle)
+
+    expect(JSON.parse(window.localStorage.getItem(HOME_LANDING_PREFERENCES_STORAGE_KEY) ?? '{}')).toMatchObject({
+      cinematicBackdropEnabled: true,
+      bootSplashEnabled: true,
+    })
+    expect(screen.getByText(/Cinematic default-image/i)).toBeInTheDocument()
+    expect(screen.getByText('Enabled for this browser')).toBeInTheDocument()
   })
 
   it('shows the shared system summary in the landing side rail', async () => {

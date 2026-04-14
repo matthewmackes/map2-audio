@@ -279,6 +279,11 @@
   gap: var(--cds-spacing-05, 1rem);
 }
 
+.hp2-home-shell__preference-toggles {
+  display: grid;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
 .hp2-home-shell__preference-list strong {
   display: block;
   margin-bottom: var(--cds-spacing-02, 0.25rem);

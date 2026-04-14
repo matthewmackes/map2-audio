@@ -24468,7 +24468,7 @@ Last updated: 2026-04-14 09:45 EDT - Codex
 ## Proposed Next Backlog
 
 ID: T2249
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add operator-facing controls for home landing preferences
 Description:
 - Goal / acceptance criteria: Expose `homeLandingPreferences` controls in the UI so operators can toggle the cinematic backdrop and boot splash without editing local storage manually.
@@ -24477,7 +24477,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: updated Theme or Home settings UI, persisted preference wiring, focused `HomePage` and settings regression coverage.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 13:04 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/homeLandingPreferences.ts` with write/update helpers so landing-mode preferences can be changed from product UI instead of only being read from local storage.
+  - Reworked the home-shell preferences rail card in `web/src/app/pages/HomePage.tsx` into an operator-facing control surface with Carbon toggles for cinematic backdrop and boot splash, while keeping a direct Theme-settings CTA in the card header.
+  - Updated `web/src/app/pages/HomePage.test.tsx` to verify the new toggles persist into local storage and immediately refresh the visible landing-mode summary.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2250
 Status: [✓] Done

@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
-import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
+import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile, Toggle } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -9,7 +9,7 @@ import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
-import { readHomeLandingPreferences } from './homeLandingPreferences'
+import { readHomeLandingPreferences, updateHomeLandingPreferences } from './homeLandingPreferences'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import { useHostMachineInfo } from '../hooks/useHostMachine'
@@ -36,7 +36,7 @@ export function HomePage() {
     refetchInterval: 15_000,
   })
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
-  const landingPreferences = useMemo(() => readHomeLandingPreferences(), [])
+  const [landingPreferences, setLandingPreferences] = useState(() => readHomeLandingPreferences())
   const shouldShowSplash = useMemo(() => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(), [landingPreferences.bootSplashEnabled])
   const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
   const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
@@ -247,22 +247,21 @@ export function HomePage() {
               />
             </ClickableTile>
 
-            <ClickableTile
-              className="hp2-home-shell__rail-card"
-              href="/platforms/theme"
-              onClick={(event) => {
-                event.preventDefault()
-                navigateHomeShellRoute(navigate, '/platforms/theme')
-              }}
-              onMouseEnter={() => prefetchHomeShellRoute('/platforms/theme')}
-              onFocus={() => prefetchHomeShellRoute('/platforms/theme')}
-            >
+            <Tile className="hp2-home-shell__rail-card">
               <div className="hp2-home-shell__rail-card-head">
                 <div>
                   <p className="hp2-home-shell__eyebrow">Landing Mode</p>
                   <h2>Presentation preferences</h2>
                 </div>
-                <span className="hp2-home-shell__rail-card-link">Open theme settings</span>
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/platforms/theme')}
+                  onFocus={() => prefetchHomeShellRoute('/platforms/theme')}
+                >
+                  Open theme settings
+                </Button>
               </div>
               <div className="hp2-home-shell__preference-list">
                 <div>
@@ -274,7 +273,31 @@ export function HomePage() {
                   <p>{landingPreferences.bootSplashEnabled ? 'Enabled for this browser' : 'Disabled by default'}</p>
                 </div>
               </div>
-            </ClickableTile>
+              <div className="hp2-home-shell__preference-toggles">
+                <Toggle
+                  id="home-landing-cinematic-backdrop"
+                  size="sm"
+                  labelText="Cinematic backdrop"
+                  labelA="Off"
+                  labelB="On"
+                  toggled={landingPreferences.cinematicBackdropEnabled}
+                  onToggle={(enabled: boolean) => {
+                    setLandingPreferences(updateHomeLandingPreferences({ cinematicBackdropEnabled: enabled }))
+                  }}
+                />
+                <Toggle
+                  id="home-landing-boot-splash"
+                  size="sm"
+                  labelText="Boot splash"
+                  labelA="Off"
+                  labelB="On"
+                  toggled={landingPreferences.bootSplashEnabled}
+                  onToggle={(enabled: boolean) => {
+                    setLandingPreferences(updateHomeLandingPreferences({ bootSplashEnabled: enabled }))
+                  }}
+                />
+              </div>
+            </Tile>
           </Column>
         </Grid>
       </Content>
