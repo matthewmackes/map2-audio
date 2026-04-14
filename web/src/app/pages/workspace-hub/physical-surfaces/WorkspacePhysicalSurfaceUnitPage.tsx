@@ -1,5 +1,3 @@
-import '../../PhysicalSurfacesShell.css'
-
 import { PhysicalSurfaceUnitPage } from '../../PhysicalSurfaceUnitPage'
 import { buildWorkspacePhysicalSurfacesPath } from '../../physicalSurfacesRoutes'
 

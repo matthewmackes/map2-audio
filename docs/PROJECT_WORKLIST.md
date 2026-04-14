@@ -24284,7 +24284,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
   - ID: T1006-subG
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Normalize CSS variable scoping and remove orphaned shell imports
     Description:
     - Goal / acceptance criteria: Remove the `--workspace-shell-scale` multiplier pattern from embedded workspace pages and clean up orphaned CSS file imports from workspace-hub outlet wrappers.
@@ -24305,7 +24305,13 @@ Subtasks:
       4. Run typecheck and verify layout in the browser.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:40 EDT - Codex
+    - Completion notes:
+      - Removed the duplicate standalone-shell CSS imports from `WorkspaceOutboardHardwareOverviewPage.tsx`, `WorkspaceOutboardHardwareDevicePage.tsx`, `WorkspacePhysicalSurfacesOverviewPage.tsx`, and `WorkspacePhysicalSurfaceUnitPage.tsx`, leaving the outlet-level imports as the single source of those embedded page styles.
+      - Added explicit `.workspace-hub-shell__content .outboard-hardware-page` / `.physical-surfaces-page` gap scoping in `WorkspaceHubShell.css` so the embedded pages no longer rely on incidental standalone-shell spacing behavior when rendered inside `/workspace/*`.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx` -> PASS
   - ID: T1006-subH
     Status: [✓] Done
     Title: Reduce tag spam across Outboard Hardware and Physical Surfaces pages

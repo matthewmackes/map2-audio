@@ -1,5 +1,3 @@
-import '../../OutboardHardwareShell.css'
-
 import { OutboardHardwareDevicePage } from '../../OutboardHardwareDevicePage'
 import { buildWorkspaceOutboardHardwarePath } from '../../outboardHardwareRoutes'
 
