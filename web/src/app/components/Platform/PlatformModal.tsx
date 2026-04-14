@@ -898,6 +898,8 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
 export interface PlatformModalContentProps {
   /** Render the shared workspace as routed page content or modal content. */
   surface?: 'route' | 'modal'
+  /** Render the local Control Panel navigation strip. */
+  renderSidebar?: boolean
   /** Initial layer to open (from URL deep-link). Pass null for the grid. */
   initialLayer?: PlatformLayerId | null
   /** Initial standalone panel to open (from URL deep-link). */
@@ -910,6 +912,7 @@ export interface PlatformModalContentProps {
 
 export function PlatformModalContent({
   surface = 'route',
+  renderSidebar = true,
   initialLayer,
   initialPanel,
   onNavigate,
@@ -983,13 +986,15 @@ export function PlatformModalContent({
   const activeId = activePanel ?? activeLayerId
   const workspaceTemplate = (
     <WorkspacePageTemplate
-      sidebar={(
-        <SidebarNavigation
-          activeId={activeId}
-          onOpenLayer={handleOpenLayer}
-          onOpenStandalone={handleOpenStandalone}
-        />
-      )}
+      sidebar={renderSidebar
+        ? (
+            <SidebarNavigation
+              activeId={activeId}
+              onOpenLayer={handleOpenLayer}
+              onOpenStandalone={handleOpenStandalone}
+            />
+          )
+        : undefined}
       contentClassName="platform-shell__panel"
       content={(
         <AnimatePresence mode="wait">

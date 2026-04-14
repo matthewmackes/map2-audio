@@ -24,6 +24,7 @@ export function PlatformWorkspaceSection() {
   return (
     <PlatformModalContent
       surface="route"
+      renderSidebar={false}
       initialLayer={target.layer ?? null}
       initialPanel={target.panel ?? null}
       onNavigate={(params) => {

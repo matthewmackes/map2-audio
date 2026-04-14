@@ -23568,6 +23568,26 @@ Last updated: 2026-04-14 00:12 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
   - `npm --prefix web run typecheck` -> PASS
 
+ID: T1009
+Status: [✓] Done
+Title: Remove the duplicate Control Panel strip from imported Workspace Platforms views
+Description:
+- Goal / acceptance criteria: When Platforms is rendered inside the unified `/workspace/platforms/*` shell, suppress the inner `Control Panel` navigation strip so operators only see the shared Workspace Hub left rail. The standalone Platforms surface must keep its own local navigation.
+- Why it matters: The imported Platforms route was still rendering its legacy in-content navigation strip, producing a second left-hand navigation surface inside the unified workspace and wasting the main content area.
+- Dependencies: T1004, T1008
+- Estimated effort: Low
+- Required outputs: route-mode suppression for the local Platforms strip, focused regression coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 05:52 EDT - Codex
+- Completion notes:
+  - Added a `renderSidebar` control to `web/src/app/components/Platform/PlatformModal.tsx` so the shared Platforms surface can render without its legacy Control Panel strip when embedded in another shell.
+  - Updated `web/src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.tsx` to set `renderSidebar={false}`, leaving the unified Workspace Hub rail as the only left-hand navigation for imported Platforms pages.
+  - Extended `web/src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx` to lock the route-mode contract and prove the embedded Platforms surface disables the duplicate sidebar.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+
 ID: T1004
 Status: [✓] Done
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree

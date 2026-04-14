@@ -8,6 +8,8 @@ const mockPlatformModalContent = jest.fn()
 
 jest.mock('../../../components/Platform/PlatformModal', () => ({
   PlatformModalContent: (props: {
+    surface?: 'route' | 'modal'
+    renderSidebar?: boolean
     initialLayer: string | null
     initialPanel: string | null
     onNavigate: (params: { layer?: string | null; panel?: string | null } | null) => void
@@ -47,6 +49,10 @@ describe('PlatformWorkspaceSection', () => {
     )
 
     expect(screen.getByTestId('platform-content')).toHaveTextContent('overview|none')
+    expect(mockPlatformModalContent).toHaveBeenCalledWith(expect.objectContaining({
+      surface: 'route',
+      renderSidebar: false,
+    }))
   })
 
   it('keeps in-section navigation on the canonical workspace path', () => {
