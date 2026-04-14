@@ -24746,7 +24746,7 @@ Last updated: 2026-04-14 09:59 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
 
 ID: T2256
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unify home and workspace shell status-data composition into a shared hook
 Description:
 - Goal / acceptance criteria: Extract a shared hook that composes host info, platform status, push-confirmation state, and launcher-interface summary for both the home shell and workspace launcher surfaces.
@@ -24755,7 +24755,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: shared hook/module, consumer rewiring, and focused regression coverage around both home and workspace shell surfaces.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 21:19 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/layout/useShellSummaryData.ts` to centralize host info, platform-status labels, push-confirmation state, and launcher-interface summary composition behind one reusable hook for shell surfaces.
+  - Rewired `HomePage.tsx` to consume the shared summary hook instead of assembling those queries inline, while leaving `useAppShellPresentation` responsible for route/window presentation concerns.
+  - Simplified `SystemSummary.tsx` to accept one `summaryData` object, reducing prop-level duplication and making later reuse on additional shell surfaces straightforward.
+  - Updated `DesktopExperience.integration.test.tsx` to match the shipped global-tree shell contract so the focused desktop flow still validates against the current navigation model after the refactor.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2257
 Status: [ ] Todo

@@ -11,13 +11,10 @@ import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktop
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences, updateHomeLandingPreferences } from './homeLandingPreferences'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
-import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
-import { useHostMachineInfo } from '../hooks/useHostMachine'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { usePushConfirmation } from '../hooks/usePushConfirmation'
-import { useLauncherInterfaceSummary } from '../layout/useLauncherInterfaceSummary'
 import { useAppShellPresentation } from '../layout/useAppShellPresentation'
 import { SystemSummary } from '../layout/SystemSummary'
+import { useShellSummaryData } from '../layout/useShellSummaryData'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { getLauncherRoutePresentation, type LandingTileSize } from '../data/launcherCatalog'
 import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
@@ -63,13 +60,11 @@ export function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { shouldReduceEffects } = useReducedEffectsPreference()
-  const { data: hostInfo } = useHostMachineInfo()
   const websocketConnection = useWebSocketConnection()
-  const platformStatus = useHomePlatformStatus()
   const specialSettings = useSpecialSettings()
-  const launcherInterfaceSummary = useLauncherInterfaceSummary(true)
-  const pendingPushConfirmationQuery = usePushConfirmation(undefined, {
-    refetchInterval: 15_000,
+  const shellSummaryData = useShellSummaryData({
+    pathname: '/',
+    navOpen: true,
   })
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
   const [landingPreferences, setLandingPreferences] = useState(() => readHomeLandingPreferences())
@@ -77,13 +72,9 @@ export function HomePage() {
   const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
   const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
   const {
-    launcherSummaryItems,
-    platformStatusLabels,
     startMenuTileItems,
   } = useAppShellPresentation({
-    hostInfo: hostInfo ?? null,
     pathname: '/',
-    platformStatus,
     websocketStatus: websocketConnection.status,
   })
   const groupedStartMenuTileItems = useMemo(
@@ -336,10 +327,7 @@ export function HomePage() {
               </div>
               <SystemSummary
                 classNamePrefix="map2-launcher"
-                launcherInterfaceSummary={launcherInterfaceSummary}
-                launcherSummaryItems={launcherSummaryItems}
-                pendingPushConfirmation={pendingPushConfirmationQuery.data?.pending_confirmation ?? null}
-                platformStatusLabels={platformStatusLabels}
+                summaryData={shellSummaryData}
               />
             </ClickableTile>
 

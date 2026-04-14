@@ -67,6 +67,31 @@ jest.mock('../hooks/useNodePageContext', () => ({
       hostname: 'MAP2-TESTBED',
       display_label: null,
       role: 'all_in_one',
+      status: 'ok',
+      is_local: true,
+    },
+    viewedNode: {
+      node_id: 'MANAGEMENT-NODE-1',
+      hostname: 'MAP2-TESTBED',
+      display_label: null,
+      role: 'all_in_one',
+      status: 'ok',
+      is_local: true,
+    },
+    viewedNodeId: 'MANAGEMENT-NODE-1',
+    topologyNodes: [
+      {
+        node_id: 'MANAGEMENT-NODE-1',
+        hostname: 'MAP2-TESTBED',
+        display_label: null,
+        role: 'all_in_one',
+        status: 'ok',
+        is_local: true,
+      },
+    ],
+    nodeTopologyQuery: {
+      isLoading: false,
+      isError: false,
     },
   }),
 }))
@@ -198,6 +223,12 @@ jest.mock('../components/Tesira/hooks/useTesiraApi', () => ({
 
 jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
+}))
+
+jest.mock('../components/NodeNav/NodeMiniCard', () => ({
+  NodeMiniCard: ({ node }: { node: { hostname: string } }) => (
+    <div data-testid="node-mini-card">{node.hostname}</div>
+  ),
 }))
 
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
@@ -351,20 +382,16 @@ describe('Desktop experience integration', () => {
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/')
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(container.querySelector('.window-taskbar')).toBeTruthy()
+    expect(container.querySelector('.global-tree-nav')).toBeTruthy()
   })
 
-  it('opens the Start Menu, navigates through it, and closes after routing', async () => {
+  it('navigates through the persistent global tree rail', async () => {
     renderDesktopExperience(['/workspace'])
 
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
-    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /Snapshot Editor/i })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('menuitem', { name: /Snapshot Editor/i }))
+    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Snapshot Editor'))
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
-    expect(screen.queryByRole('menu', { name: 'Platform menu' })).toBeNull()
   })
 
   it('keeps only the canonical landing launch tiles on the home shell', async () => {
@@ -381,38 +408,28 @@ describe('Desktop experience integration', () => {
     expect(container.querySelectorAll('.hp2-home-shell__workspace-tile')).toHaveLength(6)
   })
 
-  it('runs refresh, logout, and restart actions from the Power menu', async () => {
+  it('runs refresh, logout, and restart actions from the rail footer', async () => {
     renderDesktopExperience(['/workspace'])
 
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
-
-    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Refresh desktop'))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(mockReloadHomeDesktopShell).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
-    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Log out'))
+    fireEvent.click(screen.getByRole('button', { name: 'Log Out' }))
     expect(mockReturnHomeDesktopToBoot).toHaveBeenCalledTimes(1)
 
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
-    fireEvent.click(screen.getByRole('button', { name: 'Power actions' }))
-    fireEvent.click(within(document.querySelector('.cds--overflow-menu-options') as HTMLElement).getByText('Restart backend'))
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm restart' }))
 
     await waitFor(() => expect(mockRestartBackend).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.getByText('Restarting backend')).toBeInTheDocument())
   })
 
-  it('starts Perform in fullscreen and restores the taskbar after Escape', async () => {
+  it('renders the perform route with the perform shell class and without a window title strip', async () => {
     const { container } = renderDesktopExperience(['/perform'])
 
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
-    expect(container.querySelector('.shell-launcher')).toBeNull()
-
-    fireEvent.keyDown(window, { key: 'Escape' })
-
-    await waitFor(() => expect(container.querySelector('.shell-launcher')).toBeTruthy())
-    expect(screen.queryByRole('button', { name: 'Close Stage' })).toBeNull()
+    expect(container.querySelector('.app-shell--perform-route')).toBeTruthy()
+    expect(container.querySelector('.window-title-strip')).toBeNull()
+    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
   })
 })

@@ -4,15 +4,11 @@ import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
 import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
-import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
-import type { LauncherInterfaceSummary } from './useLauncherInterfaceSummary'
+import type { ShellSummaryData } from './useShellSummaryData'
 
 type SystemSummaryProps = {
   classNamePrefix: 'map2-launcher'
-  launcherInterfaceSummary: LauncherInterfaceSummary
-  launcherSummaryItems: string[]
-  pendingPushConfirmation: PushSurfacePendingConfirmation | null
-  platformStatusLabels: string[]
+  summaryData: ShellSummaryData
 }
 
 type DeviceListProps = {
@@ -47,11 +43,15 @@ function DeviceList({
 
 export function SystemSummary({
   classNamePrefix,
-  launcherInterfaceSummary,
-  launcherSummaryItems,
-  pendingPushConfirmation,
-  platformStatusLabels,
+  summaryData,
 }: SystemSummaryProps) {
+  const {
+    launcherInterfaceSummary,
+    launcherSummaryItems,
+    pendingPushConfirmation,
+    platformStatusLabels,
+  } = summaryData
+
   return (
     <div className={`${classNamePrefix}__summary`} aria-label="System summary">
       <div className={`${classNamePrefix}__summary-meta`}>
