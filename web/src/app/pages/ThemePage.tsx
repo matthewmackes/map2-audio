@@ -8,7 +8,18 @@ import {
   TextInput,
   Toggle,
 } from '@carbon/react'
-import { type ChangeEvent, type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  type ChangeEvent,
+  type CSSProperties,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FixedSizeList, type ListChildComponentProps } from 'react-window'
@@ -27,7 +38,6 @@ import {
 } from '../data/categoryStyles'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
@@ -329,7 +339,7 @@ const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
   { id: THEME_PAGE_SECTION_IDS.library, label: 'Library' },
   { id: THEME_PAGE_SECTION_IDS.preview, label: 'Preview' },
   { id: THEME_PAGE_SECTION_IDS.colorScheme, label: 'Color Scheme' },
-  { id: THEME_PAGE_SECTION_IDS.font, label: 'Font' },
+  { id: THEME_PAGE_SECTION_IDS.font, label: 'Typography' },
   { id: THEME_PAGE_SECTION_IDS.tokenStudio, label: 'Token Studio' },
   { id: THEME_PAGE_SECTION_IDS.appearanceAssets, label: 'Appearance Assets' },
   { id: THEME_PAGE_SECTION_IDS.personalization, label: 'Personalization' },
@@ -441,6 +451,7 @@ export function ThemePage() {
   const [wallpaperUploadError, setWallpaperUploadError] = useState<string | null>(null)
   const [pendingThemeSwitchId, setPendingThemeSwitchId] = useState<string | null>(null)
   const [activeCategoryPicker, setActiveCategoryPicker] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<string>(THEME_PAGE_SECTION_IDS.library)
   const wallpaperUploadInputRef = useRef<HTMLInputElement | null>(null)
   const activeSlotTriggerRef = useRef<HTMLButtonElement | null>(null)
   const activeCategoryTriggerRef = useRef<HTMLButtonElement | null>(null)
@@ -778,13 +789,6 @@ export function ThemePage() {
     activeCategoryTriggerRef.current?.focus({ preventScroll: true })
   }
 
-  const [activeNavSection, setActiveNavSection] = useState<string>(THEME_PAGE_SECTION_IDS.library)
-
-  const scrollToSection = (sectionId: string) => {
-    setActiveNavSection(sectionId)
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   const activeThemeLabel = draftDirty ? draftName.trim() || draftTheme.name : theme.name
   const previewFocusLabel = (() => {
     switch (previewFocus) {
@@ -800,1045 +804,146 @@ export function ThemePage() {
     }
   })()
 
-  const themeSectionNavItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => {
-    const iconBySectionId: Record<string, typeof PaintBrush> = {
-      [THEME_PAGE_SECTION_IDS.library]: Search,
-      [THEME_PAGE_SECTION_IDS.preview]: PaintBrush,
-      [THEME_PAGE_SECTION_IDS.colorScheme]: PaintBrush,
-      [THEME_PAGE_SECTION_IDS.font]: Checkmark,
-      [THEME_PAGE_SECTION_IDS.tokenStudio]: Settings,
-      [THEME_PAGE_SECTION_IDS.appearanceAssets]: Accessibility,
-      [THEME_PAGE_SECTION_IDS.personalization]: Loop,
-      [THEME_PAGE_SECTION_IDS.behavior]: Settings,
-    }
-
-    return THEME_PAGE_SECTION_LINKS.map((section) => ({
-      key: section.id,
-      label: section.label,
-      description: `Jump to the ${section.label.toLowerCase()} editor section in the Theme workspace.`,
-      to: `#${section.id}`,
-      icon: iconBySectionId[section.id] ?? PaintBrush,
-      active: activeNavSection === section.id,
-      onOpen: () => scrollToSection(section.id),
-      meta: activeNavSection === section.id ? 'Current' : undefined,
-    }))
-  }, [activeNavSection])
-
   const desktopThemeDialog = (
-    <>
-      <header className="theme-page__route-head">
-        <p className="theme-page__eyebrow">Platform appearance</p>
+    <section className="theme-page__workbench">
+      <header className="theme-page__hero">
         <div className="theme-page__hero-title-row">
           <PaintBrush size={24} aria-hidden />
           <div>
             <h1 className="theme-page__title">Theme</h1>
             <p className="theme-page__subtitle">
-              Desktop-theme dialog workflow with a classic preview pane, tighter grouping, and Carbon-backed controls.
+              Focus one theme task at a time: pick a shell, inspect the preview, then tune tokens, assets, and behavior from dedicated top tabs.
             </p>
           </div>
         </div>
+        <div className="theme-page__hero-meta">
+          <Tag type="blue" size="sm">{activeThemeLabel}</Tag>
+          <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme)}</Tag>
+          <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
+          <Tag type={draftDirty ? 'warm-gray' : 'green'} size="sm">
+            {draftDirty ? 'Draft preview active' : 'Live shell'}
+          </Tag>
+        </div>
       </header>
 
-      <section className="theme-page__desktop-dialog">
-        <div className="theme-page__workspace-shell">
-          <UnifiedWorkspaceSideNav
-            ariaLabel="Theme sections"
-            className="theme-page__tree-nav"
-            eyebrow="Appearance editor"
-            title="Theme"
-            description="One tree for library, preview, color, type, tokens, assets, personalization, and behavior tuning."
-            items={themeSectionNavItems}
-            metaBlocks={[
-              { key: 'theme-active', label: 'Active theme', value: activeThemeLabel },
-              { key: 'theme-carbon', label: 'Carbon base', value: carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme) },
-              { key: 'theme-preview', label: 'Preview focus', value: previewFocusLabel },
-            ]}
-            callout={{
-              kind: draftDirty ? 'warning' : 'info',
-              text: draftDirty
-                ? 'Draft theme edits are active in preview and not yet committed to the live shell.'
-                : 'The live shell theme matches the values shown in this workspace.',
+      <div className="theme-page__tabs-shell">
+        <div className="theme-page__top-tabs" role="tablist" aria-label="Theme workspace sections">
+          {THEME_PAGE_SECTION_LINKS.map((section) => {
+            const active = activeTab === section.id
+
+            return (
+              <button
+                key={section.id}
+                type="button"
+                role="tab"
+                id={`${section.id}-tab`}
+                aria-controls={`${section.id}-panel`}
+                aria-selected={active}
+                tabIndex={active ? 0 : -1}
+                className={`theme-page__top-tab${active ? ' theme-page__top-tab--active' : ''}`}
+                onClick={() => setActiveTab(section.id)}
+              >
+                {section.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="theme-page__section-panel">
+          <ThemeWorkspacePanel
+            activeTab={activeTab}
+            activeThemeLabel={activeThemeLabel}
+            previewFocus={previewFocus}
+            previewFocusLabel={previewFocusLabel}
+            previewTheme={editorPreviewTheme}
+            draftDirty={draftDirty}
+            draftOverrides={draftOverrides}
+            draftOverrideCount={draftOverrideCount}
+            totalThemeCount={totalThemeCount}
+            themeId={themeId}
+            draftBase={draftBase}
+            draftFamilyId={draftFamilyId}
+            draftName={draftName}
+            customThemeEntries={customThemeEntries}
+            fontPreset={fontPreset}
+            fontPresetId={fontPresetId}
+            fontPresets={fontPresets}
+            pageTransitionPreset={pageTransitionPreset}
+            overriddenCategoryCount={overriddenCategoryCount}
+            pluginOverrideCount={pluginOverrideCount}
+            categoryEditorMode={categoryEditorMode}
+            editableCategoryConfigs={editableCategoryConfigs}
+            activeCategoryPicker={activeCategoryPicker}
+            activeSlot={activeSlot}
+            desktopWallpaper={desktopWallpaper}
+            wallpaperUploadError={wallpaperUploadError}
+            pluginInventoryError={pluginInventoryError}
+            pluginInventoryLoading={pluginInventoryLoading}
+            pluginSearch={pluginSearch}
+            pluginSourceFilter={pluginSourceFilter}
+            filteredPlugins={filteredPlugins}
+            selectedPlugin={selectedPlugin}
+            selectedPluginAppearance={selectedPluginAppearance}
+            selectedPluginDraft={selectedPluginDraft}
+            selectedPluginUri={selectedPluginUri}
+            appearances={appearances}
+            shouldReduceEffects={shouldReduceEffects}
+            reducedEffectsEnabled={reducedEffectsEnabled}
+            prefersReducedMotion={prefersReducedMotion}
+            specialSettingsError={specialSettingsError}
+            specialSettingsLoading={specialSettingsLoading}
+            hiddenPluginCount={hiddenPluginCount}
+            wallpaperUploadInputRef={wallpaperUploadInputRef}
+            activeSlotTriggerRef={activeSlotTriggerRef}
+            activeCategoryTriggerRef={activeCategoryTriggerRef}
+            onRequestThemeSelection={requestThemeSelection}
+            onHandleLoadSuggestion={handleLoadSuggestion}
+            onDeleteCustomTheme={handleDeleteCustomTheme}
+            onSetDraftName={(value) => {
+              setDraftName(value)
+              setDraftDirty(true)
             }}
-            storageKey="theme-workspace"
+            onMarkDraftDirty={() => setDraftDirty(true)}
+            onSaveDraftTheme={handleSaveDraftTheme}
+            onResetDraft={handleResetDraft}
+            onSetPreviewFocus={setPreviewFocus}
+            onSetDraftBase={(base) => {
+              setDraftBase(base)
+              setDraftDirty(true)
+            }}
+            onSetDraftFamilyId={(familyId) => {
+              setDraftFamilyId(familyId)
+              setDraftDirty(true)
+            }}
+            onSetFontPreset={(presetId) => setFontPreset(presetId as PlatformFontPresetId)}
+            onSetActiveSlot={(slot) => setActiveSlot(slot)}
+            onCloseActiveSlot={closeActiveSlot}
+            onSetDraftOverrides={setDraftOverrides}
+            onSetCategoryEditorMode={setCategoryEditorMode}
+            onSetActiveCategoryPicker={(key) => setActiveCategoryPicker(key)}
+            onCloseActiveCategoryPicker={closeActiveCategoryPicker}
+            onSetCategoryColorOverride={setCategoryColorOverride}
+            onResetCategoryColorOverride={resetCategoryColorOverride}
+            onResetAllCategoryColorOverrides={resetAllCategoryColorOverrides}
+            onSetPluginSearch={setPluginSearch}
+            onSetPluginSourceFilter={setPluginSourceFilter}
+            onSetSelectedPluginUri={setSelectedPluginUri}
+            onSetIconPickerOpen={setIconPickerOpen}
+            onHandlePluginDraftChange={handlePluginDraftChange}
+            onHandleSavePluginAppearance={handleSavePluginAppearance}
+            onHandleResetPluginAppearance={handleResetPluginAppearance}
+            onHandleResetAllPluginAppearances={handleResetAllPluginAppearances}
+            onSelectDesktopWallpaperMode={selectDesktopWallpaperMode}
+            onOpenWallpaperUploadPicker={openWallpaperUploadPicker}
+            onHandleWallpaperUpload={handleWallpaperUpload}
+            onNavigateHome={() => navigate('/')}
+            onSetReducedEffectsEnabled={setReducedEffectsEnabled}
+            onSetPageTransitionPreset={setPageTransitionPreset}
+            onOpenSpecialSettings={() => setShowSpecialSettings(true)}
           />
-
-          <div className="theme-page__workspace-content">
-            <div className="theme-page__desktop-titlebar">
-              <div className="theme-page__desktop-titlecopy">
-                <strong>Desktop Themes</strong>
-                <span>Preview the active shell, load a preset or direction, then tune tokens and assets from the same editor.</span>
-              </div>
-              <div className="theme-page__desktop-titlemeta">
-                <div className="theme-page__section-tags">
-                  <Tag type="blue" size="sm">{activeThemeLabel}</Tag>
-                  <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftDirty ? draftBase : theme.carbonTheme)}</Tag>
-                  <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
-                  <Tag type={draftDirty ? 'warm-gray' : 'green'} size="sm">
-                    {draftDirty ? 'Draft preview active' : 'Live shell'}
-                  </Tag>
-                </div>
-                <div className="theme-page__desktop-titlecontrols" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-            </div>
-
-            <div className="theme-page__desktop-main">
-              <div className="theme-page__desktop-column theme-page__desktop-column--library">
-                <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.library}>
-                  <legend>Theme selection</legend>
-                  <div className="theme-page__catalog-grid">
-                    <section className="theme-page__catalog-block">
-                      <div className="theme-page__dialog-subhead">
-                        <strong>Core Carbon themes</strong>
-                        <Tag type="cool-gray" size="sm">{CORE_THEME_IDS.length}</Tag>
-                      </div>
-                      <div className="theme-page__catalog-list">
-                    {CORE_THEME_IDS.map((coreId) => {
-                      const coreTheme = builtInThemes[coreId]
-                      const active = !draftDirty && themeId === coreId
-
-                      return (
-                        <button
-                          key={coreId}
-                          type="button"
-                          className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                          onClick={() => requestThemeSelection(coreId)}
-                          aria-pressed={active}
-                        >
-                          <span className="theme-page__catalog-item-copy">
-                            <strong>{coreTheme.name}</strong>
-                            <span>{coreTheme.description}</span>
-                          </span>
-                          <span className="theme-page__catalog-item-meta">
-                            <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
-                              {active ? 'Active' : carbonThemeLabel(coreTheme.carbonTheme)}
-                            </Tag>
-                            <ThemeSwatchStrip theme={resolvePreviewTheme(coreId, coreTheme)} />
-                          </span>
-                        </button>
-                      )
-                    })}
-                      </div>
-                    </section>
-
-                    {PRESET_THEME_GROUPS.map((group) => (
-                      <section key={group.label} className="theme-page__catalog-block">
-                        <div className="theme-page__dialog-subhead">
-                          <strong>{group.label}</strong>
-                          <Tag type="teal" size="sm">{group.tag}</Tag>
-                          <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
-                        </div>
-                        <ThemeCatalogVirtualList
-                          ids={group.ids.filter((pid) => builtInThemes[pid])}
-                          themeId={themeId}
-                          draftDirty={draftDirty}
-                          onSelect={requestThemeSelection}
-                    />
-                  </section>
-                ))}
-
-                <section className="theme-page__catalog-block">
-                  <div className="theme-page__dialog-subhead">
-                    <strong>Suggested directions</strong>
-                    <Tag type="cyan" size="sm">Curated</Tag>
-                  </div>
-                  <div className="theme-page__catalog-list">
-                    {SUGGESTED_DIRECTIONS.map((suggestion) => {
-                      const selected = draftDirty
-                        && draftName.trim() === suggestion.name
-                        && draftBase === suggestion.base
-                        && draftFamilyId === suggestion.familyId
-                        && draftOverrideCount === 0
-
-                      return (
-                        <button
-                          key={suggestion.id}
-                          type="button"
-                          className={`theme-page__catalog-item${selected ? ' theme-page__catalog-item--active' : ''}`}
-                          onClick={() => handleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)}
-                          aria-pressed={selected}
-                        >
-                          <span className="theme-page__catalog-item-copy">
-                            <strong>{suggestion.name}</strong>
-                            <span>{suggestion.description}</span>
-                          </span>
-                          <span className="theme-page__catalog-item-meta">
-                            <Tag type={selected ? 'blue' : 'cool-gray'} size="sm">
-                              {selected ? 'Draft' : carbonThemeLabel(suggestion.base)}
-                            </Tag>
-                            <ThemeSwatchStrip
-                              theme={generateThemeFromPalette(suggestion.familyId, suggestion.base, {}, suggestion.id, suggestion.name)}
-                            />
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-
-                <section className="theme-page__catalog-block">
-                  <div className="theme-page__dialog-subhead">
-                    <strong>Custom themes</strong>
-                    <Tag type={customThemeEntries.length > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                      {customThemeEntries.length > 0 ? `${customThemeEntries.length} saved` : 'None'}
-                    </Tag>
-                  </div>
-                  {customThemeEntries.length === 0 ? (
-                    <p className="theme-page__group-note">Save the current draft to build a reusable library entry.</p>
-                  ) : (
-                    <div className="theme-page__catalog-list">
-                      {customThemeEntries.map((customTheme) => {
-                        const active = !draftDirty && themeId === customTheme.id
-
-                        return (
-                          <div key={customTheme.id} className="theme-page__catalog-row">
-                            <button
-                              type="button"
-                              className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                              onClick={() => requestThemeSelection(customTheme.id)}
-                              aria-pressed={active}
-                            >
-                              <span className="theme-page__catalog-item-copy">
-                                <strong>{customTheme.name}</strong>
-                                <span>{customTheme.description}</span>
-                              </span>
-                              <span className="theme-page__catalog-item-meta">
-                                <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
-                                  {active ? 'Active' : 'Custom'}
-                                </Tag>
-                                <ThemeSwatchStrip theme={resolvePreviewTheme(customTheme.id, customTheme)} />
-                              </span>
-                            </button>
-                            <Button kind="ghost" size="sm" onClick={() => handleDeleteCustomTheme(customTheme.id)}>
-                              Delete
-                            </Button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </section>
-              </div>
-            </fieldset>
-
-            <fieldset className="theme-page__dialog-group">
-              <legend>Save as</legend>
-              <TextInput
-                id="theme-page-custom-theme-name-dialog"
-                labelText="Custom theme name"
-                placeholder={draftTheme.name}
-                value={draftName}
-                onChange={(event) => {
-                  setDraftName(event.target.value)
-                  setDraftDirty(true)
-                }}
-                maxLength={60}
-              />
-              {draftDirty && draftOverrideCount > 0 ? (
-                <div className="theme-page__draft-warning">
-                  <InlineNotification
-                    lowContrast
-                    hideCloseButton
-                    kind="warning"
-                    title="Token overrides are still in draft."
-                    subtitle="These token changes are not saved yet. Presets, fonts, appearance assets, and behavior settings still apply immediately."
-                  />
-                  <Button kind="secondary" size="sm" onClick={handleSaveDraftTheme}>
-                    Save now
-                  </Button>
-                </div>
-              ) : null}
-              <div className="theme-page__dialog-actions">
-                <Button kind="ghost" renderIcon={Reset} onClick={handleResetDraft} disabled={!draftDirty}>
-                  Reset draft
-                </Button>
-                <Button kind="primary" renderIcon={PaintBrush} onClick={handleSaveDraftTheme} disabled={!draftDirty}>
-                  Save and apply custom theme
-                </Button>
-              </div>
-              <p className="theme-page__group-note">
-                Preset changes, font changes, category accents, and plugin appearance updates still persist immediately.
-              </p>
-            </fieldset>
-          </div>
-
-          <div className="theme-page__desktop-column theme-page__desktop-column--preview">
-            <fieldset className="theme-page__dialog-group theme-page__dialog-group--stretch" id={THEME_PAGE_SECTION_IDS.preview}>
-              <legend>Preview</legend>
-              <div className="theme-page__dialog-head">
-                <div>
-                  <h2 className="theme-page__section-title">Desktop Themes</h2>
-                  <p className="theme-page__section-copy">
-                    The preview now mirrors the classic desktop-theme flow more directly: desktop scene, active window, inactive window, and message box.
-                  </p>
-                </div>
-                <div className="theme-page__section-tags">
-                  <Tag type="cool-gray" size="sm">{CARBON_FAMILY_BY_ID[draftFamilyId]?.name ?? 'Blue'}</Tag>
-                  <Tag type={draftOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                    {draftOverrideCount > 0 ? `${draftOverrideCount} token edits` : 'No token edits'}
-                  </Tag>
-                </div>
-              </div>
-
-              <ThemeDesktopPreview
-                theme={editorPreviewTheme}
-                activeThemeLabel={activeThemeLabel}
-                previewFocus={previewFocus}
-              />
-
-              <div className="theme-page__preview-meta">
-                <span>Preview of {activeThemeLabel}</span>
-                <ThemeSwatchStrip theme={editorPreviewTheme} />
-              </div>
-            </fieldset>
-          </div>
-
-          <div className="theme-page__desktop-column theme-page__desktop-column--options">
-            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.colorScheme}>
-              <legend>Color scheme</legend>
-              <h2 className="theme-page__section-title">Scheme</h2>
-              <p className="theme-page__section-copy">Choose the Carbon shell baseline used for the preview windows and routed chrome.</p>
-              <div className="theme-page__option-list" role="radiogroup" aria-label="Base shell">
-                {BASE_SHELL_OPTIONS.map((base) => (
-                  <button
-                    key={base}
-                    type="button"
-                    role="radio"
-                    aria-checked={draftBase === base}
-                    className={`theme-page__option-item${draftBase === base ? ' theme-page__option-item--active' : ''}`}
-                    onClick={() => {
-                      setDraftBase(base)
-                      setDraftDirty(true)
-                    }}
-                  >
-                    <span className="theme-page__option-copy">
-                      <strong>{carbonThemeLabel(base)}</strong>
-                      <span>{baseShellDescription(base)}</span>
-                    </span>
-                    <span className={`theme-page__base-dot theme-page__base-dot--${base}`} aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="theme-page__dialog-group" id={THEME_PAGE_SECTION_IDS.font}>
-              <legend>Accent family</legend>
-              <h2 className="theme-page__section-title">Accent family</h2>
-              <p className="theme-page__section-copy">Retain token-based color editing, but group the family choices like a dialog palette instead of launcher cards.</p>
-              <div className="theme-page__family-grid theme-page__family-grid--dialog" role="radiogroup" aria-label="Accent family">
-                {CARBON_COLOR_FAMILIES.map((family) => {
-                  const previewShade = draftBase === 'g100' || draftBase === 'g90' ? 50 : 60
-                  const selected = draftFamilyId === family.id
-
-                  return (
-                    <button
-                      key={family.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      className={`theme-page__family-card ${selected ? ' theme-page__family-card--active' : ''}`}
-                      onClick={() => {
-                        setDraftFamilyId(family.id)
-                        setDraftDirty(true)
-                      }}
-                    >
-                      <span
-                        className="theme-page__family-band"
-                        style={{ background: family.shades[previewShade] }}
-                        aria-hidden="true"
-                      />
-                      <span className="theme-page__family-copy">
-                        <span className="theme-page__family-dot" style={{ background: family.shades[previewShade] }} aria-hidden="true" />
-                        <strong>{family.name}</strong>
-                        {selected ? <Checkmark size={14} aria-hidden /> : null}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </fieldset>
-
-            <fieldset className="theme-page__dialog-group">
-              <legend>Font face</legend>
-              <h2 className="theme-page__section-title">Platform GUI font</h2>
-              <p className="theme-page__section-copy">Font changes stay live, but they now live in the same right-hand option stack as the classic dialog reference.</p>
-              <div className="theme-page__option-list" role="radiogroup" aria-label="Platform GUI font">
-                {Object.values(fontPresets).map((preset) => {
-                  const active = preset.id === fontPresetId
-
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
-                      onClick={() => setFontPreset(preset.id as PlatformFontPresetId)}
-                    >
-                      <span className="theme-page__option-copy">
-                        <strong>{preset.name}</strong>
-                        <span>{preset.description}</span>
-                      </span>
-                      <span className="theme-page__font-inline-sample" style={{ fontFamily: preset.family }}>
-                        {preset.sample}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </fieldset>
-
-            <fieldset className="theme-page__dialog-group">
-              <legend>Preview target</legend>
-              <h2 className="theme-page__section-title">Preview target</h2>
-              <p className="theme-page__section-copy">Focus the classic preview on the desktop scene, active window, inactive window, or message box.</p>
-              <div className="theme-page__option-list" role="radiogroup" aria-label="Preview target">
-                {([
-                  ['desktop', 'Desktop', 'Highlights the wallpaper scene, desktop icons, and overall shell backdrop.'],
-                  ['inactive-window', 'Inactive window', 'Shows the passive title bar and background window chrome.'],
-                  ['active-window', 'Active window', 'Focuses the primary route window, live title bar, and content panels.'],
-                  ['message-box', 'Message box', 'Targets alerts and confirmation prompts layered above the desktop.'],
-                ] as const).map(([id, label, description]) => {
-                  const active = previewFocus === id
-
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
-                      onClick={() => setPreviewFocus(id)}
-                    >
-                      <span className="theme-page__option-copy">
-                        <strong>{label}</strong>
-                        <span>{description}</span>
-                      </span>
-                      <span className="theme-page__option-status">
-                        {active ? 'Selected' : 'Available'}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </fieldset>
-
-            <fieldset className="theme-page__dialog-group">
-              <legend>Status</legend>
-              <h2 className="theme-page__section-title">Editor status</h2>
-              <div className="theme-page__dialog-facts">
-                <div>
-                  <span>Theme library</span>
-                  <strong>{totalThemeCount} choices</strong>
-                </div>
-                <div>
-                  <span>Token overrides</span>
-                  <strong>{draftOverrideCount}</strong>
-                </div>
-                <div>
-                  <span>Appearance assets</span>
-                  <strong>{overriddenCategoryCount + pluginOverrideCount} custom</strong>
-                </div>
-                <div>
-                  <span>Motion preset</span>
-                  <strong>{pageTransitionPresetLabel(pageTransitionPreset)}</strong>
-                </div>
-              </div>
-            </fieldset>
-          </div>
         </div>
-
-        <div className="theme-page__desktop-lower-grid">
-          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.tokenStudio}>
-            <legend>Theme tokens</legend>
-            <div className="theme-page__dialog-head">
-              <div>
-                <h2 className="theme-page__section-title">Token studio</h2>
-                <p className="theme-page__section-copy">
-                  Tune semantic shell tokens from grouped lists underneath the preview, then open a family/shade picker inline.
-                </p>
-              </div>
-              <Tag type={draftOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                {draftOverrideCount > 0 ? `${draftOverrideCount} overrides` : 'No overrides'}
-              </Tag>
-            </div>
-
-            <div className="theme-page__slot-groups theme-page__slot-groups--dialog">
-              {COLOR_SLOT_GROUPS.map((group) => (
-                <article key={group.label} className="theme-page__studio-card">
-                  <div className="theme-page__studio-card-head">
-                    <h3>{group.label}</h3>
-                    <Tag type="cool-gray" size="sm">{group.slots.length} tokens</Tag>
-                  </div>
-                  <div className="theme-page__slot-grid">
-                    {group.slots.map((slot) => {
-                      const value = draftTheme.colors[slot]
-                      const overridden = slot in draftOverrides
-                      const open = activeSlot === slot
-
-                      return (
-                        <div
-                          key={slot}
-                          className={`theme-page__slot-card${open ? ' theme-page__slot-card--open' : ''}${overridden ? ' theme-page__slot-card--overridden' : ''}`}
-                        >
-                          <button
-                            type="button"
-                            className="theme-page__slot-button"
-                            onClick={(event) => {
-                              activeSlotTriggerRef.current = event.currentTarget
-                              setActiveSlot(open ? null : slot)
-                            }}
-                          >
-                            <span
-                              className="theme-page__slot-swatch"
-                              style={{
-                                background: isHexLike(value) || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('color-mix')
-                                  ? value
-                                  : 'transparent',
-                                borderStyle: isHexLike(value) || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('color-mix')
-                                  ? 'solid'
-                                  : 'dashed',
-                              }}
-                              aria-hidden="true"
-                            />
-                            <span className="theme-page__slot-copy">
-                              <strong>{SLOT_LABELS[slot] ?? slot}</strong>
-                              <code>{value}</code>
-                            </span>
-                            {overridden ? <Tag type="warm-gray" size="sm">Edited</Tag> : null}
-                          </button>
-
-                          {overridden ? (
-                            <Button
-                              kind="ghost"
-                              size="sm"
-                              className="theme-page__slot-reset"
-                              onClick={() => {
-                                setDraftOverrides((current) => {
-                                  const next = { ...current }
-                                  delete next[slot]
-                                  return next
-                                })
-                                setDraftDirty(true)
-                              }}
-                            >
-                              Reset
-                            </Button>
-                          ) : null}
-
-                          {open ? (
-                            <SlotPalettePicker
-                              currentValue={value}
-                              onPick={(color) => {
-                                setDraftOverrides((current) => ({ ...current, [slot]: color }))
-                                setDraftDirty(true)
-                                closeActiveSlot()
-                              }}
-                              onClose={closeActiveSlot}
-                            />
-                          ) : null}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.appearanceAssets}>
-            <legend>Appearance assets</legend>
-            <div className="theme-page__dialog-head">
-              <div>
-                <h2 className="theme-page__section-title">Appearance assets</h2>
-                <p className="theme-page__section-copy">
-                  Keep shared category accents and per-plugin icon or color overrides grouped together without mixing them into the main shell chooser.
-                </p>
-              </div>
-              <div className="theme-page__section-tags">
-                <Tag type={overriddenCategoryCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                  {overriddenCategoryCount > 0 ? `${overriddenCategoryCount} category accents` : 'All category defaults'}
-                </Tag>
-                <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                  {pluginOverrideCount > 0 ? `${pluginOverrideCount} plugin overrides` : 'No plugin overrides'}
-                </Tag>
-              </div>
-            </div>
-
-            <div className="theme-page__editor-mode-grid" role="group" aria-label="Appearance assets mode">
-              <Button
-                kind={categoryEditorMode === 'categories' ? 'primary' : 'tertiary'}
-                onClick={() => setCategoryEditorMode('categories')}
-              >
-                <span className="theme-page__editor-mode-copy">
-                  <strong>Category accents</strong>
-                  <span>Shared palette used by cards, chips, and browser badges.</span>
-                </span>
-              </Button>
-              <Button
-                kind={categoryEditorMode === 'plugins' ? 'primary' : 'tertiary'}
-                onClick={() => setCategoryEditorMode('plugins')}
-              >
-                <span className="theme-page__editor-mode-copy">
-                  <strong>Plugin overrides</strong>
-                  <span>Per-plugin icon, accent, and description overrides.</span>
-                </span>
-              </Button>
-            </div>
-
-            {categoryEditorMode === 'categories' ? (
-              <>
-                <div className="theme-page__section-tags">
-                  <Button kind="ghost" size="sm" disabled={overriddenCategoryCount === 0} onClick={() => resetAllCategoryColorOverrides()}>
-                    Reset all category accents
-                  </Button>
-                </div>
-                <div className="theme-page__category-grid">
-                  {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
-                    const Icon = config.icon
-
-                    return (
-                      <div key={key} className="theme-page__category-card">
-                        <div className="theme-page__category-top">
-                          <span
-                            className="theme-page__category-icon"
-                            style={{
-                              color: config.color,
-                              background: config.bg,
-                            }}
-                          >
-                            <Icon size={18} />
-                          </span>
-                          <div className="theme-page__category-copy">
-                            <span className="theme-page__category-label">{label}</span>
-                            <span className="theme-page__category-value">{config.color}</span>
-                          </div>
-                          {overridden ? <Tag type="warm-gray" size="sm">Custom</Tag> : null}
-                        </div>
-
-                        <div className="theme-page__category-controls">
-                          <button
-                            type="button"
-                            className="theme-page__category-picker-button"
-                            aria-expanded={activeCategoryPicker === key}
-                            aria-label={`${label} color`}
-                            onClick={(event) => {
-                              activeCategoryTriggerRef.current = event.currentTarget
-                              setActiveCategoryPicker(activeCategoryPicker === key ? null : key)
-                            }}
-                          >
-                            <span
-                              className="theme-page__category-picker-swatch"
-                              style={{ background: config.color }}
-                              aria-hidden="true"
-                            />
-                            <span className="theme-page__category-picker-copy">Choose from Carbon palette</span>
-                          </button>
-                          <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
-                            Reset
-                          </Button>
-                        </div>
-                        {activeCategoryPicker === key ? (
-                          <SlotPalettePicker
-                            currentValue={config.color}
-                            onPick={(color) => {
-                              setCategoryColorOverride(key, color)
-                              closeActiveCategoryPicker()
-                            }}
-                            onClose={closeActiveCategoryPicker}
-                          />
-                        ) : null}
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            ) : (
-              <div className="theme-page__plugin-editor">
-                <div className="theme-page__plugin-toolbar">
-                  <CarbonSearch
-                    id="theme-plugin-appearance-search-dialog"
-                    labelText="Search plugins"
-                    placeholder="Search plugins, authors, categories"
-                    value={pluginSearch}
-                    onChange={(event) => setPluginSearch(event.currentTarget.value)}
-                  />
-                  <div className="theme-page__plugin-filter-row">
-                    {(['all', 'lv2', 'juce', 'toobamp', 'hardware'] as PluginSourceFilter[]).map((filter) => (
-                      <Button
-                        key={filter}
-                        kind={pluginSourceFilter === filter ? 'primary' : 'tertiary'}
-                        size="sm"
-                        onClick={() => setPluginSourceFilter(filter)}
-                      >
-                        {filter === 'all' ? 'All sources' : PLUGIN_SOURCE_FILTER_LABELS[filter]}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="theme-page__plugin-grid">
-                  <div className="theme-page__plugin-list">
-                    <div className="theme-page__plugin-list-head">
-                      <strong>Plugins</strong>
-                      <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                        {pluginOverrideCount > 0 ? `${pluginOverrideCount} customized` : 'No overrides'}
-                      </Tag>
-                    </div>
-                    {pluginInventoryError ? (
-                      <InlineNotification
-                        lowContrast
-                        hideCloseButton
-                        kind="error"
-                        title="Plugin catalog unavailable."
-                        subtitle={pluginInventoryError}
-                      />
-                    ) : null}
-                    {pluginInventoryLoading ? (
-                      <LoadingState className="theme-page__plugin-empty" description="Loading plugin catalog" />
-                    ) : filteredPlugins.length === 0 ? (
-                      <EmptyState
-                        className="theme-page__plugin-empty"
-                        compact
-                        title="No plugins match the current filter"
-                        description="Try adjusting the search or source filters."
-                      />
-                    ) : (
-                      <div className="theme-page__plugin-list-scroll">
-                        {filteredPlugins.map((plugin) => {
-                          const isSelected = plugin.uri === selectedPluginUri
-                          const override = appearances[plugin.uri]
-
-                          return (
-                            <button
-                              key={plugin.uri}
-                              type="button"
-                              className={`theme-page__plugin-list-item${isSelected ? ' theme-page__plugin-list-item--selected' : ''}`}
-                              onClick={() => setSelectedPluginUri(plugin.uri)}
-                            >
-                              <span className="theme-page__plugin-list-icon">
-                                <PluginAppearanceIcon
-                                  identifier={override?.icon_identifier}
-                                  customSvg={override?.custom_svg}
-                                  fallbackCategory={plugin.category}
-                                  size={22}
-                                />
-                              </span>
-                              <span className="theme-page__plugin-list-copy">
-                                <strong>{getDisplayPluginName(plugin.name, plugin.uri)}</strong>
-                                <span>{plugin.category || plugin.class_label}</span>
-                              </span>
-                              <span className="theme-page__plugin-list-tags">
-                                <Tag type="cool-gray" size="sm">{inferPluginSource(plugin)}</Tag>
-                                {override ? <Tag type="warm-gray" size="sm">Custom</Tag> : null}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="theme-page__plugin-detail">
-                    {selectedPlugin && selectedPluginDraft ? (
-                      <>
-                        <div className="theme-page__plugin-detail-head">
-                          <div className="theme-page__plugin-detail-title">
-                            <span className="theme-page__plugin-list-icon theme-page__plugin-list-icon--large">
-                              <PluginAppearanceIcon
-                                identifier={selectedPluginDraft.icon_identifier}
-                                customSvg={selectedPluginDraft.custom_svg}
-                                fallbackCategory={selectedPlugin.category}
-                                size={28}
-                              />
-                            </span>
-                            <div>
-                              <h3>{getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}</h3>
-                              <p>{sanitizeRestrictedDisplayText(selectedPlugin.author)} · {selectedPlugin.category || selectedPlugin.class_label}</p>
-                            </div>
-                          </div>
-                          <div className="theme-page__section-tags">
-                            <Tag type="cool-gray" size="sm">{inferPluginSource(selectedPlugin)}</Tag>
-                            <Button kind="ghost" size="sm" renderIcon={Search} onClick={() => setIconPickerOpen(true)}>
-                              Pick icon
-                            </Button>
-                          </div>
-                        </div>
-
-                        <PluginColorPicker
-                          accentColor={selectedPluginDraft.accent_color}
-                          darkVariant={selectedPluginDraft.dark_variant}
-                          lightVariant={selectedPluginDraft.light_variant}
-                          onChange={handlePluginDraftChange}
-                        />
-
-                        <TextInput
-                          id="theme-plugin-description-dialog"
-                          labelText="Short description override"
-                          value={selectedPluginDraft.description ?? ''}
-                          onChange={(event) => handlePluginDraftChange({ description: event.currentTarget.value })}
-                        />
-
-                        <div className="theme-page__plugin-detail-actions">
-                          <Button kind="secondary" size="sm" onClick={() => void handleSavePluginAppearance()}>
-                            Save plugin override
-                          </Button>
-                          <Button kind="ghost" size="sm" disabled={!selectedPluginAppearance} onClick={() => void handleResetPluginAppearance()}>
-                            Reset this plugin
-                          </Button>
-                          <Button kind="ghost" size="sm" disabled={pluginOverrideCount === 0} onClick={() => void handleResetAllPluginAppearances()}>
-                            Reset all plugin overrides
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <EmptyState
-                        className="theme-page__plugin-empty"
-                        compact
-                        title="Select a plugin to edit its appearance"
-                        description="Choose a plugin from the list to change its icon, accent, and description."
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </fieldset>
-        </div>
-
-        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.personalization}>
-          <legend>Desktop personalization</legend>
-          <div className="theme-page__dialog-head">
-            <div>
-              <h2 className="theme-page__section-title">Desktop personalization</h2>
-              <p className="theme-page__section-copy">
-                Control the desktop wallpaper and jump directly back to the desktop or display settings workflow from the same page.
-              </p>
-            </div>
-            <div className="theme-page__section-tags">
-              <Tag type="cool-gray" size="sm">
-                {desktopWallpaper.mode === 'default-image'
-                  ? 'Default wallpaper'
-                  : desktopWallpaper.mode === 'solid-theme'
-                    ? 'Theme solid color'
-                    : 'Uploaded wallpaper'}
-              </Tag>
-              <Tag type="blue" size="sm">{carbonThemeLabel(theme.carbonTheme ?? 'g10')}</Tag>
-            </div>
-          </div>
-
-          <div className="theme-page__settings-stack">
-            <div className="theme-page__settings-row theme-page__settings-row--stacked">
-              <div className="theme-page__motion-head">
-                <PaintBrush size={20} aria-hidden />
-                <div>
-                  <strong>Wallpaper source</strong>
-                  <p>Choose the platform hero wallpaper, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
-                </div>
-              </div>
-              <div className="theme-page__option-list" role="radiogroup" aria-label="Desktop wallpaper source">
-                {([
-                  ['default-image', 'Platform hero', 'Use the platform hero icon over a black desktop background.'],
-                  ['solid-theme', 'Theme solid color', 'Use the active Carbon theme background color as the desktop wallpaper.'],
-                  ['uploaded-image', 'Uploaded image', 'Use a custom image stored locally in this browser.'],
-                ] as const).map(([id, label, description]) => {
-                  const active = desktopWallpaper.mode === id
-
-                  return (
-                    <div key={id} className="theme-page__option-stack">
-                      <button
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
-                        onClick={() => selectDesktopWallpaperMode(id)}
-                      >
-                        <span className="theme-page__option-copy">
-                          <strong>{label}</strong>
-                          <span>{description}</span>
-                        </span>
-                        <span className="theme-page__option-status">
-                          {active ? 'Selected' : 'Available'}
-                        </span>
-                      </button>
-                      {id === 'uploaded-image' && active ? (
-                        <div className="theme-page__option-detail" aria-live="polite">
-                          <Button kind="secondary" size="sm" onClick={openWallpaperUploadPicker}>
-                            Choose file...
-                          </Button>
-                          <span className="theme-page__option-detail-copy">
-                            {desktopWallpaper.imageDataUrl
-                              ? 'Custom wallpaper loaded from local browser storage.'
-                              : 'No file chosen.'}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-              <input
-                ref={wallpaperUploadInputRef}
-                type="file"
-                accept="image/*"
-                aria-label="Upload desktop wallpaper"
-                style={{ display: 'none' }}
-                onChange={handleWallpaperUpload}
-              />
-              {desktopWallpaper.mode === 'uploaded-image' && desktopWallpaper.imageDataUrl ? (
-                <p className="theme-page__group-note">Custom wallpaper loaded from local browser storage.</p>
-              ) : null}
-              {wallpaperUploadError ? (
-                <InlineNotification
-                  lowContrast
-                  hideCloseButton
-                  kind="error"
-                  title="Wallpaper upload failed."
-                  subtitle={wallpaperUploadError}
-                />
-              ) : null}
-            </div>
-
-            <div className="theme-page__settings-row">
-              <div className="theme-page__motion-head">
-                <Settings size={20} aria-hidden />
-                <div>
-                  <strong>Display entry points</strong>
-                  <p>Use the desktop wallpaper context menu or return to the desktop now to validate the current personalization settings live.</p>
-                </div>
-              </div>
-              <div className="theme-page__motion-actions">
-                <Button kind="tertiary" onClick={() => navigate('/')}>
-                  Open desktop
-                </Button>
-              </div>
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset className="theme-page__dialog-group theme-page__dialog-group--wide" id={THEME_PAGE_SECTION_IDS.behavior}>
-          <legend>Behavior and accessibility</legend>
-          <div className="theme-page__dialog-head">
-            <div>
-              <h2 className="theme-page__section-title">Behavior and accessibility</h2>
-              <p className="theme-page__section-copy">
-                Motion and utility behavior stay on the same page, but in a dedicated lower panel rather than mixed into the shell chooser.
-              </p>
-            </div>
-            <div className="theme-page__section-tags">
-              <Tag type="blue" size="sm">{pageTransitionPresetLabel(pageTransitionPreset)}</Tag>
-              <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
-                {shouldReduceEffects ? 'Reduced effects active' : 'Full effects active'}
-              </Tag>
-            </div>
-          </div>
-
-          <div className="theme-page__settings-stack">
-            <div className="theme-page__settings-row">
-              <div className="theme-page__motion-head">
-                <Accessibility size={20} aria-hidden />
-                <div>
-                  <strong>Reduce effects</strong>
-                  <p>Use the saved toggle below to keep movement restrained even when the OS does not require it.</p>
-                </div>
-              </div>
-              <Toggle
-                id="theme-page-reduce-effects-dialog"
-                labelText="Reduce Effects Mode"
-                labelA="Off"
-                labelB="On"
-                toggled={reducedEffectsEnabled}
-                onToggle={setReducedEffectsEnabled}
-              />
-            </div>
-
-            <div className="theme-page__settings-row theme-page__settings-row--stacked">
-              <div className="theme-page__motion-head">
-                <Loop size={20} aria-hidden />
-                <div>
-                  <strong>Page transition style</strong>
-                  <p>Choose how supported shell routes animate. Reduced motion still forces the minimal fade.</p>
-                </div>
-              </div>
-              <div className="theme-page__option-list" role="radiogroup" aria-label="Page transition style">
-                {PAGE_TRANSITION_PRESET_OPTIONS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={preset.id === pageTransitionPreset}
-                    className={`theme-page__option-item${preset.id === pageTransitionPreset ? ' theme-page__option-item--active' : ''}`}
-                    onClick={() => setPageTransitionPreset(preset.id)}
-                  >
-                    <span className="theme-page__option-copy">
-                      <strong>{preset.name}</strong>
-                      <span>{preset.description}</span>
-                    </span>
-                    <span className="theme-page__option-status">
-                      {preset.id === pageTransitionPreset ? 'Selected' : 'Available'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="theme-page__settings-row">
-              <div className="theme-page__motion-head">
-                <Settings size={20} aria-hidden />
-                <div>
-                  <strong>Special Settings Menu</strong>
-                  <p>Keep native-plugin visibility controls and related utility behavior outside the shell-theme tokens.</p>
-                </div>
-              </div>
-              <div className="theme-page__motion-actions">
-                <Tag type={hiddenPluginCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                  {hiddenPluginCount > 0 ? `${hiddenPluginCount} hidden plugin${hiddenPluginCount === 1 ? '' : 's'}` : 'All native plugins visible'}
-                </Tag>
-                {specialSettingsLoading ? <Tag type="cyan" size="sm">Loading</Tag> : null}
-                <Button kind="secondary" size="sm" renderIcon={Settings} onClick={() => setShowSpecialSettings(true)}>
-                  Open Special Settings Menu
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {specialSettingsError ? (
-            <InlineNotification
-              lowContrast
-              hideCloseButton
-              kind="error"
-              title="Special settings are unavailable."
-              subtitle={specialSettingsError}
-            />
-          ) : null}
-          {prefersReducedMotion ? (
-            <InlineNotification
-              lowContrast
-              hideCloseButton
-              kind="info"
-              title="System reduced-motion is active."
-              subtitle="OS accessibility settings still force minimal motion even if the saved preference is off."
-            />
-          ) : null}
-        </fieldset>
-
-        <div className="theme-page__dialog-footer" role="status" aria-live="polite">
-          <span>Auto-save active for presets, fonts, appearance assets, and behavior preferences.</span>
-          <span>Preview target: {previewFocusLabel}</span>
-          <button type="button" className="theme-page__footer-link" onClick={() => scrollToSection(THEME_PAGE_SECTION_IDS.tokenStudio)}>
-            {draftOverrideCount} token edit{draftOverrideCount === 1 ? '' : 's'}
-          </button>
-          <button type="button" className="theme-page__footer-link" onClick={() => scrollToSection(THEME_PAGE_SECTION_IDS.appearanceAssets)}>
-            {overriddenCategoryCount + pluginOverrideCount} appearance override{overriddenCategoryCount + pluginOverrideCount === 1 ? '' : 's'}
-          </button>
-        </div>
-          </div>
-        </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 
   return (
@@ -1890,6 +995,1098 @@ export function ThemePage() {
           }}
         />
       ) : null}
+    </section>
+  )
+}
+
+interface ThemeWorkspacePanelProps {
+  activeTab: string
+  activeThemeLabel: string
+  previewFocus: ThemePreviewFocus
+  previewTheme: Theme
+  previewFocusLabel: string
+  draftDirty: boolean
+  draftOverrides: Partial<ThemeColors>
+  draftOverrideCount: number
+  totalThemeCount: number
+  themeId: string
+  draftBase: BaseShell
+  draftFamilyId: string
+  draftName: string
+  customThemeEntries: Theme[]
+  fontPreset: { name: string }
+  fontPresetId: string
+  fontPresets: Record<string, { id: string; name: string; description: string; family: string; sample: string }>
+  pageTransitionPreset: PageTransitionPreset
+  overriddenCategoryCount: number
+  pluginOverrideCount: number
+  categoryEditorMode: PluginAppearanceEditorMode
+  editableCategoryConfigs: ReturnType<typeof getEditableCategoryConfigs>
+  activeCategoryPicker: string | null
+  activeSlot: keyof ThemeColors | null
+  desktopWallpaper: DesktopWallpaperState
+  wallpaperUploadError: string | null
+  pluginInventoryError: string | null
+  pluginInventoryLoading: boolean
+  pluginSearch: string
+  pluginSourceFilter: PluginSourceFilter
+  filteredPlugins: Plugin[]
+  selectedPlugin: Plugin | null
+  selectedPluginAppearance: PluginAppearanceOverride | null
+  selectedPluginDraft: Partial<PluginAppearanceOverride> | null
+  selectedPluginUri: string | null
+  appearances: Record<string, PluginAppearanceOverride>
+  shouldReduceEffects: boolean
+  reducedEffectsEnabled: boolean
+  prefersReducedMotion: boolean
+  specialSettingsError: string | null
+  specialSettingsLoading: boolean
+  hiddenPluginCount: number
+  wallpaperUploadInputRef: MutableRefObject<HTMLInputElement | null>
+  activeSlotTriggerRef: MutableRefObject<HTMLButtonElement | null>
+  activeCategoryTriggerRef: MutableRefObject<HTMLButtonElement | null>
+  onRequestThemeSelection: (themeId: string) => void
+  onHandleLoadSuggestion: (familyId: string, base: BaseShell, name: string) => void
+  onDeleteCustomTheme: (themeId: string) => void
+  onSetDraftName: (value: string) => void
+  onMarkDraftDirty: () => void
+  onSaveDraftTheme: () => void
+  onResetDraft: () => void
+  onSetPreviewFocus: (focus: ThemePreviewFocus) => void
+  onSetDraftBase: (base: BaseShell) => void
+  onSetDraftFamilyId: (familyId: string) => void
+  onSetFontPreset: (presetId: string) => void
+  onSetActiveSlot: (slot: keyof ThemeColors | null) => void
+  onCloseActiveSlot: () => void
+  onSetDraftOverrides: Dispatch<SetStateAction<Partial<ThemeColors>>>
+  onSetCategoryEditorMode: (mode: PluginAppearanceEditorMode) => void
+  onSetActiveCategoryPicker: (key: string | null) => void
+  onCloseActiveCategoryPicker: () => void
+  onSetCategoryColorOverride: typeof setCategoryColorOverride
+  onResetCategoryColorOverride: typeof resetCategoryColorOverride
+  onResetAllCategoryColorOverrides: typeof resetAllCategoryColorOverrides
+  onSetPluginSearch: (value: string) => void
+  onSetPluginSourceFilter: (filter: PluginSourceFilter) => void
+  onSetSelectedPluginUri: (uri: string) => void
+  onSetIconPickerOpen: (open: boolean) => void
+  onHandlePluginDraftChange: (update: Partial<PluginAppearanceOverride>) => void
+  onHandleSavePluginAppearance: () => Promise<void>
+  onHandleResetPluginAppearance: () => Promise<void>
+  onHandleResetAllPluginAppearances: () => Promise<void>
+  onSelectDesktopWallpaperMode: (mode: DesktopWallpaperState['mode']) => void
+  onOpenWallpaperUploadPicker: () => void
+  onHandleWallpaperUpload: (event: ChangeEvent<HTMLInputElement>) => void
+  onNavigateHome: () => void
+  onSetReducedEffectsEnabled: (enabled: boolean) => void
+  onSetPageTransitionPreset: (preset: PageTransitionPreset) => void
+  onOpenSpecialSettings: () => void
+}
+
+function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
+  const {
+    activeTab,
+    activeThemeLabel,
+    previewFocus,
+    previewTheme,
+    previewFocusLabel,
+    draftDirty,
+    draftOverrides,
+    draftOverrideCount,
+    totalThemeCount,
+    themeId,
+    draftBase,
+    draftFamilyId,
+    draftName,
+    customThemeEntries,
+    fontPreset,
+    fontPresetId,
+    fontPresets,
+    pageTransitionPreset,
+    overriddenCategoryCount,
+    pluginOverrideCount,
+    categoryEditorMode,
+    editableCategoryConfigs,
+    activeCategoryPicker,
+    activeSlot,
+    desktopWallpaper,
+    wallpaperUploadError,
+    pluginInventoryError,
+    pluginInventoryLoading,
+    pluginSearch,
+    pluginSourceFilter,
+    filteredPlugins,
+    selectedPlugin,
+    selectedPluginAppearance,
+    selectedPluginDraft,
+    selectedPluginUri,
+    appearances,
+    shouldReduceEffects,
+    reducedEffectsEnabled,
+    prefersReducedMotion,
+    specialSettingsError,
+    specialSettingsLoading,
+    hiddenPluginCount,
+    wallpaperUploadInputRef,
+    activeSlotTriggerRef,
+    activeCategoryTriggerRef,
+    onRequestThemeSelection,
+    onHandleLoadSuggestion,
+    onDeleteCustomTheme,
+    onSetDraftName,
+    onMarkDraftDirty,
+    onSaveDraftTheme,
+    onResetDraft,
+    onSetPreviewFocus,
+    onSetDraftBase,
+    onSetDraftFamilyId,
+    onSetFontPreset,
+    onSetActiveSlot,
+    onCloseActiveSlot,
+    onSetDraftOverrides,
+    onSetCategoryEditorMode,
+    onSetActiveCategoryPicker,
+    onCloseActiveCategoryPicker,
+    onSetCategoryColorOverride,
+    onResetCategoryColorOverride,
+    onResetAllCategoryColorOverrides,
+    onSetPluginSearch,
+    onSetPluginSourceFilter,
+    onSetSelectedPluginUri,
+    onSetIconPickerOpen,
+    onHandlePluginDraftChange,
+    onHandleSavePluginAppearance,
+    onHandleResetPluginAppearance,
+    onHandleResetAllPluginAppearances,
+    onSelectDesktopWallpaperMode,
+    onOpenWallpaperUploadPicker,
+    onHandleWallpaperUpload,
+    onNavigateHome,
+    onSetReducedEffectsEnabled,
+    onSetPageTransitionPreset,
+    onOpenSpecialSettings,
+  } = props
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.library) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.library}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.library}-tab`} role="tabpanel">
+        <div className="theme-page__panel-header">
+          <div>
+            <h2 className="theme-page__section-title">Desktop Themes</h2>
+            <p className="theme-page__section-copy">
+              Load a core shell, browse presets, test a suggested direction, or save the current draft as a reusable custom theme.
+            </p>
+          </div>
+          <div className="theme-page__section-tags">
+            <Tag type="cool-gray" size="sm">{totalThemeCount} choices</Tag>
+            <Tag type={draftDirty ? 'warm-gray' : 'green'} size="sm">
+              {draftDirty ? `${draftOverrideCount} token edits in draft` : 'No draft changes'}
+            </Tag>
+          </div>
+        </div>
+
+        <div className="theme-page__library-panel">
+          <div className="theme-page__catalog-grid">
+            <section className="theme-page__catalog-block">
+              <div className="theme-page__dialog-subhead">
+                <strong>Core Carbon themes</strong>
+                <Tag type="cool-gray" size="sm">{CORE_THEME_IDS.length}</Tag>
+              </div>
+              <div className="theme-page__catalog-list">
+                {CORE_THEME_IDS.map((coreId) => {
+                  const coreTheme = builtInThemes[coreId]
+                  const active = !draftDirty && themeId === coreId
+
+                  return (
+                    <button
+                      key={coreId}
+                      type="button"
+                      className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+                      onClick={() => onRequestThemeSelection(coreId)}
+                      aria-pressed={active}
+                    >
+                      <span className="theme-page__catalog-item-copy">
+                        <strong>{coreTheme.name}</strong>
+                        <span>{coreTheme.description}</span>
+                      </span>
+                      <span className="theme-page__catalog-item-meta">
+                        <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
+                          {active ? 'Active' : carbonThemeLabel(coreTheme.carbonTheme)}
+                        </Tag>
+                        <ThemeSwatchStrip theme={resolvePreviewTheme(coreId, coreTheme)} />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+            {PRESET_THEME_GROUPS.map((group) => (
+              <section key={group.label} className="theme-page__catalog-block">
+                <div className="theme-page__dialog-subhead">
+                  <strong>{group.label}</strong>
+                  <Tag type="teal" size="sm">{group.tag}</Tag>
+                  <Tag type="cool-gray" size="sm">{group.ids.length}</Tag>
+                </div>
+                <ThemeCatalogVirtualList
+                  ids={group.ids.filter((pid) => builtInThemes[pid])}
+                  themeId={themeId}
+                  draftDirty={draftDirty}
+                  onSelect={onRequestThemeSelection}
+                />
+              </section>
+            ))}
+
+            <section className="theme-page__catalog-block">
+              <div className="theme-page__dialog-subhead">
+                <strong>Suggested directions</strong>
+                <Tag type="cyan" size="sm">Curated</Tag>
+              </div>
+              <div className="theme-page__catalog-list">
+                {SUGGESTED_DIRECTIONS.map((suggestion) => {
+                  const selected =
+                    draftDirty
+                    && draftName.trim() === suggestion.name
+                    && draftBase === suggestion.base
+                    && draftFamilyId === suggestion.familyId
+                    && draftOverrideCount === 0
+
+                  return (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      className={`theme-page__catalog-item${selected ? ' theme-page__catalog-item--active' : ''}`}
+                      onClick={() => onHandleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)}
+                      aria-pressed={selected}
+                    >
+                      <span className="theme-page__catalog-item-copy">
+                        <strong>{suggestion.name}</strong>
+                        <span>{suggestion.description}</span>
+                      </span>
+                      <span className="theme-page__catalog-item-meta">
+                        <Tag type={selected ? 'blue' : 'cool-gray'} size="sm">
+                          {selected ? 'Draft' : carbonThemeLabel(suggestion.base)}
+                        </Tag>
+                        <ThemeSwatchStrip
+                          theme={generateThemeFromPalette(suggestion.familyId, suggestion.base, {}, suggestion.id, suggestion.name)}
+                        />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+            <section className="theme-page__catalog-block">
+              <div className="theme-page__dialog-subhead">
+                <strong>Custom themes</strong>
+                <Tag type={customThemeEntries.length > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                  {customThemeEntries.length > 0 ? `${customThemeEntries.length} saved` : 'None'}
+                </Tag>
+              </div>
+              {customThemeEntries.length === 0 ? (
+                <p className="theme-page__group-note">Save the current draft to build a reusable library entry.</p>
+              ) : (
+                <div className="theme-page__catalog-list">
+                  {customThemeEntries.map((customTheme) => {
+                    const active = !draftDirty && themeId === customTheme.id
+
+                    return (
+                      <div key={customTheme.id} className="theme-page__catalog-row">
+                        <button
+                          type="button"
+                          className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+                          onClick={() => onRequestThemeSelection(customTheme.id)}
+                          aria-pressed={active}
+                        >
+                          <span className="theme-page__catalog-item-copy">
+                            <strong>{customTheme.name}</strong>
+                            <span>{customTheme.description}</span>
+                          </span>
+                          <span className="theme-page__catalog-item-meta">
+                            <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
+                              {active ? 'Active' : 'Custom'}
+                            </Tag>
+                            <ThemeSwatchStrip theme={resolvePreviewTheme(customTheme.id, customTheme)} />
+                          </span>
+                        </button>
+                        <Button kind="ghost" size="sm" onClick={() => onDeleteCustomTheme(customTheme.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div className="theme-page__dialog-group">
+            <div className="theme-page__dialog-subhead">
+              <strong>Save as</strong>
+              <Tag type="cool-gray" size="sm">Custom</Tag>
+            </div>
+            <TextInput
+              id="theme-page-custom-theme-name-dialog"
+              labelText="Custom theme name"
+              placeholder={previewTheme.name}
+              value={draftName}
+              onChange={(event) => onSetDraftName(event.target.value)}
+              maxLength={60}
+            />
+            {draftDirty && draftOverrideCount > 0 ? (
+              <div className="theme-page__draft-warning">
+                <InlineNotification
+                  lowContrast
+                  hideCloseButton
+                  kind="warning"
+                  title="Token overrides are still in draft."
+                  subtitle="These token changes are not saved yet. Presets, fonts, appearance assets, and behavior settings still apply immediately."
+                />
+                <Button kind="secondary" size="sm" onClick={onSaveDraftTheme}>
+                  Save now
+                </Button>
+              </div>
+            ) : null}
+            <div className="theme-page__dialog-actions">
+              <Button kind="ghost" renderIcon={Reset} onClick={onResetDraft} disabled={!draftDirty}>
+                Reset draft
+              </Button>
+              <Button kind="primary" renderIcon={PaintBrush} onClick={onSaveDraftTheme} disabled={!draftDirty}>
+                Save and apply custom theme
+              </Button>
+            </div>
+            <p className="theme-page__group-note">
+              Preset changes, typography, appearance assets, and behavior settings still persist immediately.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.preview) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.preview}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.preview}-tab`} role="tabpanel">
+        <div className="theme-page__panel-header">
+          <div>
+            <h2 className="theme-page__section-title">Desktop Themes</h2>
+            <p className="theme-page__section-copy">
+              The preview mirrors the desktop-theme workflow directly: desktop scene, active window, inactive window, and message box.
+            </p>
+          </div>
+          <div className="theme-page__section-tags">
+            <Tag type="cool-gray" size="sm">{CARBON_FAMILY_BY_ID[draftFamilyId]?.name ?? 'Blue'}</Tag>
+            <Tag type={draftOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+              {draftOverrideCount > 0 ? `${draftOverrideCount} token edits` : 'No token edits'}
+            </Tag>
+          </div>
+        </div>
+
+        <div className="theme-page__preview-layout">
+          <div className="theme-page__dialog-group">
+            <ThemeDesktopPreview theme={previewTheme} activeThemeLabel={activeThemeLabel} previewFocus={previewFocus} />
+            <div className="theme-page__preview-meta">
+              <span>Preview of {activeThemeLabel}</span>
+              <ThemeSwatchStrip theme={previewTheme} />
+            </div>
+          </div>
+
+          <div className="theme-page__dialog-group">
+            <div className="theme-page__panel-header">
+              <div>
+                <h2 className="theme-page__section-title">Preview target</h2>
+                <p className="theme-page__section-copy">Focus the preview on the desktop scene, active window, inactive window, or message box.</p>
+              </div>
+              <Tag type="blue" size="sm">{previewFocusLabel}</Tag>
+            </div>
+            <div className="theme-page__option-list" role="radiogroup" aria-label="Preview target">
+              {([
+                ['desktop', 'Desktop', 'Highlights the wallpaper scene, desktop icons, and overall shell backdrop.'],
+                ['inactive-window', 'Inactive window', 'Shows the passive title bar and background window chrome.'],
+                ['active-window', 'Active window', 'Focuses the primary route window, live title bar, and content panels.'],
+                ['message-box', 'Message box', 'Targets alerts and confirmation prompts layered above the desktop.'],
+              ] as const).map(([id, label, description]) => {
+                const active = previewFocus === id
+
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
+                    onClick={() => onSetPreviewFocus(id)}
+                  >
+                    <span className="theme-page__option-copy">
+                      <strong>{label}</strong>
+                      <span>{description}</span>
+                    </span>
+                    <span className="theme-page__option-status">{active ? 'Selected' : 'Available'}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.colorScheme) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.colorScheme}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.colorScheme}-tab`} role="tabpanel">
+        <div className="theme-page__panel-header">
+          <div>
+            <h2 className="theme-page__section-title">Scheme</h2>
+            <p className="theme-page__section-copy">Choose the Carbon shell baseline used for the preview windows and routed chrome.</p>
+          </div>
+          <Tag type="cool-gray" size="sm">{carbonThemeLabel(draftBase)}</Tag>
+        </div>
+        <div className="theme-page__dialog-group">
+          <div className="theme-page__option-list" role="radiogroup" aria-label="Base shell">
+            {BASE_SHELL_OPTIONS.map((base) => (
+              <button
+                key={base}
+                type="button"
+                role="radio"
+                aria-checked={draftBase === base}
+                className={`theme-page__option-item${draftBase === base ? ' theme-page__option-item--active' : ''}`}
+                onClick={() => onSetDraftBase(base)}
+              >
+                <span className="theme-page__option-copy">
+                  <strong>{carbonThemeLabel(base)}</strong>
+                  <span>{baseShellDescription(base)}</span>
+                </span>
+                <span className={`theme-page__base-dot theme-page__base-dot--${base}`} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.font) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.font}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.font}-tab`} role="tabpanel">
+        <div className="theme-page__typography-panel">
+          <div className="theme-page__dialog-group">
+            <h2 className="theme-page__section-title">Accent family</h2>
+            <p className="theme-page__section-copy">Retain token-based color editing, but group the family choices like a modern palette instead of a left rail.</p>
+            <div className="theme-page__family-grid theme-page__family-grid--dialog" role="radiogroup" aria-label="Accent family">
+              {CARBON_COLOR_FAMILIES.map((family) => {
+                const previewShade = draftBase === 'g100' || draftBase === 'g90' ? 50 : 60
+                const selected = draftFamilyId === family.id
+
+                return (
+                  <button
+                    key={family.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    className={`theme-page__family-card ${selected ? ' theme-page__family-card--active' : ''}`}
+                    onClick={() => onSetDraftFamilyId(family.id)}
+                  >
+                    <span className="theme-page__family-band" style={{ background: family.shades[previewShade] }} aria-hidden="true" />
+                    <span className="theme-page__family-copy">
+                      <span className="theme-page__family-dot" style={{ background: family.shades[previewShade] }} aria-hidden="true" />
+                      <strong>{family.name}</strong>
+                      {selected ? <Checkmark size={14} aria-hidden /> : null}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="theme-page__dialog-group">
+            <div className="theme-page__panel-header">
+              <div>
+                <h2 className="theme-page__section-title">Platform GUI font</h2>
+                <p className="theme-page__section-copy">Font changes stay live, but now live on their own tab instead of a stacked sidebar block.</p>
+              </div>
+              <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
+            </div>
+            <div className="theme-page__option-list" role="radiogroup" aria-label="Platform GUI font">
+              {Object.values(fontPresets).map((preset) => {
+                const active = preset.id === fontPresetId
+
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
+                    onClick={() => onSetFontPreset(preset.id)}
+                  >
+                    <span className="theme-page__option-copy">
+                      <strong>{preset.name}</strong>
+                      <span>{preset.description}</span>
+                    </span>
+                    <span className="theme-page__font-inline-sample" style={{ fontFamily: preset.family }}>
+                      {preset.sample}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.tokenStudio) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.tokenStudio}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.tokenStudio}-tab`} role="tabpanel">
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <div className="theme-page__dialog-head">
+            <div>
+              <h2 className="theme-page__section-title">Token studio</h2>
+              <p className="theme-page__section-copy">Tune semantic shell tokens from grouped lists, then open a family and shade picker inline.</p>
+            </div>
+            <Tag type={draftOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+              {draftOverrideCount > 0 ? `${draftOverrideCount} overrides` : 'No overrides'}
+            </Tag>
+          </div>
+
+          <div className="theme-page__slot-groups theme-page__slot-groups--dialog">
+            {COLOR_SLOT_GROUPS.map((group) => (
+              <article key={group.label} className="theme-page__studio-card">
+                <div className="theme-page__studio-card-head">
+                  <h3>{group.label}</h3>
+                  <Tag type="cool-gray" size="sm">{group.slots.length} tokens</Tag>
+                </div>
+                <div className="theme-page__slot-grid">
+                  {group.slots.map((slot) => {
+                    const value = previewTheme.colors[slot]
+                    const overridden = slot in draftOverrides
+                    const open = activeSlot === slot
+
+                    return (
+                      <div
+                        key={slot}
+                        className={`theme-page__slot-card${open ? ' theme-page__slot-card--open' : ''}${overridden ? ' theme-page__slot-card--overridden' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="theme-page__slot-button"
+                          onClick={(event) => {
+                            activeSlotTriggerRef.current = event.currentTarget
+                            onSetActiveSlot(open ? null : slot)
+                          }}
+                        >
+                          <span
+                            className="theme-page__slot-swatch"
+                            style={{
+                              background: isHexLike(value) || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('color-mix')
+                                ? value
+                                : 'transparent',
+                              borderStyle: isHexLike(value) || value.startsWith('rgb') || value.startsWith('hsl') || value.startsWith('color-mix')
+                                ? 'solid'
+                                : 'dashed',
+                            }}
+                            aria-hidden="true"
+                          />
+                          <span className="theme-page__slot-copy">
+                            <strong>{SLOT_LABELS[slot] ?? slot}</strong>
+                            <code>{value}</code>
+                          </span>
+                          {overridden ? <Tag type="warm-gray" size="sm">Edited</Tag> : null}
+                        </button>
+
+                        {overridden ? (
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            className="theme-page__slot-reset"
+                            onClick={() => {
+                              onSetDraftOverrides((current) => {
+                                const next = { ...current }
+                                delete next[slot]
+                                return next
+                              })
+                              onMarkDraftDirty()
+                            }}
+                          >
+                            Reset
+                          </Button>
+                        ) : null}
+
+                        {open ? (
+                          <SlotPalettePicker
+                            currentValue={value}
+                            onPick={(color) => {
+                              onSetDraftOverrides((current) => ({ ...current, [slot]: color }))
+                              onMarkDraftDirty()
+                              onCloseActiveSlot()
+                            }}
+                            onClose={onCloseActiveSlot}
+                          />
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.appearanceAssets) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.appearanceAssets}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.appearanceAssets}-tab`} role="tabpanel">
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <div className="theme-page__dialog-head">
+            <div>
+              <h2 className="theme-page__section-title">Appearance assets</h2>
+              <p className="theme-page__section-copy">
+                Keep shared category accents and per-plugin icon or color overrides grouped together without mixing them into the shell chooser.
+              </p>
+            </div>
+            <div className="theme-page__section-tags">
+              <Tag type={overriddenCategoryCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                {overriddenCategoryCount > 0 ? `${overriddenCategoryCount} category accents` : 'All category defaults'}
+              </Tag>
+              <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                {pluginOverrideCount > 0 ? `${pluginOverrideCount} plugin overrides` : 'No plugin overrides'}
+              </Tag>
+            </div>
+          </div>
+
+          <div className="theme-page__editor-mode-grid" role="group" aria-label="Appearance assets mode">
+            <Button kind={categoryEditorMode === 'categories' ? 'primary' : 'tertiary'} onClick={() => onSetCategoryEditorMode('categories')}>
+              <span className="theme-page__editor-mode-copy">
+                <strong>Category accents</strong>
+                <span>Shared palette used by cards, chips, and browser badges.</span>
+              </span>
+            </Button>
+            <Button kind={categoryEditorMode === 'plugins' ? 'primary' : 'tertiary'} onClick={() => onSetCategoryEditorMode('plugins')}>
+              <span className="theme-page__editor-mode-copy">
+                <strong>Plugin overrides</strong>
+                <span>Per-plugin icon, accent, and description overrides.</span>
+              </span>
+            </Button>
+          </div>
+
+          {categoryEditorMode === 'categories' ? (
+            <>
+              <div className="theme-page__section-tags">
+                <Button kind="ghost" size="sm" disabled={overriddenCategoryCount === 0} onClick={() => onResetAllCategoryColorOverrides()}>
+                  Reset all category accents
+                </Button>
+              </div>
+              <div className="theme-page__category-grid">
+                {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
+                  const Icon = config.icon
+
+                  return (
+                    <div key={key} className="theme-page__category-card">
+                      <div className="theme-page__category-top">
+                        <span className="theme-page__category-icon" style={{ color: config.color, background: config.bg }}>
+                          <Icon size={18} />
+                        </span>
+                        <div className="theme-page__category-copy">
+                          <span className="theme-page__category-label">{label}</span>
+                          <span className="theme-page__category-value">{config.color}</span>
+                        </div>
+                        {overridden ? <Tag type="warm-gray" size="sm">Custom</Tag> : null}
+                      </div>
+
+                      <div className="theme-page__category-controls">
+                        <button
+                          type="button"
+                          className="theme-page__category-picker-button"
+                          aria-expanded={activeCategoryPicker === key}
+                          aria-label={`${label} color`}
+                          onClick={(event) => {
+                            activeCategoryTriggerRef.current = event.currentTarget
+                            onSetActiveCategoryPicker(activeCategoryPicker === key ? null : key)
+                          }}
+                        >
+                          <span className="theme-page__category-picker-swatch" style={{ background: config.color }} aria-hidden="true" />
+                          <span className="theme-page__category-picker-copy">Choose from Carbon palette</span>
+                        </button>
+                        <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => onResetCategoryColorOverride(key)}>
+                          Reset
+                        </Button>
+                      </div>
+                      {activeCategoryPicker === key ? (
+                        <SlotPalettePicker
+                          currentValue={config.color}
+                          onPick={(color) => {
+                            onSetCategoryColorOverride(key, color)
+                            onCloseActiveCategoryPicker()
+                          }}
+                          onClose={onCloseActiveCategoryPicker}
+                        />
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="theme-page__plugin-editor">
+              <div className="theme-page__plugin-toolbar">
+                <CarbonSearch
+                  id="theme-plugin-appearance-search-dialog"
+                  labelText="Search plugins"
+                  placeholder="Search plugins, authors, categories"
+                  value={pluginSearch}
+                  onChange={(event) => onSetPluginSearch(event.currentTarget.value)}
+                />
+                <div className="theme-page__plugin-filter-row">
+                  {(['all', 'lv2', 'juce', 'toobamp', 'hardware'] as PluginSourceFilter[]).map((filter) => (
+                    <Button key={filter} kind={pluginSourceFilter === filter ? 'primary' : 'tertiary'} size="sm" onClick={() => onSetPluginSourceFilter(filter)}>
+                      {filter === 'all' ? 'All sources' : PLUGIN_SOURCE_FILTER_LABELS[filter]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="theme-page__plugin-grid">
+                <div className="theme-page__plugin-list">
+                  <div className="theme-page__plugin-list-head">
+                    <strong>Plugins</strong>
+                    <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                      {pluginOverrideCount > 0 ? `${pluginOverrideCount} customized` : 'No overrides'}
+                    </Tag>
+                  </div>
+                  {pluginInventoryError ? (
+                    <InlineNotification lowContrast hideCloseButton kind="error" title="Plugin catalog unavailable." subtitle={pluginInventoryError} />
+                  ) : null}
+                  {pluginInventoryLoading ? (
+                    <LoadingState className="theme-page__plugin-empty" description="Loading plugin catalog" />
+                  ) : filteredPlugins.length === 0 ? (
+                    <EmptyState className="theme-page__plugin-empty" compact title="No plugins match the current filter" description="Try adjusting the search or source filters." />
+                  ) : (
+                    <div className="theme-page__plugin-list-scroll">
+                      {filteredPlugins.map((plugin) => {
+                        const isSelected = plugin.uri === selectedPluginUri
+                        const override = appearances[plugin.uri]
+
+                        return (
+                          <button
+                            key={plugin.uri}
+                            type="button"
+                            className={`theme-page__plugin-list-item${isSelected ? ' theme-page__plugin-list-item--selected' : ''}`}
+                            onClick={() => onSetSelectedPluginUri(plugin.uri)}
+                          >
+                            <span className="theme-page__plugin-list-icon">
+                              <PluginAppearanceIcon
+                                identifier={override?.icon_identifier}
+                                customSvg={override?.custom_svg}
+                                fallbackCategory={plugin.category}
+                                size={22}
+                              />
+                            </span>
+                            <span className="theme-page__plugin-list-copy">
+                              <strong>{getDisplayPluginName(plugin.name, plugin.uri)}</strong>
+                              <span>{plugin.category || plugin.class_label}</span>
+                            </span>
+                            <span className="theme-page__plugin-list-tags">
+                              <Tag type="cool-gray" size="sm">{inferPluginSource(plugin)}</Tag>
+                              {override ? <Tag type="warm-gray" size="sm">Custom</Tag> : null}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="theme-page__plugin-detail">
+                  {selectedPlugin && selectedPluginDraft ? (
+                    <>
+                      <div className="theme-page__plugin-detail-head">
+                        <div className="theme-page__plugin-detail-title">
+                          <span className="theme-page__plugin-list-icon theme-page__plugin-list-icon--large">
+                            <PluginAppearanceIcon
+                              identifier={selectedPluginDraft.icon_identifier}
+                              customSvg={selectedPluginDraft.custom_svg}
+                              fallbackCategory={selectedPlugin.category}
+                              size={28}
+                            />
+                          </span>
+                          <div>
+                            <h3>{getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}</h3>
+                            <p>{sanitizeRestrictedDisplayText(selectedPlugin.author)} · {selectedPlugin.category || selectedPlugin.class_label}</p>
+                          </div>
+                        </div>
+                        <div className="theme-page__section-tags">
+                          <Tag type="cool-gray" size="sm">{inferPluginSource(selectedPlugin)}</Tag>
+                          <Button kind="ghost" size="sm" renderIcon={Search} onClick={() => onSetIconPickerOpen(true)}>
+                            Pick icon
+                          </Button>
+                        </div>
+                      </div>
+
+                      <PluginColorPicker
+                        accentColor={selectedPluginDraft.accent_color}
+                        darkVariant={selectedPluginDraft.dark_variant}
+                        lightVariant={selectedPluginDraft.light_variant}
+                        onChange={onHandlePluginDraftChange}
+                      />
+
+                      <TextInput
+                        id="theme-plugin-description-dialog"
+                        labelText="Short description override"
+                        value={selectedPluginDraft.description ?? ''}
+                        onChange={(event) => onHandlePluginDraftChange({ description: event.currentTarget.value })}
+                      />
+
+                      <div className="theme-page__plugin-detail-actions">
+                        <Button kind="secondary" size="sm" onClick={() => void onHandleSavePluginAppearance()}>
+                          Save plugin override
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={!selectedPluginAppearance} onClick={() => void onHandleResetPluginAppearance()}>
+                          Reset this plugin
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={pluginOverrideCount === 0} onClick={() => void onHandleResetAllPluginAppearances()}>
+                          Reset all plugin overrides
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <EmptyState className="theme-page__plugin-empty" compact title="Select a plugin to edit its appearance" description="Choose a plugin from the list to change its icon, accent, and description." />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.personalization) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.personalization}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.personalization}-tab`} role="tabpanel">
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <div className="theme-page__dialog-head">
+            <div>
+              <h2 className="theme-page__section-title">Desktop personalization</h2>
+              <p className="theme-page__section-copy">Control the desktop wallpaper and jump back to the desktop workflow from one focused panel.</p>
+            </div>
+            <div className="theme-page__section-tags">
+              <Tag type="cool-gray" size="sm">
+                {desktopWallpaper.mode === 'default-image'
+                  ? 'Default wallpaper'
+                  : desktopWallpaper.mode === 'solid-theme'
+                    ? 'Theme solid color'
+                    : 'Uploaded wallpaper'}
+              </Tag>
+              <Tag type="blue" size="sm">{carbonThemeLabel(previewTheme.carbonTheme ?? 'g10')}</Tag>
+            </div>
+          </div>
+
+          <div className="theme-page__settings-stack">
+            <div className="theme-page__settings-row theme-page__settings-row--stacked">
+              <div className="theme-page__motion-head">
+                <PaintBrush size={20} aria-hidden />
+                <div>
+                  <strong>Wallpaper source</strong>
+                  <p>Choose the platform hero wallpaper, a theme-colored desktop, or an uploaded image stored locally in this browser.</p>
+                </div>
+              </div>
+              <div className="theme-page__option-list" role="radiogroup" aria-label="Desktop wallpaper source">
+                {([
+                  ['default-image', 'Platform hero', 'Use the platform hero icon over a black desktop background.'],
+                  ['solid-theme', 'Theme solid color', 'Use the active Carbon theme background color as the desktop wallpaper.'],
+                  ['uploaded-image', 'Uploaded image', 'Use a custom image stored locally in this browser.'],
+                ] as const).map(([id, label, description]) => {
+                  const active = desktopWallpaper.mode === id
+
+                  return (
+                    <div key={id} className="theme-page__option-stack">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        className={`theme-page__option-item${active ? ' theme-page__option-item--active' : ''}`}
+                        onClick={() => onSelectDesktopWallpaperMode(id)}
+                      >
+                        <span className="theme-page__option-copy">
+                          <strong>{label}</strong>
+                          <span>{description}</span>
+                        </span>
+                        <span className="theme-page__option-status">{active ? 'Selected' : 'Available'}</span>
+                      </button>
+                      {id === 'uploaded-image' && active ? (
+                        <div className="theme-page__option-detail" aria-live="polite">
+                          <Button kind="secondary" size="sm" onClick={onOpenWallpaperUploadPicker}>
+                            Choose file...
+                          </Button>
+                          <span className="theme-page__option-detail-copy">
+                            {desktopWallpaper.imageDataUrl ? 'Custom wallpaper loaded from local browser storage.' : 'No file chosen.'}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+              <input
+                ref={wallpaperUploadInputRef}
+                type="file"
+                accept="image/*"
+                aria-label="Upload desktop wallpaper"
+                style={{ display: 'none' }}
+                onChange={onHandleWallpaperUpload}
+              />
+              {desktopWallpaper.mode === 'uploaded-image' && desktopWallpaper.imageDataUrl ? (
+                <p className="theme-page__group-note">Custom wallpaper loaded from local browser storage.</p>
+              ) : null}
+              {wallpaperUploadError ? (
+                <InlineNotification lowContrast hideCloseButton kind="error" title="Wallpaper upload failed." subtitle={wallpaperUploadError} />
+              ) : null}
+            </div>
+
+            <div className="theme-page__settings-row">
+              <div className="theme-page__motion-head">
+                <Settings size={20} aria-hidden />
+                <div>
+                  <strong>Display entry points</strong>
+                  <p>Use the desktop wallpaper context menu or return to the desktop now to validate the current personalization settings live.</p>
+                </div>
+              </div>
+              <div className="theme-page__motion-actions">
+                <Button kind="tertiary" onClick={onNavigateHome}>
+                  Open desktop
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section id={`${THEME_PAGE_SECTION_IDS.behavior}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.behavior}-tab`} role="tabpanel">
+      <div className="theme-page__behavior-panel">
+        <div className="theme-page__dialog-group">
+          <h2 className="theme-page__section-title">Editor status</h2>
+          <div className="theme-page__dialog-facts">
+            <div>
+              <span>Theme library</span>
+              <strong>{totalThemeCount} choices</strong>
+            </div>
+            <div>
+              <span>Token overrides</span>
+              <strong>{draftOverrideCount}</strong>
+            </div>
+            <div>
+              <span>Appearance assets</span>
+              <strong>{overriddenCategoryCount + pluginOverrideCount} custom</strong>
+            </div>
+            <div>
+              <span>Motion preset</span>
+              <strong>{pageTransitionPresetLabel(pageTransitionPreset)}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <div className="theme-page__dialog-head">
+            <div>
+              <h2 className="theme-page__section-title">Behavior and accessibility</h2>
+              <p className="theme-page__section-copy">Motion and utility behavior stay together in a dedicated panel instead of living inside the shell chooser.</p>
+            </div>
+            <div className="theme-page__section-tags">
+              <Tag type="blue" size="sm">{pageTransitionPresetLabel(pageTransitionPreset)}</Tag>
+              <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
+                {shouldReduceEffects ? 'Reduced effects active' : 'Full effects active'}
+              </Tag>
+            </div>
+          </div>
+
+          <div className="theme-page__settings-stack">
+            <div className="theme-page__settings-row">
+              <div className="theme-page__motion-head">
+                <Accessibility size={20} aria-hidden />
+                <div>
+                  <strong>Reduce effects</strong>
+                  <p>Use the saved toggle below to keep movement restrained even when the OS does not require it.</p>
+                </div>
+              </div>
+              <Toggle
+                id="theme-page-reduce-effects-dialog"
+                labelText="Reduce Effects Mode"
+                labelA="Off"
+                labelB="On"
+                toggled={reducedEffectsEnabled}
+                onToggle={onSetReducedEffectsEnabled}
+              />
+            </div>
+
+            <div className="theme-page__settings-row theme-page__settings-row--stacked">
+              <div className="theme-page__motion-head">
+                <Loop size={20} aria-hidden />
+                <div>
+                  <strong>Page transition style</strong>
+                  <p>Choose how supported shell routes animate. Reduced motion still forces the minimal fade.</p>
+                </div>
+              </div>
+              <div className="theme-page__option-list" role="radiogroup" aria-label="Page transition style">
+                {PAGE_TRANSITION_PRESET_OPTIONS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={preset.id === pageTransitionPreset}
+                    className={`theme-page__option-item${preset.id === pageTransitionPreset ? ' theme-page__option-item--active' : ''}`}
+                    onClick={() => onSetPageTransitionPreset(preset.id)}
+                  >
+                    <span className="theme-page__option-copy">
+                      <strong>{preset.name}</strong>
+                      <span>{preset.description}</span>
+                    </span>
+                    <span className="theme-page__option-status">{preset.id === pageTransitionPreset ? 'Selected' : 'Available'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="theme-page__settings-row">
+              <div className="theme-page__motion-head">
+                <Settings size={20} aria-hidden />
+                <div>
+                  <strong>Special Settings Menu</strong>
+                  <p>Keep native-plugin visibility controls and related utility behavior outside the shell-theme tokens.</p>
+                </div>
+              </div>
+              <div className="theme-page__motion-actions">
+                <Tag type={hiddenPluginCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                  {hiddenPluginCount > 0 ? `${hiddenPluginCount} hidden plugin${hiddenPluginCount === 1 ? '' : 's'}` : 'All native plugins visible'}
+                </Tag>
+                {specialSettingsLoading ? <Tag type="cyan" size="sm">Loading</Tag> : null}
+                <Button kind="secondary" size="sm" renderIcon={Settings} onClick={onOpenSpecialSettings}>
+                  Open Special Settings Menu
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {specialSettingsError ? (
+            <InlineNotification lowContrast hideCloseButton kind="error" title="Special settings are unavailable." subtitle={specialSettingsError} />
+          ) : null}
+          {prefersReducedMotion ? (
+            <InlineNotification
+              lowContrast
+              hideCloseButton
+              kind="info"
+              title="System reduced-motion is active."
+              subtitle="OS accessibility settings still force minimal motion even if the saved preference is off."
+            />
+          ) : null}
+        </div>
+      </div>
     </section>
   )
 }

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-13 - Completed `T1000` by adding live-status rollups to the `/outboard-hardware` overview cards, reusing the existing frontend hook surfaces, and tightening IntelFX device-location alias coverage without introducing a new backend summary API.
+Last updated: 2026-04-14 - Completed `T1005` by refactoring `/platforms/theme` into a top-tabbed single-panel workflow, removing the redundant inner chrome layers, and refreshing focused Theme-page regression coverage for the new navigation model.
 
 ## Performance Brain
 
@@ -24099,3 +24099,25 @@ Subtasks:
       - Residual legacy literals are now limited to explicit redirect definitions, route-base compatibility helpers, alias maps, and targeted tests that intentionally validate those compatibility seams.
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
+
+ID: T1005
+Status: [✓] Done
+Title: Convert the Theme workspace from an inner side rail to top tabs with one focused panel at a time
+Description:
+- Goal / acceptance criteria: Clean up `/platforms/theme` by replacing the inner Theme side navigation with horizontal tabs across the top, ensuring each tab swaps in a dedicated view instead of the old all-sections-at-once layout, removing redundant Theme titlebar/wrapper chrome inside the page, modernizing the visual treatment, and preserving existing persistence behavior for themes, preview targeting, tokens, appearance assets, personalization, and behavior controls.
+- Why it matters: The previous routed Theme page still looked over-layered and visually noisy, with too many nested headers and too much simultaneous content competing for attention.
+- Dependencies: T711, T716
+- Estimated effort: Medium
+- Required outputs: updated `web/src/app/pages/ThemePage.tsx`, updated `web/src/app/pages/ThemePage.css`, refreshed focused Theme-page tests, validation evidence, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 12:40 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/ThemePage.tsx` so the Theme workspace now renders a horizontal top-tab bar inside the Theme content area and swaps one focused panel at a time for Library, Preview, Color Scheme, Typography, Token Studio, Appearance Assets, Personalization, and Behavior.
+  - Removed the redundant inner side rail, faux titlebar/footer chrome, and extra wrapper hierarchy from the Theme workspace, then modernized the layout toward a cleaner hero-plus-tabs composition in `web/src/app/pages/ThemePage.css`.
+  - Refreshed `web/src/app/pages/ThemePage.test.tsx` to validate the new tab workflow while preserving persistence and regression coverage for wallpaper mode, preview targeting, token editing, plugin appearance overrides, motion settings, and draft-theme switching.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx` -> PASS (`22 passed`)
+- Licensing review:
+  - Touched Theme page source, stylesheet, test, and worklist artifacts remain MAP2-owned repository files covered by the project AGPLv3 policy; no new third-party notices or ownership overrides were introduced in this slice.

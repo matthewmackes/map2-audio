@@ -11,7 +11,7 @@ import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.pn
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
-import { HeroIconLauncher } from '../layout/HeroIconLauncher'
+import { StaticHeroIconLauncher } from '../layout/StaticHeroIconLauncher'
 import { HomeStartMenuOverlay } from './HomeStartMenuOverlay'
 import './HomePage.css'
 
@@ -187,9 +187,8 @@ export function HomePage() {
         ) : null}
         <div className="hp2-desktop__underlay" aria-hidden="true" />
 
-        {/* Centered Hero Icon Launcher */}
-        <div className="hp2-desktop__cube-launcher">
-          <HeroIconLauncher
+        <div className="hp2-desktop__start-launcher">
+          <StaticHeroIconLauncher
             isActive={menuOpen}
             buttonRef={cubeButtonRef}
             onClick={handleToggleCubeMenu}

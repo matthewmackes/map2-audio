@@ -11,7 +11,6 @@ import type { StartMenuTileItem } from './ShellLauncherPanel'
 const START_MENU_EXCLUDED_ROUTES = new Set([
   '/launch-control',
   '/midi-commander',
-  '/workspace',
   '/workspace/artifacts',
   '/workspace/physical-surfaces',
 ])

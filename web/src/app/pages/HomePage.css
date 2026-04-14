@@ -168,36 +168,14 @@
 }
 
 /* ============================================================================
-   Centered Cube Launcher
+   Corner Start Launcher
    ============================================================================ */
 
-.hp2-desktop__cube-launcher {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hp2-desktop__cube-launcher .hero-icon-launcher__btn {
-  width: 50vmin;
-  height: 50vmin;
-  max-width: 500px;
-  max-height: 500px;
-}
-
-@media (max-width: 66rem) {
-  .hp2-desktop__cube-launcher .hero-icon-launcher__btn {
-    width: 40vmin;
-    height: 40vmin;
-  }
-}
-
-@media (max-width: 42rem) {
-  .hp2-desktop__cube-launcher .hero-icon-launcher__btn {
-    width: max(35vmin, 180px);
-    height: max(35vmin, 180px);
-  }
+.hp2-desktop__start-launcher {
+  position: absolute;
+  left: var(--window-shell-launcher-offset, clamp(1rem, 2vw, 1.5rem));
+  bottom: var(--window-shell-launcher-offset, clamp(1rem, 2vw, 1.5rem));
+  z-index: 10;
 }
 
 /* ============================================================================
