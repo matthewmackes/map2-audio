@@ -1,8 +1,9 @@
-import { Button, Loading, Tag, Tile } from '@carbon/react'
+import { Button, Loading, Tag } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { EmptyState } from '../components/shared/EmptyState'
+import { DashboardCard } from '../components/shared/DashboardCard'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
 import {
@@ -59,16 +60,16 @@ function UnitCard({
   }
 
   return (
-    <Tile className="physical-surfaces-page__card" key={unit.unit_id}>
-      <div className="physical-surfaces-page__card-head">
+    <DashboardCard className="physical-surfaces-page__card" key={unit.unit_id}>
+      <div className="physical-surfaces-page__card-head dashboard-card__header">
         <div>
-          <p className="physical-surfaces-page__eyebrow">{unit.family}</p>
-          <h2>{unit.display_name}</h2>
+          <p className="physical-surfaces-page__eyebrow dashboard-card__eyebrow">{unit.family}</p>
+          <h2 className="dashboard-card__title">{unit.display_name}</h2>
         </div>
         <Tag type={statusTagType(unit.status)}>{unit.status}</Tag>
       </div>
-      <p className="physical-surfaces-page__body-copy">{unit.status_reason}</p>
-      <p className="physical-surfaces-page__body-copy">
+      <p className="physical-surfaces-page__body-copy dashboard-card__body-copy">{unit.status_reason}</p>
+      <p className="physical-surfaces-page__body-copy dashboard-card__body-copy">
         Current view: <strong>{unit.view_state.current_view_label}</strong>
       </p>
       <div className="physical-surfaces-page__tag-row">
@@ -122,7 +123,7 @@ function UnitCard({
           </Button>
         ) : null}
       </div>
-    </Tile>
+    </DashboardCard>
   )
 }
 
@@ -159,10 +160,10 @@ export function PhysicalSurfacesOverviewPage({
       />
 
       {summary?.host_observations.maschinen_mk1_host_note ? (
-        <Tile className="physical-surfaces-page__host-note">
-          <p className="physical-surfaces-page__eyebrow">Host observation</p>
-          <p className="physical-surfaces-page__body-copy">{summary.host_observations.maschinen_mk1_host_note}</p>
-        </Tile>
+        <DashboardCard className="physical-surfaces-page__host-note">
+          <p className="physical-surfaces-page__eyebrow dashboard-card__eyebrow">Host observation</p>
+          <p className="physical-surfaces-page__body-copy dashboard-card__body-copy">{summary.host_observations.maschinen_mk1_host_note}</p>
+        </DashboardCard>
       ) : null}
 
       {(summary?.units ?? []).length ? (

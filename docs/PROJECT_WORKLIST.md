@@ -24886,7 +24886,7 @@ Last updated: 2026-04-14 13:47 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
 
 ID: T2263
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build a shared clickable dashboard-card primitive for home and workspace summaries
 Description:
 - Goal / acceptance criteria: Extract a reusable Carbon card primitive for summary/dashboard surfaces so the home launch tiles and workspace summary cards stop maintaining parallel structural/styling patterns.
@@ -24895,7 +24895,15 @@ Description:
 - Estimated effort: Medium
 - Required outputs: shared component or styling primitive, consumer rewiring, and focused regression coverage.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 22:29 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/shared/DashboardCard.tsx` and `DashboardCard.css` as a reusable Carbon card primitive that centralizes the shared surface shell, interactive hover/focus treatment, and common dashboard heading/body typography.
+  - Rewired the home shell in `web/src/app/pages/HomePage.tsx` so the hero, launch tiles, and right-rail cards now use the shared dashboard-card primitive instead of maintaining their own direct `Tile`/`ClickableTile` wrappers.
+  - Rewired the workspace overview card surfaces in `web/src/app/pages/PhysicalSurfacesOverviewPage.tsx` and `web/src/app/pages/OutboardHardwareOverviewPage.tsx` to use the same primitive for their summary/detail card shells while preserving the route-specific content and metrics.
+  - Added `web/src/app/components/shared/DashboardCard.test.tsx` and updated `PhysicalSurfacesOverviewPage.test.tsx` so the new primitive and the rewired consumers stay covered.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/shared/DashboardCard.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/PhysicalSurfacesOverviewPage.test.tsx` -> PASS
 
 ID: T2264
 Status: [✓] Done

@@ -1,10 +1,11 @@
-import { Button, Tag, Tile } from '@carbon/react'
+import { Button, Tag } from '@carbon/react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
 import type { TesiraDeviceSummary } from '../components/Tesira/types'
 import { EmptyState } from '../components/shared/EmptyState'
+import { DashboardCard } from '../components/shared/DashboardCard'
 import { type DeviceLocation, useDeviceLocation } from '../hooks/useDeviceLocation'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { useIntelFXOverviewStatus, type IntelFXState } from '../../map2/intelfxApi'
@@ -424,16 +425,16 @@ function OutboardHardwareCard({
   }
 
   return (
-    <Tile className="outboard-hardware-page__card">
-      <div className="outboard-hardware-page__card-head">
+    <DashboardCard className="outboard-hardware-page__card">
+      <div className="outboard-hardware-page__card-head dashboard-card__header">
         <div>
-          <p className="outboard-hardware-page__eyebrow">{device.category}</p>
-          <h2>{device.displayName}</h2>
+          <p className="outboard-hardware-page__eyebrow dashboard-card__eyebrow">{device.category}</p>
+          <h2 className="dashboard-card__title">{device.displayName}</h2>
         </div>
         <Tag type={categoryTagType(device.category)}>{device.shortLabel}</Tag>
       </div>
-      <p className="outboard-hardware-page__body-copy">{device.description}</p>
-      <p className="outboard-hardware-page__body-copy">
+      <p className="outboard-hardware-page__body-copy dashboard-card__body-copy">{device.description}</p>
+      <p className="outboard-hardware-page__body-copy dashboard-card__body-copy">
         Operator focus: <strong>{device.operatorFocus}</strong>
       </p>
       <div
@@ -447,7 +448,7 @@ function OutboardHardwareCard({
           </Tag>
         ))}
       </div>
-      <p className="outboard-hardware-page__body-copy">
+      <p className="outboard-hardware-page__body-copy dashboard-card__body-copy">
         Live status: <strong>{liveStatus.summary}</strong>
       </p>
       <div className="outboard-hardware-page__tag-row">
@@ -487,7 +488,7 @@ function OutboardHardwareCard({
           </Button>
         ) : null}
       </div>
-    </Tile>
+    </DashboardCard>
   )
 }
 

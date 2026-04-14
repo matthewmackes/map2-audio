@@ -1,7 +1,7 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
-import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, Modal, OverflowMenu, OverflowMenuItem, Search, Tag, Tile, Toggle } from '@carbon/react'
+import { Button, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, Modal, OverflowMenu, OverflowMenuItem, Search, Tag, Toggle } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -15,6 +15,7 @@ import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useAppShellPresentation } from '../layout/useAppShellPresentation'
 import { SystemSummary } from '../layout/SystemSummary'
 import { useShellSummaryData } from '../layout/useShellSummaryData'
+import { DashboardCard } from '../components/shared/DashboardCard'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { getLauncherRoutePresentation, type LandingTileSize } from '../data/launcherCatalog'
 import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
@@ -388,8 +389,8 @@ export function HomePage() {
       <Content className="hp2-home-shell__content">
         <Grid className="hp2-home-shell__grid" condensed>
           <Column lg={10} md={8} sm={4} className="hp2-home-shell__main">
-            <Tile className="hp2-home-shell__hero">
-              <p className="hp2-home-shell__eyebrow">Home</p>
+            <DashboardCard className="hp2-home-shell__hero">
+              <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">Home</p>
               <h1 className="hp2-home-shell__title">Desktop Control Panel</h1>
               <p className="hp2-home-shell__lede">
                 Access your tools: editing, routing, performance, and system controls.
@@ -433,7 +434,7 @@ export function HomePage() {
                 <span className="hp2-home-shell__quick-launch-kbd">K</span>
                 <span>Search every main destination</span>
               </div>
-            </Tile>
+            </DashboardCard>
 
             <section className="hp2-home-shell__workspace-sections" aria-label="Control Panel shortcuts">
               {groupedStartMenuTileItems.map((section) => (
@@ -446,8 +447,9 @@ export function HomePage() {
                       const Icon = item.icon
                       const isRecent = isHomeShellTileRecent(recentRoute, item.route)
                       return (
-                        <ClickableTile
+                        <DashboardCard
                           key={item.route}
+                          interactive
                           className={`hp2-home-shell__workspace-tile hp2-home-shell__workspace-tile--${item.size}${isRecent ? ' is-recent' : ''}`}
                           href={item.route}
                           onClick={(event) => {
@@ -459,7 +461,7 @@ export function HomePage() {
                           data-recent-route={isRecent ? 'true' : 'false'}
                           data-tile-size={item.size}
                         >
-                          <div className="hp2-home-shell__workspace-tile-head">
+                          <div className="hp2-home-shell__workspace-tile-head dashboard-card__header">
                             <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
                               <Icon size={20} aria-hidden />
                             </span>
@@ -468,10 +470,10 @@ export function HomePage() {
                             </Tag>
                           </div>
                           <div className="hp2-home-shell__workspace-copy">
-                            <h2>{item.label}</h2>
-                            <p>{item.description}</p>
+                            <h2 className="dashboard-card__title">{item.label}</h2>
+                            <p className="dashboard-card__body-copy">{item.description}</p>
                           </div>
-                        </ClickableTile>
+                        </DashboardCard>
                       )
                     })}
                   </div>
@@ -481,7 +483,8 @@ export function HomePage() {
           </Column>
 
           <Column lg={6} md={8} sm={4} className="hp2-home-shell__rail">
-            <ClickableTile
+            <DashboardCard
+              interactive
               className="hp2-home-shell__rail-card hp2-home-shell__rail-card--summary"
               href="/workspace/platforms/overview"
               onClick={(event) => {
@@ -491,10 +494,10 @@ export function HomePage() {
               onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
               onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
             >
-              <div className="hp2-home-shell__rail-card-head">
+              <div className="hp2-home-shell__rail-card-head dashboard-card__header">
                 <div>
-                  <p className="hp2-home-shell__eyebrow">System Status</p>
-                  <h2>System health and devices</h2>
+                  <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">System Status</p>
+                  <h2 className="dashboard-card__title">System health and devices</h2>
                 </div>
                 <span className="hp2-home-shell__rail-card-link">Open control panel</span>
               </div>
@@ -502,13 +505,13 @@ export function HomePage() {
                 classNamePrefix="map2-launcher"
                 summaryData={shellSummaryData}
               />
-            </ClickableTile>
+            </DashboardCard>
 
-            <Tile className="hp2-home-shell__rail-card">
-              <div className="hp2-home-shell__rail-card-head">
+            <DashboardCard className="hp2-home-shell__rail-card">
+              <div className="hp2-home-shell__rail-card-head dashboard-card__header">
                 <div>
-                  <p className="hp2-home-shell__eyebrow">Display Settings</p>
-                  <h2>Visual preferences</h2>
+                  <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">Display Settings</p>
+                  <h2 className="dashboard-card__title">Visual preferences</h2>
                 </div>
                 <Button
                   kind="ghost"
@@ -520,14 +523,14 @@ export function HomePage() {
                   Open theme settings
                 </Button>
               </div>
-                <div className="hp2-home-shell__preference-list">
+              <div className="hp2-home-shell__preference-list">
                 <div>
                   <strong>Desktop Background</strong>
-                  <p>{landingPreferences.cinematicBackdropEnabled ? `Custom ${wallpaper.mode}` : 'Simple dark'}</p>
+                  <p className="dashboard-card__body-copy">{landingPreferences.cinematicBackdropEnabled ? `Custom ${wallpaper.mode}` : 'Simple dark'}</p>
                 </div>
                 <div>
                   <strong>Startup Screen</strong>
-                  <p>{landingPreferences.bootSplashEnabled ? 'On' : 'Off'}</p>
+                  <p className="dashboard-card__body-copy">{landingPreferences.bootSplashEnabled ? 'On' : 'Off'}</p>
                 </div>
               </div>
               <div className="hp2-home-shell__preference-toggles">
@@ -554,7 +557,7 @@ export function HomePage() {
                   }}
                 />
               </div>
-            </Tile>
+            </DashboardCard>
           </Column>
         </Grid>
       </Content>
