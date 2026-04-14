@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1183** TypeScript | **136** C++/H | **143** Docs | **2090** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1183** TypeScript | **136** C++/H | **143** Docs | **2091** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1690b8d0`](https://github.com/matthewmackes/map2-audio/commit/1690b8d0eda8ba461004f31ab474d33540bd853f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`3db031ad`](https://github.com/matthewmackes/map2-audio/commit/3db031ad96769b8a20156086dc4ce335c35d0c26) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`f8937c6e`](https://github.com/matthewmackes/map2-audio/commit/f8937c6e393795fd637c233aa2585b756bbdf5e9) | Refine theme workspace tabs and home shell polish | Map2 Audio | 2026-04-14 |
 | [`10f89a48`](https://github.com/matthewmackes/map2-audio/commit/10f89a48c9feab80f4037b1143b0b859671ae05b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`edd4070d`](https://github.com/matthewmackes/map2-audio/commit/edd4070d175c7f87ff186392e8214519f74afe41) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`25aa4c0c`](https://github.com/matthewmackes/map2-audio/commit/25aa4c0c922ed1c935ff29e59f42e72de131df66) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`ab817dae`](https://github.com/matthewmackes/map2-audio/commit/ab817dae61c2da98b4dbeb1218e15724b067c239) | Remove duplicate Platforms control panel strip in Workspa... | Map2 Audio | 2026-04-14 |
-| [`f9d0c192`](https://github.com/matthewmackes/map2-audio/commit/f9d0c192b0791ce99344c6c1f5d7f2fe196e5477) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
