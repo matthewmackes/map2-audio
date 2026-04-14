@@ -24362,7 +24362,7 @@ Scope: clean up the `/` landing page (HomePage + HomeStartMenuOverlay + ShellLau
 - [x] T2241 — Extract `useFocusTrap()` hook at `web/src/app/hooks/useFocusTrap.ts` from the two duplicated traps in `HomeStartMenuOverlay.tsx` and `ShellLauncherPanel.tsx`. Add jest coverage.
 - [ ] T2242 — Replace the desktop-metaphor landing with the Carbon UI Shell pattern: `UIShell` + page header + `<Grid>` of `Tile` / `ClickableTile` for workspaces, plus a side-rail for system status. Move wallpaper/boot-splash behind an opt-in preference.
 - [x] T2243 — Config-driven start menu: move `START_MENU_DEFINITIONS` out of code into a typed config module (or Special Settings, already Raft-synced), resolving icons/colors via Carbon icons and `@carbon/colors` tokens. Aligns with the existing `promoted_advanced_routes` precedent.
-- [ ] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
+- [x] T2244 — Adopt Carbon spacing tokens across `HomePage.css` and launcher CSS. Replace hardcoded `0.55rem / 0.7rem / 0.95rem / 34px` with `$spacing-03..$spacing-07` (or `--cds-spacing-*`).
 - [ ] T2245 — Collapse `hp2-*` and `shell-launcher-*` BEM namespaces into a single `map2-launcher__*` namespace, deleting local classes where a Carbon component already supplies styling.
 - [x] T2246 — Swap the custom power menu for Carbon `OverflowMenu` only; delete the `.hp2-overlay__power-button` CSS block (~40 lines) and the unused `.hp2-window__eyebrow` class.
 - [x] T2247 — Replace the bespoke `hp2-boot-splash` markup with Carbon `InlineLoading` / `ProgressIndicator` so the splash has real `role` / `aria-live` semantics.
@@ -24378,6 +24378,8 @@ Completion notes (2026-04-14 13:19 EDT - Codex):
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useFocusTrap.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 - T2247: replaced the boot splash `ProgressBar` with Carbon `InlineLoading`, added explicit `role="status"` / `aria-live="polite"` semantics to the splash footer, and refreshed the HomePage regression to assert the new loading announcement without changing boot timing behavior.
 - Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
+- T2244: replaced the launcher and landing-page hardcoded spacing values in `web/src/app/layout/AppShell.css` and `web/src/app/pages/HomePage.css` with Carbon spacing tokens for overlay padding, launcher header/summary gaps, footer spacing, and wallpaper grid sizing, preserving the existing layout while aligning the surface with Carbon token usage.
+- Validation: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx`
 
 Assigned to: Codex
-Last updated: 2026-04-14 13:42 EDT - Codex
+Last updated: 2026-04-14 13:48 EDT - Codex

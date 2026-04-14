@@ -55,7 +55,7 @@
 
 .hp2-boot__progress {
   display: grid;
-  gap: 0.55rem;
+  gap: var(--cds-spacing-03, 0.5rem);
   align-items: center;
   width: min(100%, 30rem);
   justify-self: center;
@@ -160,7 +160,7 @@
     linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.26) 100%),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: auto, 34px 34px, 34px 34px;
+  background-size: auto, calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)), calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-07, 2rem) + var(--cds-spacing-01, 0.125rem));
   pointer-events: none;
 }
 
@@ -190,7 +190,7 @@
   display: grid;
   align-items: end;
   justify-items: start;
-  padding: 1.5rem;
+  padding: var(--cds-spacing-06, 1.5rem);
 }
 
 .hp2-overlay__backdrop {
@@ -231,9 +231,9 @@
 .hp2-overlay__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.7rem;
+  gap: var(--cds-spacing-04, 0.75rem);
   align-items: start;
-  padding: 0.85rem 0.95rem 0.8rem;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 82%, transparent);
   background: var(--cds-layer-hover, #f4f4f4);
 }
@@ -241,7 +241,7 @@
 .hp2-overlay__header-main {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.7rem;
+  gap: var(--cds-spacing-04, 0.75rem);
   min-width: 0;
 }
 
@@ -285,8 +285,8 @@
 
 .hp2-overlay__summary {
   display: grid;
-  gap: 0.55rem;
-  padding: 0.7rem 0.95rem 0.8rem;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 76%, transparent);
   background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 58%, var(--cds-layer, #ffffff));
 }
@@ -294,14 +294,14 @@
 .hp2-overlay__summary-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--cds-spacing-02, 0.25rem);
 }
 
 .hp2-overlay__summary-meta-item {
   display: inline-flex;
   align-items: center;
   min-height: 1.55rem;
-  padding: 0.15rem 0.45rem;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
   background: var(--cds-layer, #ffffff);
   color: var(--cds-text-secondary, var(--text-secondary));
@@ -316,7 +316,7 @@
 .hp2-overlay__summary-row--node-status {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--cds-spacing-02, 0.25rem);
   flex-wrap: wrap;
 }
 
@@ -324,20 +324,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.45rem;
+  gap: var(--cds-spacing-03, 0.5rem);
 }
 
 .hp2-overlay__status-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--cds-spacing-02, 0.25rem);
 }
 
 .hp2-overlay__status-list span {
   display: inline-flex;
   align-items: center;
   min-height: 1.65rem;
-  padding: 0.18rem 0.45rem;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 78%, transparent);
   background: var(--cds-layer, #ffffff);
   color: var(--cds-text-primary, var(--text-primary));
@@ -348,12 +348,12 @@
 .hp2-overlay__device-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.55rem;
+  gap: var(--cds-spacing-03, 0.5rem);
 }
 
 .hp2-overlay__device-group {
   display: grid;
-  gap: 0.45rem;
+  gap: var(--cds-spacing-03, 0.5rem);
   min-width: 0;
 }
 
@@ -367,7 +367,7 @@
 .hp2-overlay__device-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: var(--cds-spacing-02, 0.25rem);
   min-width: 0;
 }
 
@@ -377,7 +377,7 @@
   align-items: center;
   min-height: 1.55rem;
   max-width: 100%;
-  padding: 0.15rem 0.45rem;
+  padding: var(--cds-spacing-01, 0.125rem) var(--cds-spacing-03, 0.5rem);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   line-height: 1.15;
 }
@@ -397,7 +397,7 @@
 /* ── Overlay Body / Tiles ─────────────────────────────────────────────────── */
 
 .hp2-overlay__body {
-  padding: 0.75rem 0.95rem;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
   overflow-y: auto;
 }
 
@@ -405,7 +405,7 @@
 
 .hp2-overlay__footer {
   margin-top: auto;
-  padding: 0 0.95rem 0.95rem;
+  padding: 0 var(--cds-spacing-05, 1rem) var(--cds-spacing-05, 1rem);
 }
 
 .hp2-overlay__power-root {
