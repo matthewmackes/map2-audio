@@ -134,6 +134,9 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname.startsWith('/engine')) {
     return NODE_PAGE_KEYS.audioEngine
   }
+  if (pathname === '/workspace' || pathname.startsWith('/workspace/')) {
+    return NODE_PAGE_KEYS.platform
+  }
   if (pathname.startsWith('/artifacts')) {
     return NODE_PAGE_KEYS.lv2Plugins
   }

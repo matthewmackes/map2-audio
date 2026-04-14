@@ -70,7 +70,7 @@ describe('useSpecialSettings', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.settings?.menuLocation).toBe('hidden')
     expect(result.current.settings?.pinnedRoutes).toEqual(['/platforms/about'])
-    expect(result.current.settings?.landingTiles).toEqual([{ route: '/platforms/overview', size: 'medium' }])
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/workspace', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(true)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([9, 12])
 
@@ -92,14 +92,14 @@ describe('useSpecialSettings', () => {
     expect(payload.menu_location).toBe('hidden')
     expect(payload.pinned_routes).toEqual(['/intelfx'])
     expect(payload.landing_tiles).toEqual([
-      { route: '/platforms/overview', size: 'medium' },
+      { route: '/workspace', size: 'medium' },
     ])
     expect(payload.snapshot_setlist_mode).toBe(false)
     expect(payload.snapshot_setlist_order).toEqual([5])
     expect(payload.promoted_advanced_routes).toEqual(['/intelfx'])
 
     await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/intelfx']))
-    expect(result.current.settings?.landingTiles).toEqual([{ route: '/platforms/overview', size: 'medium' }])
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/workspace', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(false)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([5])
     expect(result.current.settings?.menuLocation).toBe('hidden')

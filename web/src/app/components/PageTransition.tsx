@@ -46,7 +46,11 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
     return { id: 'home' }
   }
 
-  if (pathname.startsWith('/audio-artifacts') || pathname.startsWith('/artifacts')) {
+  if (
+    pathname.startsWith('/audio-artifacts')
+    || pathname.startsWith('/artifacts')
+    || pathname.startsWith('/workspace/artifacts')
+  ) {
     return { id: 'audio-artifacts' }
   }
 

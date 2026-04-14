@@ -23,6 +23,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Open Platforms when you want one place for the main system tools without opening extra popups or separate flows.',
     bestFor: 'System setup and monitoring',
   },
+  '/workspace': {
+    summary: 'Unified Workspace Hub for platform posture, physical surfaces, audio artifacts, and outboard hardware from one routed shell.',
+    capabilities: [
+      'One canonical hub for the main MAP2 workspace families',
+      'Direct access to platform, surfaces, artifacts, and outboard sections',
+      'Shared route shell across the unified workspace migration',
+      'Reduced launcher duplication for operators and prospects',
+      'Canonical entrypoint for migrated workspace bookmarks',
+      'Clear handoff into section-level routes',
+    ],
+    learnMore: 'Open Workspaces when you want the canonical MAP2 hub for supervisory platform views and the migrated routed workspace families.',
+    bestFor: 'Unified workspace launch and monitoring',
+  },
   '/platforms/overview': {
     summary: 'Main Platforms workspace for overview, audio-engine, management, AVB, cluster, discovery, and utility workspaces in one routed shell.',
     capabilities: [
@@ -192,6 +205,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     bestFor: 'Plugin catalog operations',
   },
   '/artifacts': {
+    summary: 'Shared library for plugins, models, impulse responses, SoundFonts, and other audio files used by MAP2.',
+    capabilities: [
+      'Browse installed LV2 plugins',
+      'Check what files are available on each node',
+      'Manage impulse responses and NAM models',
+      'See assets across the system',
+      'Confirm that needed files are installed',
+      'Keep asset handling in one place',
+    ],
+    learnMore: 'Use Audio Artifacts when you need to find, review, or manage the sound files and plugins used by the system.',
+    bestFor: 'Plugin and asset library work',
+  },
+  '/workspace/artifacts': {
     summary: 'Shared library for plugins, models, impulse responses, SoundFonts, and other audio files used by MAP2.',
     capabilities: [
       'Browse installed LV2 plugins',

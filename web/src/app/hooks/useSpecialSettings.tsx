@@ -66,7 +66,7 @@ function resolveLandingTiles(data: Record<string, unknown>): LandingTilePlacemen
     return prioritizeRequiredHomeLauncher(ensureRequiredHomeLauncher(normalizedTiles))
   }
 
-  return [{ route: '/platforms/overview', size: 'medium' }]
+  return [{ route: '/workspace', size: 'medium' }]
 }
 
 function resolveSnapshotSetlistMode(data: Record<string, unknown>): boolean {

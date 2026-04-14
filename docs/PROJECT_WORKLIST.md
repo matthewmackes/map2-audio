@@ -23949,8 +23949,11 @@ Subtasks:
         - Required outputs: reference sweep, grep evidence, and regression validation.
         Subtasks: None
         Assigned to: Codex
-        Last updated: 2026-04-13 19:43 EDT - Codex
+        Last updated: 2026-04-13 19:46 EDT - Codex
+        - Progress notes:
+          - Repointed the default special-settings landing tile, poster manifest workspace posters, page-transition audio-artifact scope matching, node-display page-key mapping, and home-card workspace profiles toward canonical `/workspace*` routes.
+          - Remaining residual sweep work is now concentrated in session/test fixtures and a few compatibility helpers that still intentionally mention legacy roots.
     Assigned to: Codex
-    Last updated: 2026-04-13 19:43 EDT - Codex
+    Last updated: 2026-04-13 19:46 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
