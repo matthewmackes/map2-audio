@@ -24807,7 +24807,7 @@ Last updated: 2026-04-14 13:34 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx` -> PASS
 
 ID: T2259
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add a command-palette style quick launcher to the home shell
 Description:
 - Goal / acceptance criteria: Provide a keyboard-first quick-launch affordance on the home shell that searches the canonical launch destinations and navigates directly to the selected route.
@@ -24816,7 +24816,15 @@ Description:
 - Estimated effort: High
 - Required outputs: searchable launcher UI, keyboard handling, route prefetch integration, and focused accessibility/regression tests.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 21:49 EDT - Codex
+- Completion notes:
+  - Added a modal quick launcher to `HomePage.tsx` with a dedicated hero action, `Ctrl/Cmd+K` keyboard shortcut, filtered result list, arrow/Enter keyboard handling, and direct navigation through `navigateHomeShellRoute()`.
+  - Built the searchable destination list from the canonical home/start-menu definitions plus the key static platform routes, keeping the palette aligned with the real launcher catalog instead of introducing a separate route registry.
+  - Integrated route prefetching for the top quick-launch results and added a compact “Ctrl + K” callout in the hero so operators can discover the keyboard-first path without reading docs.
+  - Extended `HomePage.test.tsx` to cover both button-driven and keyboard-driven quick-launch flows, including filtered routing to theme settings and Brain.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
 
 ID: T2260
 Status: [✓] Done

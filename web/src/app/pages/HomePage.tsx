@@ -1,7 +1,7 @@
-import { startTransition, useEffect, useMemo, useState, type ComponentType } from 'react'
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
-import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, OverflowMenu, OverflowMenuItem, Tag, Tile, Toggle } from '@carbon/react'
+import { Button, ClickableTile, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, Modal, OverflowMenu, OverflowMenuItem, Search, Tag, Tile, Toggle } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
@@ -37,6 +37,45 @@ type HomeLaunchTile = {
   size: LandingTileSize
 }
 
+type QuickLaunchItem = {
+  route: string
+  label: string
+  description: string
+  group: string
+  keywords: string[]
+}
+
+const QUICK_LAUNCH_STATIC_ITEMS: QuickLaunchItem[] = [
+  {
+    route: '/workspace/platforms/overview',
+    label: 'Control Panel',
+    description: 'Open system posture, nodes, devices, and workspace-wide controls.',
+    group: 'Workspace',
+    keywords: ['workspace', 'overview', 'platforms', 'control panel'],
+  },
+  {
+    route: '/snapshot-editor',
+    label: 'Snapshot Editor',
+    description: 'Open graph editing, routing, and recall work.',
+    group: 'Workspace',
+    keywords: ['snapshot', 'editor', 'routing', 'graph'],
+  },
+  {
+    route: '/platforms/theme',
+    label: 'Display Settings',
+    description: 'Open desktop theme and appearance controls.',
+    group: 'Platform',
+    keywords: ['theme', 'display', 'settings', 'appearance'],
+  },
+  {
+    route: '/platforms/about',
+    label: 'About MAP2',
+    description: 'Open platform references, background, and documentation links.',
+    group: 'Platform',
+    keywords: ['about', 'docs', 'documentation', 'info'],
+  },
+]
+
 function resolveHomeGroup(route: string): typeof HOME_GROUP_ORDER[number] {
   if (route === '/workspace' || route.startsWith('/workspace/')) {
     return 'Workspace'
@@ -56,6 +95,36 @@ function resolveHomeGroupValue(homeGroup: string | undefined, route: string): ty
     : resolveHomeGroup(route)
 }
 
+function normalizeQuickLaunchValue(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function buildQuickLaunchItems(startMenuTileItems: Array<{
+  route: string
+  label: string
+  homeGroup?: string
+  description: string
+  shortLabel: string
+}>) {
+  const dedupedItems = new Map<string, QuickLaunchItem>()
+
+  for (const item of QUICK_LAUNCH_STATIC_ITEMS) {
+    dedupedItems.set(item.route, item)
+  }
+
+  for (const item of startMenuTileItems) {
+    dedupedItems.set(item.route, {
+      route: item.route,
+      label: item.label,
+      description: item.description,
+      group: item.homeGroup ?? resolveHomeGroup(item.route),
+      keywords: [item.shortLabel, item.label, item.description, item.homeGroup ?? resolveHomeGroup(item.route)],
+    })
+  }
+
+  return Array.from(dedupedItems.values())
+}
+
 export function HomePage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -70,6 +139,11 @@ export function HomePage() {
   const [landingPreferences, setLandingPreferences] = useState(() => readHomeLandingPreferences())
   const shouldShowSplash = useMemo(() => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(), [landingPreferences.bootSplashEnabled])
   const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
+  const [quickLaunchOpen, setQuickLaunchOpen] = useState(false)
+  const [quickLaunchQuery, setQuickLaunchQuery] = useState('')
+  const [activeQuickLaunchIndex, setActiveQuickLaunchIndex] = useState(0)
+  const quickLaunchSearchRef = useRef<HTMLInputElement | null>(null)
+  const deferredQuickLaunchQuery = useDeferredValue(quickLaunchQuery)
   const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
   const {
     startMenuTileItems,
@@ -126,6 +200,94 @@ export function HomePage() {
     },
     [specialSettings.settings?.landingTiles, startMenuTileItems],
   )
+  const quickLaunchItems = useMemo(() => buildQuickLaunchItems(startMenuTileItems), [startMenuTileItems])
+  const filteredQuickLaunchItems = useMemo(() => {
+    const normalizedQuery = normalizeQuickLaunchValue(deferredQuickLaunchQuery)
+    if (!normalizedQuery) {
+      return quickLaunchItems
+    }
+
+    return quickLaunchItems.filter((item) => {
+      const haystack = [
+        item.label,
+        item.description,
+        item.group,
+        item.route,
+        ...item.keywords,
+      ]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(normalizedQuery)
+    })
+  }, [deferredQuickLaunchQuery, quickLaunchItems])
+
+  useEffect(() => {
+    if (!quickLaunchOpen) {
+      return
+    }
+
+    setActiveQuickLaunchIndex(0)
+  }, [deferredQuickLaunchQuery, quickLaunchOpen])
+
+  useEffect(() => {
+    if (!quickLaunchOpen) {
+      return
+    }
+
+    const focusId = window.setTimeout(() => {
+      quickLaunchSearchRef.current?.focus()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(focusId)
+    }
+  }, [quickLaunchOpen])
+
+  useEffect(() => {
+    if (!quickLaunchOpen) {
+      return
+    }
+
+    for (const item of filteredQuickLaunchItems.slice(0, 5)) {
+      prefetchHomeShellRoute(item.route)
+    }
+  }, [filteredQuickLaunchItems, quickLaunchOpen])
+
+  useEffect(() => {
+    const handleQuickLaunchShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setQuickLaunchOpen(true)
+        return
+      }
+
+      if (event.key !== 'Escape') {
+        return
+      }
+
+      setQuickLaunchOpen(false)
+    }
+
+    window.addEventListener('keydown', handleQuickLaunchShortcut)
+    return () => {
+      window.removeEventListener('keydown', handleQuickLaunchShortcut)
+    }
+  }, [])
+
+  const handleOpenQuickLaunch = () => {
+    setQuickLaunchOpen(true)
+  }
+
+  const handleCloseQuickLaunch = () => {
+    setQuickLaunchOpen(false)
+    setQuickLaunchQuery('')
+    setActiveQuickLaunchIndex(0)
+  }
+
+  const handleSelectQuickLaunchItem = (route: string) => {
+    handleCloseQuickLaunch()
+    navigateHomeShellRoute(navigate, route)
+  }
 
   useEffect(() => {
     if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
@@ -259,6 +421,17 @@ export function HomePage() {
                 >
                   Display settings
                 </Button>
+                <Button
+                  kind="ghost"
+                  onClick={handleOpenQuickLaunch}
+                >
+                  Quick launch
+                </Button>
+              </div>
+              <div className="hp2-home-shell__quick-launch-callout">
+                <span className="hp2-home-shell__quick-launch-kbd">Ctrl</span>
+                <span className="hp2-home-shell__quick-launch-kbd">K</span>
+                <span>Search every main destination</span>
               </div>
             </Tile>
 
@@ -385,6 +558,77 @@ export function HomePage() {
           </Column>
         </Grid>
       </Content>
+      <Modal
+        open={quickLaunchOpen}
+        passiveModal
+        modalHeading="Quick launch"
+        size="sm"
+        onRequestClose={handleCloseQuickLaunch}
+      >
+        <div className="hp2-home-shell__quick-launch-panel">
+          <p className="hp2-home-shell__quick-launch-copy">
+            Search the main MAP2 destinations and press Enter to jump.
+          </p>
+          <Search
+            id="home-quick-launch-search"
+            ref={quickLaunchSearchRef}
+            labelText="Search destinations"
+            placeholder="Search control panel, Brain, MIDI, snapshots..."
+            value={quickLaunchQuery}
+            onChange={(event) => setQuickLaunchQuery(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                setActiveQuickLaunchIndex((current) => (
+                  filteredQuickLaunchItems.length === 0
+                    ? 0
+                    : Math.min(current + 1, filteredQuickLaunchItems.length - 1)
+                ))
+                return
+              }
+
+              if (event.key === 'ArrowUp') {
+                event.preventDefault()
+                setActiveQuickLaunchIndex((current) => Math.max(current - 1, 0))
+                return
+              }
+
+              if (event.key === 'Enter' && filteredQuickLaunchItems[activeQuickLaunchIndex]) {
+                event.preventDefault()
+                handleSelectQuickLaunchItem(filteredQuickLaunchItems[activeQuickLaunchIndex].route)
+              }
+            }}
+          />
+          <div className="hp2-home-shell__quick-launch-results" role="listbox" aria-label="Quick launch results">
+            {filteredQuickLaunchItems.length > 0 ? filteredQuickLaunchItems.slice(0, 8).map((item, index) => (
+              <button
+                key={item.route}
+                type="button"
+                role="option"
+                aria-selected={index === activeQuickLaunchIndex}
+                className={`hp2-home-shell__quick-launch-result${index === activeQuickLaunchIndex ? ' is-active' : ''}`}
+                onClick={() => handleSelectQuickLaunchItem(item.route)}
+                onMouseEnter={() => setActiveQuickLaunchIndex(index)}
+                onFocus={() => {
+                  setActiveQuickLaunchIndex(index)
+                  prefetchHomeShellRoute(item.route)
+                }}
+              >
+                <span className="hp2-home-shell__quick-launch-result-main">
+                  <span className="hp2-home-shell__quick-launch-result-label">{item.label}</span>
+                  <span className="hp2-home-shell__quick-launch-result-group">{item.group}</span>
+                </span>
+                <span className="hp2-home-shell__quick-launch-result-description">{item.description}</span>
+                <span className="hp2-home-shell__quick-launch-result-route">{item.route}</span>
+              </button>
+            )) : (
+              <div className="hp2-home-shell__quick-launch-empty" role="status">
+                No destinations match that search.
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

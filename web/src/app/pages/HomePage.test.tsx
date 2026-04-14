@@ -395,9 +395,9 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
-    expect(screen.getByText('Workspace')).toBeInTheDocument()
-    expect(screen.getByText('Performance')).toBeInTheDocument()
-    expect(screen.getByText('MIDI')).toBeInTheDocument()
+    expect(screen.getByLabelText('Workspace shortcuts')).toBeInTheDocument()
+    expect(screen.getByLabelText('Performance shortcuts')).toBeInTheDocument()
+    expect(screen.getByLabelText('MIDI shortcuts')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Workspaces/i })).toHaveAttribute('data-tile-size', 'large')
     expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'medium')
     expect(screen.getByRole('link', { name: /MIDI Hub/i })).toHaveAttribute('data-tile-size', 'medium')
@@ -469,6 +469,30 @@ describe('HomePage landing', () => {
     expect(screen.getByText(/Custom default-image/i)).toBeInTheDocument()
     expect(backdropToggle).toHaveAttribute('aria-checked', 'true')
     expect(splashToggle).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('opens the quick launcher from the hero action and navigates to a filtered destination', async () => {
+    renderHome()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Quick launch' }))
+
+    const searchbox = screen.getByRole('searchbox', { name: 'Search destinations' })
+    fireEvent.change(searchbox, { target: { value: 'theme' } })
+    fireEvent.click(await screen.findByRole('option', { name: /Display Settings Platform/i }))
+
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
+  })
+
+  it('opens the quick launcher with Ctrl+K and launches the active result with Enter', async () => {
+    renderHome()
+
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+
+    const searchbox = await screen.findByRole('searchbox', { name: 'Search destinations' })
+    fireEvent.change(searchbox, { target: { value: 'brain' } })
+    fireEvent.keyDown(searchbox, { key: 'Enter' })
+
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain')
   })
 
   it('shows the shared system summary in the landing side rail', async () => {
