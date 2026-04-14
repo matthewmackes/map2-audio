@@ -24674,7 +24674,7 @@ Assigned to: Codex
 Last updated: 2026-04-14 09:50 EDT - Codex
 
 ID: T2265
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add dedicated regression coverage for `WorkspaceSectionHeader`
 Description:
 - Goal / acceptance criteria: Add direct component coverage for `WorkspaceSectionHeader` so its compact title/eyebrow/actions contract is validated independently of page-level consumers.
@@ -24683,7 +24683,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: new component tests covering title hierarchy, optional fields, and responsive action rendering expectations.
 Assigned to: Codex
-Last updated: 2026-04-14 09:50 EDT - Codex
+Last updated: 2026-04-14 10:02 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/shared/WorkspaceSectionHeader.test.tsx` to validate the compact shared header’s required title rendering plus its optional eyebrow, subtitle, and actions contract.
+  - The new suite also asserts that absent optional props do not leave behind empty DOM regions, which keeps the component coverage aligned with its current minimal API.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/shared/WorkspaceSectionHeader.test.tsx` -> PASS
 
 ID: T2266
 Status: [ ] Todo
