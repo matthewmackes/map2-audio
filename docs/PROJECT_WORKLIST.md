@@ -24824,3 +24824,22 @@ Last updated: 2026-04-14 11:34 EDT - Codex
 - Validation:
   - `npm --prefix web run typecheck` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/DesktopExperience.integration.test.tsx src/app/pages/HomePage.test.tsx src/app/pages/HomeStartMenuOverlay.test.tsx` -> PASS
+
+ID: T2273
+Status: [✓] Done
+Title: Remove workspace-hub summary cards and restore the standard title bar
+Description:
+- Goal / acceptance criteria: Remove the large top summary-card band from the Workspace Hub shell and restore the standard shared window title bar used across the other routed interfaces.
+- Why it matters: The extra card band duplicates section navigation and displaces the core workspace content, while the missing title bar makes the hub feel inconsistent with the rest of the product shell.
+- Dependencies: T1006, T2253
+- Estimated effort: Low
+- Required outputs: workspace-hub shell layout cleanup, shared title-strip context wiring, focused hub-shell regression updates, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-14 13:30 EDT - Codex
+- Completion notes:
+  - Removed the top summary-card band from `web/src/app/pages/WorkspaceHubShell.tsx` / `.css` so the hub now opens directly into its routed workspace content instead of duplicating the sidebar navigation.
+  - Restored the shared window title strip by wiring a real workspace-hub `ShellWindowContextValue` with the standard close affordance back to home, while keeping nested outlet content isolated behind an inner null provider.
+  - Updated `web/src/app/pages/WorkspaceHubShell.test.tsx` so the hub suite now verifies the standard title bar, the absence of the removed summary strip, and the close-button navigation behavior.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS

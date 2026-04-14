@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import {
   WorkspaceHubIndexRedirect,
@@ -14,14 +14,6 @@ jest.mock('../theme', () => ({
       carbonTheme: 'g100',
     },
   }),
-}))
-
-jest.mock('../layout/ShellWindowContext', () => ({
-  ShellWindowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-
-jest.mock('../components/shared/ShellWindowTitleStrip', () => ({
-  ShellWindowTitleStrip: () => null,
 }))
 
 const mockUseUnifiedWorkspaceData = jest.fn<UnifiedWorkspaceData, []>()
@@ -98,6 +90,11 @@ function WorkspaceStubSection({ title, summaryLabel }: { title: string; summaryL
   )
 }
 
+function LocationProbe() {
+  const location = useLocation()
+  return <div data-testid="workspace-hub-location">{`${location.pathname}${location.search}`}</div>
+}
+
 describe('WorkspaceHubShell', () => {
   beforeEach(() => {
     mockUseUnifiedWorkspaceData.mockImplementation(buildWorkspaceData)
@@ -125,12 +122,13 @@ describe('WorkspaceHubShell', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeInTheDocument()
+    expect(screen.getByText('Workspace Hub', { selector: '.window-title-strip__title' })).toBeInTheDocument()
+    expect(screen.getByText('workspace / hub')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Overview', current: 'page' })).toHaveAttribute('href', '/workspace/platforms/overview')
     expect(screen.getByRole('link', { name: 'Audio Engine' })).toHaveAttribute('href', '/workspace/platforms/audio-engine')
     expect(screen.getByRole('link', { name: 'Host Machine' })).toHaveAttribute('href', '/workspace/platforms/host-machine')
     expect(screen.getByRole('link', { name: 'Platform Guide' })).toHaveAttribute('href', '/workspace/platforms/about')
-    expect(screen.getByLabelText('Workspace summaries')).toBeInTheDocument()
-    expect(screen.getByText('6 metrics')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Workspace summaries')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
@@ -166,7 +164,7 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByRole('link', { name: 'MPX1 Rack' })).toHaveAttribute('href', '/workspace/outboard-hardware/lexicon-mpx1')
   })
 
-  it('navigates when a workspace summary card is activated', async () => {
+  it('closes the workspace hub shell back to home from the standard title bar', async () => {
     render(
       <MemoryRouter
         initialEntries={['/workspace/artifacts?category=snapshots']}
@@ -181,17 +179,14 @@ describe('WorkspaceHubShell', () => {
               path="artifacts"
               element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
             />
-            <Route
-              path="physical-surfaces"
-              element={<WorkspaceStubSection title="Physical Surfaces" summaryLabel="1 notification · 2 online units" />}
-            />
           </Route>
+          <Route path="*" element={<LocationProbe />} />
         </Routes>
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Physical Surfaces' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close Workspace Hub' }))
 
-    expect(await screen.findByRole('heading', { name: 'Physical Surfaces' })).toBeInTheDocument()
+    expect(await screen.findByTestId('workspace-hub-location')).toHaveTextContent('/')
   })
 })

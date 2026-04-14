@@ -3,7 +3,10 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { GlobalTheme, Theme } from '@carbon/react'
 
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
+import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
+import { MapOs2DrivesIcon } from '../components/icons/map'
 import { platformPanelItems } from '../data/platformMenuItems'
+import type { ShellWindowContextValue } from '../layout/ShellWindowContext'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import {
   WORKSPACE_ARTIFACTS_BASE_PATH,
@@ -130,21 +133,6 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
   ]
 }
 
-function buildSummaryDestination(summary: UnifiedWorkspaceSectionSummary): string {
-  switch (summary.key) {
-    case 'platforms':
-      return buildWorkspaceHubPlatformPath('overview')
-    case 'physical-surfaces':
-      return buildWorkspacePhysicalSurfacesPath()
-    case 'artifacts':
-      return buildWorkspaceArtifactsPath()
-    case 'outboard-hardware':
-      return buildWorkspaceOutboardHardwarePath()
-    default:
-      return '/workspace/platforms/overview'
-  }
-}
-
 export function WorkspaceHubIndexRedirect() {
   return <Navigate to="/workspace/platforms/overview" replace />
 }
@@ -163,42 +151,40 @@ export function WorkspaceHubShell() {
     }),
     [navSections, workspaceData.summaries],
   )
+  const shellWindowContext = useMemo<ShellWindowContextValue>(
+    () => ({
+      title: 'Workspace Hub',
+      titleIcon: MapOs2DrivesIcon,
+      routeHint: 'workspace / hub',
+      accentColor: 'var(--cds-support-warning)',
+      onClose: () => navigate('/'),
+    }),
+    [navigate],
+  )
 
   return (
     <GlobalTheme theme={resolvedTheme}>
       <Theme as="div" theme={resolvedTheme} className="workspace-hub-shell">
-        <ShellWindowProvider value={null}>
+        <ShellWindowProvider value={shellWindowContext}>
+          <ShellWindowTitleStrip />
           <WorkspaceHubContext.Provider value={contextValue}>
-            <WorkspacePageTemplate
-              className="workspace-hub-shell__template"
-              windowClassName="workspace-hub-shell__frame"
-              sidebarClassName="workspace-hub-shell__sidebar"
-              contentClassName="workspace-hub-shell__content"
-              stickySidebar
-              sidebar={<WorkspaceHubNav sections={navSections} />}
-              content={
-                <main className="workspace-hub-shell__content-body">
-                  <section className="workspace-hub-shell__summary-grid" aria-label="Workspace summaries">
-                    {workspaceData.orderedSummaries.map((summary) => (
-                      <button
-                        key={summary.key}
-                        type="button"
-                        className={`workspace-hub-shell__summary-card workspace-hub-shell__summary-card--${summary.tone}`}
-                        onClick={() => navigate(buildSummaryDestination(summary))}
-                        aria-label={`Open ${summary.label}`}
-                      >
-                        <p className="workspace-hub-shell__summary-label">{summary.label}</p>
-                        <h2 className="workspace-hub-shell__summary-metric">{summary.metric}</h2>
-                        <p className="workspace-hub-shell__summary-detail">{summary.detail}</p>
-                      </button>
-                    ))}
-                  </section>
-                  <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
-                    <Outlet />
-                  </section>
-                </main>
-              }
-            />
+            <ShellWindowProvider value={null}>
+              <WorkspacePageTemplate
+                className="workspace-hub-shell__template"
+                windowClassName="workspace-hub-shell__frame"
+                sidebarClassName="workspace-hub-shell__sidebar"
+                contentClassName="workspace-hub-shell__content"
+                stickySidebar
+                sidebar={<WorkspaceHubNav sections={navSections} />}
+                content={
+                  <main className="workspace-hub-shell__content-body">
+                    <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
+                      <Outlet />
+                    </section>
+                  </main>
+                }
+              />
+            </ShellWindowProvider>
           </WorkspaceHubContext.Provider>
         </ShellWindowProvider>
       </Theme>
