@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1182** TypeScript | **136** C++/H | **143** Docs | **2079** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1182** TypeScript | **136** C++/H | **143** Docs | **2082** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-13 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-14 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-10 |
 | [MAP2 FAQ: Simple Consumer Version](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_CONSUMER_11TH_GRADE_2026-04-10.md) | 2026-04-10 |
 | [MAP2 FAQ: What Is the MAP Platform and How Different Music Users Could Use It](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_FAQ_MARKET_ALIGNED_2026-04-10.md) | 2026-04-10 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7df3e778`](https://github.com/matthewmackes/map2-audio/commit/7df3e778f3f87fbb511fd2d410a9afd32ef6ff52) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
+| [`27041938`](https://github.com/matthewmackes/map2-audio/commit/27041938dac686ab02235162f88b6b1102404dff) | Fix Workspace Hub left navigation inventory | Map2 Audio | 2026-04-14 |
+| [`a8de97ee`](https://github.com/matthewmackes/map2-audio/commit/a8de97eea09c674112813c80b77aa0699fe7bec3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`6cfb7489`](https://github.com/matthewmackes/map2-audio/commit/6cfb74897618af76c2372cc0c00acb23e02335c2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`dbfaf49f`](https://github.com/matthewmackes/map2-audio/commit/dbfaf49f31438b4c8e86c30aac8fb175441c10c6) | Ship T1004-subE-subD-subB-subB workspace alias cleanup | Map2 Audio | 2026-04-13 |
 | [`5dfd96ce`](https://github.com/matthewmackes/map2-audio/commit/5dfd96ce9ffd494b1707ea7276f44e06e4785cd0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`d430576b`](https://github.com/matthewmackes/map2-audio/commit/d430576b98c314290a1c697a53cdd3e6a28e4acd) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
 | [`6e323ea6`](https://github.com/matthewmackes/map2-audio/commit/6e323ea664bddeec7b50cfc91291535a3f0eb7a4) | Ship T1004-subE-subD-subB-subA workspace helper canonical... | Map2 Audio | 2026-04-13 |
-| [`c4f88bab`](https://github.com/matthewmackes/map2-audio/commit/c4f88bab03a07cf87fb1aff6e75a40c3aed4a5a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`1dbe1c99`](https://github.com/matthewmackes/map2-audio/commit/1dbe1c999d0437a19098125d4af2e16a4e6e19bd) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-13 |
-| [`e7b90587`](https://github.com/matthewmackes/map2-audio/commit/e7b90587acc6726a2b40daa56c9244b2d8202137) | Ship T1004-subE-subD-subA workspace fixture cleanup | Map2 Audio | 2026-04-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
