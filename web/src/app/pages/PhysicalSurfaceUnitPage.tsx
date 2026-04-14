@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { EmptyState } from '../components/shared/EmptyState'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
 import type { EnrichedPhysicalSurfaceMatch } from '../../map2/types'
@@ -69,6 +70,18 @@ export function PhysicalSurfaceUnitPage({
           eyebrow="Physical Surfaces"
           title="Physical Surface Not Found"
           subtitle="The requested unit is not present in the shared stack summary."
+        />
+        <EmptyState
+          className="physical-surfaces-page__card"
+          align="left"
+          compact
+          title="Return to the overview"
+          description="Choose one of the available physical-surface families from the shared workspace list."
+          actions={
+            <Button kind="secondary" size="sm" onClick={() => navigate(buildUnitPath())}>
+              Back to overview
+            </Button>
+          }
         />
       </div>
     )

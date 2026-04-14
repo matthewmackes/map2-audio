@@ -2,6 +2,7 @@ import { Button, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 
+import { EmptyState } from '../components/shared/EmptyState'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import {
   resolveOutboardHardwareStandaloneRoute,
@@ -37,16 +38,18 @@ export function OutboardHardwareDevicePage({
           title="Outboard Hardware Unit Not Found"
           subtitle="The requested device is not part of the routed outboard-hardware catalog."
         />
-        <Tile className="outboard-hardware-page__card">
-          <p className="outboard-hardware-page__body-copy">
-            Return to the overview to choose one of the routed outboard-hardware entries.
-          </p>
-          <div className="outboard-hardware-page__action-row">
+        <EmptyState
+          className="outboard-hardware-page__card"
+          align="left"
+          compact
+          title="Return to the overview"
+          description="Choose one of the routed outboard-hardware entries from the shared catalog."
+          actions={
             <Button kind="secondary" size="sm" onClick={() => navigate(buildDevicePath())}>
               Back to overview
             </Button>
-          </div>
-        </Tile>
+          }
+        />
       </div>
     )
   }

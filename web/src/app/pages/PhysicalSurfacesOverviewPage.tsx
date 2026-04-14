@@ -2,6 +2,7 @@ import { Button, Loading, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 
+import { EmptyState } from '../components/shared/EmptyState'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
 import {
@@ -129,11 +130,21 @@ export function PhysicalSurfacesOverviewPage({
         </Tile>
       ) : null}
 
-      <div className="physical-surfaces-page__unit-grid">
-        {(summary?.units ?? []).map((unit) => (
-          <UnitCard key={unit.unit_id} unit={unit} buildUnitPath={buildUnitPath} />
-        ))}
-      </div>
+      {(summary?.units ?? []).length ? (
+        <div className="physical-surfaces-page__unit-grid">
+          {(summary?.units ?? []).map((unit) => (
+            <UnitCard key={unit.unit_id} unit={unit} buildUnitPath={buildUnitPath} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          className="physical-surfaces-page__card"
+          align="left"
+          compact
+          title="No physical surfaces are currently available"
+          description="The shared surface inventory did not return any unit records for this workspace."
+        />
+      )}
     </div>
   )
 }

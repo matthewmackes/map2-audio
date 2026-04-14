@@ -161,7 +161,7 @@ export function WorkspaceHubShell() {
               stickySidebar
               sidebar={<WorkspaceHubNav sections={navSections} />}
               content={
-                <main className="workspace-hub-shell__content-body" key={location.pathname}>
+                <main className="workspace-hub-shell__content-body">
                   <section className="workspace-hub-shell__summary-grid" aria-label="Workspace summaries">
                     {workspaceData.orderedSummaries.map((summary) => (
                       <article
@@ -174,7 +174,9 @@ export function WorkspaceHubShell() {
                       </article>
                     ))}
                   </section>
-                  <Outlet />
+                  <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
+                    <Outlet />
+                  </section>
                 </main>
               }
             />

@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { useTesiraDevices } from '../components/Tesira/hooks/useTesiraApi'
 import type { TesiraDeviceSummary } from '../components/Tesira/types'
+import { EmptyState } from '../components/shared/EmptyState'
 import { type DeviceLocation, useDeviceLocation } from '../hooks/useDeviceLocation'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { useIntelFXOverviewStatus, type IntelFXState } from '../../map2/intelfxApi'
@@ -547,11 +548,13 @@ export function OutboardHardwareOverviewPage({
 
       <div className="outboard-hardware-page__unit-grid">
         {filteredDevices.length === 0 ? (
-          <Tile className="outboard-hardware-page__card">
-            <p className="outboard-hardware-page__body-copy">
-              No outboard devices currently match the <strong>{filterLabel(statusFilter)}</strong> filter.
-            </p>
-          </Tile>
+          <EmptyState
+            className="outboard-hardware-page__card"
+            align="left"
+            compact
+            title="No outboard devices match this filter"
+            description={<>Adjust the status filter or return to <strong>All</strong> to review the full shared inventory.</>}
+          />
         ) : (
           filteredDevices.map((device) => (
             <OutboardHardwareCard

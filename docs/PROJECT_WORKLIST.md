@@ -24386,7 +24386,7 @@ Subtasks:
       - `npm --prefix web run typecheck` -> PASS
       - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/AudioArtifactsPage.test.tsx` -> PASS
   - ID: T1006-subJ
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Final visual polish pass — spacing, transitions, empty states, typography
     Description:
     - Goal / acceptance criteria: After completing subtasks A through I, perform a full visual review of every `/workspace/*` route and fix any remaining inconsistencies in spacing, typography, transitions, and empty-state presentation.
@@ -24409,7 +24409,15 @@ Subtasks:
       6. Run the full frontend test suite: `npm --prefix web run typecheck && CI=1 npm --prefix web test -- --runInBand`.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 09:31 EDT - Codex
+    - Completion notes:
+      - Normalized the remaining workspace-hub spacing values in `WorkspaceHubShell.css` to Carbon spacing tokens, added an outlet-surface enter animation for route swaps inside `/workspace/*`, and kept the summary grid/cards aligned with the compact shell treatment.
+      - Replaced the remaining ad hoc workspace empty states with the shared `EmptyState` component across the outboard overview/detail pages and physical-surfaces overview/detail pages so the hub now uses consistent fallback presentation.
+      - Verified the compact header treatment, duplicate-metrics removal, hidden debug payloads, and route-swap polish together through the focused workspace shell/outboard regression suite.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx` -> PASS
+      - `WorkspaceHubShell.test.tsx` still emits the existing React Router future-flag warnings during Jest, but the suite passed unchanged.
 Assigned to: Codex
 Last updated: 2026-04-14 13:00 EDT - Architect
 
