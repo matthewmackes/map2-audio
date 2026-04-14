@@ -440,7 +440,6 @@ function OutboardHardwareCard({
             {capability}
           </Tag>
         ))}
-        {dedicatedRoute ? <Tag type="purple">{dedicatedRoute}</Tag> : null}
       </div>
       <div className="outboard-hardware-page__action-row">
         <Button kind="ghost" size="sm" onClick={() => navigate(buildDevicePath(device.deviceId))}>

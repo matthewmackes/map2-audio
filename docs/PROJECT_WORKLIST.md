@@ -24295,7 +24295,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-14 13:00 EDT - Architect
   - ID: T1006-subH
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Reduce tag spam across Outboard Hardware and Physical Surfaces pages
     Description:
     - Goal / acceptance criteria: Remove tags that display internal route paths, architectural contract labels, and layout-mode identifiers. Keep only tags that communicate user-actionable state: online/offline status, device counts, and match counts.
@@ -24317,7 +24317,14 @@ Subtasks:
       4. Run typecheck and page tests.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:22 EDT - Codex
+    - Completion notes:
+      - Removed the internal dedicated-route tag from `OutboardHardwareOverviewPage.tsx` cards and removed the internal layout-mode, surface-lab access, and standalone-route tags from `PhysicalSurfacesOverviewPage.tsx` unit cards so the overview surfaces only expose operator-meaningful state and capability tags.
+      - Limited fixed-view presentation tags in `PhysicalSurfaceUnitPage.tsx` to at most four primitive entries, which prevents low-level presentation maps from flooding the detail page when they contain many internal keys.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
+      - No dedicated `PhysicalSurfacesOverviewPage` or `PhysicalSurfaceUnitPage` test files currently exist in `web/src/app/pages`, so this slice relied on typecheck plus existing workspace-hub/outboard coverage.
   - ID: T1006-subI
     Status: [ ] Todo
     Title: Tighten embedded AudioArtifacts layout inside the workspace hub

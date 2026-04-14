@@ -73,9 +73,6 @@ function UnitCard({
         {unit.matched_midi_devices.length ? (
           <Tag type="green">{unit.matched_midi_devices.length} MIDI Hub match{unit.matched_midi_devices.length === 1 ? '' : 'es'}</Tag>
         ) : null}
-        <Tag type="blue">{unit.view_state.page_layout_mode}</Tag>
-        <Tag type="green">{unit.surface_lab.access}</Tag>
-        {standaloneRoute ? <Tag type="purple">{standaloneRoute}</Tag> : null}
       </div>
       <div className="physical-surfaces-page__list-block">
         <h3>Transport layers</h3>

@@ -199,7 +199,10 @@ export function PhysicalSurfaceUnitPage({
                   </Tag>
                 </div>
                 <div className="physical-surfaces-page__tag-row">
-                  {Object.entries(view.presentation ?? {}).map(([key, value]) => (
+                  {Object.entries(view.presentation ?? {})
+                    .filter(([, value]) => typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+                    .slice(0, 4)
+                    .map(([key, value]) => (
                     <Tag key={`${view.view_id}-${key}`} type="cool-gray">
                       {key}: {value}
                     </Tag>
