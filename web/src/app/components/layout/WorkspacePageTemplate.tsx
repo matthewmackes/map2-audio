@@ -31,25 +31,31 @@ export function WorkspacePageTemplate({
   asideClassName,
   stickySidebar = false,
 }: WorkspacePageTemplateProps) {
+  const hasSidebar = Boolean(sidebar)
+
   return (
     <div className={joinClasses('workspace-page-template', className)}>
       <div className={joinClasses('workspace-page-template__inner', innerClassName)}>
         <div
           className={joinClasses(
             'workspace-page-template__window',
-            aside && 'workspace-page-template__window--with-aside',
+            hasSidebar && 'workspace-page-template__window--with-sidebar',
+            aside && hasSidebar && 'workspace-page-template__window--with-aside',
+            aside && !hasSidebar && 'workspace-page-template__window--content-with-aside',
             windowClassName,
           )}
         >
-          <aside
-            className={joinClasses(
-              'workspace-page-template__sidebar',
-              stickySidebar && 'workspace-page-template__sidebar--sticky',
-              sidebarClassName,
-            )}
-          >
-            {sidebar}
-          </aside>
+          {hasSidebar ? (
+            <aside
+              className={joinClasses(
+                'workspace-page-template__sidebar',
+                stickySidebar && 'workspace-page-template__sidebar--sticky',
+                sidebarClassName,
+              )}
+            >
+              {sidebar}
+            </aside>
+          ) : null}
           <div className={joinClasses('workspace-page-template__content', contentClassName)}>
             {content}
           </div>

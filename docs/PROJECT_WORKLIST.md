@@ -23588,6 +23588,26 @@ Last updated: 2026-04-14 05:52 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
   - `npm --prefix web run typecheck` -> PASS
 
+ID: T1010
+Status: [✓] Done
+Title: Tighten the Workspace Hub shell layout so imported workspaces use the available width
+Description:
+- Goal / acceptance criteria: Rebalance the canonical `/workspace/*` shell so the left rail, outer page padding, summary strip, and embedded section spacing make materially better use of wide desktop viewports. The fix must preserve the shared Workspace Hub navigation, keep imported section routes intact, and stay scoped to the hub rather than globally shrinking unrelated shells.
+- Why it matters: The unified shell currently burns too much horizontal and vertical space in its own chrome, which leaves imported workspace bodies like Platforms visually cramped and surrounded by unnecessary whitespace.
+- Dependencies: T1008, T1009
+- Estimated effort: Low
+- Required outputs: hub-specific layout adjustments, any necessary embedded section spacing overrides, validation evidence, and worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 12:31 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/layout/WorkspacePageTemplate.tsx` and `WorkspacePageTemplate.css` so the layout collapses to a true single-content column when no sidebar is provided, eliminating the hidden empty sidebar track that was still consuming width inside embedded Workspace Hub sections.
+  - Added `web/src/app/components/layout/WorkspacePageTemplate.test.tsx` to lock the no-sidebar and with-sidebar grid behaviors into the regression suite before other workspace shells reuse the primitive.
+  - Tightened `web/src/app/pages/WorkspaceHubShell.css` so the shared hub rail is narrower, shell padding/gaps are smaller, summary cards are denser, and the embedded Platforms route runs with a reduced local shell scale only when mounted inside `/workspace/*`.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/layout/WorkspacePageTemplate.test.tsx src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS (`4 suites, 29 tests`; existing React Router future-flag and suspended-resource warnings only)
+  - `npm --prefix web run typecheck` -> PASS
+
 ID: T1004
 Status: [✓] Done
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree

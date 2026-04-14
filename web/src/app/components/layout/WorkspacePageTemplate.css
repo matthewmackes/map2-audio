@@ -29,6 +29,10 @@
   min-height: 100%;
   align-items: start;
   gap: var(--workspace-page-template-gap);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-page-template__window--with-sidebar {
   grid-template-columns: minmax(var(--workspace-page-template-sidebar-min), var(--workspace-page-template-sidebar-max)) minmax(0, 1fr);
 }
 
@@ -37,6 +41,10 @@
     minmax(var(--workspace-page-template-sidebar-min), var(--workspace-page-template-sidebar-max))
     minmax(0, 1fr)
     minmax(var(--workspace-page-template-aside-min), var(--workspace-page-template-aside-width));
+}
+
+.workspace-page-template__window--content-with-aside {
+  grid-template-columns: minmax(0, 1fr) minmax(var(--workspace-page-template-aside-min), var(--workspace-page-template-aside-width));
 }
 
 .workspace-page-template__sidebar,
