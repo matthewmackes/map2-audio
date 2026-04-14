@@ -112,19 +112,22 @@ describe('WorkspaceHubShell', () => {
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Overview', current: 'page' })).toHaveAttribute('href', '/workspace/platforms/overview')
+    expect(screen.getByRole('link', { name: 'Audio Engine' })).toHaveAttribute('href', '/workspace/platforms/audio-engine')
+    expect(screen.getByRole('link', { name: 'Host Machine' })).toHaveAttribute('href', '/workspace/platforms/host-machine')
+    expect(screen.getByRole('link', { name: 'Platform Guide' })).toHaveAttribute('href', '/workspace/platforms/about')
     expect(screen.getByLabelText('Workspace summaries')).toBeInTheDocument()
     expect(screen.getAllByText('6 metrics')).toHaveLength(2)
     expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
-  it('renders flat section dividers and keeps the targeted workspace link active', async () => {
+  it('renders full imported section nav entries and keeps the targeted workspace link active', async () => {
     render(
-      <MemoryRouter initialEntries={['/workspace/outboard-hardware']}>
+      <MemoryRouter initialEntries={['/workspace/artifacts?category=snapshots']}>
         <Routes>
           <Route path="/workspace/*" element={<WorkspaceHubShell />}>
             <Route
-              path="outboard-hardware"
-              element={<WorkspaceHubPlaceholder sectionKey="outboard-hardware" title="Outboard Hardware" subtitle="Overview scaffold" />}
+              path="artifacts"
+              element={<WorkspaceHubPlaceholder sectionKey="artifacts" title="Audio Artifacts" subtitle="Overview scaffold" />}
             />
           </Route>
         </Routes>
@@ -135,10 +138,11 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByText('Physical Surfaces', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
     expect(screen.getByText('Outboard Hardware', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: 'Outboard Hardware' })).toBeInTheDocument()
-
-    const links = screen.getAllByRole('link', { name: 'Overview' })
-    expect(links).toHaveLength(4)
-    expect(screen.getByRole('link', { name: 'Overview', current: 'page' })).toHaveAttribute('href', '/workspace/outboard-hardware')
+    expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ableton Push' })).toHaveAttribute('href', '/workspace/physical-surfaces/ableton-push')
+    expect(screen.getByRole('link', { name: 'Snapshots', current: 'page' })).toHaveAttribute('href', '/workspace/artifacts?category=snapshots')
+    expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute('href', '/workspace/artifacts/discover')
+    expect(screen.getByRole('link', { name: 'Tesira AVB' })).toHaveAttribute('href', '/workspace/outboard-hardware/biamp-tesira')
+    expect(screen.getByRole('link', { name: 'MPX1 Rack' })).toHaveAttribute('href', '/workspace/outboard-hardware/lexicon-mpx1')
   })
 })

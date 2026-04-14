@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { Location } from 'react-router-dom'
 
 import type { UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
 
@@ -6,6 +7,7 @@ export interface WorkspaceHubNavItem {
   key: string
   label: string
   to: string
+  match?: (location: Pick<Location, 'pathname' | 'search'>) => boolean
 }
 
 export interface WorkspaceHubNavSection {

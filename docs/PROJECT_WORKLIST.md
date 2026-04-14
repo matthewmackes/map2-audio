@@ -23548,6 +23548,26 @@ Validation:
 - `npm --prefix web run typecheck` -> PASS
 - `npm --prefix web run build` -> PASS
 
+ID: T1008
+Status: [✓] Done
+Title: Restore the missing imported-section left navigation in Workspace Hub
+Description:
+- Goal / acceptance criteria: Repair `WorkspaceHubShell` so the shared `/workspace/*` left rail exposes the intended imported-section destinations instead of only one placeholder `Overview` link per section. The fix must use canonical workspace routes that already exist for platforms, physical surfaces, artifacts, and outboard hardware, and it must keep artifact query-parameter destinations from all appearing active at once.
+- Why it matters: The Unified Workspace Shell shipped with a scaffold-only nav model, which makes most of the imported workspace destinations effectively unreachable from the shell chrome and breaks the core promise of the unified left-hand navigation.
+- Dependencies: T1004
+- Estimated effort: Low
+- Required outputs: repaired hub nav inventory, active-state fix for artifact category links, focused hub/route regressions, and worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 00:12 EDT - Codex
+- Completion notes:
+  - Replaced the hard-coded four-link scaffold in `web/src/app/pages/WorkspaceHubShell.tsx` with real flat nav inventories built from the existing platform panel items, physical-surface units, artifact library/discover/category routes, and outboard device catalog.
+  - Extended `web/src/app/pages/WorkspaceHubContext.ts` and `web/src/app/pages/WorkspaceHubNav.tsx` so nav items can provide explicit active-match logic, which fixes the artifact-section bug where multiple query-parameter destinations would otherwise all appear active on `/workspace/artifacts`.
+  - Updated `web/src/app/pages/WorkspaceHubShell.test.tsx` to lock the restored imported-section entries into the regression suite, including platform utility pages, physical-surface units, artifact category links, and outboard device entries.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+
 ID: T1004
 Status: [✓] Done
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree
