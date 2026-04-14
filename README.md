@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1196** TypeScript | **136** C++/H | **144** Docs | **2142** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1196** TypeScript | **136** C++/H | **144** Docs | **2145** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8a0adb1c`](https://github.com/matthewmackes/map2-audio/commit/8a0adb1c6ab3949055dbbcfb89f612ae3eec503d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
+| [`87bc552f`](https://github.com/matthewmackes/map2-audio/commit/87bc552faa7218929590ef1085c511175effb601) | add home quick launcher | Map2 Audio | 2026-04-14 |
+| [`a95b147e`](https://github.com/matthewmackes/map2-audio/commit/a95b147e24f0de81368ff8473220d5a93725a3ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`d039aea3`](https://github.com/matthewmackes/map2-audio/commit/d039aea34c814d31c8d478064809025341815868) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`62d796d8`](https://github.com/matthewmackes/map2-audio/commit/62d796d853501ec7f8f30429fde49ebc12439927) | improve shell summary loading states | Map2 Audio | 2026-04-14 |
 | [`905ed966`](https://github.com/matthewmackes/map2-audio/commit/905ed9668bfe434cb09e41a4b1a3702c031b5fcb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`b5c850bb`](https://github.com/matthewmackes/map2-audio/commit/b5c850bb921189affca7617f067e2bc1b3fe551a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`2497bd0a`](https://github.com/matthewmackes/map2-audio/commit/2497bd0aed7485ce4afc1a703221ba37e6cdb922) | refactor shared shell summary data | Map2 Audio | 2026-04-14 |
-| [`315aaefa`](https://github.com/matthewmackes/map2-audio/commit/315aaefa91e87c398ef92e572e03be57c4b4e481) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`41a1b049`](https://github.com/matthewmackes/map2-audio/commit/41a1b04918c563b186c406b10304c1bd7343f694) | test: add workspace visual smoke harness | Map2 Audio | 2026-04-14 |
-| [`9bc324b8`](https://github.com/matthewmackes/map2-audio/commit/9bc324b8acb9ad76aa0440f4841fcf352519ee70) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
