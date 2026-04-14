@@ -3,7 +3,6 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { GlobalTheme, Theme } from '@carbon/react'
 
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
-import { PageHeader } from '../components/PageHeader'
 import { platformPanelItems } from '../data/platformMenuItems'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import {
@@ -133,41 +132,6 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
 
 export function WorkspaceHubIndexRedirect() {
   return <Navigate to="/workspace/platforms/overview" replace />
-}
-
-export function WorkspaceHubPlaceholder({
-  title,
-  subtitle,
-  sectionKey,
-}: {
-  title: string
-  subtitle: string
-  sectionKey: UnifiedWorkspaceSectionSummary['key']
-}) {
-  const { summaries } = useWorkspaceHubContext()
-  const summary = summaries[sectionKey]
-
-  return (
-    <div className="workspace-hub-shell__placeholder">
-      <PageHeader
-        title={title}
-        subtitle={subtitle}
-        actions={(
-          <div className="workspace-hub-shell__header-metrics" aria-label={`${title} summary`}>
-            <span className="workspace-hub-shell__header-metric">{summary.metric}</span>
-            <span className="workspace-hub-shell__header-detail">{summary.detail}</span>
-          </div>
-        )}
-      />
-      <div className="workspace-hub-shell__placeholder-card">
-        <h2>Migration pending</h2>
-        <p>
-          This section now has a canonical `/workspace/*` address and flat navigation entry. Content migration lands in later
-          workspace-hub slices.
-        </p>
-      </div>
-    </div>
-  )
 }
 
 export function WorkspaceHubShell() {

@@ -552,49 +552,21 @@ export function OutboardHardwareOverviewPage({
         </Tile>
       </div>
 
-      <Tile className="outboard-hardware-page__card">
-        <div className="outboard-hardware-page__card-head">
-          <div>
-            <p className="outboard-hardware-page__eyebrow">Workspace contract</p>
-            <h2>One shell, five preserved routes</h2>
-          </div>
-        </div>
-        <p className="outboard-hardware-page__body-copy">
-          Use the shared shell to browse the rack and interface families, then jump into the unchanged dedicated route when you need live status, deep editors, or device-specific workflows.
-        </p>
-        <div className="outboard-hardware-page__tag-row">
-          <Tag type="blue">Home tile grouped</Tag>
-          <Tag type="cool-gray">Advanced Menu preserved</Tag>
-          <Tag type="green">Dedicated routes intact</Tag>
-        </div>
-      </Tile>
-
-      <Tile className="outboard-hardware-page__card">
-        <div className="outboard-hardware-page__card-head">
-          <div>
-            <p className="outboard-hardware-page__eyebrow">Status filter</p>
-            <h2>Focus the overview</h2>
-          </div>
-          <Tag type="cool-gray">
-            Showing {filteredDevices.length} of {metrics.total}
-          </Tag>
-        </div>
-        <p className="outboard-hardware-page__body-copy">
-          Filter the shared outboard grid by current readiness posture before opening the dedicated route for a deeper investigation.
-        </p>
-        <div className="outboard-hardware-page__action-row" role="group" aria-label="Outboard status filter">
-          {(['all', 'healthy', 'attention', 'offline'] as StatusFilter[]).map((filter) => (
-            <Button
-              key={filter}
-              kind={statusFilter === filter ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setStatusFilter(filter)}
-            >
-              {filterLabel(filter)}
-            </Button>
-          ))}
-        </div>
-      </Tile>
+      <div className="outboard-hardware-page__action-row" role="group" aria-label="Outboard status filter">
+        <Tag type="cool-gray">
+          Showing {filteredDevices.length} of {metrics.total}
+        </Tag>
+        {(['all', 'healthy', 'attention', 'offline'] as StatusFilter[]).map((filter) => (
+          <Button
+            key={filter}
+            kind={statusFilter === filter ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter(filter)}
+          >
+            {filterLabel(filter)}
+          </Button>
+        ))}
+      </div>
 
       <div className="outboard-hardware-page__unit-grid">
         {filteredDevices.length === 0 ? (

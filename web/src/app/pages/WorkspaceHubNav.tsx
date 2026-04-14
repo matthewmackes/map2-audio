@@ -20,9 +20,6 @@ export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
       <div>
         <p className="workspace-hub-nav__eyebrow">Workspace Hub</p>
         <h1 className="workspace-hub-nav__title">Unified Workspaces</h1>
-        <p className="workspace-hub-nav__copy">
-          Flat scaffold for the upcoming consolidated workspace shell. Section bodies migrate in later slices.
-        </p>
       </div>
 
       {sections.map((section) => (

@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import {
   WorkspaceHubIndexRedirect,
-  WorkspaceHubPlaceholder,
   WorkspaceHubShell,
 } from './WorkspaceHubShell'
 import type { UnifiedWorkspaceData } from '../hooks/useUnifiedWorkspaceData'
@@ -90,6 +89,15 @@ function buildWorkspaceData(): UnifiedWorkspaceData {
   }
 }
 
+function WorkspaceStubSection({ title, summaryLabel }: { title: string; summaryLabel: string }) {
+  return (
+    <section>
+      <h1>{title}</h1>
+      <div aria-label={`${title} summary`}>{summaryLabel}</div>
+    </section>
+  )
+}
+
 describe('WorkspaceHubShell', () => {
   beforeEach(() => {
     mockUseUnifiedWorkspaceData.mockImplementation(buildWorkspaceData)
@@ -103,7 +111,7 @@ describe('WorkspaceHubShell', () => {
             <Route index element={<WorkspaceHubIndexRedirect />} />
             <Route
               path="platforms/overview"
-              element={<WorkspaceHubPlaceholder sectionKey="platforms" title="Platforms" subtitle="Overview scaffold" />}
+              element={<WorkspaceStubSection title="Platforms" summaryLabel="4 layers · 1 alert" />}
             />
           </Route>
         </Routes>
@@ -116,7 +124,7 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByRole('link', { name: 'Host Machine' })).toHaveAttribute('href', '/workspace/platforms/host-machine')
     expect(screen.getByRole('link', { name: 'Platform Guide' })).toHaveAttribute('href', '/workspace/platforms/about')
     expect(screen.getByLabelText('Workspace summaries')).toBeInTheDocument()
-    expect(screen.getAllByText('6 metrics')).toHaveLength(2)
+    expect(screen.getByText('6 metrics')).toBeInTheDocument()
     expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
@@ -127,7 +135,7 @@ describe('WorkspaceHubShell', () => {
           <Route path="/workspace/*" element={<WorkspaceHubShell />}>
             <Route
               path="artifacts"
-              element={<WorkspaceHubPlaceholder sectionKey="artifacts" title="Audio Artifacts" subtitle="Overview scaffold" />}
+              element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
             />
           </Route>
         </Routes>

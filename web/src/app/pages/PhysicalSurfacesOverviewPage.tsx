@@ -155,30 +155,6 @@ export function PhysicalSurfacesOverviewPage({
         </Tile>
       </div>
 
-      {summary ? (
-        <Tile className="physical-surfaces-page__card">
-          <div className="physical-surfaces-page__card-head">
-            <div>
-              <p className="physical-surfaces-page__eyebrow">Shared operator contract</p>
-              <h2>Synth-first surface rules</h2>
-            </div>
-          </div>
-          <div className="physical-surfaces-page__tag-row">
-            <Tag type="blue">{summary.shared_operator_contract.primary_role}</Tag>
-            <Tag type="cool-gray">{summary.shared_operator_contract.multi_synth_mode}</Tag>
-            <Tag type="cool-gray">{summary.shared_operator_contract.page_layout_mode}</Tag>
-            <Tag type="cool-gray">{summary.shared_operator_contract.view_sync}</Tag>
-            <Tag type="green">{summary.shared_operator_contract.community_firmware_support}</Tag>
-          </div>
-          <ul className="physical-surfaces-page__note-list">
-            <li>{summary.shared_operator_contract.sub_menu_policy}</li>
-            <li>{summary.shared_operator_contract.target_follow_policy}</li>
-            <li>{summary.shared_operator_contract.snapshot_strategy}</li>
-            <li>{summary.shared_operator_contract.surface_lab_mode}</li>
-          </ul>
-        </Tile>
-      ) : null}
-
       {summary?.host_observations.maschinen_mk1_host_note ? (
         <Tile className="physical-surfaces-page__host-note">
           <p className="physical-surfaces-page__eyebrow">Host observation</p>

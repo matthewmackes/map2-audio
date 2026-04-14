@@ -24125,7 +24125,7 @@ Last updated: 2026-04-14 12:40 EDT - Codex
 ## Workspace Hub UI Unification
 
 ID: T1006
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Unify the `/workspace/*` area into one cohesive, world-class interface
 Description:
 - Goal / acceptance criteria: Eliminate all placeholder tiles, redundant metric grids, engineering-internal copy, raw JSON debug blocks, inconsistent card styling, and duplicate page headers across the four workspace sections (Platforms, Physical Surfaces, Audio Artifacts, Outboard Hardware) so the entire `/workspace/*` area looks and feels like a single professional product surface rather than a patchwork of migration slices.
@@ -24135,7 +24135,7 @@ Description:
 - Required outputs: Updated page components, CSS files, shared header component or `PageHeader` compact variant, focused regression tests for each modified page, visual browser verification, and worklist validation notes.
 Subtasks:
   - ID: T1006-subA
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove all placeholder and scaffolding tiles from the workspace hub
     Description:
     - Goal / acceptance criteria: Delete every "Migration pending", "Flat scaffold", and architectural-explainer tile across the workspace area so no engineering-internal copy is visible to end users.
@@ -24152,7 +24152,14 @@ Subtasks:
       6. After each deletion, run `npm --prefix web run typecheck` and the relevant page tests to confirm no runtime errors.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:16 EDT - Codex
+    - Completion notes:
+      - Deleted the exported `WorkspaceHubPlaceholder` scaffold from `web/src/app/pages/WorkspaceHubShell.tsx` and updated `WorkspaceHubShell.test.tsx` to use real routed stub content instead of the removed migration placeholder component.
+      - Removed the engineering-internal scaffold paragraph from `web/src/app/pages/WorkspaceHubNav.tsx` / `WorkspaceHubNav.css`, deleted the "Workspace contract" tile from `OutboardHardwareOverviewPage.tsx`, flattened the outboard status filter into an inline control row, and removed the "Shared operator contract / Synth-first surface rules" tile from `PhysicalSurfacesOverviewPage.tsx`.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx` -> PASS
+      - No dedicated `PhysicalSurfacesOverviewPage` test file currently exists in `web/src/app/pages`, so this slice relied on typecheck plus the existing workspace-hub and outboard coverage.
   - ID: T1006-subB
     Status: [ ] Todo
     Title: Unify page headers across all workspace sections with a compact treatment
