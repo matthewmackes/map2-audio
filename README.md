@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2157** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2160** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`584113c6`](https://github.com/matthewmackes/map2-audio/commit/584113c6e53c04ead96ca6a1110e0d76aee1a44c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
+| [`fe71220b`](https://github.com/matthewmackes/map2-audio/commit/fe71220b11fd04df0f25c1f25f3b1057dfb34773) | docs: refresh avb and tesira blocker evidence | Map2 Audio | 2026-04-14 |
+| [`2e334dc5`](https://github.com/matthewmackes/map2-audio/commit/2e334dc556faaa1ffc661e03c53012929fc2dc2d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`9cc7a952`](https://github.com/matthewmackes/map2-audio/commit/9cc7a95215de3040b2de970231b7a51d627a2bdb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`d58eed58`](https://github.com/matthewmackes/map2-audio/commit/d58eed5840472c30790cdee630e16ebe3ae01718) | feat: add home recent destinations | Map2 Audio | 2026-04-14 |
 | [`3c842041`](https://github.com/matthewmackes/map2-audio/commit/3c842041814a7e9cd3304bce31778a9d4f888ed1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`ea0a9f02`](https://github.com/matthewmackes/map2-audio/commit/ea0a9f02da1f55f6610a69d4b2c97bccc3ec5074) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`b758d4be`](https://github.com/matthewmackes/map2-audio/commit/b758d4be0502bc5a8ccb9541a75754b85915ccf5) | feat: add home visual smoke harness | Map2 Audio | 2026-04-14 |
-| [`e0869d05`](https://github.com/matthewmackes/map2-audio/commit/e0869d059088265e3d801f13b38a2bd575ae0a50) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`94f45350`](https://github.com/matthewmackes/map2-audio/commit/94f45350acfffeaa96c306c1991f2a389260f957) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
-| [`26bf4179`](https://github.com/matthewmackes/map2-audio/commit/26bf4179c1d1d5d2aee0a9b46ba05d144c05be81) | extract shared dashboard cards | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
