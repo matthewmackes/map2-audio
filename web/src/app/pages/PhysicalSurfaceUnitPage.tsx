@@ -1,4 +1,4 @@
-import { Button, Loading, Tag, Tile } from '@carbon/react'
+import { Accordion, AccordionItem, Button, Loading, Tag, Tile } from '@carbon/react'
 import { useMemo } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -251,7 +251,11 @@ export function PhysicalSurfaceUnitPage({
             ))}
           </div>
           {unit.surface_lab.snapshot ? (
-            <pre className="physical-surfaces-page__pre">{JSON.stringify(unit.surface_lab.snapshot, null, 2)}</pre>
+            <Accordion className="physical-surfaces-page__accordion">
+              <AccordionItem title="Lab snapshot data">
+                <pre className="physical-surfaces-page__pre">{JSON.stringify(unit.surface_lab.snapshot, null, 2)}</pre>
+              </AccordionItem>
+            </Accordion>
           ) : null}
         </Tile>
       </div>
@@ -304,7 +308,11 @@ export function PhysicalSurfaceUnitPage({
               <h2>Current backend context</h2>
             </div>
           </div>
-          <pre className="physical-surfaces-page__pre">{JSON.stringify(unit.service_state, null, 2)}</pre>
+          <Accordion className="physical-surfaces-page__accordion">
+            <AccordionItem title="Raw service state">
+              <pre className="physical-surfaces-page__pre">{JSON.stringify(unit.service_state, null, 2)}</pre>
+            </AccordionItem>
+          </Accordion>
         </Tile>
       </div>
 

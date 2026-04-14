@@ -24208,7 +24208,7 @@ Subtasks:
     Assigned to: Codex
     Last updated: 2026-04-14 13:00 EDT - Architect
   - ID: T1006-subD
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Hide raw JSON debug blocks behind disclosure accordions
     Description:
     - Goal / acceptance criteria: Wrap raw `JSON.stringify` `<pre>` blocks in Physical Surface unit pages inside collapsed Carbon `AccordionItem` elements so debug data is available to power users but hidden from the default view.
@@ -24225,7 +24225,13 @@ Subtasks:
       3. Run typecheck and verify the accordions expand/collapse correctly.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-04-14 13:00 EDT - Architect
+    Last updated: 2026-04-14 14:26 EDT - Codex
+    - Completion notes:
+      - Wrapped the `surface_lab.snapshot` and `service_state` JSON dumps in `PhysicalSurfaceUnitPage.tsx` inside Carbon `Accordion` / `AccordionItem` components titled `Lab snapshot data` and `Raw service state`, so the debug payloads stay available without rendering as default-open raw blocks.
+      - Added accordion styling in `PhysicalSurfacesShell.css` to keep the disclosure items visually aligned with the surrounding workspace tiles instead of falling back to a mismatched default presentation.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - No dedicated `PhysicalSurfaceUnitPage` or physical-surfaces shell/page test files currently exist in `web/src/app/pages`, so this slice relied on typecheck validation and explicit worklist tracking of the remaining test-coverage gap.
   - ID: T1006-subE
     Status: [ ] Todo
     Title: Unify card border-radius and tile styling across workspace sections

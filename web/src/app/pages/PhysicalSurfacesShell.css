@@ -224,6 +224,19 @@
   line-height: 1.5;
 }
 
+.physical-surfaces-page__accordion .cds--accordion__item {
+  border-top: 0;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--cds-layer-hover) 72%, var(--cds-layer));
+  overflow: hidden;
+}
+
+.physical-surfaces-page__accordion .cds--accordion__heading,
+.physical-surfaces-page__accordion .cds--accordion__content {
+  background: transparent;
+}
+
 @media (max-width: 1180px) {
   .physical-surfaces-page__metrics,
   .physical-surfaces-page__unit-grid,
