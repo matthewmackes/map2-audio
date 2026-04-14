@@ -25,16 +25,13 @@ import {
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import { useTheme } from '../theme'
+import {
+  FALLBACK_PHYSICAL_SURFACE_UNITS,
+  resolvePhysicalSurfaceStandaloneRoute,
+  type PhysicalSurfacesShellContextValue,
+} from './physicalSurfacesShared'
 
 type NavAccent = 'green' | 'blue' | 'warm-gray' | 'red'
-
-const STANDALONE_SURFACE_ROUTE_BY_UNIT_ID: Record<string, string> = {
-  'maschine-mk1': '/maschine',
-  'ableton-push': '/labs/push-surface',
-  'mackie-mcu-pro': '/mcu',
-  'novation-launch-control': '/launch-control',
-  'meloaudio-midi-commander': '/midi-commander',
-}
 
 function PhysicalSurfaceNavDot({ accent }: { accent: NavAccent | 'active' }) {
   return (
@@ -71,31 +68,6 @@ function unitIcon(unitId: string) {
   }
 }
 
-export function resolvePhysicalSurfaceStandaloneRoute(
-  unitId: string,
-  specializedRoute?: string | null,
-): string | null {
-  if (specializedRoute && specializedRoute.trim()) {
-    return specializedRoute
-  }
-  return STANDALONE_SURFACE_ROUTE_BY_UNIT_ID[unitId] ?? null
-}
-
-const FALLBACK_UNITS: Array<Pick<EnrichedPhysicalSurfaceUnit, 'unit_id' | 'display_name'> & { status: string }> = [
-  { unit_id: 'maschine-mk1', display_name: 'Native Instruments Maschine MK1', status: 'planned' },
-  { unit_id: 'ableton-push', display_name: 'Ableton Push', status: 'planned' },
-  { unit_id: 'ground-control-pro', display_name: 'Voodoo Lab Ground Control Pro', status: 'planned' },
-  { unit_id: 'meloaudio-midi-commander', display_name: 'MeloAudio MIDI Commander', status: 'planned' },
-  { unit_id: 'novation-launch-control', display_name: 'Novation Launch Control Family', status: 'planned' },
-  { unit_id: 'mackie-mcu-pro', display_name: 'Mackie MCU Pro', status: 'planned' },
-]
-
-export interface PhysicalSurfacesShellContextValue {
-  summary: EnrichedPhysicalSurfacesSummary | null
-  isLoading: boolean
-  isError: boolean
-}
-
 export function PhysicalSurfacesShell() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -119,7 +91,7 @@ export function PhysicalSurfacesShell() {
   )
 
   const navItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => {
-    const units = summary?.units ?? FALLBACK_UNITS
+    const units = summary?.units ?? FALLBACK_PHYSICAL_SURFACE_UNITS
     const items: UnifiedWorkspaceSideNavItem[] = [
       {
         key: 'overview',
@@ -157,7 +129,7 @@ export function PhysicalSurfacesShell() {
   const footerRouteItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => {
     const units = summary?.units ?? []
     const unitsById = new Map(units.map((unit) => [unit.unit_id, unit]))
-    const routeUnits = FALLBACK_UNITS
+    const routeUnits = FALLBACK_PHYSICAL_SURFACE_UNITS
       .map((fallback) => unitsById.get(fallback.unit_id) ?? fallback)
       .filter((unit) => resolvePhysicalSurfaceStandaloneRoute(unit.unit_id) !== null)
 

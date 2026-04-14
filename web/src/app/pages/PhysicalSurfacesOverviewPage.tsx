@@ -7,7 +7,7 @@ import type { EnrichedPhysicalSurfaceUnit } from '../../map2/types'
 import {
   resolvePhysicalSurfaceStandaloneRoute,
   type PhysicalSurfacesShellContextValue,
-} from './PhysicalSurfacesShell'
+} from './physicalSurfacesShared'
 import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {

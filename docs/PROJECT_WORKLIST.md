@@ -23901,7 +23901,7 @@ Subtasks:
           - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS
           - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subE-subB
-        Status: [ ] Todo
+        Status: [✓] Done
         Title: Lift shared shell context/contracts out of the legacy physical-surfaces and outboard shell files
         Description:
         - Goal / acceptance criteria: Move the remaining shared types/constants needed by workspace-hub section pages into canonical route modules so the old shell files are no longer imported by active workspace pages.
@@ -23910,10 +23910,17 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: shared module extraction, import rewiring, and focused route regressions.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 19:35 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:39 EDT - Codex
+        - Completion notes:
+          - Extracted the physical-surfaces shared context contract, fallback unit list, and standalone-route resolver into `physicalSurfacesShared.ts`.
+          - Extracted the outboard shared device catalog, route resolver, and outlet context contract into `outboardHardwareShared.ts`.
+          - Repointed the canonical workspace-hub outlets and the active routed overview/detail pages so they no longer import shared data or types from the legacy shell files.
+        - Validation:
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PhysicalSurfacesShell.test.tsx src/app/pages/OutboardHardwareShell.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+          - `npm --prefix web run typecheck` -> PASS
       - ID: T1004-subE-subC
-        Status: [ ] Todo
+        Status: [>] In Progress
         Title: Delete the retired legacy workspace shell files and route-local tests
         Description:
         - Goal / acceptance criteria: Remove the superseded shell/page files and any route-local tests that only cover the deleted legacy entrypoints once the canonical workspace pages own the remaining behavior.
@@ -23922,8 +23929,8 @@ Subtasks:
         - Estimated effort: Medium
         - Required outputs: file deletions, updated focused tests, and grep proof.
         Subtasks: None
-        Assigned to: Unassigned
-        Last updated: 2026-04-13 19:35 EDT - Codex
+        Assigned to: Codex
+        Last updated: 2026-04-13 19:39 EDT - Codex
       - ID: T1004-subE-subD
         Status: [ ] Todo
         Title: Sweep residual canonical workspace references across shell/session/supporting surfaces
@@ -23937,6 +23944,6 @@ Subtasks:
         Assigned to: Unassigned
         Last updated: 2026-04-13 19:35 EDT - Codex
     Assigned to: Codex
-    Last updated: 2026-04-13 19:35 EDT - Codex
+    Last updated: 2026-04-13 19:39 EDT - Codex
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex

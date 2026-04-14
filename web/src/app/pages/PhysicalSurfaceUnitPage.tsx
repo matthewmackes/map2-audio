@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
 import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
 import type { EnrichedPhysicalSurfaceMatch } from '../../map2/types'
-import type { PhysicalSurfacesShellContextValue } from './PhysicalSurfacesShell'
+import type { PhysicalSurfacesShellContextValue } from './physicalSurfacesShared'
 import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {

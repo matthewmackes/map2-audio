@@ -12,7 +12,7 @@ import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareDevice,
   type OutboardHardwareShellContextValue,
-} from './OutboardHardwareShell'
+} from './outboardHardwareShared'
 import { useCluster } from '../contexts/useCluster'
 import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
 

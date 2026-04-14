@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 
-import { OUTBOARD_HARDWARE_DEVICES, type OutboardHardwareShellContextValue } from '../../OutboardHardwareShell'
+import { OUTBOARD_HARDWARE_DEVICES, type OutboardHardwareShellContextValue } from '../../outboardHardwareShared'
 import '../../OutboardHardwareShell.css'
 
 export function WorkspaceOutboardHardwareOutlet() {

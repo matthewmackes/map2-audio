@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import {
   resolveOutboardHardwareStandaloneRoute,
   type OutboardHardwareShellContextValue,
-} from './OutboardHardwareShell'
+} from './outboardHardwareShared'
 import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
 
 function categoryTagType(category: string): 'red' | 'blue' | 'green' {

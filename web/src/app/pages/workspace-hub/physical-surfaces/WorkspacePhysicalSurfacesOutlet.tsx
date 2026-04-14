@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 
 import { useUnifiedWorkspaceData } from '../../../hooks/useUnifiedWorkspaceData'
-import type { PhysicalSurfacesShellContextValue } from '../../PhysicalSurfacesShell'
+import type { PhysicalSurfacesShellContextValue } from '../../physicalSurfacesShared'
 import '../../PhysicalSurfacesShell.css'
 
 export function WorkspacePhysicalSurfacesOutlet() {
