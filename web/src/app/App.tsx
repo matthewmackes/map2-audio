@@ -54,11 +54,9 @@ const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetwork
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
-const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
-const CPUPerformancePage    = lazy(() => import('./pages/CPUPerformancePage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
 const PerformanceBrainPage  = lazy(() => import('./pages/PerformanceBrainPage').then(m => ({ default: m.PerformanceBrainPage })))
@@ -152,7 +150,7 @@ function PageLoader() {
         ? 'midi-hub'
         : pathname.startsWith('/metering')
           ? 'metrics'
-          : pathname.startsWith('/engine') || pathname.startsWith('/pipewire') || pathname.startsWith('/dsp')
+          : pathname.startsWith('/engine') || pathname.startsWith('/pipewire')
             ? 'audio-engine'
             : 'default'
 
@@ -405,6 +403,8 @@ export function App() {
                                 <Route path="/physical-surfaces/:surfaceId" element={<LegacyPhysicalSurfacesRedirect />} />
                                 <Route path="/outboard-hardware" element={<LegacyOutboardHardwareRedirect />} />
                                 <Route path="/outboard-hardware/:deviceId" element={<LegacyOutboardHardwareRedirect />} />
+                                <Route path="/dsp" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
+                                <Route path="/cpu-performance" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
                                 <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />
@@ -420,12 +420,10 @@ export function App() {
                                 <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
-                                <Route path="/dsp" element={<RouteBoundary title="DSP view crashed" actionLabel="Reload DSP view"><DSPPage /></RouteBoundary>} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
                                 <Route path="/host-machine" element={<LegacyStandalonePanelRedirect panel="host-machine" />} />
-                                <Route path="/cpu-performance" element={<CPUPerformancePage />} />
                                 <Route path="/engine" element={<LegacyStandalonePanelRedirect panel="audio-engine" />} />
                                 <Route path="/metering" element={<RouteBoundary title="Metering view crashed" actionLabel="Reload metering"><MeteringPage /></RouteBoundary>} />
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />

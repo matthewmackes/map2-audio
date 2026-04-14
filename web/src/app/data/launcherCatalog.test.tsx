@@ -124,6 +124,7 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogTreeChildren('/workspace')).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ route: '/workspace/platforms/overview', label: 'Overview' }),
+        expect.objectContaining({ route: '/chains', label: 'Chains' }),
         expect.objectContaining({ route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' }),
       ]),
     )

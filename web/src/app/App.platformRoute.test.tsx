@@ -237,6 +237,22 @@ describe('App routing', () => {
     expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
   })
 
+  it('redirects the retired /dsp route into the canonical workspace hub overview', async () => {
+    window.history.pushState({}, '', '/dsp')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+  })
+
+  it('redirects the retired /cpu-performance route into the canonical workspace hub overview', async () => {
+    window.history.pushState({}, '', '/cpu-performance')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+  })
+
   it('keeps the dedicated /launch-control route available inside AppShell', async () => {
     window.history.pushState({}, '', '/launch-control')
 

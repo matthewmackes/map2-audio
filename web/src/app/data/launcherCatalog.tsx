@@ -134,6 +134,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/workspace/platforms/overview', label: 'Overview' },
       { route: '/workspace/platforms/management', label: 'Device Manager' },
       { route: '/workspace/platforms/audio-engine', label: 'Audio Engine' },
+      { route: '/chains', label: 'Chains' },
       { route: '/workspace/platforms/avb-routing', label: 'AVB Routing' },
       { route: '/workspace/platforms/network-discovery', label: 'Network Discovery' },
       { route: '/workspace/platforms/cluster-dashboard', label: 'Cluster Dashboard' },

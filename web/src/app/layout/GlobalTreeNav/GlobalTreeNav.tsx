@@ -8,7 +8,6 @@ import {
   Music,
   ScreenMap,
   Settings,
-  Waveform,
 } from '@carbon/icons-react'
 
 import { MapRackDeviceIcon } from '../../components/icons/map'
@@ -58,8 +57,6 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/brain',
   'HARDWARE_GROUP_HEADER',
   '/midi-hub',
-  '/chains',
-  '/dsp',
   '/tesira',
   '/mpx1',
   '/intelfx',
@@ -73,7 +70,6 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/labs/push-surface',
   '/expression',
   '/lcd',
-  '/cpu-performance',
   '/welcome',
   '/workspace',
 ] as const
@@ -83,8 +79,6 @@ const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
   '/snapshot-editor': ScreenMap,
   '/brain': Music,
   '/midi-hub': Music,
-  '/chains': Waveform,
-  '/dsp': Waveform,
   '/tesira': Settings,
   '/mpx1': MapRackDeviceIcon,
   '/intelfx': MapRackDeviceIcon,
@@ -98,7 +92,6 @@ const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
   '/labs/push-surface': IbmWatsonMachineLearning,
   '/expression': ChartLine,
   '/lcd': ScreenMap,
-  '/cpu-performance': ChartLine,
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {

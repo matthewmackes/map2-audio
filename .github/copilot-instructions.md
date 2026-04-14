@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (PTP monitor fallback parsing documented)
+> **Last Updated**: April 14, 2026 (legacy utility route retirement documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1030,6 +1030,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Reject `pmc` `CURRENT_DATA_SET` replies that do not contain any usable fields, then fall back to journal parsing; update the journal regex to accept interface-qualified port transitions and use the latest transition in the window.
 - **Verification**: `pytest -q tests/test_ptp_monitor.py`; `PYTHONPATH=/home/mm/map2-audio python3 - <<'PY' ... from app.routes.avb import get_ptp_status ... PY`
 - **Lesson**: For linuxptp integrations, a successful command invocation is not enough; treat command-echo-only output as no data and keep log parsers aligned with the host’s real service log format.
+
+**94. Legacy Utility Route Retirement Must Update Router, Tree Order, And Workspace Tree-Children Together**
+- **Files**: `web/src/app/App.tsx`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx`, `web/src/app/data/launcherCatalog.tsx`
+- **Problem**: A route can look removed from the platform while still leaking through one shell layer, or disappear from navigation entirely when it should survive as a nested Control Panel child.
+- **Root Cause**: The routed platform shell is split across three contracts: the router still decides whether a URL resolves, `GlobalTreeNav` decides which items render as top-level leaves, and `launcherCatalog` provides nested tree-children such as the Control Panel hierarchy.
+- **Fix**: When retiring or reparenting a utility route, remove the old page from `App.tsx`, remove any stale top-level tree ordering/icon overrides in `GlobalTreeNav.tsx`, and add the surviving nested destination through the parent route’s `treeChildren` metadata in `launcherCatalog.tsx`. Redirect retired legacy URLs to the approved replacement instead of leaving dead standalone pages mounted.
+- **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx src/app/App.platformRoute.test.tsx`; `npm --prefix web run build`
+- **Lesson**: On MAP2’s global rail shell, route retirement is cross-layer. If router, tree ordering, and launcher tree metadata do not change together, the platform becomes internally inconsistent.
 
 ### Server Management Gotchas
 
@@ -2077,6 +2085,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-14] - Legacy Utility Route Retirement
+- **Section**: Gotchas & Learned Fixes (#94), Update Log
+- **Change**: Documented that retiring or reparenting legacy utility routes requires coordinated updates across `App.tsx`, `GlobalTreeNav.tsx`, and `launcherCatalog.tsx`, with redirects for old URLs.
+- **Reason**: The `/chains`, `/dsp`, and `/cpu-performance` cleanup depended on all three navigation layers staying aligned so the shell and route table did not drift apart.
+- **Impact**: Future shell cleanups should stop leaving orphaned top-level leaves, hidden-but-routable pages, or missing nested Control Panel entries.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/App.tsx`, `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx`, `web/src/app/data/launcherCatalog.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - PTP Monitor Fallback Parsing
 - **Section**: Gotchas & Learned Fixes (#93), Update Log

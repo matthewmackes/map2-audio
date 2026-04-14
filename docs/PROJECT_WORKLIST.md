@@ -7564,8 +7564,27 @@ Last updated: 2026-03-29 20:26 EDT - Codex
   - Software prep, wrappers, and false-pass hardening are complete in the archive.
   - Current host still reports AVB operational on `enp11s0`, so the old “no NIC” assumption remains cleared.
   - Refreshed evidence on 2026-04-14 still shows `/api/avb/avdecc/entities` empty, no active streams, `map2-ptp4l.service` active, and `/api/avb/status` now resolving to `MASTER`; the remaining blocker is still lack of a discovered peer/grandmaster-locked AVB bench plus missing engine-bound AVB readiness.
-  - Unblock path: the shortest route is a two-node AVB bench using the existing Intel `igb` host plus one AVB-capable peer (second MAP2 node or Tesira unit), ideally through a TSN switch but direct-link smoke testing is still useful to prove peer discovery and PTP lock before the full matrix.
-  - Source archive references: `T004` in `docs/archive/PROJECT_WORKLIST_ARCHIVE_20260316.md`.
+
+ID: T2281
+Status: [✓] Done
+Title: Reorganize legacy utility routes in the global platform shell
+Description:
+- Goal / acceptance criteria: Move `/chains` under the Control Panel navigation hierarchy and fully remove `/dsp` and `/cpu-performance` from routed platform access so they no longer appear in the shell or resolve as platform pages.
+- Why it matters: The user wants the persistent platform shell simplified and the remaining legacy utility routes narrowed to the approved Control Panel structure.
+- Dependencies: T2277
+- Estimated effort: Medium
+- Required outputs: route-table cleanup, global tree navigation update, focused regression coverage, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-14 23:19 EDT - Codex
+- Completion notes:
+  - Moved `/chains` under the Control Panel tree by adding it to the `/workspace` launcher tree-children metadata, so it now renders inside the global left-rail hierarchy instead of as a top-level platform item.
+  - Removed `/dsp` and `/cpu-performance` from the shell by deleting their routed page entries, removing them from the global tree ordering/override lists, and retiring their dedicated lazy page imports from `web/src/app/App.tsx`.
+  - Preserved compatibility for existing bookmarks by redirecting both legacy URLs to `/workspace/platforms/overview` instead of leaving stale routes mounted.
+  - Added focused regression coverage for the tree presentation and route redirects in `AppShell.test.tsx`, `launcherCatalog.test.tsx`, and `App.platformRoute.test.tsx`.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ## Tesira
 
