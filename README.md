@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1202** TypeScript | **136** C++/H | **145** Docs | **2174** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1203** TypeScript | **136** C++/H | **145** Docs | **2177** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5c0c54fd`](https://github.com/matthewmackes/map2-audio/commit/5c0c54fdb5109ffab74eb4be7bda350fc3f8a39f) | Close expression and home reconciliation | Map2 Audio | 2026-04-14 |
+| [`947d9474`](https://github.com/matthewmackes/map2-audio/commit/947d9474fd0d5bd4e07ac5f9b375af73972fe444) | Ship remaining expression and shell updates | Map2 Audio | 2026-04-14 |
+| [`07924463`](https://github.com/matthewmackes/map2-audio/commit/0792446333a2d51ba32a8c51fd8e85f35108f39c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`ccf9a6c7`](https://github.com/matthewmackes/map2-audio/commit/ccf9a6c7c703ed24213c5ef47ef97433246df803) | Ship shared device-context rollout | Map2 Audio | 2026-04-14 |
 | [`d7c79607`](https://github.com/matthewmackes/map2-audio/commit/d7c796073f71136098caf2900c71c2bd0d2f6326) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 | [`1ec74bea`](https://github.com/matthewmackes/map2-audio/commit/1ec74beacece02f3292ce6b7ab747b6a517df0d1) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
 | [`afcb69f9`](https://github.com/matthewmackes/map2-audio/commit/afcb69f92a9a3b9b95a3ad4b6614b6f57b859730) | feat: add global navigation pin toggle | Map2 Audio | 2026-04-14 |
 | [`39d26d91`](https://github.com/matthewmackes/map2-audio/commit/39d26d91fddcbd0440285c93d0367372b0289f86) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
-| [`d420c253`](https://github.com/matthewmackes/map2-audio/commit/d420c2536377c014d928d81a90b2254a8428e4f6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-14 |
-| [`5f4a95d5`](https://github.com/matthewmackes/map2-audio/commit/5f4a95d5803b29fe0a528d1c7d0658865ec0a984) | refactor: remove retired dsp utility pages | Map2 Audio | 2026-04-14 |
-| [`bb8507cc`](https://github.com/matthewmackes/map2-audio/commit/bb8507cc123c7a4fce380a479829da8f8b36c57d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
