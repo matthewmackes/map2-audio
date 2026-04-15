@@ -15,7 +15,6 @@
 
 import React, { useState } from 'react';
 import {
-  AddAlt,
   ChevronDown,
   ChevronRight,
   Devices,
@@ -39,7 +38,6 @@ import {
   Typography,
   Chip,
   Tooltip,
-  Divider,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -701,22 +699,6 @@ export function NodeTree() {
           </ListItem>
         )}
       </List>
-
-      {/* Footer */}
-      <Divider />
-      <Box sx={{ p: 2 }}>
-        <Tooltip title="Manual node entry is not available yet">
-          <ListItemButton disabled sx={{ borderRadius: 1 }}>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <AddAlt size={16} />
-            </ListItemIcon>
-            <ListItemText
-              primary="Add Node"
-              primaryTypographyProps={{ variant: 'body2', fontSize: 13 }}
-            />
-          </ListItemButton>
-        </Tooltip>
-      </Box>
     </>
   );
 

@@ -193,6 +193,12 @@ describe('NodeTree status badge behavior', () => {
     expect(screen.getByLabelText('Offline')).toBeTruthy()
   })
 
+  it('does not render a disabled manual Add Node affordance', () => {
+    render(<NodeTree />)
+
+    expect(screen.queryByText('Add Node')).toBeNull()
+  })
+
   it('renders per-node AVB sync and issue chips from engine discovered cache', () => {
     const localEndpoint = makeEndpoint({
       endpoint_id: 'local-talker',

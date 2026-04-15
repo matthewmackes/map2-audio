@@ -303,30 +303,38 @@ class FrameBuffer:
     __slots__ = ("_data",)
 
     def __init__(self) -> None:
-        self._data = bytearray(DISPLAY_FRAMEBUFFER_SIZE)
+        # cabl ground state is 0xFF (all pixels black on the panel, which is
+        # inverted: bits high = panel dots off = screen appears dark). The
+        # setPixel routine OR's the mask bits on, then AND's the brightness
+        # bits off — so the ground state MUST have the mask bits set or
+        # pixels land as random high-bit residue.
+        self._data = bytearray(b"\xff" * DISPLAY_FRAMEBUFFER_SIZE)
 
     def clear(self, brightness: int = 0) -> None:
-        """Fill the canvas with a uniform brightness (0..31)."""
+        """Fill the canvas with a uniform brightness (0..31).
+
+        brightness=0 → black (panel appears dark), brightness=31 → white.
+        """
         b = max(0, min(DISPLAY_PIXEL_MAX, int(brightness)))
-        self._data[:] = bytes(DISPLAY_FRAMEBUFFER_SIZE)
         if b == 0:
+            self.fill_black()
             return
-        # Slow path — set every pixel. Only used in tests / full repaints.
+        if b == DISPLAY_PIXEL_MAX:
+            self.fill_white()
+            return
+        # Slow path — set every pixel.
+        self.fill_black()
         for y in range(DISPLAY_HEIGHT):
             for x in range(DISPLAY_WIDTH):
                 self.set_pixel(x, y, b)
 
     def fill_black(self) -> None:
-        self._data[:] = bytes(DISPLAY_FRAMEBUFFER_SIZE)
+        """Fill the buffer with 0xFF — cabl's 'black' state (panel dark)."""
+        self._data[:] = b"\xff" * DISPLAY_FRAMEBUFFER_SIZE
 
     def fill_white(self) -> None:
-        # White = brightest = p=31. Pre-set every high-bit region, then clear
-        # the brightness nibbles. This matches what set_pixel would do for
-        # every pixel at p=31 but skips the per-pixel loop.
-        self.fill_black()
-        for y in range(DISPLAY_HEIGHT):
-            for x in range(DISPLAY_WIDTH):
-                self.set_pixel(x, y, DISPLAY_PIXEL_MAX)
+        """Fill the buffer with 0x00 — cabl's 'white' state (panel bright)."""
+        self._data[:] = bytes(DISPLAY_FRAMEBUFFER_SIZE)
 
     def set_pixel(self, x: int, y: int, brightness: int) -> None:
         if not (0 <= x < DISPLAY_WIDTH and 0 <= y < DISPLAY_HEIGHT):

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2301 by routing audio-state snapshot activation through the canonical runtime-confirmed activation flow.
+Last updated: 2026-04-15 - Completed T2292 by removing the dead AVB manual-node affordance and validating the shipped web bundle.
 
 ---
 
@@ -159,7 +159,7 @@ Last updated: 2026-04-15 18:25 EDT - Codex
 ---
 
 ID: T2292
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement or retire the disabled manual node-entry affordance in the AVB node tree
 Description:
 - Goal / acceptance criteria: Resolve the disabled `Add Node` affordance in `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx` by either implementing a real manual-node-entry workflow end to end or removing the inactive control entirely. If implemented, the flow must include operator-visible validation, API wiring, and focused regression coverage. If retired, the dead affordance must be removed and the surrounding navigation layout rebalanced cleanly.
@@ -167,8 +167,14 @@ Description:
 - Dependencies: None
 - Estimated effort: Medium
 - Required outputs: shipped manual-node-entry decision, UI/API updates or affordance removal, focused regression coverage, and validated web build/test status.
-Assigned to: Unassigned
-Last updated: 2026-04-15 18:25 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-15 19:18 EDT - Codex
+- Completion notes:
+  - Removed the disabled `Add Node` footer control from `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx` so the AVB node tree no longer advertises a manual-entry workflow that does not exist.
+  - Added a focused regression in `NodeTree.badges.test.tsx` proving the dead manual node-entry affordance stays absent while the rest of the AVB node-tree interaction contract remains intact.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
