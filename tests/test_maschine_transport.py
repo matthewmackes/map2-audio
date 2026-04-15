@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+from app.services.maschine.mk1_protocol import (
+    LED_DATA_SIZE,
+    LED_GROUP_SIZE,
+    build_led_packets,
+)
 from app.services.maschine.transport import (
     MaschineTransportController,
     PyUsbBulkMaschineTransport,
@@ -121,6 +126,19 @@ def test_transport_controller_falls_back_to_pyusb_when_hidapi_fails():
     assert connected is True
     assert runtime_info["transport_id"] == "pyusb-bulk"
     assert runtime_info["selected_transport"]["transport_id"] == "pyusb-bulk"
+
+
+def test_build_led_packets_splits_full_led_array_into_two_control_packets():
+    led_state = list(range(LED_DATA_SIZE))
+
+    group0, group1 = build_led_packets(led_state)
+
+    assert len(group0) == 2 + LED_GROUP_SIZE
+    assert len(group1) == 2 + LED_GROUP_SIZE
+    assert group0[:2] == bytes([0x0C, 0x00])
+    assert group1[:2] == bytes([0x0C, 0x1E])
+    assert group0[2:] == bytes(range(LED_GROUP_SIZE))
+    assert group1[2:] == bytes(range(LED_GROUP_SIZE, LED_DATA_SIZE))
 
 
 def test_descriptor_parser_extracts_mk1_alternate_setting_bulk_layout():

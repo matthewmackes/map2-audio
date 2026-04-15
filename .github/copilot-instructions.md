@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 14, 2026 (global navigation pin toggle documented)
+> **Last Updated**: April 15, 2026 (Maschine MK1 LED transport correction documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1099,6 +1099,13 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 scripts/continuous_release.py --help`; `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/continuous_release.py`
 - **Lesson**: When a user keeps asking for the same end-of-slice release loop, promote it into a first-class repo command instead of retyping the workflow every time.
 
+**89. Maschine MK1 LED Bulk Writes Need The Pad Drain Thread And The Original Two-Packet Slot Split**
+- **Problem**: A seemingly successful single 64-byte MK1 LED write path fixed the immediate `EP 0x01` timeout symptom but silently left slots 31..61 unreachable, so the platform could claim LED success while half the device never lit.
+- **Root Cause**: Two issues were conflated: the transport wedge came from not draining pad traffic on `EP 0x84`, while the LED protocol itself still required cabl's original two-packet format where header byte 2 is the starting slot offset into the 62-byte LED array.
+- **Fix**: Keep the background pad-drain thread running in `app/services/maschine/mk1_usb_transport.py`, build LEDs with `build_led_packets()` in `app/services/maschine/mk1_protocol.py`, and preserve host-side diagnostics that verify the full 62-slot walk before changing the transport again.
+- **Verification**: `python3 -m pytest -q tests/test_maschine_transport.py tests/test_maschine_mk1.py tests/test_maschine_lcd_service.py tests/test_maschine_routes.py`; `python3 scripts/maschine_two_packet_test.py`; `python3 scripts/maschine_led_slot_walk.py`
+- **Lesson**: Fix the backpressure cause without rewriting the hardware protocol. On the MK1, output stability and full LED coverage require both the pad-endpoint drain and the original two-packet slot contract.
+
 **4. Sleep Commands Kill Builds (CRITICAL)**
 - **File**: `.copilot-notes/server-restart-pattern.md`
 - **Problem**: `sleep 5 && curl` blocks terminal, causes `^C` interrupts
@@ -2164,6 +2171,13 @@ Target: < 5 ms total
 - **Reason**: The repeated end-of-slice workflow was still being replayed manually even though it is deterministic: commit all, sync both remotes, deploy/restart port `3000`, and verify health.
 - **Impact**: Future assistant work can ship slices with less pause time and lower risk of skipping the GitHub/GitLab sync or production verification steps.
 - **Files**: `.github/copilot-instructions.md`, `scripts/continuous_release.py`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-04-15] - Maschine MK1 LED Transport Correction
+- **Section**: Gotchas & Learned Fixes (#89), Update Log
+- **Change**: Documented the corrected MK1 LED transport rule: restore the original two-packet LED slot split, keep the pad drain thread active, and archive host-side diagnostics for full-slot verification.
+- **Reason**: Follow-up hardware evidence showed the single-packet experiment only masked the backpressure symptom and silently dropped slots 31..61.
+- **Impact**: Future MK1 transport changes should treat pad-endpoint draining and LED packet shape as separate concerns and verify the full 62-slot contract before shipping.
+- **Files**: `.github/copilot-instructions.md`, `app/services/maschine/mk1_protocol.py`, `app/services/maschine/mk1_usb_transport.py`, `tests/test_maschine_transport.py`, `scripts/maschine_led_slot_walk.py`, `scripts/maschine_two_packet_test.py`, `scripts/maschine_unused_slot_test.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-07] - Maschine Runtime Override Reload Gating
 - **Section**: Gotchas & Learned Fixes (#87), Update Log

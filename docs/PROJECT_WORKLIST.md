@@ -6,7 +6,27 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2293 with an explicit node-scoped WebSocket transport contract in the cluster context.
+Last updated: 2026-04-15 - Reconciled T2302 after corrected MK1 hardware evidence restored the two-packet LED transport contract with pad-endpoint draining.
+
+---
+
+ID: T2302
+Status: [✓] Done
+Title: Restore the full Maschine MK1 LED slot contract and archive the corrected hardware diagnosis
+Description:
+- Goal / acceptance criteria: Reconcile the post-T2300 MK1 hardware findings by restoring the real LED bulk-write contract, proving that all 62 LED slots remain addressable, documenting the dependency on draining `EP 0x84`, and preserving operator diagnostics that reproduce the corrected behavior. Acceptance requires production code to use the verified wire format again, regression coverage for the packet split, reproducible hardware scripts for slot-walk/two-packet validation, and updated worklist/memory notes that correct the earlier single-packet conclusion.
+- Why it matters: The prior single-packet conclusion only addressed the wedge symptom and silently dropped slots 31..61, which would leave part of the hardware dark while the codebase claimed the transport was fixed.
+- Dependencies: T2300
+- Estimated effort: Medium
+- Required outputs: restored MK1 LED packet builder/writer contract, archived hardware diagnostics, focused packet regression coverage, and reconciled documentation/history.
+Assigned to: Codex
+Last updated: 2026-04-15 19:26 EDT - Codex
+- Completion notes:
+  - Restored `app/services/maschine/mk1_protocol.py` and `app/services/maschine/mk1_usb_transport.py` to cabl's verified two-packet LED contract and documented the real root cause: `EP 0x01` wedges only when `EP 0x84` pad traffic is not being drained.
+  - Added `scripts/maschine_led_slot_walk.py`, `scripts/maschine_two_packet_test.py`, and `scripts/maschine_unused_slot_test.py` so host-hardware checks can verify full 62-slot reachability, the corrected two-packet transport, and the currently unused slot identities directly on an MK1.
+  - Added focused packet-split regression coverage in `tests/test_maschine_transport.py` so future changes cannot collapse the MK1 LED array back into a misleading single-packet write.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_transport.py tests/test_maschine_mk1.py tests/test_maschine_lcd_service.py tests/test_maschine_routes.py` -> PASS
 
 ---
 
@@ -46,6 +66,7 @@ Last updated: 2026-04-15 18:50 EDT - Codex
   - Switched `app/services/maschine/mk1_usb_transport.py` and `app/services/maschine/mk1_protocol.py` to the observed single 64-byte LED bulk write path and documented the usbmon evidence in code comments.
   - Extended `app/services/maschine_lcd_service.py` so each rendered panel now includes both the existing XBM simulator payload and a hex-encoded MK1 framebuffer payload suitable for the hardware daemon.
   - Added `scripts/maschine_led_diagnose.py` and `scripts/maschine_led_diagnose_traced.sh` so the failing legacy LED write path and the working single-packet path can be reproduced and traced directly on host hardware.
+  - Follow-up `T2302` corrected the LED-only conclusion with fuller hardware evidence: the LCD framebuffer payload work remains valid, but the final shipped LED path is the restored two-packet contract with mandatory pad-endpoint draining.
 - Validation:
   - `python3 -m pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_mk1.py tests/test_maschine_routes.py` -> PASS
 

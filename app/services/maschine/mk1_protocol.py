@@ -55,16 +55,26 @@ LED_GROUP_1_OFFSET = 0x1E  # retained for reference / legacy two-packet path
 LED_CHANNEL_PRIMER = bytes([0x0B, 0xFF, 0x02, 0x05])
 LED_BACKLIGHT_DEFAULT = 0x5C
 
-# Observed behavior (usbmon 2026-04-15, MK1 17cc:0808 Bus 3 Dev 020):
-# The two-packet form cabl documents ([0x0C,0x00]+31B then [0x0C,0x1E]+31B)
-# causes the device to ignore the second write — bulk OUT on EP 0x01
-# sits for 500 ms and then the URB cancels with -ENOENT and 0 bytes
-# transferred, wedging the endpoint until a physical replug. Sending all
-# 62 LED bytes in ONE 64-byte bulk OUT with header [0x0C,0x00] completes
-# cleanly in <1 ms and drives every LED. We therefore use the single-
-# packet form exclusively. See scripts/maschine_led_diagnose.py V11 for
-# the reproduction and /tmp/mk1-trace-V11.txt for the kernel trace.
-LED_PACKET_SIZE = 2 + LED_DATA_SIZE  # 64 bytes total
+# Wire format (verified end-to-end 2026-04-15 against MK1 17cc:0808):
+# ----------------------------------------------------------------
+# cabl's two-packet scheme is CORRECT — but it only works when the pad
+# IN endpoint (EP 0x84) is being actively drained. If the host stops
+# consuming pad pressure data, EP 0x01 OUT backs up within ~50 ms and
+# every subsequent write to EP 0x01 (primer, LEDs, MIDI) times out with
+# -ETIMEDOUT and 0 bytes transferred. See
+# scripts/maschine_unwedge_test.py H2/H3 for the proof.
+#
+# Symptom timeline we chased through 17 diagnostic variants:
+#   - Without drain: first LED write OK, second wedges, replug required.
+#   - With drain thread running: both packets succeed indefinitely.
+#
+# Don't try to "optimize" to a single 64-byte write — the device rejects
+# slots past offset 30 because byte-1 of the header is the starting slot
+# offset into the LED array, not a chunk tag. Single-packet form only
+# addresses slots 0..30 and silently drops 31..61 (verified on hardware:
+# all second-group LEDs stayed dark until the two-packet scheme was
+# restored). Use build_led_packets() and the transport's drain thread.
+LED_PACKET_SIZE = 2 + LED_GROUP_SIZE  # 33 bytes per packet, 2 packets per update
 
 
 class Led(IntEnum):
@@ -146,28 +156,21 @@ LED_PAD_INDEX: tuple[int, ...] = (
 )
 
 
-def build_led_packet(led_state: Iterable[int]) -> bytes:
-    """Build the single 64-byte LED update for endpoint ``EP_CONTROL_OUT``.
+def build_led_packets(led_state: Iterable[int]) -> tuple[bytes, bytes]:
+    """Build cabl's two 33-byte LED packets for ``EP_CONTROL_OUT``.
 
     ``led_state`` is any iterable of 62 integers in 0..255. Out-of-range
-    values are clamped. If fewer than 62 values are supplied the tail is
-    zero-padded; extras are ignored. Returns a 64-byte ``bytes``:
-    ``[0x0C, 0x00]`` + 62 brightness bytes.
-    """
-    buffer = bytearray(LED_DATA_SIZE)
-    for i, value in enumerate(led_state):
-        if i >= LED_DATA_SIZE:
-            break
-        buffer[i] = max(0, min(255, int(value)))
-    return bytes([0x0C, LED_GROUP_0_OFFSET]) + bytes(buffer)
+    values are clamped. Fewer-than-62 inputs are zero-padded; extras are
+    ignored. Returns ``(group0, group1)``:
 
+    - ``group0`` = ``[0x0C, 0x00]`` + slots 0..30 (31 data bytes, 33 total)
+    - ``group1`` = ``[0x0C, 0x1E]`` + slots 31..61 (31 data bytes, 33 total)
 
-def build_led_packets(led_state: Iterable[int]) -> tuple[bytes, bytes]:
-    """Legacy two-packet builder, retained for tests that diff against cabl.
-
-    Do NOT use this in the live transport — the device ignores the second
-    packet and wedges EP 0x01. See :func:`build_led_packet` for the
-    production path.
+    Byte 1 of each header is the starting slot offset into the device's
+    LED array. The device rejects combined writes larger than 31 data
+    bytes — you MUST send both packets and you MUST keep the pad input
+    endpoint drained (see transport drain thread) or the second write
+    wedges EP 0x01.
     """
     buffer = bytearray(LED_DATA_SIZE)
     for i, value in enumerate(led_state):
@@ -192,6 +195,7 @@ DISPLAY_PIXEL_MAX = 31  # 5-bit grayscale per pixel
 
 _FRAME_CHUNK_FULL = 502
 _FRAME_CHUNK_TAIL = 338
+_FRAME_MIDDLE_CHUNKS = 20  # per cabl CanvasBase<255,64,10880,22>: 22 - first - tail
 
 
 def _d(display_index: int) -> int:
@@ -265,15 +269,17 @@ def build_display_frame_packets(display_index: int, framebuffer: bytes) -> list[
         bytes((d, 0x00, 0x03, 0x15, 0x00, 0x54)),
     ]
 
+    # cabl layout: 22 data chunks total = 1 first (502 B) + 20 middle (502 B
+    # each) + 1 tail (338 B). 502 + 20*502 + 338 = 10880 ✓.
+    # First chunk uses d (0 or 2). Middle + tail use d+1 (1 or 3).
     offset = 0
-    packets.append(bytes((d, 0x01, 0xF7, 0x5C)) + framebuffer[offset:offset + _FRAME_CHUNK_FULL])
+    packets.append(
+        bytes((d, 0x01, 0xF7, 0x5C)) + framebuffer[offset:offset + _FRAME_CHUNK_FULL]
+    )
     offset += _FRAME_CHUNK_FULL
 
     d_rest = d + 1
-    # We need 22 chunks total: 1 first + N middle + 1 tail.
-    # Full frame = 10880; after first 502 and final 338, middle = 10880 - 502 - 338 = 10040
-    # → 10040 / 502 = 20 middle chunks.
-    while offset + _FRAME_CHUNK_FULL + _FRAME_CHUNK_TAIL <= DISPLAY_FRAMEBUFFER_SIZE:
+    for _ in range(_FRAME_MIDDLE_CHUNKS):
         packets.append(
             bytes((d_rest, 0x01, 0xF6)) + framebuffer[offset:offset + _FRAME_CHUNK_FULL]
         )

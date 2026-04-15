@@ -41,7 +41,7 @@ from app.services.maschine.mk1_protocol import (
     VENDOR_ID,
     build_display_frame_packets,
     build_display_init_packets,
-    build_led_packet,
+    build_led_packets,
 )
 
 LOGGER = logging.getLogger("maschine_mk1_usb_transport")
@@ -164,9 +164,22 @@ class MaschineMK1UsbTransport:
     # ------------------------------------------------------------------
 
     def write_leds(self, led_state: "list[int] | tuple[int, ...]") -> None:
+        """Push all 62 LED slots using cabl's two-packet scheme.
+
+        Packet 1 (header ``[0x0C, 0x00]``) carries slots 0..30. Packet 2
+        (header ``[0x0C, 0x1E]``) carries slots 31..61. The header byte 2 is
+        the starting-slot offset into the LED array — the device will not
+        accept a single 64-byte combined write past offset 30.
+
+        EP 0x01 wedges after any write if the pad IN endpoint backs up, so
+        the transport's background drain thread must be running (it is
+        started in ``open()``).
+        """
         if self._device is None:
             raise RuntimeError("transport is not open")
-        self._write(EP_CONTROL_OUT, build_led_packet(led_state))
+        g0, g1 = build_led_packets(led_state)
+        self._write(EP_CONTROL_OUT, g0)
+        self._write(EP_CONTROL_OUT, g1)
 
     def write_display_frame(self, display_index: int, framebuffer: bytes) -> None:
         if self._device is None:
