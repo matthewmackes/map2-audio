@@ -114,9 +114,20 @@
 }
 
 .hp2-home-shell__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
   font-size: clamp(2.2rem, 4vw, 3.75rem);
   line-height: 1;
   letter-spacing: -0.04em;
+}
+
+.hp2-home-shell__title-icon {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  align-self: baseline;
+  filter: drop-shadow(0 0 6px rgba(69, 137, 255, 0.25));
 }
 
 .hp2-home-shell__lede,

@@ -56,21 +56,14 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/',
   '/snapshot-editor',
   '/workspace',
+  'FILES_GROUP_HEADER',
+  '/workspace/artifacts',
   '/midi-hub',
   'INSTRUMENTS_GROUP_HEADER',
   '/brain',
   'HARDWARE_GROUP_HEADER',
-  '/tesira',
-  '/mpx1',
-  '/intelfx',
-  '/edirol-ua1000',
-  '/hotone-jogg',
-  '/mcu',
-  '/launch-control',
-  '/midi-commander',
-  '/maschine',
-  '/ground-control-pro',
-  '/labs/push-surface',
+  '/workspace/outboard-hardware',
+  '/workspace/physical-surfaces',
   '/expression',
   '/lcd',
   '/welcome',
@@ -105,6 +98,7 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
 }
 
 const GROUP_HEADER_LABELS: Record<string, string> = {
+  'FILES_GROUP_HEADER': 'Files',
   'INSTRUMENTS_GROUP_HEADER': 'Instruments',
   'HARDWARE_GROUP_HEADER': 'Hardware',
 }

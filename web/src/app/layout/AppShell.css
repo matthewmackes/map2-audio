@@ -117,7 +117,7 @@
 
 .app-shell__frame {
   display: grid;
-  grid-template-columns: var(--global-tree-width, 16rem) minmax(0, 1fr);
+  grid-template-columns: var(--global-tree-width, 0rem) 1fr;
   min-height: 100vh;
   transition: grid-template-columns 160ms ease;
 }
@@ -126,6 +126,7 @@
   position: relative;
   min-width: 0;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 .app-shell__nav-pin-toggle {

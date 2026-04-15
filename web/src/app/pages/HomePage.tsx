@@ -4,6 +4,7 @@ import { ArrowRight, Launch, Settings } from '@carbon/icons-react'
 import { Button, Column, Content, Grid, Header, HeaderGlobalBar, HeaderName, InlineLoading, Modal, OverflowMenu, OverflowMenuItem, Search, Tag, Toggle } from '@carbon/react'
 import {
   MAP2_PLATFORM_NAME,
+  Map2BrandMark,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
@@ -392,7 +393,10 @@ export function HomePage() {
           <Column lg={10} md={8} sm={4} className="hp2-home-shell__main">
             <DashboardCard className="hp2-home-shell__hero">
               <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">Home</p>
-              <h1 className="hp2-home-shell__title">Desktop Control Panel</h1>
+              <h1 className="hp2-home-shell__title">
+                <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
+                {MAP2_PLATFORM_NAME}
+              </h1>
               <p className="hp2-home-shell__lede">
                 Access your tools: editing, routing, performance, and system controls.
               </p>

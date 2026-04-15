@@ -125,7 +125,37 @@ describe('launcherCatalog', () => {
       expect.arrayContaining([
         expect.objectContaining({ route: '/workspace/platforms/overview', label: 'Overview' }),
         expect.objectContaining({ route: '/chains', label: 'Chains' }),
+      ]),
+    )
+    expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ route: '/workspace/artifacts', label: 'Audio Artifacts' }),
+        expect.objectContaining({ route: '/workspace/physical-surfaces', label: 'Physical Surfaces' }),
         expect.objectContaining({ route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' }),
+      ]),
+    )
+
+    expect(getLauncherCatalogTreeChildren('/workspace/artifacts')).toEqual(
+      expect.arrayContaining([
+        { route: '/workspace/artifacts', label: 'Overview' },
+        { route: '/workspace/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
+        { route: '/workspace/artifacts?category=native-juce', label: 'Native JUCE' },
+      ]),
+    )
+
+    expect(getLauncherCatalogTreeChildren('/workspace/physical-surfaces')).toEqual(
+      expect.arrayContaining([
+        { route: '/workspace/physical-surfaces', label: 'Overview' },
+        { route: '/workspace/physical-surfaces/ableton-push', label: 'Ableton Push' },
+        { route: '/workspace/physical-surfaces/mackie-mcu-pro', label: 'MCU Pro' },
+      ]),
+    )
+
+    expect(getLauncherCatalogTreeChildren('/workspace/outboard-hardware')).toEqual(
+      expect.arrayContaining([
+        { route: '/workspace/outboard-hardware', label: 'Overview' },
+        { route: '/workspace/outboard-hardware/tesira', label: 'Tesira AVB' },
+        { route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' },
       ]),
     )
 
