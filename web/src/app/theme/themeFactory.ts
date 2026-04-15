@@ -1,4 +1,5 @@
 import type { CarbonThemeId, Theme, ThemeColors } from './types';
+import type { ThemeWidgets } from './types';
 import {
   CARBON_FAMILY_BY_ID,
   CARBON_NEUTRALS,
@@ -10,10 +11,17 @@ import {
 } from './carbonPalette';
 
 export const baseWidgets = {
+  'border-radius-xs': '0px',
   'border-radius-sm': '0px',
   'border-radius-md': '0px',
   'border-radius-lg': '4px',
+  'border-radius-xl': '6px',
+  'border-radius-xxl': '10px',
   'border-width': '1px',
+  'spacing-density-compact': '0.85',
+  'spacing-density-default': '1',
+  'spacing-density-spacious': '1.15',
+  'widget-shadow': '0',
   'glow-intensity': '0',
   'transition-speed': '0.12s',
 } as const;
@@ -29,6 +37,7 @@ export function generateThemeFromPalette(
   overrides: Partial<ThemeColors> = {},
   id?: string,
   name?: string,
+  widgetOverrides: Partial<ThemeWidgets> = {},
 ): Theme {
   const family = CARBON_FAMILY_BY_ID[familyId] ?? CARBON_FAMILY_BY_ID['blue'];
   const isDark = base === 'g100' || base === 'g90';
@@ -108,6 +117,9 @@ export function generateThemeFromPalette(
     description: `Carbon ${family.name} palette on ${isDark ? 'dark' : 'light'} (${base}) shell.`,
     carbonTheme,
     colors: generated,
-    widgets: { ...baseWidgets },
+    widgets: {
+      ...baseWidgets,
+      ...widgetOverrides,
+    },
   };
 }

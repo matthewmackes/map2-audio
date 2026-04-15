@@ -25,7 +25,7 @@ export function HoToneJoGGPage() {
             ? `USB Audio Interface Configuration & Monitoring · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
             : 'USB Audio Interface Configuration & Monitoring'
         }
-        icon={<Headphones size={32} style={{ color: '#3b82f6' }} />}
+        icon={<Headphones size={32} style={{ color: 'var(--interactive)' }} />}
       />
 
       <DeviceContextBanner deviceName="HoTone JoGG" deviceKey="hotone-jogg" />

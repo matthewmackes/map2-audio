@@ -12,9 +12,9 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   min-height: var(--app-window-titlebar-height, 2.3rem);
-  border-bottom: 1px solid var(--window-shell-titlebar-border, color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent));
-  background: var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%));
-  color: var(--window-shell-titlebar-contrast, var(--cds-text-primary, var(--text-primary)));
+  border-bottom: 1px solid var(--window-shell-titlebar-border, color-mix(in srgb, var(--border-strong) 88%, transparent));
+  background: var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%));
+  color: var(--window-shell-titlebar-contrast, var(--text-primary));
   box-shadow: none;
 }
 
@@ -29,9 +29,9 @@
   align-items: center;
   justify-content: center;
   width: 2.35rem;
-  border-right: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
-  background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer, #ffffff)));
-  color: var(--cds-text-primary, var(--text-primary));
+  border-right: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--border-strong)) 88%, transparent);
+  background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--interactive)) 12%, var(--surface)));
+  color: var(--text-primary);
 }
 
 .window-title-strip__icon {
@@ -54,7 +54,7 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.1;
-  color: var(--cds-text-secondary, var(--text-secondary));
+  color: var(--text-secondary);
 }
 
 .window-title-strip__title-row {
@@ -67,7 +67,7 @@
 .window-title-strip__title {
   min-width: 0;
   overflow: hidden;
-  color: var(--cds-text-primary, var(--text-primary));
+  color: var(--text-primary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
@@ -78,7 +78,7 @@
 
 .window-title-strip__meta {
   overflow: hidden;
-  color: var(--cds-text-secondary, var(--text-secondary));
+  color: var(--text-secondary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
@@ -95,17 +95,17 @@
   justify-content: flex-end;
   gap: 0.18rem;
   padding: 0.2rem 0.25rem;
-  border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 80%, transparent);
-  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%)) 90%, var(--window-shell-surface, var(--cds-background, var(--bg))) 10%);
+  border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--border-strong)) 80%, transparent);
+  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 90%, var(--window-shell-surface, var(--bg)) 10%);
 }
 
 .window-title-strip__close {
   min-width: 1.85rem;
   min-height: 1.75rem;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--cds-border-strong-01, #8d8d8d)) 88%, transparent);
-  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, var(--bg)))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%)) 18%);
-  color: var(--cds-text-primary, var(--text-primary));
+  border: 1px solid color-mix(in srgb, var(--window-shell-border, var(--border-strong)) 88%, transparent);
+  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--surface) 92%, var(--bg))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 18%);
+  color: var(--text-primary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 700;
@@ -116,9 +116,9 @@
 
 .window-title-strip__close:hover,
 .window-title-strip__close:focus-visible {
-  border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 42%, var(--window-shell-border, var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28))));
-  background: color-mix(in srgb, var(--cds-support-error, #da1e28) 10%, var(--window-shell-surface-strong, var(--cds-layer, #ffffff)));
-  outline: 2px solid var(--cds-focus, var(--cds-support-error, #da1e28));
+  border-color: color-mix(in srgb, var(--support-danger) 42%, var(--window-shell-border, color-mix(in srgb, var(--border-subtle) 28%, transparent)));
+  background: color-mix(in srgb, var(--support-danger) 10%, var(--window-shell-surface-strong, var(--surface)));
+  outline: 2px solid var(--support-danger);
   outline-offset: 2px;
 }
 

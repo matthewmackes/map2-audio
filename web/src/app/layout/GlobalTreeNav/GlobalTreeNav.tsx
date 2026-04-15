@@ -54,12 +54,12 @@ type TreeItemDefinition = {
 const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
-  '/workspace',
   '/snapshot-editor',
+  '/workspace',
+  '/midi-hub',
   'INSTRUMENTS_GROUP_HEADER',
   '/brain',
   'HARDWARE_GROUP_HEADER',
-  '/midi-hub',
   '/tesira',
   '/mpx1',
   '/intelfx',
@@ -99,6 +99,7 @@ const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/workspace': 'Control Panel',
   '/snapshot-editor': 'Snapshot Editor',
+  '/midi-hub': 'MIDI Advanced',
   '/labs/push-surface': 'Push Surface',
   '/ground-control-pro': 'Ground Control Pro',
 }
@@ -230,14 +231,16 @@ function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
 
-function TreeNodeLabel({ label, secondary }: { label: string; secondary?: ReactNode }) {
+function TreeNodeLabel({ label, secondary, isBold = false }: { label: string; secondary?: ReactNode; isBold?: boolean }) {
   return (
-    <span className="global-tree-nav__node-copy">
+    <span className={`global-tree-nav__node-copy${isBold ? ' global-tree-nav__node-copy--bold' : ''}`}>
       <span className="global-tree-nav__node-label">{label}</span>
       {secondary ? <span className="global-tree-nav__node-secondary">{secondary}</span> : null}
     </span>
   )
 }
+
+const BOLD_TOP_LEVEL_ROUTES = new Set(['/', '/snapshot-editor', '/workspace', '/midi-hub'])
 
 function renderTreeItems(
   items: TreeItemDefinition[],
@@ -269,6 +272,7 @@ function renderTreeItems(
     }
 
     const selected = item.id === activeNodeId
+    const isBold = BOLD_TOP_LEVEL_ROUTES.has(item.id)
 
     if (item.children?.length) {
       return (
@@ -277,7 +281,7 @@ function renderTreeItems(
           id={item.id}
           className={joinClasses('global-tree-nav__tree-node', selected && 'is-selected')}
           isExpanded={expandedIds.includes(item.id)}
-          label={<TreeNodeLabel label={item.label} />}
+          label={<TreeNodeLabel label={item.label} isBold={isBold} />}
           onSelect={(event) => {
             event.preventDefault()
             if (item.route) {
@@ -297,7 +301,7 @@ function renderTreeItems(
         key={item.id}
         id={item.id}
         className={joinClasses('global-tree-nav__tree-node', selected && 'is-selected')}
-        label={<TreeNodeLabel label={item.label} />}
+        label={<TreeNodeLabel label={item.label} isBold={isBold} />}
         onSelect={(event) => {
           event.preventDefault()
           if (item.route) {

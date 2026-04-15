@@ -15,7 +15,7 @@
  */
 
 import { generateThemeFromPalette } from './themeFactory';
-import type { Theme, ThemeColors } from './types';
+import type { Theme, ThemeColors, ThemeWidgets } from './types';
 
 /* ─── helper ──────────────────────────────────────────────────────────────── */
 
@@ -26,8 +26,9 @@ function preset(
   base: 'g100' | 'g90' | 'g10' | 'white',
   overrides: Partial<ThemeColors> = {},
   description?: string,
+  widgetOverrides: Partial<ThemeWidgets> = {},
 ): Theme {
-  const theme = generateThemeFromPalette(familyId, base, overrides, id, name);
+  const theme = generateThemeFromPalette(familyId, base, overrides, id, name, widgetOverrides);
   if (description) {
     theme.description = description;
   }
@@ -857,6 +858,18 @@ const win11Glow = preset(
     'focus-ring': '#ff8c00',
   },
   'Windows 11 Glow — warm amber accent on charcoal canvas, inspired by the "Glow" wallpaper.',
+  {
+    'spacing-density-default': '1.06',
+    'spacing-density-compact': '0.88',
+    'spacing-density-spacious': '1.28',
+    'border-radius-sm': '2px',
+    'border-radius-md': '4px',
+    'border-radius-lg': '12px',
+    'border-radius-xl': '16px',
+    'border-radius-xxl': '20px',
+    'widget-shadow': 'rgba(255, 140, 0, 0.28)',
+    'glow-intensity': '0.42',
+  },
 );
 
 const winTerminal = preset(

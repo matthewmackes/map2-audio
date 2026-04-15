@@ -187,9 +187,16 @@ input[type="range"]:focus::-webkit-slider-thumb {
   --bg-warning: color-mix(in srgb, var(--cds-support-warning) 20%, var(--cds-background));
   --shadow-strong: none;
   --shadow-soft: none;
+  --widget-shadow: none;
+  --spacing-density-compact: 0.9;
+  --spacing-density-default: 1;
+  --spacing-density-spacious: 1.1;
+  --border-radius-xs: 0px;
   --border-radius-sm: 0px;
   --border-radius-md: 0px;
   --border-radius-lg: 4px;
+  --border-radius-xl: 8px;
+  --border-radius-xxl: 12px;
   --border-width: 1px;
   --surface-gradient: none;
   --glow-intensity: 0;

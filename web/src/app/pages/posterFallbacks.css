@@ -1,30 +1,78 @@
 .poster-fallback {
   background-size: cover;
   background-position: center;
+  --poster-fallback-bg: var(--surface);
+  background-color: var(--poster-fallback-bg);
 }
 
-.poster-fallback--system-overview { background-color: #2c261f; }
-.poster-fallback--audio-engine { background-color: #12263f; }
-.poster-fallback--avb-routing { background-color: #173247; }
-.poster-fallback--host-machine { background-color: #1a2737; }
-.poster-fallback--stage-mode { background-color: #2f241f; }
-.poster-fallback--guide { background-color: #1a2d43; }
-.poster-fallback--about { background-color: #252d3a; }
-.poster-fallback--expression { background-color: #17373d; }
-.poster-fallback--presets { background-color: #1b3b35; }
-.poster-fallback--lv2-plugins { background-color: #173245; }
-.poster-fallback--midi { background-color: #32243c; }
-.poster-fallback--midi-hub { background-color: #1d3b39; }
-.poster-fallback--mpx1-rack { background-color: #1a2f44; }
-.poster-fallback--tesira-avb { background-color: #2d243a; }
-.poster-fallback--cluster-dashboard { background-color: #17354a; }
-.poster-fallback--multi-system { background-color: #183347; }
-.poster-fallback--grid { background-color: #1d2b40; }
-.poster-fallback--grid-3d { background-color: #262b45; }
-.poster-fallback--ir-nam-library { background-color: #173448; }
-.poster-fallback--lcd-console { background-color: #1b3a39; }
-.poster-fallback--edirol-ua1000 { background-color: #183146; }
-.poster-fallback--hotone-jogg { background-color: #392727; }
-.poster-fallback--generic-interface { background-color: #2b3240; }
-.poster-fallback--midi-cluster { background-color: #282b44; }
-.poster-fallback--api-observatory { background-color: #2b2943; }
+.poster-fallback--system-overview { --poster-fallback-bg: var(--surface); }
+.poster-fallback--audio-engine {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--interactive) 18%);
+}
+.poster-fallback--avb-routing {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--support-info) 18%);
+}
+.poster-fallback--host-machine {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--support-success) 18%);
+}
+.poster-fallback--stage-mode {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-warning) 16%);
+}
+.poster-fallback--guide {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 86%, var(--interactive) 14%);
+}
+.poster-fallback--about { --poster-fallback-bg: var(--surface); }
+.poster-fallback--expression {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--support-success) 18%);
+}
+.poster-fallback--presets {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 85%, var(--support-warning) 15%);
+}
+.poster-fallback--lv2-plugins {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-info) 16%);
+}
+.poster-fallback--midi {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 80%, var(--support-danger) 20%);
+}
+.poster-fallback--midi-hub {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-success) 16%);
+}
+.poster-fallback--mpx1-rack {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-info) 16%);
+}
+.poster-fallback--tesira-avb {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--interactive) 18%);
+}
+.poster-fallback--cluster-dashboard {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--interactive) 16%);
+}
+.poster-fallback--multi-system {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 86%, var(--support-info) 14%);
+}
+.poster-fallback--grid {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-success) 16%);
+}
+.poster-fallback--grid-3d {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 86%, var(--support-warning) 14%);
+}
+.poster-fallback--ir-nam-library {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 83%, var(--interactive) 17%);
+}
+.poster-fallback--lcd-console {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-danger) 16%);
+}
+.poster-fallback--edirol-ua1000 {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 86%, var(--support-success) 14%);
+}
+.poster-fallback--hotone-jogg {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 82%, var(--support-danger) 18%);
+}
+.poster-fallback--generic-interface {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 86%, var(--support-warning) 14%);
+}
+.poster-fallback--midi-cluster {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 84%, var(--support-info) 16%);
+}
+.poster-fallback--api-observatory {
+  --poster-fallback-bg: color-mix(in srgb, var(--surface) 85%, var(--interactive) 15%);
+}

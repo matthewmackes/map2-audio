@@ -17,9 +17,9 @@
   min-height: calc(100vh - 56px);
   --workspace-side-nav-border: color-mix(in srgb, var(--border) 88%, transparent);
   --workspace-side-nav-surface:
-    linear-gradient(180deg, color-mix(in srgb, #e53935 8%, var(--surface)) 0%, var(--surface) 100%);
-  --workspace-side-nav-surface-hover: color-mix(in srgb, #e53935 6%, var(--surface-2));
-  --workspace-side-nav-surface-selected: color-mix(in srgb, #e53935 12%, var(--surface-2));
+    linear-gradient(180deg, color-mix(in srgb, var(--support-danger) 8%, var(--surface)) 0%, var(--surface) 100%);
+  --workspace-side-nav-surface-hover: color-mix(in srgb, var(--support-danger) 6%, var(--surface-2));
+  --workspace-side-nav-surface-selected: color-mix(in srgb, var(--support-danger) 12%, var(--surface-2));
 }
 
 .intelfx-shell__main {
@@ -114,7 +114,7 @@
 
 .intelfx-statusbar__lcd {
   min-width: 0;
-  border: 1px solid #e53935;
+  border: 1px solid var(--support-danger);
   border-radius: 0;
   background: var(--surface);
   overflow: hidden;
@@ -127,7 +127,7 @@
   display: inline-block;
   white-space: nowrap;
   padding-left: 100%;
-  color: #e53935;
+  color: var(--support-danger);
   font-size: var(--cds-helper-text-01-font-size);
   line-height: var(--cds-helper-text-01-line-height);
   letter-spacing: 0.01em;
@@ -166,9 +166,9 @@
 .intelfx-statusbar__tap {
   height: 24px;
   border-radius: 0;
-  border: 1px solid #e53935;
-  background: color-mix(in srgb, #e53935 14%, var(--surface));
-  color: #e53935;
+  border: 1px solid var(--support-danger);
+  background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
+  color: var(--support-danger);
   padding: 0 8px;
   display: inline-flex;
   align-items: center;
@@ -181,8 +181,8 @@
 }
 
 .intelfx-statusbar__tap:hover {
-  border-color: #e53935;
-  background: color-mix(in srgb, #e53935 22%, var(--surface));
+  border-color: var(--support-danger);
+  background: color-mix(in srgb, var(--support-danger) 22%, var(--surface));
 }
 
 .intelfx-statusbar__bypass {

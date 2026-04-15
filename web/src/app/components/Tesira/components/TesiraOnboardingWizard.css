@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  color: var(--cds-text-primary, #161616);
+  color: var(--text-primary);
 }
 
 .tesira-onboarding-wizard__hero,
@@ -12,8 +12,8 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: linear-gradient(160deg, var(--cds-layer) 0%, var(--cds-layer-hover) 100%);
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
 }
 
 .tesira-onboarding-wizard__hero {
@@ -36,7 +36,7 @@
 .tesira-onboarding-wizard__callout p,
 .tesira-onboarding-wizard__verify-card p {
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
 }
 
 .tesira-onboarding-wizard__eyebrow,
@@ -46,7 +46,7 @@
   font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: var(--cds-label-01-line-height, 1rem);
   letter-spacing: var(--cds-label-01-letter-spacing, 0.16px);
-  color: var(--cds-text-helper, #6f6f6f);
+  color: var(--text-tertiary);
 }
 
 .tesira-onboarding-wizard__hero-tags,
@@ -69,24 +69,24 @@
   gap: 0.5rem;
   align-items: flex-start;
   padding: 0.9rem;
-  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer);
+  border: 1px solid var(--border);
+  background: var(--surface);
   cursor: pointer;
   text-align: left;
 }
 
 .tesira-onboarding-wizard__progress-step.is-active {
-  border-color: var(--cds-focus, #0f62fe);
-  box-shadow: inset 0 0 0 1px var(--cds-focus, #0f62fe);
+  border-color: var(--focus-ring);
+  box-shadow: inset 0 0 0 1px var(--focus-ring);
 }
 
 .tesira-onboarding-wizard__progress-step.is-complete {
-  background: var(--cds-layer-selected, #e8f1ff);
+  background: color-mix(in srgb, var(--surface) 86%, var(--interactive) 14%);
 }
 
 .tesira-onboarding-wizard__progress-title {
   font-weight: 600;
-  color: var(--cds-text-primary, #161616);
+  color: var(--text-primary);
 }
 
 .tesira-onboarding-wizard__panel-grid,
@@ -108,7 +108,7 @@
 }
 
 .tesira-onboarding-wizard__method-tile.is-selected {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 0;
 }
 
@@ -124,7 +124,7 @@
 .tesira-onboarding-wizard__method-tile ul {
   margin: 0;
   padding-left: 1rem;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
 }
 
 .tesira-onboarding-wizard__checklist,
@@ -148,25 +148,25 @@
   gap: 0.35rem;
   align-items: flex-start;
   padding: 0.85rem;
-  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer);
+  border: 1px solid var(--border);
+  background: var(--surface);
   cursor: pointer;
   text-align: left;
 }
 
 .tesira-onboarding-wizard__candidate.is-selected {
-  border-color: var(--cds-focus, #0f62fe);
-  box-shadow: inset 0 0 0 1px var(--cds-focus, #0f62fe);
+  border-color: var(--focus-ring);
+  box-shadow: inset 0 0 0 1px var(--focus-ring);
 }
 
 .tesira-onboarding-wizard__candidate-title {
   font-weight: 600;
-  color: var(--cds-text-primary, #161616);
+  color: var(--text-primary);
 }
 
 .tesira-onboarding-wizard__candidate-meta,
 .tesira-onboarding-wizard__empty {
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
 }
 
 .tesira-onboarding-wizard__candidate-tags {
@@ -176,8 +176,8 @@
 }
 
 .tesira-onboarding-wizard__verify-card {
-  border: 1px solid var(--cds-border-subtle-01, #c6c6c6);
-  background: var(--cds-layer);
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 1rem;
 }
 

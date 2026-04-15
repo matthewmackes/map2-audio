@@ -119,7 +119,13 @@ function isPageTransitionPreset(value: string): value is PageTransitionPreset {
 
 function resolvePreviewTheme(themeId: string, theme: Theme): Theme {
   if (themeId in builtInThemes || usesCssVariables(theme)) {
-    return generateThemeFromPalette('blue', (theme.carbonTheme ?? 'g100') as BaseShell, {}, theme.id, theme.name)
+    return generateThemeFromPalette(
+      'blue',
+      (theme.carbonTheme ?? 'g100') as BaseShell,
+      {},
+      theme.id,
+      theme.name,
+    )
   }
 
   return theme
@@ -1267,7 +1273,13 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
                           {selected ? 'Draft' : carbonThemeLabel(suggestion.base)}
                         </Tag>
                         <ThemeSwatchStrip
-                          theme={generateThemeFromPalette(suggestion.familyId, suggestion.base, {}, suggestion.id, suggestion.name)}
+                          theme={generateThemeFromPalette(
+                            suggestion.familyId,
+                            suggestion.base,
+                            {},
+                            suggestion.id,
+                            suggestion.name,
+                          )}
                         />
                       </span>
                     </button>

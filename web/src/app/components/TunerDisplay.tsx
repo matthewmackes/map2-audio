@@ -14,15 +14,20 @@ import React, { useEffect, useState, useRef } from 'react';
 
 // Note names for display (used in tuner algorithms)
 const _NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const SUPPORT_SUCCESS = 'var(--support-success)'
+const SUPPORT_WARNING = 'var(--support-warning)'
+const SUPPORT_DANGER = 'var(--support-danger)'
+const SUPPORT_WARN_TO_DANGER = 'color-mix(in srgb, var(--support-warning) 60%, var(--support-danger) 40%)'
+const TEXT_SECONDARY_MIX = 'color-mix(in srgb, var(--text-secondary) 40%, transparent)'
+const TEXT_PRIMARY_MIX = 'color-mix(in srgb, var(--text-primary) 20%, transparent)'
 
 // Color based on cents deviation
 const getInTuneColor = (cents: number): string => {
   const absCents = Math.abs(cents);
-  if (absCents <= 2) return '#22c55e';      // Green: in tune
-  if (absCents <= 5) return '#84cc16';      // Light green: very close
-  if (absCents <= 10) return '#eab308';     // Yellow: close
-  if (absCents <= 20) return '#f97316';     // Orange: getting there
-  return '#ef4444';                          // Red: out of tune
+  if (absCents <= 2) return SUPPORT_SUCCESS; // Green: in tune
+  if (absCents <= 10) return SUPPORT_WARNING; // Yellow: close
+  if (absCents <= 20) return SUPPORT_WARN_TO_DANGER; // Orange: getting there
+  return SUPPORT_DANGER; // Red: out of tune
 };
 
 // Get tuning quality label
@@ -83,7 +88,7 @@ const TunerNeedle: React.FC<{ cents: number; width: number; height: number }> = 
         d={`M ${centerX - needleLength * 0.7} ${centerY} 
             A ${needleLength * 0.7} ${needleLength * 0.7} 0 0 1 ${centerX + needleLength * 0.7} ${centerY}`}
         fill="none"
-        stroke="rgba(255,255,255,0.1)"
+        stroke={TEXT_PRIMARY_MIX}
         strokeWidth="8"
         strokeLinecap="round"
       />
@@ -93,7 +98,7 @@ const TunerNeedle: React.FC<{ cents: number; width: number; height: number }> = 
         d={`M ${centerX - 15} ${centerY - needleLength * 0.65} 
             A ${needleLength * 0.7} ${needleLength * 0.7} 0 0 1 ${centerX + 15} ${centerY - needleLength * 0.65}`}
         fill="none"
-        stroke="rgba(34, 197, 94, 0.3)"
+        stroke={SUPPORT_SUCCESS}
         strokeWidth="10"
         strokeLinecap="round"
       />
@@ -117,7 +122,7 @@ const TunerNeedle: React.FC<{ cents: number; width: number; height: number }> = 
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke={marker === 0 ? '#22c55e' : 'rgba(255,255,255,0.3)'}
+            stroke={marker === 0 ? SUPPORT_SUCCESS : TEXT_PRIMARY_MIX}
             strokeWidth={marker === 0 ? 3 : 1}
           />
         );
@@ -148,9 +153,9 @@ const TunerNeedle: React.FC<{ cents: number; width: number; height: number }> = 
       />
       
       {/* Cents labels */}
-      <text x={centerX - needleLength * 0.75} y={centerY + 15} fill="rgba(255,255,255,0.4)" fontSize="10" textAnchor="middle">-50</text>
-      <text x={centerX} y={centerY - needleLength * 0.65} fill="rgba(255,255,255,0.5)" fontSize="10" textAnchor="middle">0</text>
-      <text x={centerX + needleLength * 0.75} y={centerY + 15} fill="rgba(255,255,255,0.4)" fontSize="10" textAnchor="middle">+50</text>
+      <text x={centerX - needleLength * 0.75} y={centerY + 15} fill="color-mix(in srgb, var(--text-secondary) 40%, transparent)" fontSize="10" textAnchor="middle">-50</text>
+      <text x={centerX} y={centerY - needleLength * 0.65} fill="color-mix(in srgb, var(--text-secondary) 50%, transparent)" fontSize="10" textAnchor="middle">0</text>
+      <text x={centerX + needleLength * 0.75} y={centerY + 15} fill="color-mix(in srgb, var(--text-secondary) 40%, transparent)" fontSize="10" textAnchor="middle">+50</text>
     </svg>
   );
 };
@@ -181,16 +186,16 @@ const StrobeDisplay: React.FC<{ cents: number; width: number }> = ({ cents, widt
   const stripeWidth = width / stripes;
   
   return (
-    <div
-      style={{
-        display: 'flex',
-        width: '100%',
-        height: 24,
-        overflow: 'hidden',
-        borderRadius: 4,
-        background: 'rgba(0,0,0,0.5)',
-      }}
-    >
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: 24,
+            overflow: 'hidden',
+            borderRadius: 4,
+            background: 'color-mix(in srgb, var(--surface-2) 88%, transparent)',
+          }}
+        >
       {Array.from({ length: stripes }).map((_, i) => {
         const offset = ((phase + i * 30) % 360) / 360;
         const intensity = Math.sin(offset * Math.PI * 2) * 0.5 + 0.5;
@@ -223,7 +228,8 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   
   const color = getInTuneColor(centsDeviation);
   const label = getTuningLabel(centsDeviation);
-  const confidenceColor = confidence >= 0.75 ? '#22c55e' : confidence >= 0.45 ? '#eab308' : '#ef4444';
+  const confidenceColor =
+    confidence >= 0.75 ? SUPPORT_SUCCESS : confidence >= 0.45 ? SUPPORT_WARNING : SUPPORT_DANGER
   
   // Size configurations
   const sizes = {
@@ -242,10 +248,10 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
       style={{
         width: size.width,
         height: size.height,
-        background: 'rgba(14, 14, 18, 0.96)',
+        background: 'color-mix(in srgb, var(--surface-2) 96%, transparent)',
         borderRadius: 12,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        border: '1px solid var(--border)',
+        boxShadow: `0 4px 20px ${TEXT_PRIMARY_MIX}, inset 0 1px 0 ${TEXT_SECONDARY_MIX}`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -263,7 +269,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           top: 8,
           right: 12,
           fontSize: 10,
-          color: 'rgba(255, 255, 255, 0.4)',
+            color: TEXT_SECONDARY_MIX,
         }}
       >
         A4 = {referenceA4} Hz
@@ -292,7 +298,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             fontSize: size.noteSize,
             fontWeight: 700,
-            color: hasSignal ? color : 'rgba(255, 255, 255, 0.2)',
+            color: hasSignal ? color : TEXT_PRIMARY_MIX,
             textShadow: hasSignal ? `0 0 20px ${color}` : 'none',
             fontFamily: 'var(--font-ui)',
             transition: 'all 0.2s ease',
@@ -305,7 +311,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             fontSize: size.noteSize * 0.4,
             fontWeight: 500,
-            color: hasSignal ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.2)',
+            color: hasSignal ? 'var(--text-secondary)' : TEXT_PRIMARY_MIX,
           }}
         >
           {hasSignal ? octave : '-'}
@@ -318,7 +324,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             width: '100%',
             height: 6,
-            background: 'rgba(255, 255, 255, 0.1)',
+            background: 'color-mix(in srgb, var(--text-secondary) 20%, transparent)',
             borderRadius: 3,
             position: 'relative',
             overflow: 'hidden',
@@ -332,7 +338,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
               top: 0,
               width: 2,
               height: '100%',
-              background: 'rgba(34, 197, 94, 0.5)',
+              background: 'color-mix(in srgb, var(--support-success) 50%, transparent)',
               transform: 'translateX(-50%)',
             }}
           />
@@ -373,7 +379,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             fontSize: size.freqSize,
             fontFamily: 'var(--font-mono)',
-            color: hasSignal ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.2)',
+            color: hasSignal ? 'color-mix(in srgb, var(--text-primary) 85%, transparent)' : TEXT_PRIMARY_MIX,
           }}
         >
           {hasSignal ? `${frequencyHz.toFixed(1)} Hz` : '-- Hz'}
@@ -383,7 +389,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
         <span
           style={{
             fontSize: size.freqSize - 2,
-            color: hasSignal ? color : 'rgba(255, 255, 255, 0.2)',
+            color: hasSignal ? color : TEXT_PRIMARY_MIX,
             fontWeight: 600,
           }}
         >
@@ -395,7 +401,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             fontSize: size.freqSize,
             fontFamily: 'var(--font-mono)',
-            color: hasSignal ? color : 'rgba(255, 255, 255, 0.2)',
+            color: hasSignal ? color : TEXT_PRIMARY_MIX,
             minWidth: 50,
             textAlign: 'right',
           }}
@@ -413,7 +419,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           style={{
             width: '100%',
             height: 3,
-            background: 'rgba(255, 255, 255, 0.1)',
+            background: 'color-mix(in srgb, var(--text-secondary) 20%, transparent)',
             borderRadius: 2,
             overflow: 'hidden',
           }}

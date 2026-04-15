@@ -39,10 +39,17 @@ export interface ThemeColors {
 }
 
 export interface ThemeWidgets {
+  'border-radius-xs': string;
   'border-radius-sm': string;
   'border-radius-md': string;
   'border-radius-lg': string;
+  'border-radius-xl': string;
+  'border-radius-xxl': string;
   'border-width': string;
+  'spacing-density-compact': string;
+  'spacing-density-default': string;
+  'spacing-density-spacious': string;
+  'widget-shadow': string;
   'glow-intensity': string;
   'transition-speed': string;
 }

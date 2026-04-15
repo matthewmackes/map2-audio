@@ -14,9 +14,9 @@
   gap: 0.9rem;
   padding: 1rem;
   min-height: 100%;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer) 88%, #0f62fe 12%), var(--cds-layer));
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--interactive) 12%), var(--surface));
 }
 
 .maschine-page__panel-head {
@@ -33,7 +33,7 @@
 
 .maschine-page__panel-copy {
   margin: 0;
-  color: var(--cds-text-secondary);
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -53,7 +53,7 @@
 
 .maschine-page__kv-grid dt {
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  color: var(--cds-text-secondary);
+  color: var(--text-secondary);
 }
 
 .maschine-page__kv-grid dd {
@@ -77,23 +77,23 @@
 }
 
 .maschine-page__pad--empty {
-  background: #393939;
-  color: #c6c6c6;
+  background: var(--surface-2);
+  color: var(--text-secondary);
 }
 
 .maschine-page__pad--bypassed {
-  background: #6f6f6f;
-  color: #f4f4f4;
+  background: color-mix(in srgb, var(--surface) 82%, var(--interactive) 18%);
+  color: var(--text-primary);
 }
 
 .maschine-page__pad--active {
-  background: #24a148;
-  color: #081a0b;
+  background: var(--support-success);
+  color: var(--text-primary);
 }
 
 .maschine-page__pad--selected {
   animation: maschine-pad-pulse 1.1s ease-in-out infinite;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22) inset;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-primary) 22%, transparent) inset;
 }
 
 .maschine-page__lcd-grid {
@@ -112,14 +112,14 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  color: var(--cds-text-secondary);
+  color: var(--text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
 .maschine-page__lcd-canvas {
   image-rendering: pixelated;
-  border: 1px solid #6f6f6f;
-  background: #161616;
+  border: 1px solid var(--border);
+  background: var(--surface);
   width: 100%;
   max-width: 384px;
 }
@@ -143,8 +143,8 @@
   display: grid;
   gap: 0.65rem;
   padding: 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 82%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-hover) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 68%, transparent);
 }
 
 @keyframes maschine-pad-pulse {
