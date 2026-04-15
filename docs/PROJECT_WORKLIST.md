@@ -6,7 +6,50 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Added T2295-T2299 for the snapshot activation assurance audit and the required authority/runtime hardening follow-on work.
+Last updated: 2026-04-15 - Completed T2301 by routing audio-state snapshot activation through the canonical runtime-confirmed activation flow.
+
+---
+
+ID: T2301
+Status: [✓] Done
+Title: Route audio-state snapshot activation through the canonical runtime-confirmed activation path
+Description:
+- Goal / acceptance criteria: Remove the direct authority-write bypass in `app/routes/audio_state.py:/snapshots/{snapshot_id}/activate` so the endpoint reuses `StateAuthorityActivationService.activate_snapshot()` and only returns a committed audio-state envelope after the canonical activation flow has run and authority reflects the activated snapshot. Acceptance requires focused route coverage proving the endpoint no longer writes desired/committed state directly and fails cleanly if canonical activation does not yield an authority-confirmed snapshot.
+- Why it matters: The audit confirmed this endpoint is the clearest route-level exclusivity violation because it can mutate committed authority without runtime confirmation, undermining the single committed activation gate the platform is trying to enforce.
+- Dependencies: T2295
+- Estimated effort: Medium
+- Required outputs: route refactor, authority-confirmation guardrail, updated focused route tests, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 19:11 EDT - Codex
+- Completion notes:
+  - Refactored `app/routes/audio_state.py:/snapshots/{snapshot_id}/activate` so it now delegates to `StateAuthorityActivationService.activate_snapshot()` instead of writing desired/committed authority state directly.
+  - Added an authority-confirmation guardrail: the route now fails with `409` if canonical activation returns but committed authority does not confirm the same snapshot.
+  - Reworked `tests/test_audio_state_routes.py` so the route coverage now proves canonical delegation, not-found handling, and authority-mismatch failure behavior instead of preserving the old direct-write bypass contract.
+- Validation:
+  - `python3 -m pytest -q tests/test_audio_state_routes.py tests/test_snapshot_service.py::test_activate_snapshot_confirms_audio_authority_after_runtime_live tests/test_snapshot_runtime_state_progress.py tests/test_publish_readiness_service.py tests/test_state_authority_activation_service.py` -> PASS
+  - `python3 -m pytest -q tests/test_audio_state_models.py tests/test_audio_state_authority_service.py` -> PASS
+
+---
+
+ID: T2300
+Status: [✓] Done
+Title: Correct Maschine MK1 LED bulk transport and expose device-ready LCD framebuffer payloads
+Description:
+- Goal / acceptance criteria: Replace the ineffective two-packet MK1 LED bulk write path with the observed working single-packet transport, expose the MK1-ready LCD framebuffer alongside the existing simulator payload, archive operator diagnostics proving the protocol shape, and validate the transport/render surfaces with focused backend tests.
+- Why it matters: The previous LED path could wedge the MK1 bulk endpoint and the LCD renderer only emitted the simulator-oriented XBM payload, leaving the hardware path out of sync with the backend render contract.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: corrected MK1 LED transport builder/writer, LCD framebuffer payload support, reproducible diagnosis scripts, focused backend validation, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 18:50 EDT - Codex
+- Completion notes:
+  - Switched `app/services/maschine/mk1_usb_transport.py` and `app/services/maschine/mk1_protocol.py` to the observed single 64-byte LED bulk write path and documented the usbmon evidence in code comments.
+  - Extended `app/services/maschine_lcd_service.py` so each rendered panel now includes both the existing XBM simulator payload and a hex-encoded MK1 framebuffer payload suitable for the hardware daemon.
+  - Added `scripts/maschine_led_diagnose.py` and `scripts/maschine_led_diagnose_traced.sh` so the failing legacy LED write path and the working single-packet path can be reproduced and traced directly on host hardware.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_mk1.py tests/test_maschine_routes.py` -> PASS
+
+---
 
 ---
 
@@ -67,7 +110,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2295
-Status: [ ] Todo
+Status: [✓] Done
 Title: Produce an evidence-backed activation-path assurance audit for committed snapshot activation
 Description:
 - Goal / acceptance criteria: Execute a formal audit of the real snapshot activation path across `SnapshotService`, `StateAuthorityActivationService`, `SnapshotRuntimeStateService`, `AudioStateAuthorityService`, publish-readiness routes/surfaces, activation events, and all related UI/API/controller/reconciliation entry points. The audit must define the actual committed-snapshot record, canonical activation sequence, source-of-truth stores, bypass-capable paths, invariants, partial-failure windows, concurrency protections, audit trail quality, and operator-feedback quality using implementation evidence rather than architecture intent. Acceptance requires a decisive written assessment answering the required platform questions, with verdicts for commitment integrity, activation-path exclusivity, authority-update correctness, lock-step guarantees, feedback quality, auditability, concurrency safety, and recovery safety.
@@ -75,8 +118,15 @@ Description:
 - Dependencies: None
 - Estimated effort: High
 - Required outputs: platform-specific audit brief, traced activation-path map, evidence-backed assurance report, bypass inventory, invariant matrix, drift/split-brain analysis, failure-feedback matrix, remediation plan ranked by severity, and explicit follow-on tasks or status updates for all confirmed gaps.
-Assigned to: Unassigned
-Last updated: 2026-04-15 18:55 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-15 19:03 EDT - Codex
+- Completion notes:
+  - Added `docs/audits/snapshot-activation-assurance-audit-20260415.md` with an evidence-backed review of the canonical activation path, control-plane/runtime source-of-truth split, bypass inventory, failure windows, feedback quality, and recovery/concurrency risks.
+  - Confirmed the current main activation route is materially improved by intent phases, runtime live-state, durable activation events, typed readiness feedback, and the new post-runtime authority publication step.
+  - Confirmed the platform is still not rock-solid because non-canonical live mutation paths remain, `/api/audio-state/snapshots/{id}/activate` bypasses runtime confirmation, and post-confirm authority publication can still fail silently without emitting an explicit degraded state.
+  - Mapped the confirmed remediation set directly onto `T2296` through `T2299` rather than creating a duplicate side plan.
+- Validation:
+  - Audit evidence sourced from `app/services/state_authority_activation_service.py`, `app/services/snapshot_service.py`, `app/services/snapshot_runtime_state_service.py`, `app/services/audio_state_authority.py`, `app/services/publish_readiness_service.py`, `app/routes/unified_snapshots.py`, `app/routes/audio_state.py`, and the focused activation/readiness regressions in `tests/`.
 
 ---
 

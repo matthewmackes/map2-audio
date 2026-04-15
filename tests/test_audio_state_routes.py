@@ -3,7 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.models.audio_state import AudioStateDesiredIO, AudioStateRouting, AuthoritativeAudioState, CompiledSnapshotIntent
+from app.models.audio_state import (
+    AudioStateDesiredIO,
+    AudioStateRouting,
+    AudioStateSnapshotRef,
+    AuthoritativeAudioState,
+    CompiledSnapshotIntent,
+)
 from app.routes import audio_state as audio_state_routes
 from app.services.audio_state_authority import AudioStateAuthorityError
 
@@ -36,15 +42,9 @@ class _DesiredOnlyService:
         return type("CommittedEnvelope", (), {"namespace": "/map2/audio-state/v1", "key": "/map2/audio-state/v1/committed", "revision": 23})()
 
 
-class _ActivateService:
-    def __init__(self, *, committed_extensions=None, desired_extensions=None) -> None:
-        self.desired = None
-        self.committed = None
-        self._committed_extensions = committed_extensions or {}
-        self._desired_extensions = desired_extensions
-
-    async def next_state_version(self):
-        return 12
+class _CommittedAuthorityService:
+    def __init__(self, *, snapshot_id: int | None = None) -> None:
+        self.snapshot_id = snapshot_id
 
     async def get_committed_state(self):
         committed = AuthoritativeAudioState(
@@ -52,6 +52,15 @@ class _ActivateService:
             leader_epoch=3,
             committed_at="2026-04-05T16:00:00",
             origin_node_id="node-a",
+            source_snapshot=(
+                AudioStateSnapshotRef(
+                    snapshot_id=self.snapshot_id,
+                    snapshot_revision_id=2,
+                    name=f"Snapshot {self.snapshot_id}",
+                )
+                if self.snapshot_id is not None
+                else None
+            ),
             desired=CompiledSnapshotIntent(
                 snapshot_id=6,
                 snapshot_revision_id=2,
@@ -59,9 +68,9 @@ class _ActivateService:
                 io=AudioStateDesiredIO(requested_input_device="In", requested_output_device="Out"),
                 routing=AudioStateRouting(mode="series", active_path_ids=["a"], path_order=["a"]),
                 chains=[],
-                extensions=self._desired_extensions or self._committed_extensions,
+                extensions={},
             ),
-            extensions=self._committed_extensions,
+            extensions={},
         )
         return type(
             "CommittedEnvelope",
@@ -70,46 +79,6 @@ class _ActivateService:
                 "namespace": "/map2/audio-state/v1",
                 "key": "/map2/audio-state/v1/committed",
                 "revision": 30,
-                "value": committed,
-            },
-        )()
-
-    async def get_desired_state(self):
-        if self._desired_extensions is None:
-            raise AudioStateAuthorityError("No desired audio state exists in etcd")
-        desired = CompiledSnapshotIntent(
-            snapshot_id=6,
-            snapshot_revision_id=2,
-            compiled_at="2026-04-05T15:59:59",
-            io=AudioStateDesiredIO(requested_input_device="In", requested_output_device="Out"),
-            routing=AudioStateRouting(mode="series", active_path_ids=["a"], path_order=["a"]),
-            chains=[],
-            extensions=self._desired_extensions,
-        )
-        return type(
-            "DesiredEnvelope",
-            (),
-            {
-                "namespace": "/map2/audio-state/v1",
-                "key": "/map2/audio-state/v1/desired",
-                "revision": 29,
-                "value": desired,
-            },
-        )()
-
-    async def put_desired_state(self, desired):
-        self.desired = desired
-        return type("DesiredEnvelope", (), {"revision": 31})()
-
-    async def put_committed_state(self, committed):
-        self.committed = committed
-        return type(
-            "CommittedEnvelope",
-            (),
-            {
-                "namespace": "/map2/audio-state/v1",
-                "key": "/map2/audio-state/v1/committed",
-                "revision": 32,
                 "value": committed,
             },
         )()
@@ -228,24 +197,21 @@ def test_put_desired_audio_state_commits_authoritative_envelope(monkeypatch) -> 
     assert fake_service.requested.snapshot_id == 11
 
 
-def test_activate_snapshot_route_compiles_and_commits_authoritative_state(monkeypatch) -> None:
+def test_activate_snapshot_route_delegates_to_canonical_activation_and_returns_committed_state(monkeypatch) -> None:
     client = _build_client(monkeypatch)
-    fake_service = _ActivateService()
-    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
-    monkeypatch.setattr(audio_state_routes, "resolve_local_node_id", lambda: "node-a")
+    fake_authority = _CommittedAuthorityService(snapshot_id=7)
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_authority)
+
+    activation_calls = []
 
     class _FakeSnapshotService:
         def __init__(self, _session) -> None:
-            pass
+            class _Activation:
+                async def activate_snapshot(_self, snapshot_id: int, *, triggered_by: str = "ui"):
+                    activation_calls.append({"snapshot_id": snapshot_id, "triggered_by": triggered_by})
+                    return {"snapshot_id": snapshot_id, "snapshot_revision": f"rev-{snapshot_id}"}
 
-        async def get_snapshot(self, snapshot_id: int):
-            return {
-                "id": snapshot_id,
-                "name": "Authority Snapshot",
-                "routing": {"mode": "series", "active_channel_key": "ch_a", "series_order": ["ch_a"]},
-                "paths": [{"id": "ch_a", "label": "A", "snapshot_chain_id": 101}],
-                "chains": [],
-            }
+            self.state_authority_activation = _Activation()
 
     @asynccontextmanager
     async def _fake_session():
@@ -263,45 +229,24 @@ def test_activate_snapshot_route_compiles_and_commits_authoritative_state(monkey
     payload = response.json()
     assert payload["namespace"] == "/map2/audio-state/v1"
     assert payload["key"] == "/map2/audio-state/v1/committed"
-    assert payload["revision"] == 32
-    assert payload["value"]["state_version"] == 12
-    assert payload["value"]["leader_epoch"] == 4
+    assert payload["revision"] == 30
+    assert payload["value"]["state_version"] == 11
     assert payload["value"]["source_snapshot"]["snapshot_id"] == 7
-    assert payload["value"]["cluster"]["sync_status"] == "pending_apply"
-    assert fake_service.desired.snapshot_id == 7
-    assert fake_service.committed.source_snapshot.snapshot_id == 7
+    assert activation_calls == [{"snapshot_id": 7, "triggered_by": "ui-test"}]
 
 
-def test_activate_snapshot_route_preserves_existing_authority_extensions(monkeypatch) -> None:
+def test_activate_snapshot_route_returns_404_when_canonical_activation_finds_no_snapshot(monkeypatch) -> None:
     client = _build_client(monkeypatch)
-    fake_service = _ActivateService(
-        committed_extensions={
-            "performance_brain": {
-                "instances": {
-                    "instance-17__position-3": {
-                        "runtime_instance_id": "instance-17__position-3",
-                        "instance_id": "17",
-                        "plugin_position": 3,
-                    }
-                }
-            }
-        }
-    )
-    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
-    monkeypatch.setattr(audio_state_routes, "resolve_local_node_id", lambda: "node-a")
+    fake_authority = _CommittedAuthorityService(snapshot_id=9)
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_authority)
 
     class _FakeSnapshotService:
         def __init__(self, _session) -> None:
-            pass
+            class _Activation:
+                async def activate_snapshot(_self, snapshot_id: int, *, triggered_by: str = "ui"):
+                    return None
 
-        async def get_snapshot(self, snapshot_id: int):
-            return {
-                "id": snapshot_id,
-                "name": "Brain Safe Snapshot",
-                "routing": {"mode": "series", "active_channel_key": "ch_a", "series_order": ["ch_a"]},
-                "paths": [{"id": "ch_a", "label": "A", "snapshot_chain_id": 101}],
-                "chains": [],
-            }
+            self.state_authority_activation = _Activation()
 
     @asynccontextmanager
     async def _fake_session():
@@ -315,55 +260,21 @@ def test_activate_snapshot_route_preserves_existing_authority_extensions(monkeyp
         json={"triggered_by": "ui-test", "leader_epoch": 5},
     )
 
-    assert response.status_code == 200
-    assert fake_service.desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
-    assert fake_service.committed.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+    assert response.status_code == 404
 
 
-def test_activate_snapshot_route_prefers_snapshot_owned_authority_extensions(monkeypatch) -> None:
+def test_activate_snapshot_route_fails_when_authority_does_not_confirm_same_snapshot(monkeypatch) -> None:
     client = _build_client(monkeypatch)
-    fake_service = _ActivateService(
-        committed_extensions={
-            "performance_brain": {
-                "instances": {
-                    "instance-17__position-3": {
-                        "runtime_instance_id": "instance-17__position-3",
-                        "instance_id": "17",
-                        "plugin_position": 3,
-                    }
-                }
-            },
-            "transport": {
-                "tempo": 128.0,
-            },
-        }
-    )
-    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_service)
-    monkeypatch.setattr(audio_state_routes, "resolve_local_node_id", lambda: "node-a")
+    fake_authority = _CommittedAuthorityService(snapshot_id=99)
+    monkeypatch.setattr(audio_state_routes, "_service", lambda: fake_authority)
 
     class _FakeSnapshotService:
         def __init__(self, _session) -> None:
-            pass
+            class _Activation:
+                async def activate_snapshot(_self, snapshot_id: int, *, triggered_by: str = "ui"):
+                    return {"snapshot_id": snapshot_id, "snapshot_revision": f"rev-{snapshot_id}"}
 
-        async def get_snapshot(self, snapshot_id: int):
-            return {
-                "id": snapshot_id,
-                "name": "Brain Override Snapshot",
-                "routing": {"mode": "series", "active_channel_key": "ch_a", "series_order": ["ch_a"]},
-                "paths": [{"id": "ch_a", "label": "A", "snapshot_chain_id": 101}],
-                "chains": [],
-                "extensions": {
-                    "performance_brain": {
-                        "instances": {
-                            "instance-18__position-4": {
-                                "runtime_instance_id": "instance-18__position-4",
-                                "instance_id": "18",
-                                "plugin_position": 4,
-                            }
-                        }
-                    }
-                },
-            }
+            self.state_authority_activation = _Activation()
 
     @asynccontextmanager
     async def _fake_session():
@@ -377,10 +288,8 @@ def test_activate_snapshot_route_prefers_snapshot_owned_authority_extensions(mon
         json={"triggered_by": "ui-test", "leader_epoch": 5},
     )
 
-    assert response.status_code == 200
-    assert "instance-17__position-3" not in fake_service.desired.extensions["performance_brain"]["instances"]
-    assert fake_service.desired.extensions["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
-    assert fake_service.committed.extensions["transport"]["tempo"] == 128.0
+    assert response.status_code == 409
+    assert "did not confirm" in response.json()["detail"]
 
 
 def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
