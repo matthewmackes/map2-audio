@@ -4,9 +4,9 @@
   min-height: min(100vh, 100dvh);
   padding: 3rem clamp(1.5rem, 3vw, 3rem) 2rem;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 22%, transparent) 0 0.9rem, transparent 0.9rem 100%),
-    linear-gradient(180deg, var(--cds-layer-hover, #dde1e6) 0%, var(--cds-background, #f4f4f4) 100%);
-  color: var(--cds-text-primary, #161616);
+    linear-gradient(90deg, color-mix(in srgb, var(--interactive) 22%, transparent) 0 0.9rem, transparent 0.9rem 100%),
+    linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 100%);
+  color: var(--text-primary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -25,11 +25,11 @@
   width: min(100%, clamp(14rem, 28vw, 18rem));
   min-height: clamp(4.75rem, 10vw, 6rem);
   padding: 0.9rem 1.15rem;
-  border: 1px solid var(--cds-border-subtle, #c6c6c6);
-  background: var(--cds-layer, #ffffff);
+  border: 1px solid var(--border);
+  background: var(--surface);
   box-shadow:
-    inset 1px 1px 0 color-mix(in srgb, white 85%, transparent),
-    inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
+    inset 1px 1px 0 color-mix(in srgb, var(--text-inverse) 18%, transparent),
+    inset -1px -1px 0 color-mix(in srgb, var(--text-primary) 10%, transparent);
 }
 
 .hp2-boot__mark {
@@ -48,7 +48,7 @@
 .hp2-boot__subtitle {
   width: min(100%, 34rem);
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-heading-02-font-size, 1rem);
   line-height: 1.55;
 }
@@ -63,7 +63,7 @@
 
 .hp2-boot__progress-copy {
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
