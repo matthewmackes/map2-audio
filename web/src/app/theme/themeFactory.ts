@@ -20,8 +20,8 @@ export const baseWidgets = {
 
 /**
  * Generate a full Theme from a Carbon color family + a base shell (g100/g90/white/g10).
- * All color slots are resolved to concrete hex values so they can be individually overridden
- * by the ThemeChooserModal per-slot editor without relying on CDS CSS variable forwarding.
+ * All color slots are resolved to concrete values so they can be individually overridden
+ * by theme-management surfaces without relying on CDS CSS variable forwarding.
  */
 export function generateThemeFromPalette(
   familyId: string,

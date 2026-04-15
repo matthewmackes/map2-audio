@@ -1,19 +1,19 @@
 .app-shell {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .app-shell:not(:has(.hp-root)) {
-  --platform-shell-bg: var(--cds-background, var(--bg));
-  --platform-shell-layer: color-mix(in srgb, var(--cds-layer, var(--surface)) 82%, transparent);
-  --platform-shell-layer-strong: color-mix(in srgb, var(--cds-layer-hover, var(--surface-2)) 88%, transparent);
-  --platform-shell-border: color-mix(in srgb, var(--cds-border-subtle-01, var(--border)) 78%, var(--cds-link-primary, var(--interactive)) 22%);
-  --platform-shell-border-strong: color-mix(in srgb, var(--cds-border-strong-01, var(--border-strong, var(--border))) 76%, var(--cds-link-primary, var(--interactive)) 24%);
-  --platform-shell-text: var(--cds-text-primary, var(--text-primary));
-  --platform-shell-text-secondary: var(--cds-text-secondary, var(--text-secondary));
-  --platform-shell-accent: var(--cds-link-primary, var(--interactive));
-  --platform-shell-accent-soft: var(--accent, var(--cds-link-primary, var(--interactive)));
+  --platform-shell-bg: var(--bg);
+  --platform-shell-layer: color-mix(in srgb, var(--surface) 82%, transparent);
+  --platform-shell-layer-strong: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  --platform-shell-border: color-mix(in srgb, var(--border) 78%, var(--interactive) 22%);
+  --platform-shell-border-strong: color-mix(in srgb, var(--border-strong, var(--border)) 76%, var(--interactive) 24%);
+  --platform-shell-text: var(--text-primary);
+  --platform-shell-text-secondary: var(--text-secondary);
+  --platform-shell-accent: var(--interactive);
+  --platform-shell-accent-soft: var(--accent);
   position: relative;
-  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 14%, var(--platform-shell-bg));
+  background: color-mix(in srgb, var(--surface) 14%, var(--platform-shell-bg));
 }
 
 .app-shell:not(:has(.hp-root))::before {
@@ -30,7 +30,7 @@
 }
 
 .app-shell--audio-grid {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .app-shell--audio-grid::before {
@@ -38,7 +38,7 @@
 }
 
 .app-shell--themed-workspace {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .app-shell--themed-workspace::before {
@@ -46,11 +46,11 @@
 }
 
 .platform-brand-frame:has(.app-shell--themed-workspace) {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .platform-brand-frame:has(.app-shell--themed-workspace) .platform-brand-frame__content {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .platform-brand-frame {
@@ -85,7 +85,7 @@
 
 .app-shell--themed-workspace .app-content,
 .app-shell--themed-workspace .app-content.app-content--full {
-  background: var(--cds-background, var(--bg));
+  background: var(--bg);
 }
 
 .platform-brand-backdrop__mark {
@@ -139,21 +139,21 @@
   min-height: 2.25rem;
   margin: var(--cds-spacing-05, 1rem);
   padding: 0.45rem 0.8rem;
-  border: 1px solid color-mix(in srgb, var(--cds-link-primary, #0f62fe) 34%, var(--cds-border-strong-01, #8d8d8d));
-  background: color-mix(in srgb, var(--cds-layer, #161616) 92%, var(--cds-background, #000000));
-  color: var(--cds-text-primary, #f4f4f4);
+  border: 1px solid color-mix(in srgb, var(--interactive) 34%, var(--border-strong) 66%);
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  color: var(--text-primary);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .app-shell__nav-pin-toggle:hover {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-strong-01, #8d8d8d));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer, #161616));
+  border-color: color-mix(in srgb, var(--interactive) 48%, var(--border-strong) 52%);
+  background: color-mix(in srgb, var(--interactive) 10%, var(--surface));
 }
 
 .app-shell__nav-pin-toggle:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -162,13 +162,13 @@
 .app-shell--windowed {
   --app-window-titlebar-height: 2.3rem;
   --window-shell-gap: 0;
-  --window-shell-border: var(--cds-border-subtle-01, rgba(141, 141, 141, 0.28));
-  --window-shell-surface: var(--cds-background, var(--bg));
-  --window-shell-surface-strong: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, var(--bg)));
-  --window-shell-titlebar: color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 96%, black 4%);
-  --window-shell-titlebar-border: color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 88%, transparent);
-  --window-shell-titlebar-contrast: var(--cds-text-primary, var(--text-primary));
-  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer, #ffffff));
+  --window-shell-border: color-mix(in srgb, var(--border) 72%, transparent);
+  --window-shell-surface: var(--bg);
+  --window-shell-surface-strong: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  --window-shell-titlebar: color-mix(in srgb, var(--surface-2) 96%, black 4%);
+  --window-shell-titlebar-border: color-mix(in srgb, var(--border-strong) 88%, transparent);
+  --window-shell-titlebar-contrast: var(--text-primary);
+  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--interactive)) 12%, var(--surface));
   --window-shell-usable-height: 100vh;
 }
 
@@ -191,8 +191,8 @@
   border-left: 1px solid color-mix(in srgb, white 70%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--window-shell-border) 94%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--window-shell-border) 96%, transparent);
-  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 10%, var(--cds-layer, #ffffff));
-  color: var(--cds-text-primary, var(--text-primary));
+  background: color-mix(in srgb, var(--support-warning) 10%, var(--surface));
+  color: var(--text-primary);
   box-shadow: none;
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);

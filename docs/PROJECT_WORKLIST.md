@@ -6,7 +6,133 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-14 - Added `T2277` Global Tree-View Navigation epic.
+Last updated: 2026-04-15 - Reconciled the active theme-system queue against archived duplicate-ID history.
+
+---
+
+## Theme System Effectiveness
+
+ID: T2281
+Status: [>] In Progress
+Title: Make the theme system more effective — bridge the gap between theme tokens and component CSS
+Description:
+- Goal / acceptance criteria: Themes currently make only small visual changes to the GUI because the majority of component CSS files reference Carbon design tokens (`var(--cds-*)`) or hardcoded hex colors directly, bypassing the theme-layer custom properties (`--bg`, `--surface`, `--border`, `--primary`, etc.) that `applyTheme()` sets on `:root`. This epic closes that gap so switching themes produces a clearly visible, full-interface color shift across surfaces, borders, text, interactive elements, status indicators, and visualizations.
+- Why it matters: The product ships 54+ built-in themes and a full theme editor, but operators see almost no difference when switching between them. The theme infrastructure is well-engineered; the problem is purely that downstream consumers bypass it.
+- Dependencies: None
+- Estimated effort: High (multi-slice)
+- Audit findings (2026-04-15):
+  - 4 core themes use `var(--cds-*)` passthrough values — Carbon's own class (`cds--g100`, etc.) controls the actual rendered color, so the custom properties set by `applyTheme()` are effectively ignored for those themes.
+  - ~100 component CSS files reference `--cds-*` tokens directly (e.g. `var(--cds-border-subtle)`, `var(--cds-layer-hover)`) instead of the theme-layer aliases (`var(--border)`, `var(--surface-2)`).
+  - ~40 CSS files contain ~600+ hardcoded hex color values (`#161616`, `#ffffff`, `#525252`, etc.) that ignore themes entirely.
+  - ~100+ TSX files use inline `style={{ color: '#...' }}` with hardcoded hex values, primarily in plugin cards, visualizations, meters, and editors.
+  - `expressionDesignTokens.ts` duplicates the entire token system with its own parallel hardcoded color object used only by ExpressionPage.
+  - Category accent colors (`categoryStyles.tsx`) always use `CARBON_FAMILY_BY_ID[...].shades[40]` regardless of the active theme.
+- `ThemeWidgets` is very limited (6 tokens: border-radius, border-width, glow, transition) — no shadow, spacing, or density tokens.
+- `ThemeChooserModal.tsx` and `ThemeCreatorDialog.tsx` duplicate functionality already present in `ThemePage.tsx`.
+- Ledger reconciliation note (2026-04-15): this top-of-file `T2281.*` block is the authoritative active queue. Later duplicate IDs in archived history blocks are preserved for narrative history only and must not drive current status scans.
+- Required outputs: Subtask completion across all slices, focused validation per subtask, and updated worklist status.
+Subtasks:
+  - ID: T2281-A
+    Status: [>] In Progress
+    Title: Bridge component CSS from `var(--cds-*)` to theme-layer aliases
+    Description:
+    - Goal / acceptance criteria: Audit all CSS files under `web/src/` and replace direct `var(--cds-*)` references with the corresponding theme-layer custom properties defined in `index.css` (e.g. `var(--cds-background)` → `var(--bg)`, `var(--cds-border-subtle)` → `var(--border)`, `var(--cds-text-primary)` → `var(--text-primary)`, `var(--cds-layer-01)` → `var(--surface)`, etc.). Where no alias exists, add one to `index.css` `:root` and then use it. This is the single highest-leverage change — it connects the theme token pipeline to the actual rendered UI.
+    - Why it matters: This is the primary reason themes have minimal effect. Until component CSS reads the theme-layer vars, `applyTheme()` overrides are invisible.
+    - Dependencies: None
+    - Estimated effort: High
+    - Required outputs: Updated CSS files, any new aliases added to `index.css`, typecheck + build pass.
+    Subtasks:
+      - ID: T2281-A1
+        Status: [✓] Done
+        Title: Re-theme shared shell and navigation chrome to use theme-layer aliases
+        Description:
+        - Goal / acceptance criteria: Convert the highest-visibility shared shell/layout CSS surfaces away from direct Carbon color tokens and onto theme-layer aliases so theme switching visibly affects the left rail, launcher shell, app frame, and shared routed chrome before the broader component sweep. Initial scope: `AppShell.css`, `GlobalTreeNav.css`, `LauncherPanel.css`, and adjacent shared chrome files touched by those surfaces.
+        - Why it matters: These shared shells dominate the operator experience and provide the fastest visible payoff from the theme-system bridge.
+        - Dependencies: None
+        - Estimated effort: Medium
+        - Required outputs: Updated shared CSS, focused validation, and worklist notes.
+        Assigned to: Codex
+        Last updated: 2026-04-15 22:01 EDT - Codex
+        - Completion notes:
+          - Replaced the shared shell chrome's direct Carbon color tokens in `AppShell.css`, `GlobalTreeNav.css`, `LauncherPanel.css`, and `IntelFXMidiMapView.css` with theme-layer aliases such as `--bg`, `--surface`, `--border`, `--text-primary`, `--text-secondary`, `--interactive`, `--support-warning`, and `--focus-ring`.
+          - Tightened the global base stylesheet so shared focus and disclosure chrome also read theme-layer aliases instead of direct `--cds-*` color variables where those values affect operator-visible color shifts.
+          - Kept spacing/typography Carbon variables intact for this slice so the change is limited to the theme-color bridge rather than unrelated layout semantics.
+        - Validation:
+          - `npm --prefix web run typecheck` -> PASS
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/IntelFXMidiMapView.test.tsx src/app/pages/WorkspaceHubShell.test.tsx src/app/theme/useTheme.test.ts` -> PASS
+          - `npm --prefix web run build` -> PASS
+    Assigned to: Unassigned
+  - ID: T2281-B
+    Status: [ ] Todo
+    Title: Replace hardcoded hex colors in CSS files with theme custom properties
+    Description:
+    - Goal / acceptance criteria: Audit all CSS files under `web/src/` for hardcoded hex color values and replace them with the appropriate theme-layer CSS custom property. Where a suitable property does not exist, either map to the closest existing token or add a new token to `index.css`. Exceptions: theme preview swatches, base-dot indicators, and any deliberate fixed-color elements (e.g. Carbon base-shell dot indicators in ThemePage) may retain literal values with a comment.
+    - Why it matters: ~600+ hardcoded hex values in 40+ CSS files currently ignore the theme system entirely.
+    - Dependencies: T2281-A
+    - Estimated effort: High
+    - Required outputs: Updated CSS files, typecheck + build pass.
+    Assigned to: Unassigned
+  - ID: T2281-C
+    Status: [ ] Todo
+    Title: Replace hardcoded hex colors in TSX inline styles with theme tokens
+    Description:
+    - Goal / acceptance criteria: Audit TSX files with inline `style=` props that use hardcoded hex colors and replace them with `var(--*)` references or move the styling to CSS classes that use theme tokens. Focus areas: plugin cards (`PluginCards/`), visualizations (`Visualizations/`), meters (`AudioMeter`, `TunerDisplay`), and graph/canvas components. Components that render to `<canvas>` or SVG may need to read computed CSS variable values at render time via `getComputedStyle()`.
+    - Why it matters: ~100+ TSX files with inline hardcoded colors ignore themes.
+    - Dependencies: T2281-A
+    - Estimated effort: High
+    - Required outputs: Updated TSX files, typecheck + build pass.
+    Assigned to: Unassigned
+  - ID: T2281-D
+    Status: [ ] Todo
+    Title: Remove `expressionDesignTokens.ts` and migrate ExpressionPage to shared theme tokens
+    Description:
+    - Goal / acceptance criteria: Delete `web/src/app/pages/expressionDesignTokens.ts` and update `ExpressionPage.tsx` (and `ExpressionPage.module.css`) to use the shared theme-layer CSS custom properties instead of the parallel token object. The expression pedal UI should look identical under the default theme and respond correctly to theme switches.
+    - Why it matters: A parallel hardcoded token file undermines the theme system and creates maintenance confusion.
+    - Dependencies: T2281-A
+    - Estimated effort: Low
+    - Required outputs: Deleted token file, updated ExpressionPage, typecheck + build pass.
+    Assigned to: Unassigned
+  - ID: T2281-E
+    Status: [ ] Todo
+    Title: Make category accent colors theme-aware
+    Description:
+    - Goal / acceptance criteria: Update `categoryStyles.tsx` so category accent colors derive from the active theme's primary color family or respond to the theme's color-scheme (dark/light) rather than always using Carbon shade 40 from a fixed palette. The category color override system (localStorage) should continue to work.
+    - Why it matters: Plugin browser category badges currently look identical regardless of the active theme.
+    - Dependencies: T2281-A
+    - Estimated effort: Low
+    - Required outputs: Updated categoryStyles, typecheck + build pass.
+    Assigned to: Unassigned
+  - ID: T2281-F
+    Status: [ ] Todo
+    Title: Expand `ThemeWidgets` with shadow, density, and shape tokens
+    Description:
+    - Goal / acceptance criteria: Add new widget tokens to the `ThemeWidgets` interface and `baseWidgets` defaults for shadow intensity, spacing density (compact/default/spacious), and additional border-radius tiers. Update `applyTheme()` to set these on `:root`. Create at least one preset theme variant that demonstrates a visually distinct widget configuration (e.g. rounded + elevated vs. the current flat/square default).
+    - Why it matters: Current widget tokens are too limited (6 values) to produce visible shape/depth differences between themes.
+    - Dependencies: T2281-A
+    - Estimated effort: Medium
+    - Required outputs: Updated types, themeFactory, at least one demo preset, typecheck + build pass.
+    Assigned to: Unassigned
+  - ID: T2281-G
+    Status: [✓] Done
+    Title: Consolidate ThemeChooserModal and ThemeCreatorDialog into ThemePage
+    Description:
+    - Goal / acceptance criteria: Remove `ThemeChooserModal.tsx` and `ThemeCreatorDialog.tsx` (and their CSS files) if their functionality is fully covered by `ThemePage.tsx`. Update any remaining call sites to navigate to `/platforms/theme` instead of opening the removed modals. If any unique functionality exists only in the modals, migrate it to ThemePage first.
+    - Why it matters: Three overlapping theme management surfaces create code duplication and user confusion.
+    - Dependencies: None
+    - Estimated effort: Low
+    - Required outputs: Removed files, updated imports/references, typecheck + build pass.
+    Assigned to: Unassigned
+    Last updated: 2026-04-15 22:01 EDT - Codex
+    - Completion notes:
+      - Removed the dead `ThemeChooserModal` and `ThemeCreatorDialog` component implementations, their stylesheets, and the orphaned `ThemeCreatorDialog` test because the live app no longer imports them and `ThemePage.tsx` remains the canonical theme-management surface.
+      - Cleaned the lingering `themeFactory.ts` documentation note so it no longer refers to the removed chooser modal as an active editor surface.
+      - Verified there are no remaining source imports for either retired component.
+    - Validation:
+      - `rg -n "ThemeChooserModal|ThemeCreatorDialog" web/src -g '*.{ts,tsx,css}'` -> PASS (`0 matches`)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+Assigned to: Unassigned
+Last updated: 2026-04-15 22:01 EDT - Codex
 
 ---
 

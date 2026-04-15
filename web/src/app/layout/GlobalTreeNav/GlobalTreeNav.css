@@ -9,16 +9,16 @@
   width: 16rem;
   min-width: 16rem;
   min-height: 100vh;
-  border-inline-end: 1px solid var(--cds-border-subtle-01, #393939);
-  background: color-mix(in srgb, var(--cds-layer, #161616) 88%, var(--cds-background, #000000));
-  color: var(--cds-text-primary, #f4f4f4);
+  border-inline-end: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  color: var(--text-primary);
 }
 
 .global-tree-nav__header {
   display: grid;
   gap: var(--cds-spacing-03, 0.5rem);
   padding: var(--cds-spacing-05, 1rem);
-  border-block-end: 1px solid var(--cds-border-subtle-01, #393939);
+  border-block-end: 1px solid var(--border);
 }
 
 .global-tree-nav__header-row {
@@ -30,7 +30,7 @@
 
 .global-tree-nav__eyebrow {
   margin: 0;
-  color: var(--cds-text-secondary, #c6c6c6);
+  color: var(--text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -39,8 +39,8 @@
 
 .global-tree-nav__pin-button {
   appearance: none;
-  border: 1px solid var(--cds-border-subtle-01, #393939);
-  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 88%, transparent);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
   color: inherit;
   font: inherit;
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
@@ -51,12 +51,12 @@
 }
 
 .global-tree-nav__pin-button:hover {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 42%, var(--cds-border-subtle-01, #393939));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer-hover, #262626));
+  border-color: color-mix(in srgb, var(--interactive) 42%, var(--border));
+  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
 }
 
 .global-tree-nav__pin-button:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -64,8 +64,8 @@
 .global-tree-nav__footer-button,
 .global-tree-nav__node-switcher-button {
   appearance: none;
-  border: 1px solid var(--cds-border-subtle-01, #393939);
-  background: color-mix(in srgb, var(--cds-layer-hover, #262626) 88%, transparent);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
   color: inherit;
   font: inherit;
 }
@@ -82,14 +82,14 @@
 .global-tree-nav__node-button:hover,
 .global-tree-nav__footer-button:hover,
 .global-tree-nav__node-switcher-button:hover {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 42%, var(--cds-border-subtle-01, #393939));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, var(--cds-layer-hover, #262626));
+  border-color: color-mix(in srgb, var(--interactive) 42%, var(--border));
+  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
 }
 
 .global-tree-nav__node-button:focus-visible,
 .global-tree-nav__footer-button:focus-visible,
 .global-tree-nav__node-switcher-button:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .global-tree-nav__node-button-status {
-  color: var(--cds-text-secondary, #c6c6c6);
+  color: var(--text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
@@ -123,7 +123,7 @@
 
 .global-tree-nav__node-switcher-title {
   margin: 0;
-  color: var(--cds-text-secondary, #c6c6c6);
+  color: var(--text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
 }
@@ -142,8 +142,8 @@
 }
 
 .global-tree-nav__node-switcher-button.is-active {
-  border-color: color-mix(in srgb, var(--cds-support-success, #24a148) 48%, var(--cds-border-subtle-01, #393939));
-  background: color-mix(in srgb, var(--cds-support-success, #24a148) 10%, var(--cds-layer-hover, #262626));
+  border-color: color-mix(in srgb, var(--support-success) 48%, var(--border));
+  background: color-mix(in srgb, var(--support-success) 10%, var(--surface-2));
 }
 
 .global-tree-nav__body {
@@ -162,7 +162,7 @@
 
 .global-tree-nav__group-header {
   padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
-  color: var(--cds-text-secondary, #c6c6c6);
+  color: var(--text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -171,8 +171,8 @@
 }
 
 .global-tree-nav__tree-node.is-selected > .cds--tree-node__label .global-tree-nav__node-copy {
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 16%, transparent);
-  color: var(--cds-text-primary, #f4f4f4);
+  background: color-mix(in srgb, var(--interactive) 16%, transparent);
+  color: var(--text-primary);
 }
 
 .global-tree-nav__node-copy {
@@ -189,7 +189,7 @@
 }
 
 .global-tree-nav__node-secondary {
-  color: var(--cds-text-secondary, #c6c6c6);
+  color: var(--text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
@@ -197,7 +197,7 @@
   display: grid;
   gap: var(--cds-spacing-03, 0.5rem);
   padding: var(--cds-spacing-05, 1rem);
-  border-block-start: 1px solid var(--cds-border-subtle-01, #393939);
+  border-block-start: 1px solid var(--border);
 }
 
 .global-tree-nav__footer-button {
@@ -219,7 +219,7 @@
     min-width: 0;
     min-height: auto;
     border-inline-end: 0;
-    border-block-end: 1px solid var(--cds-border-subtle-01, #393939);
+    border-block-end: 1px solid var(--border);
   }
 
   .global-tree-nav__layer {
