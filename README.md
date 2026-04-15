@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1110** Python | **1197** TypeScript | **136** C++/H | **145** Docs | **2206** total commits | **3** stars | **0** forks | **0** open issues
+**1113** Python | **1197** TypeScript | **136** C++/H | **145** Docs | **2209** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`03e50c02`](https://github.com/matthewmackes/map2-audio/commit/03e50c027bc6c65b7d1368a9fa6be478403cc14c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
+| [`0d2ee56c`](https://github.com/matthewmackes/map2-audio/commit/0d2ee56cc2771ed3a11ee3cacffc503d6d9ea3cb) | Restore MK1 two-packet LED transport contract | Map2 Audio | 2026-04-15 |
+| [`1b376856`](https://github.com/matthewmackes/map2-audio/commit/1b3768568a8b78cb6d04d2c389040a91aa808c02) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`a56f6e0e`](https://github.com/matthewmackes/map2-audio/commit/a56f6e0e341a9c18b9f3a461eea959eddc08cb33) | Add explicit cluster WebSocket path contract | Map2 Audio | 2026-04-15 |
 | [`fa51b84c`](https://github.com/matthewmackes/map2-audio/commit/fa51b84c4af4c57cc4390719bc511c9515db5c62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`40ad8573`](https://github.com/matthewmackes/map2-audio/commit/40ad85737a93df53ea7d57b94ed3b11f1c148139) | Add MK1 endpoint unwedge diagnostic | Map2 Audio | 2026-04-15 |
 | [`8b173ff9`](https://github.com/matthewmackes/map2-audio/commit/8b173ff92e809ee8d5ca831f67c05203b019c312) | Align MK1 round-robin test framebuffer polarity | Map2 Audio | 2026-04-15 |
 | [`2bfcd0d5`](https://github.com/matthewmackes/map2-audio/commit/2bfcd0d58c8cdfd822e4dbc8416eaaf895789362) | Use inverted black framebuffer for MK1 init | Map2 Audio | 2026-04-15 |
-| [`fc62491b`](https://github.com/matthewmackes/map2-audio/commit/fc62491b17e1d926d0d0a2433f2792e04188ea81) | Retire dead AVB Add Node affordance | Map2 Audio | 2026-04-15 |
-| [`66871113`](https://github.com/matthewmackes/map2-audio/commit/66871113cc749a265e294679a56bfe29031690e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
-| [`24e94350`](https://github.com/matthewmackes/map2-audio/commit/24e943503b1cf801d29d2afda4645571ffba3fc2) | Route audio-state activation through canonical flow | Map2 Audio | 2026-04-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
