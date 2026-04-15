@@ -1,45 +1,21 @@
 /**
- * ExpressionPage - Guided expression pedal workflow (T097).
+ * ExpressionPage - Premium Audio Device UI for Expression Pedal Control (T097)
+ * Redesigned with professional audio device aesthetic, enhanced visualizations,
+ * and smooth animations using Framer Motion.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
 import { NumberInput } from '../components/ParameterControl'
 import { EmptyState } from '../components/shared/EmptyState'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
+import { expressionTokens } from './expressionDesignTokens'
+import styles from './ExpressionPage.module.css'
 
-const C = {
-  bg: '#161616',
-  panel: '#262626',
-  panelAlt: '#333333',
-  panelDark: '#1f1f1f',
-  border: '#525252',
-  text: '#f4f4f4',
-  muted: '#8d8d8d',
-  subtle: '#c6c6c6',
-  blue: '#0f62fe',
-  teal: '#009d9a',
-  purple: '#8a3ffc',
-  green: '#24a148',
-  amber: '#f1c21b',
-  red: '#da1e28',
-  mono: "var(--font-mono)",
-  sans: "var(--font-ui)",
-} as const
-
-const API_BASE = (import.meta.env.VITE_API_BASE as string || '/api')
-
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
-    ...init,
-  })
-  if (!response.ok) {
-    throw new Error(`${response.status} ${path}`)
-  }
-  return response.json() as Promise<T>
-}
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 interface CurvePoint {
   x: number
@@ -104,6 +80,25 @@ interface RetimeStats {
 
 type Curve = 'linear' | 'log' | 'exp' | 'scurve' | 'custom'
 
+export interface CcChannelPair {
+  cc: number
+  channel: number
+}
+
+export interface ExpressionViewProps {
+  highlightedCcPairs?: CcChannelPair[]
+  initialCc?: number | null
+  initialChannel?: number | null
+  onAssignmentMutated?: () => void
+  constrainedWidth?: boolean
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const API_BASE = (import.meta.env.VITE_API_BASE as string || '/api')
+
 const CURVES: Array<{ id: Curve; label: string }> = [
   { id: 'linear', label: 'Linear' },
   { id: 'log', label: 'Logarithmic' },
@@ -112,22 +107,20 @@ const CURVES: Array<{ id: Curve; label: string }> = [
   { id: 'custom', label: 'Custom' },
 ]
 
-export interface CcChannelPair {
-  cc: number
-  channel: number
-}
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
-export interface ExpressionViewProps {
-  /** CC/channel pairs from MIDI table rows with cc !== null — used for highlighting */
-  highlightedCcPairs?: CcChannelPair[]
-  /** Pre-fill CC when "New assignment" is clicked */
-  initialCc?: number | null
-  /** Pre-fill channel when "New assignment" is clicked */
-  initialChannel?: number | null
-  /** Called after any save or delete mutation succeeds */
-  onAssignmentMutated?: () => void
-  /** When true activates tab-based layout for constrained width (~700px) */
-  constrainedWidth?: boolean
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+    ...init,
+  })
+  if (!response.ok) {
+    throw new Error(`${response.status} ${path}`)
+  }
+  return response.json() as Promise<T>
 }
 
 function clamp01(value: number): number {
@@ -171,15 +164,35 @@ function curvePath(curve: Curve, customCurve: CurvePoint[], width: number, heigh
   return `M ${pts.join(' L ')}`
 }
 
+// ============================================================================
+// CURVE PREVIEW COMPONENT
+// ============================================================================
+
 function CurvePreview({ curve, customCurve }: { curve: Curve; customCurve: CurvePoint[] }) {
   return (
-    <svg width={120} height={120} style={{ background: C.panelAlt, border: `1px solid ${C.border}` }}>
-      <line x1={0} y1={60} x2={120} y2={60} stroke={C.border} strokeWidth={1} />
-      <line x1={60} y1={0} x2={60} y2={120} stroke={C.border} strokeWidth={1} />
-      <path d={curvePath(curve, customCurve, 120, 120)} fill="none" stroke={C.teal} strokeWidth={2} />
-    </svg>
+    <motion.svg
+      className={styles.curveSVG}
+      width={120}
+      height={120}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <line x1={0} y1={60} x2={120} y2={60} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
+      <line x1={60} y1={0} x2={60} y2={120} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
+      <path
+        d={curvePath(curve, customCurve, 120, 120)}
+        fill="none"
+        stroke={expressionTokens.colors.liveIndicator}
+        strokeWidth={2}
+      />
+    </motion.svg>
   )
 }
+
+// ============================================================================
+// CUSTOM CURVE EDITOR COMPONENT
+// ============================================================================
 
 function CustomCurveEditor({
   points,
@@ -201,7 +214,6 @@ function CustomCurveEditor({
     const idx = dragging.current
     next[idx] = { x: px, y: py }
 
-    // Keep point ordering stable.
     if (idx === 0 && next[0].x >= next[1].x) next[0].x = Math.max(0, next[1].x - 0.02)
     if (idx === 1 && next[1].x <= next[0].x) next[1].x = Math.min(1, next[0].x + 0.02)
     onChange(next)
@@ -219,25 +231,35 @@ function CustomCurveEditor({
   }, [applyPointer])
 
   return (
-    <svg
+    <motion.svg
       ref={svgRef}
+      className={styles.curveSVG}
       width={200}
       height={200}
-      style={{ background: C.panelAlt, border: `1px solid ${C.border}`, touchAction: 'none' }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{ touchAction: 'none' }}
       onMouseLeave={() => { dragging.current = null }}
     >
-      <line x1={0} y1={100} x2={200} y2={100} stroke={C.border} strokeWidth={1} />
-      <line x1={100} y1={0} x2={100} y2={200} stroke={C.border} strokeWidth={1} />
-      <path d={curvePath('custom', safePoints, 200, 200)} fill="none" stroke={C.purple} strokeWidth={2} />
+      <line x1={0} y1={100} x2={200} y2={100} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
+      <line x1={100} y1={0} x2={100} y2={200} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
+      <path
+        d={curvePath('custom', safePoints, 200, 200)}
+        fill="none"
+        stroke={expressionTokens.colors.curve}
+        strokeWidth={2}
+      />
       {safePoints.map((point, index) => (
-        <circle
+        <motion.circle
           key={index === 0 ? 'p1' : 'p2'}
           cx={point.x * 200}
           cy={(1 - point.y) * 200}
           r={6}
-          fill={index === 0 ? C.teal : C.purple}
-          stroke={C.text}
+          fill={index === 0 ? expressionTokens.colors.liveIndicator : expressionTokens.colors.curve}
+          stroke={expressionTokens.colors.textPrimary}
           strokeWidth={1}
+          whileHover={{ r: 8 }}
           style={{ cursor: 'grab' }}
           onMouseDown={(event) => {
             event.preventDefault()
@@ -246,9 +268,13 @@ function CustomCurveEditor({
           }}
         />
       ))}
-    </svg>
+    </motion.svg>
   )
 }
+
+// ============================================================================
+// RETIME FOOTER COMPONENT
+// ============================================================================
 
 function RetimeFooter() {
   const [stats, setStats] = useState<RetimeStats | null>(null)
@@ -265,41 +291,36 @@ function RetimeFooter() {
 
   const p95 = stats?.p95_ms ?? 0
   const statusColor = !stats
-    ? C.muted
+    ? expressionTokens.colors.textMuted
     : p95 < 3.0
-      ? C.green
+      ? expressionTokens.colors.active
       : p95 <= 5.0
-        ? C.amber
-        : C.red
+        ? expressionTokens.colors.warning
+        : expressionTokens.colors.error
 
   return (
-    <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>
-          Control latency p95:{' '}
-          <span style={{ color: statusColor }}>
-            {stats ? `${stats.p95_ms.toFixed(2)}ms` : '--'}
-          </span>
+    <div className={styles.retimeFooter}>
+      <span className={styles.retimeStatsLabel}>
+        Control latency p95:{' '}
+        <span style={{ color: statusColor }} className={styles.retimeValue}>
+          {stats ? `${stats.p95_ms.toFixed(2)}ms` : '--'}
         </span>
-        <button
-          onClick={refresh}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${C.border}`,
-            borderRadius: 4,
-            color: C.subtle,
-            fontFamily: C.sans,
-            fontSize: 11,
-            padding: '2px 8px',
-            cursor: 'pointer',
-          }}
-        >
-          Refresh
-        </button>
-      </div>
+      </span>
+      <motion.button
+        className={styles.refreshButton}
+        onClick={refresh}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Refresh
+      </motion.button>
     </div>
   )
 }
+
+// ============================================================================
+// LIVE DUAL GRAPHIC COMPONENT
+// ============================================================================
 
 function LiveDualGraphic({
   assignment,
@@ -356,9 +377,7 @@ function LiveDualGraphic({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: C.muted,
-        fontFamily: C.sans,
-        fontSize: 13,
+        color: expressionTokens.colors.textTertiary,
         textAlign: 'center',
         padding: 16,
       }}>
@@ -385,63 +404,78 @@ function LiveDualGraphic({
       .join(' ')
   }
 
-  const meter = (
-    value: number,
-    color: string,
-    label: string,
-    valueLabel: string,
-  ) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <span style={{ fontFamily: C.mono, fontSize: 11, color: C.text }}>{valueLabel}</span>
-      <div style={{
-        width: 40,
-        height: 200,
-        border: `1px solid ${C.border}`,
-        background: C.panelAlt,
-        position: 'relative',
-      }}>
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: `${Math.round(clamp01(value) * 100)}%`,
-          background: color,
-          transition: 'height 30ms linear',
-        }} />
-      </div>
-      <span style={{
-        fontFamily: C.mono,
-        fontSize: 10,
-        color: C.muted,
-        letterSpacing: '0.02em',
-      }}>
-        {label}
-      </span>
+  const Meter = (props: {
+    value: number
+    color: string
+    label: string
+    valueLabel: string
+  }) => (
+    <div className={styles.meterColumn}>
+      <div className={styles.meterValueLabel}>{props.valueLabel}</div>
+      <motion.div
+        className={styles.meterContainer}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.div
+          className={styles.meterFill}
+          style={{ background: props.color, height: '0%' }}
+          animate={{ height: `${Math.round(clamp01(props.value) * 100)}%` }}
+          transition={{ duration: 0.03, ease: 'linear' }}
+        />
+      </motion.div>
+      <span className={styles.meterLabel}>{props.label}</span>
     </div>
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
-        {meter(pedalNormalized, C.teal, `Pedal (CC ${assignment.cc})`, `${Math.round(pedalNormalized * 100)}%`)}
-        {meter(paramNormalized, C.purple, assignment.param_label || assignment.param_id, paramDisplay)}
+    <motion.div
+      className={styles.monitorContent}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className={styles.meterRow}>
+        <Meter
+          value={pedalNormalized}
+          color={expressionTokens.colors.liveIndicator}
+          label={`Pedal (CC ${assignment.cc})`}
+          valueLabel={`${Math.round(pedalNormalized * 100)}%`}
+        />
+        <Meter
+          value={paramNormalized}
+          color={expressionTokens.colors.curve}
+          label={assignment.param_label || assignment.param_id}
+          valueLabel={paramDisplay}
+        />
       </div>
-      <div>
-        <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 4 }}>
-          10s overlay
-        </div>
-        <svg width={chartW} height={chartH} style={{ background: C.panelAlt, border: `1px solid ${C.border}` }}>
-          <line x1={0} y1={chartH * 0.25} x2={chartW} y2={chartH * 0.25} stroke={C.border} strokeDasharray="2,2" strokeWidth={1} />
-          <line x1={0} y1={chartH * 0.75} x2={chartW} y2={chartH * 0.75} stroke={C.border} strokeDasharray="2,2" strokeWidth={1} />
-          <path d={pathFor('pedal')} fill="none" stroke={C.teal} strokeWidth={1.5} />
-          <path d={pathFor('param')} fill="none" stroke={C.purple} strokeWidth={1.5} />
-        </svg>
+
+      <div className={styles.waveformContainer}>
+        <span className={styles.waveformLabel}>10s overlay</span>
+        <motion.svg
+          className={styles.waveformSVG}
+          width={chartW}
+          height={chartH}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <line x1={0} y1={chartH * 0.25} x2={chartW} y2={chartH * 0.25} stroke={expressionTokens.colors.borderSubtle} strokeDasharray="2,2" strokeWidth={1} />
+          <line x1={0} y1={chartH * 0.75} x2={chartW} y2={chartH * 0.75} stroke={expressionTokens.colors.borderSubtle} strokeDasharray="2,2" strokeWidth={1} />
+          <path d={pathFor('pedal')} fill="none" stroke={expressionTokens.colors.liveIndicator} strokeWidth={1.5} />
+          <path d={pathFor('param')} fill="none" stroke={expressionTokens.colors.curve} strokeWidth={1.5} />
+        </motion.svg>
       </div>
+
       <RetimeFooter />
-    </div>
+    </motion.div>
   )
 }
+
+// ============================================================================
+// ASSIGNMENT FORM COMPONENT
+// ============================================================================
 
 function AssignmentForm({
   initial,
@@ -506,6 +540,7 @@ function AssignmentForm({
       param.label.toLowerCase().includes(q) || param.id.toLowerCase().includes(q),
     )
   }, [params, search])
+
   const selectedParam = useMemo(
     () => params.find((param) => param.id === paramId),
     [paramId, params],
@@ -556,75 +591,56 @@ function AssignmentForm({
     }
   }, [listenerId, onCancelListen])
 
-  const fieldLabel: React.CSSProperties = {
-    fontFamily: C.sans,
-    color: C.muted,
-    fontSize: 11,
-    marginBottom: 4,
-    display: 'block',
-  }
-  const inputBase: React.CSSProperties = {
-    width: '100%',
-    background: C.panelAlt,
-    color: C.text,
-    border: `1px solid ${C.border}`,
-    borderRadius: 4,
-    fontFamily: C.mono,
-    fontSize: 13,
-    padding: '6px 8px',
-    outline: 'none',
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '14px 0 20px' }}>
-      <div style={{
-        border: `1px solid ${listening ? C.blue : C.border}`,
-        background: listening ? `${C.blue}18` : C.panelDark,
-        borderRadius: 4,
-        padding: '10px 12px',
-      }}>
-        <div style={{ fontFamily: C.sans, fontSize: 12, color: C.subtle }}>{detectMessage || 'Auto-detect MIDI CC by moving your pedal.'}</div>
-        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+    <motion.div
+      className={styles.formSection}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* CC Detection Panel */}
+      <motion.div
+        className={`${styles.detectCCPanel} ${listening ? styles.detectCCPanelListening : ''}`}
+        animate={{ borderColor: listening ? expressionTokens.colors.primary : expressionTokens.colors.border }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className={styles.detectCCMessage}>
+          {detectMessage || 'Auto-detect MIDI CC by moving your pedal.'}
+        </div>
+        <div className={styles.detectCCButtons}>
           {!listening ? (
-            <button
+            <motion.button
+              className={styles.buttonPrimary}
               onClick={startListen}
-              style={{
-                background: C.blue,
-                border: 'none',
-                borderRadius: 4,
-                color: '#fff',
-                fontFamily: C.sans,
-                fontSize: 12,
-                fontWeight: 600,
-                padding: '6px 10px',
-                cursor: 'pointer',
-              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ flex: 1 }}
             >
               Detect CC
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              className={styles.buttonSecondary}
               onClick={cancelListen}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${C.border}`,
-                borderRadius: 4,
-                color: C.subtle,
-                fontFamily: C.sans,
-                fontSize: 12,
-                padding: '6px 10px',
-                cursor: 'pointer',
-              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ flex: 1 }}
             >
               Cancel
-            </button>
+            </motion.button>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+      {/* MIDI Input Fields */}
+      <motion.div
+        className={styles.fieldGrid}
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         <div>
-          <span style={fieldLabel}>CC</span>
+          <label className={styles.fieldLabel}>CC</label>
           <NumberInput
             value={cc}
             min={0}
@@ -635,11 +651,11 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.blue}
+            accentColor={expressionTokens.colors.primary}
           />
         </div>
         <div>
-          <span style={fieldLabel}>Channel (0=Omni)</span>
+          <label className={styles.fieldLabel}>Channel (0=Omni)</label>
           <NumberInput
             value={channel}
             min={0}
@@ -650,11 +666,11 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.blue}
+            accentColor={expressionTokens.colors.primary}
           />
         </div>
         <div>
-          <span style={fieldLabel}>Input Min</span>
+          <label className={styles.fieldLabel}>Input Min</label>
           <NumberInput
             value={ccMin}
             min={0}
@@ -665,11 +681,11 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.blue}
+            accentColor={expressionTokens.colors.primary}
           />
         </div>
         <div>
-          <span style={fieldLabel}>Input Max</span>
+          <label className={styles.fieldLabel}>Input Max</label>
           <NumberInput
             value={ccMax}
             min={0}
@@ -680,59 +696,63 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.blue}
+            accentColor={expressionTokens.colors.primary}
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div>
-        <span style={fieldLabel}>Target parameter</span>
+      {/* Parameter Selection */}
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.15 }}
+      >
+        <label className={styles.fieldLabel}>Target Parameter</label>
         <input
-          style={{ ...inputBase, marginBottom: 4 }}
+          type="text"
+          className={styles.inputField}
           value={search || paramLabel}
           placeholder="Search engine parameters..."
           onChange={(e) => setSearch(e.target.value)}
+          style={{ marginBottom: 4 }}
         />
-        {search.trim() && (
-          <div style={{
-            border: `1px solid ${C.border}`,
-            borderRadius: 4,
-            overflow: 'hidden',
-            maxHeight: 180,
-            overflowY: 'auto',
-            background: C.panelDark,
-          }}>
-            {filteredParams.length === 0 && (
-              <div style={{ fontFamily: C.sans, fontSize: 12, color: C.muted, padding: 10 }}>No matching parameter.</div>
-            )}
-            {filteredParams.map((param) => (
-              <button
-                key={param.id}
-                onClick={() => handleParamSelect(param)}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: `1px solid ${C.border}`,
-                  color: param.id === paramId ? C.blue : C.text,
-                  fontFamily: C.sans,
-                  fontSize: 12,
-                  padding: '7px 10px',
-                  cursor: 'pointer',
-                }}
-              >
-                {param.label}
-                <span style={{ marginLeft: 8, color: C.muted, fontFamily: C.mono, fontSize: 11 }}>{param.unit}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+        <AnimatePresence>
+          {search.trim() && (
+            <motion.div
+              className={styles.parameterDropdown}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {filteredParams.length === 0 && (
+                <div className={styles.parameterEmptyMessage}>No matching parameter.</div>
+              )}
+              {filteredParams.map((param) => (
+                <motion.button
+                  key={param.id}
+                  className={`${styles.parameterOption} ${paramId === param.id ? styles.parameterOptionSelected : ''}`}
+                  onClick={() => handleParamSelect(param)}
+                  whileHover={{ backgroundColor: expressionTokens.colors.panelSecondary }}
+                >
+                  <span>{param.label}</span>
+                  <span className={styles.parameterOptionUnit}>{param.unit}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+      {/* Output Range */}
+      <motion.div
+        className={styles.fieldGridThreeCol}
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <div>
-          <span style={fieldLabel}>Output Min</span>
+          <label className={styles.fieldLabel}>Output Min</label>
           <NumberInput
             value={outMin}
             min={selectedParam?.min ?? 0}
@@ -751,11 +771,11 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.teal}
+            accentColor={expressionTokens.colors.liveIndicator}
           />
         </div>
         <div>
-          <span style={fieldLabel}>Output Max</span>
+          <label className={styles.fieldLabel}>Output Max</label>
           <NumberInput
             value={outMax}
             min={selectedParam?.min ?? 0}
@@ -774,77 +794,89 @@ function AssignmentForm({
             showLabel={false}
             size="small"
             fullWidth
-            accentColor={C.teal}
+            accentColor={expressionTokens.colors.liveIndicator}
           />
         </div>
-        <button
+        <motion.button
+          className={styles.buttonSecondary}
           onClick={() => {
             const min = outMin
             setOutMin(outMax)
             setOutMax(min)
           }}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${C.border}`,
-            borderRadius: 4,
-            color: C.subtle,
-            fontFamily: C.sans,
-            fontSize: 12,
-            padding: '6px 10px',
-            cursor: 'pointer',
-            height: 34,
-          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          style={{ height: 34 }}
         >
           Swap
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      <div>
-        <span style={fieldLabel}>Response curve</span>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Response Curve */}
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.25 }}
+      >
+        <label className={styles.fieldLabel}>Response Curve</label>
+        <div className={styles.curveSection}>
+          <div className={styles.curveButtonList}>
             {CURVES.map((entry) => (
-              <button
+              <motion.button
                 key={entry.id}
+                className={`${styles.curveButton} ${curve === entry.id ? styles.curveButtonActive : ''}`}
                 onClick={() => setCurve(entry.id)}
-                style={{
-                  background: curve === entry.id ? `${C.blue}22` : 'transparent',
-                  border: curve === entry.id ? `1px solid ${C.blue}` : `1px solid ${C.border}`,
-                  borderRadius: 4,
-                  color: curve === entry.id ? C.blue : C.subtle,
-                  fontFamily: C.sans,
-                  fontSize: 12,
-                  textAlign: 'left',
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                  minWidth: 130,
-                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {entry.label}
-              </button>
+              </motion.button>
             ))}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className={styles.curvePreviewContainer}>
             <CurvePreview curve={curve} customCurve={customCurve} />
-            {curve === 'custom' && (
-              <CustomCurveEditor points={customCurve} onChange={setCustomCurve} />
-            )}
+            <AnimatePresence>
+              {curve === 'custom' && (
+                <CustomCurveEditor points={customCurve} onChange={setCustomCurve} />
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: C.sans, fontSize: 12, color: C.subtle }}>
+      {/* Active Checkbox */}
+      <motion.label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontFamily: expressionTokens.typography.fontFamily.ui,
+          fontSize: '12px',
+          color: expressionTokens.colors.textSecondary,
+        }}
+        whileHover={{ scale: 1.02 }}
+      >
         <input
           type="checkbox"
           checked={active}
           onChange={(event) => setActive(event.target.checked)}
-          style={{ accentColor: C.blue }}
+          style={{
+            accentColor: expressionTokens.colors.primary,
+            cursor: 'pointer',
+          }}
         />
         Assignment active
-      </label>
+      </motion.label>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
+      {/* Action Buttons */}
+      <motion.div
+        className={styles.buttonGroup}
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
+      >
+        <motion.button
+          className={styles.buttonPrimary}
           onClick={() => onSave({
             id: initial?.id,
             cc,
@@ -861,57 +893,38 @@ function AssignmentForm({
             source: initial?.source || 'user',
           })}
           disabled={!paramId}
-          style={{
-            flex: 1,
-            background: paramId ? C.blue : C.panelAlt,
-            border: 'none',
-            borderRadius: 4,
-            color: '#fff',
-            fontFamily: C.sans,
-            fontSize: 13,
-            fontWeight: 600,
-            padding: '8px 12px',
-            cursor: paramId ? 'pointer' : 'default',
-          }}
+          whileHover={paramId ? { scale: 1.02 } : {}}
+          whileTap={paramId ? { scale: 0.98 } : {}}
+          style={{ opacity: paramId ? 1 : 0.5 }}
         >
           Save
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          className={styles.buttonSecondary}
           onClick={onCancel}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${C.border}`,
-            borderRadius: 4,
-            color: C.subtle,
-            fontFamily: C.sans,
-            fontSize: 13,
-            padding: '8px 12px',
-            cursor: 'pointer',
-          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           Cancel
-        </button>
+        </motion.button>
         {initial && initial.source !== 'performance_mode' && (
-          <button
+          <motion.button
+            className={styles.buttonDanger}
             onClick={() => onDelete(initial.id)}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${C.red}`,
-              borderRadius: 4,
-              color: C.red,
-              fontFamily: C.sans,
-              fontSize: 13,
-              padding: '8px 12px',
-              cursor: 'pointer',
-            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             Delete
-          </button>
+          </motion.button>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
+
+// ============================================================================
+// ASSIGNMENT ROW COMPONENT
+// ============================================================================
 
 function AssignmentRow({
   assignment,
@@ -925,68 +938,51 @@ function AssignmentRow({
   isHighlighted?: boolean
 }) {
   return (
-    <button
+    <motion.button
+      className={`${styles.assignmentRow} ${selected ? styles.assignmentRowSelected : ''} ${isHighlighted && !selected ? styles.assignmentRowHighlighted : ''} ${selected && isHighlighted ? styles.assignmentRowSelectedHighlighted : ''}`}
       onClick={onSelect}
-      style={{
-        width: '100%',
-        textAlign: 'left',
-        border: selected ? `1px solid ${C.blue}` : isHighlighted ? `1px solid ${C.teal}` : `1px solid ${C.border}`,
-        background: selected ? `${C.blue}1f` : isHighlighted ? `${C.teal}0d` : C.panel,
-        borderRadius: 4,
-        padding: '8px 10px',
-        paddingLeft: isHighlighted && !selected ? 8 : 10,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        cursor: 'pointer',
-        borderLeft: isHighlighted && !selected ? `3px solid ${C.teal}` : undefined,
-      }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2 }}
     >
-      <span style={{ color: C.teal, fontFamily: C.mono, fontSize: 11, minWidth: 38 }}>
-        CC{assignment.cc}
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          color: C.text,
-          fontFamily: C.sans,
-          fontSize: 12,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}>
+      <span className={styles.assignmentCCLabel}>CC{assignment.cc}</span>
+      <div className={styles.assignmentContent}>
+        <div className={styles.assignmentParamName}>
           {assignment.param_label || assignment.param_id}
         </div>
-        <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10 }}>
+        <div className={styles.assignmentMetadata}>
           ch{assignment.channel || '*'} | {assignment.curve}
         </div>
       </div>
       {isHighlighted && !selected && (
-        <span style={{
-          fontFamily: C.mono,
-          fontSize: 9,
-          color: C.teal,
-          background: `${C.teal}22`,
-          border: `1px solid ${C.teal}44`,
-          borderRadius: 3,
-          padding: '1px 4px',
-          letterSpacing: '0.02em',
-          flexShrink: 0,
-        }}>
+        <motion.span
+          className={styles.assignmentMidiLabel}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+        >
           MIDI
-        </span>
+        </motion.span>
       )}
-      <span style={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        background: assignment.active ? C.green : C.panelAlt,
-        flexShrink: 0,
-      }} />
-    </button>
+      <motion.div
+        className={`${styles.assignmentStatusIndicator} ${assignment.active ? styles.assignmentStatusIndicatorActive : ''}`}
+        animate={{
+          boxShadow: assignment.active
+            ? `0 0 8px ${expressionTokens.colors.active}4d`
+            : 'none',
+        }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.button>
   )
 }
 
-// Tab IDs for constrained layout
+// ============================================================================
+// MAIN EXPRESSION VIEW COMPONENT
+// ============================================================================
+
 type ConstrainedTab = 'assignments' | 'edit' | 'live'
 
 export function ExpressionView({
@@ -1024,7 +1020,6 @@ export function ExpressionView({
   const selected = assignments.find((a) => a.id === selectedId) || null
   const selectedParam = params.find((param) => param.id === selected?.param_id)
 
-  // Determine if an assignment's cc/channel matches the MIDI dialog's mapped pairs
   const isHighlighted = useCallback((a: Assignment): boolean => {
     if (!highlightedCcPairs || highlightedCcPairs.length === 0) return false
     return highlightedCcPairs.some(
@@ -1034,7 +1029,6 @@ export function ExpressionView({
     )
   }, [highlightedCcPairs])
 
-  // Auto-select the first highlighted assignment when overlay opens
   const didAutoSelect = useRef(false)
   useEffect(() => {
     if (didAutoSelect.current || !highlightedCcPairs?.length || assignments.length === 0) return
@@ -1047,7 +1041,6 @@ export function ExpressionView({
     }
   }, [assignments, highlightedCcPairs, isHighlighted, constrainedWidth])
 
-  // Seed for new assignment from the MIDI dialog's focused row
   const newAssignmentSeed = useMemo((): Assignment | null => {
     if (initialCc == null) return null
     return {
@@ -1129,83 +1122,52 @@ export function ExpressionView({
     if (constrainedWidth) setActiveTab('assignments')
   }
 
-  // --- Constrained tab layout ---
-  if (constrainedWidth) {
-    const tabStyle = (tab: ConstrainedTab): React.CSSProperties => ({
-      flex: 1,
-      padding: '8px 4px',
-      border: 'none',
-      borderBottom: activeTab === tab ? `2px solid ${C.blue}` : '2px solid transparent',
-      background: 'transparent',
-      color: activeTab === tab ? C.text : C.muted,
-      fontFamily: C.sans,
-      fontSize: 12,
-      fontWeight: activeTab === tab ? 600 : 400,
-      cursor: 'pointer',
-      transition: 'all 0.15s ease',
-    })
+  // Full-width layout for desktop
+  return (
+    <motion.div
+      className={styles.container}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className={styles.header}>
+        <h1 className={styles.title}>Expression Pedal Control</h1>
+        <p className={styles.subtitle}>
+          Map MIDI continuous controllers to any engine parameter with real-time feedback and curve shaping.
+        </p>
+        <div className={styles.headerDivider} />
+      </div>
 
-    const assignmentsTabLabel = `Assignments${highlightedCount > 0 ? ` (${highlightedCount} MIDI)` : userAssignments.length + perfAssignments.length > 0 ? ` (${userAssignments.length + perfAssignments.length})` : ''}`
+      <div className={styles.mainGrid}>
+        {/* Assignment List Column */}
+        <motion.div
+          className={styles.assignmentColumn}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <motion.button
+            className={styles.newAssignmentButton}
+            onClick={handleNewAssignment}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            layoutId="new-button"
+          >
+            New assignment
+          </motion.button>
 
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: C.bg,
-        color: C.text,
-        fontFamily: C.sans,
-      }}>
-        {/* Tab bar */}
-        <div style={{
-          display: 'flex',
-          borderBottom: `1px solid ${C.border}`,
-          background: C.panelDark,
-          flexShrink: 0,
-        }}>
-          <button style={tabStyle('assignments')} onClick={() => setActiveTab('assignments')}>
-            {assignmentsTabLabel}
-          </button>
-          <button style={tabStyle('edit')} onClick={() => setActiveTab('edit')}>
-            {creating ? 'New' : selected ? 'Edit' : 'Edit'}
-          </button>
-          <button style={tabStyle('live')} onClick={() => setActiveTab('live')}>
-            Live Signal
-          </button>
-        </div>
-
-        {/* Assignments tab */}
-        {activeTab === 'assignments' && (
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: 14,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}>
-            <button
-              onClick={handleNewAssignment}
-              style={{
-                background: C.blue,
-                border: 'none',
-                borderRadius: 4,
-                color: '#fff',
-                fontFamily: C.sans,
-                fontSize: 13,
-                fontWeight: 600,
-                padding: '8px 10px',
-                cursor: 'pointer',
-              }}
+          {highlightedCount > 0 && (
+            <motion.div
+              className={`${styles.assignmentGroupLabel} ${styles.assignmentGroupLabelHighlighted}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
             >
-              New assignment
-            </button>
+              Linked to this plugin
+            </motion.div>
+          )}
 
-            {highlightedCount > 0 && (
-              <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 6 }}>
-                Linked to this plugin
-              </div>
-            )}
+          <AnimatePresence>
             {userAssignments.filter(isHighlighted).map((assignment) => (
               <AssignmentRow
                 key={assignment.id}
@@ -1215,12 +1177,23 @@ export function ExpressionView({
                 isHighlighted
               />
             ))}
+          </AnimatePresence>
 
-            {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
-              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: highlightedCount > 0 ? 10 : 6 }}>
-                {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
-              </div>
-            )}
+          {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
+            <motion.div
+              className={styles.assignmentGroupLabel}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                marginTop: highlightedCount > 0 ? 10 : 6,
+              }}
+            >
+              {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
+            </motion.div>
+          )}
+
+          <AnimatePresence>
             {userAssignments.filter((a) => !isHighlighted(a)).map((assignment) => (
               <AssignmentRow
                 key={assignment.id}
@@ -1230,12 +1203,20 @@ export function ExpressionView({
                 isHighlighted={false}
               />
             ))}
+          </AnimatePresence>
 
-            {perfAssignments.length > 0 && (
-              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 10 }}>
-                Performance mode defaults
-              </div>
-            )}
+          {perfAssignments.length > 0 && (
+            <motion.div
+              className={styles.assignmentGroupLabel}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              Performance mode defaults
+            </motion.div>
+          )}
+
+          <AnimatePresence>
             {perfAssignments.map((assignment) => (
               <AssignmentRow
                 key={assignment.id}
@@ -1245,229 +1226,75 @@ export function ExpressionView({
                 isHighlighted={isHighlighted(assignment)}
               />
             ))}
-          </div>
-        )}
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Edit tab */}
-        {activeTab === 'edit' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px' }}>
+        {/* Form Column */}
+        <motion.div
+          className={styles.formColumn}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <AnimatePresence mode="wait">
             {creating || selected ? (
-              <AssignmentForm
-                initial={creating ? (newAssignmentSeed ?? null) : selected}
-                params={params}
-                onSave={(payload) => saveMutation.mutate(payload)}
-                onCancel={handleCancel}
-                onDelete={(assignmentId) => {
-                  if (window.confirm('Delete this assignment?')) {
-                    deleteMutation.mutate(assignmentId)
-                  }
-                }}
-                onListenForCC={listenForCC}
-                onCancelListen={cancelListenForCC}
-              />
-            ) : (
-              <div style={{
-                height: '100%',
-                minHeight: 200,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: C.muted,
-                fontFamily: C.sans,
-                fontSize: 13,
-                textAlign: 'center',
-                flexDirection: 'column',
-                gap: 12,
-              }}>
-                <span>Select an assignment or create a new one.</span>
-                <button
-                  onClick={handleNewAssignment}
-                  style={{
-                    background: C.blue,
-                    border: 'none',
-                    borderRadius: 4,
-                    color: '#fff',
-                    fontFamily: C.sans,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: '6px 14px',
-                    cursor: 'pointer',
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AssignmentForm
+                  initial={creating ? (newAssignmentSeed ?? null) : selected}
+                  params={params}
+                  onSave={(payload) => saveMutation.mutate(payload)}
+                  onCancel={handleCancel}
+                  onDelete={(assignmentId) => {
+                    if (window.confirm('Delete this assignment?')) {
+                      deleteMutation.mutate(assignmentId)
+                    }
                   }}
-                >
-                  New assignment
-                </button>
-              </div>
+                  onListenForCC={listenForCC}
+                  onCancelListen={cancelListenForCC}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                className={styles.emptyStateContainer}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <span>Select an assignment to edit, or create a new one.</span>
+              </motion.div>
             )}
-          </div>
-        )}
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Live Signal tab */}
-        {activeTab === 'live' && (
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em' }}>
-              Live signal
-            </div>
-            <LiveDualGraphic
-              assignment={selected}
-              paramUnit={selectedParam?.unit || ''}
-            />
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // --- Full-width layout (original) ---
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100%',
-      background: C.bg,
-      color: C.text,
-      fontFamily: C.sans,
-    }}>
-      <div style={{ padding: '16px 22px 0' }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: C.text }}>Expression Pedal Control</h1>
-        <p style={{ margin: '6px 0 14px', fontSize: 13, color: C.muted }}>
-          Map MIDI continuous controllers to any engine parameter.
-        </p>
-        <div style={{ height: 1, background: C.border }} />
-      </div>
-
-      <div style={{
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '300px 1fr 320px',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          borderRight: isMobile ? 'none' : `1px solid ${C.border}`,
-          borderBottom: isMobile ? `1px solid ${C.border}` : 'none',
-          overflowY: 'auto',
-          padding: 14,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          minHeight: isMobile ? 220 : 0,
-        }}>
-          <button
-            onClick={handleNewAssignment}
-            style={{
-              background: C.blue,
-              border: 'none',
-              borderRadius: 4,
-              color: '#fff',
-              fontFamily: C.sans,
-              fontSize: 13,
-              fontWeight: 600,
-              padding: '8px 10px',
-              cursor: 'pointer',
-            }}
-          >
-            New assignment
-          </button>
-
-          {highlightedCount > 0 && (
-            <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 6 }}>
-              Linked to this plugin
-            </div>
-          )}
-          {userAssignments.filter(isHighlighted).map((assignment) => (
-            <AssignmentRow
-              key={assignment.id}
-              assignment={assignment}
-              selected={selectedId === assignment.id}
-              onSelect={() => handleSelectAssignment(assignment.id)}
-              isHighlighted
-            />
-          ))}
-
-          {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: highlightedCount > 0 ? 10 : 6 }}>
-              {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
-            </div>
-          )}
-          {userAssignments.filter((a) => !isHighlighted(a)).map((assignment) => (
-            <AssignmentRow
-              key={assignment.id}
-              assignment={assignment}
-              selected={selectedId === assignment.id}
-              onSelect={() => handleSelectAssignment(assignment.id)}
-              isHighlighted={false}
-            />
-          ))}
-
-          {perfAssignments.length > 0 && (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em', marginTop: 10 }}>
-              Performance mode defaults
-            </div>
-          )}
-          {perfAssignments.map((assignment) => (
-            <AssignmentRow
-              key={assignment.id}
-              assignment={assignment}
-              selected={selectedId === assignment.id}
-              onSelect={() => handleSelectAssignment(assignment.id)}
-              isHighlighted={isHighlighted(assignment)}
-            />
-          ))}
-        </div>
-
-        <div style={{
-          overflowY: 'auto',
-          padding: isMobile ? '0 14px' : '0 22px',
-          borderBottom: isMobile ? `1px solid ${C.border}` : 'none',
-        }}>
-          {creating || selected ? (
-            <AssignmentForm
-              initial={creating ? (newAssignmentSeed ?? null) : selected}
-              params={params}
-              onSave={(payload) => saveMutation.mutate(payload)}
-              onCancel={handleCancel}
-              onDelete={(assignmentId) => {
-                if (window.confirm('Delete this assignment?')) {
-                  deleteMutation.mutate(assignmentId)
-                }
-              }}
-              onListenForCC={listenForCC}
-              onCancelListen={cancelListenForCC}
-            />
-          ) : (
-            <div style={{
-              height: '100%',
-              minHeight: 260,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: C.muted,
-              fontFamily: C.sans,
-              fontSize: 13,
-              textAlign: 'center',
-            }}>
-              Select an assignment to edit, or create a new one.
-            </div>
-          )}
-        </div>
-
-        <div style={{
-          borderLeft: isMobile ? 'none' : `1px solid ${C.border}`,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-        }}>
-          <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: '0.02em' }}>
-            Live signal
-          </div>
+        {/* Live Monitor Column */}
+        <motion.div
+          className={styles.monitorColumn}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <div className={styles.monitorHeader}>Live Signal</div>
           <LiveDualGraphic
             assignment={selected}
             paramUnit={selectedParam?.unit || ''}
           />
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }
+
+// ============================================================================
+// PAGE COMPONENT
+// ============================================================================
 
 export function ExpressionPage() {
   return (

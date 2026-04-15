@@ -218,6 +218,12 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
     ],
   },
+  '/snapshot-editor': {
+    treeChildren: [
+      { route: '/workspace', label: 'Control Panel' },
+      { route: '/platforms/about', label: 'Platform Guide' },
+    ],
+  },
   '/brain': {
     treeChildren: [
       { route: '/brain', label: 'Overview' },

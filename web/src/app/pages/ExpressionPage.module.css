@@ -1,0 +1,745 @@
+/**
+ * Expression Pedal Control - Stylesheet
+ * Premium audio device aesthetic with smooth animations
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+}
+
+/* ============================================================================
+   HEADER / TITLE SECTION
+   ============================================================================ */
+
+.header {
+  padding: 16px 22px 0;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 6px 0 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.headerDivider {
+  height: 1px;
+  background: var(--border);
+}
+
+/* ============================================================================
+   MAIN LAYOUT GRID
+   ============================================================================ */
+
+.mainGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr 320px;
+  overflow: hidden;
+  gap: 0;
+}
+
+.assignmentColumn {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formColumn {
+  overflow-y: auto;
+  padding: 0 22px;
+}
+
+.monitorColumn {
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================================
+   ASSIGNMENT LIST SECTION
+   ============================================================================ */
+
+.assignmentListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-top: 4px;
+}
+
+.newAssignmentButton {
+  background: var(--interactive);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+  width: 100%;
+}
+
+.newAssignmentButton:hover {
+  background: var(--interactive-hover);
+}
+
+.newAssignmentButton:active {
+  background: var(--interactive-active);
+}
+
+.assignmentGroupLabel {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.assignmentGroupLabelFirst {
+  margin-top: 6px;
+}
+
+.assignmentGroupLabelHighlighted {
+  color: #009d9a;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   ASSIGNMENT ROW / CARD
+   ============================================================================ */
+
+.assignmentRow {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-left: none;
+  transition: all 0.12s ease-in-out;
+  min-height: 56px;
+}
+
+.assignmentRow:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.assignmentRowSelected {
+  border: 1px solid var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 15%, transparent);
+}
+
+.assignmentRowHighlighted {
+  border: 1px solid #009d9a;
+  background: color-mix(in srgb, #009d9a 8%, transparent);
+  border-left: 3px solid #009d9a;
+  padding-left: 8px;
+}
+
+.assignmentRowSelectedHighlighted {
+  border: 1px solid var(--interactive);
+  border-left: 3px solid var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 15%, transparent);
+  padding-left: 8px;
+}
+
+.assignmentCCLabel {
+  color: #009d9a;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  min-width: 38px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.assignmentContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assignmentParamName {
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignmentMetadata {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignmentStatusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: all 0.12s ease-in-out;
+}
+
+.assignmentStatusIndicatorActive {
+  background: #24a148;
+  box-shadow: 0 0 8px rgba(36, 161, 72, 0.3);
+}
+
+.assignmentMidiLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #009d9a;
+  background: color-mix(in srgb, #009d9a 20%, transparent);
+  border: 1px solid color-mix(in srgb, #009d9a 40%, transparent);
+  border-radius: 3px;
+  padding: 1px 4px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   FORM SECTION
+   ============================================================================ */
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 0 20px;
+}
+
+.tabContainer {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tabButtonActive {
+  border-bottom-color: var(--interactive);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tabButtonActive::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--interactive);
+}
+
+/* ============================================================================
+   FORM FIELDS
+   ============================================================================ */
+
+.fieldLabel {
+  display: block;
+  font-family: var(--font-ui);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  margin-bottom: 4px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.inputField {
+  width: 100%;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 6px 8px;
+  outline: none;
+  transition: all 0.12s ease-in-out;
+  box-sizing: border-box;
+}
+
+.inputField:focus {
+  border-color: var(--interactive);
+  box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+}
+
+.inputField:hover {
+  border-color: var(--border-strong);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fieldGridTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.fieldGridThreeCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* ============================================================================
+   PARAMETER SEARCH / DROPDOWN
+   ============================================================================ */
+
+.parameterDropdown {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--surface);
+  z-index: 100;
+}
+
+.parameterOption {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.parameterOption:hover {
+  background: var(--surface-2);
+}
+
+.parameterOptionSelected {
+  color: var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 10%, transparent);
+}
+
+.parameterOptionUnit {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.parameterEmptyMessage {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 10px;
+  text-align: center;
+}
+
+/* ============================================================================
+   DETECT CC SECTION
+   ============================================================================ */
+
+.detectCCPanel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.detectCCPanelListening {
+  border-color: var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 8%, transparent);
+}
+
+.detectCCMessage {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detectCCButtons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================================
+   CURVE SECTION
+   ============================================================================ */
+
+.curveSection {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.curveButtonList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.curveButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  text-align: left;
+  padding: 4px 10px;
+  cursor: pointer;
+  min-width: 130px;
+  transition: all 0.12s ease-in-out;
+}
+
+.curveButton:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.curveButtonActive {
+  background: color-mix(in srgb, var(--interactive) 15%, transparent);
+  border: 1px solid var(--interactive);
+  color: var(--interactive);
+  font-weight: 600;
+}
+
+.curvePreviewContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.curveSVG {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   LIVE MONITOR SECTION
+   ============================================================================ */
+
+.monitorHeader {
+  padding: 14px 16px 0;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.monitorContent {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.meterRow {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.meterColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.meterValueLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.meterContainer {
+  width: 40px;
+  height: 200px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.meterFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #0f62fe 0%, #009d9a 100%);
+  transition: height 30ms linear;
+}
+
+.meterLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.waveformContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waveformLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.waveformSVG {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ============================================================================
+   FOOTER / RETIME STATS
+   ============================================================================ */
+
+.retimeFooter {
+  border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.retimeStatsLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.retimeValue {
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+.refreshButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+
+.refreshButton:hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+   ACTION BUTTONS
+   ============================================================================ */
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.buttonPrimary {
+  flex: 1;
+  background: var(--interactive);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--interactive-hover);
+}
+
+.buttonPrimary:active:not(:disabled) {
+  background: var(--interactive-active);
+}
+
+.buttonPrimary:disabled {
+  background: var(--surface);
+  color: var(--text-tertiary);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.buttonSecondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+
+.buttonSecondary:hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.buttonDanger {
+  background: transparent;
+  border: 1px solid var(--support-danger);
+  border-radius: 4px;
+  color: var(--support-danger);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease-in-out;
+}
+
+.buttonDanger:hover {
+  background: color-mix(in srgb, var(--support-danger) 10%, transparent);
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.emptyStateContainer {
+  height: 100%;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  text-align: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================================
+   RESPONSIVE: MOBILE / TABLET
+   ============================================================================ */
+
+@media (max-width: 1024px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .assignmentColumn {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    min-height: 220px;
+  }
+
+  .monitorColumn {
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+    min-height: 300px;
+  }
+
+  .formColumn {
+    padding: 0 14px;
+  }
+}
+
+@media (max-width: 672px) {
+  .fieldGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meterRow {
+    gap: 16px;
+  }
+
+  .header {
+    padding: 16px 14px 0;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+}

@@ -73,7 +73,6 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/expression',
   '/lcd',
   '/welcome',
-  '/workspace',
 ] as const
 
 const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
