@@ -16,7 +16,9 @@ Kernel-driver handling:
 from __future__ import annotations
 
 import logging
+import threading
 import time
+from collections import deque
 from typing import Any
 
 try:
@@ -60,6 +62,17 @@ class MaschineMK1UsbTransport:
         self._allow_kernel_detach = allow_kernel_detach
         self._device: Any | None = None
         self._opened: bool = False
+        # Background pad drainer — MANDATORY. The MK1 streams ~23 kB/s of pad
+        # pressure data on EP 0x84; if the host doesn't consume it, EP 0x01
+        # OUT (LEDs / primer / MIDI) wedges and returns ETIMEDOUT on every
+        # write until a physical replug OR a drain. See
+        # scripts/maschine_unwedge_test.py — H2/H3 prove drain is required.
+        self._drain_thread: threading.Thread | None = None
+        self._drain_stop = threading.Event()
+        self._pad_queue: deque[bytes] = deque(maxlen=256)
+        self._button_queue: deque[bytes] = deque(maxlen=256)
+        self._queue_lock = threading.Lock()
+        self._write_lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -91,11 +104,23 @@ class MaschineMK1UsbTransport:
 
         self._device = device
         self._opened = True
+        self._drain_stop.clear()
+        self._drain_thread = threading.Thread(
+            target=self._drain_loop,
+            name="maschine-mk1-pad-drain",
+            daemon=True,
+        )
+        self._drain_thread.start()
         LOGGER.info("Maschine MK1 USB transport opened (bus=%s addr=%s)", device.bus, device.address)
 
     def close(self) -> None:
         if not self._opened or self._device is None:
             return
+        self._drain_stop.set()
+        thread = self._drain_thread
+        self._drain_thread = None
+        if thread is not None:
+            thread.join(timeout=1.0)
         device = self._device
         try:
             usb.util.release_interface(device, INTERFACE_NUMBER)
@@ -154,10 +179,24 @@ class MaschineMK1UsbTransport:
     # ------------------------------------------------------------------
 
     def read_pads(self, timeout_ms: int = 2) -> bytes | None:
-        return self._read(EP_PADS_IN, PAD_DATA_SIZE, timeout_ms)
+        """Return the most-recent pad frame captured by the drain thread.
+
+        ``timeout_ms`` is kept for call-site compatibility but is unused —
+        the drain thread continuously services EP 0x84 in the background,
+        so reads are non-blocking pops from an in-memory queue.
+        """
+        del timeout_ms
+        with self._queue_lock:
+            if self._pad_queue:
+                return self._pad_queue.popleft()
+        return None
 
     def read_buttons_encoders(self, timeout_ms: int = 2) -> bytes | None:
-        return self._read(EP_BUTTONS_IN, 64, timeout_ms)
+        del timeout_ms
+        with self._queue_lock:
+            if self._button_queue:
+                return self._button_queue.popleft()
+        return None
 
     # ------------------------------------------------------------------
     # Private
@@ -165,17 +204,39 @@ class MaschineMK1UsbTransport:
 
     def _write(self, endpoint: int, payload: bytes) -> None:
         assert self._device is not None
-        self._device.write(endpoint, payload, timeout=500)
+        with self._write_lock:
+            self._device.write(endpoint, payload, timeout=500)
 
-    def _read(self, endpoint: int, length: int, timeout_ms: int) -> bytes | None:
+    def _read_raw(self, endpoint: int, length: int, timeout_ms: int) -> bytes | None:
         assert self._device is not None
         try:
             data = self._device.read(endpoint, length, timeout=timeout_ms)
         except usb.core.USBTimeoutError:  # type: ignore[attr-defined]
             return None
         except usb.core.USBError as exc:  # type: ignore[attr-defined]
-            # libusb returns ETIMEDOUT as USBError on some platforms.
             if getattr(exc, "errno", None) == 110:
                 return None
-            raise
+            return None
         return bytes(data)
+
+    def _drain_loop(self) -> None:
+        """Background worker — consume EP 0x84 (pads) + EP 0x81 (buttons).
+
+        The MK1 will wedge EP 0x01 OUT (LEDs) within ~50 ms if nobody reads
+        the pad IN endpoint. This loop runs from open() until close() and
+        queues the latest frames for the consumer. Per-frame latency is
+        bounded by the USB poll interval (~1 ms at high speed).
+        """
+        LOGGER.debug("pad drain loop started")
+        while not self._drain_stop.is_set():
+            if self._device is None:
+                break
+            pad = self._read_raw(EP_PADS_IN, PAD_DATA_SIZE, timeout_ms=1)
+            if pad:
+                with self._queue_lock:
+                    self._pad_queue.append(pad)
+            btn = self._read_raw(EP_BUTTONS_IN, 64, timeout_ms=1)
+            if btn:
+                with self._queue_lock:
+                    self._button_queue.append(btn)
+        LOGGER.debug("pad drain loop exiting")

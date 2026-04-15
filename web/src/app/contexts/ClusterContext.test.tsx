@@ -2,7 +2,8 @@ import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-import { ClusterProvider, useCluster } from './ClusterContext'
+import { ClusterProvider } from './ClusterContext'
+import { useCluster } from './useCluster'
 
 const mockUpdateSettings = jest.fn()
 const mockUseSpecialSettings = jest.fn()
@@ -98,6 +99,9 @@ describe('ClusterContext', () => {
     expect(result.current.getNodeApiPrefix()).toBe('?node_id=node-b')
     expect(result.current.getNodeApiPrefix('node-a')).toBe('')
     expect(result.current.getNodeApiPrefix('node-b')).toBe('?node_id=node-b')
+    expect(result.current.getNodeWsPrefix()).toBe('/ws?node_id=node-b')
+    expect(result.current.getNodeWsPrefix('node-a')).toBe('/ws')
+    expect(result.current.getNodeWsPrefix('node-b')).toBe('/ws?node_id=node-b')
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ lastActiveNode: 'node-b' }))
   })
 
@@ -130,6 +134,7 @@ describe('ClusterContext', () => {
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ lastActiveNode: 'all' }))
     expect(result.current.activeNodeId).toBe('all')
     expect(result.current.getNodeApiPrefix()).toBe('?node_id=all')
+    expect(result.current.getNodeWsPrefix()).toBe('/ws?node_id=all')
 
     act(() => {
       result.current.setActiveNode(null)
@@ -138,6 +143,7 @@ describe('ClusterContext', () => {
     await waitFor(() => expect(result.current.activeNodeId).toBeNull())
     expect(result.current.activeNodeId).toBeNull()
     expect(result.current.getNodeApiPrefix()).toBe('')
+    expect(result.current.getNodeWsPrefix()).toBe('/ws')
   })
 
   it('prefers the special-settings node preference over localStorage when both exist', async () => {

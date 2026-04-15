@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2292 by removing the dead AVB manual-node affordance and validating the shipped web bundle.
+Last updated: 2026-04-15 - Completed T2293 with an explicit node-scoped WebSocket transport contract in the cluster context.
 
 ---
 
@@ -145,7 +145,7 @@ Last updated: 2026-04-15 18:25 EDT - Codex
 ---
 
 ID: T2293
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add a dedicated node-scoped WebSocket federation contract for the web cluster context
 Description:
 - Goal / acceptance criteria: Replace the current `getNodeWsPrefix` query-param reuse in `web/src/app/contexts/ClusterContext.tsx` with an explicit node-scoped WebSocket transport contract that can target remote nodes without pretending the HTTP prefix helper is the finished solution. Acceptance requires a dedicated WS prefix/builder path, updated consumers, and focused tests covering local-node, remote-node, and fallback behavior.
@@ -153,8 +153,15 @@ Description:
 - Dependencies: None
 - Estimated effort: Medium
 - Required outputs: explicit WS federation helper/contract, updated cluster-context consumers, focused regression coverage, and validated web build/test status.
-Assigned to: Unassigned
-Last updated: 2026-04-15 18:25 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-15 19:27 EDT - Codex
+- Completion notes:
+  - Replaced the cluster-context WebSocket placeholder reuse with a dedicated WebSocket path builder in `web/src/app/contexts/ClusterContext.tsx`, so the cluster layer now emits explicit `/ws` and `/ws?node_id=...` targets instead of pretending the HTTP query helper is the finished contract.
+  - Extended `web/src/app/contexts/ClusterContext.test.tsx` to lock local-node, remote-node, and all-node WebSocket targeting behavior alongside the existing API-prefix assertions.
+  - Corrected the stale test import so the focused cluster-context suite exercises the real `useCluster` hook path.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/contexts/ClusterContext.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

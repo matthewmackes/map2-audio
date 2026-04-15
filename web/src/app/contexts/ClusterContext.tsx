@@ -168,10 +168,16 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo<ClusterContextValue>(() => {
-    const prefixFor = (nodeId?: string | null) => {
+    const apiPrefixFor = (nodeId?: string | null) => {
       const target = nodeId ?? activeNodeId
       if (!target || target === localNodeId) return ''
       return `?node_id=${encodeURIComponent(target)}`
+    }
+
+    const wsPrefixFor = (nodeId?: string | null) => {
+      const target = nodeId ?? activeNodeId
+      if (!target || target === localNodeId) return '/ws'
+      return `/ws?node_id=${encodeURIComponent(target)}`
     }
 
     return {
@@ -180,8 +186,8 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
       localNodeId,
       isClusterMode,
       setActiveNode: handleSetActiveNode,
-      getNodeApiPrefix: prefixFor,
-      getNodeWsPrefix: prefixFor, // Mirrors API node scoping until dedicated WS federation lands.
+      getNodeApiPrefix: apiPrefixFor,
+      getNodeWsPrefix: wsPrefixFor,
     }
   }, [activeNodeId, handleSetActiveNode, isClusterMode, localNodeId, nodes])
 
