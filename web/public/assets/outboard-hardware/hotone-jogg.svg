@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">HoTone JoGG hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the HoTone JoGG audio interface.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#133221" />
+      <stop offset="100%" stop-color="#0e6027" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="170" y="240" width="900" height="420" rx="26" fill="#101210" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(250 312)">
+    <rect width="740" height="276" rx="22" fill="#1a1c19" />
+    <rect x="64" y="74" width="216" height="130" rx="20" fill="#42be65" />
+    <circle cx="432" cy="138" r="64" fill="#f4f4f4" />
+    <circle cx="610" cy="138" r="64" fill="#f4f4f4" />
+  </g>
+  <text x="1120" y="328" fill="#d9fdd3" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">OUTBOARD HARDWARE</text>
+  <text x="1120" y="412" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="78" font-weight="700">HOTONE JOGG</text>
+  <text x="1120" y="476" fill="#f3fff0" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">portable interface status with host-profile awareness</text>
+</svg>

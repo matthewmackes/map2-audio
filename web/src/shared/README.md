@@ -26,6 +26,4 @@ Move `PluginChooser` out of `shared/` when either:
 
 ## Current Scope
 
-The active reason this directory still exists is `PluginChooser`. The sibling
-`shared/constants/` files are currently unreferenced compatibility stubs and do
-not change the ownership decision above.
+The active reason this directory still exists is `PluginChooser`.

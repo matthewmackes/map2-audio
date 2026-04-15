@@ -962,7 +962,10 @@ class StateAuthorityActivationService:
                 live_snapshot_payload=refreshed_detail,
                 runtime_metrics=runtime_metrics,
             )
-            await self.owner._publish_snapshot_desired_state(refreshed_detail)
+            await self.owner._publish_confirmed_live_state_to_audio_authority(
+                refreshed_detail,
+                runtime_live_state=live_runtime_state,
+            )
             brain_runtime_reconcile_result["broadcast_count"] = await self.owner._broadcast_snapshot_brain_runtime_updates(
                 brain_runtime_reconcile_result
             )

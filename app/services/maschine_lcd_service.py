@@ -11,7 +11,7 @@ from app.routes.health import build_system_health_snapshot
 from app.routes.midi_hub import get_hub_status
 from app.utils.singleton import Singleton
 
-LCD_WIDTH = 128
+LCD_WIDTH = 255
 LCD_HEIGHT = 64
 
 _FONT_5X7: dict[str, tuple[str, ...]] = {
@@ -130,6 +130,37 @@ class _Canvas:
                         byte_value |= 1 << bit_index
                 packed.append(byte_value)
         return packed.hex().upper()
+
+    def to_mk1_framebuffer(self) -> bytes:
+        """Convert the 1-bpp canvas to the MK1 5-bit packed wire format.
+
+        On-pixels → full brightness (31); off-pixels → 0. The daemon consumes
+        this bytes blob directly via ``write_display_frame``.
+        """
+        from app.services.maschine.mk1_protocol import FrameBuffer, DISPLAY_PIXEL_MAX
+
+        fb = FrameBuffer()
+        for y, row in enumerate(self._pixels):
+            for x, pixel in enumerate(row):
+                if pixel:
+                    fb.set_pixel(x, y, DISPLAY_PIXEL_MAX)
+        return fb.buffer()
+
+
+def _canvas_panel(canvas: "_Canvas") -> dict[str, Any]:
+    """Serialize a canvas for both the web simulator and the MK1 daemon.
+
+    ``data`` (XBM hex) is consumed by the React LCD simulator; ``framebuffer``
+    (hex-encoded 10,880-byte blob in MK1 5bpp column-packed layout) is
+    consumed by the device daemon via ``write_display_frame``.
+    """
+    return {
+        "width": LCD_WIDTH,
+        "height": LCD_HEIGHT,
+        "format": "xbm",
+        "data": canvas.to_xbm_hex(),
+        "framebuffer": canvas.to_mk1_framebuffer().hex(),
+    }
 
 
 @dataclass
@@ -254,18 +285,8 @@ class MaschineLCDRenderService(Singleton):
         return {
             "context": "audio_grid",
             "audio_grid": copy.deepcopy(audio_grid),
-            "left": {
-                "width": LCD_WIDTH,
-                "height": LCD_HEIGHT,
-                "format": "xbm",
-                "data": left.to_xbm_hex(),
-            },
-            "right": {
-                "width": LCD_WIDTH,
-                "height": LCD_HEIGHT,
-                "format": "xbm",
-                "data": right.to_xbm_hex(),
-            },
+            "left": _canvas_panel(left),
+            "right": _canvas_panel(right),
             "meta": {
                 "menu_items": menu_items,
                 "selected_block_id": selected_id,
@@ -324,18 +345,8 @@ class MaschineLCDRenderService(Singleton):
         return {
             "context": "stats",
             "stats": copy.deepcopy(stats),
-            "left": {
-                "width": LCD_WIDTH,
-                "height": LCD_HEIGHT,
-                "format": "xbm",
-                "data": left.to_xbm_hex(),
-            },
-            "right": {
-                "width": LCD_WIDTH,
-                "height": LCD_HEIGHT,
-                "format": "xbm",
-                "data": right.to_xbm_hex(),
-            },
+            "left": _canvas_panel(left),
+            "right": _canvas_panel(right),
             "meta": {
                 "focus_metric": selected_key,
                 "history_points": len(history),

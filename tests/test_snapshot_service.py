@@ -2265,6 +2265,94 @@ def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, 
     assert desired.routing.active_path_ids == ["channel-a"]
 
 
+def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+    committed_states: list[object] = []
+    observations: list[object] = []
+    reconciliations: list[bool] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+        async def next_state_version(self):
+            return 7
+
+        async def put_committed_state(self, state):
+            committed_states.append(state)
+            return SimpleNamespace(value=state)
+
+        async def put_observation(self, observation):
+            observations.append(observation)
+            return SimpleNamespace(value=observation)
+
+        async def reconcile_committed_state(self):
+            reconciliations.append(True)
+            return SimpleNamespace(value=committed_states[-1] if committed_states else None)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(runtime_state_service_module, "resolve_local_node_id", lambda: "LOCAL-NODE")
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="AuthorityConfirmed",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+    asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    assert len(committed_states) == 1
+    assert committed_states[0].source_snapshot.snapshot_id == 1
+    assert committed_states[0].engine.display_state == "stopped"
+    assert len(observations) == 1
+    assert observations[0].node_id == "LOCAL-NODE"
+    assert observations[0].engine.display_state == "live"
+    assert observations[0].runtime_paths[0].status == "active"
+    assert observations[0].runtime_paths[0].owner_node_id == "LOCAL-NODE"
+    assert reconciliations == [True]
+
+
 def test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []

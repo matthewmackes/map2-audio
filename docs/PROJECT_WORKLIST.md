@@ -6,7 +6,165 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2289 for the nav pin icon styling and Home title rename.
+Last updated: 2026-04-15 - Added T2295-T2299 for the snapshot activation assurance audit and the required authority/runtime hardening follow-on work.
+
+---
+
+ID: T2299
+Status: [ ] Todo
+Title: Upgrade snapshot activation rejection and degraded-state feedback to operator-grade contracts
+Description:
+- Goal / acceptance criteria: Expand the snapshot publish/activation feedback model so every activation blocker, rejection, partial-apply state, stale-confirmation state, divergence state, retry path, and reconciliation side effect exposes a stable machine-readable code, exact failing guardrail, affected snapshot/version/node/path identity, precise operator-safe message, recommended remediation, and supporting log/event correlation hooks. Acceptance requires a full failure-feedback matrix tied to the live implementation, backend/frontend contract updates where needed, and regression coverage proving the platform never collapses these conditions into ambiguous generic success/failure messaging.
+- Why it matters: The platform already has publish-readiness and activation-progress surfaces, but the current runtime/authority mismatch class proves that operator messaging can still misdescribe the real state. The audit target explicitly requires excellent actionable feedback whenever activation is blocked, degraded, or inconsistent.
+- Dependencies: T2295
+- Estimated effort: High
+- Required outputs: audited failure-feedback matrix, updated typed readiness/activation contracts, UI copy/state handling updates, structured logging/event correlation additions, operator/runbook notes, and focused backend/frontend regression coverage for each high-risk failure family.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:55 EDT - Codex
+
+---
+
+ID: T2298
+Status: [ ] Todo
+Title: Build activation-path crash, restart, concurrency, and reconciliation qualification for snapshot authority invariants
+Description:
+- Goal / acceptance criteria: Add an explicit qualification suite that stress-tests snapshot activation correctness across concurrent publish attempts, restart mid-activation, crash after runtime apply but before authority confirmation, authority write failure after runtime success, runtime success without observation publication, stale read windows, reconciliation overwrite attempts, and retry/idempotency paths. Acceptance requires executable automated coverage plus documented fault-injection/chaos procedures that verify the platform’s activation invariants and produce auditable artifacts.
+- Why it matters: A distributed activation path is not rock-solid because the happy path works once. The target property requires proof that runtime and authority stay correct under partial failure, recovery, and concurrent pressure rather than only under normal UI-driven activation.
+- Dependencies: T2295, T2296, T2297
+- Estimated effort: High
+- Required outputs: invariant-based integration/chaos test plan, new automated backend tests, restart/crash harness or scripted qualification flows, archived evidence expectations, and updated release/qualification documentation for activation correctness.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:55 EDT - Codex
+
+---
+
+ID: T2297
+Status: [ ] Todo
+Title: Enforce strict runtime-authority lock-step and explicit degraded signaling for snapshot activation
+Description:
+- Goal / acceptance criteria: Hard-stop the remaining cases where runtime and control-plane authority can disagree silently or report success too early by making successful activation publish durable authority updates plus node observations in the same canonical workflow, surfacing any mismatch as an explicit degraded/drifted state with bounded transition semantics, and documenting the exact ordering/acknowledgment contract for `desired`, `committed`, `observed`, runtime live-state, and activation events. Acceptance requires code-level invariant enforcement, mismatch-state visibility, and regression coverage for success, partial-failure, stale-observation, restart, and reconciliation paths.
+- Why it matters: The platform’s source-of-truth model depends on `committed` + `observed`, but recent live/runtime evidence showed runtime could be live while authority still claimed `stopped/pending_apply`. That gap directly violates the intended lock-step guarantee and undermines operator trust.
+- Dependencies: T2295
+- Estimated effort: High
+- Required outputs: hardened authority/runtime update ordering, explicit degraded/drift state model, bounded transition rules, backend/frontend regressions for lock-step invariants, and deployment/verification notes proving the shipped path keeps authority aligned with live runtime.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:55 EDT - Codex
+
+---
+
+ID: T2296
+Status: [ ] Todo
+Title: Seal non-canonical snapshot live-state mutation paths behind one committed activation gate
+Description:
+- Goal / acceptance criteria: Inventory and classify every code path that can make a snapshot live, mutate runtime live state, write control-plane authority, reconcile drift, retry activation, or emulate success, then remove, gate, or explicitly scope any path that can bypass the single committed-snapshot activation workflow. Acceptance requires a canonical-path decision documented in code and docs, explicit classification of API/UI/controller/background/emergency/test-only entry points, and enforcement that non-canonical routes cannot make runtime live or mutate authority without the approved committed activation path and audit trail.
+- Why it matters: The codebase has multiple surfaces touching live state (`/api/snapshots/{id}/activate`, audio-state routes, runtime-state services, retry/repair flows, controller hooks, reconciliation helpers, snapshot update sync paths). Without an explicit exclusivity pass, hidden bypasses remain a severe correctness risk even if the primary path is improved.
+- Dependencies: T2295
+- Estimated effort: High
+- Required outputs: entry-point/bypass inventory, canonical activation gate definition, code changes to remove or constrain bypass-capable paths, audit-trail coverage for retained emergency/test paths, and focused regressions proving rejected or gated behavior.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:55 EDT - Codex
+
+---
+
+ID: T2295
+Status: [ ] Todo
+Title: Produce an evidence-backed activation-path assurance audit for committed snapshot activation
+Description:
+- Goal / acceptance criteria: Execute a formal audit of the real snapshot activation path across `SnapshotService`, `StateAuthorityActivationService`, `SnapshotRuntimeStateService`, `AudioStateAuthorityService`, publish-readiness routes/surfaces, activation events, and all related UI/API/controller/reconciliation entry points. The audit must define the actual committed-snapshot record, canonical activation sequence, source-of-truth stores, bypass-capable paths, invariants, partial-failure windows, concurrency protections, audit trail quality, and operator-feedback quality using implementation evidence rather than architecture intent. Acceptance requires a decisive written assessment answering the required platform questions, with verdicts for commitment integrity, activation-path exclusivity, authority-update correctness, lock-step guarantees, feedback quality, auditability, concurrency safety, and recovery safety.
+- Why it matters: The platform now has a richer snapshot publish/readiness stack, but recent inspection showed a concrete runtime-live vs authority-stopped mismatch class. A formal audit is required before calling this a rock-solid committed control-plane activation path.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: platform-specific audit brief, traced activation-path map, evidence-backed assurance report, bypass inventory, invariant matrix, drift/split-brain analysis, failure-feedback matrix, remediation plan ranked by severity, and explicit follow-on tasks or status updates for all confirmed gaps.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:55 EDT - Codex
+
+---
+
+ID: T2294
+Status: [ ] Todo
+Title: Extract MPX1 flow-sidebar parameter helpers into a shared utility module
+Description:
+- Goal / acceptance criteria: Remove the duplicated MPX1 parameter helper logic currently embedded in `web/src/app/components/MPX1/MPX1FlowSidebar.tsx` and align it with the editor surface by moving the shared helpers into a dedicated utility module (for example `mpx1ParamUtils.ts`). Both the sidebar and block-editor surfaces must read the same helper implementations, and focused regression coverage must prove the shared formatting/grouping behavior stays stable.
+- Why it matters: The file currently carries an explicit "future refactor" note because the duplicated helper stack invites divergence between two active MPX1 editing surfaces.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: shared MPX1 helper module, updated MPX1 sidebar/editor consumers, focused regression coverage, and validated web build/test status.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:25 EDT - Codex
+
+---
+
+ID: T2293
+Status: [ ] Todo
+Title: Add a dedicated node-scoped WebSocket federation contract for the web cluster context
+Description:
+- Goal / acceptance criteria: Replace the current `getNodeWsPrefix` query-param reuse in `web/src/app/contexts/ClusterContext.tsx` with an explicit node-scoped WebSocket transport contract that can target remote nodes without pretending the HTTP prefix helper is the finished solution. Acceptance requires a dedicated WS prefix/builder path, updated consumers, and focused tests covering local-node, remote-node, and fallback behavior.
+- Why it matters: The current implementation works as a stopgap, but the code still documents itself as a future federation placeholder. Leaving that ambiguity in place makes multi-node realtime work harder to reason about and easier to regress.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: explicit WS federation helper/contract, updated cluster-context consumers, focused regression coverage, and validated web build/test status.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:25 EDT - Codex
+
+---
+
+ID: T2292
+Status: [ ] Todo
+Title: Implement or retire the disabled manual node-entry affordance in the AVB node tree
+Description:
+- Goal / acceptance criteria: Resolve the disabled `Add Node` affordance in `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx` by either implementing a real manual-node-entry workflow end to end or removing the inactive control entirely. If implemented, the flow must include operator-visible validation, API wiring, and focused regression coverage. If retired, the dead affordance must be removed and the surrounding navigation layout rebalanced cleanly.
+- Why it matters: The current control advertises functionality that does not exist, which is both dead UI and a standing source of operator confusion.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: shipped manual-node-entry decision, UI/API updates or affordance removal, focused regression coverage, and validated web build/test status.
+Assigned to: Unassigned
+Last updated: 2026-04-15 18:25 EDT - Codex
+
+---
+
+ID: T2291
+Status: [✓] Done
+Title: Audit and remove dead web React compatibility surfaces while queuing unfinished web follow-ups
+Description:
+- Goal / acceptance criteria: Audit the active `web/` React codebase for dead or unused items, remove the low-risk confirmed orphans, tighten misleading stub/future labels that are not backed by live implementation, and convert real unfinished web ideas into canonical worklist tasks.
+- Why it matters: The web tree had accumulated dormant compatibility files and fuzzy "future"/"stub" language that obscured which code was truly dead versus which work still needs delivery.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: dead-code audit findings, removed orphaned web files, clarified labels/comments for unfinished surfaces, new worklist follow-up tasks, and validated web lint/typecheck status.
+Assigned to: Codex
+Last updated: 2026-04-15 18:25 EDT - Codex
+- Completion notes:
+  - Deleted the unreferenced legacy component `web/src/components/BackupRestoreWizard.tsx`.
+  - Deleted the unreferenced compatibility stub files under `web/src/shared/constants/` and tightened `web/src/shared/README.md` so it no longer documents files that no longer exist.
+  - Removed the unused `generateThemeFromPalette` import from `web/src/app/theme/themes.ts`, cutting one lint warning from the web cleanup slice.
+  - Reworded the AVB node-tree tooltip and related internal comments so dead/unfinished surfaces now read as precise status instead of vague `future`/`stub` placeholders.
+  - Added follow-up tasks `T2292` through `T2294` for the real unfinished web ideas uncovered during the audit.
+- Validation:
+  - `npm --prefix web run lint` -> PASS (10 pre-existing warnings remain outside this cleanup slice)
+  - `npm --prefix web run typecheck` -> PASS
+
+---
+
+ID: T2290
+Status: [✓] Done
+Title: Restore missing hero assets and detail-page hero rendering for Physical Surfaces and Outboard Hardware
+Description:
+- Goal / acceptance criteria: Replace the broken hero-image references on the Physical Surfaces and Outboard Hardware pages with committed public assets, render large hero media on the per-product detail pages as well as the overview cards, and add regression coverage that fails if hero metadata points at missing files again.
+- Why it matters: T2275 and T2276 shipped the hero-image wiring but the referenced public assets were absent, leaving both sections without the intended media treatment and hiding the gap behind purely DOM-level tests.
+- Dependencies: T2275, T2276
+- Estimated effort: Low
+- Required outputs: Committed hero assets under `web/public/assets`, updated hero metadata/routes, detail-page hero rendering, focused regression coverage, and reconciled worklist notes for the shipped remediation.
+Assigned to: Codex
+Last updated: 2026-04-15 23:50 EDT - Codex
+- Completion notes:
+  - Added committed MAP2-owned SVG hero assets for every Physical Surfaces and Outboard Hardware product referenced by the hero metadata.
+  - Updated both hero-image registries to point at those committed public assets and corrected the attribution text to reflect MAP2-owned artwork instead of the previously claimed stock-photo sources.
+  - Extended `PhysicalSurfaceUnitPage.tsx` and `OutboardHardwareDevicePage.tsx` with large hero media blocks so the product detail routes now match the overview-card treatment.
+  - Relaxed the Physical Surfaces overview gating so products with hero art still display media even when they do not expose a standalone dedicated route.
+  - Added focused UI assertions plus a new asset-existence regression test so broken public hero paths are caught by Jest.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/PhysicalSurfacesOverviewPage.test.tsx src/app/pages/PhysicalSurfaceUnitPage.test.tsx src/app/pages/OutboardHardwareOverviewPage.test.tsx src/app/pages/OutboardHardwareDevicePage.test.tsx src/app/pages/heroImageAssets.test.ts` -> PASS
 
 ---
 

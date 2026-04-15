@@ -159,7 +159,8 @@ describe('PhysicalSurfacesOverviewPage', () => {
     expect(within(unitCard as HTMLElement).getByText('Connected to the local host and actively reporting.')).toBeInTheDocument()
     expect(within(unitCard as HTMLElement).getByText('Current view:')).toBeInTheDocument()
     expect(within(unitCard as HTMLElement).getByRole('button', { name: 'Open Surface Page' })).toBeInTheDocument()
-    expect(within(unitCard as HTMLElement).getByRole('button', { name: /Ableton Push pad and performance controller View Dedicated Route/i })).toBeInTheDocument()
+    expect(within(unitCard as HTMLElement).getByRole('button', { name: /Ableton Push performance controller hero artwork View Dedicated Route/i })).toBeInTheDocument()
+    expect(within(unitCard as HTMLElement).getByRole('img', { name: 'Ableton Push performance controller hero artwork' })).toBeInTheDocument()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 

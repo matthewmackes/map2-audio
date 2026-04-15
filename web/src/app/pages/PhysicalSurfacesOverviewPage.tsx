@@ -59,6 +59,38 @@ function UnitCard({
     }
   }
 
+  const heroImageBlock = heroImage ? (
+    standaloneRoute ? (
+      <div
+        className="physical-surfaces-page__hero-image-container"
+        onClick={handleHeroImageClick}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        title={`View ${unit.display_name} - ${heroImage.attribution}`}
+      >
+        <img
+          src={heroImage.imagePath}
+          alt={heroImage.alt}
+          className="physical-surfaces-page__hero-image"
+          loading="lazy"
+        />
+        <div className="physical-surfaces-page__hero-image-overlay">
+          <span className="physical-surfaces-page__hero-image-label">View Dedicated Route</span>
+        </div>
+      </div>
+    ) : (
+      <div className="physical-surfaces-page__hero-image-container" title={heroImage.attribution}>
+        <img
+          src={heroImage.imagePath}
+          alt={heroImage.alt}
+          className="physical-surfaces-page__hero-image"
+          loading="lazy"
+        />
+      </div>
+    )
+  ) : null
+
   return (
     <DashboardCard className="physical-surfaces-page__card" key={unit.unit_id}>
       <div className="physical-surfaces-page__card-head dashboard-card__header">
@@ -93,26 +125,7 @@ function UnitCard({
           ))}
         </ul>
       </div>
-      {standaloneRoute && heroImage ? (
-        <div
-          className="physical-surfaces-page__hero-image-container"
-          onClick={handleHeroImageClick}
-          onKeyDown={handleKeyDown}
-          role="button"
-          tabIndex={0}
-          title={`View ${unit.display_name} - ${heroImage.attribution}`}
-        >
-          <img
-            src={heroImage.imagePath}
-            alt={heroImage.alt}
-            className="physical-surfaces-page__hero-image"
-            loading="lazy"
-          />
-          <div className="physical-surfaces-page__hero-image-overlay">
-            <span className="physical-surfaces-page__hero-image-label">View Dedicated Route</span>
-          </div>
-        </div>
-      ) : null}
+      {heroImageBlock}
       <div className="physical-surfaces-page__action-row">
         <Button kind="ghost" size="sm" onClick={() => navigate(buildUnitPath(unit.unit_id))}>
           Open Surface Page

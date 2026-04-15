@@ -1055,6 +1055,138 @@ class SnapshotService:
                 exc,
             )
 
+    async def _publish_confirmed_live_state_to_audio_authority(
+        self,
+        detail: dict[str, Any],
+        *,
+        runtime_live_state: dict[str, Any] | None = None,
+        leader_epoch: int = 1,
+    ) -> None:
+        try:
+            from app.models.audio_state import (
+                AudioStateEngineSummary,
+                AudioStateObservation,
+                AudioStatePathStatus,
+            )
+            from app.services.audio_state_authority import AudioStateAuthorityService
+            from app.services.audio_state_snapshot_compiler import (
+                build_initial_authoritative_audio_state,
+                compile_snapshot_detail_to_intent,
+                overlay_audio_state_extensions,
+            )
+            from app.services.snapshot_runtime_state_service import resolve_local_node_id
+
+            authority = AudioStateAuthorityService()
+            preserved_extensions = await self._load_current_audio_state_extensions()
+            snapshot_extensions = detail.get("extensions") if isinstance(detail.get("extensions"), dict) else None
+            merged_extensions = overlay_audio_state_extensions(
+                preserved_extensions,
+                snapshot_extensions,
+            )
+
+            desired_state = compile_snapshot_detail_to_intent(
+                detail,
+                extensions=merged_extensions,
+            )
+            await authority.put_desired_state(desired_state)
+
+            required_methods = (
+                "next_state_version",
+                "put_committed_state",
+                "put_observation",
+                "reconcile_committed_state",
+            )
+            if not all(hasattr(authority, method_name) for method_name in required_methods):
+                return
+
+            node_id = str(
+                (runtime_live_state or {}).get("node_id")
+                or resolve_local_node_id()
+            ).strip() or resolve_local_node_id()
+            state_version = await authority.next_state_version()
+            committed_state = build_initial_authoritative_audio_state(
+                detail,
+                origin_node_id=node_id,
+                state_version=state_version,
+                leader_epoch=leader_epoch,
+                extensions=merged_extensions,
+            )
+            committed_envelope = await authority.put_committed_state(committed_state)
+
+            runtime_payload = (
+                runtime_live_state.get("live_snapshot_payload")
+                if isinstance(runtime_live_state, dict) and isinstance(runtime_live_state.get("live_snapshot_payload"), dict)
+                else detail
+            )
+            runtime_live_state_paths = (
+                runtime_payload.get("live_state", {}).get("paths")
+                if isinstance(runtime_payload, dict)
+                and isinstance(runtime_payload.get("live_state"), dict)
+                and isinstance(runtime_payload.get("live_state", {}).get("paths"), list)
+                else []
+            )
+            runtime_path_chain_ids = {
+                str(path.get("path_id") or "").strip(): path
+                for path in runtime_live_state_paths
+                if isinstance(path, dict) and str(path.get("path_id") or "").strip()
+            }
+            runtime_metrics = (
+                copy.deepcopy(runtime_live_state.get("runtime_metrics"))
+                if isinstance(runtime_live_state, dict) and isinstance(runtime_live_state.get("runtime_metrics"), dict)
+                else {}
+            )
+            io_bindings = detail.get("io_bindings") if isinstance(detail.get("io_bindings"), dict) else {}
+            observed_at = str(
+                (runtime_live_state or {}).get("emitted_at")
+                or _utcnow().isoformat()
+            )
+            observation = AudioStateObservation(
+                node_id=node_id,
+                observed_state_version=committed_envelope.value.state_version,
+                applied=True,
+                effective_input_device=(
+                    io_bindings.get("input_device")
+                    if isinstance(io_bindings.get("input_device"), str)
+                    else None
+                ),
+                effective_output_device=(
+                    io_bindings.get("output_device")
+                    if isinstance(io_bindings.get("output_device"), str)
+                    else None
+                ),
+                runtime_paths=[
+                    path.model_copy(
+                        update={
+                            "status": AudioStatePathStatus.ACTIVE,
+                            "status_reason": None,
+                            "owner_node_id": node_id,
+                            "runtime_chain_id": (
+                                runtime_path_chain_ids.get(path.path_id, {}).get("runtime_chain_id")
+                                if isinstance(runtime_path_chain_ids.get(path.path_id), dict)
+                                else path.runtime_chain_id
+                            ) or path.runtime_chain_id,
+                        }
+                    )
+                    for path in committed_envelope.value.paths
+                ],
+                engine=AudioStateEngineSummary(
+                    display_state="live",
+                    is_warning=False,
+                    is_offline=False,
+                ),
+                runtime_metrics=runtime_metrics,
+                observed_at=observed_at,
+                extensions=copy.deepcopy(merged_extensions),
+            )
+            await authority.put_observation(observation)
+            await authority.reconcile_committed_state()
+        except Exception as exc:
+            logger.debug(
+                "Snapshot live-state authority confirm skipped for %s: %s",
+                detail.get("id"),
+                exc,
+            )
+
     async def _reconcile_snapshot_brain_runtime_extensions(
         self,
         *,

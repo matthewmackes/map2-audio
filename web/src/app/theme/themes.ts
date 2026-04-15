@@ -1,6 +1,6 @@
 import type { CarbonThemeId, Theme, ThemeColors } from './types';
 import { PRESET_THEME_MAP, PRESET_THEME_ORDER } from './presetThemes';
-import { baseWidgets, generateThemeFromPalette } from './themeFactory';
+import { baseWidgets } from './themeFactory';
 
 function createThemeColors(carbonTheme: CarbonThemeId): ThemeColors {
   const colorScheme = carbonTheme === 'white' || carbonTheme === 'g10' ? 'light' : 'dark';

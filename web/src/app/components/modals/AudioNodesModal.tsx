@@ -882,7 +882,7 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
     void assignmentsQuery.refetch()
   }
 
-  // ── Node action stubs (hit the real API) ────────────────────────────────────
+  // ── Node actions ─────────────────────────────────────────────────────────────
 
   const { pushToast } = useToasts()
 

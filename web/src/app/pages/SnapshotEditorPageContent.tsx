@@ -3923,7 +3923,7 @@ export function SnapshotEditorPage() {
           rows: [
             { label: 'Device', value: audioInterfaceStatus.deviceName || 'Audio interface' },
             { label: 'Source routes', value: formatInspectorList(inputRoutes) },
-            { label: 'Live branches', value: formatInspectorList(activeFlowLabels) },
+            { label: 'Active branches', value: formatInspectorList(activeFlowLabels) },
             { label: 'Clocking', value: `${audioInterfaceStatus.sampleRate || 48000} Hz / ${audioInterfaceStatus.bufferSize || 256} smp` },
           ],
         }
@@ -3972,14 +3972,14 @@ export function SnapshotEditorPage() {
             { label: 'Incoming branches', value: formatInspectorList(blendDetail) },
             { label: 'Primary branch', value: primaryFlowLabel },
             { label: 'Output destination', value: formatInspectorList(outputRoutes) },
-            { label: 'Live status', value: livePathLayout.status === 'available' ? 'Mix active' : 'Live path unavailable' },
+            { label: 'Routing status', value: livePathLayout.status === 'available' ? 'Mix configured' : 'Configured path unavailable' },
           ],
         }
       case 'ab':
         return {
           heading: 'A/B selector',
-          summary: 'One branch is live while alternate branches remain in standby for immediate recall.',
-          tags: ['A/B', livePathLayout.status === 'available' ? 'Live' : 'Unavailable'],
+          summary: 'One branch is selected while alternate branches remain in standby for immediate recall.',
+          tags: ['A/B', livePathLayout.status === 'available' ? 'Configured' : 'Unavailable'],
           rows: [
             { label: 'Selected branch', value: primaryFlowLabel },
             { label: 'Standby branches', value: formatInspectorList(standbyFlowLabels) },

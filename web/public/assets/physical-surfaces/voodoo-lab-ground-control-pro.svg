@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Ground Control Pro hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Voodoo Lab Ground Control Pro.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d0709" />
+      <stop offset="100%" stop-color="#5c1f14" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="120" y="200" width="1360" height="420" rx="36" fill="#1d1d1d" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(190 290)">
+    <rect width="1220" height="240" rx="28" fill="#111111" />
+    <g fill="#d0d0d0">
+      <circle cx="118" cy="170" r="52" />
+      <circle cx="266" cy="170" r="52" />
+      <circle cx="414" cy="170" r="52" />
+      <circle cx="562" cy="170" r="52" />
+      <circle cx="710" cy="170" r="52" />
+      <circle cx="858" cy="170" r="52" />
+      <circle cx="1006" cy="170" r="52" />
+    </g>
+    <rect x="78" y="44" width="280" height="46" rx="14" fill="#ff832b" />
+    <rect x="390" y="44" width="280" height="46" rx="14" fill="#24a148" />
+    <rect x="702" y="44" width="280" height="46" rx="14" fill="#0f62fe" />
+  </g>
+  <text x="150" y="130" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+  <text x="150" y="760" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="72" font-weight="700">GROUND CONTROL PRO</text>
+  <text x="150" y="824" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">foot control, preset recall, and stage transport mapping</text>
+</svg>

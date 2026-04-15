@@ -705,7 +705,7 @@ export function NodeTree() {
       {/* Footer */}
       <Divider />
       <Box sx={{ p: 2 }}>
-        <Tooltip title="Add node manually (future)">
+        <Tooltip title="Manual node entry is not available yet">
           <ListItemButton disabled sx={{ borderRadius: 1 }}>
             <ListItemIcon sx={{ minWidth: 32 }}>
               <AddAlt size={16} />

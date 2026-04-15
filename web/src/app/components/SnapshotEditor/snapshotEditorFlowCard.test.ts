@@ -29,7 +29,7 @@ describe('snapshotEditorFlowCard helpers', () => {
     expect(items).toEqual([
       '3 loaded blocks',
       'Selected',
-      'Live path',
+      'Configured path',
       '100% blend',
       'I/O routing',
       '2 in / 2 out',
@@ -48,7 +48,7 @@ describe('snapshotEditorFlowCard helpers', () => {
       clockLabel: '48K / 256',
       routingMode: 'MIX',
       avbLabel: 'Local only',
-    })).toBe('3 loaded blocks / Selected / Live path / 100% blend / I/O routing / 2 in / 2 out / 48K / 256 / MIX / LOCAL ONLY')
+    })).toBe('3 loaded blocks / Selected / Configured path / 100% blend / I/O routing / 2 in / 2 out / 48K / 256 / MIX / LOCAL ONLY')
   })
 
   it('keeps the flow-card LED and slot palette theme-driven', () => {

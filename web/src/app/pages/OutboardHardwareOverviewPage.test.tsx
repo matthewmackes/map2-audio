@@ -223,6 +223,14 @@ describe('OutboardHardwareOverviewPage', () => {
     expect(mockUseIntelFXState).not.toHaveBeenCalled()
   })
 
+  it('renders hero art for routed device cards', () => {
+    renderOverview()
+
+    const tesiraCard = screen.getByRole('heading', { name: 'Tesira AVB', level: 2 }).closest('.cds--tile')
+    expect(tesiraCard).not.toBeNull()
+    expect(within(tesiraCard as HTMLElement).getByRole('img', { name: 'Biamp Tesira AVB hero artwork' })).toBeInTheDocument()
+  })
+
   it('filters the device grid by readiness state', () => {
     renderOverview()
 
@@ -249,7 +257,7 @@ describe('OutboardHardwareOverviewPage', () => {
     renderOverview()
     const mpx1Card = screen.getByRole('heading', { name: 'MPX1 Rack', level: 2 }).closest('.cds--tile')
     expect(mpx1Card).not.toBeNull()
-    fireEvent.click(within(mpx1Card as HTMLElement).getByRole('button', { name: 'Open on rack-b' }))
+    fireEvent.click(within(mpx1Card as HTMLElement).getByRole('button', { name: /Lexicon MPX1 hero artwork Open on rack-b/i }))
     expect(screen.getByText('MPX1 route')).toBeInTheDocument()
     expect(mockUseCluster().setActiveNode).toHaveBeenCalledWith('node-b')
   })
@@ -258,7 +266,7 @@ describe('OutboardHardwareOverviewPage', () => {
     renderOverview()
     const tesiraCard = screen.getByRole('heading', { name: 'Tesira AVB', level: 2 }).closest('.cds--tile')
     expect(tesiraCard).not.toBeNull()
-    fireEvent.click(within(tesiraCard as HTMLElement).getByRole('button', { name: 'Open on rack-a' }))
+    fireEvent.click(within(tesiraCard as HTMLElement).getByRole('button', { name: /Biamp Tesira AVB hero artwork Open on rack-a/i }))
     expect(screen.getByText('Tesira route')).toBeInTheDocument()
     expect(mockUseCluster().setActiveNode).toHaveBeenCalledWith(null)
   })

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Lexicon MPX1 hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Lexicon MPX1 rack processor.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#311300" />
+      <stop offset="100%" stop-color="#ff832b" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="130" y="260" width="1120" height="380" rx="24" fill="#171717" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(210 318)">
+    <rect width="960" height="264" rx="20" fill="#222222" />
+    <rect x="72" y="64" width="264" height="68" rx="14" fill="#ff832b" />
+    <rect x="72" y="154" width="264" height="42" rx="12" fill="#f4f4f4" />
+    <circle cx="740" cy="132" r="82" fill="#f4f4f4" />
+    <circle cx="740" cy="132" r="36" fill="#262626" />
+    <rect x="856" y="74" width="44" height="116" rx="16" fill="#42be65" />
+  </g>
+  <text x="1280" y="334" fill="#ffd9be" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">OUTBOARD HARDWARE</text>
+  <text x="1280" y="418" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="74" font-weight="700">LEXICON MPX1</text>
+  <text x="1280" y="482" fill="#fff1e8" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">program recall, editing, and rack diagnostics</text>
+</svg>

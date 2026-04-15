@@ -9,6 +9,7 @@ import {
   type OutboardHardwareShellContextValue,
 } from './outboardHardwareShared'
 import { buildOutboardHardwarePath } from './outboardHardwareRoutes'
+import { getHeroImageForDevice } from './outboardHardwareHeroImages'
 
 function categoryTagType(category: string): 'red' | 'blue' | 'green' {
   if (category === 'AVB DSP Mixer') return 'red'
@@ -55,6 +56,7 @@ export function OutboardHardwareDevicePage({
   }
 
   const dedicatedRoute = resolveOutboardHardwareStandaloneRoute(device.deviceId)
+  const heroImage = getHeroImageForDevice(device.deviceId)
 
   return (
     <div className="outboard-hardware-page">
@@ -71,6 +73,52 @@ export function OutboardHardwareDevicePage({
           </div>
         }
       />
+
+      {heroImage ? (
+        <Tile className="outboard-hardware-page__card">
+          <div className="outboard-hardware-page__card-head">
+            <div>
+              <p className="outboard-hardware-page__eyebrow">Hero media</p>
+              <h2>Product overview</h2>
+            </div>
+            <Tag type="cool-gray">{heroImage.attribution}</Tag>
+          </div>
+          {dedicatedRoute ? (
+            <div
+              className="outboard-hardware-page__hero-image-container"
+              onClick={() => navigate(dedicatedRoute)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  navigate(dedicatedRoute)
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              title={`View ${device.displayName} - ${heroImage.attribution}`}
+            >
+              <img
+                src={heroImage.imagePath}
+                alt={heroImage.alt}
+                className="outboard-hardware-page__hero-image"
+                loading="lazy"
+              />
+              <div className="outboard-hardware-page__hero-image-overlay">
+                <span className="outboard-hardware-page__hero-image-label">Open Dedicated Route</span>
+              </div>
+            </div>
+          ) : (
+            <div className="outboard-hardware-page__hero-image-container" title={heroImage.attribution}>
+              <img
+                src={heroImage.imagePath}
+                alt={heroImage.alt}
+                className="outboard-hardware-page__hero-image"
+                loading="lazy"
+              />
+            </div>
+          )}
+        </Tile>
+      ) : null}
 
       <div className="outboard-hardware-page__dual-grid">
         <Tile className="outboard-hardware-page__card">

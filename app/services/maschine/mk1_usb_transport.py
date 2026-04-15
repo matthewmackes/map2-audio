@@ -39,7 +39,7 @@ from app.services.maschine.mk1_protocol import (
     VENDOR_ID,
     build_display_frame_packets,
     build_display_init_packets,
-    build_led_packets,
+    build_led_packet,
 )
 
 LOGGER = logging.getLogger("maschine_mk1_usb_transport")
@@ -140,9 +140,7 @@ class MaschineMK1UsbTransport:
     def write_leds(self, led_state: "list[int] | tuple[int, ...]") -> None:
         if self._device is None:
             raise RuntimeError("transport is not open")
-        group0, group1 = build_led_packets(led_state)
-        self._write(EP_CONTROL_OUT, group0)
-        self._write(EP_CONTROL_OUT, group1)
+        self._write(EP_CONTROL_OUT, build_led_packet(led_state))
 
     def write_display_frame(self, display_index: int, framebuffer: bytes) -> None:
         if self._device is None:

@@ -181,7 +181,7 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
       isClusterMode,
       setActiveNode: handleSetActiveNode,
       getNodeApiPrefix: prefixFor,
-      getNodeWsPrefix: prefixFor, // placeholder for future WS federation
+      getNodeWsPrefix: prefixFor, // Mirrors API node scoping until dedicated WS federation lands.
     }
   }, [activeNodeId, handleSetActiveNode, isClusterMode, localNodeId, nodes])
 

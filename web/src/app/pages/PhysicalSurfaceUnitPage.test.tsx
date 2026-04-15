@@ -170,6 +170,7 @@ describe('PhysicalSurfaceUnitPage', () => {
     expect(screen.getByText('Advanced tooling')).toBeInTheDocument()
     expect(screen.getByText('Current backend context')).toBeInTheDocument()
     expect(screen.getByText('Shared MIDI inventory')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Ableton Push performance controller hero artwork' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Open Existing Route' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back to Overview' })).toBeInTheDocument()
     expect(consoleErrorSpy).not.toHaveBeenCalled()

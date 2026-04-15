@@ -50,10 +50,21 @@ INTERFACE_ALT_SETTING = 1
 LED_DATA_SIZE = 62
 LED_GROUP_SIZE = 31
 LED_GROUP_0_OFFSET = 0x00
-LED_GROUP_1_OFFSET = 0x1E  # 30 — start of second half
+LED_GROUP_1_OFFSET = 0x1E  # retained for reference / legacy two-packet path
 
 LED_CHANNEL_PRIMER = bytes([0x0B, 0xFF, 0x02, 0x05])
 LED_BACKLIGHT_DEFAULT = 0x5C
+
+# Observed behavior (usbmon 2026-04-15, MK1 17cc:0808 Bus 3 Dev 020):
+# The two-packet form cabl documents ([0x0C,0x00]+31B then [0x0C,0x1E]+31B)
+# causes the device to ignore the second write — bulk OUT on EP 0x01
+# sits for 500 ms and then the URB cancels with -ENOENT and 0 bytes
+# transferred, wedging the endpoint until a physical replug. Sending all
+# 62 LED bytes in ONE 64-byte bulk OUT with header [0x0C,0x00] completes
+# cleanly in <1 ms and drives every LED. We therefore use the single-
+# packet form exclusively. See scripts/maschine_led_diagnose.py V11 for
+# the reproduction and /tmp/mk1-trace-V11.txt for the kernel trace.
+LED_PACKET_SIZE = 2 + LED_DATA_SIZE  # 64 bytes total
 
 
 class Led(IntEnum):
@@ -135,12 +146,28 @@ LED_PAD_INDEX: tuple[int, ...] = (
 )
 
 
-def build_led_packets(led_state: Iterable[int]) -> tuple[bytes, bytes]:
-    """Build the two 33-byte LED blocks for endpoint ``EP_CONTROL_OUT``.
+def build_led_packet(led_state: Iterable[int]) -> bytes:
+    """Build the single 64-byte LED update for endpoint ``EP_CONTROL_OUT``.
 
     ``led_state`` is any iterable of 62 integers in 0..255. Out-of-range
     values are clamped. If fewer than 62 values are supplied the tail is
-    zero-padded; extras are ignored.
+    zero-padded; extras are ignored. Returns a 64-byte ``bytes``:
+    ``[0x0C, 0x00]`` + 62 brightness bytes.
+    """
+    buffer = bytearray(LED_DATA_SIZE)
+    for i, value in enumerate(led_state):
+        if i >= LED_DATA_SIZE:
+            break
+        buffer[i] = max(0, min(255, int(value)))
+    return bytes([0x0C, LED_GROUP_0_OFFSET]) + bytes(buffer)
+
+
+def build_led_packets(led_state: Iterable[int]) -> tuple[bytes, bytes]:
+    """Legacy two-packet builder, retained for tests that diff against cabl.
+
+    Do NOT use this in the live transport — the device ignores the second
+    packet and wedges EP 0x01. See :func:`build_led_packet` for the
+    production path.
     """
     buffer = bytearray(LED_DATA_SIZE)
     for i, value in enumerate(led_state):

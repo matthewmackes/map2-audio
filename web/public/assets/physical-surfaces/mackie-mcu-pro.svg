@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Mackie MCU Pro hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Mackie MCU Pro.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#141414" />
+      <stop offset="100%" stop-color="#3d3d3d" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="90" y="220" width="1420" height="430" rx="28" fill="#111315" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(150 280)">
+    <rect width="1300" height="310" rx="24" fill="#1a1d1f" />
+    <g fill="#f4f4f4">
+      <rect x="60" y="68" width="86" height="182" rx="18" />
+      <rect x="210" y="68" width="86" height="182" rx="18" />
+      <rect x="360" y="68" width="86" height="182" rx="18" />
+      <rect x="510" y="68" width="86" height="182" rx="18" />
+      <rect x="660" y="68" width="86" height="182" rx="18" />
+      <rect x="810" y="68" width="86" height="182" rx="18" />
+      <rect x="960" y="68" width="86" height="182" rx="18" />
+      <rect x="1110" y="68" width="130" height="96" rx="18" />
+    </g>
+    <rect x="1110" y="186" width="130" height="64" rx="16" fill="#24a148" />
+  </g>
+  <text x="110" y="132" fill="#c6c6c6" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+  <text x="110" y="792" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="74" font-weight="700">MACKIE MCU PRO</text>
+  <text x="110" y="850" fill="#e0e0e0" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">motor faders, transport, and DAW-centric tactile control</text>
+</svg>

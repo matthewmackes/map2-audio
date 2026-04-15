@@ -7,8 +7,12 @@ import { EmptyState } from '../components/shared/EmptyState'
 import { WorkspaceSectionHeader } from '../components/shared/WorkspaceSectionHeader'
 import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
 import type { EnrichedPhysicalSurfaceMatch } from '../../map2/types'
-import type { PhysicalSurfacesShellContextValue } from './physicalSurfacesShared'
+import {
+  resolvePhysicalSurfaceStandaloneRoute,
+  type PhysicalSurfacesShellContextValue,
+} from './physicalSurfacesShared'
 import { buildPhysicalSurfacesPath } from './physicalSurfacesRoutes'
+import { getHeroImageForUnit } from './physicalSurfacesHeroImages'
 
 function statusTagType(status: string | undefined): 'green' | 'blue' | 'red' | 'cool-gray' {
   if (status === 'online') return 'green'
@@ -43,6 +47,8 @@ export function PhysicalSurfaceUnitPage({
     () => summary?.units.find((item) => item.unit_id === surfaceId) ?? null,
     [summary, surfaceId],
   )
+  const heroImage = unit ? getHeroImageForUnit(unit.unit_id) : null
+  const standaloneRoute = unit ? resolvePhysicalSurfaceStandaloneRoute(unit.unit_id, unit.specialized_route) : null
 
   const setViewMutation = useMutation({
     mutationFn: async (viewId: string | null) => {
@@ -103,6 +109,52 @@ export function PhysicalSurfaceUnitPage({
         }
       />
 
+      {heroImage ? (
+        <Tile className="physical-surfaces-page__card">
+          <div className="physical-surfaces-page__card-head">
+            <div>
+              <p className="physical-surfaces-page__eyebrow">Hero media</p>
+              <h2>Product overview</h2>
+            </div>
+            <Tag type="cool-gray">{heroImage.attribution}</Tag>
+          </div>
+          {standaloneRoute ? (
+            <div
+              className="physical-surfaces-page__hero-image-container"
+              onClick={() => navigate(standaloneRoute)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  navigate(standaloneRoute)
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              title={`View ${unit.display_name} - ${heroImage.attribution}`}
+            >
+              <img
+                src={heroImage.imagePath}
+                alt={heroImage.alt}
+                className="physical-surfaces-page__hero-image"
+                loading="lazy"
+              />
+              <div className="physical-surfaces-page__hero-image-overlay">
+                <span className="physical-surfaces-page__hero-image-label">Open Dedicated Route</span>
+              </div>
+            </div>
+          ) : (
+            <div className="physical-surfaces-page__hero-image-container" title={heroImage.attribution}>
+              <img
+                src={heroImage.imagePath}
+                alt={heroImage.alt}
+                className="physical-surfaces-page__hero-image"
+                loading="lazy"
+              />
+            </div>
+          )}
+        </Tile>
+      ) : null}
+
       <div className="physical-surfaces-page__dual-grid">
         <Tile className="physical-surfaces-page__card">
           <div className="physical-surfaces-page__card-head">
@@ -134,8 +186,8 @@ export function PhysicalSurfaceUnitPage({
           </div>
           <p className="physical-surfaces-page__body-copy">{unit.firmware_posture.detail}</p>
           <div className="physical-surfaces-page__action-row">
-            {unit.specialized_route ? (
-              <Button kind="secondary" size="sm" onClick={() => navigate(unit.specialized_route ?? buildUnitPath(unit.unit_id))}>
+            {standaloneRoute ? (
+              <Button kind="secondary" size="sm" onClick={() => navigate(standaloneRoute)}>
                 Open Existing Route
               </Button>
             ) : null}

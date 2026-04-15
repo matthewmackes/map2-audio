@@ -108,7 +108,7 @@ export function buildFlowCardMetadataItems({
     pushUnique(items, 'Selected')
   }
 
-  pushUnique(items, activeAudio ? 'Live path' : branchLabel)
+  pushUnique(items, activeAudio ? 'Configured path' : branchLabel)
   pushUnique(items, secondaryAnnotation)
   pushUnique(items, 'I/O routing')
   pushUnique(items, ioLabel)
@@ -137,7 +137,7 @@ export function buildFlowCardMetadataLines({
   const primaryItems = [
     flowSummary,
     isActive ? 'Selected' : null,
-    activeAudio ? 'Live path' : branchLabel,
+    activeAudio ? 'Configured path' : branchLabel,
     secondaryAnnotation,
   ].filter((item): item is string => Boolean(item?.trim()))
 

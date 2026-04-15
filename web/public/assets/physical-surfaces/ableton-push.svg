@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Ableton Push hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Ableton Push controller.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1f2c" />
+      <stop offset="100%" stop-color="#ff832b" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="110" y="120" width="840" height="660" rx="28" fill="#171717" stroke="#525252" stroke-width="4" />
+  <g transform="translate(180 190)">
+    <rect width="700" height="520" rx="24" fill="#111315" />
+    <g fill="#f4f4f4">
+      <rect x="50" y="54" width="92" height="92" rx="12" />
+      <rect x="156" y="54" width="92" height="92" rx="12" />
+      <rect x="262" y="54" width="92" height="92" rx="12" />
+      <rect x="368" y="54" width="92" height="92" rx="12" />
+      <rect x="474" y="54" width="92" height="92" rx="12" />
+      <rect x="580" y="54" width="70" height="92" rx="12" />
+      <rect x="50" y="162" width="92" height="92" rx="12" />
+      <rect x="156" y="162" width="92" height="92" rx="12" />
+      <rect x="262" y="162" width="92" height="92" rx="12" />
+      <rect x="368" y="162" width="92" height="92" rx="12" />
+      <rect x="474" y="162" width="92" height="92" rx="12" />
+      <rect x="580" y="162" width="70" height="92" rx="12" />
+      <rect x="50" y="270" width="92" height="92" rx="12" />
+      <rect x="156" y="270" width="92" height="92" rx="12" />
+      <rect x="262" y="270" width="92" height="92" rx="12" />
+      <rect x="368" y="270" width="92" height="92" rx="12" />
+      <rect x="474" y="270" width="92" height="92" rx="12" />
+      <rect x="580" y="270" width="70" height="92" rx="12" />
+    </g>
+    <rect x="50" y="402" width="236" height="56" rx="14" fill="#ff832b" />
+    <rect x="306" y="402" width="344" height="56" rx="14" fill="#8a3ffc" />
+  </g>
+  <text x="1010" y="284" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+  <text x="1010" y="368" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="76" font-weight="700">ABLETON PUSH</text>
+  <text x="1010" y="438" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">session pads, encoders, and performance views</text>
+</svg>

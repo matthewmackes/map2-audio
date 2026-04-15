@@ -48,6 +48,7 @@ describe('OutboardHardwareDevicePage', () => {
     renderDevice('/workspace/outboard-hardware/eventide-intelfx')
 
     expect(screen.getByRole('heading', { name: 'IntelFX Rack' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'IntelFX Rack hero artwork' })).toBeInTheDocument()
     expect(screen.getByText('Identity and routing metadata')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Open dedicated route' }))

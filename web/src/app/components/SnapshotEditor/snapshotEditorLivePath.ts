@@ -135,7 +135,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
       secondaryFlowId: null,
       groups: [],
       flowStates,
-      mobileSummary: ['Live path unavailable'],
+      mobileSummary: ['Configured path unavailable'],
     }
   }
 
@@ -198,7 +198,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
         {
           id: 'parallel-main',
           kind: 'parallel',
-          title: 'Live parallel blend',
+          title: 'Configured parallel blend',
           entryLabel: 'Input Split',
           exitLabel: 'Mix to Output',
           flowIds: orderedFlowIds,
@@ -208,7 +208,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
 
       mobileSummary = activeIds.length > 0
         ? [`Parallel: ${activeIds.map((flowId) => `${flowMap.get(flowId)?.label} ${clampPercent(input.blendPositions?.[flowId], 100)}%`).join(', ')}`]
-        : ['Live path unavailable']
+        : ['Configured path unavailable']
       break
     }
 
@@ -234,7 +234,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
         {
           id: 'ab-main',
           kind: 'ab',
-          title: 'Live A/B switch',
+          title: 'Configured A/B switch',
           entryLabel: 'Selector',
           exitLabel: 'Output',
           flowIds: orderedFlowIds,
@@ -244,7 +244,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
 
       mobileSummary = activeId
         ? [`A/B: ${flowMap.get(activeId)?.label} selected`]
-        : ['Live path unavailable']
+        : ['Configured path unavailable']
       break
     }
 
@@ -286,7 +286,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
         {
           id: 'morph-main',
           kind: 'morph',
-          title: 'Live morph path',
+          title: 'Configured morph path',
           entryLabel: 'Source',
           exitLabel: 'Output',
           flowIds: orderedFlowIds,
@@ -296,7 +296,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
 
       mobileSummary = sourceId && targetId
         ? [`Morph ${Math.round(morphProgress * 100)}%: ${flowMap.get(sourceId)?.label} -> ${flowMap.get(targetId)?.label}`]
-        : ['Live path unavailable']
+        : ['Configured path unavailable']
       break
     }
 
@@ -371,7 +371,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
 
       mobileSummary = audioFlowId
         ? [`Sidechain: audio ${flowMap.get(audioFlowId)?.label}${sidechainSourceId ? `, key ${flowMap.get(sidechainSourceId)?.label}` : ''}`]
-        : ['Live path unavailable']
+        : ['Configured path unavailable']
       break
     }
 
@@ -388,7 +388,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
           activeAudio: true,
           dimmed: false,
           annotation: 'Serial stage',
-          secondaryAnnotation: flowMap.get(flowId)?.chainId === null ? 'No chain assigned' : 'Processing live audio',
+          secondaryAnnotation: flowMap.get(flowId)?.chainId === null ? 'No chain assigned' : 'Configured in current routing',
         })
       }
       for (const flowId of inactiveIds) {
@@ -422,14 +422,14 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
 
       mobileSummary = activeIds.length > 0
         ? [`Series: ${activeIds.map((flowId) => flowMap.get(flowId)?.label).join(' > ')}`]
-        : ['Live path unavailable']
+        : ['Configured path unavailable']
       break
     }
   }
 
   const status = activeFlowIds.length > 0 ? 'available' : 'unavailable'
   if (status === 'unavailable') {
-    mobileSummary = ['Live path unavailable']
+    mobileSummary = ['Configured path unavailable']
   }
 
   return {

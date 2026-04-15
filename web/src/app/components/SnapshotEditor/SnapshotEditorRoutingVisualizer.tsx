@@ -397,7 +397,7 @@ function buildABDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, 
     height: nH,
     label: flow.label,
     title: `Flow ${flow.label}`,
-    caption: flow.id === activeFlowId ? 'Live path' : 'Standby path',
+    caption: flow.id === activeFlowId ? 'Selected path' : 'Standby path',
     color: flow.color,
     active: flow.id === activeFlowId,
   }))

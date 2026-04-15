@@ -12,34 +12,29 @@ export interface OutboardHardwareHeroImage {
 
 export const OUTBOARD_HARDWARE_HERO_IMAGES: Record<string, OutboardHardwareHeroImage> = {
   'biamp-tesira': {
-    imagePath: '/assets/outboard-hardware/biamp-tesira.jpg',
-    alt: 'Biamp Tesira AVB professional audio processor and mixer',
-    attribution: 'Photo by Icier Llido on Pexels',
-    photographerUrl: 'https://www.pexels.com/@icier-llido-1929755902',
+    imagePath: '/assets/outboard-hardware/biamp-tesira.svg',
+    alt: 'Biamp Tesira AVB hero artwork',
+    attribution: 'MAP2 product hero artwork',
   },
   'edirol-ua1000': {
-    imagePath: '/assets/outboard-hardware/edirol-ua1000.jpg',
-    alt: 'Edirol UA-1000 USB audio interface with cables',
-    attribution: 'Photo by Alena Sharkova on Pexels',
-    photographerUrl: 'https://www.pexels.com/@alenakroon',
+    imagePath: '/assets/outboard-hardware/edirol-ua1000.svg',
+    alt: 'Edirol UA-1000 hero artwork',
+    attribution: 'MAP2 product hero artwork',
   },
   'hotone-jogg': {
-    imagePath: '/assets/outboard-hardware/hotone-jogg.jpg',
-    alt: 'HoTone JoGG USB audio interface device',
-    attribution: 'Photo by www.kaboompics.com on Pexels',
-    photographerUrl: 'https://www.pexels.com/@karola-g',
+    imagePath: '/assets/outboard-hardware/hotone-jogg.svg',
+    alt: 'HoTone JoGG hero artwork',
+    attribution: 'MAP2 product hero artwork',
   },
   'lexicon-mpx1': {
-    imagePath: '/assets/outboard-hardware/lexicon-mpx1.jpg',
-    alt: 'Lexicon MPX1 multi-effects processor rack equipment',
-    attribution: 'Photo by Alena Sharkova on Pexels',
-    photographerUrl: 'https://www.pexels.com/@alenakroon',
+    imagePath: '/assets/outboard-hardware/lexicon-mpx1.svg',
+    alt: 'Lexicon MPX1 hero artwork',
+    attribution: 'MAP2 product hero artwork',
   },
   'eventide-intelfx': {
-    imagePath: '/assets/outboard-hardware/eventide-intelfx.jpg',
-    alt: 'Rocktron Eventide IntelFX rack processor equipment',
-    attribution: 'Photo by Icier Llido on Pexels',
-    photographerUrl: 'https://www.pexels.com/@icier-llido-1929755902',
+    imagePath: '/assets/outboard-hardware/eventide-intelfx.svg',
+    alt: 'IntelFX Rack hero artwork',
+    attribution: 'MAP2 product hero artwork',
   },
 }
 
