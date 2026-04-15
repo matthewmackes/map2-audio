@@ -1280,6 +1280,14 @@ These files represent best practices and architectural patterns to follow:
 - **Validation**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/pages/JuceGridPage.test.tsx`; `npm --prefix web run build`
 - **Lesson**: For asset-backed effect editors, "upload" is not complete until the newly uploaded asset is both visible on the active surface and selected immediately.
 
+**14. Mirrored React Editor Helpers Should Move Into A Shared Module Before UI Logic Diverges**
+- **Files**: `web/src/app/components/MPX1/MPX1BlockEditor.tsx`, `web/src/app/components/MPX1/MPX1FlowSidebar.tsx`, `web/src/app/components/MPX1/mpx1ParamUtils.ts`
+- **Problem**: Two active MPX1 editor surfaces were formatting values, grouping parameters, and deriving algorithm/value state with copy-pasted helper stacks, which made any future behavior fix likely to land in one surface but not the other.
+- **Root Cause**: The original duplication avoided early coupling, but once both surfaces stabilized the helper logic became shared behavior rather than local implementation detail.
+- **Fix**: Extract the shared helper contract into a dedicated module and add a focused unit test for the helper surface so editor-specific UI can evolve independently without forking formatting/grouping semantics.
+- **Validation**: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/MPX1/mpx1ParamUtils.test.ts`; `npm --prefix web run build`
+- **Lesson**: When two React editor surfaces depend on the same domain formatting and grouping rules, duplicate helpers are temporary only. Promote them into a tested shared module before one surface drifts.
+
 ### JUCE/Audio Gotchas
 
 **13. Debug Build Performance**
@@ -2178,6 +2186,13 @@ Target: < 5 ms total
 - **Reason**: Follow-up hardware evidence showed the single-packet experiment only masked the backpressure symptom and silently dropped slots 31..61.
 - **Impact**: Future MK1 transport changes should treat pad-endpoint draining and LED packet shape as separate concerns and verify the full 62-slot contract before shipping.
 - **Files**: `.github/copilot-instructions.md`, `app/services/maschine/mk1_protocol.py`, `app/services/maschine/mk1_usb_transport.py`, `tests/test_maschine_transport.py`, `scripts/maschine_led_slot_walk.py`, `scripts/maschine_two_packet_test.py`, `scripts/maschine_unused_slot_test.py`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-04-15] - Shared MPX1 Parameter Helper Extraction
+- **Section**: React/TypeScript Gotchas (#14), Update Log
+- **Change**: Documented the shared `mpx1ParamUtils.ts` contract so the MPX1 block editor and flow sidebar now consume one tested helper module for formatting, grouping, enum ranges, clamping, and algorithm/value lookup.
+- **Reason**: The worklist explicitly called out a duplicated helper stack, and leaving it duplicated would let one MPX1 editor surface drift from the other the next time parameter semantics change.
+- **Impact**: Future MPX1 UI work should extend the shared helper module first and keep surface-specific components focused on layout and interaction rather than reimplementing parameter semantics.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/MPX1/mpx1ParamUtils.ts`, `web/src/app/components/MPX1/mpx1ParamUtils.test.ts`, `web/src/app/components/MPX1/MPX1BlockEditor.tsx`, `web/src/app/components/MPX1/MPX1FlowSidebar.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-07] - Maschine Runtime Override Reload Gating
 - **Section**: Gotchas & Learned Fixes (#87), Update Log

@@ -1,86 +1,18 @@
-/**
- * MPX1FlowSidebar — parameter editor panel shown when a block card is selected.
- *
- * Param helpers (clamp, algorithmKey, getParamValue, formatValue, groupParamsByPage,
- * ParamControl) are intentionally duplicated here from MPX1BlockEditor.tsx to
- * avoid cross-component coupling. A future refactor can consolidate them into a
- * shared mpx1ParamUtils.ts if needed.
- */
-
 import React, { useCallback, useMemo } from 'react'
 import { Close } from '@carbon/icons-react'
 
 import type { MPX1RegistryParam, UseMPX1StateResult } from '../../../map2/mpx1Api'
 import { MPX1Knob } from './MPX1Knob'
 import type { BlockRoutingState } from './mpx1FlowRouting'
+import {
+  buildMpx1EnumValues,
+  clampMpx1Value,
+  formatMpx1ParamValue,
+  getMpx1ParamValue,
+  groupMpx1ParamsByPage,
+  mpx1AlgorithmKey,
+} from './mpx1ParamUtils'
 import { NumberInput } from '../ParameterControl'
-
-// ── Internal helpers ──────────────────────────────────────────────────────────
-
-function clamp(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min
-  return Math.min(max, Math.max(min, value))
-}
-
-function algorithmKey(index: number): string {
-  return `alg_${Math.max(0, index).toString().padStart(2, '0')}`
-}
-
-function getParamValue(param: MPX1RegistryParam, shadow: Record<string, number>): number {
-  const raw = shadow[param.id]
-  if (Number.isFinite(raw)) return Number(raw)
-  if (Number.isFinite(param.default)) return Number(param.default)
-  return Number(param.range?.min ?? 0)
-}
-
-function formatValue(param: MPX1RegistryParam, value: number): string {
-  const units = (param.units ?? '').toLowerCase()
-  if (units.includes('hz')) {
-    return Math.abs(value) >= 1000
-      ? `${(value / 1000).toFixed(2)} kHz`
-      : `${Math.round(value)} Hz`
-  }
-  if (units === 's' || units === 'sec' || units === 'seconds') {
-    return Math.abs(value) < 1
-      ? `${Math.round(value * 1000)} ms`
-      : `${value.toFixed(2)} s`
-  }
-  if (units.includes('ms')) {
-    return value >= 1000 ? `${(value / 1000).toFixed(2)} s` : `${Math.round(value)} ms`
-  }
-  if (units.includes('db')) {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(1)} dB`
-  }
-  if (units && units !== 'index' && units !== 'none') {
-    return `${Math.round(value * 100) / 100} ${param.units}`
-  }
-  return `${Math.round(value * 100) / 100}`
-}
-
-function groupParamsByPage(
-  params: MPX1RegistryParam[],
-): Array<{ page: string; params: MPX1RegistryParam[] }> {
-  const pages = new Map<string, MPX1RegistryParam[]>()
-  for (const param of params) {
-    const page = param.page || 'Parameters'
-    const existing = pages.get(page) ?? []
-    existing.push(param)
-    pages.set(page, existing)
-  }
-  return Array.from(pages.entries()).map(([page, grouped]) => ({
-    page,
-    params: grouped.sort((a, b) => a.display_name.localeCompare(b.display_name)),
-  }))
-}
-
-function buildEnumValues(param: MPX1RegistryParam): number[] {
-  const min = Number(param.range?.min ?? 0)
-  const max = Number(param.range?.max ?? 0)
-  if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) return [0]
-  const count = max - min + 1
-  if (count > 64) return [Math.round(min), Math.round(max)]
-  return Array.from({ length: count }, (_, i) => Math.round(min + i))
-}
 
 interface ParamControlProps {
   param: MPX1RegistryParam
@@ -107,7 +39,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
   }
 
   if (param.type === 'enum' || param.widget === 'select') {
-    const options = buildEnumValues(param)
+    const options = buildMpx1EnumValues(param)
     return (
       <label className="mpx1-flow-sidebar__control mpx1-flow-sidebar__select-wrap">
         <span className="mpx1-flow-sidebar__label">{param.display_name}</span>
@@ -140,7 +72,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
           size="small"
           onChange={onChange}
         />
-        <span className="mpx1-flow-sidebar__value">{formatValue(param, value)}</span>
+        <span className="mpx1-flow-sidebar__value">{formatMpx1ParamValue(param, value)}</span>
       </label>
     )
   }
@@ -152,7 +84,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
       min={min}
       max={max}
       step={Math.max(0.01, (max - min) / 200)}
-      formatter={(v) => formatValue(param, v)}
+      formatter={(v) => formatMpx1ParamValue(param, v)}
       size={62}
       compact
       onChange={onChange}
@@ -211,30 +143,30 @@ export function MPX1FlowSidebar({
 
   const currentAlgIndex = useMemo(() => {
     if (!algorithmParam || !selectedBlock) return 0
-    return clamp(
-      Math.round(getParamValue(algorithmParam, mpx1.shadow)),
+    return clampMpx1Value(
+      Math.round(getMpx1ParamValue(algorithmParam, mpx1.shadow)),
       Math.round(Number(algorithmParam.range?.min ?? 0)),
       Math.round(Number(algorithmParam.range?.max ?? 0)),
     )
   }, [algorithmParam, selectedBlock, mpx1.shadow])
 
-  const activeAlgKey = algorithmKey(currentAlgIndex)
+  const activeAlgKey = mpx1AlgorithmKey(currentAlgIndex)
 
   const activeParams = useMemo(
     () => blockParams.filter((p) => p.algorithm === activeAlgKey),
     [blockParams, activeAlgKey],
   )
 
-  const groupedPages = useMemo(() => groupParamsByPage(activeParams), [activeParams])
+  const groupedPages = useMemo(() => groupMpx1ParamsByPage(activeParams), [activeParams])
 
   const handleParamChange = useCallback(
     (param: MPX1RegistryParam, nextValue: number) => {
-      const prevValue = getParamValue(param, mpx1.shadow)
+      const prevValue = getMpx1ParamValue(param, mpx1.shadow)
       onParamChange(param.id, prevValue, nextValue)
       void mpx1.setParam(param.id, nextValue).catch((err) => {
         console.error(`MPX1 flow sidebar setParam ${param.id}:`, err)
       })
-      setLcdText(`${param.display_name}: ${formatValue(param, nextValue)}`)
+      setLcdText(`${param.display_name}: ${formatMpx1ParamValue(param, nextValue)}`)
     },
     [mpx1, onParamChange, setLcdText],
   )
@@ -242,7 +174,7 @@ export function MPX1FlowSidebar({
   const handleAlgorithmChange = useCallback(
     (nextAlg: number) => {
       if (!algorithmParam || !selectedBlock) return
-      const prevValue = getParamValue(algorithmParam, mpx1.shadow)
+      const prevValue = getMpx1ParamValue(algorithmParam, mpx1.shadow)
       onParamChange(algorithmParam.id, prevValue, nextAlg)
       void mpx1.setParam(algorithmParam.id, nextAlg).catch((err) => {
         console.error('MPX1 flow algorithm change:', err)
@@ -311,7 +243,7 @@ export function MPX1FlowSidebar({
                 <ParamControl
                   key={param.id}
                   param={param}
-                  value={getParamValue(param, mpx1.shadow)}
+                  value={getMpx1ParamValue(param, mpx1.shadow)}
                   onChange={(v) => handleParamChange(param, v)}
                 />
               ))}

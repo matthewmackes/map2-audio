@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Reconciled T2302 after corrected MK1 hardware evidence restored the two-packet LED transport contract with pad-endpoint draining.
+Last updated: 2026-04-15 - Completed T2294 by extracting the shared MPX1 parameter helper module used by both the block editor and flow sidebar.
 
 ---
 
@@ -152,7 +152,7 @@ Last updated: 2026-04-15 19:03 EDT - Codex
 ---
 
 ID: T2294
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract MPX1 flow-sidebar parameter helpers into a shared utility module
 Description:
 - Goal / acceptance criteria: Remove the duplicated MPX1 parameter helper logic currently embedded in `web/src/app/components/MPX1/MPX1FlowSidebar.tsx` and align it with the editor surface by moving the shared helpers into a dedicated utility module (for example `mpx1ParamUtils.ts`). Both the sidebar and block-editor surfaces must read the same helper implementations, and focused regression coverage must prove the shared formatting/grouping behavior stays stable.
@@ -161,7 +161,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: shared MPX1 helper module, updated MPX1 sidebar/editor consumers, focused regression coverage, and validated web build/test status.
 Assigned to: Unassigned
-Last updated: 2026-04-15 18:25 EDT - Codex
+Last updated: 2026-04-15 19:36 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/MPX1/mpx1ParamUtils.ts` so the MPX1 block editor and flow sidebar now share the same helper implementations for algorithm keys, value resolution, enum range generation, page grouping, value formatting, and clamping.
+  - Updated `web/src/app/components/MPX1/MPX1BlockEditor.tsx` and `web/src/app/components/MPX1/MPX1FlowSidebar.tsx` to consume the shared helper module instead of carrying duplicate local logic.
+  - Added `web/src/app/components/MPX1/mpx1ParamUtils.test.ts` to lock the shared formatting, grouping, and value-resolution contract in one focused regression.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/MPX1/mpx1ParamUtils.test.ts` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
