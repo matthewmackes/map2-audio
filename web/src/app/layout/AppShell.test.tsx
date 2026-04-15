@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
@@ -128,6 +128,16 @@ function ShellAwareContent() {
   )
 }
 
+function expectInDocumentOrder(labels: string[]) {
+  const elements = labels.map((label) => screen.getByText(label))
+
+  for (let index = 0; index < elements.length - 1; index += 1) {
+    const current = elements[index]
+    const next = elements[index + 1]
+    expect(current.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  }
+}
+
 describe('AppShell global tree navigation', () => {
   beforeEach(() => {
     jest.useFakeTimers()
@@ -174,12 +184,31 @@ describe('AppShell global tree navigation', () => {
     )
 
     expect(container.querySelector('.window-title-strip')).toBeNull()
-    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
-    expect(screen.getAllByText('Control Panel').length).toBeGreaterThan(0)
+    const navTree = screen.getByLabelText('Global navigation tree')
+    expect(navTree).toBeInTheDocument()
+    expectInDocumentOrder([
+      'Home',
+      'Snapshot Editor',
+      'Control Panel',
+      'MIDI Advanced',
+      'Audio Artifacts',
+      'Platform Guide',
+      'Hardware',
+    ])
+    expect(screen.getAllByText('Control Panel')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
-    expect(screen.getByText('Brain')).toBeInTheDocument()
-    expect(screen.queryByText('DSP')).toBeNull()
-    expect(screen.queryByText('CPU Performance')).toBeNull()
+    expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
+    expect(screen.getByText('Platform Guide')).toBeInTheDocument()
+    expect(screen.getByText('Hardware')).toBeInTheDocument()
+    expect(screen.getByText('Physical Surfaces')).toBeInTheDocument()
+    expect(screen.getByText('Outboard Gear')).toBeInTheDocument()
+    expect(within(navTree).getByText('Connections')).toBeInTheDocument()
+    expect(within(navTree).getByText('Presets')).toBeInTheDocument()
+    expect(within(navTree).getAllByText('Tesira AVB').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Files')).toBeNull()
+    expect(screen.queryByText('Brain')).toBeNull()
+    expect(screen.getAllByText('Overview').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
   })
 
@@ -194,7 +223,12 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     expect(container.querySelector('.window-title-strip__eyebrow')).toHaveTextContent('Workspace surface')
     expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
-    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+    const navTree = screen.getByLabelText('Global navigation tree')
+    expect(navTree).toBeInTheDocument()
+    expect(within(navTree).getByText('Hardware')).toBeInTheDocument()
+    expect(within(navTree).getByText('Outboard Gear')).toBeInTheDocument()
+    expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
+    expect(within(navTree).getByText('Panel')).toBeInTheDocument()
   })
 
   it('closes the current app back to the desktop route', async () => {
@@ -228,7 +262,7 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByText('Snapshot Editor'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
     })
   })
 
@@ -262,6 +296,7 @@ describe('AppShell global tree navigation', () => {
 
     await waitFor(() => {
       expect(screen.queryByLabelText('Global navigation tree')).toBeNull()
+      expect(screen.getByLabelText('Collapsed navigation rail')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Pin Navigation' })).toBeInTheDocument()
     })
 

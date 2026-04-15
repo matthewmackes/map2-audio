@@ -1,4 +1,4 @@
-import { Edit } from '@carbon/icons-react'
+import { Edit, SettingsAdjust } from '@carbon/icons-react'
 import { Button, Layer, Tag } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
@@ -296,21 +296,34 @@ export function SnapshotChainManagementCard({
                     ) : null}
                   </div>
                 ) : (
-                  <h2 className="juce-grid-page__snapshot-status-title">
-                    {liveSnapshot && onRenameSnapshot ? (
-                      <button
-                        type="button"
-                        className="juce-grid-page__snapshot-status-title-button"
-                        onClick={onRenameSnapshot}
-                        disabled={snapshotRenamePending}
-                        aria-label={`Rename snapshot ${snapshotTitle}`}
-                        title="Rename snapshot"
+                  <>
+                    {liveSnapshot && onOpenProgressModal ? (
+                      <Button
+                        size="sm"
+                        kind="secondary"
+                        renderIcon={SettingsAdjust}
+                        className="juce-grid-page__snapshot-status-config-button"
+                        onClick={onOpenProgressModal}
                       >
-                        <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
-                        <Edit size={20} aria-hidden="true" />
-                      </button>
-                    ) : snapshotTitle}
-                  </h2>
+                        Snapshot Configuration
+                      </Button>
+                    ) : null}
+                    <h2 className="juce-grid-page__snapshot-status-title">
+                      {liveSnapshot && onRenameSnapshot ? (
+                        <button
+                          type="button"
+                          className="juce-grid-page__snapshot-status-title-button"
+                          onClick={onRenameSnapshot}
+                          disabled={snapshotRenamePending}
+                          aria-label={`Rename snapshot ${snapshotTitle}`}
+                          title="Rename snapshot"
+                        >
+                          <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
+                          <Edit size={20} aria-hidden="true" />
+                        </button>
+                      ) : snapshotTitle}
+                    </h2>
+                  </>
                 )}
               </div>
               {channelActivityBadge || monitoringStatusLabel ? (

@@ -36,7 +36,7 @@ describe('SnapshotEditorOptionsRail', () => {
     renderRail()
 
     expect(screen.getByRole('button', { name: 'Collapse options toolbar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open snapshot progress' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Snapshot configuration' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add signal path' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit MIDI mappings' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'View live state' })).toBeInTheDocument()
@@ -47,7 +47,7 @@ describe('SnapshotEditorOptionsRail', () => {
   it('routes the direct buttons through the provided callbacks', () => {
     const props = renderRail()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open snapshot progress' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snapshot configuration' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add signal path' }))
     fireEvent.click(screen.getByRole('button', { name: 'Edit MIDI mappings' }))
     fireEvent.click(screen.getByRole('button', { name: 'View live state' }))

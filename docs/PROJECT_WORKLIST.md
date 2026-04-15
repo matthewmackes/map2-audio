@@ -6,9 +6,141 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Reconciled the active theme-system queue against archived duplicate-ID history.
+Last updated: 2026-04-15 - Completed T2287 for the Snapshot Editor Carbon quick-actions follow-up cleanup.
 
 ---
+
+ID: T2287
+Status: [✓] Done
+Title: Tighten Snapshot Editor quick-actions trigger and destructive affordances after Carbon menu review
+Description:
+- Goal / acceptance criteria: Apply the approved follow-up decisions from the Snapshot Editor quick-actions review by converting the left quick-actions trigger into an icon-led Carbon menu affordance, keeping `Snapshot Configuration` terminology limited to the approved surfaces, removing `Clear signal paths` from the textual utility list so destructive access stays on the dedicated danger-oriented control, and promoting the new Snapshot Configuration hero button for stronger visibility.
+- Why it matters: The first Carbon cleanup pass established the new menu direction, but the user explicitly refined the trigger style, destructive-action placement, and hero emphasis afterward. The worklist must capture that shipped final state instead of leaving the repo ledger one step behind the UI.
+- Dependencies: T712
+- Estimated effort: Low
+- Required outputs: Snapshot Editor menu/hero follow-up implementation, focused regression coverage, validation evidence, and reconciled worklist status.
+Assigned to: Codex
+Last updated: 2026-04-15 23:05 EDT - Codex
+- Completion notes:
+  - Converted the Snapshot Editor quick-actions trigger into an icon-led Carbon menu button and kept its accessible name as `Quick actions`.
+  - Removed `Clear signal paths` from the textual quick-actions utility section so destructive access now stays on the icon options rail instead of appearing in the lighter-weight text menu.
+  - Promoted the hero-level `Snapshot Configuration` button from `ghost` to `secondary` while leaving existing progress-modal/toast wording elsewhere unchanged per the follow-up direction.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand src/app/components/SnapshotEditor/SnapshotEditorMenuRail.test.tsx src/app/components/SnapshotEditor/SnapshotEditorOptionsRail.test.tsx src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+
+---
+
+ID: T2286
+Status: [✓] Done
+Title: Rework the Home landing hero support area into an engineering telemetry grid
+Description:
+- Goal / acceptance criteria: Replace the current Home landing support area indicated by the user with a transparent Carbon grid that presents audio-engineering telemetry in one operator-facing surface. Required content: current MIDI devices connected across all nodes, current mapped MIDI with realtime feedback, current audio interfaces connected across all nodes, current AVB endpoints connected across all nodes, current snapshot loaded and live across all nodes, and current latency pressure using the existing measurement source already present elsewhere in the product.
+- Why it matters: The Home landing page should function as an audio-engineering command surface instead of a marketing-style launcher band, giving operators immediate multi-node situational awareness from the first screen.
+- Dependencies: T2284
+- Estimated effort: Medium
+- Required outputs: UX/content specification from user answers, Home landing layout/data integration changes, any required shared telemetry adapters, focused regression coverage, and validated build/test status.
+Assigned to: Codex
+Last updated: 2026-04-15 10:04 EDT - Codex
+- Confirmed requirements from user:
+  - Scope: replace everything on the Home landing page except the left navigation tree.
+  - Surface locality: Home only, not a shared shell component.
+  - Interaction model: every telemetry area should navigate to the corresponding React GUI page for more detail.
+  - Content depth: detailed views only; do not show offline devices/endpoints.
+  - MIDI mapped state: include all mapped MIDI with realtime feedback.
+  - Audio interfaces / AVB endpoints / snapshots / latency pressure: show detailed all-node views for each, using the existing latency-pressure measurement source.
+  - Layout direction: user revised the earlier grid ask and now wants one structured list, not a grid.
+  - Visual direction: use Carbon Structured List as the style guide (`https://carbondesignsystem.com/components/structured-list/usage/`), prefer a flat view, and avoid layered card treatment.
+  - Section composition: render six separate structured-list sections, not one combined list.
+  - Navigation resolution:
+    - mapped MIDI rows should navigate to the exact owning React GUI page for that mapping/device.
+    - latency pressure should navigate to the Audio Engine page.
+    - audio-interface rows should resolve into the correct node context first, then open Audio Engine.
+  - Snapshot presentation: use best-practice grouping across all nodes rather than forcing a one-row-per-node layout when a clearer grouped presentation exists.
+- Completion notes:
+  - Replaced the Home launcher hero/rail composition with a dedicated engineering telemetry surface made of six separate Carbon structured-list sections for MIDI devices, mapped MIDI, audio interfaces, AVB endpoints, live snapshots, and latency pressure.
+  - Wired row navigation into node-aware React destinations using existing platform and cluster route helpers, including Audio Engine / AVB workspace focus targets and best-effort exact MIDI-owner routing for MPX1, IntelFX, and other hardware-specific mappings.
+  - Reused existing live product data paths where available (`midiHubApi`, cluster hardware inventory, AVB discovery, cluster snapshot runtime state, and the latency pressure calculation pipeline) so the landing page reflects current operator telemetry instead of static card content.
+- Validation:
+  - Not run in this cycle (not requested explicitly).
+
+ID: T2285
+Status: [✓] Done
+Title: Restore MIDI Advanced child routes under the global tree
+Description:
+- Goal / acceptance criteria: Re-enable the `/midi-hub/*` child pages under the `MIDI Advanced` top-level nav item so the left tree exposes its existing subsection routes again.
+- Why it matters: `MIDI Advanced` was flattened during the nav simplification, which hid the dedicated child pages that still exist and should remain directly reachable from the tree.
+- Dependencies: T2284
+- Estimated effort: Low
+- Required outputs: Updated global tree config, focused regression coverage, and validated shell build/test status.
+Assigned to: Codex
+Last updated: 2026-04-15 09:03 EDT - Codex
+- Completion notes:
+  - Re-enabled the `MIDI Advanced` subtree by removing `/midi-hub` from the flat top-level route set.
+  - Restored default expansion for the `/midi-hub` branch so its child pages are visible again in the global tree.
+  - Updated shell regression coverage to assert `Connections` and `Presets` appear under `MIDI Advanced`.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+
+ID: T2284
+Status: [✓] Done
+Title: Restore the bottom hardware tree and remove obsolete shell quick-launch affordances
+Description:
+- Goal / acceptance criteria: Convert the global nav footer actions to Carbon icon-first buttons, remove the Home quick-launch trigger and modal behavior, and restore a bottom `Hardware` tree that contains `Physical Surfaces` and `Outboard Gear` group headings with nested children and deeper descendants where available. Hardware routes must no longer appear elsewhere in the left nav, and hardware pages must auto-expand the relevant hardware branch on load.
+- Why it matters: The shell currently mixes flat primary destinations with an incomplete hardware grouping model and still exposes a Home quick-launch surface the operator no longer wants.
+- Dependencies: T2283
+- Estimated effort: Medium
+- Required outputs: Updated nav tree builder/styling, Home surface cleanup, regression coverage for hardware tree + quick-launch removal, and validated typecheck/test/build status.
+Assigned to: Codex
+Last updated: 2026-04-15 08:58 EDT - Codex
+- Completion notes:
+  - Converted the global nav footer actions to icon-first Carbon buttons while preserving accessible text labels for `Refresh`, `Restart`, and `Log Out`.
+  - Removed the Home quick-launch trigger, keyboard shortcut modal behavior, and related test expectations so the landing hero no longer exposes the obsolete search surface.
+  - Restored a separate bottom `Hardware` tree with `Physical Surfaces` and `Outboard Gear` headings, nested descendants where available, and auto-expansion when a hardware sub-route is active.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T2283
+Status: [✓] Done
+Title: Reorganize the global tree to the six-item operator order
+Description:
+- Goal / acceptance criteria: Update the global tree so the top-level order is exactly `Home`, `Snapshot Editor`, `Control Panel`, `MIDI Advanced`, `Audio Artifacts`, `Platform Guide`. `Snapshot Editor` must be flat with no nested children, `Control Panel` must retain its current children, the `Files` section header must be removed, and `Platform Guide` must appear last as a top-level item.
+- Why it matters: The current tree mixes section headers and nested children in a way that obscures the intended primary operator destinations.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated nav tree builder, focused regression coverage for order/nesting, and validated shell build/test status.
+Assigned to: Codex
+Last updated: 2026-04-15 08:27 EDT - Codex
+- Completion notes:
+  - Reworked `GlobalTreeNav.tsx` so the top-level operator order is now `Home`, `Snapshot Editor`, `Control Panel`, `MIDI Advanced`, `Audio Artifacts`, `Platform Guide`.
+  - Flattened `Snapshot Editor`, `MIDI Advanced`, `Audio Artifacts`, and `Platform Guide` so they no longer render nested children, while preserving the existing `Control Panel` child tree.
+  - Removed the `Files` section header from the global tree and updated shell regression coverage so the new order and direct `Snapshot Editor` navigation are enforced.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T2282
+Status: [✓] Done
+Title: Keep shell content and reopen control accessible when the global side tree is hidden
+Description:
+- Goal / acceptance criteria: Unpinning the global side tree must not strand the operator without a visible way to reopen navigation, and full-bleed routed surfaces must remain usable when the tree is hidden. The shell needs a persistent collapsed rail or equivalent dedicated reopen affordance outside page content stacking contexts.
+- Why it matters: The current shell renders the reopen button inside the routed content pane, so pages with full-surface layouts can visually bury it and make the app appear fully hidden once the side tree is dismissed.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Shell layout patch, regression test coverage for unpin/re-pin flow, and updated worklist status.
+Assigned to: Codex
+Last updated: 2026-04-15 08:02 EDT - Codex
+- Completion notes:
+  - Moved the `Pin Navigation` affordance out of routed page content and into a dedicated collapsed shell rail rendered whenever the global tree is unpinned.
+  - Reserved a narrow shell column while unpinned so the reopen control stays visible above full-bleed page layouts instead of depending on page-local stacking order.
+  - Added regression coverage in `AppShell.test.tsx` to assert the collapsed rail is present during the unpinned state and that re-pinning restores the full tree.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
 
 ## Theme System Effectiveness
 

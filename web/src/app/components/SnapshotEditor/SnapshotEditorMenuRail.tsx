@@ -1,3 +1,4 @@
+import { List } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -6,19 +7,6 @@ const MENU_PINNED_STORAGE_KEY = 'map2_snapshot_menu_pinned'
 
 interface SnapshotEditorMenuRailProps {
   prefersReducedMotion: boolean
-  title: string
-  dirty: boolean
-  onCreate: () => void
-  createPending: boolean
-  onSave: () => void
-  savePending: boolean
-  saveDisabled: boolean
-  onOpenWorkspace: () => void
-  onDuplicate: () => void
-  duplicatePending: boolean
-  duplicateDisabled: boolean
-  onOpenVersionHistory: () => void
-  versionHistoryDisabled: boolean
   onOpenControlCenter: () => void
   controlCenterDisabled: boolean
   onAddFlow: () => void
@@ -26,16 +14,8 @@ interface SnapshotEditorMenuRailProps {
   onOpenMidi: () => void
   midiDisabled: boolean
   midiTitle: string
-  midiLearning: boolean
-  onToggleAbSwitch?: () => void
-  abSwitchVisible: boolean
-  abSwitchDisabled: boolean
-  abSwitchPending: boolean
-  abSwitchActiveLabel?: string
-  abSwitchNextLabel?: string
   onOpenLiveRuntime: () => void
   liveRuntimeLabel: string
-  liveRuntimeActive: boolean
   onOpenPerform: () => void
   onUndo: () => void
   undoDisabled: boolean
@@ -49,16 +29,6 @@ interface SnapshotEditorMenuRailProps {
   onNext: () => void
   nextDisabled: boolean
   nextTitle?: string
-  onToggleLock?: () => void
-  lockVisible: boolean
-  locked: boolean
-  lockPending: boolean
-  onToggleFavorite?: () => void
-  favoriteVisible: boolean
-  favoriteActive: boolean
-  favoritePending: boolean
-  onClearFlows: () => void
-  clearFlowsDisabled: boolean
 }
 
 interface MenuItemConfig {
@@ -75,19 +45,6 @@ interface MenuItemConfig {
 
 export function SnapshotEditorMenuRail({
   prefersReducedMotion,
-  title,
-  dirty,
-  onCreate,
-  createPending,
-  onSave,
-  savePending,
-  saveDisabled,
-  onOpenWorkspace,
-  onDuplicate,
-  duplicatePending,
-  duplicateDisabled,
-  onOpenVersionHistory,
-  versionHistoryDisabled,
   onOpenControlCenter,
   controlCenterDisabled,
   onAddFlow,
@@ -95,16 +52,8 @@ export function SnapshotEditorMenuRail({
   onOpenMidi,
   midiDisabled,
   midiTitle,
-  midiLearning,
-  onToggleAbSwitch,
-  abSwitchVisible,
-  abSwitchDisabled,
-  abSwitchPending,
-  abSwitchActiveLabel,
-  abSwitchNextLabel,
   onOpenLiveRuntime,
   liveRuntimeLabel,
-  liveRuntimeActive,
   onOpenPerform,
   onUndo,
   undoDisabled,
@@ -118,16 +67,6 @@ export function SnapshotEditorMenuRail({
   onNext,
   nextDisabled,
   nextTitle,
-  onToggleLock,
-  lockVisible,
-  locked,
-  lockPending,
-  onToggleFavorite,
-  favoriteVisible,
-  favoriteActive,
-  favoritePending,
-  onClearFlows,
-  clearFlowsDisabled,
 }: SnapshotEditorMenuRailProps) {
   const panelId = useId()
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -205,141 +144,61 @@ export function SnapshotEditorMenuRail({
   }
 
   const primaryItems = useMemo<MenuItemConfig[]>(() => {
-    const items: MenuItemConfig[] = [
+    return [
       {
         id: 'control-center',
-        label: 'Open snapshot progress?',
+        label: 'Snapshot configuration',
         className: 'snapshot-menu-rail__item--control-center',
         onClick: onOpenControlCenter,
         disabled: controlCenterDisabled,
       },
       {
         id: 'add-flow',
-        label: 'Add a signal path?',
+        label: 'Add signal path',
         className: 'snapshot-menu-rail__item--add-flow',
         onClick: onAddFlow,
         disabled: addFlowDisabled,
       },
       {
         id: 'midi',
-        label: midiLearning ? 'MIDI learn is armed. Edit mappings?' : 'Edit MIDI mappings?',
+        label: 'Edit MIDI mappings',
         className: 'snapshot-menu-rail__item--midi',
         onClick: onOpenMidi,
         disabled: midiDisabled,
         title: midiTitle,
       },
-    ]
-
-    if (abSwitchVisible) {
-      items.push({
-        id: 'ab-switch',
-        label: `Switch A/B from ${abSwitchActiveLabel ?? 'A'} to ${abSwitchNextLabel ?? 'B'}?`,
-        pendingLabel: `Switching A/B to ${abSwitchNextLabel ?? 'B'}...`,
-        className: 'snapshot-menu-rail__item--ab-switch',
-        onClick: onToggleAbSwitch,
-        disabled: abSwitchDisabled || !onToggleAbSwitch,
-        pending: abSwitchPending,
-      })
-    }
-
-    items.push(
       {
         id: 'live',
-        label: liveRuntimeActive ? 'Live state is active. Inspect it?' : 'Inspect the live state?',
+        label: 'Inspect live state',
         className: 'snapshot-menu-rail__item--live',
         onClick: onOpenLiveRuntime,
         title: liveRuntimeLabel,
       },
       {
         id: 'perform',
-        label: 'Open performance view?',
+        label: 'Open performance view',
         className: 'snapshot-menu-rail__item--perform',
         onClick: onOpenPerform,
       },
-      {
-        id: 'create',
-        label: 'Create a new snapshot?',
-        pendingLabel: 'Creating a new snapshot...',
-        className: 'snapshot-menu-rail__item--new',
-        onClick: onCreate,
-        disabled: createPending,
-        pending: createPending,
-      },
-      {
-        id: 'load',
-        label: 'Load a saved snapshot?',
-        className: 'snapshot-menu-rail__item--load',
-        onClick: onOpenWorkspace,
-        title,
-      },
-      {
-        id: 'duplicate',
-        label: 'Duplicate this snapshot?',
-        pendingLabel: 'Duplicating this snapshot...',
-        className: 'snapshot-menu-rail__item--duplicate',
-        onClick: onDuplicate,
-        disabled: duplicateDisabled,
-        pending: duplicatePending,
-      },
-      {
-        id: 'history',
-        label: 'Review version history?',
-        className: 'snapshot-menu-rail__item--history',
-        onClick: onOpenVersionHistory,
-        disabled: versionHistoryDisabled,
-      },
-      {
-        id: 'save',
-        label: dirty ? 'Save these changes?' : 'Save the current snapshot?',
-        activeLabel: dirty ? 'Save these changes?' : undefined,
-        pendingLabel: 'Saving these changes...',
-        className: `snapshot-menu-rail__item--save${dirty ? ' is-dirty' : ''}`,
-        onClick: onSave,
-        disabled: saveDisabled,
-        pending: savePending,
-      },
-    )
-
-    return items
+    ]
   }, [
-    abSwitchActiveLabel,
-    abSwitchDisabled,
-    abSwitchNextLabel,
-    abSwitchPending,
-    abSwitchVisible,
     addFlowDisabled,
     controlCenterDisabled,
-    createPending,
-    dirty,
-    duplicateDisabled,
-    duplicatePending,
-    liveRuntimeActive,
     liveRuntimeLabel,
     midiDisabled,
-    midiLearning,
     midiTitle,
     onAddFlow,
-    onCreate,
-    onDuplicate,
     onOpenControlCenter,
     onOpenLiveRuntime,
     onOpenMidi,
     onOpenPerform,
-    onOpenVersionHistory,
-    onOpenWorkspace,
-    onSave,
-    onToggleAbSwitch,
-    saveDisabled,
-    savePending,
-    title,
-    versionHistoryDisabled,
   ])
 
   const utilityItems = useMemo<MenuItemConfig[]>(() => {
-    const items: MenuItemConfig[] = [
+    return [
       {
         id: 'undo',
-        label: 'Undo the last change',
+        label: 'Undo last change',
         pendingLabel: 'Undoing the last change...',
         className: 'snapshot-menu-rail__item--undo',
         onClick: onUndo,
@@ -348,7 +207,7 @@ export function SnapshotEditorMenuRail({
       },
       {
         id: 'redo',
-        label: 'Redo the last change',
+        label: 'Redo last change',
         pendingLabel: 'Redoing the last change...',
         className: 'snapshot-menu-rail__item--redo',
         onClick: onRedo,
@@ -357,7 +216,7 @@ export function SnapshotEditorMenuRail({
       },
       {
         id: 'previous',
-        label: 'Go to the previous snapshot',
+        label: 'Open previous snapshot',
         className: 'snapshot-menu-rail__item--back',
         onClick: onPrevious,
         disabled: previousDisabled,
@@ -365,63 +224,19 @@ export function SnapshotEditorMenuRail({
       },
       {
         id: 'next',
-        label: 'Go to the next snapshot',
+        label: 'Open next snapshot',
         className: 'snapshot-menu-rail__item--forward',
         onClick: onNext,
         disabled: nextDisabled,
         title: nextTitle,
       },
     ]
-
-    if (lockVisible) {
-      items.push({
-        id: 'lock',
-        label: locked ? 'Unlock editing' : 'Lock editing',
-        pendingLabel: locked ? 'Unlocking editing...' : 'Locking editing...',
-        className: 'snapshot-menu-rail__item--lock',
-        onClick: onToggleLock,
-        disabled: lockPending || !onToggleLock,
-        pending: lockPending,
-      })
-    }
-
-    if (favoriteVisible) {
-      items.push({
-        id: 'favorite',
-        label: favoriteActive ? 'Remove from favorites' : 'Add to favorites',
-        pendingLabel: favoriteActive ? 'Updating favorites...' : 'Updating favorites...',
-        className: 'snapshot-menu-rail__item--favorite',
-        onClick: onToggleFavorite,
-        disabled: favoritePending || !onToggleFavorite,
-        pending: favoritePending,
-      })
-    }
-
-    items.push({
-      id: 'clear',
-      label: 'Clear all signal paths',
-      className: 'snapshot-menu-rail__item--clear',
-      onClick: onClearFlows,
-      disabled: clearFlowsDisabled,
-    })
-
-    return items
   }, [
-    clearFlowsDisabled,
-    favoriteActive,
-    favoritePending,
-    favoriteVisible,
-    lockPending,
-    lockVisible,
-    locked,
     nextDisabled,
     nextTitle,
-    onClearFlows,
     onNext,
     onPrevious,
     onRedo,
-    onToggleFavorite,
-    onToggleLock,
     onUndo,
     previousDisabled,
     previousTitle,
@@ -458,15 +273,15 @@ export function SnapshotEditorMenuRail({
             <div
               id={panelId}
               className="snapshot-menu-rail__panel"
-              role="toolbar"
-              aria-label="Snapshot editor quick menu"
+              role="menu"
+              aria-label="Snapshot editor quick actions"
             >
               <div className="snapshot-menu-rail__header">
                 <div className="snapshot-menu-rail__header-copy">
-                  <p className="snapshot-menu-rail__eyebrow">Quick Menu</p>
-                  <h2 className="snapshot-menu-rail__title">10 quick questions</h2>
+                  <p className="snapshot-menu-rail__eyebrow">Snapshot Editor</p>
+                  <h2 className="snapshot-menu-rail__title">5 quick actions</h2>
                   <p className="snapshot-menu-rail__summary">
-                    Text-only controls for the snapshot editor.
+                    Carbon-aligned actions for the current snapshot workflow.
                   </p>
                 </div>
                 <div className="snapshot-menu-rail__header-actions">
@@ -500,14 +315,15 @@ export function SnapshotEditorMenuRail({
               </div>
 
               <div className="snapshot-menu-rail__section">
-                <p className="snapshot-menu-rail__section-label">Primary</p>
+                <p className="snapshot-menu-rail__section-label">Actions</p>
                 <div className="snapshot-menu-rail__list">
                   {primaryItems.map((item) => (
                     <Button
                       key={item.id}
-                      size="md"
+                      size="sm"
                       kind="ghost"
                       className={`snapshot-menu-rail__item ${item.className}`}
+                      role="menuitem"
                       onClick={() => runAction(item.onClick)}
                       disabled={item.disabled}
                       title={item.title}
@@ -527,6 +343,7 @@ export function SnapshotEditorMenuRail({
                       size="sm"
                       kind="ghost"
                       className={`snapshot-menu-rail__item snapshot-menu-rail__item--utility ${item.className}`}
+                      role="menuitem"
                       onClick={() => runAction(item.onClick)}
                       disabled={item.disabled}
                       title={item.title}
@@ -546,8 +363,12 @@ export function SnapshotEditorMenuRail({
           size="sm"
           kind={open ? 'secondary' : 'primary'}
           className={`snapshot-menu-rail__trigger${open ? ' is-open' : ''}`}
+          renderIcon={List}
+          hasIconOnly
+          iconDescription="Quick actions"
           aria-controls={panelId}
           aria-expanded={open}
+          aria-haspopup="menu"
           onClick={() => {
             if (open && pinned) {
               setPinned(false)
@@ -556,9 +377,7 @@ export function SnapshotEditorMenuRail({
             }
             setOpen((current) => !current)
           }}
-        >
-          {open ? (pinned ? 'Pinned menu' : 'Hide menu') : 'Show menu'}
-        </Button>
+        />
       </div>
     </div>
   )

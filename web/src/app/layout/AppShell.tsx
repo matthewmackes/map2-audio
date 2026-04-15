@@ -114,8 +114,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       className={shellClassName}
       style={{
         '--window-shell-accent': shellAccentColor,
-        '--global-tree-width': globalNavPinned ? '16rem' : '0rem',
-        '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '0rem',
+        '--global-tree-width': globalNavPinned ? '16rem' : '3.5rem',
+        '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '3.5rem',
       } as CSSProperties}
     >
       <div className="app-shell__frame">
@@ -127,9 +127,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             onRefreshPage={() => reloadHomeDesktopShell()}
             onTogglePinned={() => setGlobalNavPinned(false)}
           />
-        ) : null}
-        <main className="app-content app-content--with-global-tree">
-          {!globalNavPinned ? (
+        ) : (
+          <aside className="app-shell__nav-collapsed-rail" aria-label="Collapsed navigation rail">
             <button
               type="button"
               className="app-shell__nav-pin-toggle"
@@ -138,7 +137,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               Pin Navigation
             </button>
-          ) : null}
+          </aside>
+        )}
+        <main className="app-content app-content--with-global-tree">
           <ShellWindowProvider value={isDesktopRoute ? null : shellWindowContext}>
             <PageTransition>{children}</PageTransition>
           </ShellWindowProvider>

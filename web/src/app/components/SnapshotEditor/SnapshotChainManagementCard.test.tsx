@@ -201,13 +201,14 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof SnapshotChain
 }
 
 describe('SnapshotChainManagementCard', () => {
-  it('renders the snapshot title and opens snapshot progress from the activity indicator', () => {
+  it('renders the snapshot title and opens snapshot progress from the configuration launcher', () => {
     const props = renderCard()
 
     expect(screen.getByText('Audio Grid')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Snapshot Configuration' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'All 2 channels are active.' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snapshot Configuration' }))
 
     expect(props.onOpenProgressModal).toHaveBeenCalledTimes(1)
   })

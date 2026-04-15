@@ -94,6 +94,30 @@ jest.mock('../hooks/useReducedEffectsPreference', () => ({
   useReducedEffectsPreference: () => mockReducedEffectsPreference,
 }))
 
+jest.mock('../contexts/useCluster', () => ({
+  useCluster: () => ({
+    activeNodeId: null,
+    localNodeId: 'MANAGEMENT-NODE-1',
+    isClusterMode: true,
+    setActiveNode: jest.fn(),
+    getNodeApiPrefix: () => '',
+    nodes: [
+      {
+        nodeId: 'MANAGEMENT-NODE-1',
+        hostname: 'MAP2-TESTBED',
+        isLocal: true,
+        isOnline: true,
+      },
+      {
+        nodeId: 'STAGE-NODE-2',
+        hostname: 'STAGE-RACK',
+        isLocal: false,
+        isOnline: true,
+      },
+    ],
+  }),
+}))
+
 jest.mock('../hooks/useHomePlatformStatus', () => ({
   useHomePlatformStatus: () => ({
     avb: { label: 'AVB: operational', state: 'ok' },
@@ -128,16 +152,180 @@ jest.mock('../layout/useLauncherInterfaceSummary', () => ({
   }),
 }))
 
-jest.mock('../components/NodeNav/NodeNavBar', () => ({
-  NodeNavBar: () => <div data-testid="node-nav-bar" />,
+jest.mock('../hooks/useDeviceLocation', () => ({
+  useClusterHardwareInventory: () => ({
+    data: {
+      nodes: {
+        'MANAGEMENT-NODE-1': {
+          status: 'online',
+          audio_interfaces: ['RME Fireface UFX'],
+          usb_audio_devices: [{ name: 'RME Fireface UFX' }],
+          pipewire_devices: [],
+        },
+        'STAGE-NODE-2': {
+          status: 'online',
+          audio_interfaces: ['UA-1000'],
+          usb_audio_devices: [{ description: 'Roland Edirol UA-1000' }],
+          pipewire_devices: [],
+        },
+      },
+    },
+    isLoading: false,
+  }),
 }))
 
-jest.mock('../components/LatencyPressureShellReadout', () => ({
-  LatencyPressureShellReadout: () => <div data-testid="shell-latency-pressure-readout">09</div>,
+jest.mock('../hooks/useSnapshotRuntimeState', () => ({
+  useClusterSnapshotRuntimeLiveState: () => ({
+    data: {
+      local_node_id: 'MANAGEMENT-NODE-1',
+      generated_at: '2026-04-15T12:00:00Z',
+      count: 2,
+      nodes: [
+        {
+          node_id: 'MANAGEMENT-NODE-1',
+          seq: 1,
+          emitted_at: '2026-04-15T12:00:00Z',
+          state: 'live',
+          snapshot_id: 42,
+          snapshot_revision: 'r7',
+          snapshot_name: 'Main Show Snapshot',
+          runtime_metrics: {},
+          warning_threshold_seconds: 15,
+          offline_threshold_seconds: 30,
+          age_seconds: 1,
+          is_warning: false,
+          is_offline: false,
+          display_state: 'live',
+          display_label: 'Live',
+        },
+        {
+          node_id: 'STAGE-NODE-2',
+          seq: 1,
+          emitted_at: '2026-04-15T12:00:00Z',
+          state: 'live',
+          snapshot_id: 42,
+          snapshot_revision: 'r7',
+          snapshot_name: 'Main Show Snapshot',
+          runtime_metrics: {},
+          warning_threshold_seconds: 15,
+          offline_threshold_seconds: 30,
+          age_seconds: 1,
+          is_warning: false,
+          is_offline: false,
+          display_state: 'live',
+          display_label: 'Live',
+        },
+      ],
+    },
+    isLoading: false,
+  }),
 }))
 
-jest.mock('../components/TaskbarClock', () => ({
-  TaskbarClock: () => <div data-testid="taskbar-clock">9:41 AM</div>,
+jest.mock('../hooks/useAvbStatus', () => ({
+  useAVBDiscovery: () => ({
+    data: {
+      enabled: true,
+      total_discovered: 2,
+      talker_nodes: 1,
+      listener_nodes: 2,
+      nodes: [
+        {
+          node_id: 'MANAGEMENT-NODE-1',
+          hostname: 'MAP2-TESTBED',
+          addresses: ['192.168.1.10'],
+          port: 8080,
+          last_seen: '2026-04-15T12:00:00Z',
+          avb_capabilities: {
+            interface: 'enp2s0',
+            stream_id: 'avb-main',
+            ptp_synced: true,
+            ptp_offset_ns: 30,
+            tsn_configured: true,
+            talker_streams: 1,
+            listener_streams: 2,
+            max_streams: 8,
+            sample_rate: 48000,
+            channels: 8,
+          },
+        },
+      ],
+    },
+    isLoading: false,
+  }),
+  useAVBStreams: () => ({
+    data: {
+      available: true,
+      streams: [
+        {
+          stream_id: 'avb-main',
+          direction: 'talker',
+          state: 'running',
+          interface: 'enp2s0',
+          dest_mac: '91:e0:f0:00:00:01',
+          channels: 8,
+          sample_rate: 48000,
+        },
+      ],
+    },
+    isLoading: false,
+  }),
+}))
+
+jest.mock('../../map2/api', () => ({
+  midiHubApi: {
+    getStatusForNode: jest.fn(async (nodeId?: string | null) => ({
+      ports: nodeId === 'STAGE-NODE-2'
+        ? [
+            { port_id: 'stage-1', name: 'MPX1 Rack MIDI In', direction: 'input', kind: 'alsa' },
+            { port_id: 'stage-2', name: 'IntelFX Rack MIDI Out', direction: 'output', kind: 'alsa' },
+          ]
+        : [
+            { port_id: 'main-1', name: 'Express 128', direction: 'duplex', kind: 'alsa' },
+          ],
+    })),
+    getRoutesForNode: jest.fn(async (nodeId?: string | null) => ({
+      routes: nodeId === 'STAGE-NODE-2'
+        ? [
+            {
+              route_id: 'route-stage',
+              source_port: 'MPX1 Rack MIDI In',
+              destination_ports: ['IntelFX Rack MIDI Out'],
+              enabled: true,
+              priority: 100,
+              route_type: 'pass_through',
+              filter: { message_types: ['cc'], channels: [1], cc_range: null, note_range: null, velocity_range: null },
+              transform_chain: [],
+              destination_latency_ms: { 'IntelFX Rack MIDI Out': 2 },
+            },
+          ]
+        : [
+            {
+              route_id: 'route-main',
+              source_port: 'Express 128',
+              destination_ports: ['Snapshot Engine'],
+              enabled: true,
+              priority: 100,
+              route_type: 'mapped',
+              filter: { message_types: ['program_change'], channels: [1], cc_range: null, note_range: null, velocity_range: null },
+              transform_chain: [{ id: 'normalize' }],
+              destination_latency_ms: {},
+            },
+          ],
+    })),
+  },
+  latencyV2Api: {
+    getJitterStats: jest.fn(async (nodeId?: string | null) => ({
+      p50_ms: 0.08,
+      p95_ms: nodeId === 'STAGE-NODE-2' ? 0.24 : 0.11,
+      p99_ms: 0.4,
+      max_ms: 0.9,
+      rtl_p95_ms: nodeId === 'STAGE-NODE-2' ? 5.2 : 3.9,
+      xrun_count: nodeId === 'STAGE-NODE-2' ? 1 : 0,
+      window_seconds: 30,
+      sample_count: 128,
+      running: true,
+    })),
+  },
 }))
 
 function makeJsonResponse(body: unknown, ok = true): Response {
@@ -267,7 +455,7 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeTruthy()
+    expect(screen.getByText('Mackes Audio Platform')).toBeTruthy()
     expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
     expect(screen.getByRole('status')).toHaveTextContent('Restoring your desktop')
     expect(screen.queryByText('Desktop Control Panel')).toBeNull()
@@ -277,7 +465,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -285,8 +473,8 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.getByText('Carbon landing')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Engineering Telemetry' })).toBeInTheDocument()
+    expect(screen.getByText('Operator telemetry')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -303,7 +491,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
   })
 
   it('skips the opt-in boot splash immediately when reduced motion is preferred', async () => {
@@ -317,7 +505,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-reduced-effects', 'true')
-    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -390,73 +578,34 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders the settings-backed home launch grid and navigates through the hero actions', async () => {
+  it('renders the engineering telemetry sections and opens node-aware destinations from the structured lists', async () => {
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Primary launchers')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'medium')
-    expect(screen.getByRole('link', { name: /MIDI Hub/i })).toHaveAttribute('data-tile-size', 'medium')
-    expect(screen.getByRole('link', { name: /Stage Mode/i })).toHaveAttribute('data-tile-size', 'small')
-    expect(screen.queryByRole('link', { name: /Workspaces/i })).toBeNull()
-    expect(screen.queryByText('Recent destinations')).toBeNull()
-    expect(screen.queryByText('Device Operations')).toBeNull()
-    expect(screen.queryByRole('link', { name: /Snapshot Editor/i })).toBeNull()
-    expect(screen.queryByRole('link', { name: /Device\(s\) Manager/i })).toBeNull()
+    expect(await screen.findByRole('heading', { name: 'Engineering Telemetry' })).toBeInTheDocument()
+    expect(screen.getByText('Current MIDI Devices Connected')).toBeInTheDocument()
+    expect(screen.getByText('Current MAPPED MIDI')).toBeInTheDocument()
+    expect(screen.getByText('Current Audio Interfaces Connected')).toBeInTheDocument()
+    expect(screen.getByText('Current AVB Endpoints Connected')).toBeInTheDocument()
+    expect(screen.getByText('Current Snapshot Loaded and Live')).toBeInTheDocument()
+    expect(screen.getByText('Current Latency Pressure')).toBeInTheDocument()
+    expect(screen.getByText('Express 128')).toBeInTheDocument()
+    expect(screen.getByText('Main Show Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Fabric state')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Brain' }))
-    expect(screen.getByTestId('location-probe').textContent).toBe('/brain')
-  })
-
-  it('hides unconfigured home destinations when landing tiles are reduced in special settings', async () => {
-    mockSpecialSettingsState.settings = {
-      enabled: true,
-      hiddenPlugins: [],
-      menuLocation: 'hidden',
-      pinnedRoutes: [],
-      landingTiles: [
-        { route: '/workspace', size: 'medium' },
-        { route: '/brain', size: 'large' },
-      ],
+    const mpxRow = (await screen.findAllByText('MPX1 Rack MIDI In'))[1]?.closest('.cds--structured-list-row')
+    if (!mpxRow) {
+      throw new Error('Expected MPX1 Rack MIDI In telemetry row')
     }
-
-    renderHome()
-
-    expect(await screen.findByLabelText('Primary launchers')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'large')
-    expect(screen.queryByRole('link', { name: /MIDI Hub/i })).toBeNull()
-    expect(screen.queryByRole('link', { name: /Stage Mode/i })).toBeNull()
-    expect(screen.queryByRole('link', { name: /Workspaces/i })).toBeNull()
+    fireEvent.click(mpxRow)
+    expect(screen.getByTestId('location-probe').textContent).toBe('/mpx1/midi-map?node_id=STAGE-NODE-2')
   })
 
-  it('renders the landing system-status rail card as non-navigational status only', async () => {
+  it('deep-links the landing actions menu into theme settings', async () => {
     renderHome()
 
-    expect(await screen.findByText('System health and devices')).toBeInTheDocument()
-    expect(screen.queryByText('Open control panel')).toBeNull()
-  })
-
-  it('deep-links the landing preferences rail card into theme settings', async () => {
-    renderHome()
-
-    fireEvent.click(await screen.findByRole('button', { name: /Open theme settings/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Options/i }))
+    fireEvent.click(await screen.findByText('Display settings'))
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
-  })
-
-  it('marks the most recently active workspace tile when returning home', async () => {
-    window.sessionStorage.setItem('map2:home-shell-recent-route', '/brain')
-
-    renderHome()
-
-    const recentTile = (await screen.findAllByRole('link', { name: /Brain/i })).find(
-      (link) => link.getAttribute('data-recent-route') === 'true',
-    )
-    expect(recentTile).toBeDefined()
-    if (!recentTile) {
-      throw new Error('Expected a recent Brain workspace tile')
-    }
-    expect(recentTile).toHaveAttribute('data-recent-route', 'true')
-    expect(recentTile).toHaveTextContent('Recent')
   })
 
   it('does not render a recent-destinations strip from session-scoped route history', async () => {
@@ -475,60 +624,31 @@ describe('HomePage landing', () => {
     expect(screen.queryByLabelText('Recent destinations')).toBeNull()
   })
 
-  it('persists operator-facing landing preferences from the home rail toggles', async () => {
+  it('removes the home preference toggles from the telemetry surface', async () => {
     renderHome()
 
-    const backdropToggle = await screen.findByRole('switch', { name: /Desktop background/i })
-    const splashToggle = screen.getByRole('switch', { name: /Startup screen/i })
-
-    fireEvent.click(backdropToggle)
-    fireEvent.click(splashToggle)
-
-    expect(JSON.parse(window.localStorage.getItem(HOME_LANDING_PREFERENCES_STORAGE_KEY) ?? '{}')).toMatchObject({
-      cinematicBackdropEnabled: true,
-      bootSplashEnabled: true,
-    })
-    expect(screen.getByText(/Custom default-image/i)).toBeInTheDocument()
-    expect(backdropToggle).toHaveAttribute('aria-checked', 'true')
-    expect(splashToggle).toHaveAttribute('aria-checked', 'true')
+    await screen.findByTestId('home-shell')
+    expect(screen.queryByRole('switch', { name: /Desktop background/i })).toBeNull()
+    expect(screen.queryByRole('switch', { name: /Startup screen/i })).toBeNull()
   })
 
-  it('opens the quick launcher from the hero action and navigates to a filtered destination', async () => {
+  it('removes the quick-launch hero affordance and does not open a search modal with Ctrl+K', async () => {
     renderHome()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Quick launch' }))
-
-    const searchbox = screen.getByRole('searchbox', { name: 'Search destinations' })
-    fireEvent.change(searchbox, { target: { value: 'theme' } })
-    fireEvent.click(await screen.findByRole('option', { name: /Display Settings Platform/i }))
-
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
-  })
-
-  it('opens the quick launcher with Ctrl+K and launches the active result with Enter', async () => {
-    renderHome()
-
+    await screen.findByTestId('home-shell')
+    expect(screen.queryByRole('button', { name: 'Quick launch' })).toBeNull()
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
-
-    const searchbox = await screen.findByRole('searchbox', { name: 'Search destinations' })
-    fireEvent.change(searchbox, { target: { value: 'brain' } })
-    fireEvent.keyDown(searchbox, { key: 'Enter' })
-
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain')
+    expect(screen.queryByRole('searchbox', { name: 'Search destinations' })).toBeNull()
   })
 
-  it('shows the shared system summary in the landing side rail', async () => {
+  it('shows the live telemetry content instead of the old system-summary side rail', async () => {
     renderHome()
 
-    expect(await screen.findByLabelText('System summary')).toBeInTheDocument()
-    expect(screen.getByText('Fedora Linux 42')).toBeInTheDocument()
-    expect(screen.getByText('map2-host')).toBeInTheDocument()
-    expect(screen.getByText('AVB: operational')).toBeInTheDocument()
-    expect(screen.getByText('AVDECC: 1 entity')).toBeInTheDocument()
-    expect(screen.getByText('Nodes: 1 active')).toBeInTheDocument()
+    expect(await screen.findByText('Current AVB Endpoints Connected')).toBeInTheDocument()
+    expect(screen.getAllByText('AVB: operational').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Nodes: 1 active').length).toBeGreaterThan(0)
     expect(screen.getByText('RME Fireface UFX')).toBeInTheDocument()
     expect(screen.getByText('Express 128')).toBeInTheDocument()
-    expect(screen.getByTestId('node-nav-bar')).toBeInTheDocument()
-    expect(screen.getByTestId('taskbar-clock')).toBeInTheDocument()
+    expect(screen.queryByLabelText('System summary')).toBeNull()
   })
 })

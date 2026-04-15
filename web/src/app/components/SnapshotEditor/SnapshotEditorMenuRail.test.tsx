@@ -6,19 +6,6 @@ import { SnapshotEditorMenuRail } from './SnapshotEditorMenuRail'
 function renderRail(overrides: Partial<React.ComponentProps<typeof SnapshotEditorMenuRail>> = {}) {
   const props: React.ComponentProps<typeof SnapshotEditorMenuRail> = {
     prefersReducedMotion: true,
-    title: 'Working Snapshot',
-    dirty: false,
-    onCreate: jest.fn(),
-    createPending: false,
-    onSave: jest.fn(),
-    savePending: false,
-    saveDisabled: false,
-    onOpenWorkspace: jest.fn(),
-    onDuplicate: jest.fn(),
-    duplicatePending: false,
-    duplicateDisabled: false,
-    onOpenVersionHistory: jest.fn(),
-    versionHistoryDisabled: false,
     onOpenControlCenter: jest.fn(),
     controlCenterDisabled: false,
     onAddFlow: jest.fn(),
@@ -26,16 +13,8 @@ function renderRail(overrides: Partial<React.ComponentProps<typeof SnapshotEdito
     onOpenMidi: jest.fn(),
     midiDisabled: false,
     midiTitle: '4 MIDI mappings',
-    midiLearning: false,
-    onToggleAbSwitch: jest.fn(),
-    abSwitchVisible: true,
-    abSwitchDisabled: false,
-    abSwitchPending: false,
-    abSwitchActiveLabel: 'A',
-    abSwitchNextLabel: 'B',
     onOpenLiveRuntime: jest.fn(),
     liveRuntimeLabel: 'View live state',
-    liveRuntimeActive: false,
     onOpenPerform: jest.fn(),
     onUndo: jest.fn(),
     undoDisabled: false,
@@ -47,14 +26,6 @@ function renderRail(overrides: Partial<React.ComponentProps<typeof SnapshotEdito
     previousDisabled: false,
     onNext: jest.fn(),
     nextDisabled: false,
-    lockVisible: false,
-    locked: false,
-    lockPending: false,
-    favoriteVisible: false,
-    favoriteActive: false,
-    favoritePending: false,
-    onClearFlows: jest.fn(),
-    clearFlowsDisabled: false,
     ...overrides,
   }
 
@@ -67,26 +38,50 @@ describe('SnapshotEditorMenuRail', () => {
     window.localStorage.clear()
   })
 
-  it('shows an A/B switch action in the floating quick menu when enabled', () => {
+  it('renders five statement-style primary actions in the quick menu', () => {
+    renderRail()
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
+    })
+
+    expect(screen.getByRole('menu', { name: 'Snapshot editor quick actions' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Snapshot configuration' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Add signal path' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Edit MIDI mappings' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Inspect live state' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Open performance view' })).toBeInTheDocument()
+    expect(screen.queryByText(/\?/)).not.toBeInTheDocument()
+  })
+
+  it('routes the quick actions through the provided callbacks', async () => {
     const props = renderRail()
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Show menu' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
     })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Snapshot configuration' }))
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Switch A/B from A to B?' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
     })
-
-    expect(props.onToggleAbSwitch).toHaveBeenCalledTimes(1)
-  })
-
-  it('omits the A/B switch action when the page is not in A/B mode', () => {
-    renderRail({ abSwitchVisible: false })
-
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Add signal path' }))
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Show menu' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
     })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit MIDI mappings' }))
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
+    })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect live state' }))
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
+    })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Open performance view' }))
 
-    expect(screen.queryByRole('button', { name: 'Switch A/B from A to B?' })).not.toBeInTheDocument()
+    expect(props.onOpenControlCenter).toHaveBeenCalledTimes(1)
+    expect(props.onAddFlow).toHaveBeenCalledTimes(1)
+    expect(props.onOpenMidi).toHaveBeenCalledTimes(1)
+    expect(props.onOpenLiveRuntime).toHaveBeenCalledTimes(1)
+    expect(props.onOpenPerform).toHaveBeenCalledTimes(1)
   })
 })

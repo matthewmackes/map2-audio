@@ -1,11 +1,11 @@
 import {
-  Add,
   ChevronLeft,
   ChevronRight,
+  DataTable,
+  FlowConnection,
   Launch,
-  MachineLearningModel,
   Music,
-  Settings,
+  SettingsAdjust,
   TrashCan,
 } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
@@ -103,10 +103,10 @@ export function SnapshotEditorOptionsRail({
                     size="sm"
                     kind="secondary"
                     className="snapshot-toolbar__button snapshot-toolbar__button--control-center"
-                    renderIcon={Settings}
-                    iconDescription="Open snapshot progress"
-                    aria-label="Open snapshot progress"
-                    title="Open snapshot progress"
+                    renderIcon={SettingsAdjust}
+                    iconDescription="Snapshot configuration"
+                    aria-label="Snapshot configuration"
+                    title="Snapshot configuration"
                     onClick={onOpenControlCenter}
                     disabled={controlCenterDisabled}
                   />
@@ -115,7 +115,7 @@ export function SnapshotEditorOptionsRail({
                     size="sm"
                     kind="primary"
                     className={`snapshot-toolbar__button snapshot-toolbar__button--add-flow ${!prefersReducedMotion && !addFlowDisabled ? 'is-pulsing' : ''}`}
-                    renderIcon={Add}
+                    renderIcon={FlowConnection}
                     iconDescription="Add signal path"
                     aria-label="Add signal path"
                     title="Add signal path"
@@ -130,7 +130,7 @@ export function SnapshotEditorOptionsRail({
                     size="sm"
                     kind="ghost"
                     className={`snapshot-toolbar__button snapshot-toolbar__button--midi ${midiLearning ? 'is-learning' : ''}`}
-                    renderIcon={MachineLearningModel}
+                    renderIcon={DataTable}
                     iconDescription="Edit MIDI mappings"
                     aria-label="Edit MIDI mappings"
                     title={midiTitle}

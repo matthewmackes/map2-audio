@@ -207,6 +207,9 @@
 }
 
 .global-tree-nav__footer-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   padding: 0.7rem 0.8rem;
   text-align: left;
   cursor: pointer;

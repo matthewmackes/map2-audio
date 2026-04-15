@@ -6,6 +6,9 @@ import {
   Home,
   IbmWatsonMachineLearning,
   Music,
+  Logout,
+  Renew,
+  Restart,
   ScreenMap,
   Settings,
 } from '@carbon/icons-react'
@@ -48,7 +51,6 @@ type TreeItemDefinition = {
   route?: string
   icon?: ComponentType<any>
   children?: TreeItemDefinition[]
-  isGroupHeader?: boolean
 }
 
 const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
@@ -56,18 +58,21 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/',
   '/snapshot-editor',
   '/workspace',
-  'FILES_GROUP_HEADER',
-  '/workspace/artifacts',
   '/midi-hub',
-  'INSTRUMENTS_GROUP_HEADER',
-  '/brain',
-  'HARDWARE_GROUP_HEADER',
-  '/workspace/outboard-hardware',
-  '/workspace/physical-surfaces',
-  '/expression',
-  '/lcd',
-  '/welcome',
+  '/workspace/artifacts',
+  '/platforms/about',
+  '/hardware',
 ] as const
+
+const FLAT_TOP_LEVEL_ROUTES = new Set([
+  '/',
+  '/snapshot-editor',
+  '/workspace/artifacts',
+  '/platforms/about',
+])
+const HARDWARE_TREE_ID = '/hardware'
+const HARDWARE_PHYSICAL_SURFACES_ID = '/hardware::physical-surfaces'
+const HARDWARE_OUTBOARD_GEAR_ID = '/hardware::outboard-gear'
 
 const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
   '/': Home,
@@ -93,14 +98,11 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/workspace': 'Control Panel',
   '/snapshot-editor': 'Snapshot Editor',
   '/midi-hub': 'MIDI Advanced',
+  '/workspace/artifacts': 'Audio Artifacts',
+  '/platforms/about': 'Platform Guide',
+  '/hardware': 'Hardware',
   '/labs/push-surface': 'Push Surface',
   '/ground-control-pro': 'Ground Control Pro',
-}
-
-const GROUP_HEADER_LABELS: Record<string, string> = {
-  'FILES_GROUP_HEADER': 'Files',
-  'INSTRUMENTS_GROUP_HEADER': 'Instruments',
-  'HARDWARE_GROUP_HEADER': 'Hardware',
 }
 
 function normalizeTarget(target: string): string {
@@ -127,19 +129,21 @@ function routeMatchesLocation(target: string, pathname: string, search: string):
 }
 
 function readExpandedIds(): string[] {
+  const defaultExpandedIds = ['/workspace', '/midi-hub', HARDWARE_TREE_ID, HARDWARE_PHYSICAL_SURFACES_ID, HARDWARE_OUTBOARD_GEAR_ID]
+
   if (typeof window === 'undefined') {
-    return ['/workspace', '/midi-hub']
+    return defaultExpandedIds
   }
 
   try {
     const raw = window.localStorage.getItem(GLOBAL_TREE_STORAGE_KEY)
     if (!raw) {
-      return ['/workspace', '/midi-hub']
+      return defaultExpandedIds
     }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : ['/workspace', '/midi-hub']
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : defaultExpandedIds
   } catch {
-    return ['/workspace', '/midi-hub']
+    return defaultExpandedIds
   }
 }
 
@@ -157,30 +161,70 @@ function resolveTreeLabel(route: string, fallbackLabel: string | undefined): str
 function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): TreeItemDefinition {
   const normalizedRoute = normalizeTarget(child.route)
   const childNavigationItem = findNavigationItem(normalizedRoute.split('?')[0])
+  const childRoutePath = normalizedRoute.split('?')[0]
+  const nestedChildren = getLauncherCatalogTreeChildren(childRoutePath)
+    .filter((nestedChild) => normalizeTarget(nestedChild.route).split('?')[0] !== childRoutePath)
+    .map((nestedChild) => buildChildTreeItem(normalizedRoute, nestedChild))
 
   return {
     id: `${parentId}::${normalizedRoute}`,
     label: child.label,
     route: normalizedRoute,
-    icon: childNavigationItem?.icon,
+    icon: TREE_ICON_OVERRIDES[childRoutePath] ?? childNavigationItem?.icon,
+    children: nestedChildren,
+  }
+}
+
+function buildHardwareTree(): TreeItemDefinition {
+  const physicalSurfacesItem = getLauncherCatalogItem('/workspace/physical-surfaces')
+  const outboardHardwareItem = getLauncherCatalogItem('/workspace/outboard-hardware')
+  const physicalSurfacesChildren = getLauncherCatalogTreeChildren('/workspace/physical-surfaces')
+    .map((child) => buildChildTreeItem(HARDWARE_PHYSICAL_SURFACES_ID, child))
+  const outboardOverviewChildren = getLauncherCatalogTreeChildren('/workspace/outboard-hardware')
+  const outboardChildren = outboardOverviewChildren.map((child) => {
+    const normalizedRoute = normalizeTarget(child.route)
+    const routePath = normalizedRoute.split('?')[0]
+    const navigationItem = findNavigationItem(routePath)
+    const nestedChildren = getLauncherCatalogTreeChildren(routePath)
+      .filter((nestedChild) => normalizeTarget(nestedChild.route).split('?')[0] !== routePath)
+      .map((nestedChild) => buildChildTreeItem(normalizedRoute, nestedChild))
+
+    return {
+      id: `${HARDWARE_OUTBOARD_GEAR_ID}::${normalizedRoute}`,
+      label: child.label,
+      route: normalizedRoute,
+      icon: TREE_ICON_OVERRIDES[routePath] ?? navigationItem?.icon,
+      children: nestedChildren,
+    }
+  })
+
+  return {
+    id: HARDWARE_TREE_ID,
+    label: 'Hardware',
+    icon: MapRackDeviceIcon,
+    children: [
+      {
+        id: HARDWARE_PHYSICAL_SURFACES_ID,
+        label: 'Physical Surfaces',
+        route: '/workspace/physical-surfaces',
+        icon: TREE_ICON_OVERRIDES['/workspace/physical-surfaces'] ?? physicalSurfacesItem?.icon,
+        children: physicalSurfacesChildren,
+      },
+      {
+        id: HARDWARE_OUTBOARD_GEAR_ID,
+        label: 'Outboard Gear',
+        route: '/workspace/outboard-hardware',
+        icon: TREE_ICON_OVERRIDES['/workspace/outboard-hardware'] ?? outboardHardwareItem?.icon ?? MapRackDeviceIcon,
+        children: outboardChildren,
+      },
+    ],
   }
 }
 
 function buildTreeItems(): TreeItemDefinition[] {
-  const items: TreeItemDefinition[] = []
-  
-  for (const route of TOP_LEVEL_ROUTE_ORDER) {
-    // Handle group headers
-    if (route.endsWith('_GROUP_HEADER')) {
-      const label = GROUP_HEADER_LABELS[route]
-      if (label) {
-        items.push({
-          id: route,
-          label,
-          isGroupHeader: true,
-        })
-      }
-      continue
+  return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
+    if (route === HARDWARE_TREE_ID) {
+      return [buildHardwareTree()]
     }
 
     const launcherItem = getLauncherCatalogItem(route)
@@ -188,33 +232,33 @@ function buildTreeItems(): TreeItemDefinition[] {
     const label = resolveTreeLabel(route, launcherItem?.heroTitle ?? navigationItem?.label)
 
     if (!label) {
-      continue
+      return []
     }
 
-    const children = getLauncherCatalogTreeChildren(route).map((child) => buildChildTreeItem(route, child))
-    items.push({
+    const children = FLAT_TOP_LEVEL_ROUTES.has(route)
+      ? []
+      : getLauncherCatalogTreeChildren(route).map((child) => buildChildTreeItem(route, child))
+    return [{
       id: route,
       label,
       route: children.length > 0 ? children[0]?.route ?? route : normalizeTarget(route),
       icon: TREE_ICON_OVERRIDES[route] ?? launcherItem?.icon ?? navigationItem?.icon,
       children,
-    })
-  }
-  
-  return items
+    }]
+  })
 }
 
-function findActiveNodeId(items: TreeItemDefinition[], pathname: string, search: string): string | null {
+function findActiveNodePath(items: TreeItemDefinition[], pathname: string, search: string): string[] | null {
   for (const item of items) {
     if (item.children?.length) {
-      const nestedMatch = findActiveNodeId(item.children, pathname, search)
+      const nestedMatch = findActiveNodePath(item.children, pathname, search)
       if (nestedMatch) {
-        return nestedMatch
+        return [item.id, ...nestedMatch]
       }
     }
 
     if (item.route && routeMatchesLocation(item.route, pathname, search)) {
-      return item.id
+      return [item.id]
     }
   }
 
@@ -234,7 +278,15 @@ function TreeNodeLabel({ label, secondary, isBold = false }: { label: string; se
   )
 }
 
-const BOLD_TOP_LEVEL_ROUTES = new Set(['/', '/snapshot-editor', '/workspace', '/midi-hub'])
+const BOLD_TOP_LEVEL_ROUTES = new Set([
+  '/',
+  '/snapshot-editor',
+  '/workspace',
+  '/midi-hub',
+  '/workspace/artifacts',
+  '/platforms/about',
+  '/hardware',
+])
 
 function renderTreeItems(
   items: TreeItemDefinition[],
@@ -256,15 +308,6 @@ function renderTreeItems(
   }
 
   return items.map((item) => {
-    // Render group headers as non-interactive elements
-    if (item.isGroupHeader) {
-      return (
-        <div key={item.id} className="global-tree-nav__group-header">
-          {item.label}
-        </div>
-      )
-    }
-
     const selected = item.id === activeNodeId
     const isBold = BOLD_TOP_LEVEL_ROUTES.has(item.id)
 
@@ -329,10 +372,11 @@ export function GlobalTreeNav({
   const [expandedIds, setExpandedIds] = useState<string[]>(() => readExpandedIds())
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
   const treeItems = useMemo(() => buildTreeItems(), [])
-  const activeNodeId = useMemo(
-    () => findActiveNodeId(treeItems, location.pathname, location.search),
+  const activeNodePath = useMemo(
+    () => findActiveNodePath(treeItems, location.pathname, location.search),
     [location.pathname, location.search, treeItems],
   )
+  const activeNodeId = activeNodePath?.[activeNodePath.length - 1] ?? null
   const displayedNode = topologyNodes.find((node) => node.node_id === viewedNodeId)
     ?? topologyNodes.find((node) => node.is_local)
     ?? null
@@ -354,6 +398,20 @@ export function GlobalTreeNav({
       // Ignore storage failures in restricted browser contexts.
     }
   }, [expandedIds])
+
+  useEffect(() => {
+    if (!activeNodePath || activeNodePath.length < 2) {
+      return
+    }
+
+    setExpandedIds((previous) => {
+      const next = new Set(previous)
+      for (const ancestorId of activeNodePath.slice(0, -1)) {
+        next.add(ancestorId)
+      }
+      return Array.from(next)
+    })
+  }, [activeNodePath])
 
   return (
     <Layer className="global-tree-nav__layer">
@@ -437,12 +495,15 @@ export function GlobalTreeNav({
 
         <div className="global-tree-nav__footer" role="group" aria-label="System actions">
           <button type="button" className="global-tree-nav__footer-button" onClick={onRefreshPage}>
+            <Renew size={16} aria-hidden />
             Refresh
           </button>
           <button type="button" className="global-tree-nav__footer-button" onClick={onOpenRestartConfirm}>
+            <Restart size={16} aria-hidden />
             Restart
           </button>
           <button type="button" className="global-tree-nav__footer-button" onClick={onLogOut}>
+            <Logout size={16} aria-hidden />
             Log Out
           </button>
         </div>

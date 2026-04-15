@@ -6207,44 +6207,18 @@ export function SnapshotEditorPage() {
   const renderEditorMenuRail = () => (
     <SnapshotEditorMenuRail
       prefersReducedMotion={prefersReducedMotion}
-      title={snapshotWorkspaceTitle}
-      dirty={snapshotsDirty}
-      onCreate={createCapturedSnapshot}
-      createPending={createSnapshotFromEditorMutation.isPending}
-      onSave={() => updateActiveSnapshotMutation.mutate()}
-      savePending={updateActiveSnapshotMutation.isPending}
-      saveDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
       onPrevious={goToPreviousSnapshot}
       previousDisabled={snapshotNavigationPending || !previousEditorSnapshot}
       previousTitle={previousSnapshotDisabledReason}
       onNext={goToNextSnapshot}
       nextDisabled={snapshotNavigationPending || !nextEditorSnapshot}
       nextTitle={nextSnapshotDisabledReason}
-      onDuplicate={() => duplicateActiveSnapshotMutation.mutate()}
-      duplicatePending={duplicateActiveSnapshotMutation.isPending}
-      duplicateDisabled={!activeSnapshot || duplicateActiveSnapshotMutation.isPending}
-      onOpenVersionHistory={openVersionHistoryWorkspace}
-      versionHistoryDisabled={!activeSnapshot}
-      onToggleLock={activeSnapshot ? () => toggleActiveSnapshotLockMutation.mutate() : undefined}
-      lockVisible={Boolean(activeSnapshot)}
-      locked={snapshotEditingLocked}
-      lockPending={toggleActiveSnapshotLockMutation.isPending}
       onUndo={() => undoMutation.mutate()}
       undoDisabled={!snapshotUndoRedo.canUndo || undoMutation.isPending}
       undoPending={undoMutation.isPending}
       onRedo={() => redoMutation.mutate()}
       redoDisabled={!snapshotUndoRedo.canRedo || redoMutation.isPending}
       redoPending={redoMutation.isPending}
-      onToggleFavorite={activeSnapshot ? () => {
-        toggleActiveSnapshotFavoriteMutation.mutate({
-          snapshotId: activeSnapshot.id,
-          isFavorite: !activeSnapshot.is_favorite,
-        })
-      } : undefined}
-      favoriteVisible={Boolean(activeSnapshot)}
-      favoriteActive={Boolean(activeSnapshot?.is_favorite)}
-      favoritePending={toggleActiveSnapshotFavoriteMutation.isPending}
-      onOpenWorkspace={openArtifactsSnapshots}
       onOpenControlCenter={openControlCenter}
       controlCenterDisabled={false}
       onAddFlow={addFlow}
@@ -6252,13 +6226,6 @@ export function SnapshotEditorPage() {
       onOpenMidi={openMidiMappingsWorkspace}
       midiDisabled={snapshotEditingLocked}
       midiTitle={midiMappingsTitle}
-      midiLearning={midiLearning}
-      onToggleAbSwitch={toggleAbSwitch}
-      abSwitchVisible={abSwitchEnabled}
-      abSwitchDisabled={snapshotEditingLocked || updateLiveSnapshotRoutingMutation.isPending || !abSwitchAlternateFlow}
-      abSwitchPending={updateLiveSnapshotRoutingMutation.isPending}
-      abSwitchActiveLabel={abSwitchActiveLabel}
-      abSwitchNextLabel={abSwitchNextLabel}
       onOpenLiveRuntime={openLiveRuntimeWorkspace}
       liveRuntimeLabel={
         liveRuntimeDisplayState === 'live_warning'
@@ -6267,10 +6234,7 @@ export function SnapshotEditorPage() {
             ? 'View offline live state'
             : 'View live state'
       }
-      liveRuntimeActive={liveRuntimeActive}
       onOpenPerform={openPerformWorkspace}
-      onClearFlows={() => setShowClearFlowsModal(true)}
-      clearFlowsDisabled={clearFlowsDisabled}
     />
   )
   const tabletDetailsAction = isTabletTouchLayout ? (

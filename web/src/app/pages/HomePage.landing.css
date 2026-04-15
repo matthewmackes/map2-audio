@@ -308,6 +308,107 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
+.hp2-home-shell__telemetry-shell {
+  display: grid;
+  gap: var(--cds-spacing-06, 1.5rem);
+}
+
+.hp2-home-shell__telemetry-intro,
+.hp2-home-shell__telemetry-section {
+  display: grid;
+  gap: var(--cds-spacing-05, 1rem);
+  padding: var(--cds-spacing-06, 1.5rem);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.hp2-home-shell__telemetry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.hp2-home-shell__telemetry-stack {
+  display: grid;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.hp2-home-shell__telemetry-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.hp2-home-shell__telemetry-section-copy {
+  display: grid;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.hp2-home-shell__telemetry-table-wrap {
+  overflow-x: auto;
+}
+
+.hp2-home-shell__telemetry-list.cds--structured-list {
+  min-width: 48rem;
+  background: transparent;
+}
+
+.hp2-home-shell__telemetry-list .cds--structured-list-thead,
+.hp2-home-shell__telemetry-list .cds--structured-list-tbody,
+.hp2-home-shell__telemetry-list .cds--structured-list-row,
+.hp2-home-shell__telemetry-list .cds--structured-list-th,
+.hp2-home-shell__telemetry-list .cds--structured-list-td {
+  background: transparent;
+}
+
+.hp2-home-shell__telemetry-list .cds--structured-list-th,
+.hp2-home-shell__telemetry-list .cds--structured-list-td {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+.hp2-home-shell__telemetry-row {
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.hp2-home-shell__telemetry-row.is-actionable {
+  cursor: pointer;
+}
+
+.hp2-home-shell__telemetry-row.is-actionable:hover,
+.hp2-home-shell__telemetry-row.is-actionable:focus-visible {
+  background: color-mix(in srgb, var(--interactive) 6%, transparent);
+}
+
+.hp2-home-shell__telemetry-row.is-actionable:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.hp2-home-shell__telemetry-row[data-tone='healthy'] .hp2-home-shell__telemetry-row-primary {
+  color: var(--text-primary);
+}
+
+.hp2-home-shell__telemetry-row[data-tone='warning'] .hp2-home-shell__telemetry-row-primary {
+  color: var(--support-warning);
+}
+
+.hp2-home-shell__telemetry-row[data-tone='critical'] .hp2-home-shell__telemetry-row-primary {
+  color: var(--support-danger);
+}
+
+.hp2-home-shell__telemetry-row-primary {
+  font-weight: 600;
+}
+
+.hp2-home-shell__telemetry-row-helper {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
 .hp2-home-shell__quick-launch-panel {
   display: grid;
   gap: var(--cds-spacing-05, 1rem);
@@ -463,5 +564,14 @@
   .hp2-home-shell__section-note {
     max-width: none;
     text-align: left;
+  }
+
+  .hp2-home-shell__telemetry-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hp2-home-shell__telemetry-list.cds--structured-list {
+    min-width: 36rem;
   }
 }
