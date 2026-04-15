@@ -63,7 +63,7 @@ Subtasks:
           - `npm --prefix web run build` -> PASS
     Assigned to: Unassigned
   - ID: T2281-B
-    Status: [ ] Todo
+    Status: [>] In Progress
     Title: Replace hardcoded hex colors in CSS files with theme custom properties
     Description:
     - Goal / acceptance criteria: Audit all CSS files under `web/src/` for hardcoded hex color values and replace them with the appropriate theme-layer CSS custom property. Where a suitable property does not exist, either map to the closest existing token or add a new token to `index.css`. Exceptions: theme preview swatches, base-dot indicators, and any deliberate fixed-color elements (e.g. Carbon base-shell dot indicators in ThemePage) may retain literal values with a comment.
@@ -71,7 +71,27 @@ Subtasks:
     - Dependencies: T2281-A
     - Estimated effort: High
     - Required outputs: Updated CSS files, typecheck + build pass.
-    Assigned to: Unassigned
+    Subtasks:
+      - ID: T2281-B1
+        Status: [✓] Done
+        Title: Re-theme Home landing, boot, and workspace hub CSS surfaces
+        Description:
+        - Goal / acceptance criteria: Convert the high-visibility Home landing shell, boot screen, and legacy workspace hub nav CSS from hardcoded hex colors / Carbon fallbacks to theme-layer aliases so those operator-facing entry surfaces visibly follow the active theme without changing layout semantics.
+        - Why it matters: These entry points still hardcode neutrals and IBM blue accents, which makes theme switches look inconsistent immediately after launch.
+        - Dependencies: T2281-A
+        - Estimated effort: Medium
+        - Required outputs: Updated `HomePage.landing.css`, `HomePage.boot.css`, `WorkspaceHubNav.css`, focused validation, and worklist notes.
+        Assigned to: Codex
+        Last updated: 2026-04-15 00:53 EDT - Codex
+        - Completion notes:
+          - Replaced the Home landing shell, boot screen, and workspace hub nav's fixed Carbon blues, neutrals, and dark-surface fallbacks with theme-layer aliases such as `--bg`, `--surface`, `--surface-2`, `--border`, `--text-*`, `--interactive`, and `--focus-ring`.
+          - Converted the hero/backdrop gradients and tile focus/hover treatments to `color-mix(...)` expressions based on theme aliases so the entry experience now tracks both dark and light theme families instead of staying pinned to IBM blue plus fixed grey overlays.
+          - Kept the existing spacing, layout, and typography semantics intact for this slice so the change remains strictly about theme responsiveness on high-visibility home-entry surfaces.
+        - Validation:
+          - `npm --prefix web run typecheck` -> PASS
+          - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts src/app/layout/AppShell.test.tsx src/app/theme/useTheme.test.ts` -> PASS
+          - `npm --prefix web run build` -> PASS
+        Assigned to: Codex
   - ID: T2281-C
     Status: [ ] Todo
     Title: Replace hardcoded hex colors in TSX inline styles with theme tokens

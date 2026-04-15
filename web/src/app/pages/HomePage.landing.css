@@ -1,15 +1,15 @@
 .hp2-root {
   position: relative;
   min-height: 100%;
-  color: var(--cds-text-primary, #161616);
+  color: var(--text-primary);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
 .hp2-root--landing {
   min-height: min(100vh, 100dvh);
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 14%, transparent) 0%, transparent 42%),
-    linear-gradient(180deg, var(--cds-layer-hover, #dde1e6) 0%, var(--cds-background, #f4f4f4) 100%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--interactive) 14%, transparent) 0%, transparent 42%),
+    linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 100%);
   overflow: hidden;
 }
 
@@ -42,9 +42,9 @@
 
 .hp2-root__backdrop {
   background:
-    linear-gradient(180deg, rgba(244, 244, 244, 0.84) 0%, rgba(244, 244, 244, 0.94) 100%),
-    linear-gradient(90deg, rgba(15, 98, 254, 0.05) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(15, 98, 254, 0.04) 1px, transparent 1px);
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 84%, transparent) 0%, color-mix(in srgb, var(--bg) 94%, transparent) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--interactive) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(0deg, color-mix(in srgb, var(--interactive) 4%, transparent) 1px, transparent 1px);
   background-size:
     auto,
     calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)),
@@ -55,8 +55,8 @@
 .hp2-home-shell__masthead {
   position: relative;
   z-index: 2;
-  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
-  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -82,8 +82,8 @@
   display: grid;
   gap: var(--cds-spacing-05, 1rem);
   border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
-  background: color-mix(in srgb, var(--cds-layer, #ffffff) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(14px);
   transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
@@ -100,7 +100,7 @@
 
 .hp2-home-shell__eyebrow {
   margin: 0;
-  color: var(--cds-text-helper, #6f6f6f);
+  color: var(--text-tertiary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -123,7 +123,7 @@
 .hp2-home-shell__workspace-copy p,
 .hp2-home-shell__preference-list p {
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.55;
 }
@@ -139,7 +139,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cds-spacing-03, 0.5rem);
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
@@ -150,10 +150,10 @@
   min-width: 1.75rem;
   min-height: 1.75rem;
   padding: 0 var(--cds-spacing-02, 0.25rem);
-  border: 1px solid color-mix(in srgb, var(--cds-border-strong-01, #8d8d8d) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 76%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cds-layer-hover, #f4f4f4) 88%, transparent);
-  color: var(--cds-text-primary, #161616);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -219,20 +219,20 @@
 .hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:hover,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-subtle, #c6c6c6));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-link-primary, #0f62fe) 18%, transparent);
+  border-color: color-mix(in srgb, var(--interactive) 48%, var(--border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive) 18%, transparent);
 }
 
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
 .hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
 .hp2-home-shell__workspace-tile.cds--tile.is-recent {
-  border-color: color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 56%, var(--cds-border-subtle, #c6c6c6));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 22%, transparent);
+  border-color: color-mix(in srgb, var(--home-tile-accent, var(--interactive)) 56%, var(--border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--home-tile-accent, var(--interactive)) 22%, transparent);
 }
 
 .hp2-home-shell__workspace-tile-head {
@@ -249,8 +249,8 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 0.875rem;
-  background: color-mix(in srgb, var(--home-tile-accent, var(--cds-link-primary, #0f62fe)) 12%, var(--cds-layer-hover, #f4f4f4));
-  color: var(--home-tile-accent, var(--cds-link-primary, #0f62fe));
+  background: color-mix(in srgb, var(--home-tile-accent, var(--interactive)) 12%, var(--surface-2));
+  color: var(--home-tile-accent, var(--interactive));
 }
 
 .hp2-home-shell__workspace-copy {
@@ -268,7 +268,7 @@
 
 .hp2-home-shell__recent-card-group,
 .hp2-home-shell__recent-card-route {
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
@@ -290,7 +290,7 @@
 }
 
 .hp2-home-shell__rail-card-link {
-  color: var(--cds-link-primary, #0f62fe);
+  color: var(--interactive);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 600;
   white-space: nowrap;
@@ -325,7 +325,7 @@
 
 .hp2-home-shell__quick-launch-copy {
   margin: 0;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
@@ -339,9 +339,9 @@
   display: grid;
   gap: var(--cds-spacing-02, 0.25rem);
   padding: var(--cds-spacing-04, 0.75rem);
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
   border-radius: 0.875rem;
-  background: var(--cds-layer, #ffffff);
+  background: var(--surface);
   color: inherit;
   text-align: left;
   transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
@@ -350,13 +350,13 @@
 .hp2-home-shell__quick-launch-result:hover,
 .hp2-home-shell__quick-launch-result:focus-visible,
 .hp2-home-shell__quick-launch-result.is-active {
-  border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 48%, var(--cds-border-subtle, #c6c6c6));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 6%, var(--cds-layer, #ffffff));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-link-primary, #0f62fe) 18%, transparent);
+  border-color: color-mix(in srgb, var(--interactive) 48%, var(--border));
+  background: color-mix(in srgb, var(--interactive) 6%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive) 18%, transparent);
 }
 
 .hp2-home-shell__quick-launch-result:focus-visible {
-  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -373,21 +373,21 @@
 
 .hp2-home-shell__quick-launch-result-group,
 .hp2-home-shell__quick-launch-result-route {
-  color: var(--cds-text-helper, #6f6f6f);
+  color: var(--text-tertiary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
 .hp2-home-shell__quick-launch-result-description {
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: 1.45;
 }
 
 .hp2-home-shell__quick-launch-empty {
   padding: var(--cds-spacing-04, 0.75rem);
-  border: 1px dashed color-mix(in srgb, var(--cds-border-subtle, #c6c6c6) 92%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--border) 92%, transparent);
   border-radius: 0.875rem;
-  color: var(--cds-text-secondary, #525252);
+  color: var(--text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -425,9 +425,9 @@
 @media (prefers-contrast: more) {
   .hp2-root__backdrop {
     background:
-      linear-gradient(180deg, rgba(244, 244, 244, 0.96) 0%, rgba(244, 244, 244, 1) 100%),
-      linear-gradient(90deg, rgba(15, 98, 254, 0.12) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(15, 98, 254, 0.1) 1px, transparent 1px);
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 96%, transparent) 0%, var(--bg) 100%),
+      linear-gradient(90deg, color-mix(in srgb, var(--interactive) 12%, transparent) 1px, transparent 1px),
+      linear-gradient(0deg, color-mix(in srgb, var(--interactive) 10%, transparent) 1px, transparent 1px);
   }
 
   .hp2-home-shell__masthead,
@@ -435,8 +435,8 @@
   .hp2-home-shell__rail-card,
   .hp2-home-shell__recent-card.cds--tile,
   .hp2-home-shell__workspace-tile.cds--tile {
-    border-color: var(--cds-border-strong-01, #8d8d8d);
-    background: var(--cds-layer, #ffffff);
+    border-color: var(--border-strong);
+    background: var(--surface);
     backdrop-filter: none;
   }
 
