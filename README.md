@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2188** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2189** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`85f9a95c`](https://github.com/matthewmackes/map2-audio/commit/85f9a95c64735515f1aa1ea698294a25d0470dec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`e8131c47`](https://github.com/matthewmackes/map2-audio/commit/e8131c47a10e808a54b0c8fda47f7d01ff2af512) | Complete theme-system CSS tokenization sweep and close epic | Map2 Audio | 2026-04-15 |
 | [`c5673d1a`](https://github.com/matthewmackes/map2-audio/commit/c5673d1a19c0db856ca8ca2f5008635ce1ce2476) | Merge gitlab master after home theme ship rebase | Map2 Audio | 2026-04-14 |
 | [`cb249274`](https://github.com/matthewmackes/map2-audio/commit/cb2492741cc95924d7c2059535bbaed3edb76dcd) | Theme home entry surfaces | Map2 Audio | 2026-04-14 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`09277694`](https://github.com/matthewmackes/map2-audio/commit/092776943f9dd2e455190174325c0d3e794a8834) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`f37f2103`](https://github.com/matthewmackes/map2-audio/commit/f37f21032df6c04f33e9b774e9b65287d2ffe701) | Theme expression surface and category accents | Map2 Audio | 2026-04-14 |
 | [`44ab4999`](https://github.com/matthewmackes/map2-audio/commit/44ab4999e9179ecbbad8e3102db67563b82c4738) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
-| [`a3ba2836`](https://github.com/matthewmackes/map2-audio/commit/a3ba28361c1d7aa72af225f217f27653e58edcf2) | Bridge shared theme chrome and retire dead theme dialogs | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
