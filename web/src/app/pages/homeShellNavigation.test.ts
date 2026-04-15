@@ -35,8 +35,8 @@ describe('homeShellNavigation recent routes', () => {
       {
         route: '/workspace/artifacts?category=snapshots',
         label: 'Snapshots',
-        description: 'Return to Workspaces.',
-        group: 'Workspaces',
+        description: 'Return to Audio Artifacts.',
+        group: 'Audio Artifacts',
       },
     ])
   })

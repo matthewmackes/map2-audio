@@ -173,26 +173,25 @@
   gap: var(--cds-spacing-06, 1.5rem);
 }
 
-.hp2-home-shell__recent-strip {
-  display: grid;
-  gap: var(--cds-spacing-04, 0.75rem);
-}
-
-.hp2-home-shell__recent-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--cds-spacing-05, 1rem);
-}
-
-.hp2-home-shell__workspace-section {
-  display: grid;
-  gap: var(--cds-spacing-04, 0.75rem);
-}
-
 .hp2-home-shell__workspace-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.hp2-home-shell__workspace-section-copy {
+  display: grid;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.hp2-home-shell__section-note {
+  margin: 0;
+  max-width: 20rem;
+  color: var(--text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.45;
+  text-align: right;
 }
 
 .hp2-home-shell__workspace-strip {
@@ -208,13 +207,6 @@
   min-height: 13rem;
 }
 
-.hp2-home-shell__recent-card.cds--tile {
-  min-height: 10.5rem;
-  padding: var(--cds-spacing-05, 1rem);
-  text-decoration: none;
-  color: inherit;
-}
-
 .hp2-home-shell__workspace-tile.cds--tile.hp2-home-shell__workspace-tile--small {
   min-height: 10.5rem;
 }
@@ -226,8 +218,6 @@
 
 .hp2-home-shell__workspace-tile.cds--tile:hover,
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
-.hp2-home-shell__recent-card.cds--tile:hover,
-.hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:hover,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
   border-color: color-mix(in srgb, var(--interactive) 48%, var(--border));
@@ -235,7 +225,6 @@
 }
 
 .hp2-home-shell__workspace-tile.cds--tile:focus-visible,
-.hp2-home-shell__recent-card.cds--tile:focus-visible,
 .hp2-home-shell__rail-card.cds--tile:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
@@ -270,22 +259,12 @@
   align-content: start;
 }
 
-.hp2-home-shell__recent-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--cds-spacing-03, 0.5rem);
-}
-
-.hp2-home-shell__recent-card-group,
-.hp2-home-shell__recent-card-route {
-  color: var(--text-secondary);
+.hp2-home-shell__workspace-group {
+  color: var(--text-tertiary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-}
-
-.hp2-home-shell__recent-card-route {
-  margin-top: auto;
-  word-break: break-word;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .hp2-home-shell__rail-card-head {
@@ -407,7 +386,6 @@
   .hp2-root__backdrop,
   .hp2-home-shell__hero,
   .hp2-home-shell__rail-card,
-  .hp2-home-shell__recent-card.cds--tile,
   .hp2-home-shell__workspace-tile.cds--tile {
     animation: none;
     transition: none;
@@ -423,7 +401,6 @@
 .hp2-root[data-reduced-effects='true'] .hp2-root__backdrop,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__hero,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__rail-card,
-.hp2-root[data-reduced-effects='true'] .hp2-home-shell__recent-card.cds--tile,
 .hp2-root[data-reduced-effects='true'] .hp2-home-shell__workspace-tile.cds--tile {
   animation: none;
   transition: none;
@@ -444,7 +421,6 @@
   .hp2-home-shell__masthead,
   .hp2-home-shell__hero,
   .hp2-home-shell__rail-card,
-  .hp2-home-shell__recent-card.cds--tile,
   .hp2-home-shell__workspace-tile.cds--tile {
     border-color: var(--border-strong);
     background: var(--surface);
@@ -457,7 +433,6 @@
 }
 
 @media (max-width: 66rem) {
-  .hp2-home-shell__recent-grid,
   .hp2-home-shell__workspace-strip {
     grid-template-columns: 1fr;
   }
@@ -478,5 +453,15 @@
 
   .hp2-home-shell__hero-actions {
     display: grid;
+  }
+
+  .hp2-home-shell__workspace-section-head {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .hp2-home-shell__section-note {
+    max-width: none;
+    text-align: left;
   }
 }

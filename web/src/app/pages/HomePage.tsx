@@ -19,13 +19,14 @@ import { useShellSummaryData } from '../layout/useShellSummaryData'
 import { DashboardCard } from '../components/shared/DashboardCard'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { getLauncherRoutePresentation, type LandingTileSize } from '../data/launcherCatalog'
-import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentDestinations, readHomeShellRecentRoute } from './homeShellNavigation'
+import { isHomeShellTileRecent, navigateHomeShellRoute, prefetchHomeShellRoute, readHomeShellRecentRoute } from './homeShellNavigation'
 import '../layout/LauncherPanel/LauncherPanel.css'
 import './HomePage.boot.css'
 import './HomePage.landing.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 const HOME_GROUP_ORDER = ['Workspace', 'Performance', 'MIDI', 'Device Operations'] as const
+const LANDING_VISIBLE_GROUPS = new Set<(typeof HOME_GROUP_ORDER)[number]>(['Performance', 'MIDI'])
 
 type HomeLaunchTile = {
   route: string
@@ -49,13 +50,6 @@ type QuickLaunchItem = {
 
 const QUICK_LAUNCH_STATIC_ITEMS: QuickLaunchItem[] = [
   {
-    route: '/workspace/platforms/overview',
-    label: 'Control Panel',
-    description: 'Open system posture, nodes, devices, and workspace-wide controls.',
-    group: 'Workspace',
-    keywords: ['workspace', 'overview', 'platforms', 'control panel'],
-  },
-  {
     route: '/snapshot-editor',
     label: 'Snapshot Editor',
     description: 'Open graph editing, routing, and recall work.',
@@ -77,6 +71,17 @@ const QUICK_LAUNCH_STATIC_ITEMS: QuickLaunchItem[] = [
     keywords: ['about', 'docs', 'documentation', 'info'],
   },
 ]
+
+function isLandingHiddenRoute(route: string) {
+  return (
+    route === '/workspace'
+    || route.startsWith('/workspace/')
+    || route.startsWith('/workspace?')
+    || route === '/tesira'
+    || route.startsWith('/tesira/')
+    || route.startsWith('/tesira?')
+  )
+}
 
 function resolveHomeGroup(route: string): typeof HOME_GROUP_ORDER[number] {
   if (route === '/workspace' || route.startsWith('/workspace/')) {
@@ -147,7 +152,6 @@ export function HomePage() {
   const quickLaunchSearchRef = useRef<HTMLInputElement | null>(null)
   const deferredQuickLaunchQuery = useDeferredValue(quickLaunchQuery)
   const recentRoute = useMemo(() => readHomeShellRecentRoute(), [location.key])
-  const recentDestinations = useMemo(() => readHomeShellRecentDestinations(), [location.key])
   const {
     startMenuTileItems,
   } = useAppShellPresentation({
@@ -203,7 +207,17 @@ export function HomePage() {
     },
     [specialSettings.settings?.landingTiles, startMenuTileItems],
   )
-  const quickLaunchItems = useMemo(() => buildQuickLaunchItems(startMenuTileItems), [startMenuTileItems])
+  const visibleLaunchTiles = useMemo(
+    () => groupedStartMenuTileItems
+      .filter((section) => LANDING_VISIBLE_GROUPS.has(section.group))
+      .flatMap((section) => section.items)
+      .filter((item) => !isLandingHiddenRoute(item.route)),
+    [groupedStartMenuTileItems],
+  )
+  const quickLaunchItems = useMemo(
+    () => buildQuickLaunchItems(startMenuTileItems).filter((item) => !isLandingHiddenRoute(item.route)),
+    [startMenuTileItems],
+  )
   const filteredQuickLaunchItems = useMemo(() => {
     const normalizedQuery = normalizeQuickLaunchValue(deferredQuickLaunchQuery)
     if (!normalizedQuery) {
@@ -381,7 +395,6 @@ export function HomePage() {
         <HeaderGlobalBar>
           <Tag type="blue">Carbon landing</Tag>
           <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
-            <OverflowMenuItem itemText="Open Workspace" onClick={() => navigateHomeShellRoute(navigate, '/workspace/platforms/overview')} />
             <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
             <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
           </OverflowMenu>
@@ -398,16 +411,16 @@ export function HomePage() {
                 {MAP2_PLATFORM_NAME}
               </h1>
               <p className="hp2-home-shell__lede">
-                Access your tools: editing, routing, performance, and system controls.
+                Jump straight into performance, sequencing, MIDI routing, and live editing without the old launcher clutter.
               </p>
               <div className="hp2-home-shell__hero-actions">
                 <Button
                   renderIcon={ArrowRight}
-                  onClick={() => navigateHomeShellRoute(navigate, '/workspace/platforms/overview')}
-                  onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
-                  onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
+                  onClick={() => navigateHomeShellRoute(navigate, '/brain')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/brain')}
+                  onFocus={() => prefetchHomeShellRoute('/brain')}
                 >
-                  Open Control Panel
+                  Open Brain
                 </Button>
                 <Button
                   kind="tertiary"
@@ -420,15 +433,15 @@ export function HomePage() {
                 </Button>
                 <Button
                   kind="ghost"
-                  renderIcon={Settings}
-                  onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')}
-                  onMouseEnter={() => prefetchHomeShellRoute('/platforms/theme')}
-                  onFocus={() => prefetchHomeShellRoute('/platforms/theme')}
+                  onClick={() => navigateHomeShellRoute(navigate, '/midi-hub/connections')}
+                  onMouseEnter={() => prefetchHomeShellRoute('/midi-hub/connections')}
+                  onFocus={() => prefetchHomeShellRoute('/midi-hub/connections')}
                 >
-                  Display settings
+                  Open Advanced MIDI
                 </Button>
                 <Button
                   kind="ghost"
+                  renderIcon={Settings}
                   onClick={handleOpenQuickLaunch}
                 >
                   Quick launch
@@ -441,104 +454,62 @@ export function HomePage() {
               </div>
             </DashboardCard>
 
-            {recentDestinations.length > 0 ? (
-              <section className="hp2-home-shell__recent-strip" aria-label="Recent destinations">
-                <div className="hp2-home-shell__workspace-section-head">
-                  <p className="hp2-home-shell__eyebrow">Recent destinations</p>
+            <section className="hp2-home-shell__workspace-sections" aria-label="Primary launchers">
+              <div className="hp2-home-shell__workspace-section-head">
+                <div className="hp2-home-shell__workspace-section-copy">
+                  <p className="hp2-home-shell__eyebrow">Primary launchers</p>
+                  <h2 className="dashboard-card__title">Performance and MIDI</h2>
                 </div>
-                <div className="hp2-home-shell__recent-grid">
-                  {recentDestinations.map((destination) => (
+                <p className="hp2-home-shell__section-note">Focused launchers for the routes you still want on Home.</p>
+              </div>
+              <div className="hp2-home-shell__workspace-strip">
+                {visibleLaunchTiles.map((item) => {
+                  const Icon = item.icon
+                  const isRecent = isHomeShellTileRecent(recentRoute, item.route)
+                  return (
                     <DashboardCard
-                      key={destination.route}
+                      key={item.route}
                       interactive
-                      className="hp2-home-shell__recent-card"
-                      href={destination.route}
+                      className={`hp2-home-shell__workspace-tile hp2-home-shell__workspace-tile--${item.size}${isRecent ? ' is-recent' : ''}`}
+                      href={item.route}
                       onClick={(event) => {
                         event.preventDefault()
-                        navigateHomeShellRoute(navigate, destination.route)
+                        navigateHomeShellRoute(navigate, item.route)
                       }}
-                      onMouseEnter={() => prefetchHomeShellRoute(destination.route)}
-                      onFocus={() => prefetchHomeShellRoute(destination.route)}
+                      onMouseEnter={() => prefetchHomeShellRoute(item.route)}
+                      onFocus={() => prefetchHomeShellRoute(item.route)}
+                      data-recent-route={isRecent ? 'true' : 'false'}
+                      data-tile-size={item.size}
                     >
-                      <div className="hp2-home-shell__recent-card-head dashboard-card__header">
-                        <Tag type="purple">Recent</Tag>
-                        <span className="hp2-home-shell__recent-card-group">{destination.group}</span>
+                      <div className="hp2-home-shell__workspace-tile-head dashboard-card__header">
+                        <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
+                          <Icon size={20} aria-hidden />
+                        </span>
+                        <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
+                          {isRecent ? 'Recent' : item.shortLabel}
+                        </Tag>
                       </div>
                       <div className="hp2-home-shell__workspace-copy">
-                        <h2 className="dashboard-card__title">{destination.label}</h2>
-                        <p className="dashboard-card__body-copy">{destination.description}</p>
+                        <span className="hp2-home-shell__workspace-group">{item.homeGroup}</span>
+                        <h2 className="dashboard-card__title">{item.label}</h2>
+                        <p className="dashboard-card__body-copy">{item.description}</p>
                       </div>
-                      <span className="hp2-home-shell__recent-card-route">{destination.route}</span>
                     </DashboardCard>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="hp2-home-shell__workspace-sections" aria-label="Control Panel shortcuts">
-              {groupedStartMenuTileItems.map((section) => (
-                <section key={section.group} className="hp2-home-shell__workspace-section" aria-label={`${section.group} shortcuts`}>
-                  <div className="hp2-home-shell__workspace-section-head">
-                    <p className="hp2-home-shell__eyebrow">{section.group}</p>
-                  </div>
-                  <div className="hp2-home-shell__workspace-strip">
-                    {section.items.map((item) => {
-                      const Icon = item.icon
-                      const isRecent = isHomeShellTileRecent(recentRoute, item.route)
-                      return (
-                        <DashboardCard
-                          key={item.route}
-                          interactive
-                          className={`hp2-home-shell__workspace-tile hp2-home-shell__workspace-tile--${item.size}${isRecent ? ' is-recent' : ''}`}
-                          href={item.route}
-                          onClick={(event) => {
-                            event.preventDefault()
-                            navigateHomeShellRoute(navigate, item.route)
-                          }}
-                          onMouseEnter={() => prefetchHomeShellRoute(item.route)}
-                          onFocus={() => prefetchHomeShellRoute(item.route)}
-                          data-recent-route={isRecent ? 'true' : 'false'}
-                          data-tile-size={item.size}
-                        >
-                          <div className="hp2-home-shell__workspace-tile-head dashboard-card__header">
-                            <span className="hp2-home-shell__workspace-icon" style={{ '--home-tile-accent': item.color } as React.CSSProperties}>
-                              <Icon size={20} aria-hidden />
-                            </span>
-                            <Tag type={item.maturity === 'production' ? 'green' : item.maturity === 'hardware-blocked' ? 'red' : 'cool-gray'}>
-                              {isRecent ? 'Recent' : item.shortLabel}
-                            </Tag>
-                          </div>
-                          <div className="hp2-home-shell__workspace-copy">
-                            <h2 className="dashboard-card__title">{item.label}</h2>
-                            <p className="dashboard-card__body-copy">{item.description}</p>
-                          </div>
-                        </DashboardCard>
-                      )
-                    })}
-                  </div>
-                </section>
-              ))}
+                  )
+                })}
+              </div>
             </section>
           </Column>
 
           <Column lg={6} md={8} sm={4} className="hp2-home-shell__rail">
             <DashboardCard
-              interactive
               className="hp2-home-shell__rail-card hp2-home-shell__rail-card--summary"
-              href="/workspace/platforms/overview"
-              onClick={(event) => {
-                event.preventDefault()
-                navigateHomeShellRoute(navigate, '/workspace/platforms/overview')
-              }}
-              onMouseEnter={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
-              onFocus={() => prefetchHomeShellRoute('/workspace/platforms/overview')}
             >
               <div className="hp2-home-shell__rail-card-head dashboard-card__header">
                 <div>
                   <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">System Status</p>
                   <h2 className="dashboard-card__title">System health and devices</h2>
                 </div>
-                <span className="hp2-home-shell__rail-card-link">Open control panel</span>
               </div>
               <SystemSummary
                 classNamePrefix="map2-launcher"

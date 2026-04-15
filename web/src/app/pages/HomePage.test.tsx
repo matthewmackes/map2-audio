@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
@@ -277,7 +277,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -285,8 +285,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
     expect(screen.getByText('Carbon landing')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
@@ -304,7 +303,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
   })
 
   it('skips the opt-in boot splash immediately when reduced motion is preferred', async () => {
@@ -318,7 +317,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-reduced-effects', 'true')
-    expect(screen.queryByRole('heading', { name: 'Mackes Audio Platform' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -394,19 +393,19 @@ describe('HomePage landing', () => {
   it('renders the settings-backed home launch grid and navigates through the hero actions', async () => {
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'Desktop Control Panel' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Workspace shortcuts')).toBeInTheDocument()
-    expect(screen.getByLabelText('Performance shortcuts')).toBeInTheDocument()
-    expect(screen.getByLabelText('MIDI shortcuts')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Workspaces/i })).toHaveAttribute('data-tile-size', 'large')
+    expect(await screen.findByRole('heading', { name: 'Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Primary launchers')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'medium')
     expect(screen.getByRole('link', { name: /MIDI Hub/i })).toHaveAttribute('data-tile-size', 'medium')
     expect(screen.getByRole('link', { name: /Stage Mode/i })).toHaveAttribute('data-tile-size', 'small')
+    expect(screen.queryByRole('link', { name: /Workspaces/i })).toBeNull()
+    expect(screen.queryByText('Recent destinations')).toBeNull()
+    expect(screen.queryByText('Device Operations')).toBeNull()
     expect(screen.queryByRole('link', { name: /Snapshot Editor/i })).toBeNull()
     expect(screen.queryByRole('link', { name: /Device\(s\) Manager/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Control Panel' }))
-    expect(screen.getByTestId('location-probe').textContent).toBe('/workspace/platforms/overview')
+    fireEvent.click(screen.getByRole('button', { name: 'Open Brain' }))
+    expect(screen.getByTestId('location-probe').textContent).toBe('/brain')
   })
 
   it('hides unconfigured home destinations when landing tiles are reduced in special settings', async () => {
@@ -423,17 +422,18 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    expect(await screen.findByRole('link', { name: /Workspaces/i })).toBeInTheDocument()
+    expect(await screen.findByLabelText('Primary launchers')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Brain/i })).toHaveAttribute('data-tile-size', 'large')
     expect(screen.queryByRole('link', { name: /MIDI Hub/i })).toBeNull()
     expect(screen.queryByRole('link', { name: /Stage Mode/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Workspaces/i })).toBeNull()
   })
 
-  it('deep-links the landing system-status rail card into the workspace surfaces', async () => {
+  it('renders the landing system-status rail card as non-navigational status only', async () => {
     renderHome()
 
-    fireEvent.click(await screen.findByRole('link', { name: /System Status System health and devices/i }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByText('System health and devices')).toBeInTheDocument()
+    expect(screen.queryByText('Open control panel')).toBeNull()
   })
 
   it('deep-links the landing preferences rail card into theme settings', async () => {
@@ -459,7 +459,7 @@ describe('HomePage landing', () => {
     expect(recentTile).toHaveTextContent('Recent')
   })
 
-  it('renders a recent-destinations strip from session-scoped route history', async () => {
+  it('does not render a recent-destinations strip from session-scoped route history', async () => {
     window.sessionStorage.setItem(
       'map2:home-shell-recent-routes',
       JSON.stringify([
@@ -471,13 +471,8 @@ describe('HomePage landing', () => {
 
     renderHome()
 
-    const recentStrip = await screen.findByLabelText('Recent destinations')
-    expect(within(recentStrip).getByRole('link', { name: /Theme/i })).toBeInTheDocument()
-    expect(within(recentStrip).getByRole('link', { name: /Brain/i })).toBeInTheDocument()
-    expect(within(recentStrip).getByRole('link', { name: /Connections/i })).toBeInTheDocument()
-
-    fireEvent.click(within(recentStrip).getByRole('link', { name: /Theme/i }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Recent destinations')).toBeNull()
   })
 
   it('persists operator-facing landing preferences from the home rail toggles', async () => {
