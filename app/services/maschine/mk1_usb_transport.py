@@ -122,7 +122,8 @@ class MaschineMK1UsbTransport:
         """
         if self._device is None:
             raise RuntimeError("transport is not open")
-        black = bytes(DISPLAY_FRAMEBUFFER_SIZE)
+        # cabl's 'black' framebuffer is 0xFF bytes (the panel is inverted).
+        black = b"\xff" * DISPLAY_FRAMEBUFFER_SIZE
         for display_index in (0, 1):
             for packet, post_delay_ms in build_display_init_packets(display_index):
                 self._write(EP_DISPLAY_OUT, packet)
