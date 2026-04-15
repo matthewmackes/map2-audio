@@ -1,0 +1,129 @@
+.device-context-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+}
+
+/* ── Issue list ─────────────────────────────────────────────────────────────── */
+
+.device-context-dialog__issue-list {
+  display: grid;
+  gap: var(--cds-spacing-03);
+}
+
+.device-context-dialog__issue-row {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: var(--cds-spacing-04);
+  align-items: start;
+  padding: var(--cds-spacing-04);
+  border: 1px solid var(--cds-border-subtle-01, var(--border));
+  background: var(--cds-layer-accent, var(--surface-2));
+}
+
+.device-context-dialog__issue-icon {
+  padding-top: 2px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.device-context-dialog__issue-icon--info    { color: var(--cds-support-info, var(--support-info)); }
+.device-context-dialog__issue-icon--warning { color: var(--cds-support-warning, var(--support-warning)); }
+.device-context-dialog__issue-icon--error   { color: var(--cds-support-error, var(--support-danger)); }
+
+.device-context-dialog__issue-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+}
+
+.device-context-dialog__issue-title {
+  font-size: var(--cds-heading-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  line-height: var(--cds-heading-compact-01-line-height, 1.29);
+  color: var(--cds-text-primary, var(--text-primary));
+  margin: 0;
+}
+
+.device-context-dialog__issue-detail {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: var(--cds-body-compact-01-line-height, 1.29);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  margin: 0;
+}
+
+/* ── Progress area ──────────────────────────────────────────────────────────── */
+
+.device-context-dialog__progress-area {
+  padding: var(--cds-spacing-03) 0;
+}
+
+.device-context-dialog__progress-label {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  margin: 0 0 var(--cds-spacing-05) 0;
+}
+
+/* ── Error area ─────────────────────────────────────────────────────────────── */
+
+.device-context-dialog__error-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+}
+
+.device-context-dialog__error-step {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  margin: 0;
+}
+
+/* ── Cluster actions section ────────────────────────────────────────────────── */
+
+.device-context-dialog__cluster-actions {
+  border-top: 1px solid var(--cds-border-subtle-01, var(--border));
+  padding-top: var(--cds-spacing-05);
+}
+
+.device-context-dialog__cluster-actions-title {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  margin: 0 0 var(--cds-spacing-04) 0;
+}
+
+.device-context-dialog__node-list {
+  display: grid;
+  gap: 1px;
+  background: var(--cds-border-subtle-01, var(--border));
+  border: 1px solid var(--cds-border-subtle-01, var(--border));
+  margin-bottom: var(--cds-spacing-04);
+}
+
+.device-context-dialog__node-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-03) var(--cds-spacing-04);
+  background: var(--cds-layer, var(--surface));
+}
+
+.device-context-dialog__node-hostname {
+  flex: 1;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.device-context-dialog__node-kind {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.device-context-dialog__rediscovery-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-04);
+  margin-top: var(--cds-spacing-04);
+}

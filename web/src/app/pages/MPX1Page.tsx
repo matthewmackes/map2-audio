@@ -1,8 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Activity, Book, Branch, Categories, Music, Play, SettingsAdjust, Waveform } from '@carbon/icons-react'
-import { Alert, Button, CircularProgress } from '@mui/material'
-
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MPX1/programNumber'
@@ -10,8 +8,9 @@ import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '.
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
+import { DeviceContextBanner } from '../components/DeviceContext'
 import { useCluster } from '../contexts/useCluster'
-import { useDeviceLocation } from '../hooks/useDeviceLocation'
+import { useDeviceNodeContext } from '../hooks/useDeviceNodeContext'
 import '../components/MPX1/MPX1PageShell.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag' | 'flow'
@@ -93,15 +92,12 @@ export function MPX1Page() {
   const location = useLocation()
   const navigate = useNavigate()
   const activeSection = sectionFromPath(location.pathname)
-  const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
-  const { location: deviceLocation, isLoading: locationLoading } = useDeviceLocation('lexicon-mpx1')
+  const { activeNodeId, localNodeId, nodes } = useCluster()
+  const { deviceState } = useDeviceNodeContext('lexicon-mpx1')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
-  const locationNode = deviceLocation ? nodes.find((node) => node.nodeId === deviceLocation.nodeId) : null
   const remoteSelected = selectedNodeId !== localNodeId
   const apiNodeId = remoteSelected ? selectedNodeId : null
-  const needsSwitch = Boolean(deviceLocation && selectedNodeId !== deviceLocation.nodeId)
-  const locationOffline = Boolean(locationNode && locationNode.nodeId !== localNodeId && !locationNode.isOnline)
   const mpx1 = useMPX1State({
     nodeId: apiNodeId,
     autoConnectWs: !apiNodeId,
@@ -225,7 +221,7 @@ export function MPX1Page() {
     </>
   )
 
-  if (locationLoading) {
+  if (deviceState === 'loading') {
     return renderShell(
       <div className="mpx1-shell__main" style={{ padding: 24 }}>
         <LoadingState description="Checking cluster MIDI inventory for the Lexicon MPX-1" />
@@ -233,7 +229,7 @@ export function MPX1Page() {
     )
   }
 
-  if (!deviceLocation) {
+  if (deviceState === 'not_found') {
     return renderShell(
       <div className="mpx1-shell__main" style={{ padding: 24 }}>
         <EmptyState
@@ -241,38 +237,6 @@ export function MPX1Page() {
           description="Connect the interface or switch to the node where it is attached to manage it here."
           align="left"
         />
-      </div>
-    )
-  }
-
-  if (needsSwitch) {
-    const locationLabel = deviceLocation.hostname ?? deviceLocation.nodeId
-    return renderShell(
-      <div className="mpx1-shell__main" style={{ padding: 24 }}>
-        <Alert
-          severity="info"
-          action={
-            <Button
-              color="inherit"
-              size="small"
-              onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
-            >
-              Switch to {locationLabel}
-            </Button>
-          }
-        >
-          Lexicon MPX-1 is connected to {locationLabel}. Select that node to manage the rack.
-        </Alert>
-      </div>
-    )
-  }
-
-  if (locationOffline) {
-    return renderShell(
-      <div className="mpx1-shell__main" style={{ padding: 24 }}>
-        <Alert severity="warning">
-          Lexicon MPX-1 is assigned to {deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.
-        </Alert>
       </div>
     )
   }
@@ -303,13 +267,7 @@ export function MPX1Page() {
           />
 
           <div className="mpx1-shell__main">
-            {remoteSelected ? (
-              <div style={{ padding: '12px 16px 0 16px' }}>
-                <Alert severity="info">
-                  MPX-1 control is proxied to {selectedNode?.hostname ?? selectedNodeId}.
-                </Alert>
-              </div>
-            ) : null}
+            <DeviceContextBanner deviceName="Lexicon MPX-1" deviceKey="lexicon-mpx1" />
             <div className="mpx1-shell__content">
               <Outlet />
             </div>

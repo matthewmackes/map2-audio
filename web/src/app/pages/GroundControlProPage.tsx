@@ -45,6 +45,7 @@ import { ArrowRight, Code, Download, Save, Send, Upload } from '@carbon/icons-re
 
 import { EmptyState } from '../components/shared/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { DeviceContextBanner } from '../components/DeviceContext'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import groundControlProApi, {
   type GroundControlArtifact,
@@ -578,6 +579,7 @@ export function GroundControlProPage() {
               </div>
             )}
           />
+          <DeviceContextBanner deviceName="Ground Control Pro" deviceKey="ground-control-pro" />
 
           {notice ? (
             <InlineNotification

@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Book, Branch, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification } from '@carbon/react'
+import { InlineLoading, InlineNotification } from '@carbon/react'
 
 import { IntelFXStatusBar } from '../components/IntelFX/IntelFXStatusBar'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
@@ -19,8 +19,9 @@ import { useIntelFXState, type IntelFXRegistryParam, type UseIntelFXStateResult 
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
+import { DeviceContextBanner } from '../components/DeviceContext'
 import { useCluster } from '../contexts/useCluster'
-import { useDeviceLocation } from '../hooks/useDeviceLocation'
+import { useDeviceNodeContext } from '../hooks/useDeviceNodeContext'
 import '../components/IntelFX/IntelFXPageShell.css'
 import './IntelFXPage.css'
 
@@ -113,15 +114,12 @@ export function IntelFXPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const activeSection = sectionFromPath(location.pathname)
-  const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
-  const { location: deviceLocation, isLoading: locationLoading } = useDeviceLocation('rocktron-intelfx')
+  const { activeNodeId, localNodeId, nodes } = useCluster()
+  const { deviceState } = useDeviceNodeContext('rocktron-intelfx')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
-  const locationNode = deviceLocation ? nodes.find((node) => node.nodeId === deviceLocation.nodeId) : null
   const remoteSelected = selectedNodeId !== localNodeId
   const apiNodeId = remoteSelected ? selectedNodeId : null
-  const needsSwitch = Boolean(deviceLocation && selectedNodeId !== deviceLocation.nodeId)
-  const locationOffline = Boolean(locationNode && locationNode.nodeId !== localNodeId && !locationNode.isOnline)
   const intelfx = useIntelFXState({
     nodeId: apiNodeId,
     autoConnectWs: !apiNodeId,
@@ -235,7 +233,7 @@ export function IntelFXPage() {
     </>
   )
 
-  if (locationLoading) {
+  if (deviceState === 'loading') {
     return renderShell(
       <div className="intelfx-shell__main">
         <div className="intelfx-shell__content">
@@ -245,7 +243,7 @@ export function IntelFXPage() {
     )
   }
 
-  if (!deviceLocation) {
+  if (deviceState === 'not_found') {
     return renderShell(
       <div className="intelfx-shell__main">
         <div className="intelfx-shell__content">
@@ -253,47 +251,6 @@ export function IntelFXPage() {
             title="IntelFX not detected"
             description="No Rocktron IntelFX MIDI interface is currently detected on any cluster node."
             align="left"
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (needsSwitch) {
-    const locationLabel = deviceLocation.hostname ?? deviceLocation.nodeId
-    return renderShell(
-      <div className="intelfx-shell__main">
-        <div className="intelfx-shell__content">
-          <InlineNotification
-            kind="info"
-            lowContrast
-            hideCloseButton
-            title="Switch cluster node"
-            subtitle={`Rocktron IntelFX is connected to ${locationLabel}. Select that node to manage the rack.`}
-          />
-          <Button
-            size="sm"
-            kind="tertiary"
-            className="intelfx-page__notice-action"
-            onClick={() => setActiveNode(deviceLocation.nodeId === localNodeId ? null : deviceLocation.nodeId)}
-          >
-            Switch to {locationLabel}
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (locationOffline) {
-    return renderShell(
-      <div className="intelfx-shell__main">
-        <div className="intelfx-shell__content">
-          <InlineNotification
-            kind="warning"
-            lowContrast
-            hideCloseButton
-            title="Assigned node offline"
-            subtitle={`Rocktron IntelFX is assigned to ${deviceLocation.hostname ?? deviceLocation.nodeId}, but that peer is currently offline.`}
           />
         </div>
       </div>
@@ -326,6 +283,7 @@ export function IntelFXPage() {
           />
 
           <div className="intelfx-shell__main">
+            <DeviceContextBanner deviceName="Rocktron IntelFX" deviceKey="rocktron-intelfx" />
             {remoteSelected ? (
               <div className="intelfx-page__proxy-notice">
                 <InlineNotification

@@ -32,9 +32,16 @@ export function WorkspacePageTemplate({
   stickySidebar = false,
 }: WorkspacePageTemplateProps) {
   const hasSidebar = Boolean(sidebar)
+  const isContentOnly = !hasSidebar && !aside
 
   return (
-    <div className={joinClasses('workspace-page-template', className)}>
+    <div
+      className={joinClasses(
+        'workspace-page-template',
+        isContentOnly && 'workspace-page-template--content-only',
+        className,
+      )}
+    >
       <div className={joinClasses('workspace-page-template__inner', innerClassName)}>
         <div
           className={joinClasses(
@@ -42,6 +49,7 @@ export function WorkspacePageTemplate({
             hasSidebar && 'workspace-page-template__window--with-sidebar',
             aside && hasSidebar && 'workspace-page-template__window--with-aside',
             aside && !hasSidebar && 'workspace-page-template__window--content-with-aside',
+            isContentOnly && 'workspace-page-template__window--content-only',
             windowClassName,
           )}
         >

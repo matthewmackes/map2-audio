@@ -11,6 +11,15 @@
   --workspace-page-template-sidebar-max: 20rem;
   --workspace-page-template-aside-min: 18rem;
   --workspace-page-template-aside-width: 24rem;
+  --workspace-page-template-content-only-padding-block: 1.25rem;
+  --workspace-page-template-content-only-padding-inline: clamp(0.9rem, 0.55rem + 0.95vw, 1.9rem);
+  --workspace-page-template-content-only-gap: 1rem;
+}
+
+.workspace-page-template--content-only {
+  --workspace-page-template-padding-block: var(--workspace-page-template-content-only-padding-block);
+  --workspace-page-template-padding-inline: var(--workspace-page-template-content-only-padding-inline);
+  --workspace-page-template-gap: var(--workspace-page-template-content-only-gap);
 }
 
 .workspace-page-template__inner {
@@ -30,6 +39,10 @@
   align-items: start;
   gap: var(--workspace-page-template-gap);
   grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-page-template__window--content-only {
+  align-content: start;
 }
 
 .workspace-page-template__window--with-sidebar {

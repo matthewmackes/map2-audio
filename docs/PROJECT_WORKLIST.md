@@ -10,6 +10,48 @@ Last updated: 2026-04-14 - Added `T2277` Global Tree-View Navigation epic.
 
 ---
 
+## Shared Device Context + Expression Surface Continuation
+
+ID: T2278
+Status: [✓] Done
+Title: Finish the shared device-context banner/dialog rollout across direct hardware routes
+Description:
+- Goal / acceptance criteria: Complete and validate the in-progress shared device-context UX already staged in the dirty tree so direct hardware pages use one consistent banner/dialog pattern for device discovery, wrong-node guidance, and offline-node handling without regressing route-specific control surfaces. The slice must cover the new shared `DeviceContext` components, `useDeviceNodeContext` hook, and the touched device pages (`/edirol-ua1000`, `/hotone-jogg`, `/ground-control-pro`, `/mpx1`, `/intelfx`) with focused validation and worklist notes.
+- Why it matters: The current repo state contains unshipped partial changes for device-context handling. Leaving those files inconsistent would break the required platform-layer coherence and make several hardware pages diverge in how they explain cluster-node/device targeting.
+- Dependencies: T973, T974
+- Estimated effort: Medium
+- Required outputs: completed shared device-context implementation, any required route/layout/test fixes, focused validation evidence, and status update.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 23:24 EDT - Codex
+- Completion notes:
+  - Added a shared `web/src/app/components/DeviceContext/` surface plus `web/src/app/hooks/useDeviceNodeContext.ts`, consolidating cluster-node mismatch, offline-node, and not-found device guidance behind one banner/dialog contract instead of route-local alert logic.
+  - Rewired the direct hardware/device pages touched in the dirty tree (`EdirolUA1000Page.tsx`, `HoToneJoGGPage.tsx`, `GroundControlProPage.tsx`, `IntelFXPage.tsx`, `MPX1Page.tsx`) to use the shared device-context flow while preserving each page’s existing control surface and remote-node proxy behavior.
+  - Extended `WorkspacePageTemplate` with an explicit content-only layout modifier so direct device/workspace shells can tighten padding consistently without route-local CSS hacks, then aligned the focused page tests with the new dependency surface instead of the removed location-only alerts.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HoToneJoGGPage.test.tsx src/app/pages/GroundControlProPage.test.tsx src/app/components/layout/WorkspacePageTemplate.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T2279
+Status: [>] In Progress
+Title: Reconcile the staged Expression/Home redesign bundle into a coherent routed shell slice
+Description:
+- Goal / acceptance criteria: Audit and either complete or explicitly de-scope the remaining dirty-tree redesign work around `ExpressionPage`, the home-surface LCD panel, and related shell/layout tweaks so the affected routes build cleanly, retain operator-critical navigation content, and align with current MAP2 UI constraints.
+- Why it matters: The workspace currently includes a second unfinished bundle that mixes a major Expression redesign with home-shell substitutions. It should not be shipped accidentally without deliberate reconciliation.
+- Dependencies: T2278
+- Estimated effort: High
+- Required outputs: reconciled code changes or explicit rollback/de-scope notes, focused validation evidence, and updated worklist status.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-14 23:24 EDT - Codex
+- Progress notes:
+  - Audited the staged Home/LCD substitution and confirmed it regressed the existing home-shell contract by removing recent-destination and grouped launch-strip behavior while introducing noisy LCD polling into the current test harness.
+  - De-scoped that substitution from the in-progress bundle by restoring the canonical home-shell recent-destinations and grouped-launch sections in `HomePage.tsx` / `HomePage.landing.css`, leaving the remaining Expression redesign work isolated for follow-up rather than shipping the shell regression.
+  - Current validation after the de-scope: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts` -> PASS.
+
+---
+
 ## Global Tree-View Navigation
 
 ID: T2277

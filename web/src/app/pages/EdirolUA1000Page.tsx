@@ -62,8 +62,9 @@ import { LegacyButton } from '../components/shared/LegacyButton'
 import { LegacyTile } from '../components/shared/LegacyTile'
 import { useToasts } from '../components/Toasts'
 import { audioApi, diagnosticsApi, getWsUrl } from '../../map2/api'
+import { DeviceContextBanner } from '../components/DeviceContext'
 import { useCluster } from '../contexts/useCluster'
-import { useDeviceLocation } from '../hooks/useDeviceLocation'
+import { useDeviceNodeContext } from '../hooks/useDeviceNodeContext'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
@@ -95,20 +96,16 @@ export function EdirolUA1000Page() {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const isMobile = useIsMobile()
-  const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
-  const { location, isLoading: locationLoading } = useDeviceLocation('edirol-ua1000')
+  const { activeNodeId, localNodeId, nodes } = useCluster()
+  const { deviceState } = useDeviceNodeContext('edirol-ua1000')
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
   const [shoppingDialogOpen, setShoppingDialogOpen] = useState(false)
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
-  const locationNode = location ? nodes.find((node) => node.nodeId === location.nodeId) : null
   const remoteSelected = selectedNodeId !== localNodeId
   const apiNodeId = remoteSelected ? selectedNodeId : null
   const scopeKey = apiNodeId ?? 'local'
-  const needsSwitch = Boolean(location && selectedNodeId !== location.nodeId)
-  const locationLabel = location?.hostname ?? location?.nodeId ?? 'the correct node'
-  const locationOffline = Boolean(locationNode && locationNode.nodeId !== localNodeId && !locationNode.isOnline)
   const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000, nodeId: apiNodeId })
 
   // Real-time WebSocket data
@@ -313,11 +310,13 @@ export function EdirolUA1000Page() {
         }
       />
 
-      {locationLoading ? (
+      <DeviceContextBanner deviceName="Edirol UA-1000" deviceKey="edirol-ua1000" />
+
+      {deviceState === 'loading' ? (
         <LoadingState description="Checking cluster hardware inventory for the Edirol UA-1000 interface" />
       ) : null}
 
-      {!locationLoading && !location ? (
+      {deviceState === 'not_found' ? (
         <EmptyState
           title="No Edirol UA-1000 interface is currently detected on any cluster node"
           description="Connect the interface or switch to the node where it is attached to continue."
@@ -325,30 +324,7 @@ export function EdirolUA1000Page() {
         />
       ) : null}
 
-      {!locationLoading && needsSwitch ? (
-        <Alert
-          severity="info"
-          action={
-            <Button
-              color="inherit"
-              size="small"
-              onClick={() => setActiveNode(location?.nodeId === localNodeId ? null : location?.nodeId ?? null)}
-            >
-              Switch to {locationLabel}
-            </Button>
-          }
-        >
-          Edirol UA-1000 is connected to {locationLabel}. Select that node to use this control page.
-        </Alert>
-      ) : null}
-
-      {!locationLoading && locationOffline ? (
-        <Alert severity="warning">
-          Edirol UA-1000 is assigned to {locationLabel}, but that peer is currently offline.
-        </Alert>
-      ) : null}
-
-      {!locationLoading && (!location || needsSwitch || locationOffline) ? null : (
+      {deviceState === 'ready' ? (
         <>
 
       {/* Health Alert */}
@@ -686,7 +662,7 @@ export function EdirolUA1000Page() {
         onClose={() => setShoppingDialogOpen(false)}
       />
         </>
-      )}
+      ) : null}
     </div>
   )
 }

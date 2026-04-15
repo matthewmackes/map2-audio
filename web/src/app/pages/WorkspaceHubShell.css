@@ -8,6 +8,9 @@
   --workspace-page-template-padding-block: var(--cds-spacing-05);
   --workspace-page-template-padding-inline: clamp(1rem, 0.7rem + 1vw, 1.75rem);
   --workspace-page-template-gap: var(--cds-spacing-06);
+  --workspace-page-template-content-only-padding-block: var(--cds-spacing-04);
+  --workspace-page-template-content-only-padding-inline: clamp(0.75rem, 0.45rem + 0.95vw, 1.9rem);
+  --workspace-page-template-content-only-gap: var(--cds-spacing-05);
 }
 
 .workspace-hub-shell__frame {
@@ -66,5 +69,7 @@
     --workspace-page-template-padding-block: var(--cds-spacing-05);
     --workspace-page-template-padding-inline: 0.85rem;
     --workspace-page-template-gap: var(--cds-spacing-05);
+    --workspace-page-template-content-only-padding-block: var(--cds-spacing-04);
+    --workspace-page-template-content-only-padding-inline: 0.75rem;
   }
 }

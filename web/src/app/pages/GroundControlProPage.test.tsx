@@ -95,6 +95,12 @@ jest.mock('../hooks/useDeviceLocation', () => ({
   useDeviceLocation: (...args: unknown[]) => mockUseDeviceLocation(...args),
 }))
 
+jest.mock('../components/DeviceContext', () => ({
+  DeviceContextBanner: ({ deviceName }: { deviceName: string }) => (
+    <div data-testid="device-context-banner">{deviceName} context banner</div>
+  ),
+}))
+
 jest.mock('../components/PageHeader', () => ({
   PageHeader: ({
     title,
@@ -206,6 +212,7 @@ describe('GroundControlProPage', () => {
     expect(screen.getByRole('tab', { name: 'Forensics' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
     expect(screen.getByText('Hardware not detected')).toBeTruthy()
+    expect(screen.getByTestId('device-context-banner')).toHaveTextContent('Ground Control Pro context banner')
   })
 
   it('imports a dump into the editable session model and keeps push gated without backup', async () => {

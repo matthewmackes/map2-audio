@@ -1,21 +1,20 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 import { HoToneJoGGPage } from './HoToneJoGGPage'
 
-const mockSetActiveNode = jest.fn()
 const mockUseCluster = jest.fn()
-const mockUseDeviceLocation = jest.fn()
+const mockUseDeviceNodeContext = jest.fn()
 const mockAudioInterfaceControl = jest.fn(({ nodeId }: { nodeId?: string | null }) => (
   <div data-testid="audio-interface-control">{nodeId ?? 'local'}</div>
 ))
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 
-jest.mock('../hooks/useDeviceLocation', () => ({
-  useDeviceLocation: (...args: unknown[]) => mockUseDeviceLocation(...args),
+jest.mock('../hooks/useDeviceNodeContext', () => ({
+  useDeviceNodeContext: (...args: unknown[]) => mockUseDeviceNodeContext(...args),
 }))
 
 jest.mock('../components/PageHeader', () => ({
@@ -27,13 +26,18 @@ jest.mock('../components/PageHeader', () => ({
   ),
 }))
 
+jest.mock('../components/DeviceContext', () => ({
+  DeviceContextBanner: ({ deviceName }: { deviceName: string }) => (
+    <div data-testid="device-context-banner">{deviceName} context banner</div>
+  ),
+}))
+
 jest.mock('../../map2/components/AudioInterfaceControl', () => ({
   AudioInterfaceControl: (props: { nodeId?: string | null }) => mockAudioInterfaceControl(props),
 }))
 
 describe('HoToneJoGGPage', () => {
   beforeEach(() => {
-    mockSetActiveNode.mockReset()
     mockAudioInterfaceControl.mockClear()
     mockUseCluster.mockReturnValue({
       activeNodeId: null,
@@ -42,21 +46,18 @@ describe('HoToneJoGGPage', () => {
         { nodeId: 'node-local', hostname: 'local-rack' },
         { nodeId: 'node-b', hostname: 'rack-b' },
       ],
-      setActiveNode: mockSetActiveNode,
+    })
+    mockUseDeviceNodeContext.mockReturnValue({
+      deviceState: 'needs_switch',
     })
   })
 
   it('shows a switch prompt when the hardware is on another node', () => {
-    mockUseDeviceLocation.mockReturnValue({
-      location: { nodeId: 'node-b', hostname: 'rack-b' },
-      isLoading: false,
-    })
+    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'needs_switch' })
 
     render(<HoToneJoGGPage />)
 
-    expect(screen.getByText('HoTone JoGG is connected to rack-b. Select that node to manage the interface directly.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to rack-b' }))
-    expect(mockSetActiveNode).toHaveBeenCalledWith('node-b')
+    expect(screen.getByTestId('device-context-banner').textContent).toContain('HoTone JoGG context banner')
     expect(screen.queryByTestId('audio-interface-control')).toBeNull()
   })
 
@@ -68,12 +69,8 @@ describe('HoToneJoGGPage', () => {
         { nodeId: 'node-local', hostname: 'local-rack' },
         { nodeId: 'node-b', hostname: 'rack-b' },
       ],
-      setActiveNode: mockSetActiveNode,
     })
-    mockUseDeviceLocation.mockReturnValue({
-      location: { nodeId: 'node-b', hostname: 'rack-b' },
-      isLoading: false,
-    })
+    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'ready' })
 
     render(<HoToneJoGGPage />)
 
@@ -83,14 +80,11 @@ describe('HoToneJoGGPage', () => {
   })
 
   it('shows a cluster-wide warning when the interface is not detected anywhere', () => {
-    mockUseDeviceLocation.mockReturnValue({
-      location: null,
-      isLoading: false,
-    })
+    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'not_found' })
 
     render(<HoToneJoGGPage />)
 
-    expect(screen.getByText('No HoTone JoGG interface is currently detected on any cluster node.')).toBeTruthy()
+    expect(screen.getByText('No HoTone JoGG interface is currently detected on any cluster node')).toBeTruthy()
     expect(screen.queryByTestId('audio-interface-control')).toBeNull()
   })
 })
