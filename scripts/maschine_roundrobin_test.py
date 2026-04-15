@@ -32,8 +32,9 @@ from app.services.maschine.mk1_protocol import (  # noqa: E402
 from app.services.maschine.mk1_usb_transport import MaschineMK1UsbTransport  # noqa: E402
 
 
-BLACK = bytes(DISPLAY_FRAMEBUFFER_SIZE)
-WHITE = bytes([0xFF] * DISPLAY_FRAMEBUFFER_SIZE)
+# cabl ground state: 0xFF = black (panel dark), 0x00 = white (panel bright)
+BLACK = b"\xff" * DISPLAY_FRAMEBUFFER_SIZE
+WHITE = bytes(DISPLAY_FRAMEBUFFER_SIZE)
 
 
 def tick(t: MaschineMK1UsbTransport, label: str, frame: bytes, leds: list[int], dwell: float) -> None:
