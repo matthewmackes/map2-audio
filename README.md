@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1101** Python | **1200** TypeScript | **136** C++/H | **145** Docs | **2181** total commits | **3** stars | **0** forks | **0** open issues
+**1101** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2183** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f37f2103`](https://github.com/matthewmackes/map2-audio/commit/f37f21032df6c04f33e9b774e9b65287d2ffe701) | Theme expression surface and category accents | Map2 Audio | 2026-04-14 |
+| [`44ab4999`](https://github.com/matthewmackes/map2-audio/commit/44ab4999e9179ecbbad8e3102db67563b82c4738) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`a3ba2836`](https://github.com/matthewmackes/map2-audio/commit/a3ba28361c1d7aa72af225f217f27653e58edcf2) | Bridge shared theme chrome and retire dead theme dialogs | Map2 Audio | 2026-04-14 |
 | [`43ef213c`](https://github.com/matthewmackes/map2-audio/commit/43ef213c3f9f537f71f7ac26d9fee663907be150) | Update build identity after production ship | Map2 Audio | 2026-04-14 |
 | [`83ac7f76`](https://github.com/matthewmackes/map2-audio/commit/83ac7f76cdfdebbb8594f1ba3a0ef7acbbf4cd31) | Restore control panel rail and flatten workspace shell | Map2 Audio | 2026-04-14 |
 | [`c8e3226a`](https://github.com/matthewmackes/map2-audio/commit/c8e3226a4f1b7ac61651c06a7853f2246dc3dcc5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`5c0c54fd`](https://github.com/matthewmackes/map2-audio/commit/5c0c54fdb5109ffab74eb4be7bda350fc3f8a39f) | Close expression and home reconciliation | Map2 Audio | 2026-04-14 |
 | [`947d9474`](https://github.com/matthewmackes/map2-audio/commit/947d9474fd0d5bd4e07ac5f9b375af73972fe444) | Ship remaining expression and shell updates | Map2 Audio | 2026-04-14 |
-| [`07924463`](https://github.com/matthewmackes/map2-audio/commit/0792446333a2d51ba32a8c51fd8e85f35108f39c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
-| [`ccf9a6c7`](https://github.com/matthewmackes/map2-audio/commit/ccf9a6c7c703ed24213c5ef47ef97433246df803) | Ship shared device-context rollout | Map2 Audio | 2026-04-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
