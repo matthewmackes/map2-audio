@@ -34,7 +34,7 @@ Last updated: 2026-04-14 23:24 EDT - Codex
   - `npm --prefix web run build` -> PASS
 
 ID: T2279
-Status: [>] In Progress
+Status: [✓] Done
 Title: Reconcile the staged Expression/Home redesign bundle into a coherent routed shell slice
 Description:
 - Goal / acceptance criteria: Audit and either complete or explicitly de-scope the remaining dirty-tree redesign work around `ExpressionPage`, the home-surface LCD panel, and related shell/layout tweaks so the affected routes build cleanly, retain operator-critical navigation content, and align with current MAP2 UI constraints.
@@ -44,11 +44,19 @@ Description:
 - Required outputs: reconciled code changes or explicit rollback/de-scope notes, focused validation evidence, and updated worklist status.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-04-14 23:24 EDT - Codex
+Last updated: 2026-04-15 00:51 EDT - Codex
 - Progress notes:
   - Audited the staged Home/LCD substitution and confirmed it regressed the existing home-shell contract by removing recent-destination and grouped launch-strip behavior while introducing noisy LCD polling into the current test harness.
   - De-scoped that substitution from the in-progress bundle by restoring the canonical home-shell recent-destinations and grouped-launch sections in `HomePage.tsx` / `HomePage.landing.css`, leaving the remaining Expression redesign work isolated for follow-up rather than shipping the shell regression.
   - Current validation after the de-scope: `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts` -> PASS.
+- Completion notes:
+  - Removed the dead de-scoped LCD/home redesign artifacts (`web/src/app/components/LCDDisplay.tsx`, `LCDDisplay.css`, `web/src/app/hooks/useLCDData.ts`, `EXPRESSION_REDESIGN_SUMMARY.md`, and the staged image artifact) so the repo no longer carries an unshipped alternate Home surface after the de-scope decision.
+  - Kept the shipped `ExpressionPage` redesign and the related nav tweaks (`launcherCatalog.tsx`, `GlobalTreeNav.tsx`) as the coherent surviving slice from the staged bundle, while updating `AppShell.test.tsx` to match the current tree contract after the reconciliation.
+  - Closed the task on authoritative route/build evidence instead of a direct Jest import of `ExpressionPage.tsx`, because the current Jest pipeline still does not execute modules that depend on Vite `import.meta` without additional harness work; the production build remains the canonical gate for that page in this slice.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx src/app/pages/homeShellNavigation.test.ts src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

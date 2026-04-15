@@ -176,8 +176,8 @@ describe('AppShell global tree navigation', () => {
     expect(container.querySelector('.window-title-strip')).toBeNull()
     expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
     expect(screen.getByText('Control Panel')).toBeInTheDocument()
-    expect(screen.getByText('Chains')).toBeInTheDocument()
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
+    expect(screen.getByText('Brain')).toBeInTheDocument()
     expect(screen.queryByText('DSP')).toBeNull()
     expect(screen.queryByText('CPU Performance')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
@@ -228,7 +228,7 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByText('Snapshot Editor'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace')
     })
   })
 
