@@ -548,18 +548,33 @@ class StateAuthorityActivationService:
 
             await self.session.flush()
             preferred_instance_ids = chain_preloaded_instance_ids if chain_preloaded_instance_ids else None
+            activation_kwargs: dict[str, Any] = {
+                "allow_snapshot_path_activation": True,
+            }
             if preferred_instance_ids:
-                try:
-                    activated = await self.chain_service.activate_chain(
-                        runtime_chain.id,
-                        preferred_detached_instance_ids=preferred_instance_ids,
-                    )
-                except TypeError as exc:
-                    if "preferred_detached_instance_ids" not in str(exc):
-                        raise
+                activation_kwargs["preferred_detached_instance_ids"] = preferred_instance_ids
+            try:
+                activated = await self.chain_service.activate_chain(
+                    runtime_chain.id,
+                    **activation_kwargs,
+                )
+            except TypeError as exc:
+                message = str(exc)
+                if "allow_snapshot_path_activation" in message:
+                    activation_kwargs.pop("allow_snapshot_path_activation", None)
+                    try:
+                        activated = await self.chain_service.activate_chain(
+                            runtime_chain.id,
+                            **activation_kwargs,
+                        )
+                    except TypeError as inner_exc:
+                        if "preferred_detached_instance_ids" not in str(inner_exc):
+                            raise
+                        activated = await self.chain_service.activate_chain(runtime_chain.id)
+                elif "preferred_detached_instance_ids" in message:
                     activated = await self.chain_service.activate_chain(runtime_chain.id)
-            else:
-                activated = await self.chain_service.activate_chain(runtime_chain.id)
+                else:
+                    raise
             activation_status = "active" if activated else "degraded"
             activated_runtime_chain_ids.append(runtime_chain.id)
             runtime_paths.append(

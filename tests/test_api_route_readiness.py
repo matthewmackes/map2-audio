@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from app.routes import audio as audio_routes
 from app.routes import chains as chains_routes
 from app.routes import plugins as plugins_routes
+from app.services.chain_service import SnapshotOwnedChainActivationError
 from app.services import api_readiness
 
 
@@ -224,3 +225,39 @@ def test_chain_activate_route_returns_structured_503_when_operation_times_out(mo
     assert excinfo.value.status_code == 503
     assert excinfo.value.detail["reason"] == "chain_activation_temporarily_unavailable"
     assert excinfo.value.detail["route"] == "/api/chains/{id}/activate"
+
+
+def test_chain_activate_route_rejects_snapshot_owned_runtime_chain_outside_canonical_path(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: _FakeOrchestrator(_orchestrator_status()),
+    )
+
+    class _Session:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def rollback(self):
+            return None
+
+    class _FakeChainService:
+        def __init__(self, _session):
+            pass
+
+        async def activate_chain(self, _chain_id):
+            raise SnapshotOwnedChainActivationError(
+                "Chain 7 is owned by a live snapshot and must be activated through /api/snapshots/{id}/activate."
+            )
+
+    monkeypatch.setattr("app.database.get_session", lambda: _Session())
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr(chains_routes, "_allow_chain_toggle", lambda chain_id: True)
+
+    with pytest.raises(HTTPException) as excinfo:
+        asyncio.run(chains_routes.activate_chain(7))
+
+    assert excinfo.value.status_code == 409
+    assert "must be activated through /api/snapshots/{id}/activate" in str(excinfo.value.detail)

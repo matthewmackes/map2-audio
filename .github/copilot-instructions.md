@@ -1253,6 +1253,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: `kill -9 $(pgrep -f "uvicorn app.main")`
 - **Prevention**: Use systemd service with proper cleanup
 
+**10. Snapshot-Owned Runtime Chains Must Fail Closed Outside Canonical Snapshot Activation**
+- **Files**: `app/services/chain_service.py`, `app/services/state_authority_activation_service.py`, `app/routes/chains.py`
+- **Problem**: Generic chain activation surfaces could activate `source_kind == "snapshot_path"` runtime chains directly, which let snapshot-owned live projections mutate through shared chain tooling instead of the committed snapshot activation gate.
+- **Root Cause**: `ChainService.activate_chain()` served both generic chain tooling and the canonical snapshot activation workflow, but it had no explicit opt-in separating snapshot-owned runtime chains from ordinary chains.
+- **Fix**: Make `ChainService.activate_chain()` reject snapshot-owned runtime chains unless the caller explicitly passes a canonical opt-in flag, and surface that denial as a `409` on generic chain routes while `StateAuthorityActivationService` remains the approved opt-in caller.
+- **Validation**: `python3 -m pytest -q tests/test_api_route_readiness.py tests/test_chain_plugin_loader_state_persistence.py -k 'snapshot_runtime_chain or chain_activate_route'`; `python3 -m pytest -q tests/test_snapshot_service.py::test_activate_snapshot_confirms_audio_authority_after_runtime_live`
+- **Lesson**: Shared backend helpers need an explicit exclusivity contract when one caller is canonical and others are not. If a runtime chain belongs to a live snapshot, generic chain tooling must fail closed unless the committed snapshot activation path opts in on purpose.
+
 ### React/TypeScript Gotchas
 
 **10. WebSocket Connection Cleanup**
@@ -2193,6 +2201,13 @@ Target: < 5 ms total
 - **Reason**: The worklist explicitly called out a duplicated helper stack, and leaving it duplicated would let one MPX1 editor surface drift from the other the next time parameter semantics change.
 - **Impact**: Future MPX1 UI work should extend the shared helper module first and keep surface-specific components focused on layout and interaction rather than reimplementing parameter semantics.
 - **Files**: `.github/copilot-instructions.md`, `web/src/app/components/MPX1/mpx1ParamUtils.ts`, `web/src/app/components/MPX1/mpx1ParamUtils.test.ts`, `web/src/app/components/MPX1/MPX1BlockEditor.tsx`, `web/src/app/components/MPX1/MPX1FlowSidebar.tsx`, `docs/PROJECT_WORKLIST.md`
+
+### [2026-04-15] - Snapshot-Owned Chain Activation Guard
+- **Section**: Python Backend Gotchas (#10), Update Log
+- **Change**: Documented the service-level guard that blocks generic activation of `snapshot_path` runtime chains unless the canonical snapshot activation service explicitly opts in.
+- **Reason**: The activation exclusivity audit identified shared chain activation tooling as a non-canonical bypass family for live snapshot mutation.
+- **Impact**: Future chain tooling should treat snapshot-owned runtime chains as canonical-activation-only resources and preserve the explicit opt-in boundary instead of routing them through generic chain controls.
+- **Files**: `.github/copilot-instructions.md`, `app/services/chain_service.py`, `app/services/state_authority_activation_service.py`, `app/routes/chains.py`, `tests/test_api_route_readiness.py`, `tests/test_chain_plugin_loader_state_persistence.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-07] - Maschine Runtime Override Reload Gating
 - **Section**: Gotchas & Learned Fixes (#87), Update Log

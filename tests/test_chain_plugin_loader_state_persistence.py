@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app import database as database_module
 from app.routes import chains as chains_routes
-from app.services.chain_service import ChainService
+from app.services.chain_service import ChainService, SnapshotOwnedChainActivationError
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 
 
@@ -726,7 +726,7 @@ async def test_activate_snapshot_runtime_chain_uses_spillover_replace_when_avail
         await session.flush()
 
         service = ChainService(session)
-        assert await service.activate_chain(chain.id) is True
+        assert await service.activate_chain(chain.id, allow_snapshot_path_activation=True) is True
         payload = await service.get_chain(chain.id)
 
     assert fake_engine_service._engine.replace_chain_calls == []
@@ -739,6 +739,28 @@ async def test_activate_snapshot_runtime_chain_uses_spillover_replace_when_avail
         "restored_positions": [0],
         "missing_positions": [],
     }
+
+
+@pytest.mark.asyncio
+async def test_activate_snapshot_runtime_chain_requires_canonical_opt_in(tmp_path, monkeypatch):
+    _init_temp_async_db(tmp_path, "chain-loader-runtime-guard.db")
+    monkeypatch.setattr("app.services.chain_service._ENABLE_ENGINE_CHAIN_DEPLOY", True)
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(
+            name="Snapshot Runtime Chain",
+            is_active=False,
+            config=json.dumps({"source_kind": "snapshot_path", "snapshot_id": 7, "path_id": "A"}),
+        )
+        session.add(chain)
+        await session.flush()
+
+        service = ChainService(session)
+        with pytest.raises(
+            SnapshotOwnedChainActivationError,
+            match="must be activated through /api/snapshots/\\{id\\}/activate",
+        ):
+            await service.activate_chain(chain.id)
 
     await _dispose_db()
 

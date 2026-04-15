@@ -6,7 +6,29 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2294 by extracting the shared MPX1 parameter helper module used by both the block editor and flow sidebar.
+Last updated: 2026-04-15 - Completed T2303 by blocking generic snapshot-owned runtime chain activation outside the canonical snapshot activation path.
+
+---
+
+ID: T2303
+Status: [✓] Done
+Title: Block generic snapshot-owned runtime chain activation outside the canonical snapshot activation path
+Description:
+- Goal / acceptance criteria: Close the non-canonical chain-activation bypass family identified in `T2296` by ensuring `snapshot_path` runtime chains cannot be activated through generic chain routes or helper services unless the canonical snapshot activation workflow explicitly opts in. Acceptance requires a service-level guard, operator-visible route failure instead of a generic transient error, canonical activation compatibility, focused regression coverage for the denied and allowed paths, and reconciled worklist notes.
+- Why it matters: `ChainService.activate_chain()` can be reached through generic `/api/chains/*` and deployment flows, and snapshot-owned runtime chains were mutating live snapshot projections through that shared service without proving they came from the committed snapshot activation gate.
+- Dependencies: T2295
+- Estimated effort: Medium
+- Required outputs: snapshot-owned chain activation guard, canonical opt-in wiring, focused route/service regression coverage, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 19:44 EDT - Codex
+- Completion notes:
+  - Added `SnapshotOwnedChainActivationError` in `app/services/chain_service.py` and made `activate_chain()` fail closed for `source_kind == "snapshot_path"` unless the caller explicitly passes `allow_snapshot_path_activation=True`.
+  - Updated `app/services/state_authority_activation_service.py` so the canonical snapshot activation path is the only shipped runtime-chain activation path that opts into snapshot-owned chain activation.
+  - Updated `app/routes/chains.py` so the generic chain activation route now returns a clear `409` for snapshot-owned runtime chains instead of collapsing the denial into a transient readiness-style failure.
+  - Added focused regressions in `tests/test_chain_plugin_loader_state_persistence.py` and `tests/test_api_route_readiness.py`, while keeping the canonical activation regression green.
+- Validation:
+  - `python3 -m pytest -q tests/test_api_route_readiness.py tests/test_chain_plugin_loader_state_persistence.py -k 'snapshot_runtime_chain or chain_activate_route'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py::test_activate_snapshot_confirms_audio_authority_after_runtime_live` -> PASS
 
 ---
 
@@ -117,7 +139,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2296
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Seal non-canonical snapshot live-state mutation paths behind one committed activation gate
 Description:
 - Goal / acceptance criteria: Inventory and classify every code path that can make a snapshot live, mutate runtime live state, write control-plane authority, reconcile drift, retry activation, or emulate success, then remove, gate, or explicitly scope any path that can bypass the single committed-snapshot activation workflow. Acceptance requires a canonical-path decision documented in code and docs, explicit classification of API/UI/controller/background/emergency/test-only entry points, and enforcement that non-canonical routes cannot make runtime live or mutate authority without the approved committed activation path and audit trail.
@@ -126,7 +148,7 @@ Description:
 - Estimated effort: High
 - Required outputs: entry-point/bypass inventory, canonical activation gate definition, code changes to remove or constrain bypass-capable paths, audit-trail coverage for retained emergency/test paths, and focused regressions proving rejected or gated behavior.
 Assigned to: Unassigned
-Last updated: 2026-04-15 18:55 EDT - Codex
+Last updated: 2026-04-15 19:39 EDT - Codex
 
 ---
 

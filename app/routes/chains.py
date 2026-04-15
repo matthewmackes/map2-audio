@@ -16,7 +16,7 @@ try:
     from pydantic import BaseModel
     from typing import List
     from app.services.api_readiness import ensure_chain_route_ready, raise_route_transient_unavailable
-    from app.services.chain_service import ChainService
+    from app.services.chain_service import ChainService, SnapshotOwnedChainActivationError
     from app.services.event_publisher import event_publisher, EventType
 
     router = APIRouter(prefix="/api/chains", tags=["chains"])
@@ -741,6 +741,12 @@ try:
                         issues=[f"Chain activation for {chain_id} timed out while dependencies were settling"],
                         required_services=_CHAIN_REQUIRED_SERVICES,
                     )
+                except SnapshotOwnedChainActivationError as exc:
+                    try:
+                        await session.rollback()
+                    except Exception:
+                        pass
+                    raise HTTPException(status_code=409, detail=str(exc)) from exc
                 except Exception:
                     try:
                         await session.rollback()
@@ -1049,7 +1055,19 @@ try:
 
                 async with get_session() as session:
                     service = ChainService(session)
-                    activated = await service.activate_chain(request.chain_id)
+                    try:
+                        activated = await service.activate_chain(request.chain_id)
+                    except SnapshotOwnedChainActivationError as exc:
+                        return {
+                            "status": "failed",
+                            "applied": False,
+                            "message": str(exc),
+                            "chain_id": request.chain_id,
+                            "chain_name": chain_name,
+                            "plugin_count": len(normalized_plugins),
+                            "mode": request.mode,
+                            "activate": request.activate,
+                        }
 
                 if not activated:
                     return {

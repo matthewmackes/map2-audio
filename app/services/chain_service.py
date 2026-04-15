@@ -37,6 +37,11 @@ from app.services.snapshot_system_blocks import (
 
 logger = logging.getLogger(__name__)
 
+
+class SnapshotOwnedChainActivationError(RuntimeError):
+    """Raised when a snapshot-owned runtime chain is activated outside the canonical snapshot path."""
+
+
 _ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "true").lower() in {
     "1",
     "true",
@@ -1799,6 +1804,7 @@ class ChainService:
         chain_id: int,
         *,
         preferred_detached_instance_ids: Optional[List[int]] = None,
+        allow_snapshot_path_activation: bool = False,
     ) -> bool:
         """Activate a chain and deploy it to the JUCE audio engine.
         
@@ -1842,6 +1848,15 @@ class ChainService:
             )
             chain_plugins = plugins_result.scalars().all()
             chain_config = self._parse_chain_config(chain.config)
+            if (
+                isinstance(chain_config, dict)
+                and chain_config.get("source_kind") == "snapshot_path"
+                and not allow_snapshot_path_activation
+            ):
+                raise SnapshotOwnedChainActivationError(
+                    f"Chain {chain_id} is owned by a live snapshot and must be activated through "
+                    "/api/snapshots/{id}/activate."
+                )
             runtime_sync = await self._deploy_chain_to_engine(
                 chain_plugins,
                 enable_snapshot_spillover=(
@@ -1951,6 +1966,8 @@ class ChainService:
             
             logger.info(f"Activated chain {chain_id}")
             return True
+        except SnapshotOwnedChainActivationError:
+            raise
         except Exception as e:
             logger.error(f"Error activating chain {chain_id}: {e}")
             return False
