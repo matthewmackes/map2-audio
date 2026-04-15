@@ -204,11 +204,14 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Outboard Gear')).toBeInTheDocument()
     expect(within(navTree).getByText('Connections')).toBeInTheDocument()
     expect(within(navTree).getByText('Presets')).toBeInTheDocument()
+    expect(within(navTree).getAllByText('Overview').length).toBeGreaterThan(1)
+    expect(within(navTree).getByText('LV2 Plugins')).toBeInTheDocument()
+    expect(within(navTree).getByText('NAM Models')).toBeInTheDocument()
+    expect(within(navTree).getAllByText('Discover').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Tesira AVB').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
     expect(screen.queryByText('Files')).toBeNull()
     expect(screen.queryByText('Brain')).toBeNull()
-    expect(screen.getAllByText('Overview').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
   })
 
@@ -228,7 +231,6 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getByText('Hardware')).toBeInTheDocument()
     expect(within(navTree).getByText('Outboard Gear')).toBeInTheDocument()
     expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
-    expect(within(navTree).getByText('Panel')).toBeInTheDocument()
   })
 
   it('closes the current app back to the desktop route', async () => {

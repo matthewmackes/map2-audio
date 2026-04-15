@@ -7,6 +7,8 @@ import {
   IbmWatsonMachineLearning,
   Music,
   Logout,
+  Pin,
+  PinFilled,
   Renew,
   Restart,
   ScreenMap,
@@ -67,7 +69,6 @@ const TOP_LEVEL_ROUTE_ORDER = [
 const FLAT_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
-  '/workspace/artifacts',
   '/platforms/about',
 ])
 const HARDWARE_TREE_ID = '/hardware'
@@ -426,7 +427,7 @@ export function GlobalTreeNav({
               aria-pressed={isPinned}
               onClick={onTogglePinned}
             >
-              {isPinned ? 'Unpin Navigation' : 'Pin Navigation'}
+              {isPinned ? <PinFilled size={18} aria-hidden="true" /> : <Pin size={18} aria-hidden="true" />}
             </button>
           </div>
           <Popover

@@ -637,7 +637,7 @@ export function HomePage() {
                 <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">Home</p>
                 <h1 className="hp2-home-shell__title">
                   <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
-                  Engineering Telemetry
+                  MAP: Mackes Audio Platform
                 </h1>
                 <p className="hp2-home-shell__lede">
                   Live cluster-facing status for connected MIDI, mapped control paths, audio interfaces, AVB endpoints, snapshots, and latency pressure.

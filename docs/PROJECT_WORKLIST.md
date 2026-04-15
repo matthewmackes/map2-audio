@@ -6,7 +6,49 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2287 for the Snapshot Editor Carbon quick-actions follow-up cleanup.
+Last updated: 2026-04-15 - Completed T2289 for the nav pin icon styling and Home title rename.
+
+---
+
+ID: T2289
+Status: [✓] Done
+Title: Convert global nav pin toggles to themed icon controls and rename the Home telemetry title
+Description:
+- Goal / acceptance criteria: Replace the Global Navigation `Pin Navigation` / `Unpin Navigation` text buttons with icon-only controls that use the theme’s main interactive color, and change the Home page hero heading from `Engineering Telemetry` to `MAP: Mackes Audio Platform`.
+- Why it matters: The nav pin affordance should read as a compact shell control instead of a text button, and the Home hero should reflect the requested product naming rather than the previous telemetry-focused title.
+- Dependencies: T2284
+- Estimated effort: Low
+- Required outputs: Updated global-nav pinned/collapsed controls, updated Home title, focused regression coverage, and reconciled worklist status.
+Assigned to: Codex
+Last updated: 2026-04-15 13:24 EDT - Codex
+- Completion notes:
+  - Replaced both the pinned nav header toggle and collapsed-rail restore control with Carbon `Pin` / `PinFilled` icon-only buttons while preserving accessible `aria-label` text for pin and unpin actions.
+  - Styled the pin controls with the primary theme interactive color so the icon treatment follows the requested main select color rather than the neutral text-button presentation.
+  - Renamed the Home hero heading to `MAP: Mackes Audio Platform` and updated the Home regression expectations accordingly.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/pages/HomePage.test.tsx` -> PASS
+
+---
+
+ID: T2288
+Status: [✓] Done
+Title: Restore Audio Artifacts child pages under the global tree
+Description:
+- Goal / acceptance criteria: Place the existing `Audio Artifacts` child pages back under the `Audio Artifacts` top-level nav item so the left global tree exposes the workspace overview, category filters, and discover route instead of flattening the section to a single leaf.
+- Why it matters: The workspace already has multiple child destinations, and flattening the top-level entry hides those routes from direct operator navigation in the global tree.
+- Dependencies: T2283
+- Estimated effort: Low
+- Required outputs: Updated global tree configuration, focused regression coverage, and validated shell navigation status.
+Assigned to: Codex
+Last updated: 2026-04-15 13:18 EDT - Codex
+- Completion notes:
+  - Removed `Audio Artifacts` from the global tree flat-route set so the existing launcher catalog children render under the top-level branch again.
+  - Restored the left-nav subtree for `Overview`, artifact categories, and `Discover` by reusing the existing `launcherCatalog` definitions rather than duplicating route metadata.
+  - Updated the AppShell regression to assert representative `Audio Artifacts` child labels remain visible from the persistent global tree.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx` -> PASS
 
 ---
 

@@ -41,20 +41,26 @@
 
 .global-tree-nav__pin-button {
   appearance: none;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
-  color: inherit;
-  font: inherit;
-  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  font-weight: 600;
-  padding: 0.35rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 1px solid color-mix(in srgb, var(--interactive) 34%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
+  color: var(--interactive);
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
 }
 
 .global-tree-nav__pin-button:hover {
-  border-color: color-mix(in srgb, var(--interactive) 42%, var(--border));
-  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--interactive) 52%, var(--border));
+  background: color-mix(in srgb, var(--interactive) 14%, var(--surface-2));
+}
+
+.global-tree-nav__pin-button svg {
+  flex: 0 0 auto;
 }
 
 .global-tree-nav__pin-button:focus-visible {

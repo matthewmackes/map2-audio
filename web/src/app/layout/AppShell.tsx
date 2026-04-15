@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { Pin } from '@carbon/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
 import { RestartOverlay } from './RestartOverlay'
@@ -135,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label="Pin Navigation"
               onClick={() => setGlobalNavPinned(true)}
             >
-              Pin Navigation
+              <Pin size={18} aria-hidden="true" />
             </button>
           </aside>
         )}

@@ -147,18 +147,14 @@
   align-items: center;
   justify-content: center;
   inline-size: 2.5rem;
-  min-height: 2.5rem;
+  block-size: 2.5rem;
   margin: 0;
-  padding: 0.45rem 0.35rem;
+  padding: 0;
   border: 1px solid color-mix(in srgb, var(--interactive) 34%, var(--border-strong) 66%);
+  border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 92%, var(--bg));
-  color: var(--text-primary);
-  font: inherit;
-  font-weight: 600;
+  color: var(--interactive);
   cursor: pointer;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 0.04em;
 }
 
 .app-shell__nav-pin-toggle:hover {
@@ -169,6 +165,10 @@
 .app-shell__nav-pin-toggle:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.app-shell__nav-pin-toggle svg {
+  flex: 0 0 auto;
 }
 
 /* Border overlay and padding modifiers removed — content is full-width and flat. */

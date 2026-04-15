@@ -473,7 +473,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Engineering Telemetry' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(screen.getByText('Operator telemetry')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
@@ -581,7 +581,7 @@ describe('HomePage landing', () => {
   it('renders the engineering telemetry sections and opens node-aware destinations from the structured lists', async () => {
     renderHome()
 
-    expect(await screen.findByRole('heading', { name: 'Engineering Telemetry' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(screen.getByText('Current MIDI Devices Connected')).toBeInTheDocument()
     expect(screen.getByText('Current MAPPED MIDI')).toBeInTheDocument()
     expect(screen.getByText('Current Audio Interfaces Connected')).toBeInTheDocument()
