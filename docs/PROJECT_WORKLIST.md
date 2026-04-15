@@ -10,6 +10,30 @@ Last updated: 2026-04-14 - Added `T2277` Global Tree-View Navigation epic.
 
 ---
 
+## Control Panel Navigation + Workspace Shell Cleanup
+
+ID: T2280
+Status: [✓] Done
+Title: Restore Control Panel to the tree rail and remove the workspace hub title strip
+Description:
+- Goal / acceptance criteria: Restore a top-level `Control Panel` item in the left-hand global tree navigation that routes operators to `/workspace/platforms/overview`, and remove the grey title strip/chrome from all `/workspace/*` pages so the routed content expands left without the current spacer or close affordance. Focused tests must cover the updated tree entry and the workspace shell contract.
+- Why it matters: The current navigation omits the canonical Control Panel entry and the shared workspace shell still presents `/workspace/*` as a nested window, which wastes width and conflicts with the current operator layout.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: updated worklist status, tree-nav patch, workspace shell cleanup, focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-15 00:07 EDT - Codex
+- Completion notes:
+  - Restored `/workspace` to the top-level `GlobalTreeNav` ordering so the left rail once again shows `Control Panel` and routes it through the launcher tree contract to `/workspace/platforms/overview`.
+  - Removed the `ShellWindowTitleStrip` and its shell-window provider wiring from `WorkspaceHubShell`, which eliminates the grey "Control Panel Hub" strip, the route-hint bars, and the close affordance across all `/workspace/*` routes while allowing the content-only template to expand left.
+  - Updated the focused shell tests to reflect the current workspace contract: routed content still renders and redirects correctly, but `/workspace/*` no longer exposes a title strip or close button.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx` -> PASS
+
+---
+
 ## Shared Device Context + Expression Surface Continuation
 
 ID: T2278

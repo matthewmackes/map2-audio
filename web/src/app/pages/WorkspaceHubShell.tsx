@@ -1,13 +1,9 @@
 import { useMemo } from 'react'
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { GlobalTheme, Theme } from '@carbon/react'
 
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
-import { MapOs2DrivesIcon } from '../components/icons/map'
 import { platformPanelItems } from '../data/platformMenuItems'
-import type { ShellWindowContextValue } from '../layout/ShellWindowContext'
-import { ShellWindowProvider } from '../layout/ShellWindowContext'
 import {
   WORKSPACE_ARTIFACTS_BASE_PATH,
   buildWorkspaceArtifactsDiscoverPath,
@@ -137,7 +133,6 @@ export function WorkspaceHubIndexRedirect() {
 
 export function WorkspaceHubShell() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { theme } = useTheme()
   const resolvedTheme = theme.carbonTheme ?? 'g100'
   const workspaceData = useUnifiedWorkspaceData()
@@ -149,40 +144,25 @@ export function WorkspaceHubShell() {
     }),
     [navSections, workspaceData.summaries],
   )
-  const shellWindowContext = useMemo<ShellWindowContextValue>(
-    () => ({
-      title: 'Control Panel Hub',
-      titleIcon: MapOs2DrivesIcon,
-      routeHint: 'control panel / hub',
-      accentColor: 'var(--cds-support-warning)',
-      onClose: () => navigate('/'),
-    }),
-    [navigate],
-  )
 
   return (
     <GlobalTheme theme={resolvedTheme}>
       <Theme as="div" theme={resolvedTheme} className="workspace-hub-shell">
-        <ShellWindowProvider value={shellWindowContext}>
-          <ShellWindowTitleStrip />
-          <WorkspaceHubContext.Provider value={contextValue}>
-            <ShellWindowProvider value={null}>
-              <WorkspacePageTemplate
-                className="workspace-hub-shell__template"
-                windowClassName="workspace-hub-shell__frame"
-                contentClassName="workspace-hub-shell__content"
-                sidebar={null}
-                content={
-                  <main className="workspace-hub-shell__content-body">
-                    <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
-                      <Outlet />
-                    </section>
-                  </main>
-                }
-              />
-            </ShellWindowProvider>
-          </WorkspaceHubContext.Provider>
-        </ShellWindowProvider>
+        <WorkspaceHubContext.Provider value={contextValue}>
+          <WorkspacePageTemplate
+            className="workspace-hub-shell__template"
+            windowClassName="workspace-hub-shell__frame"
+            contentClassName="workspace-hub-shell__content"
+            sidebar={null}
+            content={
+              <main className="workspace-hub-shell__content-body">
+                <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
+                  <Outlet />
+                </section>
+              </main>
+            }
+          />
+        </WorkspaceHubContext.Provider>
       </Theme>
     </GlobalTheme>
   )

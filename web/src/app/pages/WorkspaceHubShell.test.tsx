@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import {
   WorkspaceHubIndexRedirect,
@@ -90,11 +90,6 @@ function WorkspaceStubSection({ title, summaryLabel }: { title: string; summaryL
   )
 }
 
-function LocationProbe() {
-  const location = useLocation()
-  return <div data-testid="workspace-hub-location">{`${location.pathname}${location.search}`}</div>
-}
-
 describe('WorkspaceHubShell', () => {
   beforeEach(() => {
     mockUseUnifiedWorkspaceData.mockImplementation(buildWorkspaceData)
@@ -122,17 +117,13 @@ describe('WorkspaceHubShell', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Platforms' })).toBeInTheDocument()
-    expect(screen.getByText('Workspace Hub', { selector: '.window-title-strip__title' })).toBeInTheDocument()
-    expect(screen.getByText('workspace / hub')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Overview', current: 'page' })).toHaveAttribute('href', '/workspace/platforms/overview')
-    expect(screen.getByRole('link', { name: 'Audio Engine' })).toHaveAttribute('href', '/workspace/platforms/audio-engine')
-    expect(screen.getByRole('link', { name: 'Host Machine' })).toHaveAttribute('href', '/workspace/platforms/host-machine')
-    expect(screen.getByRole('link', { name: 'Platform Guide' })).toHaveAttribute('href', '/workspace/platforms/about')
+    expect(document.querySelector('.window-title-strip')).toBeNull()
+    expect(screen.queryByRole('button', { name: /close/i })).toBeNull()
     expect(screen.queryByLabelText('Workspace summaries')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
-  it('renders full imported section nav entries and keeps the targeted workspace link active', async () => {
+  it('renders routed workspace content without the legacy title strip chrome', async () => {
     render(
       <MemoryRouter
         initialEntries={['/workspace/artifacts?category=snapshots']}
@@ -152,69 +143,9 @@ describe('WorkspaceHubShell', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('Platforms', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
-    expect(screen.getByText('Physical Surfaces', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
-    expect(screen.getByText('Audio Artifacts', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
-    expect(screen.getByText('Outboard Hardware', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ableton Push' })).toHaveAttribute('href', '/workspace/physical-surfaces/ableton-push')
-    expect(screen.getByRole('link', { name: 'Snapshots', current: 'page' })).toHaveAttribute('href', '/workspace/artifacts?category=snapshots')
-    expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute('href', '/workspace/artifacts/discover')
-    expect(screen.getByRole('link', { name: 'Tesira AVB' })).toHaveAttribute('href', '/workspace/outboard-hardware/biamp-tesira')
-    expect(screen.getByRole('link', { name: 'MPX1 Rack' })).toHaveAttribute('href', '/workspace/outboard-hardware/lexicon-mpx1')
-  })
-
-  it('filters the workspace sidebar sections and entries from the nav search field', async () => {
-    render(
-      <MemoryRouter
-        initialEntries={['/workspace/artifacts?category=snapshots']}
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Routes>
-          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
-            <Route
-              path="artifacts"
-              element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
-            />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    )
-
-    fireEvent.change(screen.getByLabelText('Filter workspace areas'), { target: { value: 'snap' } })
-
-    expect(await screen.findByRole('link', { name: 'Snapshots', current: 'page' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Audio Engine' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Platforms', { selector: '.workspace-hub-nav__divider' })).not.toBeInTheDocument()
-    expect(screen.getByText('Audio Artifacts', { selector: '.workspace-hub-nav__divider' })).toBeInTheDocument()
-  })
-
-  it('closes the workspace hub shell back to home from the standard title bar', async () => {
-    render(
-      <MemoryRouter
-        initialEntries={['/workspace/artifacts?category=snapshots']}
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Routes>
-          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
-            <Route
-              path="artifacts"
-              element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
-            />
-          </Route>
-          <Route path="*" element={<LocationProbe />} />
-        </Routes>
-      </MemoryRouter>,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close Workspace Hub' }))
-
-    expect(await screen.findByTestId('workspace-hub-location')).toHaveTextContent('/')
+    expect(screen.getByLabelText('Audio Artifacts summary')).toHaveTextContent('2 native plugins · 4 soundfonts')
+    expect(document.querySelector('.window-title-strip')).toBeNull()
+    expect(screen.queryByRole('button', { name: /close/i })).toBeNull()
   })
 })

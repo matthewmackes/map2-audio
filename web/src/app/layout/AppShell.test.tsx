@@ -175,7 +175,7 @@ describe('AppShell global tree navigation', () => {
 
     expect(container.querySelector('.window-title-strip')).toBeNull()
     expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
-    expect(screen.getByText('Control Panel')).toBeInTheDocument()
+    expect(screen.getAllByText('Control Panel').length).toBeGreaterThan(0)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
     expect(screen.getByText('Brain')).toBeInTheDocument()
     expect(screen.queryByText('DSP')).toBeNull()

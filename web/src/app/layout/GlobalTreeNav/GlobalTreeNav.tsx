@@ -54,6 +54,7 @@ type TreeItemDefinition = {
 const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
+  '/workspace',
   '/snapshot-editor',
   'INSTRUMENTS_GROUP_HEADER',
   '/brain',
