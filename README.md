@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1105** Python | **1197** TypeScript | **136** C++/H | **145** Docs | **2197** total commits | **3** stars | **0** forks | **0** open issues
+**1108** Python | **1197** TypeScript | **136** C++/H | **145** Docs | **2199** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`24e94350`](https://github.com/matthewmackes/map2-audio/commit/24e943503b1cf801d29d2afda4645571ffba3fc2) | Route audio-state activation through canonical flow | Map2 Audio | 2026-04-15 |
+| [`3d45923f`](https://github.com/matthewmackes/map2-audio/commit/3d45923fa8fd515d954fc2c759d17376bddd439a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`d03d915b`](https://github.com/matthewmackes/map2-audio/commit/d03d915b7424b98b8dbce7b33a9d06a75fe3e54c) | Ship hero assets, snapshot authority confirm, and MK1 tra... | Map2 Audio | 2026-04-15 |
 | [`ec0e3792`](https://github.com/matthewmackes/map2-audio/commit/ec0e379235b54f502dded914211db1b7d82f5c1e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`ffb754d8`](https://github.com/matthewmackes/map2-audio/commit/ffb754d8160192460c6f04049c535ba4ccb258c4) | Refine nav pin controls and home branding | Map2 Audio | 2026-04-15 |
 | [`f2c21a1f`](https://github.com/matthewmackes/map2-audio/commit/f2c21a1f546bebe9955e2019c4766a825df4a1fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`884bef56`](https://github.com/matthewmackes/map2-audio/commit/884bef56ce912609e0a17b6bd14d267061449097) | Refine home shell and snapshot quick actions | Map2 Audio | 2026-04-15 |
 | [`30cc5e3e`](https://github.com/matthewmackes/map2-audio/commit/30cc5e3e76bd9570d0e0fd3e859712622617dd8c) | Refocus home landing launchers | Map2 Audio | 2026-04-15 |
-| [`ef465fa3`](https://github.com/matthewmackes/map2-audio/commit/ef465fa32c83c92eae435388fee40ac8a0d059cf) | feat: add Maschine MK1 probe and update home navigation | Map2 Audio | 2026-04-15 |
-| [`d0c14cef`](https://github.com/matthewmackes/map2-audio/commit/d0c14cefc694a9023efdc8a721eafedf5a915e13) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
