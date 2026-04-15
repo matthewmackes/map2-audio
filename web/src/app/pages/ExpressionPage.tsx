@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { NumberInput } from '../components/ParameterControl'
 import { EmptyState } from '../components/shared/EmptyState'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
-import { expressionTokens } from './expressionDesignTokens'
 import styles from './ExpressionPage.module.css'
 
 // ============================================================================
@@ -106,6 +105,29 @@ const CURVES: Array<{ id: Curve; label: string }> = [
   { id: 'scurve', label: 'S-Curve' },
   { id: 'custom', label: 'Custom' },
 ]
+
+const expressionTokens = {
+  colors: {
+    active: 'var(--support-success)',
+    border: 'var(--border)',
+    borderSubtle: 'var(--border)',
+    curve: 'var(--primary-strong)',
+    error: 'var(--support-danger)',
+    liveIndicator: 'var(--accent)',
+    panelSecondary: 'var(--surface-2)',
+    primary: 'var(--primary)',
+    textMuted: 'var(--muted-2)',
+    textPrimary: 'var(--text-primary)',
+    textSecondary: 'var(--text-secondary)',
+    textTertiary: 'var(--text-tertiary)',
+    warning: 'var(--support-warning)',
+  },
+  typography: {
+    fontFamily: {
+      ui: 'var(--font-ui)',
+    },
+  },
+} as const
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -970,7 +992,7 @@ function AssignmentRow({
         className={`${styles.assignmentStatusIndicator} ${assignment.active ? styles.assignmentStatusIndicatorActive : ''}`}
         animate={{
           boxShadow: assignment.active
-            ? `0 0 8px ${expressionTokens.colors.active}4d`
+            ? '0 0 8px color-mix(in srgb, var(--support-success) 30%, transparent)'
             : 'none',
         }}
         transition={{ duration: 0.3 }}

@@ -13,10 +13,10 @@ describe('categoryStyles', () => {
   })
 
   it('returns the shared default palette for known categories', () => {
-    expect(getCategoryConfig('Dynamics').color).toBe('#33b1ff')
-    expect(getCategoryConfig('Delay').color).toBe('#78a9ff')
-    expect(getCategoryConfig('Reverb').color).toBe('#be95ff')
-    expect(getCategoryConfig('Dynamics').bg).toContain('51, 177, 255')
+    expect(getCategoryConfig('Dynamics').color).toBe('var(--support-info)')
+    expect(getCategoryConfig('Delay').color).toBe('var(--interactive)')
+    expect(getCategoryConfig('Reverb').color).toBe('var(--accent)')
+    expect(getCategoryConfig('Dynamics').bg).toBe('color-mix(in srgb, var(--support-info) 15%, transparent)')
   })
 
   it('persists and applies overrides for resolved category keys', () => {
@@ -32,7 +32,7 @@ describe('categoryStyles', () => {
     setCategoryColorOverride('Delay', '#abcdef')
     resetCategoryColorOverride('Delay')
 
-    expect(getCategoryConfig('Delay').color).toBe('#78a9ff')
+    expect(getCategoryConfig('Delay').color).toBe('var(--interactive)')
     expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toBeNull()
   })
 })

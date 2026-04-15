@@ -83,7 +83,7 @@ Subtasks:
     - Required outputs: Updated TSX files, typecheck + build pass.
     Assigned to: Unassigned
   - ID: T2281-D
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Remove `expressionDesignTokens.ts` and migrate ExpressionPage to shared theme tokens
     Description:
     - Goal / acceptance criteria: Delete `web/src/app/pages/expressionDesignTokens.ts` and update `ExpressionPage.tsx` (and `ExpressionPage.module.css`) to use the shared theme-layer CSS custom properties instead of the parallel token object. The expression pedal UI should look identical under the default theme and respond correctly to theme switches.
@@ -91,9 +91,18 @@ Subtasks:
     - Dependencies: T2281-A
     - Estimated effort: Low
     - Required outputs: Deleted token file, updated ExpressionPage, typecheck + build pass.
-    Assigned to: Unassigned
+    Assigned to: Codex
+    Last updated: 2026-04-15 00:46 EDT - Codex
+    - Completion notes:
+      - Deleted `web/src/app/pages/expressionDesignTokens.ts` and replaced `ExpressionPage.tsx`'s parallel token import with a local bridge that maps the page's remaining inline SVG and control colors onto the shared theme-layer aliases (`--primary`, `--accent`, `--border`, `--support-*`, `--text-*`).
+      - Reworked `ExpressionPage.module.css` to remove the last fixed teal/green/blue accents from highlighted assignment rows, status indicators, meter gradients, and primary action buttons so the expression surface now follows the active theme instead of a frozen Carbon palette.
+      - Preserved the existing Expression route structure and control semantics while removing the page-local duplicate token source, keeping the default theme visually consistent and allowing theme switches to propagate cleanly through the page.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/categoryStyles.test.tsx src/app/theme/useTheme.test.ts src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T2281-E
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Make category accent colors theme-aware
     Description:
     - Goal / acceptance criteria: Update `categoryStyles.tsx` so category accent colors derive from the active theme's primary color family or respond to the theme's color-scheme (dark/light) rather than always using Carbon shade 40 from a fixed palette. The category color override system (localStorage) should continue to work.
@@ -101,7 +110,16 @@ Subtasks:
     - Dependencies: T2281-A
     - Estimated effort: Low
     - Required outputs: Updated categoryStyles, typecheck + build pass.
-    Assigned to: Unassigned
+    Assigned to: Codex
+    Last updated: 2026-04-15 00:46 EDT - Codex
+    - Completion notes:
+      - Replaced the fixed Carbon shade-40 category palette in `categoryStyles.tsx` with theme-aware semantic color aliases (`--interactive`, `--accent`, `--primary-strong`, `--support-*`, `--text-secondary`) so plugin browser category chips respond to the active theme.
+      - Kept the localStorage override system intact by teaching `createCategoryConfig()` to build backgrounds from either normalized hex overrides or CSS variable colors via `color-mix(...)`, preserving custom per-category overrides without forcing fixed palette values.
+      - Updated the focused category-style tests to assert the new semantic palette contract and the unchanged override/reset behavior.
+    - Validation:
+      - `npm --prefix web run typecheck` -> PASS
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/data/categoryStyles.test.tsx src/app/theme/useTheme.test.ts src/app/layout/AppShell.test.tsx` -> PASS
+      - `npm --prefix web run build` -> PASS
   - ID: T2281-F
     Status: [ ] Todo
     Title: Expand `ThemeWidgets` with shadow, density, and shape tokens

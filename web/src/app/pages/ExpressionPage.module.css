@@ -90,7 +90,7 @@
   background: var(--interactive);
   border: none;
   border-radius: 4px;
-  color: #fff;
+  color: var(--text-inverse);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
@@ -123,7 +123,7 @@
 }
 
 .assignmentGroupLabelHighlighted {
-  color: #009d9a;
+  color: var(--accent);
   text-transform: uppercase;
 }
 
@@ -158,9 +158,9 @@
 }
 
 .assignmentRowHighlighted {
-  border: 1px solid #009d9a;
-  background: color-mix(in srgb, #009d9a 8%, transparent);
-  border-left: 3px solid #009d9a;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-left: 3px solid var(--accent);
   padding-left: 8px;
 }
 
@@ -172,7 +172,7 @@
 }
 
 .assignmentCCLabel {
-  color: #009d9a;
+  color: var(--accent);
   font-family: var(--font-mono);
   font-size: 11px;
   min-width: 38px;
@@ -216,16 +216,16 @@
 }
 
 .assignmentStatusIndicatorActive {
-  background: #24a148;
-  box-shadow: 0 0 8px rgba(36, 161, 72, 0.3);
+  background: var(--support-success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--support-success) 30%, transparent);
 }
 
 .assignmentMidiLabel {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #009d9a;
-  background: color-mix(in srgb, #009d9a 20%, transparent);
-  border: 1px solid color-mix(in srgb, #009d9a 40%, transparent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: 3px;
   padding: 1px 4px;
   letter-spacing: 0.02em;
@@ -536,7 +536,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, #0f62fe 0%, #009d9a 100%);
+  background: linear-gradient(180deg, var(--primary) 0%, var(--accent) 100%);
   transition: height 30ms linear;
 }
 
@@ -624,7 +624,7 @@
   background: var(--interactive);
   border: none;
   border-radius: 4px;
-  color: #fff;
+  color: var(--text-inverse);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
