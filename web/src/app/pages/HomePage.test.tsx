@@ -580,21 +580,22 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-desktop-wallpaper-image')).toHaveAttribute('src', 'data:image/png;base64,abc123')
   })
 
-  it('renders the engineering telemetry sections and opens node-aware destinations from the structured lists', async () => {
+  it('renders the unified operations table and opens node-aware destinations from table rows', async () => {
     renderHome()
 
     expect(await screen.findByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.getByText('Current MIDI Devices Connected')).toBeInTheDocument()
-    expect(screen.getByText('Current MAPPED MIDI')).toBeInTheDocument()
-    expect(screen.getByText('Current Audio Interfaces Connected')).toBeInTheDocument()
-    expect(screen.getByText('Current AVB Endpoints Connected')).toBeInTheDocument()
-    expect(screen.getByText('Current Snapshot Loaded and Live')).toBeInTheDocument()
-    expect(screen.getByText('Current Latency Pressure')).toBeInTheDocument()
+    expect(screen.getByText('Operations table')).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
+    expect(screen.getByText('Surface')).toBeInTheDocument()
+    expect(screen.getByText('Workspace')).toBeInTheDocument()
     expect(screen.getByText('Express 128')).toBeInTheDocument()
     expect(screen.getByText('Main Show Snapshot')).toBeInTheDocument()
     expect(screen.getByText('Fabric state')).toBeInTheDocument()
+    expect(screen.getByText('MIDI connections')).toBeInTheDocument()
 
-    const mpxRow = (await screen.findAllByText('MPX1 Rack MIDI In'))[1]?.closest('.cds--structured-list-row')
+    const mpxRow = await screen.findByRole('link', {
+      name: /Mapped MIDI MPX1 Rack MIDI In IntelFX Rack MIDI Out/i,
+    })
     if (!mpxRow) {
       throw new Error('Expected MPX1 Rack MIDI In telemetry row')
     }
@@ -646,7 +647,7 @@ describe('HomePage landing', () => {
   it('shows the live telemetry content instead of the old system-summary side rail', async () => {
     renderHome()
 
-    expect(await screen.findByText('Current AVB Endpoints Connected')).toBeInTheDocument()
+    expect(await screen.findByText('Operations table')).toBeInTheDocument()
     expect(screen.getAllByText('AVB: operational').length).toBeGreaterThan(0)
     expect(screen.getByText('live nodes')).toBeInTheDocument()
     expect(screen.getByText('RME Fireface UFX')).toBeInTheDocument()

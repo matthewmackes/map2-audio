@@ -4,17 +4,24 @@ import { useNavigate } from 'react-router-dom'
 import {
   Column,
   Content,
+  DataTable,
   Grid,
   InlineLoading,
   OverflowMenu,
   OverflowMenuItem,
-  StructuredListBody,
-  StructuredListCell,
-  StructuredListHead,
-  StructuredListRow,
-  StructuredListWrapper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
   Tag,
 } from '@carbon/react'
+
 import {
   MAP2_PLATFORM_NAME,
   Map2BrandMark,
@@ -26,7 +33,6 @@ import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences } from './homeLandingPreferences'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useShellSummaryData } from '../layout/useShellSummaryData'
-import { DashboardCard } from '../components/shared/DashboardCard'
 import { navigateHomeShellRoute, prefetchHomeShellRoute } from './homeShellNavigation'
 import { useCluster } from '../contexts/useCluster'
 import { buildPlatformNodeWorkspaceHref } from '../platform/routes'
@@ -36,12 +42,25 @@ import { useAVBDiscovery, useAVBStreams } from '../hooks/useAvbStatus'
 import { readPorts } from '../components/MidiHub/portUtils'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { computeLatencyPressure } from '../utils/latencyPressure'
-import { latencyV2Api, midiHubApi, type LatencyJitterStats, type MidiHubRoute } from '../../map2/api'
-import '../layout/LauncherPanel/LauncherPanel.css'
+import {
+  latencyV2Api,
+  midiHubApi,
+  type LatencyJitterStats,
+  type MidiHubRoute,
+} from '../../map2/api'
 import './HomePage.boot.css'
 import './HomePage.landing.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
+
+const HOME_TABLE_HEADERS = [
+  { key: 'surface', header: 'Surface' },
+  { key: 'signal', header: 'Signal' },
+  { key: 'currentState', header: 'Current state' },
+  { key: 'scope', header: 'Scope' },
+  { key: 'detail', header: 'Detail' },
+  { key: 'workspace', header: 'Workspace' },
+] as const
 
 type HeroAlertTagType = 'red' | 'warm-gray'
 
@@ -52,27 +71,21 @@ type InventoryNode = {
   pipewire_devices?: Array<Record<string, unknown>>
 }
 
-type TelemetryRow = {
+type HomeTelemetryTone = 'healthy' | 'warning' | 'critical' | 'neutral'
+
+type HomeTelemetryRow = {
   id: string
-  label: string
-  value: string
+  category: string
+  signal: string
+  currentState: string
   scope: string
-  helper: string
+  detail: string
+  workspace: string
   route?: string
-  tone?: 'healthy' | 'warning' | 'critical' | 'neutral'
+  tone: HomeTelemetryTone
 }
 
-type TelemetrySectionProps = {
-  eyebrow: string
-  title: string
-  description: string
-  rows: TelemetryRow[]
-  emptyLabel: string
-  loading?: boolean
-  navigate: ReturnType<typeof useNavigate>
-}
-
-type HeroMetric = {
+type SummaryMetric = {
   id: string
   value: string
   label: string
@@ -128,6 +141,7 @@ function dedupeNames(names: Array<string | null | undefined>): string[] {
     if (seen.has(key)) {
       continue
     }
+
     seen.add(key)
     output.push(name)
   }
@@ -201,91 +215,49 @@ function resolveMidiMappingRoute(nodeId: string, route: MidiHubRoute): string {
   )
 }
 
-function formatNodeScope(count: number): string {
-  return `${count} node${count === 1 ? '' : 's'}`
-}
-
-function countRowsByTone(rows: TelemetryRow[], tone: TelemetryRow['tone']): number {
+function countRowsByTone(rows: HomeTelemetryRow[], tone: HomeTelemetryTone): number {
   return rows.filter((row) => row.tone === tone).length
 }
 
-function TelemetrySection({
-  eyebrow,
-  title,
-  description,
-  rows,
-  emptyLabel,
-  loading = false,
-  navigate,
-}: TelemetrySectionProps) {
-  const displayRows: TelemetryRow[] = rows.length > 0
-    ? rows
-    : [{
-        id: `${title}-empty`,
-        label: loading ? 'Loading live telemetry' : emptyLabel,
-        value: loading ? 'Waiting' : 'Idle',
-        scope: 'Home',
-        helper: loading ? 'Refreshing with the current runtime state.' : 'No live signals are currently reporting into this section.',
-        tone: 'neutral' as const,
-      }]
+function filterTelemetryRows(rows: HomeTelemetryRow[], query: string): HomeTelemetryRow[] {
+  const search = query.trim().toLocaleLowerCase()
+  if (!search) {
+    return rows
+  }
 
-  return (
-    <DashboardCard className="hp2-home-shell__telemetry-section">
-      <div className="hp2-home-shell__telemetry-section-head">
-        <div className="hp2-home-shell__telemetry-section-copy">
-          <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">{eyebrow}</p>
-          <h2 className="dashboard-card__title">{title}</h2>
-          <p className="dashboard-card__body-copy">{description}</p>
-        </div>
-        <Tag type="cool-gray">{formatNodeScope(rows.length)}</Tag>
-      </div>
+  return rows.filter((row) => (
+    `${row.category} ${row.signal} ${row.currentState} ${row.scope} ${row.detail} ${row.workspace}`
+      .toLocaleLowerCase()
+      .includes(search)
+  ))
+}
 
-      <div className="hp2-home-shell__telemetry-table-wrap">
-        <StructuredListWrapper aria-label={`${title} structured list`} className="hp2-home-shell__telemetry-list">
-          <StructuredListHead>
-            <StructuredListRow head>
-              <StructuredListCell head>Signal</StructuredListCell>
-              <StructuredListCell head>Current state</StructuredListCell>
-              <StructuredListCell head>Scope</StructuredListCell>
-              <StructuredListCell head>Detail</StructuredListCell>
-            </StructuredListRow>
-          </StructuredListHead>
-          <StructuredListBody>
-            {displayRows.map((row) => {
-              const isActionable = Boolean(row.route)
-              return (
-                <StructuredListRow
-                  key={row.id}
-                  className={`hp2-home-shell__telemetry-row${isActionable ? ' is-actionable' : ''}`}
-                  data-tone={row.tone ?? 'neutral'}
-                  tabIndex={isActionable ? 0 : -1}
-                  role={isActionable ? 'link' : undefined}
-                  onClick={isActionable ? () => navigateHomeShellRoute(navigate, row.route!) : undefined}
-                  onMouseEnter={isActionable ? () => prefetchHomeShellRoute(row.route!) : undefined}
-                  onFocus={isActionable ? () => prefetchHomeShellRoute(row.route!) : undefined}
-                  onKeyDown={isActionable ? (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      navigateHomeShellRoute(navigate, row.route!)
-                    }
-                  } : undefined}
-                >
-                  <StructuredListCell>
-                    <div className="hp2-home-shell__telemetry-row-primary">{row.label}</div>
-                  </StructuredListCell>
-                  <StructuredListCell>{row.value}</StructuredListCell>
-                  <StructuredListCell>{row.scope}</StructuredListCell>
-                  <StructuredListCell>
-                    <div className="hp2-home-shell__telemetry-row-helper">{row.helper}</div>
-                  </StructuredListCell>
-                </StructuredListRow>
-              )
-            })}
-          </StructuredListBody>
-        </StructuredListWrapper>
-      </div>
-    </DashboardCard>
-  )
+function toneToTagType(tone: HomeTelemetryTone): 'green' | 'warm-gray' | 'red' | 'cool-gray' {
+  if (tone === 'healthy') {
+    return 'green'
+  }
+  if (tone === 'warning') {
+    return 'warm-gray'
+  }
+  if (tone === 'critical') {
+    return 'red'
+  }
+
+  return 'cool-gray'
+}
+
+function toneToLabel(tone: HomeTelemetryTone): string {
+  if (tone === 'healthy') {
+    return 'Healthy'
+  }
+  if (tone === 'warning') {
+    return 'Watch'
+  }
+  if (tone === 'critical') {
+    return 'Critical'
+  }
+
+  return 'Info'
 }
 
 export function HomePage() {
@@ -304,8 +276,13 @@ export function HomePage() {
   const avbStreamsQuery = useAVBStreams(true)
   const wallpaper = useMemo(() => readDesktopWallpaperState(), [])
   const landingPreferences = useMemo(() => readHomeLandingPreferences(), [])
-  const shouldShowSplash = useMemo(() => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(), [landingPreferences.bootSplashEnabled])
+  const shouldShowSplash = useMemo(
+    () => landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash(),
+    [landingPreferences.bootSplashEnabled],
+  )
   const [showBootSplash, setShowBootSplash] = useState(shouldShowSplash)
+  const [searchValue, setSearchValue] = useState('')
+
   const onlineNodes = useMemo(
     () => clusterNodes.filter((node) => node.isOnline !== false),
     [clusterNodes],
@@ -340,17 +317,19 @@ export function HomePage() {
     })),
   })
 
-  const midiDeviceRows = useMemo(() => {
+  const midiDeviceRows = useMemo<HomeTelemetryRow[]>(() => {
     const rows = onlineNodes.flatMap((node, index) => {
       const status = midiStatusQueries[index]?.data as Record<string, unknown> | undefined
       return readPorts(status?.ports)
         .filter((port) => port.kind !== 'virtual' && !/virtual/i.test(port.name))
         .map((port) => ({
           id: `${node.nodeId}:${port.port_id}`,
-          label: port.name,
-          value: port.direction,
+          category: 'MIDI device',
+          signal: port.name,
+          currentState: port.direction,
           scope: node.hostname,
-          helper: `${port.kind} port · ${port.port_id}`,
+          detail: `${port.kind} port · ${port.port_id}`,
+          workspace: 'MIDI connections',
           route: withNodeQuery('/midi-hub/connections', node.nodeId),
           tone: 'healthy' as const,
         }))
@@ -362,16 +341,23 @@ export function HomePage() {
 
     return shellSummaryData.launcherInterfaceSummary.midiInterfaces.map((name, index) => ({
       id: `shell-midi-${index}`,
-      label: name,
-      value: 'Connected',
+      category: 'MIDI device',
+      signal: name,
+      currentState: 'Connected',
       scope: shellSummaryData.hostInfo?.hostname ?? 'Local node',
-      helper: 'Local MIDI interface summary.',
+      detail: 'Local MIDI interface summary.',
+      workspace: 'MIDI connections',
       route: '/midi-hub/connections',
       tone: 'healthy' as const,
     }))
-  }, [midiStatusQueries, onlineNodes, shellSummaryData.hostInfo?.hostname, shellSummaryData.launcherInterfaceSummary.midiInterfaces])
+  }, [
+    midiStatusQueries,
+    onlineNodes,
+    shellSummaryData.hostInfo?.hostname,
+    shellSummaryData.launcherInterfaceSummary.midiInterfaces,
+  ])
 
-  const midiMappingRows = useMemo(
+  const midiMappingRows = useMemo<HomeTelemetryRow[]>(
     () => onlineNodes.flatMap((node, index) => {
       const response = midiRouteQueries[index]?.data as { routes?: MidiHubRoute[] } | undefined
       const routes = response?.routes ?? []
@@ -380,27 +366,33 @@ export function HomePage() {
         .filter((route) => route.enabled)
         .map((route) => ({
           id: `${node.nodeId}:${route.route_id}`,
-          label: route.source_port,
-          value: route.destination_ports.join(', '),
+          category: 'Mapped MIDI',
+          signal: route.source_port,
+          currentState: route.destination_ports.join(', '),
           scope: node.hostname,
-          helper: formatMidiFilter(route),
+          detail: formatMidiFilter(route),
+          workspace: 'MIDI mapping',
           route: resolveMidiMappingRoute(node.nodeId, route),
-          tone: route.transform_chain.length > 0 || route.filter.message_types.length > 0 ? 'warning' as const : 'healthy' as const,
+          tone: route.transform_chain.length > 0 || route.filter.message_types.length > 0
+            ? 'warning' as const
+            : 'healthy' as const,
         }))
     }),
     [midiRouteQueries, onlineNodes],
   )
 
-  const audioInterfaceRows = useMemo(() => {
+  const audioInterfaceRows = useMemo<HomeTelemetryRow[]>(() => {
     const inventoryNodes = hardwareInventoryQuery.data?.nodes ?? {}
     const rows = Object.entries(inventoryNodes).flatMap(([nodeId, node]) => {
       const nodeName = nodeLabelById.get(nodeId) ?? nodeId
       return collectAudioInterfaces(node).map((name, index) => ({
         id: `${nodeId}:audio:${index}:${name}`,
-        label: name,
-        value: 'Connected',
+        category: 'Audio interface',
+        signal: name,
+        currentState: 'Connected',
         scope: nodeName,
-        helper: 'Node-aware audio interface inventory.',
+        detail: 'Node-aware audio interface inventory.',
+        workspace: 'Audio engine',
         route: buildPlatformNodeWorkspaceHref('audio-engine', nodeId),
         tone: 'healthy' as const,
       }))
@@ -412,10 +404,12 @@ export function HomePage() {
 
     return shellSummaryData.launcherInterfaceSummary.audioInterfaces.map((name, index) => ({
       id: `shell-audio-${index}`,
-      label: name,
-      value: 'Connected',
+      category: 'Audio interface',
+      signal: name,
+      currentState: 'Connected',
       scope: shellSummaryData.hostInfo?.hostname ?? 'Local node',
-      helper: 'Launcher interface summary fallback.',
+      detail: 'Launcher interface summary fallback.',
+      workspace: 'Audio engine',
       route: buildPlatformNodeWorkspaceHref('audio-engine'),
       tone: 'healthy' as const,
     }))
@@ -426,15 +420,17 @@ export function HomePage() {
     shellSummaryData.launcherInterfaceSummary.audioInterfaces,
   ])
 
-  const avbEndpointRows = useMemo(() => {
+  const avbEndpointRows = useMemo<HomeTelemetryRow[]>(() => {
     const runningStreams = (avbStreamsQuery.data?.streams ?? []).filter((stream) => stream.state === 'running').length
     const discovery = avbDiscoveryQuery.data
-    const summaryRow: TelemetryRow = {
+    const summaryRow: HomeTelemetryRow = {
       id: 'avb-fabric',
-      label: 'Fabric state',
-      value: shellSummaryData.platformStatus.avb.label,
+      category: 'AVB fabric',
+      signal: 'Fabric state',
+      currentState: shellSummaryData.platformStatus.avb.label,
       scope: `${discovery?.total_discovered ?? 0} endpoints`,
-      helper: `${discovery?.talker_nodes ?? 0} talkers · ${discovery?.listener_nodes ?? 0} listeners · ${runningStreams} running streams`,
+      detail: `${discovery?.talker_nodes ?? 0} talkers · ${discovery?.listener_nodes ?? 0} listeners · ${runningStreams} running streams`,
+      workspace: 'AVB routing',
       route: buildPlatformNodeWorkspaceHref('avb-routing'),
       tone: shellSummaryData.platformStatus.avb.state === 'ok' ? 'healthy' : 'warning',
     }
@@ -443,35 +439,42 @@ export function HomePage() {
       const capabilities = node.avb_capabilities
       return {
         id: `avb-node:${node.node_id}`,
-        label: node.hostname,
-        value: `${capabilities?.talker_streams ?? 0} talkers · ${capabilities?.listener_streams ?? 0} listeners`,
+        category: 'AVB endpoint',
+        signal: node.hostname,
+        currentState: `${capabilities?.talker_streams ?? 0} talkers · ${capabilities?.listener_streams ?? 0} listeners`,
         scope: capabilities?.interface ?? 'AVB fabric',
-        helper: `${capabilities?.ptp_synced ? 'PTP synced' : 'PTP pending'} · ${capabilities?.sample_rate ?? 'n/a'} Hz · ${capabilities?.channels ?? 'n/a'} ch`,
+        detail: `${capabilities?.ptp_synced ? 'PTP synced' : 'PTP pending'} · ${capabilities?.sample_rate ?? 'n/a'} Hz · ${capabilities?.channels ?? 'n/a'} ch`,
+        workspace: 'AVB routing',
         route: buildPlatformNodeWorkspaceHref('avb-routing', node.node_id),
         tone: capabilities?.ptp_synced ? 'healthy' as const : 'warning' as const,
-      }
+      } satisfies HomeTelemetryRow
     })
 
     return [summaryRow, ...nodeRows]
-  }, [avbDiscoveryQuery.data, avbStreamsQuery.data?.streams, shellSummaryData.platformStatus.avb.label, shellSummaryData.platformStatus.avb.state])
+  }, [
+    avbDiscoveryQuery.data,
+    avbStreamsQuery.data?.streams,
+    shellSummaryData.platformStatus.avb.label,
+    shellSummaryData.platformStatus.avb.state,
+  ])
 
-  const snapshotRows = useMemo(() => {
+  const snapshotRows = useMemo<HomeTelemetryRow[]>(() => {
     const states = clusterSnapshotQuery.data?.nodes ?? []
     const visibleStates = states.filter((state) => !state.is_offline)
     const grouped = new Map<string, {
       id: string
-      label: string
-      value: string
-      helperParts: string[]
+      signal: string
+      currentState: string
+      detailParts: string[]
       nodeIds: string[]
       route: string
-      tone: TelemetryRow['tone']
+      tone: HomeTelemetryTone
     }>()
 
     for (const state of visibleStates) {
-      const label = state.snapshot_name ?? (state.snapshot_id != null ? `Snapshot ${state.snapshot_id}` : 'No snapshot live')
-      const value = state.display_label
-      const key = `${state.snapshot_id ?? 'none'}:${state.snapshot_revision ?? 'none'}:${value}`
+      const signal = state.snapshot_name ?? (state.snapshot_id != null ? `Snapshot ${state.snapshot_id}` : 'No snapshot live')
+      const currentState = state.display_label
+      const key = `${state.snapshot_id ?? 'none'}:${state.snapshot_revision ?? 'none'}:${currentState}`
       const existing = grouped.get(key)
       const nodeLabel = nodeLabelById.get(state.node_id) ?? state.node_id
       const tone = state.state === 'live' ? 'healthy' as const : 'warning' as const
@@ -483,9 +486,9 @@ export function HomePage() {
 
       grouped.set(key, {
         id: key,
-        label,
-        value,
-        helperParts: [
+        signal,
+        currentState,
+        detailParts: [
           state.snapshot_id != null ? `Snapshot ${state.snapshot_id}` : 'No active snapshot ID',
           state.snapshot_revision ? `Revision ${state.snapshot_revision}` : 'No revision',
         ],
@@ -497,16 +500,18 @@ export function HomePage() {
 
     return Array.from(grouped.values()).map((group) => ({
       id: group.id,
-      label: group.label,
-      value: group.value,
-      scope: formatNodeScope(group.nodeIds.length),
-      helper: `${group.helperParts.join(' · ')} · ${group.nodeIds.join(', ')}`,
+      category: 'Snapshot',
+      signal: group.signal,
+      currentState: group.currentState,
+      scope: `${group.nodeIds.length} node${group.nodeIds.length === 1 ? '' : 's'}`,
+      detail: `${group.detailParts.join(' · ')} · ${group.nodeIds.join(', ')}`,
+      workspace: 'Snapshot editor',
       route: group.nodeIds.length === 1 ? group.route : '/snapshot-editor',
       tone: group.tone,
     }))
   }, [clusterSnapshotQuery.data?.nodes, nodeLabelById])
 
-  const latencyPressureRows = useMemo<TelemetryRow[]>(
+  const latencyPressureRows = useMemo<HomeTelemetryRow[]>(
     () => onlineNodes.map((node, index) => {
       const jitter = latencyQueries[index]?.data as LatencyJitterStats | undefined
       const analysis = computeLatencyPressure({
@@ -518,16 +523,18 @@ export function HomePage() {
 
       return {
         id: `latency:${node.nodeId}`,
-        label: node.hostname,
-        value: `${analysis.statusLabel} ${analysis.scoreDisplay}/10`,
-        scope: 'Audio Engine',
-        helper: analysis.isAvailable
+        category: 'Latency',
+        signal: node.hostname,
+        currentState: `${analysis.statusLabel} ${analysis.scoreDisplay}/10`,
+        scope: 'Audio engine',
+        detail: analysis.isAvailable
           ? [
               analysis.inputs.effectiveLatencyMs != null ? `RTL p95 ${analysis.inputs.effectiveLatencyMs.toFixed(2)} ms` : null,
               analysis.inputs.jitterP95Ms != null ? `Jitter p95 ${analysis.inputs.jitterP95Ms.toFixed(3)} ms` : null,
               analysis.inputs.xrunCount != null ? `${analysis.inputs.xrunCount} xruns` : null,
             ].filter((part): part is string => Boolean(part)).join(' · ')
           : 'Waiting for realtime telemetry.',
+        workspace: 'Audio engine',
         route: buildPlatformNodeWorkspaceHref('audio-engine', node.nodeId),
         tone: analysis.status === 'critical' || analysis.status === 'offline'
           ? 'critical'
@@ -550,7 +557,35 @@ export function HomePage() {
     || latencyQueries.some((query) => query.isLoading)
   )
 
-  const heroMetrics = useMemo<HeroMetric[]>(() => [
+  const allTelemetryRows = useMemo(
+    () => [
+      ...midiDeviceRows,
+      ...midiMappingRows,
+      ...audioInterfaceRows,
+      ...avbEndpointRows,
+      ...snapshotRows,
+      ...latencyPressureRows,
+    ],
+    [
+      audioInterfaceRows,
+      avbEndpointRows,
+      latencyPressureRows,
+      midiDeviceRows,
+      midiMappingRows,
+      snapshotRows,
+    ],
+  )
+
+  const criticalRowCount = useMemo(
+    () => countRowsByTone(allTelemetryRows, 'critical'),
+    [allTelemetryRows],
+  )
+  const warningRowCount = useMemo(
+    () => countRowsByTone(allTelemetryRows, 'warning'),
+    [allTelemetryRows],
+  )
+
+  const summaryMetrics = useMemo<SummaryMetric[]>(() => [
     {
       id: 'nodes',
       value: String(onlineNodes.length),
@@ -562,6 +597,12 @@ export function HomePage() {
       value: String(midiDeviceRows.length),
       label: 'MIDI devices',
       helper: 'physical ports reporting into the cluster',
+    },
+    {
+      id: 'midi-mappings',
+      value: String(midiMappingRows.length),
+      label: 'mapped routes',
+      helper: 'enabled transforms and routing filters',
     },
     {
       id: 'audio-interfaces',
@@ -586,6 +627,7 @@ export function HomePage() {
     avbDiscoveryQuery.data?.total_discovered,
     avbEndpointRows.length,
     midiDeviceRows.length,
+    midiMappingRows.length,
     onlineNodes.length,
     snapshotRows.length,
   ])
@@ -615,42 +657,61 @@ export function HomePage() {
       pushAlert('interfaces-error', shellSummaryData.launcherInterfaceSummary.errorMessage, 'red')
     }
 
-    const criticalLatencyCount = countRowsByTone(latencyPressureRows, 'critical')
-    if (criticalLatencyCount > 0) {
+    if (criticalRowCount > 0) {
       pushAlert(
         'latency-critical',
-        `${criticalLatencyCount} node${criticalLatencyCount === 1 ? '' : 's'} latency critical`,
+        `${criticalRowCount} signal${criticalRowCount === 1 ? '' : 's'} critical`,
         'red',
       )
-    } else {
-      const warningLatencyCount = countRowsByTone(latencyPressureRows, 'warning')
-      if (warningLatencyCount > 0) {
-        pushAlert(
-          'latency-watch',
-          `${warningLatencyCount} node${warningLatencyCount === 1 ? '' : 's'} latency elevated`,
-          'warm-gray',
-        )
-      }
     }
 
-    const snapshotAttentionCount = countRowsByTone(snapshotRows, 'warning')
-    if (snapshotAttentionCount > 0) {
+    if (warningRowCount > 0) {
       pushAlert(
-        'snapshot-attention',
-        `${snapshotAttentionCount} snapshot group${snapshotAttentionCount === 1 ? '' : 's'} need attention`,
+        'telemetry-watch',
+        `${warningRowCount} signal${warningRowCount === 1 ? '' : 's'} need attention`,
         'warm-gray',
       )
     }
 
     return alerts
   }, [
-    latencyPressureRows,
+    criticalRowCount,
     shellSummaryData.launcherInterfaceSummary.errorMessage,
     shellSummaryData.platformStatus.avb,
     shellSummaryData.platformStatus.avdecc,
     shellSummaryData.platformStatus.nodes,
-    snapshotRows,
+    warningRowCount,
   ])
+
+  const filteredTelemetryRows = useMemo(
+    () => filterTelemetryRows(allTelemetryRows, searchValue),
+    [allTelemetryRows, searchValue],
+  )
+
+  const tableRows = useMemo<HomeTelemetryRow[]>(() => {
+    if (filteredTelemetryRows.length > 0) {
+      return filteredTelemetryRows
+    }
+
+    const trimmedSearch = searchValue.trim()
+    return [{
+      id: trimmedSearch ? 'home-empty-search' : 'home-empty',
+      category: 'Status',
+      signal: trimmedSearch ? 'No matching telemetry' : telemetryLoading ? 'Loading telemetry' : 'No telemetry reported',
+      currentState: trimmedSearch ? 'No results' : telemetryLoading ? 'Refreshing' : 'Idle',
+      scope: 'Home',
+      detail: trimmedSearch
+        ? `No home telemetry rows match "${trimmedSearch}".`
+        : 'No live signals are currently reporting into the unified operations table.',
+      workspace: 'Home',
+      tone: 'neutral',
+    }]
+  }, [filteredTelemetryRows, searchValue, telemetryLoading])
+
+  const tableRowLookup = useMemo(
+    () => new Map(tableRows.map((row) => [row.id, row] as const)),
+    [tableRows],
+  )
 
   useEffect(() => {
     if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
@@ -736,24 +797,27 @@ export function HomePage() {
 
       <Content className="hp2-home-shell__content">
         <Grid className="hp2-home-shell__grid" condensed>
-          <Column lg={16} md={8} sm={4} className="hp2-home-shell__main">
-            <section className="hp2-home-shell__telemetry-shell" aria-label="MAP2 home telemetry">
-              <div className="hp2-home-shell__telemetry-intro">
-                <div className="hp2-home-shell__telemetry-intro-copy">
-                  <div className="hp2-home-shell__hero-headline">
+          <Column lg={16} md={8} sm={4}>
+            <section className="hp2-home-shell__operations-shell" aria-label="MAP2 home telemetry">
+              <header className="hp2-home-shell__operations-hero">
+                <div className="hp2-home-shell__operations-copy">
+                  <div className="hp2-home-shell__operations-kicker-row">
                     <p className="hp2-home-shell__hero-kicker">Live operations surface</p>
                     <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
                       <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
                       <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
                     </OverflowMenu>
                   </div>
-                  <h1 className="hp2-home-shell__title">
+
+                  <h1 className="hp2-home-shell__operations-title">
                     <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
                     MAP: Mackes Audio Platform
                   </h1>
-                  <p className="hp2-home-shell__lede">
-                    Live cluster-facing status for connected MIDI, mapped control paths, audio interfaces, AVB endpoints, snapshots, and latency pressure.
+
+                  <p className="hp2-home-shell__operations-lede">
+                    A tighter, single-table control surface for live MIDI, routing, interfaces, AVB, snapshots, and latency telemetry across the cluster.
                   </p>
+
                   {heroAlerts.length > 0 ? (
                     <div className="hp2-home-shell__telemetry-tags" aria-label="Telemetry alerts">
                       {heroAlerts.map((alert) => (
@@ -769,72 +833,154 @@ export function HomePage() {
                   )}
                 </div>
 
-                <div className="hp2-home-shell__hero-metrics" aria-label="Telemetry overview">
-                  {heroMetrics.map((metric) => (
-                    <div key={metric.id} className="hp2-home-shell__hero-metric">
-                      <span className="hp2-home-shell__hero-metric-value">{metric.value}</span>
-                      <span className="hp2-home-shell__hero-metric-label">{metric.label}</span>
-                      <span className="hp2-home-shell__hero-metric-helper">{metric.helper}</span>
+                <aside className="hp2-home-shell__summary-rail" aria-label="Telemetry overview">
+                  {summaryMetrics.map((metric) => (
+                    <div key={metric.id} className="hp2-home-shell__summary-metric">
+                      <span className="hp2-home-shell__summary-value">{metric.value}</span>
+                      <span className="hp2-home-shell__summary-label">{metric.label}</span>
+                      <span className="hp2-home-shell__summary-helper">{metric.helper}</span>
                     </div>
                   ))}
-                </div>
-              </div>
+                </aside>
+              </header>
 
-              <div className="hp2-home-shell__telemetry-stack">
-                <TelemetrySection
-                  eyebrow="MIDI Devices"
-                  title="Current MIDI Devices Connected"
-                  description="Per-node MIDI port inventory across the live cluster. Click any row to open the node-aware MIDI connections workspace."
-                  rows={midiDeviceRows}
-                  emptyLabel="No MIDI devices detected"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
-                <TelemetrySection
-                  eyebrow="Mapped MIDI"
-                  title="Current MAPPED MIDI"
-                  description="Enabled live mappings with routing filters, transforms, and destination context. Rows resolve to the owning GUI page when device ownership is detectable."
-                  rows={midiMappingRows}
-                  emptyLabel="No active MIDI mappings"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
-                <TelemetrySection
-                  eyebrow="Audio Interfaces"
-                  title="Current Audio Interfaces Connected"
-                  description="Connected interface inventory gathered from all reporting nodes. Rows open Audio Engine in the correct node context."
-                  rows={audioInterfaceRows}
-                  emptyLabel="No audio interfaces reported"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
-                <TelemetrySection
-                  eyebrow="AVB Endpoints"
-                  title="Current AVB Endpoints Connected"
-                  description="Discovery-backed AVB endpoint state with node ownership, talker/listener counts, and fabric timing context."
-                  rows={avbEndpointRows}
-                  emptyLabel="No AVB endpoints discovered"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
-                <TelemetrySection
-                  eyebrow="Snapshots"
-                  title="Current Snapshot Loaded and Live"
-                  description="Grouped live snapshot authority state across nodes. Shared snapshots collapse into one row; divergent runtime states remain visible."
-                  rows={snapshotRows}
-                  emptyLabel="No live snapshots reported"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
-                <TelemetrySection
-                  eyebrow="Latency Pressure"
-                  title="Current Latency Pressure"
-                  description="Per-node latency pressure derived from the existing realtime measurement path. Click through to Audio Engine for full runtime diagnostics."
-                  rows={latencyPressureRows}
-                  emptyLabel="No latency telemetry available"
-                  loading={telemetryLoading}
-                  navigate={navigate}
-                />
+              <div className="hp2-home-shell__operations-table-shell">
+                <DataTable
+                  rows={tableRows.map((row) => ({
+                    id: row.id,
+                    surface: row.category,
+                    signal: row.signal,
+                    currentState: row.currentState,
+                    scope: row.scope,
+                    detail: row.detail,
+                    workspace: row.workspace,
+                  }))}
+                  headers={[...HOME_TABLE_HEADERS]}
+                  isSortable
+                  useZebraStyles
+                >
+                  {({
+                    rows,
+                    headers,
+                    getHeaderProps,
+                    getRowProps,
+                    getTableProps,
+                    getTableContainerProps,
+                    getToolbarProps,
+                  }) => (
+                    <TableContainer
+                      {...getTableContainerProps()}
+                      title="Operations table"
+                      description="All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace."
+                      className="hp2-home-shell__table-container"
+                    >
+                      <TableToolbar {...getToolbarProps()}>
+                        <TableToolbarContent className="hp2-home-shell__table-toolbar">
+                          <TableToolbarSearch
+                            persistent
+                            value={searchValue}
+                            onChange={(_event, value) => {
+                              startTransition(() => {
+                                setSearchValue(value ?? '')
+                              })
+                            }}
+                          />
+                          <Tag type="cool-gray" size="sm">
+                            {filteredTelemetryRows.length} results
+                          </Tag>
+                          <Tag type="cool-gray" size="sm">
+                            {onlineNodes.length} nodes
+                          </Tag>
+                          <Tag type={criticalRowCount > 0 ? 'red' : warningRowCount > 0 ? 'warm-gray' : 'green'} size="sm">
+                            {criticalRowCount > 0
+                              ? `${criticalRowCount} critical`
+                              : warningRowCount > 0
+                                ? `${warningRowCount} watch`
+                                : 'stable'}
+                          </Tag>
+                          <Tag type={telemetryLoading ? 'warm-gray' : 'green'} size="sm">
+                            {telemetryLoading ? 'refreshing' : 'live'}
+                          </Tag>
+                        </TableToolbarContent>
+                      </TableToolbar>
+
+                      <div className="hp2-home-shell__table-wrap">
+                        <Table
+                          {...getTableProps()}
+                          aria-label="Home telemetry table"
+                          size="sm"
+                          className="hp2-home-shell__table"
+                        >
+                          <TableHead>
+                            <TableRow>
+                              {headers.map((header) => {
+                                const { key: _key, ...headerProps } = getHeaderProps({ header })
+                                return (
+                                  <TableHeader key={header.key} {...headerProps}>
+                                    {header.header}
+                                  </TableHeader>
+                                )
+                              })}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {rows.map((row) => {
+                              const sourceRow = tableRowLookup.get(row.id)
+                              if (!sourceRow) {
+                                return null
+                              }
+
+                              const { key: _key, ...rowProps } = getRowProps({ row })
+                              const isActionable = Boolean(sourceRow.route)
+
+                              return (
+                                <TableRow
+                                  key={row.id}
+                                  {...rowProps}
+                                  className={`hp2-home-shell__table-row${isActionable ? ' is-actionable' : ''}`}
+                                  data-tone={sourceRow.tone}
+                                  tabIndex={isActionable ? 0 : -1}
+                                  role={isActionable ? 'link' : undefined}
+                                  onClick={isActionable ? () => navigateHomeShellRoute(navigate, sourceRow.route!) : undefined}
+                                  onMouseEnter={isActionable ? () => prefetchHomeShellRoute(sourceRow.route!) : undefined}
+                                  onFocus={isActionable ? () => prefetchHomeShellRoute(sourceRow.route!) : undefined}
+                                  onKeyDown={isActionable ? (event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault()
+                                      navigateHomeShellRoute(navigate, sourceRow.route!)
+                                    }
+                                  } : undefined}
+                                >
+                                  <TableCell>
+                                    <Tag type="cool-gray" size="sm">{sourceRow.category}</Tag>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="hp2-home-shell__table-signal">{sourceRow.signal}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="hp2-home-shell__table-state">
+                                      <span className="hp2-home-shell__table-state-label">{sourceRow.currentState}</span>
+                                      <Tag type={toneToTagType(sourceRow.tone)} size="sm">
+                                        {toneToLabel(sourceRow.tone)}
+                                      </Tag>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{sourceRow.scope}</TableCell>
+                                  <TableCell>
+                                    <div className="hp2-home-shell__table-detail">{sourceRow.detail}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="hp2-home-shell__table-workspace">{sourceRow.workspace}</span>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </TableContainer>
+                  )}
+                </DataTable>
               </div>
             </section>
           </Column>
