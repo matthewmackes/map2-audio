@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2309 by classifying the remaining helper-driven live-state mutations and audit-trailing controller-display preview refresh.
+Last updated: 2026-04-15 - Completed T2296 by closing the live-state mutation inventory and canonical-path classification.
 
 ---
 
@@ -266,7 +266,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2296
-Status: [>] In Progress
+Status: [✓] Done
 Title: Seal non-canonical snapshot live-state mutation paths behind one committed activation gate
 Description:
 - Goal / acceptance criteria: Inventory and classify every code path that can make a snapshot live, mutate runtime live state, write control-plane authority, reconcile drift, retry activation, or emulate success, then remove, gate, or explicitly scope any path that can bypass the single committed-snapshot activation workflow. Acceptance requires a canonical-path decision documented in code and docs, explicit classification of API/UI/controller/background/emergency/test-only entry points, and enforcement that non-canonical routes cannot make runtime live or mutate authority without the approved committed activation path and audit trail.
@@ -275,7 +275,13 @@ Description:
 - Estimated effort: High
 - Required outputs: entry-point/bypass inventory, canonical activation gate definition, code changes to remove or constrain bypass-capable paths, audit-trail coverage for retained emergency/test paths, and focused regressions proving rejected or gated behavior.
 Assigned to: Unassigned
-Last updated: 2026-04-15 19:39 EDT - Codex
+Last updated: 2026-04-15 21:47 EDT - Codex
+- Completion notes:
+  - Closed the route-level and generic helper bypasses by routing `/api/audio-state/snapshots/{id}/activate` through canonical activation and denying generic snapshot-owned chain activation outside the canonical opt-in path.
+  - Removed non-canonical desired-authority republishes from retained live editor/runtime compatibility paths and added durable `runtime_metrics.retained_runtime_edits` audit breadcrumbs for the retained live mutation helpers, including controller-display preview refresh.
+  - Added an explicit closure addendum to `docs/audits/snapshot-activation-assurance-audit-20260415.md` that classifies the remaining entry points as canonical activation-owned, canonical repair-owned, or retained compatibility mutations with audit breadcrumbs.
+- Validation:
+  - See shipped focused validations recorded under `T2301`, `T2303`, `T2306`, `T2307`, `T2308`, and `T2309`.
 
 ---
 

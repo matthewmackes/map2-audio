@@ -129,6 +129,25 @@ These paths may be intentional operator-edit surfaces, but they prove the curren
   - authority publish retry/idempotency guarantees after a crash
   - restart-safe continuation when runtime apply succeeds but authority publish does not
 
+## T2296 Closure Addendum
+
+The original `T2296` findings above were accurate at audit time. They have since been addressed as follows:
+
+| Entry point / helper | Classification after remediation | Current status |
+| --- | --- | --- |
+| `POST /api/snapshots/{id}/activate` | Canonical activation gate | Delegates to `StateAuthorityActivationService.activate_snapshot()` |
+| `POST /api/audio-state/snapshots/{id}/activate` | Canonical activation gate | Route-local authority bypass removed; now delegates to canonical activation and verifies committed authority |
+| `POST /api/snapshots/{id}/repair/*` | Canonical repair path | Replays canonical activation after typed repair steps; does not write authority directly |
+| `SnapshotService.update_snapshot()` | Retained compatibility mutation | Live payload/runtime sync retained, but now records durable `runtime_metrics.retained_runtime_edits` |
+| `SnapshotService.update_channel()` | Retained compatibility mutation | Desired-authority republish removed; runtime sync retained with durable audit breadcrumb |
+| `SnapshotService.update_plugin_parameter_by_position()` | Retained compatibility mutation | Live payload sync retained with durable audit breadcrumb |
+| `SnapshotService.update_routing()` | Retained compatibility mutation | Desired-authority republish removed; runtime sync retained with durable audit breadcrumb |
+| `SnapshotService.replace_midi_map()` | Retained compatibility mutation | Runtime MIDI-map sync retained with durable audit breadcrumb |
+| `snapshot_controller_display_push_service.refresh_live_snapshot_controller_display_for_parameter_updates()` | Retained compatibility mutation | Live payload preview refresh retained with durable audit breadcrumb |
+| `ChainService.activate_chain()` for `snapshot_path` runtime chains | Canonical-only helper | Generic route usage is denied unless canonical activation explicitly opts in |
+
+Remaining work after `T2296` closure is no longer about hidden bypass inventory. It is now the stricter invariant work in `T2297` through `T2299`: making authority confirmation part of the canonical success contract, surfacing degraded/drift semantics, and qualifying crash/restart/concurrency behavior.
+
 ## Failure-Feedback Matrix
 
 | Failure family | Current state |
@@ -153,9 +172,6 @@ These paths may be intentional operator-edit surfaces, but they prove the curren
 
 ## Required Follow-On Work
 
-- `T2296`
-  - inventory, gate, or retire all non-canonical runtime/authority mutation paths
-  - explicitly decide which live-edit paths are allowed and how they preserve auditability
 - `T2297`
   - make authority publication part of the canonical success contract instead of a silent best-effort follow-on
   - emit explicit degraded/drift state when runtime and authority disagree
