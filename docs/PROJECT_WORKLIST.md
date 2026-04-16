@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2335 for the Home hero layout cleanup.
+Last updated: 2026-04-16 - Started T2337 to guard live snapshot edits against leaving the flow via route changes or browser close.
+
+---
+
+ID: T2337
+Status: [>] In Progress
+Title: Guard live snapshot edits against leaving the flow via route changes or browser close
+Description:
+- Goal / acceptance criteria: Prevent a guitarist from silently losing unpublished live snapshot edits by leaving the snapshot flow through app navigation, browser back/forward, or tab close. Acceptance requires route-level navigation guards for the Snapshot Editor and Snapshot Publish surfaces, browser `beforeunload` protection while live changes are pending, explicit allow-listing for the editor<->publish handoff inside the same snapshot flow, and focused regression coverage for both blocked and allowed transitions.
+- Why it matters: `T2336` closed the single-source-of-truth flow inside the snapshot surfaces, but the live working state can still be abandoned by leaving those routes through the wider app shell instead of the guarded previous/next controls.
+- Dependencies: T2336
+- Estimated effort: Medium
+- Required outputs: shared navigation-guard hook/utilities, snapshot editor/publish integration, focused tests, and validation notes.
+Assigned to: Codex
+Last updated: 2026-04-16 19:01 EDT - Codex
+
+---
+
+ID: T2336
+Status: [✓] Done
+Title: Move host, local/AVB I/O, and live-routing workflow into Snapshot Publish as the live-authoring surface
+Description:
+- Goal / acceptance criteria: Rework the snapshot create/editor/publish flow so `Create Snapshot` establishes the selected host and available local/AVB I/O, `Commit` starts the live working snapshot session with audio passing immediately, and the deep-linkable Snapshot Publish page owns the inline workflow order `Host -> Inputs/Outputs (Local + AVB) -> Routing -> Per-channel live confirmation -> Publish`. The editor must remain the authoring source of truth for the live working state, publish must operate on that same state instead of a copied draft, unpublished live changes must show a strong always-visible warning, and snapshot switching must block until the live changes are published or discarded. Acceptance requires reusing the existing routing/device UI building blocks where practical, updating the creation flow so it no longer silently persists draft assets as the user’s stage-ready state, and landing focused frontend regression coverage for the new workflow.
+- Why it matters: The current phase-1 publish workspace explains readiness clearly, but it still leaves host/device/routing decisions fragmented across editor-side modal flows and keeps creation/publish/live boundaries too ambiguous for a guitarist who needs a single end-to-end path from choosing a host to going on stage.
+- Dependencies: T961
+- Estimated effort: High
+- Required outputs: updated snapshot create/editor/publish workflow code, inline host/device/AVB/routing surfaces in `SnapshotPublishPage`, live-authoring state messaging, focused tests, and validation notes.
+Assigned to: Codex
+Last updated: 2026-04-16 19:01 EDT - Codex
+- Progress notes:
+  - Added a shared browser-persisted live-working-draft layer so editor-only snapshot changes survive route switches and can be restored when returning to Snapshot Editor.
+  - Snapshot Publish now detects editor-only live changes, surfaces an always-visible warning, offers an explicit discard action, and saves that editor working state automatically before host/device/routing/publish actions continue inline.
+  - Snapshot Editor previous/next navigation now blocks while unpublished live changes exist, matching the requested single-source-of-truth behavior.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runTestsByPath src/app/utils/liveWorkingSnapshotDraft.test.ts src/app/pages/SnapshotPublishPage.test.tsx src/app/components/snapshots/SnapshotNewWizard.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx --runInBand` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
@@ -5998,6 +6034,78 @@ Last updated: 2026-04-01 10:02 - Codex
 - Frontend tests in MaschinePage.test.tsx (see T666-subI)
 Dependencies: T666-subA through T666-subJ
 Assigned to: Unassigned
+
+ID: T666-audit
+Status: [✓] Done
+Title: Hardware audit — MK1 protocol fabricated, device dormant
+Description:
+- Discovery (2026-04-14): Physical hardware audit against NI Maschine MK1 (17cc:0808) revealed the entire USB protocol in the daemon was fabricated — LED packets, LCD packets, HID input decoder, dimensions, and transport selection all non-functional.
+- Root cause: MK1 is a raw USB bulk device (not HID). The only working open-source reference is shaduzlabs/cabl (MIT). Existing unit tests passed because they tested fabricated protocol against itself.
+- Findings: (1) LED packet format wrong (0x80+16B vs real 2×33B on EP 0x01), (2) LCD packet format wrong (0x81/0x82 chunks vs real KS0713 framed transfer on EP 0x08), (3) LCD dimensions wrong (128×64 vs real 255×64, 5bpp grayscale), (4) Input decoder fabricated HID report IDs vs real bulk IN on EP 0x84/0x81, (5) snd_usb_caiaq kernel module held the device, (6) No systemd unit installed, daemon never started.
+- All findings verified on physical hardware through iterative diagnostic scripts.
+Assigned to: Claude
+Last updated: 2026-04-16 - Claude
+
+ID: T666-subL
+Status: [✓] Done
+Title: Rewrite transport — mk1_protocol.py + mk1_usb_transport.py (cabl-derived)
+Description:
+- Created app/services/maschine/mk1_protocol.py — pure wire-format module with LED two-packet builder, LCD KS0713 init + frame chunking, FrameBuffer (255×64 5bpp), pad/button/encoder decoders
+- Created app/services/maschine/mk1_usb_transport.py — pyusb I/O layer with background pad-drain thread (mandatory for EP 0x01 OUT backpressure), write lock, deque-based input queues
+- Acceptance: All 62 LED slots light on hardware, both LCDs render black/white/gradient/text, pad input streams continuously
+- Verified via scripts/maschine_lcd_test.py, scripts/maschine_led_slot_walk.py, scripts/maschine_two_packet_test.py, scripts/maschine_unwedge_test.py
+Assigned to: Claude
+Last updated: 2026-04-16 - Claude
+
+ID: T666-subM
+Status: [✓] Done
+Title: Fix LCD renderer — 255×64, dual output (XBM for web + MK1 framebuffer for device)
+Description:
+- Updated app/services/maschine_lcd_service.py: LCD_WIDTH=255, LCD_HEIGHT=64
+- Added to_mk1_framebuffer() on _Canvas — FrameBuffer conversion
+- Added _canvas_panel() dual-output helper: XBM hex for web simulator + framebuffer hex for device daemon
+- Acceptance: Web LCD simulator and physical MK1 LCDs both render correctly from the same render pass
+Assigned to: Claude
+Last updated: 2026-04-16 - Claude
+
+ID: T666-subN
+Status: [✓] Done
+Title: Rewire daemon — replace fabricated HID protocol with cabl-derived USB bulk transport
+Description:
+- Rewrote app/services/maschine/maschine_mk1_daemon.py: deleted HidDeviceController, decode_hid_report, build_led_output_report, build_lcd_output_reports, DecodedHidEvent, all transport preference/hidapi machinery
+- New architecture: _input_loop (pad/button/encoder via mk1_protocol decoders), _display_loop (websocket + renderer), _output_loop (write LEDs + LCD frames to device via mk1_usb_transport)
+- Pad velocity now derived from 12-bit pressure (0-4095 to MIDI 0-127)
+- Transport button mapping via Button enum, Group A-H via _GROUP_BUTTONS dict
+- E2 (button LED transport feedback): Play/Rec/Loop LEDs driven by backend transport state
+- Display backlight always on at LED_BACKLIGHT_DEFAULT
+- Updated systemd/map2-maschine.service description
+- 34 new protocol tests + 9 daemon tests all passing
+Assigned to: Claude
+Last updated: 2026-04-16 - Claude
+
+ID: T666-subO
+Status: [✓] Done
+Title: E2E verification script + protocol unit tests
+Description:
+- Created scripts/maschine_e2e_verify.sh — 7-step check: USB presence, kernel driver, pyusb access, udev rules, systemd unit, backend connectivity, optional hardware blink
+- Created tests/test_maschine_mk1_protocol.py — 34 tests covering LED packets, display init/frame/FrameBuffer, pad/button/encoder decoding, Led enum
+- Rewrote tests/test_maschine_mk1_daemon.py — 9 tests for reconnecting frames, last touched bitmap, audio grid overlay, encoder delta, VirtualMidiOutput, DaemonConfig, systemd unit
+- Acceptance: All 43 new tests pass; E2E script runs clean on host with device connected
+Assigned to: Claude
+Last updated: 2026-04-16 - Claude
+
+ID: T666-subP
+Status: [ ] Todo
+Title: Extensions E3-E6 — aftertouch, encoder-push menu, pyudev hotplug
+Description:
+- E1 (stats LCD context): Done — Control button toggles display context between audio_grid and stats
+- E2 (button LED transport feedback): Done in T666-subN — Play/Rec/Loop LEDs driven by transport state
+- E3 (pad velocity to MIDI velocity): Done in T666-subN — 12-bit pressure mapped to MIDI 0-127
+- E4 (aftertouch / channel pressure): Pending — continuous pressure from held pads to polyphonic aftertouch
+- E5 (encoder-push menu navigation): Pending — encoder-1 push for back/select in LCD menu
+- E6 (pyudev hotplug): Pending — subscribe to udev events instead of reconnect polling
+Assigned to: Unassigned
+Last updated: 2026-04-16 - Claude
 
 ID: T663
 Status: [✓] Done
