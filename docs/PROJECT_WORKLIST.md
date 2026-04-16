@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Started T2334 to keep lint out of atomic build rotation directories.
+Last updated: 2026-04-16 - Completed T2335 for the Home hero layout cleanup.
+
+---
+
+ID: T2335
+Status: [✓] Done
+Title: Remove the Home hero card chrome and reclaim the top-of-page landing space
+Description:
+- Goal / acceptance criteria: Remove the bordered card treatment around the Home hero information, eliminate the dedicated Home page header strip, move the hero content upward so the landing shell uses the top of the viewport more effectively, and keep hero pills limited to warnings/errors/failures only. Acceptance requires an assertive replacement layout plus focused Home page regression coverage.
+- Why it matters: The current landing shell wastes vertical space with a header band and boxed hero, which makes the first screen feel sparse and visually heavy instead of immediate and product-forward.
+- Dependencies: T2289
+- Estimated effort: Low
+- Required outputs: updated `HomePage.tsx` / `HomePage.landing.css`, aligned Home page tests, and passing focused validation.
+Assigned to: Codex
+Last updated: 2026-04-16 10:23 EDT - Codex
+- Completion notes:
+  - Removed the Carbon `Header` masthead from `web/src/app/pages/HomePage.tsx` and converted the hero into a borderless split layout with a floating actions menu, larger title treatment, and live metric blocks that occupy the reclaimed top-of-page space.
+  - Reworked the hero status treatment so pills only render for attention states, while nominal conditions fall back to plain copy instead of neutral/green tags.
+  - Updated `web/src/app/pages/HomePage.landing.css` for the new assertive hero composition and refreshed `web/src/app/pages/HomePage.test.tsx` expectations to match the headerless landing shell.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
 
 ---
 

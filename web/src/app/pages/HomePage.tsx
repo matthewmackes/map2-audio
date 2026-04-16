@@ -5,9 +5,6 @@ import {
   Column,
   Content,
   Grid,
-  Header,
-  HeaderGlobalBar,
-  HeaderName,
   InlineLoading,
   OverflowMenu,
   OverflowMenuItem,
@@ -46,6 +43,8 @@ import './HomePage.landing.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
 
+type HeroAlertTagType = 'red' | 'warm-gray'
+
 type InventoryNode = {
   status?: string
   audio_interfaces?: string[]
@@ -71,6 +70,19 @@ type TelemetrySectionProps = {
   emptyLabel: string
   loading?: boolean
   navigate: ReturnType<typeof useNavigate>
+}
+
+type HeroMetric = {
+  id: string
+  value: string
+  label: string
+  helper: string
+}
+
+type HeroAlert = {
+  id: string
+  label: string
+  type: HeroAlertTagType
 }
 
 function normalizeText(value: string | null | undefined): string | null {
@@ -191,6 +203,10 @@ function resolveMidiMappingRoute(nodeId: string, route: MidiHubRoute): string {
 
 function formatNodeScope(count: number): string {
   return `${count} node${count === 1 ? '' : 's'}`
+}
+
+function countRowsByTone(rows: TelemetryRow[], tone: TelemetryRow['tone']): number {
+  return rows.filter((row) => row.tone === tone).length
 }
 
 function TelemetrySection({
@@ -534,6 +550,108 @@ export function HomePage() {
     || latencyQueries.some((query) => query.isLoading)
   )
 
+  const heroMetrics = useMemo<HeroMetric[]>(() => [
+    {
+      id: 'nodes',
+      value: String(onlineNodes.length),
+      label: 'live nodes',
+      helper: onlineNodes.length === 1 ? 'one cluster node responding' : 'cluster nodes responding now',
+    },
+    {
+      id: 'midi-devices',
+      value: String(midiDeviceRows.length),
+      label: 'MIDI devices',
+      helper: 'physical ports reporting into the cluster',
+    },
+    {
+      id: 'audio-interfaces',
+      value: String(audioInterfaceRows.length),
+      label: 'audio interfaces',
+      helper: 'connected interface inventory across nodes',
+    },
+    {
+      id: 'avb-endpoints',
+      value: String(avbDiscoveryQuery.data?.total_discovered ?? Math.max(avbEndpointRows.length - 1, 0)),
+      label: 'AVB endpoints',
+      helper: 'currently discovered on the fabric',
+    },
+    {
+      id: 'snapshots',
+      value: String(snapshotRows.length),
+      label: 'snapshot groups',
+      helper: 'live runtime snapshot states',
+    },
+  ], [
+    audioInterfaceRows.length,
+    avbDiscoveryQuery.data?.total_discovered,
+    avbEndpointRows.length,
+    midiDeviceRows.length,
+    onlineNodes.length,
+    snapshotRows.length,
+  ])
+
+  const heroAlerts = useMemo<HeroAlert[]>(() => {
+    const alerts: HeroAlert[] = []
+    const pushAlert = (id: string, label: string, type: HeroAlertTagType) => {
+      alerts.push({ id, label, type })
+    }
+
+    const platformAlerts: Array<{ id: string; label: string; state: 'ok' | 'warn' | 'off' | 'loading' }> = [
+      { id: 'nodes', ...shellSummaryData.platformStatus.nodes },
+      { id: 'avb', ...shellSummaryData.platformStatus.avb },
+      { id: 'avdecc', ...shellSummaryData.platformStatus.avdecc },
+    ]
+
+    for (const item of platformAlerts) {
+      if (item.state === 'warn') {
+        pushAlert(item.id, item.label, item.label.toLocaleLowerCase().includes('error') ? 'red' : 'warm-gray')
+      }
+      if (item.state === 'off') {
+        pushAlert(item.id, item.label, 'warm-gray')
+      }
+    }
+
+    if (shellSummaryData.launcherInterfaceSummary.errorMessage) {
+      pushAlert('interfaces-error', shellSummaryData.launcherInterfaceSummary.errorMessage, 'red')
+    }
+
+    const criticalLatencyCount = countRowsByTone(latencyPressureRows, 'critical')
+    if (criticalLatencyCount > 0) {
+      pushAlert(
+        'latency-critical',
+        `${criticalLatencyCount} node${criticalLatencyCount === 1 ? '' : 's'} latency critical`,
+        'red',
+      )
+    } else {
+      const warningLatencyCount = countRowsByTone(latencyPressureRows, 'warning')
+      if (warningLatencyCount > 0) {
+        pushAlert(
+          'latency-watch',
+          `${warningLatencyCount} node${warningLatencyCount === 1 ? '' : 's'} latency elevated`,
+          'warm-gray',
+        )
+      }
+    }
+
+    const snapshotAttentionCount = countRowsByTone(snapshotRows, 'warning')
+    if (snapshotAttentionCount > 0) {
+      pushAlert(
+        'snapshot-attention',
+        `${snapshotAttentionCount} snapshot group${snapshotAttentionCount === 1 ? '' : 's'} need attention`,
+        'warm-gray',
+      )
+    }
+
+    return alerts
+  }, [
+    latencyPressureRows,
+    shellSummaryData.launcherInterfaceSummary.errorMessage,
+    shellSummaryData.platformStatus.avb,
+    shellSummaryData.platformStatus.avdecc,
+    shellSummaryData.platformStatus.nodes,
+    snapshotRows,
+  ])
+
   useEffect(() => {
     if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
       completeHomeDesktopBoot()
@@ -616,42 +734,51 @@ export function HomePage() {
       ) : null}
       <div className="hp2-root__backdrop" aria-hidden="true" />
 
-      <Header aria-label="MAP2 home shell" className="hp2-home-shell__masthead">
-        <HeaderName href="/" prefix="">
-          {MAP2_PLATFORM_NAME}
-        </HeaderName>
-        <HeaderGlobalBar>
-          <Tag type="blue">Operator telemetry</Tag>
-          <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
-            <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
-            <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
-          </OverflowMenu>
-        </HeaderGlobalBar>
-      </Header>
-
       <Content className="hp2-home-shell__content">
         <Grid className="hp2-home-shell__grid" condensed>
           <Column lg={16} md={8} sm={4} className="hp2-home-shell__main">
-            <section className="hp2-home-shell__telemetry-shell" aria-label="Engineering telemetry">
-              <DashboardCard className="hp2-home-shell__telemetry-intro">
-                <p className="hp2-home-shell__eyebrow dashboard-card__eyebrow">Home</p>
-                <h1 className="hp2-home-shell__title">
-                  <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
-                  MAP: Mackes Audio Platform
-                </h1>
-                <p className="hp2-home-shell__lede">
-                  Live cluster-facing status for connected MIDI, mapped control paths, audio interfaces, AVB endpoints, snapshots, and latency pressure.
-                </p>
-                <div className="hp2-home-shell__telemetry-tags" aria-label="Telemetry overview">
-                  <Tag type="green">{shellSummaryData.platformStatus.nodes.label}</Tag>
-                  <Tag type={shellSummaryData.platformStatus.avb.state === 'ok' ? 'green' : 'warm-gray'}>
-                    {shellSummaryData.platformStatus.avb.label}
-                  </Tag>
-                  <Tag type="cool-gray">{`${midiDeviceRows.length} MIDI devices`}</Tag>
-                  <Tag type="cool-gray">{`${audioInterfaceRows.length} audio interfaces`}</Tag>
-                  <Tag type="cool-gray">{`${snapshotRows.length} snapshot groups`}</Tag>
+            <section className="hp2-home-shell__telemetry-shell" aria-label="MAP2 home telemetry">
+              <div className="hp2-home-shell__telemetry-intro">
+                <div className="hp2-home-shell__telemetry-intro-copy">
+                  <div className="hp2-home-shell__hero-headline">
+                    <p className="hp2-home-shell__hero-kicker">Live operations surface</p>
+                    <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
+                      <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
+                      <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
+                    </OverflowMenu>
+                  </div>
+                  <h1 className="hp2-home-shell__title">
+                    <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
+                    MAP: Mackes Audio Platform
+                  </h1>
+                  <p className="hp2-home-shell__lede">
+                    Live cluster-facing status for connected MIDI, mapped control paths, audio interfaces, AVB endpoints, snapshots, and latency pressure.
+                  </p>
+                  {heroAlerts.length > 0 ? (
+                    <div className="hp2-home-shell__telemetry-tags" aria-label="Telemetry alerts">
+                      {heroAlerts.map((alert) => (
+                        <Tag key={alert.id} type={alert.type}>
+                          {alert.label}
+                        </Tag>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="hp2-home-shell__hero-status-copy">
+                      No active warnings or failures are reporting into the home surface right now.
+                    </p>
+                  )}
                 </div>
-              </DashboardCard>
+
+                <div className="hp2-home-shell__hero-metrics" aria-label="Telemetry overview">
+                  {heroMetrics.map((metric) => (
+                    <div key={metric.id} className="hp2-home-shell__hero-metric">
+                      <span className="hp2-home-shell__hero-metric-value">{metric.value}</span>
+                      <span className="hp2-home-shell__hero-metric-label">{metric.label}</span>
+                      <span className="hp2-home-shell__hero-metric-helper">{metric.helper}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="hp2-home-shell__telemetry-stack">
                 <TelemetrySection

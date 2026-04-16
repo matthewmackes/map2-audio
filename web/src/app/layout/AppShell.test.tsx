@@ -192,8 +192,8 @@ describe('AppShell global tree navigation', () => {
       'Control Panel',
       'MIDI Advanced',
       'Audio Artifacts',
-      'Platform Guide',
       'Hardware',
+      'Platform Guide',
     ])
     expect(screen.getAllByText('Control Panel')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()

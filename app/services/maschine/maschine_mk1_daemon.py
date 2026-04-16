@@ -1,17 +1,16 @@
-"""Standalone Maschine MK1 HID daemon.
+"""Standalone Maschine MK1 daemon.
 
-This daemon bridges the Native Instruments Maschine MK1 USB HID surface into
+This daemon bridges the Native Instruments Maschine MK1 USB surface into
 MAP2 by:
 
-- reading HID reports and translating them into a virtual ALSA MIDI port
-- mirroring HID activity into the backend websocket bridge
-- polling backend state to render LCD frames and pad LEDs
+- reading pad/button/encoder input via bulk USB and translating to MIDI
+- mirroring input activity into the backend websocket bridge
+- polling backend state to render LCD frames and drive pad/button LEDs
 - dispatching transport and block-focus actions back into the MAP2 API
 
-The HID report decoder is intentionally table-driven and tolerant of unknown
-reports. The concrete Maschine MK1 packet layout can vary by firmware/runtime,
-so unsupported reports are surfaced as raw HID events instead of crashing the
-daemon.
+The USB protocol is a direct transcription of shaduzlabs/cabl (MIT).
+See mk1_protocol.py for the wire format and mk1_usb_transport.py for
+the pyusb I/O layer.
 """
 
 from __future__ import annotations
@@ -25,30 +24,48 @@ import signal
 import threading
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import urlencode, urljoin, urlparse
+from urllib.parse import urlparse
 
 import httpx
 import websockets
 from websockets.sync.client import ClientConnection, connect as ws_connect
 
-from app.services.maschine.transport import MaschineTransportController
+from app.services.maschine.mk1_protocol import (
+    LED_BACKLIGHT_DEFAULT,
+    LED_DATA_SIZE,
+    LED_PAD_INDEX,
+    DISPLAY_FRAMEBUFFER_SIZE,
+    Button,
+    ButtonChange,
+    EncoderDelta,
+    Led,
+    N_BUTTONS,
+    N_ENCODERS,
+    PAD_COUNT,
+    PadEvent,
+    REPORT_TAG_BUTTONS,
+    REPORT_TAG_ENCODERS,
+    decode_button_report,
+    decode_encoder_report,
+    decode_pad_report,
+    is_shift_held,
+)
+from app.services.maschine.mk1_usb_transport import (
+    MaschineMK1NotFound,
+    MaschineMK1UsbTransport,
+)
 from app.services.maschine_encoder_map_service import default_maschine_encoder_map
 from app.services.maschine_lcd_service import (
     LCD_HEIGHT,
     LCD_WIDTH,
     MaschineLCDRenderService,
     _Canvas,
+    _canvas_panel,
     _safe_label,
 )
 from app.services.maschine_service import MaschineService
 from app.utils.rtmidi_utils import dispose_rtmidi_client
-
-try:
-    import hid  # type: ignore
-except Exception:  # pragma: no cover - optional runtime dependency
-    hid = None
 
 try:
     import rtmidi  # type: ignore
@@ -57,11 +74,8 @@ except Exception:  # pragma: no cover - optional runtime dependency
 
 LOGGER = logging.getLogger("maschine_mk1_daemon")
 
-MASCHINE_VENDOR_ID = 0x17CC
-MASCHINE_PRODUCT_ID = 0x0808
 MASCHINE_VIRTUAL_PORT_NAME = "MAP2:Maschine-MK1"
 DEFAULT_BACKEND_URL = "http://localhost:8080"
-HID_POLL_INTERVAL_SECONDS = 0.002
 DISPLAY_FPS = 30.0
 DISPLAY_POLL_INTERVAL_SECONDS = 0.5
 HEARTBEAT_INTERVAL_SECONDS = 2.0
@@ -72,16 +86,37 @@ TRANSPORT_NOTE_BASE = 60
 GROUP_CC_BASE = 20
 ENCODER_CC_BASE = 1
 MASTER_CC_BASE = 9
-LED_STATE_CODES = {
-    "off": 0,
-    "dim": 1,
-    "bright": 2,
-    "pulsing": 3,
-}
 TOP_LEVEL_MENU_ITEMS = ("Audio Grid", "Stats", "---", "---", "---")
 BACKEND_MESSAGE_QUEUE_LIMIT = 256
-_RUNTIME_TRANSPORT_CONFIG_MANAGER: Any | None = None
-_RUNTIME_TRANSPORT_CONFIG_SIGNATURE: tuple[bool, int | None, int | None] | None = None
+
+# Button → transport action mapping
+_TRANSPORT_BUTTONS: dict[int, str] = {
+    int(Button.Play): "play",
+    int(Button.Rec): "record",
+    int(Button.Erase): "erase",
+    int(Button.Loop): "restart",
+    int(Button.TransportRight): "stop",
+}
+
+# Button → group index (0-7) for A-H
+_GROUP_BUTTONS: dict[int, int] = {
+    int(Button.GroupA): 0,
+    int(Button.GroupB): 1,
+    int(Button.GroupC): 2,
+    int(Button.GroupD): 3,
+    int(Button.GroupE): 4,
+    int(Button.GroupF): 5,
+    int(Button.GroupG): 6,
+    int(Button.GroupH): 7,
+}
+
+# LED slots for transport feedback (E2)
+_TRANSPORT_LED_MAP: dict[str, int] = {
+    "play": int(Led.Play),
+    "record": int(Led.Rec),
+    "stop": int(Led.TransportRight),
+    "loop": int(Led.Loop),
+}
 
 
 def _utcnow_iso() -> str:
@@ -129,92 +164,6 @@ def _normalize_backend_url(url: str) -> str:
     return normalized.rstrip("/")
 
 
-def _reset_runtime_transport_override_cache() -> None:
-    global _RUNTIME_TRANSPORT_CONFIG_MANAGER
-    global _RUNTIME_TRANSPORT_CONFIG_SIGNATURE
-    _RUNTIME_TRANSPORT_CONFIG_MANAGER = None
-    _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = None
-
-
-def _runtime_config_signature(runtime_config: Any) -> tuple[bool, int | None, int | None] | None:
-    config_path = getattr(runtime_config, "config_path", None)
-    if config_path is None:
-        return None
-    try:
-        stat_result = Path(config_path).expanduser().stat()
-    except FileNotFoundError:
-        return False, None, None
-    except Exception:
-        return None
-    return True, int(stat_result.st_mtime_ns), int(stat_result.st_size)
-
-
-def _normalize_transport_preference(value: Any) -> str | None:
-    preference = str(value or "").strip().lower()
-    if preference in {"pyusb", "usb", "bulk"}:
-        preference = "pyusb-bulk"
-    if preference not in {"auto", "hidapi", "pyusb-bulk"}:
-        return None
-    return preference
-
-
-def _parse_optional_bool_env(value: str | None) -> bool | None:
-    if value is None:
-        return None
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _read_runtime_transport_overrides(runtime_config: Any) -> tuple[str | None, bool | None]:
-    preference = _normalize_transport_preference(runtime_config.get("maschine.transport_preference", ""))
-    allow_kernel_detach = runtime_config.get("maschine.allow_kernel_detach", None)
-    allow_value = None if allow_kernel_detach is None else bool(allow_kernel_detach)
-    return preference, allow_value
-
-
-def _load_runtime_transport_overrides() -> tuple[str | None, bool | None]:
-    global _RUNTIME_TRANSPORT_CONFIG_MANAGER
-    global _RUNTIME_TRANSPORT_CONFIG_SIGNATURE
-
-    try:
-        from app.config import get_config as get_runtime_config_manager
-
-        runtime_config = _RUNTIME_TRANSPORT_CONFIG_MANAGER
-        if runtime_config is None:
-            runtime_config = get_runtime_config_manager()
-            _RUNTIME_TRANSPORT_CONFIG_MANAGER = runtime_config
-            _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = _runtime_config_signature(runtime_config)
-        else:
-            current_signature = _runtime_config_signature(runtime_config)
-            if current_signature != _RUNTIME_TRANSPORT_CONFIG_SIGNATURE:
-                runtime_config.reload()
-                _RUNTIME_TRANSPORT_CONFIG_SIGNATURE = _runtime_config_signature(runtime_config)
-        return _read_runtime_transport_overrides(runtime_config)
-    except Exception:
-        return None, None
-
-
-def _resolve_transport_policy(
-    *,
-    default_preference: str = "auto",
-    default_allow_kernel_detach: bool = False,
-) -> tuple[str, bool]:
-    runtime_preference, runtime_allow_kernel_detach = _load_runtime_transport_overrides()
-    resolved_preference = (
-        _normalize_transport_preference(os.getenv("MAP2_MASCHINE_TRANSPORT"))
-        or runtime_preference
-        or _normalize_transport_preference(default_preference)
-        or "auto"
-    )
-    resolved_allow_kernel_detach = _parse_optional_bool_env(os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH"))
-    if resolved_allow_kernel_detach is None:
-        resolved_allow_kernel_detach = (
-            bool(runtime_allow_kernel_detach)
-            if runtime_allow_kernel_detach is not None
-            else bool(default_allow_kernel_detach)
-        )
-    return resolved_preference, bool(resolved_allow_kernel_detach)
-
-
 def _build_ws_url(base_url: str, path: str) -> str:
     parsed = urlparse(base_url)
     scheme = "wss" if parsed.scheme == "https" else "ws"
@@ -225,49 +174,24 @@ def _build_ws_url(base_url: str, path: str) -> str:
 @dataclass
 class DaemonConfig:
     backend_url: str = DEFAULT_BACKEND_URL
-    vendor_id: int = MASCHINE_VENDOR_ID
-    product_id: int = MASCHINE_PRODUCT_ID
     virtual_port_name: str = MASCHINE_VIRTUAL_PORT_NAME
-    hid_poll_interval_seconds: float = HID_POLL_INTERVAL_SECONDS
     display_poll_interval_seconds: float = DISPLAY_POLL_INTERVAL_SECONDS
     heartbeat_interval_seconds: float = HEARTBEAT_INTERVAL_SECONDS
     display_refresh_interval_seconds: float = 1.0 / DISPLAY_FPS
     reconnect_backoff_min_seconds: float = RECONNECT_BACKOFF_MIN_SECONDS
     reconnect_backoff_max_seconds: float = RECONNECT_BACKOFF_MAX_SECONDS
-    transport_preference: str = "auto"
-    allow_kernel_detach: bool = False
+    allow_kernel_detach: bool = True
 
     @classmethod
     def from_env(cls) -> "DaemonConfig":
-        resolved_transport_preference, resolved_allow_kernel_detach = _resolve_transport_policy()
+        allow_detach_env = os.getenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH")
+        allow_kernel_detach = True
+        if allow_detach_env is not None:
+            allow_kernel_detach = str(allow_detach_env).strip().lower() in {"1", "true", "yes", "on"}
         return cls(
             backend_url=_normalize_backend_url(os.getenv("MAP2_BACKEND_URL", DEFAULT_BACKEND_URL)),
-            transport_preference=resolved_transport_preference,
-            allow_kernel_detach=resolved_allow_kernel_detach,
+            allow_kernel_detach=allow_kernel_detach,
         )
-
-
-@dataclass
-class DecodedHidEvent:
-    report_id: int
-    decoded_type: str
-    payload: dict[str, Any]
-    raw: bytes
-    midi_messages: tuple[bytes, ...] = field(default_factory=tuple)
-
-    def to_backend_message(self) -> dict[str, Any]:
-        return {
-            "type": "hid_event",
-            "payload": {
-                "timestamp": _utcnow_iso(),
-                "direction": "in",
-                "report_id": self.report_id,
-                "decoded_type": self.decoded_type,
-                "raw_hex": self.raw.hex().upper(),
-                "midi_hex": [message.hex().upper() for message in self.midi_messages],
-                **self.payload,
-            },
-        }
 
 
 @dataclass
@@ -283,10 +207,7 @@ class LastTouchedControl:
 class SharedRuntimeState:
     backend_connected: bool = False
     reconnecting: bool = True
-    hid_connected: bool = False
-    hid_device: dict[str, Any] = field(default_factory=dict)
-    transport: dict[str, Any] = field(default_factory=dict)
-    transport_candidates: list[dict[str, Any]] = field(default_factory=list)
+    device_connected: bool = False
     display_context: str = "audio_grid"
     top_level_menu_index: int = 0
     stats_metric_keys: list[str] = field(default_factory=list)
@@ -311,6 +232,7 @@ class SharedRuntimeState:
     )
     last_touched_control: LastTouchedControl | None = None
     stats_payload: dict[str, Any] = field(default_factory=dict)
+    transport_state: dict[str, Any] = field(default_factory=dict)
 
 
 class VirtualMidiOutput:
@@ -352,322 +274,11 @@ class VirtualMidiOutput:
         self._is_open = False
 
 
-class HidDeviceController:
-    def __init__(self, *, vendor_id: int, product_id: int) -> None:
-        self.vendor_id = vendor_id
-        self.product_id = product_id
-        self._device = None
-        self._lock = threading.Lock()
-
-    @property
-    def connected(self) -> bool:
-        return self._device is not None
-
-    def connect(self) -> tuple[bool, dict[str, Any]]:
-        if hid is None:
-            return False, {
-                "vendor_id": f"{self.vendor_id:04x}",
-                "product_id": f"{self.product_id:04x}",
-                "error": "python-hid unavailable",
-            }
-
-        try:
-            device = hid.device()
-            device.open(self.vendor_id, self.product_id)
-            try:
-                device.set_nonblocking(True)
-            except Exception:
-                pass
-            with self._lock:
-                self._device = device
-            info = {
-                "vendor_id": f"{self.vendor_id:04x}",
-                "product_id": f"{self.product_id:04x}",
-                "manufacturer": self._read_string(device, "get_manufacturer_string"),
-                "product": self._read_string(device, "get_product_string"),
-                "serial_number": self._read_string(device, "get_serial_number_string"),
-            }
-            return True, info
-        except Exception as exc:  # pragma: no cover - hardware runtime dependent
-            self.disconnect()
-            return False, {
-                "vendor_id": f"{self.vendor_id:04x}",
-                "product_id": f"{self.product_id:04x}",
-                "error": str(exc),
-            }
-
-    def disconnect(self) -> None:
-        with self._lock:
-            device = self._device
-            self._device = None
-        if device is None:
-            return
-        try:
-            device.close()
-        except Exception:
-            pass
-
-    def read_report(self, *, max_length: int = 64, timeout_ms: int = 2) -> bytes | None:
-        with self._lock:
-            device = self._device
-        if device is None:
-            return None
-        try:
-            try:
-                raw = device.read(max_length, timeout_ms)
-            except TypeError:
-                raw = device.read(max_length)
-        except Exception as exc:  # pragma: no cover - hardware runtime dependent
-            LOGGER.warning("Maschine HID read failed: %s", exc)
-            self.disconnect()
-            return None
-        if not raw:
-            return None
-        return bytes(raw)
-
-    def write_reports(self, reports: Iterable[bytes]) -> bool:
-        with self._lock:
-            device = self._device
-        if device is None:
-            return False
-        try:
-            for report in reports:
-                payload = bytes(report)
-                if not payload:
-                    continue
-                device.write(payload)
-            return True
-        except Exception as exc:  # pragma: no cover - hardware runtime dependent
-            LOGGER.debug("Maschine HID write failed: %s", exc)
-            self.disconnect()
-            return False
-
-    @staticmethod
-    def _read_string(device: Any, method_name: str) -> str | None:
-        method = getattr(device, method_name, None)
-        if method is None:
-            return None
-        try:
-            value = method()
-        except Exception:
-            return None
-        return str(value) if value is not None else None
-
-
-def decode_hid_report(report: bytes) -> DecodedHidEvent | None:
-    raw = bytes(report)
-    if not raw:
-        return None
-
-    report_id = raw[0]
-
-    if report_id == 0x01 and len(raw) >= 4:
-        pad_index = _clamp(int(raw[1]), 0, 15)
-        velocity = _clamp(int(raw[2]), 0, 127)
-        pressed = bool(raw[3])
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="pad_press" if pressed else "pad_release",
-            payload={
-                "pad_index": pad_index,
-                "velocity": velocity,
-                "pressed": pressed,
-                "channel": 1,
-                "note": PAD_NOTE_BASE + pad_index,
-            },
-            raw=raw,
-            midi_messages=(
-                _midi_note_message(1, PAD_NOTE_BASE + pad_index, velocity if pressed else 0, note_on=pressed),
-            ),
-        )
-
-    if 0x10 <= report_id <= 0x1F:
-        pad_index = report_id - 0x10
-        velocity = _clamp(int(raw[1]) if len(raw) > 1 else 127, 0, 127)
-        pressed = bool(raw[2]) if len(raw) > 2 else velocity > 0
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="pad_press" if pressed else "pad_release",
-            payload={
-                "pad_index": pad_index,
-                "velocity": velocity,
-                "pressed": pressed,
-                "channel": 1,
-                "note": PAD_NOTE_BASE + pad_index,
-            },
-            raw=raw,
-            midi_messages=(
-                _midi_note_message(1, PAD_NOTE_BASE + pad_index, velocity if pressed else 0, note_on=pressed),
-            ),
-        )
-
-    if report_id == 0x02 and len(raw) >= 3:
-        control_index = _clamp(int(raw[1]), 0, 10)
-        value = _clamp(int(raw[2]), 0, 127)
-        control = ENCODER_CC_BASE + control_index if control_index < 8 else MASTER_CC_BASE + (control_index - 8)
-        control_type = "encoder" if control_index < 8 else "master_knob"
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type=control_type,
-            payload={
-                "control_index": control_index,
-                "control": control,
-                "value": value,
-                "channel": 1,
-            },
-            raw=raw,
-            midi_messages=(_midi_cc_message(1, control, value),),
-        )
-
-    if 0x20 <= report_id <= 0x2A:
-        control_index = report_id - 0x20
-        value = _clamp(int(raw[1]) if len(raw) > 1 else 0, 0, 127)
-        control = ENCODER_CC_BASE + control_index if control_index < 8 else MASTER_CC_BASE + (control_index - 8)
-        control_type = "encoder" if control_index < 8 else "master_knob"
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type=control_type,
-            payload={
-                "control_index": control_index,
-                "control": control,
-                "value": value,
-                "channel": 1,
-            },
-            raw=raw,
-            midi_messages=(_midi_cc_message(1, control, value),),
-        )
-
-    if report_id == 0x03 and len(raw) >= 3:
-        button_index = _clamp(int(raw[1]), 0, 4)
-        pressed = bool(raw[2])
-        action = ("play", "stop", "record", "restart", "erase")[button_index]
-        note = TRANSPORT_NOTE_BASE + button_index
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="transport_press" if pressed else "transport_release",
-            payload={
-                "button_index": button_index,
-                "transport_action": action,
-                "pressed": pressed,
-                "channel": 2,
-                "note": note,
-            },
-            raw=raw,
-            midi_messages=(_midi_note_message(2, note, 127 if pressed else 0, note_on=pressed),),
-        )
-
-    if 0x30 <= report_id <= 0x34:
-        button_index = report_id - 0x30
-        pressed = bool(raw[1]) if len(raw) > 1 else True
-        action = ("play", "stop", "record", "restart", "erase")[button_index]
-        note = TRANSPORT_NOTE_BASE + button_index
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="transport_press" if pressed else "transport_release",
-            payload={
-                "button_index": button_index,
-                "transport_action": action,
-                "pressed": pressed,
-                "channel": 2,
-                "note": note,
-            },
-            raw=raw,
-            midi_messages=(_midi_note_message(2, note, 127 if pressed else 0, note_on=pressed),),
-        )
-
-    if report_id == 0x04 and len(raw) >= 3:
-        group_index = _clamp(int(raw[1]), 0, 7)
-        pressed = bool(raw[2])
-        control = GROUP_CC_BASE + group_index
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="group_press" if pressed else "group_release",
-            payload={
-                "group_index": group_index,
-                "pressed": pressed,
-                "channel": 1,
-                "control": control,
-            },
-            raw=raw,
-            midi_messages=(_midi_cc_message(1, control, 127 if pressed else 0),),
-        )
-
-    if 0x40 <= report_id <= 0x47:
-        group_index = report_id - 0x40
-        pressed = bool(raw[1]) if len(raw) > 1 else True
-        control = GROUP_CC_BASE + group_index
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="group_press" if pressed else "group_release",
-            payload={
-                "group_index": group_index,
-                "pressed": pressed,
-                "channel": 1,
-                "control": control,
-            },
-            raw=raw,
-            midi_messages=(_midi_cc_message(1, control, 127 if pressed else 0),),
-        )
-
-    if report_id == 0x05 and len(raw) >= 4:
-        control_index = _clamp(int(raw[1]), 0, 7)
-        pressed = bool(raw[2])
-        long_press = bool(raw[3])
-        return DecodedHidEvent(
-            report_id=report_id,
-            decoded_type="encoder_push_long" if pressed and long_press else ("encoder_push" if pressed else "encoder_release"),
-            payload={
-                "control_index": control_index,
-                "pressed": pressed,
-                "long_press": long_press,
-            },
-            raw=raw,
-        )
-
-    return DecodedHidEvent(
-        report_id=report_id,
-        decoded_type="unknown",
-        payload={"length": len(raw)},
-        raw=raw,
-    )
-
-
-def build_led_output_report(led_state: dict[str, Any]) -> bytes:
-    pads = list(led_state.get("pads") or [])
-    payload = bytearray([0x80])
-    for index in range(16):
-        pad = pads[index] if index < len(pads) and isinstance(pads[index], dict) else {}
-        code = LED_STATE_CODES.get(str(pad.get("state") or "off"), 0)
-        payload.append(code & 0xFF)
-    return bytes(payload)
-
-
-def build_lcd_output_reports(side: str, bitmap: dict[str, Any]) -> list[bytes]:
-    side_id = 0 if side == "left" else 1
-    raw_data = str(bitmap.get("data") or "")
-    format_name = str(bitmap.get("format") or "xbm").lower()
-    try:
-        payload = bytes.fromhex(raw_data) if format_name == "xbm" else raw_data.encode("ascii", "replace")
-    except ValueError:
-        payload = raw_data.encode("ascii", "replace")
-    if not payload:
-        payload = b"\x00"
-    chunk_size = 56
-    total_chunks = max(1, (len(payload) + chunk_size - 1) // chunk_size)
-    reports: list[bytes] = []
-    report_id = 0x81 if side_id == 0 else 0x82
-    for chunk_index in range(total_chunks):
-        chunk = payload[chunk_index * chunk_size:(chunk_index + 1) * chunk_size]
-        header = bytes([report_id, chunk_index & 0xFF, total_chunks & 0xFF, len(chunk) & 0xFF])
-        reports.append(header + chunk)
-    return reports
-
-
-def build_reconnecting_frames(title: str = "RECONNECTING") -> dict[str, dict[str, Any]]:
+def build_reconnecting_frames() -> dict[str, dict[str, Any]]:
     left = _Canvas()
-    left.draw_text(_safe_label(title, limit=12), 8, 8, scale=2)
+    left.draw_text(_safe_label("RECONNECTING", limit=12), 8, 8, scale=2)
     left.draw_hline(4, 28, LCD_WIDTH - 8)
-    left.draw_text("BACKEND OR HID", 8, 36)
+    left.draw_text("BACKEND OR DEVICE", 8, 36)
     left.draw_text("RECOVERING...", 8, 48)
 
     right = _Canvas()
@@ -677,18 +288,8 @@ def build_reconnecting_frames(title: str = "RECONNECTING") -> dict[str, dict[str
     right.draw_text("WAIT", 66, 38, scale=2)
 
     return {
-        "left": {
-            "width": LCD_WIDTH,
-            "height": LCD_HEIGHT,
-            "format": "xbm",
-            "data": left.to_xbm_hex(),
-        },
-        "right": {
-            "width": LCD_WIDTH,
-            "height": LCD_HEIGHT,
-            "format": "xbm",
-            "data": right.to_xbm_hex(),
-        },
+        "left": _canvas_panel(left),
+        "right": _canvas_panel(right),
     }
 
 
@@ -701,12 +302,7 @@ def build_last_touched_bitmap(control: LastTouchedControl) -> dict[str, Any]:
     canvas.fill_rect(4, 46, progress_width, 5)
     canvas.draw_text(_safe_label(control.min_label, limit=5), 4, 56)
     canvas.draw_text(_safe_label(control.max_label, limit=5), 92, 56)
-    return {
-        "width": LCD_WIDTH,
-        "height": LCD_HEIGHT,
-        "format": "xbm",
-        "data": canvas.to_xbm_hex(),
-    }
+    return _canvas_panel(canvas)
 
 
 class MaschineMK1Daemon:
@@ -715,33 +311,21 @@ class MaschineMK1Daemon:
         self._stop_event = threading.Event()
         self._render_requested = threading.Event()
         self._state_lock = threading.Lock()
-        self._deferred_transport_policy: tuple[str, bool] | None = None
         self._state = SharedRuntimeState()
         self._state.lcd_frames = build_reconnecting_frames()
-        self._transport = MaschineTransportController(
-            vendor_id=config.vendor_id,
-            product_id=config.product_id,
-            preference=config.transport_preference,
-            allow_kernel_detach=config.allow_kernel_detach,
-        )
-        initial_transport = self._transport.runtime_info()
-        self._state.transport = dict(initial_transport)
-        self._state.transport_candidates = [
-            dict(candidate) for candidate in initial_transport.get("candidates", []) if isinstance(candidate, dict)
-        ]
-        self._state.hid_device = self._runtime_hid_device(initial_transport)
+        self._transport: MaschineMK1UsbTransport | None = None
         self._midi = VirtualMidiOutput(config.virtual_port_name)
         self._outbound_messages: "queue.Queue[dict[str, Any]]" = queue.Queue(maxsize=BACKEND_MESSAGE_QUEUE_LIMIT)
-        self._hid_thread = threading.Thread(target=self._hid_read_loop, name="maschine-hid", daemon=True)
+        self._input_thread = threading.Thread(target=self._input_loop, name="maschine-input", daemon=True)
         self._display_thread = threading.Thread(target=self._display_loop, name="maschine-display", daemon=True)
-        self._led_thread = threading.Thread(target=self._led_feedback_loop, name="maschine-led", daemon=True)
+        self._output_thread = threading.Thread(target=self._output_loop, name="maschine-output", daemon=True)
 
     def run(self) -> int:
         LOGGER.info("Starting Maschine MK1 daemon")
         self._midi.open()
-        self._hid_thread.start()
+        self._input_thread.start()
         self._display_thread.start()
-        self._led_thread.start()
+        self._output_thread.start()
 
         try:
             while not self._stop_event.is_set():
@@ -757,100 +341,291 @@ class MaschineMK1Daemon:
             return
         self._stop_event.set()
         self._render_requested.set()
-        self._transport.disconnect()
+        transport = self._transport
+        if transport is not None:
+            transport.close()
         self._midi.close()
-        for thread in (self._hid_thread, self._display_thread, self._led_thread):
+        for thread in (self._input_thread, self._display_thread, self._output_thread):
             if thread.is_alive():
                 thread.join(timeout=2.0)
 
-    def _hid_read_loop(self) -> None:
+    # ------------------------------------------------------------------
+    # Input loop — reads pads + buttons/encoders from the USB device
+    # ------------------------------------------------------------------
+
+    def _input_loop(self) -> None:
         _best_effort_set_scheduler(55)
         client = httpx.Client(base_url=self.config.backend_url, timeout=2.5)
+        reconnect_sleep = self.config.reconnect_backoff_min_seconds
+
+        # Persistent decode state
+        prev_pad_pressed: list[bool] = [False] * PAD_COUNT
+        prev_button_state: list[bool] = [False] * N_BUTTONS
+        prev_encoder_values: list[int] = [0] * N_ENCODERS
+        encoder_initialized: bool = False
         pad_press_started: dict[int, float] = {}
-        last_encoder_values: dict[int, int] = {}
         held_groups: set[int] = set()
-        reconnect_sleep_seconds = self.config.reconnect_backoff_min_seconds
 
         try:
             while not self._stop_event.is_set():
-                self._refresh_transport_controller_from_runtime()
-                if not self._transport.connected:
-                    connected, transport_info = self._transport.connect()
-                    self._set_transport_state(connected=connected, transport_info=transport_info)
-                    if not connected:
-                        self._set_reconnecting(True)
-                        time.sleep(reconnect_sleep_seconds)
-                        reconnect_sleep_seconds = min(
-                            reconnect_sleep_seconds * 2.0,
-                            self.config.reconnect_backoff_max_seconds,
+                # Connect / reconnect
+                if self._transport is None or not self._transport.is_open:
+                    try:
+                        transport = MaschineMK1UsbTransport(
+                            allow_kernel_detach=self.config.allow_kernel_detach,
                         )
+                        transport.open()
+                        transport.initialize_device()
+                        self._transport = transport
+                        with self._state_lock:
+                            self._state.device_connected = True
+                            self._state.reconnecting = not self._state.backend_connected
+                        reconnect_sleep = self.config.reconnect_backoff_min_seconds
+                        # Reset decode state on fresh connection
+                        prev_pad_pressed = [False] * PAD_COUNT
+                        prev_button_state = [False] * N_BUTTONS
+                        prev_encoder_values = [0] * N_ENCODERS
+                        encoder_initialized = False
+                        pad_press_started.clear()
+                        held_groups.clear()
+                        LOGGER.info("Maschine MK1 device connected and initialized")
+                        self._request_render()
+                    except MaschineMK1NotFound:
+                        LOGGER.debug("Maschine MK1 not found; retrying in %.1fs", reconnect_sleep)
+                        self._set_device_connected(False)
+                        self._stop_event.wait(reconnect_sleep)
+                        reconnect_sleep = min(reconnect_sleep * 2.0, self.config.reconnect_backoff_max_seconds)
                         continue
-                    reconnect_sleep_seconds = self.config.reconnect_backoff_min_seconds
-                    self._request_render()
+                    except Exception as exc:
+                        LOGGER.warning("Maschine MK1 connect failed: %s", exc)
+                        self._set_device_connected(False)
+                        self._stop_event.wait(reconnect_sleep)
+                        reconnect_sleep = min(reconnect_sleep * 2.0, self.config.reconnect_backoff_max_seconds)
+                        continue
 
-                report = self._transport.read_report(timeout_ms=max(1, int(self.config.hid_poll_interval_seconds * 1000)))
-                if report is None:
-                    time.sleep(self.config.hid_poll_interval_seconds)
+                transport = self._transport
+                if transport is None:
                     continue
 
-                event = decode_hid_report(report)
-                if event is None:
+                # Read pads
+                try:
+                    pad_data = transport.read_pads()
+                except Exception:
+                    self._handle_device_disconnect()
                     continue
 
-                self._midi.send_messages(event.midi_messages)
-                self._enqueue_backend_message(event.to_backend_message())
+                if pad_data is not None:
+                    events = decode_pad_report(pad_data, prev_pad_pressed)
+                    for event in events:
+                        self._dispatch_pad_event(client, event, pad_press_started)
 
-                payload = event.payload
-                decoded_type = event.decoded_type
+                # Read buttons/encoders
+                try:
+                    btn_data = transport.read_buttons_encoders()
+                except Exception:
+                    self._handle_device_disconnect()
+                    continue
 
-                if decoded_type == "pad_press":
-                    pad_index = int(payload.get("pad_index", 0))
-                    pad_press_started[pad_index] = time.monotonic()
-                    self._select_block_for_pad(client, pad_index)
-                elif decoded_type == "pad_release":
-                    pad_index = int(payload.get("pad_index", 0))
-                    started_at = pad_press_started.pop(pad_index, None)
-                    if started_at is not None and (time.monotonic() - started_at) >= 0.5:
-                        self._toggle_block_bypass_for_pad(client, pad_index)
-                elif decoded_type == "transport_press" and bool(payload.get("pressed", False)):
-                    self._dispatch_transport_action(client, str(payload.get("transport_action") or ""))
-                elif decoded_type == "group_press" and bool(payload.get("pressed", False)):
-                    held_groups.add(int(payload.get("group_index", 0)))
-                elif decoded_type == "group_release":
-                    held_groups.discard(int(payload.get("group_index", 0)))
-                elif decoded_type in {"encoder", "master_knob"}:
-                    control_index = int(payload.get("control_index", 0))
-                    current_value = int(payload.get("value", 0))
-                    previous_value = last_encoder_values.get(control_index)
-                    last_encoder_values[control_index] = current_value
-                    delta = self._resolve_encoder_delta(previous_value, current_value)
-                    if control_index == 0:
-                        self._handle_navigation_encoder(client, delta)
-                    else:
-                        if 0 in held_groups and 1 <= control_index <= 7:
-                            self._assign_encoder_for_selected_block(client, encoder_slot=control_index + 1)
-                        self._record_last_touched_control(control_index=control_index, midi_value=current_value)
-                elif decoded_type == "encoder_push" and bool(payload.get("pressed", False)):
-                    control_index = int(payload.get("control_index", 0))
-                    if control_index == 0:
-                        self._toggle_display_context()
-                elif decoded_type == "encoder_push_long" and bool(payload.get("pressed", False)):
-                    control_index = int(payload.get("control_index", 0))
-                    if control_index == 0:
-                        self._set_display_context("audio_grid")
+                if btn_data is not None and len(btn_data) > 0:
+                    tag = btn_data[0]
+                    if tag == REPORT_TAG_BUTTONS:
+                        shift = is_shift_held(btn_data)
+                        changes = decode_button_report(btn_data, prev_button_state)
+                        for change in changes:
+                            self._dispatch_button(client, change, held_groups, shift)
+                    elif tag == REPORT_TAG_ENCODERS:
+                        deltas, encoder_initialized = decode_encoder_report(
+                            btn_data, prev_encoder_values, encoder_initialized,
+                        )
+                        for delta in deltas:
+                            self._dispatch_encoder(client, delta, held_groups)
+
+                # Yield to avoid spinning when no data
+                if pad_data is None and btn_data is None:
+                    time.sleep(0.001)
 
         finally:
             client.close()
-            self._transport.disconnect()
-            self._set_transport_state(connected=False, transport_info=self._snapshot_transport_info())
+            self._set_device_connected(False)
+
+    def _handle_device_disconnect(self) -> None:
+        transport = self._transport
+        self._transport = None
+        if transport is not None:
+            try:
+                transport.close()
+            except Exception:
+                pass
+        self._set_device_connected(False)
+        LOGGER.warning("Maschine MK1 device disconnected; will attempt reconnect")
+
+    # ------------------------------------------------------------------
+    # Pad dispatch
+    # ------------------------------------------------------------------
+
+    def _dispatch_pad_event(
+        self,
+        client: httpx.Client,
+        event: PadEvent,
+        pad_press_started: dict[int, float],
+    ) -> None:
+        velocity_midi = _clamp(int(event.pressure * 127 / 4095), 0, 127) if event.pressed else 0
+        midi_msg = _midi_note_message(1, PAD_NOTE_BASE + event.pad, velocity_midi, note_on=event.pressed)
+        self._midi.send_messages((midi_msg,))
+
+        self._enqueue_backend_message({
+            "type": "hid_event",
+            "payload": {
+                "timestamp": _utcnow_iso(),
+                "direction": "in",
+                "decoded_type": "pad_press" if event.pressed else "pad_release",
+                "pad_index": event.pad,
+                "velocity": velocity_midi,
+                "pressure": event.pressure,
+                "pressed": event.pressed,
+                "channel": 1,
+                "note": PAD_NOTE_BASE + event.pad,
+                "midi_hex": [midi_msg.hex().upper()],
+            },
+        })
+
+        if event.pressed:
+            pad_press_started[event.pad] = time.monotonic()
+            self._select_block_for_pad(client, event.pad)
+        else:
+            started_at = pad_press_started.pop(event.pad, None)
+            if started_at is not None and (time.monotonic() - started_at) >= 0.5:
+                self._toggle_block_bypass_for_pad(client, event.pad)
+
+    # ------------------------------------------------------------------
+    # Button dispatch
+    # ------------------------------------------------------------------
+
+    def _dispatch_button(
+        self,
+        client: httpx.Client,
+        change: ButtonChange,
+        held_groups: set[int],
+        shift: bool,
+    ) -> None:
+        button = change.button
+        pressed = change.pressed
+
+        # Group buttons
+        if button in _GROUP_BUTTONS:
+            group_index = _GROUP_BUTTONS[button]
+            if pressed:
+                held_groups.add(group_index)
+            else:
+                held_groups.discard(group_index)
+            cc = GROUP_CC_BASE + group_index
+            midi_msg = _midi_cc_message(1, cc, 127 if pressed else 0)
+            self._midi.send_messages((midi_msg,))
+            self._enqueue_backend_message({
+                "type": "hid_event",
+                "payload": {
+                    "timestamp": _utcnow_iso(),
+                    "direction": "in",
+                    "decoded_type": "group_press" if pressed else "group_release",
+                    "group_index": group_index,
+                    "pressed": pressed,
+                    "channel": 1,
+                    "midi_hex": [midi_msg.hex().upper()],
+                },
+            })
+            return
+
+        # Transport buttons
+        if button in _TRANSPORT_BUTTONS and pressed:
+            action = _TRANSPORT_BUTTONS[button]
+            note = TRANSPORT_NOTE_BASE + list(_TRANSPORT_BUTTONS.values()).index(action)
+            midi_msg = _midi_note_message(2, note, 127, note_on=True)
+            self._midi.send_messages((midi_msg,))
+            self._dispatch_transport_action(client, action)
+            self._enqueue_backend_message({
+                "type": "hid_event",
+                "payload": {
+                    "timestamp": _utcnow_iso(),
+                    "direction": "in",
+                    "decoded_type": "transport_press",
+                    "transport_action": action,
+                    "pressed": True,
+                    "channel": 2,
+                    "midi_hex": [midi_msg.hex().upper()],
+                },
+            })
+            return
+
+        # Control/Navigate/NoteRepeat — encoder push equivalents
+        if button == int(Button.Control) and pressed:
+            self._toggle_display_context()
+        elif button == int(Button.Navigate) and pressed:
+            self._set_display_context("audio_grid")
+
+        # All other button events → websocket
+        self._enqueue_backend_message({
+            "type": "hid_event",
+            "payload": {
+                "timestamp": _utcnow_iso(),
+                "direction": "in",
+                "decoded_type": "button_press" if pressed else "button_release",
+                "button": button,
+                "pressed": pressed,
+                "shift": shift,
+                "midi_hex": [],
+            },
+        })
+
+    # ------------------------------------------------------------------
+    # Encoder dispatch
+    # ------------------------------------------------------------------
+
+    def _dispatch_encoder(
+        self,
+        client: httpx.Client,
+        delta: EncoderDelta,
+        held_groups: set[int],
+    ) -> None:
+        encoder = delta.encoder
+        direction = delta.direction
+
+        if encoder == 0:
+            self._handle_navigation_encoder(client, direction)
+            return
+
+        # Encoders 1-7: parameter control; 8-10: master vol/tempo/swing
+        cc = ENCODER_CC_BASE + encoder if encoder < 8 else MASTER_CC_BASE + (encoder - 8)
+        midi_value = 65 if direction > 0 else 63  # relative CC
+        midi_msg = _midi_cc_message(1, cc, midi_value)
+        self._midi.send_messages((midi_msg,))
+
+        if 0 in held_groups and 1 <= encoder <= 7:
+            self._assign_encoder_for_selected_block(client, encoder_slot=encoder + 1)
+
+        self._record_last_touched_control(control_index=encoder, midi_value=midi_value)
+
+        self._enqueue_backend_message({
+            "type": "hid_event",
+            "payload": {
+                "timestamp": _utcnow_iso(),
+                "direction": "in",
+                "decoded_type": "encoder",
+                "encoder": encoder,
+                "delta": direction,
+                "channel": 1,
+                "midi_hex": [midi_msg.hex().upper()],
+            },
+        })
+
+    # ------------------------------------------------------------------
+    # Display loop — websocket + backend polling + rendering
+    # ------------------------------------------------------------------
 
     def _display_loop(self) -> None:
         _best_effort_set_scheduler(None)
         renderer = MaschineLCDRenderService()
         client = httpx.Client(base_url=self.config.backend_url, timeout=3.5)
         backoff_seconds = self.config.reconnect_backoff_min_seconds
-        last_led_hash = ""
-        last_lcd_hash = {"left": "", "right": ""}
 
         try:
             while not self._stop_event.is_set():
@@ -869,7 +644,6 @@ class MaschineMK1Daemon:
                         LOGGER.info("Maschine backend websocket connected")
                         backoff_seconds = self.config.reconnect_backoff_min_seconds
                         self._set_backend_connected(True)
-                        self._set_reconnecting(not self._snapshot_transport_connected())
                         self._send_json(websocket, {"type": "request_state", "payload": {}})
                         next_heartbeat = 0.0
                         next_poll = 0.0
@@ -882,11 +656,7 @@ class MaschineMK1Daemon:
 
                             if now >= next_poll or self._render_requested.is_set():
                                 self._render_requested.clear()
-                                led_hash, lcd_hash = self._poll_and_render(renderer, client, websocket)
-                                if led_hash:
-                                    last_led_hash = led_hash
-                                if lcd_hash:
-                                    last_lcd_hash = lcd_hash
+                                self._poll_and_render(renderer, client, websocket)
                                 next_poll = now + self.config.display_poll_interval_seconds
 
                             self._flush_outbound_messages(websocket)
@@ -914,8 +684,6 @@ class MaschineMK1Daemon:
                         lcd_frames=reconnect_frames,
                         led_state={"pads": [], "updated_at": _utcnow_iso()},
                     )
-                    last_led_hash = ""
-                    last_lcd_hash = {"left": "", "right": ""}
                     if self._stop_event.wait(backoff_seconds):
                         break
                     backoff_seconds = min(backoff_seconds * 2.0, self.config.reconnect_backoff_max_seconds)
@@ -923,69 +691,146 @@ class MaschineMK1Daemon:
             client.close()
             self._set_backend_connected(False)
 
-    def _led_feedback_loop(self) -> None:
+    # ------------------------------------------------------------------
+    # Output loop — writes LEDs + LCD frames to the physical device
+    # ------------------------------------------------------------------
+
+    def _output_loop(self) -> None:
         _best_effort_set_scheduler(None)
-        last_led_hash = ""
-        last_left_hash = ""
-        last_right_hash = ""
+        last_led_bytes: bytes | None = None
+        last_left_fb: str = ""
+        last_right_fb: str = ""
 
         while not self._stop_event.is_set():
-            if not self._transport.connected:
+            transport = self._transport
+            if transport is None or not transport.is_open:
                 time.sleep(self.config.display_refresh_interval_seconds)
                 continue
 
-            output_state = self._snapshot_output_state()
-            led_state = output_state["led_state"]
-            lcd_frames = output_state["lcd_frames"]
-            led_hash = _json_dumps(led_state)
-            left_hash = _json_dumps(lcd_frames.get("left"))
-            right_hash = _json_dumps(lcd_frames.get("right"))
+            output = self._snapshot_output_state()
+            led_state = output["led_state"]
+            lcd_frames = output["lcd_frames"]
 
-            reports: list[bytes] = []
-            if led_hash != last_led_hash:
-                reports.append(build_led_output_report(led_state))
-                last_led_hash = led_hash
-            if left_hash != last_left_hash:
-                reports.extend(build_lcd_output_reports("left", dict(lcd_frames.get("left") or {})))
-                last_left_hash = left_hash
-            if right_hash != last_right_hash:
-                reports.extend(build_lcd_output_reports("right", dict(lcd_frames.get("right") or {})))
-                last_right_hash = right_hash
+            # Build the 62-byte LED array
+            led_array = self._build_led_array(led_state)
+            led_bytes = bytes(led_array)
 
-            if reports:
-                self._transport.write_reports(reports)
+            if led_bytes != last_led_bytes:
+                try:
+                    transport.write_leds(led_array)
+                    last_led_bytes = led_bytes
+                except Exception as exc:
+                    LOGGER.debug("LED write failed: %s", exc)
+
+            # Write LCD frames (use framebuffer hex if available, fall back to skip)
+            left = lcd_frames.get("left") or {}
+            right = lcd_frames.get("right") or {}
+            left_fb = str(left.get("framebuffer") or "")
+            right_fb = str(right.get("framebuffer") or "")
+
+            if left_fb and left_fb != last_left_fb:
+                try:
+                    transport.write_display_frame(0, bytes.fromhex(left_fb))
+                    last_left_fb = left_fb
+                except Exception as exc:
+                    LOGGER.debug("Left LCD write failed: %s", exc)
+
+            if right_fb and right_fb != last_right_fb:
+                try:
+                    transport.write_display_frame(1, bytes.fromhex(right_fb))
+                    last_right_fb = right_fb
+                except Exception as exc:
+                    LOGGER.debug("Right LCD write failed: %s", exc)
 
             time.sleep(self.config.display_refresh_interval_seconds)
 
+    def _build_led_array(self, led_state: dict[str, Any]) -> list[int]:
+        """Build the 62-byte LED array from backend state.
+
+        Combines pad LEDs (from audio grid selection), transport feedback (E2),
+        and display backlight into the flat 62-slot array that the device needs.
+        """
+        led = [0] * LED_DATA_SIZE
+
+        # Pad LEDs from audio grid
+        pads = list(led_state.get("pads") or [])
+        for i, pad_entry in enumerate(pads[:16]):
+            if not isinstance(pad_entry, dict):
+                continue
+            state = str(pad_entry.get("state") or "off")
+            if state == "off":
+                brightness = 0
+            elif state == "dim":
+                brightness = 40
+            elif state == "bright":
+                brightness = 180
+            elif state == "pulsing":
+                # Simple pulse: oscillate based on time
+                phase = (time.monotonic() * 3.0) % 1.0
+                brightness = int(80 + 175 * abs(phase - 0.5) * 2)
+            else:
+                brightness = 0
+            if i < len(LED_PAD_INDEX):
+                led[LED_PAD_INDEX[i]] = _clamp(brightness, 0, 255)
+
+        # Transport button LEDs (E2)
+        transport_state = None
+        with self._state_lock:
+            transport_state = dict(self._state.transport_state)
+        if transport_state:
+            is_playing = bool(transport_state.get("is_playing"))
+            is_recording = bool(transport_state.get("is_recording"))
+            is_looping = bool(transport_state.get("is_looping"))
+
+            if is_playing:
+                led[int(Led.Play)] = 255
+            else:
+                led[int(Led.Play)] = 20
+
+            if is_recording:
+                led[int(Led.Rec)] = 255
+            else:
+                led[int(Led.Rec)] = 20
+
+            if is_looping:
+                led[int(Led.Loop)] = 255
+            else:
+                led[int(Led.Loop)] = 20
+
+        # Display backlight always on
+        led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+
+        return led
+
+    # ------------------------------------------------------------------
+    # Registration + heartbeat
+    # ------------------------------------------------------------------
+
     def _registration_payload(self, *, status: str) -> dict[str, Any]:
-        hid_device = self._snapshot_hid_device()
-        transport = self._snapshot_transport_info()
         return {
-            "daemon_version": "1.0.0",
+            "daemon_version": "2.0.0",
             "virtual_port_name": self.config.virtual_port_name,
-            "hid_device": hid_device,
-            "transport": transport,
-            "transport_candidates": [
-                dict(candidate) for candidate in transport.get("candidates", []) if isinstance(candidate, dict)
-            ],
+            "hid_device": {},
+            "transport": {
+                "transport_id": "usb-bulk",
+                "connected": self._snapshot_device_connected(),
+            },
+            "transport_candidates": [{
+                "transport_id": "usb-bulk",
+                "module_available": True,
+            }],
             "firmware_info": {},
             "capabilities": {
-                "protocol_version": "open-maschine-v1",
-                "transport_preference": self.config.transport_preference,
-                "hidapi_available": bool(any(
-                    str(candidate.get("transport_id") or "") == "hidapi" and candidate.get("module_available")
-                    for candidate in transport.get("candidates", [])
-                    if isinstance(candidate, dict)
-                )),
-                "pyusb_available": bool(any(
-                    str(candidate.get("transport_id") or "") == "pyusb-bulk" and candidate.get("module_available")
-                    for candidate in transport.get("candidates", [])
-                    if isinstance(candidate, dict)
-                )),
+                "protocol_version": "cabl-mk1-v1",
+                "transport_preference": "usb-bulk",
+                "hidapi_available": False,
+                "pyusb_available": True,
                 "rtmidi_available": rtmidi is not None,
                 "pads": 16,
-                "encoders": 8,
+                "encoders": 11,
                 "master_knobs": 3,
+                "buttons": N_BUTTONS,
+                "led_slots": LED_DATA_SIZE,
                 "lcd": {
                     "left": {"width": LCD_WIDTH, "height": LCD_HEIGHT},
                     "right": {"width": LCD_WIDTH, "height": LCD_HEIGHT},
@@ -995,7 +840,7 @@ class MaschineMK1Daemon:
         }
 
     def _register_heartbeat(self, client: httpx.Client) -> None:
-        status = "connected" if self._snapshot_transport_connected() else "reconnecting"
+        status = "connected" if self._snapshot_device_connected() else "reconnecting"
         payload = self._registration_payload(status=status)
         try:
             response = client.post("/api/maschine/register", json=payload)
@@ -1003,12 +848,16 @@ class MaschineMK1Daemon:
         except Exception as exc:
             LOGGER.debug("Maschine heartbeat failed: %s", exc)
 
+    # ------------------------------------------------------------------
+    # Polling + rendering
+    # ------------------------------------------------------------------
+
     def _poll_and_render(
         self,
         renderer: MaschineLCDRenderService,
         client: httpx.Client,
         websocket: ClientConnection,
-    ) -> tuple[str | None, dict[str, str] | None]:
+    ) -> None:
         audio_grid = self._poll_audio_grid(client)
         encoder_map = self._poll_encoder_map(client)
         stats_payload = self._poll_stats_payload(renderer, client)
@@ -1019,7 +868,6 @@ class MaschineMK1Daemon:
             display_context = self._state.display_context
             focus_metric = self._state.stats_focus_metric
             led_state = dict(self._state.led_state)
-            lcd_frames = dict(self._state.lcd_frames)
             last_touched = self._state.last_touched_control
             current_audio_grid = dict(self._state.audio_grid)
             current_stats = dict(self._state.stats_payload)
@@ -1037,16 +885,9 @@ class MaschineMK1Daemon:
 
         self._set_output_state(lcd_frames=frames, led_state=led_state)
 
-        led_hash = _json_dumps(led_state)
-        lcd_hash = {
-            "left": _json_dumps(frames["left"]),
-            "right": _json_dumps(frames["right"]),
-        }
-
         self._send_json(websocket, {"type": "lcd", "payload": {"side": "left", "bitmap": frames["left"]}})
         self._send_json(websocket, {"type": "lcd", "payload": {"side": "right", "bitmap": frames["right"]}})
         self._send_json(websocket, {"type": "led_state", "payload": {"pads": list(led_state.get("pads") or [])}})
-        return led_hash, lcd_hash
 
     def _poll_audio_grid(self, client: httpx.Client) -> dict[str, Any]:
         try:
@@ -1140,6 +981,8 @@ class MaschineMK1Daemon:
                         self._state.lcd_frames = dict(state["lcd"])
                     if isinstance(state.get("led_state"), dict):
                         self._state.led_state = dict(state["led_state"])
+                    if isinstance(state.get("transport"), dict):
+                        self._state.transport_state = dict(state["transport"])
             self._request_render()
             return
 
@@ -1151,7 +994,13 @@ class MaschineMK1Daemon:
                     self._state.lcd_frames = dict(data["lcd"])
                 if isinstance(data.get("led_state"), dict):
                     self._state.led_state = dict(data["led_state"])
+                if isinstance(data.get("transport"), dict):
+                    self._state.transport_state = dict(data["transport"])
             self._request_render()
+
+    # ------------------------------------------------------------------
+    # State helpers
+    # ------------------------------------------------------------------
 
     def _flush_outbound_messages(self, websocket: ClientConnection) -> None:
         while not self._stop_event.is_set():
@@ -1178,53 +1027,18 @@ class MaschineMK1Daemon:
             except queue.Full:
                 LOGGER.debug("Dropping outbound Maschine websocket payload after queue saturation")
 
-    def _set_transport_state(self, *, connected: bool, transport_info: dict[str, Any]) -> None:
+    def _set_device_connected(self, connected: bool) -> None:
         with self._state_lock:
-            self._state.hid_connected = connected
-            self._state.transport = dict(transport_info)
-            self._state.transport_candidates = [
-                dict(candidate) for candidate in transport_info.get("candidates", []) if isinstance(candidate, dict)
-            ]
-            self._state.hid_device = self._runtime_hid_device(transport_info)
+            self._state.device_connected = bool(connected)
+            if not connected:
+                self._state.reconnecting = True
         self._request_render()
-
-    def _refresh_transport_controller_from_runtime(self) -> None:
-        desired_preference, desired_allow_kernel_detach = _resolve_transport_policy(
-            default_preference=self.config.transport_preference or "auto",
-            default_allow_kernel_detach=self.config.allow_kernel_detach,
-        )
-        desired_policy = (str(desired_preference), bool(desired_allow_kernel_detach))
-        current_policy = (str(self.config.transport_preference or "auto"), bool(self.config.allow_kernel_detach))
-
-        if desired_policy == current_policy:
-            self._deferred_transport_policy = None
-            return
-        if self._transport.connected:
-            if self._deferred_transport_policy != desired_policy:
-                LOGGER.info(
-                    "Maschine transport policy change detected while connected; deferring apply until reconnect "
-                    "(current=%s/%s desired=%s/%s)",
-                    current_policy[0],
-                    current_policy[1],
-                    desired_policy[0],
-                    desired_policy[1],
-                )
-                self._deferred_transport_policy = desired_policy
-            return
-        self._deferred_transport_policy = None
-        self.config.transport_preference = str(desired_preference)
-        self.config.allow_kernel_detach = bool(desired_allow_kernel_detach)
-        self._transport = MaschineTransportController(
-            vendor_id=self.config.vendor_id,
-            product_id=self.config.product_id,
-            preference=self.config.transport_preference,
-            allow_kernel_detach=self.config.allow_kernel_detach,
-        )
-        self._set_transport_state(connected=False, transport_info=self._transport.runtime_info())
 
     def _set_backend_connected(self, connected: bool) -> None:
         with self._state_lock:
             self._state.backend_connected = bool(connected)
+            if connected:
+                self._state.reconnecting = not self._state.device_connected
         self._request_render()
 
     def _set_reconnecting(self, reconnecting: bool) -> None:
@@ -1247,56 +1061,9 @@ class MaschineMK1Daemon:
     def _request_render(self) -> None:
         self._render_requested.set()
 
-    def _snapshot_transport_connected(self) -> bool:
+    def _snapshot_device_connected(self) -> bool:
         with self._state_lock:
-            return bool(self._state.hid_connected)
-
-    def _snapshot_hid_device(self) -> dict[str, Any]:
-        with self._state_lock:
-            return dict(self._state.hid_device)
-
-    def _snapshot_transport_info(self) -> dict[str, Any]:
-        with self._state_lock:
-            return {
-                **dict(self._state.transport),
-                "candidates": [dict(candidate) for candidate in self._state.transport_candidates],
-            }
-
-    @staticmethod
-    def _runtime_hid_device(transport_info: dict[str, Any]) -> dict[str, Any]:
-        selected = transport_info.get("selected_transport")
-        if isinstance(selected, dict) and selected:
-            payload = {
-                "vendor_id": selected.get("vendor_id"),
-                "product_id": selected.get("product_id"),
-                "manufacturer": selected.get("manufacturer"),
-                "product": selected.get("product"),
-                "serial_number": selected.get("serial_number"),
-                "busnum": selected.get("busnum"),
-                "devnum": selected.get("devnum"),
-                "speed": selected.get("speed"),
-                "transport_id": selected.get("transport_id") or transport_info.get("transport_id"),
-            }
-            return {key: value for key, value in payload.items() if value not in {None, ""}}
-        for candidate in transport_info.get("candidates", []):
-            if not isinstance(candidate, dict):
-                continue
-            sysfs_probe = candidate.get("sysfs_probe")
-            if not isinstance(sysfs_probe, dict):
-                continue
-            payload = {
-                "vendor_id": sysfs_probe.get("vendor_id"),
-                "product_id": sysfs_probe.get("product_id"),
-                "manufacturer": sysfs_probe.get("manufacturer"),
-                "product": sysfs_probe.get("product"),
-                "serial_number": sysfs_probe.get("serial_number"),
-                "busnum": sysfs_probe.get("busnum"),
-                "devnum": sysfs_probe.get("devnum"),
-                "speed": sysfs_probe.get("speed"),
-                "transport_id": candidate.get("transport_id"),
-            }
-            return {key: value for key, value in payload.items() if value not in {None, ""}}
-        return {}
+            return bool(self._state.device_connected)
 
     def _snapshot_output_state(self) -> dict[str, Any]:
         with self._state_lock:
@@ -1309,6 +1076,10 @@ class MaschineMK1Daemon:
         with self._state_lock:
             self._state.lcd_frames = dict(lcd_frames)
             self._state.led_state = dict(led_state)
+
+    # ------------------------------------------------------------------
+    # Navigation + block actions
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _resolve_encoder_delta(previous_value: int | None, current_value: int) -> int:
@@ -1499,7 +1270,7 @@ class MaschineMK1Daemon:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="MAP2 Maschine MK1 HID daemon")
+    parser = argparse.ArgumentParser(description="MAP2 Maschine MK1 daemon")
     parser.add_argument("--backend-url", default=os.getenv("MAP2_BACKEND_URL", DEFAULT_BACKEND_URL))
     parser.add_argument("--log-level", default=os.getenv("MAP2_LOG_LEVEL", "INFO"))
     return parser.parse_args()

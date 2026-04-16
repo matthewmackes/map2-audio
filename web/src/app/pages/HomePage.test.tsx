@@ -465,7 +465,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'MAP2 logo' })).toBeNull()
-    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -474,7 +474,9 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.getByText('Operator telemetry')).toBeInTheDocument()
+    expect(screen.queryByText('Operator telemetry')).toBeNull()
+    expect(screen.getByText('live nodes')).toBeInTheDocument()
+    expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -491,7 +493,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
   })
 
   it('skips the opt-in boot splash immediately when reduced motion is preferred', async () => {
@@ -505,7 +507,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toHaveAttribute('data-reduced-effects', 'true')
-    expect(screen.getByText('Mackes Audio Platform')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
@@ -646,7 +648,7 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByText('Current AVB Endpoints Connected')).toBeInTheDocument()
     expect(screen.getAllByText('AVB: operational').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Nodes: 1 active').length).toBeGreaterThan(0)
+    expect(screen.getByText('live nodes')).toBeInTheDocument()
     expect(screen.getByText('RME Fireface UFX')).toBeInTheDocument()
     expect(screen.getByText('Express 128')).toBeInTheDocument()
     expect(screen.queryByLabelText('System summary')).toBeNull()

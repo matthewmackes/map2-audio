@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react'
 import {
+  Catalog,
+  Dashboard,
   Devices as Monitor,
   Home as House,
   Music as MusicNotes,
@@ -9,8 +11,6 @@ import {
 import {
   MapAudioGridIcon,
   MapMatrixProcessorIcon,
-  MapOs2DrivesIcon,
-  MapOs2FileManagerIcon,
   MapRackDeviceIcon,
   MapStagePerformanceIcon,
 } from '../components/icons/map'
@@ -133,7 +133,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/workspace',
     label: 'Workspaces',
     shortLabel: 'Workspaces',
-    icon: MapOs2DrivesIcon,
+    icon: Dashboard,
     description: 'Open the unified Workspace Hub for platforms, physical surfaces, audio artifacts, and outboard hardware from one integrated operational surface.',
     color: 'var(--cds-support-warning)',
     homeSection: 'System',
@@ -175,7 +175,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/workspace/artifacts',
     label: 'Audio Artifacts',
     shortLabel: 'Artifacts',
-    icon: MapOs2FileManagerIcon,
+    icon: Catalog,
     description: 'Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.',
     color: '#be95ff',
     homeSection: 'Audio Grid',

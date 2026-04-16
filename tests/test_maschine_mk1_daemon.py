@@ -1,98 +1,46 @@
 from __future__ import annotations
 
-import logging
-import os
 from pathlib import Path
 from types import SimpleNamespace
 
-import app.config as app_config_module
 import app.services.maschine.maschine_mk1_daemon as maschine_mk1_daemon_module
 from app.services.maschine.maschine_mk1_daemon import (
     DaemonConfig,
     LastTouchedControl,
     MaschineMK1Daemon,
     VirtualMidiOutput,
-    build_lcd_output_reports,
-    build_led_output_report,
+    build_last_touched_bitmap,
     build_reconnecting_frames,
-    decode_hid_report,
 )
+from app.services.maschine_lcd_service import LCD_HEIGHT, LCD_WIDTH
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_decode_hid_report_translates_pad_encoder_transport_and_group_messages() -> None:
-    pad_event = decode_hid_report(bytes([0x01, 0x03, 0x64, 0x01]))
-    assert pad_event is not None
-    assert pad_event.decoded_type == "pad_press"
-    assert pad_event.payload["pad_index"] == 3
-    assert pad_event.payload["note"] == 39
-    assert pad_event.midi_messages == (bytes([0x90, 39, 100]),)
-
-    encoder_event = decode_hid_report(bytes([0x02, 0x01, 0x40]))
-    assert encoder_event is not None
-    assert encoder_event.decoded_type == "encoder"
-    assert encoder_event.payload["control"] == 2
-    assert encoder_event.midi_messages == (bytes([0xB0, 2, 64]),)
-
-    transport_event = decode_hid_report(bytes([0x03, 0x02, 0x01]))
-    assert transport_event is not None
-    assert transport_event.decoded_type == "transport_press"
-    assert transport_event.payload["transport_action"] == "record"
-    assert transport_event.midi_messages == (bytes([0x91, 62, 127]),)
-
-    group_event = decode_hid_report(bytes([0x04, 0x05, 0x01]))
-    assert group_event is not None
-    assert group_event.decoded_type == "group_press"
-    assert group_event.payload["control"] == 25
-    assert group_event.midi_messages == (bytes([0xB0, 25, 127]),)
-
-
-def test_decode_hid_report_handles_master_knob_and_long_press_variants() -> None:
-    master_knob_event = decode_hid_report(bytes([0x28, 0x7F]))
-    assert master_knob_event is not None
-    assert master_knob_event.decoded_type == "master_knob"
-    assert master_knob_event.payload["control_index"] == 8
-    assert master_knob_event.payload["control"] == 9
-    assert master_knob_event.midi_messages == (bytes([0xB0, 9, 127]),)
-
-    long_press_event = decode_hid_report(bytes([0x05, 0x00, 0x01, 0x01]))
-    assert long_press_event is not None
-    assert long_press_event.decoded_type == "encoder_push_long"
-    assert long_press_event.payload["control_index"] == 0
-    assert long_press_event.payload["long_press"] is True
-
-
-def test_led_and_lcd_output_reports_are_stable_and_chunked() -> None:
-    led_state = {
-        "pads": [
-            {"state": "off"},
-            {"state": "dim"},
-            {"state": "bright"},
-            {"state": "pulsing"},
-        ],
-    }
-    led_report = build_led_output_report(led_state)
-    assert led_report[0] == 0x80
-    assert led_report[1:5] == bytes([0, 1, 2, 3])
-    assert len(led_report) == 17
-
-    bitmap = {"format": "xbm", "data": ("AA" * 80)}
-    reports = build_lcd_output_reports("right", bitmap)
-    assert len(reports) == 2
-    assert reports[0][:4] == bytes([0x82, 0x00, 0x02, 56])
-    assert reports[1][:4] == bytes([0x82, 0x01, 0x02, 24])
-
-
-def test_reconnecting_frames_and_last_touched_overlay_produce_valid_bitmaps() -> None:
+def test_reconnecting_frames_produce_valid_bitmaps_for_both_panels() -> None:
     reconnecting = build_reconnecting_frames()
-    assert reconnecting["left"]["width"] == 128
-    assert reconnecting["left"]["height"] == 64
+    assert reconnecting["left"]["width"] == LCD_WIDTH
+    assert reconnecting["left"]["height"] == LCD_HEIGHT
     assert reconnecting["left"]["format"] == "xbm"
-    assert len(reconnecting["left"]["data"]) == 2048
-    assert len(reconnecting["right"]["data"]) == 2048
+    # 255x64 XBM: ceil(255/8)*64 = 32*64 = 2048 bytes → 4096 hex chars
+    assert len(reconnecting["left"]["data"]) == 4096
+    assert len(reconnecting["right"]["data"]) == 4096
+    # Framebuffer field exists for device output (10,880 bytes → 21,760 hex chars)
+    assert "framebuffer" in reconnecting["left"]
+    assert len(reconnecting["left"]["framebuffer"]) == 21760
 
+
+def test_last_touched_bitmap_produces_valid_output() -> None:
+    touched = LastTouchedControl(label="Gain", display_value="+3.5", midi_value=80)
+    result = build_last_touched_bitmap(touched)
+    assert result["width"] == LCD_WIDTH
+    assert result["height"] == LCD_HEIGHT
+    assert "framebuffer" in result
+    assert len(result["framebuffer"]) == 21760
+
+
+def test_audio_grid_with_last_touched_inserts_parameter_into_selected_block() -> None:
     audio_grid = {
         "selected_block_id": "block-2",
         "blocks": [
@@ -111,6 +59,12 @@ def test_reconnecting_frames_and_last_touched_overlay_produce_valid_bitmaps() ->
     touched = LastTouchedControl(label="Feedback", display_value="52", midi_value=52)
     rendered = MaschineMK1Daemon._audio_grid_with_last_touched(audio_grid, touched)
     assert rendered["blocks"][1]["top_parameters"][0] == {"param_id": "Feedback", "value": "52"}
+
+
+def test_audio_grid_with_last_touched_returns_original_when_no_control() -> None:
+    audio_grid = {"selected_block_id": "b1", "blocks": [{"block_id": "b1"}]}
+    result = MaschineMK1Daemon._audio_grid_with_last_touched(audio_grid, None)
+    assert result is audio_grid
 
 
 def test_encoder_delta_wraparound_matches_relative_navigation_expectations() -> None:
@@ -155,191 +109,18 @@ def test_virtual_midi_output_disposes_rtmidi_client(monkeypatch) -> None:
     assert created[0].deleted is True
 
 
-def test_load_runtime_transport_overrides_reloads_only_when_config_file_changes(monkeypatch, tmp_path) -> None:
-    class _FakeRuntimeConfigManager:
-        def __init__(self, config_path: Path) -> None:
-            self.config_path = config_path
-            self.reload_count = 0
-            self._values = {
-                "maschine.transport_preference": "hidapi",
-                "maschine.allow_kernel_detach": False,
-            }
-            self._pending_values = dict(self._values)
-
-        def get(self, key: str, default=None):
-            return self._values.get(key, default)
-
-        def stage(self, **values) -> None:
-            self._pending_values.update(values)
-
-        def reload(self) -> None:
-            self.reload_count += 1
-            self._values = dict(self._pending_values)
-
-    config_path = tmp_path / "config.json"
-    config_path.write_text("{}", encoding="utf-8")
-    fake_manager = _FakeRuntimeConfigManager(config_path)
-
-    monkeypatch.setattr(app_config_module, "get_config", lambda: fake_manager)
-    maschine_mk1_daemon_module._reset_runtime_transport_override_cache()
-
-    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("hidapi", False)
-    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("hidapi", False)
-    assert fake_manager.reload_count == 0
-
-    fake_manager.stage(
-        **{
-            "maschine.transport_preference": "pyusb-bulk",
-            "maschine.allow_kernel_detach": True,
-        }
-    )
-    next_mtime_ns = config_path.stat().st_mtime_ns + 1_000_000
-    config_path.write_text('{"maschine":{"transport_preference":"pyusb-bulk"}}', encoding="utf-8")
-    os.utime(config_path, ns=(next_mtime_ns, next_mtime_ns))
-
-    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("pyusb-bulk", True)
-    assert fake_manager.reload_count == 1
-    assert maschine_mk1_daemon_module._load_runtime_transport_overrides() == ("pyusb-bulk", True)
-    assert fake_manager.reload_count == 1
-
-
-def test_resolve_transport_policy_prefers_env_aliases_over_runtime_values(monkeypatch) -> None:
-    monkeypatch.setattr(
-        maschine_mk1_daemon_module,
-        "_load_runtime_transport_overrides",
-        lambda: ("hidapi", True),
-    )
-    monkeypatch.setenv("MAP2_MASCHINE_TRANSPORT", "bulk")
-    monkeypatch.setenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH", "off")
-
-    assert maschine_mk1_daemon_module._resolve_transport_policy(
-        default_preference="auto",
-        default_allow_kernel_detach=False,
-    ) == ("pyusb-bulk", False)
-
-
-def test_resolve_transport_policy_falls_back_to_runtime_then_defaults(monkeypatch) -> None:
-    monkeypatch.delenv("MAP2_MASCHINE_TRANSPORT", raising=False)
+def test_daemon_config_from_env_defaults(monkeypatch) -> None:
+    monkeypatch.delenv("MAP2_BACKEND_URL", raising=False)
     monkeypatch.delenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH", raising=False)
-    monkeypatch.setattr(
-        maschine_mk1_daemon_module,
-        "_load_runtime_transport_overrides",
-        lambda: ("hidapi", True),
-    )
-
-    assert maschine_mk1_daemon_module._resolve_transport_policy(
-        default_preference="auto",
-        default_allow_kernel_detach=False,
-    ) == ("hidapi", True)
-
-    monkeypatch.setattr(
-        maschine_mk1_daemon_module,
-        "_load_runtime_transport_overrides",
-        lambda: (None, None),
-    )
-
-    assert maschine_mk1_daemon_module._resolve_transport_policy(
-        default_preference="pyusb-bulk",
-        default_allow_kernel_detach=True,
-    ) == ("pyusb-bulk", True)
+    config = DaemonConfig.from_env()
+    assert config.backend_url == "http://localhost:8080"
+    assert config.allow_kernel_detach is True
 
 
-def test_refresh_transport_controller_applies_changed_runtime_overrides_when_disconnected(monkeypatch) -> None:
-    created: list[SimpleNamespace] = []
-
-    class _FakeTransportController:
-        def __init__(self, *, vendor_id: int, product_id: int, preference: str, allow_kernel_detach: bool) -> None:
-            self.connected = False
-            self.preference = preference
-            self.allow_kernel_detach = allow_kernel_detach
-            created.append(
-                SimpleNamespace(
-                    vendor_id=vendor_id,
-                    product_id=product_id,
-                    preference=preference,
-                    allow_kernel_detach=allow_kernel_detach,
-                )
-            )
-
-        def runtime_info(self) -> dict[str, object]:
-            return {"transport": self.preference, "candidates": []}
-
-        def disconnect(self) -> None:
-            return None
-
-    monkeypatch.setattr(maschine_mk1_daemon_module, "MaschineTransportController", _FakeTransportController)
-    monkeypatch.setattr(
-        maschine_mk1_daemon_module,
-        "_load_runtime_transport_overrides",
-        lambda: ("pyusb-bulk", True),
-    )
-
-    daemon = MaschineMK1Daemon(DaemonConfig(transport_preference="auto", allow_kernel_detach=False))
-
-    assert created[0].preference == "auto"
-    assert created[0].allow_kernel_detach is False
-
-    daemon._refresh_transport_controller_from_runtime()
-
-    assert daemon.config.transport_preference == "pyusb-bulk"
-    assert daemon.config.allow_kernel_detach is True
-    assert created[-1].preference == "pyusb-bulk"
-    assert created[-1].allow_kernel_detach is True
-    assert len(created) == 2
-
-
-def test_refresh_transport_controller_logs_deferred_policy_once_and_applies_after_disconnect(monkeypatch, caplog) -> None:
-    created: list[SimpleNamespace] = []
-
-    class _FakeTransportController:
-        def __init__(self, *, vendor_id: int, product_id: int, preference: str, allow_kernel_detach: bool) -> None:
-            self.connected = False
-            self.preference = preference
-            self.allow_kernel_detach = allow_kernel_detach
-            created.append(
-                SimpleNamespace(
-                    vendor_id=vendor_id,
-                    product_id=product_id,
-                    preference=preference,
-                    allow_kernel_detach=allow_kernel_detach,
-                )
-            )
-
-        def runtime_info(self) -> dict[str, object]:
-            return {"transport": self.preference, "candidates": []}
-
-        def disconnect(self) -> None:
-            return None
-
-    monkeypatch.setattr(maschine_mk1_daemon_module, "MaschineTransportController", _FakeTransportController)
-    monkeypatch.setattr(
-        maschine_mk1_daemon_module,
-        "_resolve_transport_policy",
-        lambda **_: ("pyusb-bulk", True),
-    )
-
-    daemon = MaschineMK1Daemon(DaemonConfig(transport_preference="auto", allow_kernel_detach=False))
-    daemon._transport.connected = True
-
-    caplog.set_level(logging.INFO, logger="maschine_mk1_daemon")
-    daemon._refresh_transport_controller_from_runtime()
-
-    assert "deferring apply until reconnect" in caplog.text
-    assert len(created) == 1
-    assert daemon.config.transport_preference == "auto"
-    assert daemon.config.allow_kernel_detach is False
-
-    caplog.clear()
-    daemon._refresh_transport_controller_from_runtime()
-    assert "deferring apply until reconnect" not in caplog.text
-    assert len(created) == 1
-
-    daemon._transport.connected = False
-    daemon._refresh_transport_controller_from_runtime()
-
-    assert len(created) == 2
-    assert daemon.config.transport_preference == "pyusb-bulk"
-    assert daemon.config.allow_kernel_detach is True
+def test_daemon_config_from_env_respects_kernel_detach_env(monkeypatch) -> None:
+    monkeypatch.setenv("MAP2_MASCHINE_ALLOW_KERNEL_DETACH", "false")
+    config = DaemonConfig.from_env()
+    assert config.allow_kernel_detach is False
 
 
 def test_maschine_systemd_unit_targets_backend_and_daemon_script() -> None:

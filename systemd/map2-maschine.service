@@ -1,5 +1,5 @@
 [Unit]
-Description=MAP2 Maschine MK1 HID Daemon
+Description=MAP2 Maschine MK1 Control Daemon
 Documentation=https://github.com/matthewmackes/map2-audio
 After=network.target map2-backend.service
 Wants=map2-backend.service

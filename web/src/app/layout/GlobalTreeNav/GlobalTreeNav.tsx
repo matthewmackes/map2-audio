@@ -64,8 +64,8 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/workspace',
   '/midi-hub',
   '/workspace/artifacts',
-  '/platforms/about',
   '/hardware',
+  '/platforms/about',
 ] as const
 
 const FLAT_TOP_LEVEL_ROUTES = new Set([
