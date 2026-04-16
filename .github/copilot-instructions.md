@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (activation degraded-status contract documented)
+> **Last Updated**: April 16, 2026 (partial authority-confirmation degraded contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1110,6 +1110,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Derive the final activation response contract from `runtime_live_state.runtime_metrics.authority_publication`, return `status: degraded` plus surfaced reason/message/detail when authority confirmation fails, and let `record_authority_publication_result()` flip the matching activation event outcome to `degraded`.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'`; `python3 -m pytest -q tests/test_snapshot_routes.py -k degraded_activation_contract`; `npm --prefix web run build`
 - **Lesson**: Durable sub-metrics are not enough if the top-level API and audit outcome still say success. Any post-runtime authority failure has to promote itself into the activation contract the operator actually reads first.
+
+**104. Desired-Only Authority Refresh Is Still A Degraded Activation, Not A Confirmed One**
+- **Files**: `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`
+- **Problem**: The post-runtime authority helper had a compatibility branch where `desired` state was refreshed successfully but the backend lacked `next_state_version`, `put_committed_state`, `put_observation`, or `reconcile_committed_state`; that branch still returned a nominally confirmed authority result.
+- **Root Cause**: The helper initialized the result as `status: confirmed` before checking for missing authority capabilities and only changed the reason/message, not the status.
+- **Fix**: Treat missing committed/observed authority capabilities as `status: failed` with reason `authority_confirmation_unavailable`, surface the missing-method detail, and let the canonical activation contract degrade on that result instead of reporting success.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`
+- **Lesson**: Refreshing only `desired` state does not count as authority confirmation. Canonical success requires the full desired/committed/observed chain or an explicit degraded result.
 
 ### Server Management Gotchas
 

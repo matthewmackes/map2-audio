@@ -1135,9 +1135,14 @@ class SnapshotService:
                 "put_observation",
                 "reconcile_committed_state",
             )
-            if not all(hasattr(authority, method_name) for method_name in required_methods):
-                result["reason"] = "desired_only"
-                result["operator_message"] = "Desired state was refreshed, but full authority confirmation is unavailable."
+            missing_methods = [method_name for method_name in required_methods if not hasattr(authority, method_name)]
+            if missing_methods:
+                result["status"] = "failed"
+                result["reason"] = "authority_confirmation_unavailable"
+                result["operator_message"] = (
+                    "Desired state was refreshed, but committed and observed authority confirmation is unavailable."
+                )
+                result["technical_detail"] = f"Authority backend missing methods: {', '.join(missing_methods)}"
                 return result
 
             node_id = str(

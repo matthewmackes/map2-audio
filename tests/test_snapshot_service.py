@@ -2455,6 +2455,86 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
     )
 
 
+def test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are_unavailable(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(runtime_state_service_module, "resolve_local_node_id", lambda: "LOCAL-NODE")
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="AuthorityConfirmUnavailable",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            events = await runtime_state_service.list_activation_events(limit=1)
+            return activated, events[0]
+
+    activated, event = asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    assert activated["status"] == "degraded"
+    assert activated["result_code"] == "authority_confirmation_unavailable"
+    assert activated["operator_message"] == (
+        "Desired state was refreshed, but committed and observed authority confirmation is unavailable."
+    )
+    assert activated["technical_detail"] == (
+        "Authority backend missing methods: next_state_version, put_committed_state, put_observation, reconcile_committed_state"
+    )
+    authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
+    assert authority_publication["status"] == "failed"
+    assert authority_publication["reason"] == "authority_confirmation_unavailable"
+    assert authority_publication["published_desired"] is True
+    assert authority_publication["published_committed"] is False
+    assert authority_publication["published_observation"] is False
+    assert event["outcome"] == "degraded"
+    assert event["failure_reason"] == "authority_confirmation_unavailable"
+
+
 def test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []

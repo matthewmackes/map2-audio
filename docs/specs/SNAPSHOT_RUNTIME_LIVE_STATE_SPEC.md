@@ -191,7 +191,7 @@ Existing snapshot activation routes remain valid:
 - `POST /api/snapshots/program-change/{program_number}/activate`
 
 These routes now create activation intent and only become live after runtime confirmation.
-When runtime reaches `live` but post-runtime authority confirmation fails, the activation response must return `status: "degraded"` with surfaced reason/detail fields instead of collapsing that state into plain success.
+When runtime reaches `live` but post-runtime authority confirmation fails, or when authority publication stops after refreshing only `desired` state and never reaches `committed`/`observed`, the activation response must return `status: "degraded"` with surfaced reason/detail fields instead of collapsing that state into plain success.
 
 ### Runtime state reads
 

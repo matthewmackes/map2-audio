@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2310 so canonical activation and activation history now surface degraded authority-confirmation outcomes instead of false success.
+Last updated: 2026-04-16 - Completed T2311 so desired-only authority refresh now degrades canonical activation instead of reporting success.
 
 ---
 
@@ -285,6 +285,27 @@ Last updated: 2026-04-16 00:28 EDT - Codex
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'activation_routes_call_state_authority_activation_service_directly or degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
   - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2311
+Status: [✓] Done
+Title: Degrade canonical activation when authority publication stops after desired-state refresh
+Description:
+- Goal / acceptance criteria: Remove the remaining false-success `desired_only` branch in post-runtime authority publication by treating missing committed/observed authority capabilities as an explicit degraded authority-confirmation result instead of a confirmed activation. Acceptance requires backend contract changes, focused regressions for the partial authority path, and reconciled worklist/memory notes.
+- Why it matters: The canonical activation response now degrades when authority publication throws, but it can still claim success if the authority backend only refreshes `desired` and lacks the methods required to write `committed` and `observed` state.
+- Dependencies: T2310
+- Estimated effort: Medium
+- Required outputs: degraded partial-authority contract, focused service/runtime-state coverage, and reconciled docs/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 00:39 EDT - Codex
+- Completion notes:
+  - Changed `SnapshotService._publish_confirmed_live_state_to_audio_authority()` so the legacy desired-only branch now returns `status: failed` with reason `authority_confirmation_unavailable` and explicit missing-method diagnostics instead of masquerading as a confirmed authority result.
+  - Added focused regression coverage proving canonical activation now degrades when the authority backend can refresh only `desired` state and cannot publish `committed`/`observed` confirmation.
+  - Reconciled the runtime-live spec and Copilot memory notes so partial authority capability is documented as a degraded activation outcome rather than a compatibility success case.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
 
 ---
 
