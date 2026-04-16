@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1113** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2215** total commits | **3** stars | **0** forks | **0** open issues
+**1113** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2218** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`13963728`](https://github.com/matthewmackes/map2-audio/commit/13963728cfd2fc540cc0cec148abf251dabb423b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
+| [`f397d6b7`](https://github.com/matthewmackes/map2-audio/commit/f397d6b7110b1682c2d1abbe24fef64a3ea0ffcb) | Clarify local-only publish readiness guidance | Map2 Audio | 2026-04-15 |
+| [`dd558701`](https://github.com/matthewmackes/map2-audio/commit/dd55870188e52f72cd4aefad317d97a84dacb65c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`49d84702`](https://github.com/matthewmackes/map2-audio/commit/49d84702d0acbf75f3afb5ac77cf62b7c171521a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
 | [`54687dea`](https://github.com/matthewmackes/map2-audio/commit/54687deab21581aa14794c49d4715db8ce87e24f) | Guard snapshot-owned chain activation | Map2 Audio | 2026-04-15 |
 | [`a9ee74f4`](https://github.com/matthewmackes/map2-audio/commit/a9ee74f4b064f3fc28160ddbcdffdd480995cabb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
 | [`895c8a5a`](https://github.com/matthewmackes/map2-audio/commit/895c8a5ae0be4a63534c3f9d34d335b5d48964b6) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
 | [`12ed175a`](https://github.com/matthewmackes/map2-audio/commit/12ed175a8c5090251c6cc8a8c0857b04db039bd6) | Extract shared MPX1 parameter helpers | Map2 Audio | 2026-04-15 |
-| [`6b2a4afb`](https://github.com/matthewmackes/map2-audio/commit/6b2a4afbbeabbc5c95f292a9416626cacc8a5ffa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-15 |
-| [`03e50c02`](https://github.com/matthewmackes/map2-audio/commit/03e50c027bc6c65b7d1368a9fa6be478403cc14c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
-| [`0d2ee56c`](https://github.com/matthewmackes/map2-audio/commit/0d2ee56cc2771ed3a11ee3cacffc503d6d9ea3cb) | Restore MK1 two-packet LED transport contract | Map2 Audio | 2026-04-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
