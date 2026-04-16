@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 15, 2026 (authority-confirmation failure signaling documented)
+> **Last Updated**: April 15, 2026 (controller-display live preview audit classification documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1095,6 +1095,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k 'authority_publication or retained_runtime_edit'`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`; `npm --prefix web run build`
 - **Lesson**: When runtime success and authority confirmation can fail independently, readiness must key off the explicit post-runtime authority result instead of inferring the problem from stale authority state alone.
 
+**102. Controller-Display Live Preview Refresh Is A Retained Compatibility Mutation And Must Be Audited**
+- **Files**: `app/services/snapshot_controller_display_push_service.py`, `tests/test_snapshot_controller_display_push_service.py`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Live parameter updates that refresh the Morningstar/controller-display preview were still mutating the persisted live snapshot payload silently even after the main editor live-edit paths gained retained-runtime audit entries.
+- **Root Cause**: The preview refresh helper only rebuilt `controller_display_preview`, synced the live payload, and pushed the display update; it never appended a retained-runtime audit breadcrumb.
+- **Fix**: Treat this helper as a retained compatibility mutation, record `refresh_controller_display_preview` through `record_retained_runtime_edit()`, and keep the chain-service runtime live sync classified as canonical-only because snapshot-owned chain activation is already guarded behind the activation opt-in.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_controller_display_push_service.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k retained_runtime_edit`
+- **Lesson**: Helper-driven live payload refreshes count as live-state mutations too. If they are intentionally retained outside canonical activation, they need the same durable audit breadcrumb as editor mutations.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2164,6 +2172,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Controller-Display Preview Audit Classification
+- **Section**: Gotchas & Learned Fixes (#102), Update Log
+- **Change**: Documented that live controller-display preview refresh is a retained compatibility mutation that must append a retained-runtime audit entry, while snapshot-owned chain live sync remains canonical-only behind the activation guard.
+- **Reason**: `T2296` cleanup reached the last helper-driven live payload mutations, and the controller-display path was still mutating persisted live state silently.
+- **Impact**: Future helper-level live payload refreshes should be classified explicitly as either canonical activation-owned or retained compatibility paths with audit breadcrumbs.
+- **Files**: `.github/copilot-instructions.md`, `app/services/snapshot_controller_display_push_service.py`, `tests/test_snapshot_controller_display_push_service.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Authority Confirmation Failure Signaling
 - **Section**: Gotchas & Learned Fixes (#101), Update Log

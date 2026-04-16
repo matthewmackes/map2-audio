@@ -112,6 +112,7 @@ def test_refresh_live_snapshot_controller_display_for_parameter_updates_rebuilds
     async def _run():
         fake_hub = _FakeHub()
         synced_payloads: list[dict[str, object]] = []
+        retained_runtime_edits: list[dict[str, object]] = []
         runtime_services = []
 
         class _FakeRuntimeStateService:
@@ -170,6 +171,26 @@ def test_refresh_live_snapshot_controller_display_for_parameter_updates_rebuilds
                     "live_snapshot_payload": live_snapshot_payload,
                 }
 
+            async def record_retained_runtime_edit(
+                self,
+                *,
+                snapshot_id: int,
+                snapshot_revision: str | None = None,
+                mutation_kind: str,
+                triggered_by: str,
+                metadata: dict[str, object] | None = None,
+            ):
+                retained_runtime_edits.append(
+                    {
+                        "snapshot_id": snapshot_id,
+                        "snapshot_revision": snapshot_revision,
+                        "mutation_kind": mutation_kind,
+                        "triggered_by": triggered_by,
+                        "metadata": metadata or {},
+                    }
+                )
+                return None
+
         async def _fake_get_all_commands(_session):
             return [
                 {
@@ -216,6 +237,26 @@ def test_refresh_live_snapshot_controller_display_for_parameter_updates_rebuilds
         assert synced_preview["slots"][0]["key_parameter"]["current_value"] == 43.0
         assert synced_preview["slots"][0]["key_parameter"]["formatted_value"] == "43%"
         assert synced_preview["slots"][0]["summary_text"] == "Clean - Feedback 43%"
+        assert retained_runtime_edits == [
+            {
+                "snapshot_id": 77,
+                "snapshot_revision": "rev-1",
+                "mutation_kind": "refresh_controller_display_preview",
+                "triggered_by": "snapshot_controller_display_push_service.refresh_live_snapshot_controller_display_for_parameter_updates",
+                "metadata": {
+                    "matched_plugins": 1,
+                    "matched_slots": 1,
+                    "updated_parameters": [
+                        {
+                            "plugin_uri": "map2://juce/delay",
+                            "plugin_position": 3,
+                            "parameter_symbol": "feedback",
+                            "value": 43.0,
+                        }
+                    ],
+                },
+            }
+        ]
         assert bytes(fake_hub.sent[0]["data"][9:19]).decode("ascii") == "Clean 43% "
 
     asyncio.run(_run())

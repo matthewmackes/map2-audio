@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2308 by persisting authority-publication results and surfacing typed degraded publish blockers.
+Last updated: 2026-04-15 - Completed T2309 by classifying the remaining helper-driven live-state mutations and audit-trailing controller-display preview refresh.
+
+---
+
+ID: T2309
+Status: [✓] Done
+Title: Classify the remaining live-state mutation helpers and audit-trail controller-display preview syncs
+Description:
+- Goal / acceptance criteria: Close the remaining restart-safe `T2296` ambiguity around helper-driven live-state mutations by explicitly classifying the last `sync_live_snapshot_payload()` callers and making any retained compatibility mutation leave the same durable audit breadcrumb as the editor live-edit paths. Acceptance requires code/docs that distinguish canonical activation-owned chain-sync helpers from retained controller-display preview sync, durable audit coverage for that retained preview path, focused regression coverage, and reconciled worklist notes.
+- Why it matters: After `T2307` and `T2308`, the main editor/runtime flows are auditable, but the controller-display preview helper still updates the persisted live snapshot payload silently and the umbrella task still lacks an explicit classification of the last helper-driven live-state mutation callers.
+- Dependencies: T2308
+- Estimated effort: Medium
+- Required outputs: explicit remaining-path classification, controller-display retained-runtime audit wiring, focused regressions, and reconciled docs/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 21:33 EDT - Codex
+- Completion notes:
+  - Updated `app/services/snapshot_controller_display_push_service.py` so live controller-display preview refresh now records `refresh_controller_display_preview` through `record_retained_runtime_edit()` after syncing the persisted live payload.
+  - Added focused regression coverage in `tests/test_snapshot_controller_display_push_service.py` proving the retained-runtime audit metadata is recorded for live preview refreshes.
+  - Reconciled the remaining-path classification in repo memory: snapshot-owned chain live-state sync remains canonical-only because the generic chain route is already denied for `snapshot_path` runtime chains unless canonical activation opts in, while controller-display preview refresh is now explicitly treated as a retained audited compatibility mutation.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_controller_display_push_service.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k retained_runtime_edit` -> PASS
 
 ---
 

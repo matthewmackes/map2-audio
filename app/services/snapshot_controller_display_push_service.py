@@ -393,6 +393,25 @@ async def refresh_live_snapshot_controller_display_for_parameter_updates(
         live_snapshot_payload=next_payload,
         snapshot_revision=snapshot_revision,
     )
+    await runtime_state_service.record_retained_runtime_edit(
+        snapshot_id=snapshot_id,
+        snapshot_revision=snapshot_revision,
+        mutation_kind="refresh_controller_display_preview",
+        triggered_by="snapshot_controller_display_push_service.refresh_live_snapshot_controller_display_for_parameter_updates",
+        metadata={
+            "matched_plugins": matched_plugins,
+            "matched_slots": len(matched_slots),
+            "updated_parameters": [
+                {
+                    "plugin_uri": update["plugin_uri"],
+                    "plugin_position": update.get("plugin_position"),
+                    "parameter_symbol": update["parameter_symbol"],
+                    "value": update["value"],
+                }
+                for update in normalized_updates
+            ],
+        },
+    )
     push_result = await push_snapshot_controller_display_preview(
         snapshot_id=snapshot_id,
         snapshot_name=str(next_payload.get("name") or ""),
