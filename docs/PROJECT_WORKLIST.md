@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Closed T2297 after shipping degraded authority-confirmation contracts and the ordered canonical authority publication timeline.
+Last updated: 2026-04-16 - Completed T2313 with the first executable T2298 qualification slice for retry/idempotency behavior and an activation-event cache upsert fix.
 
 ---
 
@@ -238,7 +238,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2298
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Build activation-path crash, restart, concurrency, and reconciliation qualification for snapshot authority invariants
 Description:
 - Goal / acceptance criteria: Add an explicit qualification suite that stress-tests snapshot activation correctness across concurrent publish attempts, restart mid-activation, crash after runtime apply but before authority confirmation, authority write failure after runtime success, runtime success without observation publication, stale read windows, reconciliation overwrite attempts, and retry/idempotency paths. Acceptance requires executable automated coverage plus documented fault-injection/chaos procedures that verify the platform’s activation invariants and produce auditable artifacts.
@@ -247,7 +247,29 @@ Description:
 - Estimated effort: High
 - Required outputs: invariant-based integration/chaos test plan, new automated backend tests, restart/crash harness or scripted qualification flows, archived evidence expectations, and updated release/qualification documentation for activation correctness.
 Assigned to: Unassigned
-Last updated: 2026-04-15 18:55 EDT - Codex
+Last updated: 2026-04-16 02:06 EDT - Codex
+
+---
+
+ID: T2313
+Status: [✓] Done
+Title: Add retry and idempotency activation qualification coverage
+Description:
+- Goal / acceptance criteria: Start the explicit `T2298` qualification suite with executable coverage proving canonical activation can recover cleanly after a degraded authority-confirmation attempt and can repeat activation of the same snapshot without drifting runtime/authority contracts. Acceptance requires a dedicated qualification-oriented test surface, focused validation, and qualification notes that explain what is covered and what remains.
+- Why it matters: The main activation path is now stricter, but `T2298` requires proof that retry/idempotency behavior is correct under degraded-to-success transitions rather than only on first-pass success.
+- Dependencies: T2297
+- Estimated effort: Medium
+- Required outputs: retry/idempotency qualification tests, qualification documentation, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 02:18 EDT - Codex
+- Completion notes:
+  - Added the first dedicated `T2298` qualification module in `tests/test_snapshot_activation_qualification.py`, covering degraded-to-success retry recovery and repeated activation of the same snapshot with stable success contracts.
+  - Added `docs/qualification/snapshot-activation-qualification.md` to track the shipped automated qualification cases, the current command set, and the remaining crash/restart/concurrency gaps.
+  - Fixed an activation-event hot-cache correctness bug uncovered by the new retry qualification: event updates now upsert by `request_id` instead of blindly appending duplicate payloads that could hide degraded entries during retries.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
 
 ---
 

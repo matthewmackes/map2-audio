@@ -149,6 +149,15 @@ class SnapshotRuntimeStateService:
         self.session = session
         self.local_node_id = resolve_local_node_id()
 
+    def _cache_activation_event_payload(self, payload: dict[str, Any]) -> None:
+        request_id = str(payload.get("request_id") or "").strip()
+        cache = self._activation_event_cache[self.local_node_id]
+        if request_id:
+            existing = [entry for entry in cache if str(entry.get("request_id") or "").strip() != request_id]
+            cache = deque(existing, maxlen=ACTIVATION_EVENT_LIMIT_PER_NODE)
+            self._activation_event_cache[self.local_node_id] = cache
+        cache.appendleft(copy.deepcopy(payload))
+
     @asynccontextmanager
     async def _session_scope(self):
         if self.session is not None:
@@ -1008,8 +1017,7 @@ class SnapshotRuntimeStateService:
             event_payload = self._serialize_activation_event(event_row)
 
         if event_payload is not None:
-            cache = self._activation_event_cache[self.local_node_id]
-            cache.appendleft(event_payload)
+            self._cache_activation_event_payload(event_payload)
             await self._broadcast_activation_event(event_payload, emitted_at=requested_at)
 
         return intent_payload
@@ -1067,8 +1075,7 @@ class SnapshotRuntimeStateService:
             await session.flush()
 
         if activation_payload is not None:
-            cache = self._activation_event_cache[self.local_node_id]
-            cache.appendleft(activation_payload)
+            self._cache_activation_event_payload(activation_payload)
             await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
 
         next_intent["activation_progress"] = copy.deepcopy(
@@ -1168,8 +1175,7 @@ class SnapshotRuntimeStateService:
 
         await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
         if activation_payload is not None:
-            cache = self._activation_event_cache[self.local_node_id]
-            cache.appendleft(activation_payload)
+            self._cache_activation_event_payload(activation_payload)
             await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
         return live_state_payload
 
@@ -1280,8 +1286,7 @@ class SnapshotRuntimeStateService:
 
         await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
         if activation_payload is not None:
-            cache = self._activation_event_cache[self.local_node_id]
-            cache.appendleft(activation_payload)
+            self._cache_activation_event_payload(activation_payload)
             await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
         return live_state_payload
 
@@ -1418,8 +1423,7 @@ class SnapshotRuntimeStateService:
         if live_state_payload is not None:
             await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
         if activation_payload is not None:
-            cache = self._activation_event_cache[self.local_node_id]
-            cache.appendleft(activation_payload)
+            self._cache_activation_event_payload(activation_payload)
             await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
         return live_state_payload
 

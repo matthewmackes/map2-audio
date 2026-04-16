@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (authority publication step timeline documented)
+> **Last Updated**: April 16, 2026 (activation qualification hot-cache upsert fix documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1126,6 +1126,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Persist `authority_publication.publication_steps` as an ordered bounded-status timeline and update the success, failed-after-committed, and desired-only-unavailable regressions to assert the exact step sequence.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`
 - **Lesson**: If a correctness claim depends on sequence, store the sequence. High-level booleans are not enough for restart-safe audits or degraded-state reasoning.
+
+**106. Activation Event Cache Must Upsert By Request ID During Retries**
+- **Files**: `app/services/snapshot_runtime_state_service.py`, `tests/test_snapshot_activation_qualification.py`
+- **Problem**: The hot activation-event cache appended every event update, so a degraded activation followed by a retry could return duplicate `success` entries for the later request and crowd the degraded entry out of `list_activation_events(limit=N)` even though the database rows were correct.
+- **Root Cause**: `create_activation_intent()`, `mark_intent_phase()`, `confirm_live_intent()`, `fail_intent()`, and `record_authority_publication_result()` all did a blind `appendleft()` into the cache instead of replacing an existing payload with the same `request_id`.
+- **Fix**: Centralize cache writes behind an upsert helper that removes any existing entry for the same `request_id` before inserting the latest payload.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`
+- **Lesson**: Durable rows are not enough if the hot cache lies. Any event stream cache keyed by request lifecycle has to upsert, not append, when the same request is updated in place.
 
 ### Server Management Gotchas
 
