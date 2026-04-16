@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2312 so authority publication now exposes an ordered canonical step timeline instead of only aggregate booleans.
+Last updated: 2026-04-16 - Closed T2297 after shipping degraded authority-confirmation contracts and the ordered canonical authority publication timeline.
 
 ---
 
@@ -252,7 +252,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2297
-Status: [>] In Progress
+Status: [✓] Done
 Title: Enforce strict runtime-authority lock-step and explicit degraded signaling for snapshot activation
 Description:
 - Goal / acceptance criteria: Hard-stop the remaining cases where runtime and control-plane authority can disagree silently or report success too early by making successful activation publish durable authority updates plus node observations in the same canonical workflow, surfacing any mismatch as an explicit degraded/drifted state with bounded transition semantics, and documenting the exact ordering/acknowledgment contract for `desired`, `committed`, `observed`, runtime live-state, and activation events. Acceptance requires code-level invariant enforcement, mismatch-state visibility, and regression coverage for success, partial-failure, stale-observation, restart, and reconciliation paths.
@@ -261,7 +261,13 @@ Description:
 - Estimated effort: High
 - Required outputs: hardened authority/runtime update ordering, explicit degraded/drift state model, bounded transition rules, backend/frontend regressions for lock-step invariants, and deployment/verification notes proving the shipped path keeps authority aligned with live runtime.
 Assigned to: Unassigned
-Last updated: 2026-04-16 00:10 EDT - Codex
+Last updated: 2026-04-16 01:12 EDT - Codex
+- Completion notes:
+  - Closed the remaining false-success gaps by making canonical activation degrade when post-runtime authority confirmation fails (`T2310`) or when authority publication can refresh only `desired` state without `committed`/`observed` confirmation (`T2311`).
+  - Added the ordered `authority_publication.publication_steps` contract (`T2312`) so the canonical runtime-live -> desired -> committed -> observed -> reconcile sequence is durable and auditable instead of inferred from aggregate booleans.
+  - Existing publish-readiness coverage for `observation_stale` and `authority_diverged`, combined with the new degraded activation/event contracts, now means runtime-authority disagreement is no longer silent or reported as plain success; the remaining open work is qualification/fault-injection (`T2298`) and richer operator feedback polish (`T2299`).
+- Validation:
+  - See the focused validations recorded under `T2308`, `T2310`, `T2311`, and `T2312`.
 
 ---
 

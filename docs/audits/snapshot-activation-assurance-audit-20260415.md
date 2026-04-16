@@ -30,10 +30,10 @@ Status: `T2295` audit complete. Implementation evidence reviewed against the cur
 | --- | --- | --- |
 | Commitment integrity | `PARTIAL` | Activation intent, runtime live-state, and durable activation events are recorded consistently, but authority confirmation is still a best-effort follow-on step rather than an atomic part of runtime confirmation. |
 | Activation-path exclusivity | `FAIL` | Multiple non-canonical paths mutate live runtime payloads and/or desired authority outside the committed activation flow. |
-| Authority-update correctness | `PARTIAL` | The shipped `_publish_confirmed_live_state_to_audio_authority()` now writes desired + committed + observed after runtime confirmation, but exceptions are swallowed and no degraded contract is emitted if that publish fails. |
-| Runtime-authority lock-step guarantee | `FAIL` | `confirm_live_intent()` marks the node live before authority publish completes, so runtime can still be live while authority remains stale or incomplete. |
-| Operator feedback quality | `PARTIAL` | Preflight, stale-observation, confirmation, and divergence feedback are typed and strong; post-confirm authority failures and live-edit drift still collapse into silent log-only outcomes. |
-| Auditability | `PARTIAL` | `SnapshotActivationEvent` plus phase history and runtime metrics are durable, but there is no explicit audit event stating whether authority desired/committed/observed publication succeeded or failed after runtime confirmation. |
+| Authority-update correctness | `MEDIUM-STRONG` | The canonical activation path now degrades explicitly when post-runtime authority confirmation fails or is unavailable, and the authority result carries the ordered desired/committed/observed/reconcile step timeline. |
+| Runtime-authority lock-step guarantee | `PARTIAL` | Canonical activation no longer reports plain success when runtime is live but authority confirmation is degraded; remaining risk is now crash/restart qualification rather than silent happy-path success. |
+| Operator feedback quality | `MEDIUM-STRONG` | Preflight, stale-observation, confirmation, divergence, and post-runtime authority-confirm failures are typed and durable; richer reconciliation/runbook messaging remains follow-on work under `T2299`. |
+| Auditability | `MEDIUM-STRONG` | `SnapshotActivationEvent` plus phase history, `authority_publication`, and ordered `publication_steps` now record whether authority desired/committed/observed publication completed, failed, or was unavailable after runtime confirmation. |
 | Concurrency safety | `PARTIAL` | The runtime path is phased and auditable, but no explicit activation lock/CAS guarantee proves correctness under overlapping activation requests. |
 | Recovery safety | `PARTIAL` | Health refresh and reconciliation exist, but crash windows between runtime-live confirmation and authority publication are still real and not yet qualified. |
 
@@ -164,17 +164,12 @@ Remaining work after `T2296` closure is no longer about hidden bypass inventory.
 
 - The current implementation is substantially improved and auditable on the happy path.
 - It is not yet a rock-solid committed control-plane activation path.
-- The decisive blockers are:
-  - route-level and live-edit bypasses
-  - post-confirm authority publication that can fail silently
-  - missing explicit degraded/drift state when authority and runtime fall out of lock-step
+- The decisive remaining blockers are:
   - unqualified crash/restart/concurrency behavior
+  - operator-grade feedback for reconciliation side effects and degraded-state detail polish
 
 ## Required Follow-On Work
 
-- `T2297`
-  - make authority publication part of the canonical success contract instead of a silent best-effort follow-on
-  - emit explicit degraded/drift state when runtime and authority disagree
 - `T2298`
   - add crash/restart/concurrency qualification and fault-injection evidence
 - `T2299`
