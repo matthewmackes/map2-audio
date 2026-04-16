@@ -324,9 +324,9 @@ export function SnapshotPublishPage() {
 
   const activateMutation = useMutation({
     mutationFn: () => snapshotsApi.activate(snapshotId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       refreshPublishState()
-      pushToast('Publish requested', 'success')
+      pushToast(response.operator_message ?? 'Publish requested', response.status === 'degraded' ? 'warn' : 'success')
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Publish failed', 'error')
@@ -334,9 +334,9 @@ export function SnapshotPublishPage() {
   })
   const retryMutation = useMutation({
     mutationFn: () => snapshotsApi.retryPublish(snapshotId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       refreshPublishState()
-      pushToast('Publish retried', 'success')
+      pushToast(response.operator_message ?? 'Publish retried', response.status === 'degraded' ? 'warn' : 'success')
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Retry failed', 'error')
@@ -344,9 +344,12 @@ export function SnapshotPublishPage() {
   })
   const repairMutation = useMutation({
     mutationFn: (repairActionId: string) => snapshotsApi.runPublishRepairAction(snapshotId, repairActionId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       refreshPublishState()
-      pushToast('Repair action requested', 'success')
+      pushToast(
+        response.operator_message ?? 'Repair action requested',
+        response.status === 'degraded' ? 'warn' : 'success',
+      )
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Repair action failed', 'error')

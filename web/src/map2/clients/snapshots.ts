@@ -94,10 +94,16 @@ export interface SnapshotActivationResponse {
   result_code?: string
   operator_message?: string | null
   technical_detail?: string | null
+  recommended_action?: string | null
+  repair_action_id?: string | null
   snapshot_id: number
   name: string
   snapshot_data: SnapshotDetail
   snapshot_revision?: string
+  request_id?: string
+  node_id?: string
+  related_node_ids?: string[]
+  related_path_ids?: string[]
   activation_intent?: SnapshotActivationIntent
   runtime_live_state?: SnapshotRuntimeLiveState
   params_applied: number

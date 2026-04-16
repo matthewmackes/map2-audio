@@ -193,9 +193,19 @@ describe('SnapshotPublishPage', () => {
       ],
       applicable_steps: ['engine'],
     })
-    mockActivate.mockResolvedValue({})
-    mockRetryPublish.mockResolvedValue({})
-    mockRunPublishRepairAction.mockResolvedValue({})
+    mockActivate.mockResolvedValue({
+      status: 'success',
+      operator_message: 'The audio engine applied this snapshot and authority confirmation completed.',
+    })
+    mockRetryPublish.mockResolvedValue({
+      status: 'degraded',
+      operator_message: 'The audio engine applied this snapshot, but control-plane authority confirmation did not complete.',
+    })
+    mockRunPublishRepairAction.mockResolvedValue({
+      status: 'success',
+      operator_message: 'Local audio engine started',
+      repair_action_id: 'recover_local_audio_engine',
+    })
   })
 
   it('renders the publish workspace summary and checklist', async () => {
@@ -217,6 +227,9 @@ describe('SnapshotPublishPage', () => {
 
     await waitFor(() => {
       expect(mockRunPublishRepairAction).toHaveBeenCalledWith(12, 'recover_local_audio_engine')
+    })
+    await waitFor(() => {
+      expect(mockPushToast).toHaveBeenCalledWith('Local audio engine started', 'success')
     })
   })
 })

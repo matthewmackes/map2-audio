@@ -912,7 +912,13 @@ def test_activation_routes_preserve_degraded_activation_contract(monkeypatch):
                 "result_code": "authority_confirmation_failed",
                 "operator_message": "The audio engine applied this snapshot, but control-plane authority confirmation did not complete.",
                 "technical_detail": "committed authority write failed",
+                "recommended_action": "Retry publish",
+                "repair_action_id": "retry_publish",
                 "snapshot_id": snapshot_id,
+                "request_id": "req-11",
+                "node_id": "LOCAL-NODE",
+                "related_node_ids": ["LOCAL-NODE"],
+                "related_path_ids": [],
                 "triggered_by": triggered_by,
             }
 
@@ -933,6 +939,10 @@ def test_activation_routes_preserve_degraded_activation_contract(monkeypatch):
         assert activated["status"] == "degraded"
         assert activated["result_code"] == "authority_confirmation_failed"
         assert activated["technical_detail"] == "committed authority write failed"
+        assert activated["request_id"] == "req-11"
+        assert activated["node_id"] == "LOCAL-NODE"
+        assert activated["recommended_action"] == "Retry publish"
+        assert activated["repair_action_id"] == "retry_publish"
         assert cache_invalidations == ["chains"]
 
     asyncio.run(_run())
@@ -950,6 +960,12 @@ def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypat
                 "status": "success",
                 "snapshot_id": snapshot_id,
                 "triggered_by": triggered_by,
+                "request_id": "req-1",
+                "node_id": "LOCAL-NODE",
+                "recommended_action": None,
+                "repair_action_id": None,
+                "related_node_ids": ["LOCAL-NODE"],
+                "related_path_ids": [],
                 "activation_intent": {"request_id": "req-1", "blockers": [], "warnings": []},
             }
 
@@ -994,7 +1010,11 @@ def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypat
         assert readiness["snapshot_id"] == 31
         assert readiness["available_repairs"][0]["id"] == "retry_publish"
         assert retried["session_id"] == "sess-9"
+        assert retried["request_id"] == "req-1"
+        assert retried["node_id"] == "LOCAL-NODE"
         assert repaired["repair_action_id"] == "retry_publish"
+        assert repaired["request_id"] == "req-1"
+        assert repaired["node_id"] == "LOCAL-NODE"
         assert activation_calls == [(31, "publish_retry"), (31, "publish_retry")]
         assert readiness_calls == [31]
         assert cache_invalidations == ["chains", "chains"]

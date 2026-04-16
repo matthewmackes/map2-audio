@@ -2356,6 +2356,12 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert reconciliations == [True]
     assert activated["status"] == "success"
     assert activated["result_code"] == "live_confirmed"
+    assert activated["request_id"] == activated["activation_intent"]["request_id"]
+    assert activated["node_id"] == "LOCAL-NODE"
+    assert activated["recommended_action"] is None
+    assert activated["repair_action_id"] is None
+    assert activated["related_node_ids"] == ["LOCAL-NODE"]
+    assert activated["related_path_ids"] == []
     authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
     assert authority_publication["status"] == "confirmed"
     assert authority_publication["published_observation"] is True
@@ -2451,10 +2457,16 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
     assert len(published_desired) == 1
     assert activated["status"] == "degraded"
     assert activated["result_code"] == "authority_confirmation_failed"
+    assert activated["request_id"] == activated["activation_intent"]["request_id"]
+    assert activated["node_id"] == "LOCAL-NODE"
     assert activated["operator_message"] == (
         "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
     )
     assert activated["technical_detail"] == "committed authority write failed"
+    assert activated["recommended_action"] == "Retry publish"
+    assert activated["repair_action_id"] == "retry_publish"
+    assert activated["related_node_ids"] == ["LOCAL-NODE"]
+    assert activated["related_path_ids"] == []
     authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
     assert authority_publication["status"] == "failed"
     assert authority_publication["reason"] == "authority_confirmation_failed"
@@ -2542,12 +2554,18 @@ def test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are
     assert len(published_desired) == 1
     assert activated["status"] == "degraded"
     assert activated["result_code"] == "authority_confirmation_unavailable"
+    assert activated["request_id"] == activated["activation_intent"]["request_id"]
+    assert activated["node_id"] == "LOCAL-NODE"
     assert activated["operator_message"] == (
         "Desired state was refreshed, but committed and observed authority confirmation is unavailable."
     )
     assert activated["technical_detail"] == (
         "Authority backend missing methods: next_state_version, put_committed_state, put_observation, reconcile_committed_state"
     )
+    assert activated["recommended_action"] == "Retry publish"
+    assert activated["repair_action_id"] == "retry_publish"
+    assert activated["related_node_ids"] == ["LOCAL-NODE"]
+    assert activated["related_path_ids"] == []
     authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
     assert authority_publication["status"] == "failed"
     assert authority_publication["reason"] == "authority_confirmation_unavailable"

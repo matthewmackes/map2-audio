@@ -270,12 +270,16 @@ class StateAuthorityActivationService:
                 "operator_message": str(authority_publication.get("operator_message") or "").strip()
                 or "The audio engine applied this snapshot, but control-plane authority confirmation did not complete.",
                 "technical_detail": str(authority_publication.get("technical_detail") or "").strip() or None,
+                "recommended_action": "Retry publish",
+                "repair_action_id": "retry_publish",
             }
         return {
             "status": "success",
             "result_code": "live_confirmed",
             "operator_message": "The audio engine applied this snapshot and authority confirmation completed.",
             "technical_detail": None,
+            "recommended_action": None,
+            "repair_action_id": None,
         }
 
     def _canonicalize_json_value(self, value: Any) -> Any:
@@ -1123,10 +1127,16 @@ class StateAuthorityActivationService:
             "result_code": activation_result["result_code"],
             "operator_message": activation_result["operator_message"],
             "technical_detail": activation_result["technical_detail"],
+            "recommended_action": activation_result.get("recommended_action"),
+            "repair_action_id": activation_result.get("repair_action_id"),
             "snapshot_id": snapshot.id,
             "name": snapshot.name,
             "snapshot_data": refreshed_detail,
             "snapshot_revision": snapshot_revision,
+            "request_id": str(intent["request_id"]),
+            "node_id": str(intent["node_id"]),
+            "related_node_ids": [str(intent["node_id"])],
+            "related_path_ids": [],
             "activation_intent": intent,
             "runtime_live_state": live_runtime_state,
             "params_applied": params_applied,

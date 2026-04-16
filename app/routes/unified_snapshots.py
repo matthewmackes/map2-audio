@@ -366,8 +366,8 @@ async def _run_publish_repair_action(
         if payload is None:
             _raise_not_found("Snapshot")
         return {
-            "status": "success",
-            "snapshot_id": snapshot_id,
+            **payload,
+            "snapshot_id": payload.get("snapshot_id", snapshot_id),
             "repair_action_id": normalized_action,
             "result": payload,
         }
@@ -382,8 +382,8 @@ async def _run_publish_repair_action(
         if payload is None:
             _raise_not_found("Snapshot")
         return {
-            "status": "success",
-            "snapshot_id": snapshot_id,
+            **payload,
+            "snapshot_id": payload.get("snapshot_id", snapshot_id),
             "repair_action_id": normalized_action,
             "engine": engine_result,
             "result": payload,

@@ -224,7 +224,7 @@ Last updated: 2026-04-15 18:50 EDT - Codex
 ---
 
 ID: T2299
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Upgrade snapshot activation rejection and degraded-state feedback to operator-grade contracts
 Description:
 - Goal / acceptance criteria: Expand the snapshot publish/activation feedback model so every activation blocker, rejection, partial-apply state, stale-confirmation state, divergence state, retry path, and reconciliation side effect exposes a stable machine-readable code, exact failing guardrail, affected snapshot/version/node/path identity, precise operator-safe message, recommended remediation, and supporting log/event correlation hooks. Acceptance requires a full failure-feedback matrix tied to the live implementation, backend/frontend contract updates where needed, and regression coverage proving the platform never collapses these conditions into ambiguous generic success/failure messaging.
@@ -232,8 +232,30 @@ Description:
 - Dependencies: T2295
 - Estimated effort: High
 - Required outputs: audited failure-feedback matrix, updated typed readiness/activation contracts, UI copy/state handling updates, structured logging/event correlation additions, operator/runbook notes, and focused backend/frontend regression coverage for each high-risk failure family.
-Assigned to: Unassigned
-Last updated: 2026-04-15 18:55 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-16 07:22 EDT - Codex
+
+---
+
+ID: T2321
+Status: [✓] Done
+Title: Expose stable activation feedback identity and remediation in direct activation responses
+Description:
+- Goal / acceptance criteria: Add a stable top-level activation feedback envelope so direct activation and publish-repair responses expose correlation ids, related scope, and recommended remediation without forcing the UI to infer them from nested runtime metrics. Acceptance requires backend response updates, TypeScript/client contract updates, publish-page toast handling that uses the returned operator message, focused backend/frontend coverage, and reconciled worklist notes.
+- Why it matters: `T2299` is about operator-grade feedback. Activation events already have request/node identity, but the direct activation response still collapses operator context into a message plus the raw `activation_intent`, which is too implicit for reliable UI/operator handling.
+- Dependencies: T2298
+- Estimated effort: Medium
+- Required outputs: enriched activation/repair response contract, frontend/client consumption updates, focused tests, and updated worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 07:31 EDT - Codex
+- Completion notes:
+  - Enriched `app/services/state_authority_activation_service.py` so direct activation responses now carry top-level `request_id`, `node_id`, `recommended_action`, `repair_action_id`, and related node/path ids alongside the existing result code and messages.
+  - Updated `app/routes/unified_snapshots.py` so publish-retry and repair responses preserve that same activation feedback envelope at the top level instead of hiding it only inside nested `result` payloads.
+  - Updated the web client contract and `SnapshotPublishPage` so activation/repair toasts now use the returned operator message directly, with focused backend/frontend coverage proving the new passthrough fields and UI behavior.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
 
 ---
 

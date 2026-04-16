@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (activation evidence archive procedure documented)
+> **Last Updated**: April 16, 2026 (activation feedback envelope documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1191,6 +1191,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: Review `docs/qualification/snapshot-activation-fault-injection-procedure.md` for the artifact tree, command set, and sign-off checklist; ensure it is linked from `docs/qualification/snapshot-activation-qualification.md`.
 - **Lesson**: If a qualification claim matters at release time, the artifact layout is part of the contract. Tests, API snapshots, and logs need one documented archive path so evidence survives handoff and later audits.
 
+**114. Activation And Repair Responses Must Carry Feedback Identity At The Top Level**
+- **Files**: `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `web/src/map2/clients/snapshots.ts`, `web/src/app/pages/SnapshotPublishPage.tsx`
+- **Problem**: Activation events already exposed `request_id`/`node_id`, but the direct activation and repair responses only exposed the human message plus a nested `activation_intent` or `result` payload, which forced clients to infer correlation ids and remediation context indirectly.
+- **Root Cause**: The canonical activation service returned only status/message fields at the top level, and the repair routes wrapped that payload again instead of preserving the same direct response contract.
+- **Fix**: Promote `request_id`, `node_id`, `recommended_action`, `repair_action_id`, and related scope ids to the top-level activation response, preserve those fields through repair routes, and have the publish page toast the returned operator message directly.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`
+- **Lesson**: If a response is user-facing, correlation ids and remediation should not be buried in nested objects. Direct mutation responses need the same identity and operator context that event streams already provide.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2260,6 +2268,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Activation Feedback Envelope
+- **Section**: Gotchas & Learned Fixes (#114), Update Log
+- **Change**: Documented the top-level activation feedback envelope and preserved it through publish-retry and repair responses, with the publish page now using the returned operator message for toast feedback.
+- **Reason**: `T2299` needs operator-grade activation feedback, and the previous direct mutation responses still hid key correlation/remediation fields behind nested payloads.
+- **Impact**: Future activation/repair UI work can rely on one stable response contract for request identity, related scope, and recommended action.
+- **Files**: `.github/copilot-instructions.md`, `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `web/src/map2/clients/snapshots.ts`, `web/src/app/pages/SnapshotPublishPage.tsx`, `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Activation Evidence Archive Procedure
 - **Section**: Gotchas & Learned Fixes (#113), Update Log
