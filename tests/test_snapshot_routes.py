@@ -902,6 +902,42 @@ def test_activation_routes_call_state_authority_activation_service_directly(monk
     asyncio.run(_run())
 
 
+def test_activation_routes_preserve_degraded_activation_contract(monkeypatch):
+    cache_invalidations: list[str] = []
+
+    class _FakeActivationService:
+        async def activate_snapshot(self, snapshot_id: int, *, triggered_by: str = "ui"):
+            return {
+                "status": "degraded",
+                "result_code": "authority_confirmation_failed",
+                "operator_message": "The audio engine applied this snapshot, but control-plane authority confirmation did not complete.",
+                "technical_detail": "committed authority write failed",
+                "snapshot_id": snapshot_id,
+                "triggered_by": triggered_by,
+            }
+
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_activation = _FakeActivationService()
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
+
+    async def _run():
+        activated = await routes.activate_snapshot(11)
+        assert activated["status"] == "degraded"
+        assert activated["result_code"] == "authority_confirmation_failed"
+        assert activated["technical_detail"] == "committed authority write failed"
+        assert cache_invalidations == ["chains"]
+
+    asyncio.run(_run())
+
+
 def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypatch):
     activation_calls: list[tuple[int, str]] = []
     readiness_calls: list[int] = []

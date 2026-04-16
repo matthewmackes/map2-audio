@@ -2717,7 +2717,7 @@ export interface SnapshotActivationAuditEvent {
   triggered_by?: string | null;
   requested_at: string | null;
   confirmed_live_at?: string | null;
-  outcome: string;
+  outcome: 'requested' | 'success' | 'degraded' | 'failed';
   failure_reason?: string | null;
   activation_latency_ms?: number | null;
   runtime_metrics: Record<string, unknown>;

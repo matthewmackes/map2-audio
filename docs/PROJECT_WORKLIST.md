@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2296 by closing the live-state mutation inventory and canonical-path classification.
+Last updated: 2026-04-16 - Completed T2310 so canonical activation and activation history now surface degraded authority-confirmation outcomes instead of false success.
 
 ---
 
@@ -252,7 +252,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2297
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Enforce strict runtime-authority lock-step and explicit degraded signaling for snapshot activation
 Description:
 - Goal / acceptance criteria: Hard-stop the remaining cases where runtime and control-plane authority can disagree silently or report success too early by making successful activation publish durable authority updates plus node observations in the same canonical workflow, surfacing any mismatch as an explicit degraded/drifted state with bounded transition semantics, and documenting the exact ordering/acknowledgment contract for `desired`, `committed`, `observed`, runtime live-state, and activation events. Acceptance requires code-level invariant enforcement, mismatch-state visibility, and regression coverage for success, partial-failure, stale-observation, restart, and reconciliation paths.
@@ -261,7 +261,30 @@ Description:
 - Estimated effort: High
 - Required outputs: hardened authority/runtime update ordering, explicit degraded/drift state model, bounded transition rules, backend/frontend regressions for lock-step invariants, and deployment/verification notes proving the shipped path keeps authority aligned with live runtime.
 Assigned to: Unassigned
-Last updated: 2026-04-15 18:55 EDT - Codex
+Last updated: 2026-04-16 00:10 EDT - Codex
+
+---
+
+ID: T2310
+Status: [✓] Done
+Title: Stop canonical activation from reporting plain success after authority confirmation degrades
+Description:
+- Goal / acceptance criteria: Make the canonical snapshot activation contract report an explicit degraded outcome when runtime reaches `live` but post-runtime authority confirmation fails, and carry that degraded state through the durable activation event instead of leaving a `success` record with failed authority metrics hidden underneath. Acceptance requires backend contract changes, focused route/service/runtime-state regressions, typed client contract updates if needed, and reconciled docs/worklist notes.
+- Why it matters: `T2308` made the failure durable inside `runtime_metrics.authority_publication`, but callers can still see `status: success` and `outcome: success` for the same activation, which preserves the false-success trust gap at the top-level contract.
+- Dependencies: T2308, T2297
+- Estimated effort: Medium
+- Required outputs: degraded activation response status, degraded activation-event outcome wiring, focused regressions, and reconciled contract documentation.
+Assigned to: Codex
+Last updated: 2026-04-16 00:28 EDT - Codex
+- Completion notes:
+  - Changed `StateAuthorityActivationService.activate_snapshot()` so the canonical activation response now derives its top-level contract from `runtime_metrics.authority_publication`, returning `status: degraded` plus surfaced result code/operator message/detail whenever post-runtime authority confirmation fails.
+  - Updated `SnapshotRuntimeStateService.record_authority_publication_result()` so the matching activation event flips from `success` to `degraded` with the preserved `authority_confirmation_failed` reason instead of leaving a false-success audit record.
+  - Reconciled the frontend/client and spec contract so activation responses/events explicitly allow degraded outcomes, and added focused route/service/runtime-state regressions for the new contract.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'activation_routes_call_state_authority_activation_service_directly or degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

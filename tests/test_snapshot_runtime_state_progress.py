@@ -490,6 +490,8 @@ def test_record_authority_publication_result_updates_live_state_and_activation_e
 
     assert live_state["runtime_metrics"]["authority_publication"]["status"] == "failed"
     assert live_state["runtime_metrics"]["last_authority_publication_at"] == "2026-04-16T01:15:00+00:00"
+    assert events[0]["outcome"] == "degraded"
+    assert events[0]["failure_reason"] == "authority_confirmation_failed"
     assert events[0]["runtime_metrics"]["authority_publication"]["technical_detail"] == (
         "committed authority write failed"
     )

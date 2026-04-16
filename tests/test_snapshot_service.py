@@ -2354,9 +2354,12 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert observations[0].runtime_paths[0].status == "active"
     assert observations[0].runtime_paths[0].owner_node_id == "LOCAL-NODE"
     assert reconciliations == [True]
+    assert activated["status"] == "success"
+    assert activated["result_code"] == "live_confirmed"
     assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
     assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["published_observation"] is True
     assert event["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert event["outcome"] == "success"
     assert event["runtime_metrics"]["authority_publication"]["reconciled"] is True
 
 
@@ -2434,10 +2437,18 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
     activated, event = asyncio.run(_run())
 
     assert len(published_desired) == 1
+    assert activated["status"] == "degraded"
+    assert activated["result_code"] == "authority_confirmation_failed"
+    assert activated["operator_message"] == (
+        "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
+    )
+    assert activated["technical_detail"] == "committed authority write failed"
     authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
     assert authority_publication["status"] == "failed"
     assert authority_publication["reason"] == "authority_confirmation_failed"
     assert authority_publication["technical_detail"] == "committed authority write failed"
+    assert event["outcome"] == "degraded"
+    assert event["failure_reason"] == "authority_confirmation_failed"
     assert event["runtime_metrics"]["authority_publication"]["status"] == "failed"
     assert event["runtime_metrics"]["authority_publication"]["operator_message"] == (
         "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."

@@ -1,6 +1,6 @@
 # Snapshot Runtime Live-State And Synchronization Spec
 
-Last updated: 2026-03-30
+Last updated: 2026-04-16
 
 ## Purpose
 
@@ -167,7 +167,7 @@ Durable per-node activation audit record.
   "triggered_by": "ui | midi_pc | null",
   "requested_at": "ISO-8601",
   "confirmed_live_at": "ISO-8601 | null",
-  "outcome": "requested | success | failed",
+  "outcome": "requested | success | degraded | failed",
   "failure_reason": "string | null",
   "activation_latency_ms": 12.5,
   "runtime_metrics": {}
@@ -179,7 +179,7 @@ Retention:
 - Keep the last 100 activation events per node.
 - Use an in-memory hot cache for reads.
 - Keep the database as the durable audit source.
-- Successful and failed activation events may carry `runtime_metrics.authority_publication` so operator/readiness surfaces can distinguish post-runtime authority-confirm failures from pre-runtime activation failures.
+- Successful, degraded, and failed activation events may carry `runtime_metrics.authority_publication` so operator/readiness surfaces can distinguish post-runtime authority-confirm failures from pre-runtime activation failures.
 
 ## API And Event Surface
 
@@ -191,6 +191,7 @@ Existing snapshot activation routes remain valid:
 - `POST /api/snapshots/program-change/{program_number}/activate`
 
 These routes now create activation intent and only become live after runtime confirmation.
+When runtime reaches `live` but post-runtime authority confirmation fails, the activation response must return `status: "degraded"` with surfaced reason/detail fields instead of collapsing that state into plain success.
 
 ### Runtime state reads
 

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 15, 2026 (controller-display live preview audit classification documented)
+> **Last Updated**: April 16, 2026 (activation degraded-status contract documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1102,6 +1102,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Treat this helper as a retained compatibility mutation, record `refresh_controller_display_preview` through `record_retained_runtime_edit()`, and keep the chain-service runtime live sync classified as canonical-only because snapshot-owned chain activation is already guarded behind the activation opt-in.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_controller_display_push_service.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k retained_runtime_edit`
 - **Lesson**: Helper-driven live payload refreshes count as live-state mutations too. If they are intentionally retained outside canonical activation, they need the same durable audit breadcrumb as editor mutations.
+
+**103. Post-Runtime Authority Failure Must Flip Activation Status And Event Outcome To Degraded**
+- **Files**: `app/services/state_authority_activation_service.py`, `app/services/snapshot_runtime_state_service.py`, `web/src/map2/clients/snapshots.ts`, `web/src/map2/types.ts`, `tests/test_snapshot_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_snapshot_routes.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`
+- **Problem**: Even after `authority_publication.failed` became durable, canonical activation still returned `status: success` and activation history still recorded `outcome: success`, which left the top-level contract lying about degraded authority state.
+- **Root Cause**: Runtime confirmation marked the activation successful before the later authority-publication helper updated the event metrics, and nothing translated that post-runtime degraded result back into the API/event outcome contract.
+- **Fix**: Derive the final activation response contract from `runtime_live_state.runtime_metrics.authority_publication`, return `status: degraded` plus surfaced reason/message/detail when authority confirmation fails, and let `record_authority_publication_result()` flip the matching activation event outcome to `degraded`.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'`; `python3 -m pytest -q tests/test_snapshot_routes.py -k degraded_activation_contract`; `npm --prefix web run build`
+- **Lesson**: Durable sub-metrics are not enough if the top-level API and audit outcome still say success. Any post-runtime authority failure has to promote itself into the activation contract the operator actually reads first.
 
 ### Server Management Gotchas
 

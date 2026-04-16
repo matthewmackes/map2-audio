@@ -1403,6 +1403,13 @@ class SnapshotRuntimeStateService:
                 event_metrics["last_authority_publication_at"] = str(
                     normalized_result.get("checked_at") or emitted_at.isoformat()
                 )
+                authority_status = str(normalized_result.get("status") or "").strip().lower()
+                if authority_status == "failed":
+                    event_row.outcome = "degraded"
+                    event_row.failure_reason = str(normalized_result.get("reason") or "").strip() or None
+                elif authority_status == "confirmed":
+                    event_row.outcome = "success"
+                    event_row.failure_reason = None
                 event_row.runtime_metrics = event_metrics
                 activation_payload = self._serialize_activation_event(event_row)
 

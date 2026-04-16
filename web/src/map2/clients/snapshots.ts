@@ -90,7 +90,10 @@ export interface SnapshotPreviewResponse {
 }
 
 export interface SnapshotActivationResponse {
-  status: string
+  status: 'success' | 'degraded'
+  result_code?: string
+  operator_message?: string | null
+  technical_detail?: string | null
   snapshot_id: number
   name: string
   snapshot_data: SnapshotDetail

@@ -238,6 +238,29 @@ class StateAuthorityActivationService:
         channel_name = channel.get("label") or channel.get("channel_key")
         return f"{source_name} ({channel_name})"
 
+    @staticmethod
+    def _activation_result_contract(runtime_live_state: dict[str, Any] | None) -> dict[str, Any]:
+        authority_publication = (
+            runtime_live_state.get("runtime_metrics", {}).get("authority_publication")
+            if isinstance(runtime_live_state, dict)
+            and isinstance(runtime_live_state.get("runtime_metrics"), dict)
+            else {}
+        )
+        if isinstance(authority_publication, dict) and str(authority_publication.get("status") or "").strip().lower() == "failed":
+            return {
+                "status": "degraded",
+                "result_code": str(authority_publication.get("reason") or "").strip() or "authority_confirmation_failed",
+                "operator_message": str(authority_publication.get("operator_message") or "").strip()
+                or "The audio engine applied this snapshot, but control-plane authority confirmation did not complete.",
+                "technical_detail": str(authority_publication.get("technical_detail") or "").strip() or None,
+            }
+        return {
+            "status": "success",
+            "result_code": "live_confirmed",
+            "operator_message": "The audio engine applied this snapshot and authority confirmation completed.",
+            "technical_detail": None,
+        }
+
     def _canonicalize_json_value(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {
@@ -1065,8 +1088,13 @@ class StateAuthorityActivationService:
         except Exception as exc:
             logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
 
+        activation_result = self._activation_result_contract(live_runtime_state)
+
         return {
-            "status": "success",
+            "status": activation_result["status"],
+            "result_code": activation_result["result_code"],
+            "operator_message": activation_result["operator_message"],
+            "technical_detail": activation_result["technical_detail"],
             "snapshot_id": snapshot.id,
             "name": snapshot.name,
             "snapshot_data": refreshed_detail,
