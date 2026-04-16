@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2313 with the first executable T2298 qualification slice for retry/idempotency behavior and an activation-event cache upsert fix.
+Last updated: 2026-04-16 - Completed T2314 by qualifying overlapping same-snapshot activation attempts and serializing canonical local activation per node.
 
 ---
 
@@ -270,6 +270,28 @@ Last updated: 2026-04-16 02:18 EDT - Codex
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
+
+---
+
+ID: T2314
+Status: [✓] Done
+Title: Qualify overlapping activation attempts for the same snapshot
+Description:
+- Goal / acceptance criteria: Extend the `T2298` qualification suite with a deterministic overlapping-activation test that proves concurrent canonical activation attempts against the same snapshot do not corrupt runtime/authority state or activation-event history. Acceptance requires executable coverage, any required bug fixes, and updated qualification notes.
+- Why it matters: Retry/idempotency on a single-threaded path is not enough. The platform also needs evidence that overlapping attempts against the same target snapshot keep the final live-state and event history coherent.
+- Dependencies: T2313
+- Estimated effort: Medium
+- Required outputs: overlapping-activation qualification test, any required runtime-state fixes, and reconciled qualification/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 02:27 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_activation_qualification.py` with a deterministic overlapping same-snapshot activation case and updated the qualification ledger in `docs/qualification/snapshot-activation-qualification.md`.
+  - Fixed a real same-node concurrency gap uncovered by the new test by serializing canonical local activation requests per node inside `StateAuthorityActivationService`, preventing overlapping requests from racing each other into SQLite writer contention during activation-intent/runtime-state persistence.
+  - Confirmed the serialized overlap path still preserves coherent live-state and activation-event history for both activation attempts.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
 
 ---
 

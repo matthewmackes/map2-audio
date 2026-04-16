@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (activation qualification hot-cache upsert fix documented)
+> **Last Updated**: April 16, 2026 (same-snapshot activation serialization documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1134,6 +1134,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Centralize cache writes behind an upsert helper that removes any existing entry for the same `request_id` before inserting the latest payload.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`
 - **Lesson**: Durable rows are not enough if the hot cache lies. Any event stream cache keyed by request lifecycle has to upsert, not append, when the same request is updated in place.
+
+**107. Canonical Local Snapshot Activation Must Serialize Same-Node Requests**
+- **Files**: `app/services/state_authority_activation_service.py`, `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: Overlapping canonical activation attempts in the same backend process could race each other into SQLite writer contention while both tried to record activation intent and runtime-state updates, causing `database is locked` failures before the actual activation invariants were even exercised.
+- **Root Cause**: The canonical activation workflow had no per-node serialization guard, so two same-node requests could enter the full activation path concurrently and contend on the durable runtime/audit rows.
+- **Fix**: Add a per-node async activation lock in `StateAuthorityActivationService` and qualify the behavior with an overlapping same-snapshot activation test that proves the second request waits, then completes successfully with coherent event history.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
+- **Lesson**: Qualification should test real overlap, not just repeated calls. If the platform claims one canonical activation path per node, the code should enforce that serialization explicitly.
 
 ### Server Management Gotchas
 

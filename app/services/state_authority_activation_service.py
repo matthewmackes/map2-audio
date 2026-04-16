@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 class StateAuthorityActivationService:
     """Owns snapshot activation orchestration for the State Authority cutover."""
 
+    _activation_locks: dict[str, asyncio.Lock] = {}
+
     def __init__(
         self,
         session: AsyncSession,
@@ -81,6 +83,15 @@ class StateAuthorityActivationService:
         self._snapshot_spillover_native_uris = snapshot_spillover_native_uris
         self._canonical_transient_keys = canonical_transient_keys
         self._canonical_effects_loop_keys = canonical_effects_loop_keys
+
+    @classmethod
+    def _activation_lock_for_node(cls, node_id: str) -> asyncio.Lock:
+        normalized = str(node_id or "").strip() or "LOCAL-NODE"
+        lock = cls._activation_locks.get(normalized)
+        if lock is None:
+            lock = asyncio.Lock()
+            cls._activation_locks[normalized] = lock
+        return lock
 
     @staticmethod
     def _plugin_signature(plugin: dict[str, Any]) -> str:
@@ -619,6 +630,17 @@ class StateAuthorityActivationService:
         }
 
     async def activate_snapshot(
+        self,
+        snapshot_id: int,
+        *,
+        triggered_by: str = "ui",
+    ) -> dict[str, Any] | None:
+        from app.services.snapshot_runtime_state_service import resolve_local_node_id
+
+        async with self._activation_lock_for_node(resolve_local_node_id()):
+            return await self._activate_snapshot_locked(snapshot_id, triggered_by=triggered_by)
+
+    async def _activate_snapshot_locked(
         self,
         snapshot_id: int,
         *,

@@ -10,6 +10,7 @@ This document tracks the executable qualification slices for `T2298`.
 | --- | --- |
 | Retry after degraded authority confirmation failure | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_retry_recovers_after_degraded_authority_confirmation` |
 | Repeating activation of the same snapshot keeps the success contract stable | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_repeating_same_snapshot_keeps_success_contract_stable` |
+| Overlapping activation attempts for the same snapshot stay serialized and keep event history coherent | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_overlapping_same_snapshot_attempts_keep_history_coherent` |
 | Runtime success followed by committed-state failure | `tests/test_snapshot_service.py::test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live` |
 | Runtime success with authority confirmation unavailable after `desired` refresh only | `tests/test_snapshot_service.py::test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are_unavailable` |
 
@@ -18,6 +19,7 @@ This document tracks the executable qualification slices for `T2298`.
 ```bash
 python3 -m pytest -q tests/test_snapshot_activation_qualification.py
 python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'
+python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication
 ```
 
 ## Remaining qualification gaps
