@@ -155,6 +155,19 @@ class _ConcurrentSameSnapshotAuthorityCapture(_AlwaysHealthyAuthorityCapture):
         return SimpleNamespace(value=state)
 
 
+class _ObservationFailureRetryAuthorityCapture(_AlwaysHealthyAuthorityCapture):
+    def __init__(self) -> None:
+        super().__init__()
+        self.observation_attempts = 0
+
+    async def put_observation(self, observation):
+        self.observation_attempts += 1
+        if self.observation_attempts == 1:
+            raise RuntimeError("observation publish failed on first attempt")
+        self.observations.append(observation)
+        return SimpleNamespace(value=observation)
+
+
 def test_activation_qualification_retry_recovers_after_degraded_authority_confirmation(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     authority_capture = _RetryAuthorityCapture()
@@ -348,3 +361,52 @@ def test_activation_qualification_overlapping_different_snapshots_leave_latest_s
     assert len(authority_capture.observations) == 2
     assert {event["snapshot_id"] for event in events} == {first_snapshot_id, second_snapshot_id}
     assert [event["outcome"] for event in events] == ["success", "success"]
+
+
+def test_activation_qualification_retry_recovers_after_observation_publication_failure(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    authority_capture = _ObservationFailureRetryAuthorityCapture()
+    _patch_activation_environment(monkeypatch, authority_capture)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="ObservationRetryQualification",
+                detail_payload=_detail_payload("ObservationRetryQualification"),
+                apply_default_system_blocks=False,
+            )
+            first = await service.activate_snapshot(created["id"])
+            second = await service.activate_snapshot(created["id"], triggered_by="publish_retry")
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            live_state = await runtime_state_service.get_live_state()
+            events = await runtime_state_service.list_activation_events(limit=2)
+            return first, second, live_state, events
+
+    first, second, live_state, events = asyncio.run(_run())
+
+    assert first["status"] == "degraded"
+    assert first["result_code"] == "authority_confirmation_failed"
+    first_publication = first["runtime_live_state"]["runtime_metrics"]["authority_publication"]
+    assert first_publication["published_desired"] is True
+    assert first_publication["published_committed"] is True
+    assert first_publication["published_observation"] is False
+    assert {
+        entry["step"]: entry["status"] for entry in first_publication["publication_steps"]
+    } == {
+        "runtime_live_confirmed": "completed",
+        "publish_desired": "completed",
+        "publish_committed": "completed",
+        "publish_observation": "failed",
+        "reconcile_committed": "not_run",
+    }
+
+    assert second["status"] == "success"
+    assert second["result_code"] == "live_confirmed"
+    assert live_state["snapshot_id"] == second["snapshot_id"]
+    assert live_state["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert len(authority_capture.desired_writes) == 2
+    assert len(authority_capture.committed_writes) == 2
+    assert len(authority_capture.observations) == 1
+    assert authority_capture.observation_attempts == 2
+    assert sorted(event["outcome"] for event in events) == ["degraded", "success"]

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2315 by qualifying overlapping different-snapshot activation attempts and scoping local activation locks per event loop.
+Last updated: 2026-04-16 - Completed T2316 by qualifying observation-publication failure after committed success and retry recovery.
 
 ---
 
@@ -314,6 +314,28 @@ Last updated: 2026-04-16 06:13 EDT - Codex
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+
+---
+
+ID: T2316
+Status: [✓] Done
+Title: Qualify observation-publication failure and retry recovery
+Description:
+- Goal / acceptance criteria: Extend the `T2298` qualification suite with an activation case where runtime succeeds and committed authority writes succeed, but observation publication fails on the first attempt and a retry recovers cleanly. Acceptance requires executable coverage, any required fixes, and updated qualification notes.
+- Why it matters: `T2298` explicitly calls out runtime success without observation publication. The platform needs proof that this mid-authority failure degrades correctly and that retry recovers to a coherent final authority contract.
+- Dependencies: T2315
+- Estimated effort: Medium
+- Required outputs: observation-publication failure qualification test, any required fixes, and reconciled qualification/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 06:40 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_activation_qualification.py` with a deterministic case where runtime and committed authority succeed, observation publication fails on the first attempt, and `publish_retry` recovers the final authority contract on the second attempt.
+  - Updated `docs/qualification/snapshot-activation-qualification.md` so this explicit committed-without-observation window is now tracked as automated evidence instead of an open gap.
+  - Confirmed the degraded authority timeline for this case is `publish_committed=completed`, `publish_observation=failed`, `reconcile_committed=not_run`, followed by a clean confirmed retry.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
 
 ---
 

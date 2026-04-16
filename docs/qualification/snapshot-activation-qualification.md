@@ -12,6 +12,7 @@ This document tracks the executable qualification slices for `T2298`.
 | Repeating activation of the same snapshot keeps the success contract stable | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_repeating_same_snapshot_keeps_success_contract_stable` |
 | Overlapping activation attempts for the same snapshot stay serialized and keep event history coherent | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_overlapping_same_snapshot_attempts_keep_history_coherent` |
 | Overlapping activation attempts for different snapshots leave the later snapshot live | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_overlapping_different_snapshots_leave_latest_snapshot_live` |
+| Runtime success with committed authority written but observation publication failing degrades, then retry recovers | `tests/test_snapshot_activation_qualification.py::test_activation_qualification_retry_recovers_after_observation_publication_failure` |
 | Runtime success followed by committed-state failure | `tests/test_snapshot_service.py::test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live` |
 | Runtime success with authority confirmation unavailable after `desired` refresh only | `tests/test_snapshot_service.py::test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are_unavailable` |
 
@@ -26,6 +27,6 @@ python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_
 ## Remaining qualification gaps
 
 - Restart/crash after runtime apply but before committed/observed authority confirmation.
-- Runtime success without observation publication followed by retry/repair and stale-read windows.
+- Stale-read windows after a degraded observation-publication attempt and before retry/repair completes.
 - Reconciliation overwrite attempts and proof that later reconciliation does not silently erase a newer authority contract.
 - Archived fault-injection procedure and operator evidence expectations for release qualification.

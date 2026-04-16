@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (cross-snapshot activation serialization documented)
+> **Last Updated**: April 16, 2026 (observation-publication retry qualification documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1150,6 +1150,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Store activation locks per running event loop and per node, then extend qualification coverage to overlapping different-snapshot activations on the same node.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
 - **Lesson**: Async coordination primitives are loop-local resources. Any process-wide cache of `asyncio.Lock` objects must be loop-aware or tests and long-lived workers will eventually trip cross-loop failures.
+
+**109. Observation-Publication Failure Must Degrade After Committed Success And Recover On Retry**
+- **Files**: `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: `T2298` explicitly required proof for the window where runtime succeeds and committed authority is written, but observation publication fails before reconciliation.
+- **Root Cause**: The core degraded contract already handled generic exceptions, but there was no dedicated qualification showing that this exact mid-authority failure degrades with `publish_committed=completed`, `publish_observation=failed`, `reconcile_committed=not_run`, then recovers on retry.
+- **Fix**: Add a qualification capture that fails `put_observation()` on the first attempt and succeeds on the retry, then assert the step timeline and final confirmed live-state.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`
+- **Lesson**: Not all authority failures are equivalent. Qualification should pin the exact step boundary that failed so retry behavior is proven for committed-without-observation, not just for earlier commit failures.
 
 ### Server Management Gotchas
 
