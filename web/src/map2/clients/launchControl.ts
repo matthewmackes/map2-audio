@@ -61,7 +61,7 @@ export interface LaunchControlProjectionResponse {
   }
 }
 
-export interface LaunchControlPatchMappingResponse extends LaunchControlProjectionResponse {}
+export type LaunchControlPatchMappingResponse = LaunchControlProjectionResponse
 
 export const launchControlApi = {
   getStatus: () => fetchJson<LaunchControlStatusResponse>(`${LAUNCH_CONTROL_API_BASE}/status`, { cache: 'no-store' }),

@@ -427,6 +427,38 @@ export function PerformanceBrainPage() {
     ...(factoryPracticePacksQuery.data ?? []),
     ...(generatedPracticePacksQuery.data ?? []),
   ]
+  const activeSection = routeSection ?? state?.active_section ?? 'overview'
+  const currentSetName = state?.set_name ?? ''
+
+  const handleSectionChange = useCallback((sectionId: SectionId) => {
+    if (searchParams.get('section') !== sectionId) {
+      const nextSearchParams = new URLSearchParams(searchParams)
+      nextSearchParams.set('section', sectionId)
+      setSearchParams(nextSearchParams)
+    }
+    if (activeSection !== sectionId) {
+      stateMutation.mutate({ active_section: sectionId })
+    }
+  }, [activeSection, searchParams, setSearchParams, stateMutation])
+
+  const { primaryNavItems, utilityNavItems } = useMemo(() => {
+    const baseItems: UnifiedWorkspaceSideNavItem[] = SECTION_DEFS.map((section) => ({
+      key: section.id,
+      label: section.label,
+      description: `${section.eyebrow} • ${section.description}`,
+      to: `/brain?section=${section.id}`,
+      icon: section.icon,
+      active: activeSection === section.id,
+      onOpen: () => handleSectionChange(section.id),
+      meta: activeSection === section.id ? 'Current' : undefined,
+      variant: section.variant ?? 'default',
+    }))
+
+    return {
+      primaryNavItems: baseItems.filter((item) => item.variant !== 'utility'),
+      utilityNavItems: baseItems.filter((item) => item.variant === 'utility'),
+    }
+  }, [activeSection, handleSectionChange])
 
   if (
     stateQuery.isLoading
@@ -472,7 +504,6 @@ export function PerformanceBrainPage() {
     )
   }
 
-  const activeSection = routeSection ?? state.active_section
   const activeSlot = slots[state.active_slot]
   const activeLayer = layers.find((layer) => layer.layer_id === state.active_layer_id)
   const qualification = diagnostics.controller_qualification
@@ -481,21 +512,10 @@ export function PerformanceBrainPage() {
   const activePracticeStyle = selectedPracticeStyle(drumPracticeState.practice_style_id)
   const activePracticePack = selectedPracticePack(practicePacks, drumPracticeState.active_pack)
 
-  const handleSectionChange = useCallback((sectionId: SectionId) => {
-    if (searchParams.get('section') !== sectionId) {
-      const nextSearchParams = new URLSearchParams(searchParams)
-      nextSearchParams.set('section', sectionId)
-      setSearchParams(nextSearchParams)
-    }
-    if (state.active_section !== sectionId) {
-      stateMutation.mutate({ active_section: sectionId })
-    }
-  }, [searchParams, setSearchParams, state.active_section, stateMutation])
-
   const handleSetNameCommit = () => {
     const trimmed = setNameDraft.trim()
-    if (!trimmed || trimmed === state.set_name) {
-      setSetNameDraft(state.set_name)
+    if (!trimmed || trimmed === currentSetName) {
+      setSetNameDraft(currentSetName)
       return
     }
     stateMutation.mutate({ set_name: trimmed })
@@ -504,25 +524,6 @@ export function PerformanceBrainPage() {
   const handleSlotSelect = (slotId: number) => {
     stateMutation.mutate({ active_slot: slotId })
   }
-
-  const { primaryNavItems, utilityNavItems } = useMemo(() => {
-    const baseItems: UnifiedWorkspaceSideNavItem[] = SECTION_DEFS.map((section) => ({
-      key: section.id,
-      label: section.label,
-      description: `${section.eyebrow} • ${section.description}`,
-      to: `/brain?section=${section.id}`,
-      icon: section.icon,
-      active: activeSection === section.id,
-      onOpen: () => handleSectionChange(section.id),
-      meta: activeSection === section.id ? 'Current' : undefined,
-      variant: section.variant ?? 'default',
-    }))
-
-    return {
-      primaryNavItems: baseItems.filter((item) => item.variant !== 'utility'),
-      utilityNavItems: baseItems.filter((item) => item.variant === 'utility'),
-    }
-  }, [activeSection, handleSectionChange])
 
   return (
     <section className="brain-page">

@@ -138,9 +138,9 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
                 <div
                   className="product-detail-dialog__image-placeholder"
                   role="img"
-                  aria-label={`${product.model} product image placeholder`}
+                  aria-label={`${product.model} reference image unavailable`}
                 >
-                  <p>Product image placeholder</p>
+                  <p>Reference image unavailable</p>
                   <p>{product.model}</p>
                 </div>
 

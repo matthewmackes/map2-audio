@@ -6,7 +6,275 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2322 and closed T2299 by publishing the operator feedback matrix and correlation metadata across logs/API/UI.
+Last updated: 2026-04-16 - Started T2334 to keep lint out of atomic build rotation directories.
+
+---
+
+ID: T2334
+Status: [✓] Done
+Title: Keep web lint out of atomic build rotation directories
+Description:
+- Goal / acceptance criteria: Update the web ESLint ignore set so `npm --prefix web run lint` does not traverse transient `.dist-backup-*` or `.dist-staging-*` directories created by the atomic build script. Acceptance requires lint to pass after a completed web build without manual artifact cleanup.
+- Why it matters: The cleanup pass kept web lint/typecheck/build green, but lint can still fail non-deterministically when it scans transient build-rotation directories during or after `build_web_dist_atomic.py`. Ignoring those generated paths keeps the standard validation commands composable.
+- Dependencies: T2333
+- Estimated effort: Low
+- Required outputs: updated ESLint ignore configuration and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 08:51 EDT - Codex
+- Completion notes:
+  - Extended `web/eslint.config.js` ignores to cover `.dist-backup-*` and `.dist-staging-*`, matching the directories created by `scripts/build_web_dist_atomic.py`.
+  - Verified the intended acceptance case directly by running `npm --prefix web run build` and then `npm --prefix web run lint` on the resulting tree.
+- Validation:
+  - `npm --prefix web run build` -> PASS
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+
+---
+
+ID: T2333
+Status: [✓] Done
+Title: Rewire live download-progress hooks to the shared WebSocket client
+Description:
+- Goal / acceptance criteria: Replace the dead `../stores/webSocketStore` fallback in the live library/artifact download hooks with the supported shared MAP2 WebSocket client, add explicit topic typing for the download progress channels, and cover the subscription path with focused tests. Acceptance requires the hooks to subscribe without missing-module fallbacks and passing focused web test/lint/typecheck/build validation.
+- Why it matters: The cleanup sweep surfaced a real runtime mismatch, not dead code: live download surfaces still attempt to `require()` a removed store and silently fall back to polling. Rewiring them to the owned WebSocket client restores the intended real-time path and removes a stale compatibility branch.
+- Dependencies: T2332
+- Estimated effort: Medium
+- Required outputs: updated download-progress hooks plus any shared topic typing, focused regression coverage, and passing web validation.
+Assigned to: Codex
+Last updated: 2026-04-16 08:48 EDT - Codex
+- Completion notes:
+  - Replaced the dead `require('../stores/webSocketStore')` branch in `useDownloadProgress.ts` and `useSoundFontDownloadProgress.ts` with a shared `downloadProgressSocket.ts` helper backed by the singleton MAP2 WebSocket client.
+  - Added explicit `download:progress` and `soundfont:download:progress` topic support to `web/src/map2/websocket.ts` and focused regression coverage in `web/src/app/hooks/downloadProgressSocket.test.ts`.
+- Validation:
+  - `rg -n "webSocketStore|require\\('../stores/webSocketStore'\\)|require\\(\"\\.\\./stores/webSocketStore\"\\)" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/downloadProgressSocket.test.ts` -> PASS
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2332
+Status: [✓] Done
+Title: Prune the next verified batch of unused direct web dependencies
+Description:
+- Goal / acceptance criteria: Remove direct `web/package.json` dependencies and devDependencies that have no remaining imports anywhere in the web source tree after the latest dead-surface cleanup. Acceptance requires import verification plus passing web lint/typecheck/build validation with the refreshed lockfile.
+- Why it matters: The code cleanup stream has removed several historical surfaces, but the package manifest still carries dependencies that no longer have any live consumer. Removing them keeps install surface, audit noise, and lockfile churn aligned with the actual web app.
+- Dependencies: T2331
+- Estimated effort: Low
+- Required outputs: pruned direct dependency entries plus lockfile update, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 08:41 EDT - Codex
+- Completion notes:
+  - Removed five unused direct web dependencies and one unused dev dependency from `web/package.json` and `web/package-lock.json`: `@carbon/colors`, `@types/d3`, `clsx`, `d3`, and `react-hook-form`.
+  - Tightened the stale `carbonPalette.ts` comment so source ownership text still matches the inline palette implementation after dropping `@carbon/colors`.
+- Validation:
+  - `rg -n "from '@carbon/colors'|from \"@carbon/colors\"|from 'clsx'|from \"clsx\"|from 'd3'|from \"d3\"|from 'react-hook-form'|from \"react-hook-form\"" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2331
+Status: [✓] Done
+Title: Remove verified orphan cluster-dashboard legacy tabs and root visualization bundle
+Description:
+- Goal / acceptance criteria: Delete the detached legacy `ClusterDashboard` tab family and the dead root-level `PluginOutputPanel` visualization bundle after confirming they have no remaining runtime consumers outside self-references/tests. Acceptance requires cleaning any attached test/guard references, plus passing web lint/typecheck/build validation.
+- Why it matters: The previous cleanup runs removed dead barrels and detached component shells, but two larger historical bundles still remain in the tree even though the live platform shell now uses `ClusterDashboardWorkspace` and the surviving visualization surfaces live under other owners. Removing these bundles reduces false-positive audit noise and keeps feature ownership explicit.
+- Dependencies: T2330
+- Estimated effort: Low
+- Required outputs: deleted orphan component/style/test bundles, updated compatibility test coverage/guards where needed, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 08:35 EDT - Codex
+- Completion notes:
+  - Deleted the detached `ClusterDashboard` legacy tab family (`AVBNetworkTab`, `ClusterAdvancedOperationsTab`, `ClusterEducationTab`, `FlowManagementTab`, `LiveEventsTab`, `MetricsDashboardTab`, `MultiNodeMonitoringTab`, `ReportingTab`, `ServicesHealthTab`, `TopologyGraph`, `UpdatesTab`, and `clusterData`) including their attached CSS/test files.
+  - Deleted the dead root-level visualization bundle (`AudioMeter.tsx`, `PluginOutputPanel.tsx`, `PluginOutputPanel.css`, `PluginOutputPanel.test.tsx`, `SpectrumAnalyzer.tsx`, `TunerDisplay.tsx`, and `visualizations.ts`) and tightened `visualizationNoGradient.test.ts` to stop guarding a deleted file.
+- Validation:
+  - `rg -n "app/components/ClusterDashboard/AVBNetworkTab|app/components/ClusterDashboard/ClusterAdvancedOperationsTab|app/components/ClusterDashboard/ClusterEducationTab|app/components/ClusterDashboard/FlowManagementTab|app/components/ClusterDashboard/LiveEventsTab|app/components/ClusterDashboard/MetricsDashboardTab|app/components/ClusterDashboard/MultiNodeMonitoringTab|app/components/ClusterDashboard/ReportingTab|app/components/ClusterDashboard/ServicesHealthTab|app/components/ClusterDashboard/TopologyGraph|app/components/ClusterDashboard/UpdatesTab|app/components/ClusterDashboard/clusterData|components/AudioMeter\\.tsx|components/PluginOutputPanel\\.tsx|components/SpectrumAnalyzer\\.tsx|components/TunerDisplay\\.tsx|components/visualizations\\.ts" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2330
+Status: [✓] Done
+Title: Remove remaining dead web barrels after splitting live entrypoints from unused ones
+Description:
+- Goal / acceptance criteria: Delete the remaining component barrel/index files that still have no directory-import consumers after separating them from the live entrypoints such as `DeviceContext`, `ParameterControl`, `PluginCards`, and `icons/map`. Acceptance requires reference verification plus passing web lint/typecheck/build validation.
+- Why it matters: The previous cleanup removed obvious dead surfaces, but a final layer of unused barrel files still obscures the real module entrypoints. Removing them leaves the surviving live entrypoints explicit and easier to audit.
+- Dependencies: T2329
+- Estimated effort: Low
+- Required outputs: deleted dead barrel/index files, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 06:11 EDT - Codex
+- Completion notes:
+  - Deleted the dead barrels `HorizontalSignalChain/index.ts`, `HorizontalSignalChain/icons/index.ts`, `PluginCards/Base/index.ts`, `PluginCards/Visualizations/index.ts`, `snapshots/index.ts`, `upload/index.ts`, and `Visualizations/index.ts`.
+  - Kept the still-live entrypoints `DeviceContext/index.ts`, `ParameterControl/index.ts`, `PluginCards/index.ts`, and `icons/map/index.ts`, then flattened `PluginCards/index.ts` to direct exports so it no longer depends on the deleted sub-barrels.
+- Validation:
+  - `rg -n "app/components/HorizontalSignalChain/index|app/components/HorizontalSignalChain/icons/index|app/components/PluginCards/Base/index|app/components/PluginCards/Visualizations/index|app/components/snapshots/index|app/components/upload/index|app/components/Visualizations/index" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2329
+Status: [✓] Done
+Title: Remove another batch of unreferenced web barrel and compatibility index files
+Description:
+- Goal / acceptance criteria: Delete barrel and compatibility `index.ts` files whose exact paths and directory-import forms have no remaining consumers anywhere in `web/src`. Acceptance requires reference verification plus passing web lint/typecheck/build validation.
+- Why it matters: After the earlier surface removals, the repo still carries a set of index-only compatibility files that no longer serve any live imports. Clearing them out reduces stale module surface area and keeps ownership explicit.
+- Dependencies: T2328
+- Estimated effort: Low
+- Required outputs: deleted unreferenced barrel/index files, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 06:03 EDT - Codex
+- Completion notes:
+  - Deleted the unused compatibility/index files under `PluginCards/components`, `PluginCards/Custom/*`, `PluginCards/Layouts`, `PluginCards/Templates`, `PluginCards/utils`, plus the dead `Routing/index.ts`, `Dynamics/index.ts`, and `EQ/index.ts` barrels.
+- Validation:
+  - `rg -n "app/components/PluginCards/components|app/components/PluginCards/Custom/Airwindows|app/components/PluginCards/Custom/Dragonfly|app/components/PluginCards/Custom/JUCE|app/components/PluginCards/Custom/LV2|app/components/PluginCards/Custom/TooB|app/components/PluginCards/Custom|app/components/PluginCards/Layouts|app/components/PluginCards/Templates|app/components/PluginCards/utils|app/components/Routing/index|app/components/Dynamics/index|app/components/EQ/index" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2328
+Status: [✓] Done
+Title: Remove verified orphan compatibility wrappers, barrels, and standalone web components
+Description:
+- Goal / acceptance criteria: Delete the next batch of files whose exact import paths now have zero consumers in `web/src`, including dead `JuceGrid` compatibility wrappers, unused barrels, and standalone components with no remaining callers. Acceptance requires reference verification and passing web lint/typecheck/build validation.
+- Why it matters: Earlier cleanup removed several owning surfaces, but the tree still carries compatibility aliases and standalone components that survived only as historical scaffolding. Removing them keeps the codebase aligned with the current SnapshotEditor/App ownership model.
+- Dependencies: T2327
+- Estimated effort: Low
+- Required outputs: deleted orphan wrapper/barrel/component files, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 05:47 EDT - Codex
+- Completion notes:
+  - Deleted the orphan standalone components `Platform/LabsWorkspace.tsx` and `FlickeringGrid.tsx`, plus the unused `PluginBrowser/index.ts`, `PluginTags/TagBadge.tsx`, and `PluginTags/index.ts` barrels/helpers.
+  - Removed the dead `JuceGrid` compatibility wrapper layer: `JuceGridChainManagementCard.tsx`, `JuceGridClusterPanels.tsx`, `JuceGridParameterEditor.tsx`, `JuceGridRoutingVisualizer.tsx`, `JuceGridSelectedBlockMidiPanel.tsx`, `JuceGridSignalCanvas.tsx`, `juceGridLiveChains.ts`, `juceGridLivePath.ts`, `juceGridSnapshots.ts`, and `juceGridState.ts`.
+  - Verified the surviving `SnapshotEditor` implementations remain the live owners for the `JuceGrid*` symbol family.
+- Validation:
+  - `rg -n "app/components/Platform/LabsWorkspace|app/components/FlickeringGrid|app/components/PluginBrowser/index|app/components/PluginTags/TagBadge|app/components/PluginTags/index|app/components/JuceGrid/JuceGridChainManagementCard|app/components/JuceGrid/JuceGridClusterPanels|app/components/JuceGrid/JuceGridParameterEditor|app/components/JuceGrid/JuceGridRoutingVisualizer|app/components/JuceGrid/JuceGridSelectedBlockMidiPanel|app/components/JuceGrid/JuceGridSignalCanvas|app/components/JuceGrid/juceGridLiveChains|app/components/JuceGrid/juceGridLivePath|app/components/JuceGrid/juceGridSnapshots|app/components/JuceGrid/juceGridState" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2327
+Status: [✓] Done
+Title: Remove another verified batch of orphaned web component clusters and stale alert-shell remnants
+Description:
+- Goal / acceptance criteria: Delete the next set of verified orphan web component clusters whose files have no remaining consumers, including their attached styles/tests, and trim any leftover shared styling/comments that only served those dead shells. Acceptance requires the affected basenames or exact paths to have no remaining references and passing web lint/typecheck/build validation.
+- Why it matters: The previous cleanup rounds removed dead top-level surfaces, but the tree still carries several detached UI clusters and test/style companions that are no longer reachable from any live route or feature. Removing them keeps the web codebase tight and reduces false positives in future audits.
+- Dependencies: T2326
+- Estimated effort: Low
+- Required outputs: deleted orphaned component clusters, cleaned shared alert styling/comments, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 05:38 EDT - Codex
+- Completion notes:
+  - Deleted the orphan clusters `ApiActivityOverlay`, `BottomRoutingPanel`, `ChainPanel`, `NodeContextBanner`, and `PluginManagementCard`, including their attached CSS/test files where present.
+  - Deleted the dead `NodeAlertBar` and `NodeAlertMonitor` presentation layer, then trimmed `NodeAlerts.css` and updated `useNodeAlertMonitoring.ts` so the remaining live alert path reflects the hook/store ownership directly.
+- Validation:
+  - `rg -n "app/components/ApiActivityOverlay/ApiActivityOverlay|app/components/BottomRoutingPanel/BottomRoutingPanel|app/components/BottomRoutingPanel/index|app/components/ChainPanel/ChainPanel|app/components/ChainPanel/index|app/components/PluginManagementCard|app/components/NodeAlerts/NodeAlertBar|app/components/NodeAlerts/NodeAlertMonitor|app/components/NodeContextBanner/NodeContextBanner" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2326
+Status: [✓] Done
+Title: Retire the orphaned Host Machine widget cluster with no remaining imports
+Description:
+- Goal / acceptance criteria: Remove the unreferenced Host Machine support widgets and unused barrel file whose exact import paths now have zero matches anywhere in `web/src`, while preserving the still-live `HostMachinePage` panels and shared stylesheet. Acceptance requires reference verification plus passing web lint/typecheck/build validation.
+- Why it matters: The Host Machine surface has active operator pages, but it still carries a detached batch of dead support widgets from earlier iterations. Retiring only the fully orphaned files reduces audit noise without disturbing the live page.
+- Dependencies: T2325
+- Estimated effort: Low
+- Required outputs: deleted orphaned Host Machine widget files, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 05:20 EDT - Codex
+- Completion notes:
+  - Deleted the exact-path orphaned Host Machine widgets `AlertNotificationSettings.tsx`, `ExportDialog.tsx`, `HealthAlarms.tsx`, `HealthMonitor.tsx`, `HostMachineSettings.tsx`, `MetricsCharts.tsx`, `MetricsChartsEnhanced.tsx`, and `MultiSystemDashboard.tsx`, plus the unused `HostMachine/index.ts` barrel.
+  - Verified the live `HostMachinePage` imports still resolve through direct file paths for the retained panels and continue to use the shared `HostMachine.css` stylesheet.
+- Validation:
+  - `rg -n "HostMachine/AlertNotificationSettings|HostMachine/ExportDialog|HostMachine/HealthAlarms|HostMachine/HealthMonitor|HostMachine/HostMachineSettings|HostMachine/MetricsCharts|HostMachine/MetricsChartsEnhanced|HostMachine/MultiSystemDashboard|components/HostMachine/index" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2325
+Status: [✓] Done
+Title: Delete the next batch of orphaned web app components with no remaining consumers
+Description:
+- Goal / acceptance criteria: Remove the currently unreferenced web app component files that now have zero remaining imports or route edges after the prior cleanup passes, and verify the web tree still lint/typechecks/builds cleanly. This batch covers only components whose basenames have no references outside their own files.
+- Why it matters: After `T2323` and `T2324`, the web tree still carries a set of standalone React component files that no longer participate in any live route, page, or feature flow. Removing them tightens ownership and reduces false signal in future audits.
+- Dependencies: T2324
+- Estimated effort: Low
+- Required outputs: deleted orphaned component files, reference verification evidence, and passing web lint/typecheck/build validation.
+Assigned to: Codex
+Last updated: 2026-04-16 05:12 EDT - Codex
+- Completion notes:
+  - Deleted the orphaned component files `CPUStatusOverview.tsx`, `JUCEEngineTestStatus.tsx`, `PiPedalTestStatus.tsx`, `PlatformFooter.tsx`, `RealtimeTestResults.tsx`, `NodeAudioPathView.tsx`, and `PresetsWindow.tsx` after confirming their basenames had no remaining references outside their own files.
+- Validation:
+  - `rg -n "CPUStatusOverview|JUCEEngineTestStatus|PiPedalTestStatus|PlatformFooter|RealtimeTestResults|NodeAudioPathView|PresetsWindow" web/src --glob '!web/node_modules/**'` -> PASS (no matches)
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2324
+Status: [✓] Done
+Title: Retire the dead shared PluginChooser surface and prune its remaining unused web dependencies
+Description:
+- Goal / acceptance criteria: Remove the unreferenced `web/src/shared/components/PluginChooser/` feature surface, relocate any still-live legacy plugin icon/type fallback helpers into the owning app/plugin-appearance area, update or remove the stale `web/src/shared/README.md` ownership note accordingly, and prune direct web dependencies that no longer have any live consumer after the removal. Acceptance requires the web tree to have no remaining imports from the retired shared chooser surface, updated focused regression coverage for the retained fallback helpers, and passing web lint/typecheck/build validation.
+- Why it matters: The previous cleanup removed several dead web surfaces, but the repo still carries an entire shared React feature subtree with no live consumer. Keeping that dead compatibility shell and its unused direct dependencies makes the web ownership story noisier than it needs to be.
+- Dependencies: T2323
+- Estimated effort: Medium
+- Required outputs: retired shared chooser files, relocated plugin-appearance fallback helpers plus focused tests, pruned unused direct dependencies and lockfile updates, and reconciled worklist status.
+Assigned to: Codex
+Last updated: 2026-04-16 04:59 EDT - Codex
+- Completion notes:
+  - Retired the unreferenced `web/src/shared/components/PluginChooser/` tree and removed the now-stale `web/src/shared/README.md` ownership note after confirming no live web imports remained from the shared chooser surface.
+  - Moved the surviving legacy plugin-type glyph mapping into `web/src/app/utils/pluginLegacyCompat.ts` and updated `web/src/app/components/pluginAppearance/PluginAppearanceIcon.tsx` so the plugin-appearance fallback path no longer depends on the retired shared chooser files.
+  - Added focused regressions in `web/src/app/utils/pluginLegacyCompat.test.ts` and `web/src/app/components/pluginAppearance/PluginAppearanceIcon.test.tsx` to lock the retained legacy glyph contract and UI fallback rendering.
+  - Pruned three unused direct web dependencies and refreshed `web/package-lock.json`: `react-markdown`, `rehype-external-links`, and `three`.
+- Validation:
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/pluginAppearance/PluginAppearanceIcon.test.tsx src/app/utils/pluginLegacyCompat.test.ts` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2323
+Status: [✓] Done
+Title: Tighten the web frontend by pruning dead surfaces, clearing lint debt, and trimming unused dependencies
+Description:
+- Goal / acceptance criteria: Execute a web-only cleanup pass that removes any still-unreferenced React surfaces found in the current tree, clears the active `npm --prefix web run lint` warning set, removes operator-facing fake placeholder/demo wording where it does not reflect real runtime behavior, and prunes direct `web/package.json` dependencies that are no longer used by the web app. Acceptance requires updated worklist notes plus passing web lint/typecheck/build and focused regression coverage for the touched surfaces.
+- Why it matters: The earlier React cleanup epic reduced a large amount of historical baggage, but the current web tree still carries dead cluster-dashboard files, stale lint debt, fake placeholder/demo wording, and direct package dependencies with no remaining consumer.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: removed dead web files, resolved lint warnings, tightened live placeholder/demo copy, pruned unused direct web dependencies plus lockfile updates, focused validation evidence, and reconciled worklist status.
+Assigned to: Codex
+Last updated: 2026-04-16 01:11 EDT - Codex
+- Completion notes:
+  - Deleted the unreferenced `web/src/app/components/ClusterDashboard/ClusterOverviewTab.tsx` and `ClusterOverviewTabEnhanced.tsx` surfaces after confirming they had no remaining consumers in the web tree.
+  - Cleared the active web lint debt by tightening route typing in `web/src/app/App.tsx`, fixing `GlobalTreeNav` icon typing, stabilizing the launcher refetch effect, moving `PerformanceBrainPage` hooks ahead of the early returns, and replacing two empty response interfaces in `web/src/map2/clients/`.
+  - Split the shell-window hook access into `web/src/app/layout/useShellWindow.ts` plus a plain `ShellWindowContext.ts` export so the context file no longer trips the React Fast Refresh lint rule.
+  - Replaced the fake product-image placeholder wording in `web/src/app/components/ProductDetailDialog.tsx` with accurate unavailable-reference copy and extended the focused dialog test coverage.
+  - Pruned 11 unused direct web dependencies from `web/package.json` and refreshed `web/package-lock.json`: `@mui/styles`, `@react-hook/window-size`, `@react-three/drei`, `@react-three/fiber`, `@react-three/postprocessing`, `@reactflow/controls`, `@reactflow/minimap`, `@reactflow/node-resizer`, `class-variance-authority`, `react-remark`, and `tss-react`.
+- Validation:
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/ProductDetailDialog.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

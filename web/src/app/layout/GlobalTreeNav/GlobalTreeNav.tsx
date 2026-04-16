@@ -1,5 +1,5 @@
 import { FeatureFlags, Layer, Popover, PopoverContent, TreeView } from '@carbon/react'
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ChartLine,
@@ -47,11 +47,13 @@ type GlobalTreeNavProps = {
   onTogglePinned: () => void
 }
 
+type TreeIconComponent = NonNullable<ComponentProps<typeof TreeView.TreeNode>['renderIcon']>
+
 type TreeItemDefinition = {
   id: string
   label: string
   route?: string
-  icon?: ComponentType<any>
+  icon?: TreeIconComponent
   children?: TreeItemDefinition[]
 }
 
@@ -75,7 +77,7 @@ const HARDWARE_TREE_ID = '/hardware'
 const HARDWARE_PHYSICAL_SURFACES_ID = '/hardware::physical-surfaces'
 const HARDWARE_OUTBOARD_GEAR_ID = '/hardware::outboard-gear'
 
-const TREE_ICON_OVERRIDES: Record<string, ComponentType<any>> = {
+const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/': Home,
   '/snapshot-editor': ScreenMap,
   '/brain': Music,

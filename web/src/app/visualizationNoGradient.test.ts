@@ -8,7 +8,6 @@ const FILES_UNDER_GUARD = [
   'components/Visualizations/ClusterMeteringStrip.tsx',
   'components/Visualizations/VuMeterDisplay.tsx',
   'components/Visualizations/IRFrequencyGraph.tsx',
-  'components/TunerDisplay.tsx',
   'pages/MeteringPage.tsx',
 ]
 

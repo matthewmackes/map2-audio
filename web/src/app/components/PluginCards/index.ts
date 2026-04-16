@@ -31,13 +31,25 @@ export {
 } from './registry'
 
 // Base components
-export * from './Base'
+export { PluginCardShell } from './Base/PluginCardShell'
+export { BypassSwitch } from './Base/BypassSwitch'
+export { ParameterSection } from './Base/ParameterSection'
+export { ParameterRow } from './Base/ParameterRow'
+export { ParameterGrid } from './Base/ParameterGrid'
+export { getSectionIcon } from './Base/sectionIcons'
 
 // Templates (re-export types only — actual components are lazy-loaded via registry)
 export type { PluginCardTemplate } from './types'
 
 // Visualizations
-export * from './Visualizations'
+export { TransferCurve } from './Visualizations/TransferCurve'
+export { ReverbDecayCurve } from './Visualizations/ReverbDecayCurve'
+export { EQCurveDisplay, type EQBandData } from './Visualizations/EQCurveDisplay'
+export { DelayTapGrid } from './Visualizations/DelayTapGrid'
+export { DistortionCurve } from './Visualizations/DistortionCurve'
+export { LFOWaveform } from './Visualizations/LFOWaveform'
+export { PitchDisplay } from './Visualizations/PitchDisplay'
+export { TunerDisplay } from './Visualizations/TunerDisplay'
 
 // Router
 export { PluginCardRouter } from './PluginCardRouter'

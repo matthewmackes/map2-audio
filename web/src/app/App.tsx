@@ -9,7 +9,12 @@ import { ToastProvider, useToasts } from './components/Toasts'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
-import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath, buildWorkspaceHubPlatformPath } from './platform/routes'
+import {
+  buildLegacyPlatformRedirectPath,
+  buildPlatformWorkspacePath,
+  buildWorkspaceHubPlatformPath,
+  isPlatformWorkspaceId,
+} from './platform/routes'
 import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
 import { LoadingState } from './components/shared/LoadingState'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
@@ -228,7 +233,8 @@ function LegacyPlatformWorkspaceRedirect() {
   }
 
   const workspace = params.workspace
-  return <Navigate to={`${buildWorkspaceHubPlatformPath((workspace as any) ?? 'overview')}${location.search || ''}`} replace />
+  const normalizedWorkspace = isPlatformWorkspaceId(workspace) ? workspace : 'overview'
+  return <Navigate to={`${buildWorkspaceHubPlatformPath(normalizedWorkspace)}${location.search || ''}`} replace />
 }
 
 function LegacyPhysicalSurfacesRedirect() {

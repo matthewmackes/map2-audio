@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react'
+import { createContext } from 'react'
 import type { ComponentType } from 'react'
 
 export interface ShellWindowContextValue {
@@ -14,18 +14,6 @@ export interface ShellWindowContextValue {
   onClose: () => void
 }
 
-const ShellWindowContext = createContext<ShellWindowContextValue | null>(null)
+export const ShellWindowContext = createContext<ShellWindowContextValue | null>(null)
 
 export const ShellWindowProvider = ShellWindowContext.Provider
-
-export function useShellWindow(): ShellWindowContextValue {
-  const ctx = useContext(ShellWindowContext)
-  if (!ctx) {
-    throw new Error('useShellWindow must be used within a ShellWindowProvider')
-  }
-  return ctx
-}
-
-export function useShellWindowOptional(): ShellWindowContextValue | null {
-  return useContext(ShellWindowContext)
-}

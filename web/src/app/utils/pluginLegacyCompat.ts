@@ -1,8 +1,3 @@
-// ============================================================================
-// PluginChooser - Legacy PiPedal compatibility surface
-// Minimal type/icon helpers needed while MAP2 retires the old web/src/pipedal tree.
-// ============================================================================
-
 export enum PluginType {
   None = '',
   InvalidPlugin = 'InvalidPlugin',
@@ -52,63 +47,6 @@ export enum PluginType {
   SplitLR = 'SplitLR',
   ErrorPlugin = 'ErrorPlugin',
   Terminal = 'Terminal',
-}
-
-export interface UiControl {
-  name: string
-  symbol: string
-  default_value: number
-  min_value: number
-  max_value: number
-  units?: string | null
-  is_input: boolean
-  isHidden?: () => boolean
-}
-
-export interface UiPlugin {
-  uri: string
-  name: string
-  minorVersion: number
-  microVersion: number
-  plugin_type: PluginType
-  plugin_display_type: string
-  author_name: string
-  author_homepage: string
-  audio_inputs: number
-  audio_outputs: number
-  has_midi_input: number
-  has_midi_output: number
-  description: string
-  controls: UiControl[]
-  is_vst3: boolean
-  modGui: unknown | null
-}
-
-export function pluginTypeFromCategory(category: string): PluginType {
-  const categoryLower = category.toLowerCase()
-
-  if (categoryLower.includes('compressor')) return PluginType.CompressorPlugin
-  if (categoryLower.includes('dynamics')) return PluginType.CompressorPlugin
-  if (categoryLower.includes('limiter')) return PluginType.LimiterPlugin
-  if (categoryLower.includes('gate')) return PluginType.GatePlugin
-  if (categoryLower.includes('delay')) return PluginType.DelayPlugin
-  if (categoryLower.includes('reverb')) return PluginType.ReverbPlugin
-  if (categoryLower.includes('distortion')) return PluginType.DistortionPlugin
-  if (categoryLower.includes('amplifier') || categoryLower.includes('amp')) return PluginType.AmplifierPlugin
-  if (categoryLower.includes('chorus')) return PluginType.ChorusPlugin
-  if (categoryLower.includes('flanger')) return PluginType.FlangerPlugin
-  if (categoryLower.includes('phaser')) return PluginType.PhaserPlugin
-  if (categoryLower.includes('eq') || categoryLower.includes('equalizer')) return PluginType.EQPlugin
-  if (categoryLower.includes('filter')) return PluginType.FilterPlugin
-  if (categoryLower.includes('modulator')) return PluginType.ModulatorPlugin
-  if (categoryLower.includes('simulator')) return PluginType.SimulatorPlugin
-  if (categoryLower.includes('analyser') || categoryLower.includes('analyzer')) return PluginType.AnalyserPlugin
-  if (categoryLower.includes('utility')) return PluginType.UtilityPlugin
-  if (categoryLower.includes('generator')) return PluginType.GeneratorPlugin
-  if (categoryLower.includes('instrument')) return PluginType.InstrumentPlugin
-  if (categoryLower.includes('mixer')) return PluginType.MixerPlugin
-
-  return PluginType.Plugin
 }
 
 interface PluginGlyph {

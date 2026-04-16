@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react'
 
-import { LegacyPluginIcon } from '@/shared/components/PluginChooser/components/LegacyPluginIcon'
-import type { PluginType } from '@/shared/components/PluginChooser/pluginLegacyCompat'
+import { getPluginGlyph, type PluginType } from '../../utils/pluginLegacyCompat'
 
 import { renderPluginAppearanceFallback, resolvePluginAppearanceIconOption } from '../../utils/pluginAppearanceIcons'
 
@@ -64,16 +63,35 @@ export function PluginAppearanceIcon({
   }
 
   if (fallbackPluginType) {
-    return (
-      <LegacyPluginIcon
-        pluginType={fallbackPluginType}
-        size={size}
-        opacity={opacity}
-        color={color}
-        decorative={decorative}
-        label={label}
-      />
+    const glyph = getPluginGlyph(fallbackPluginType)
+    const fontSize = Math.max(9, Math.round(size * (glyph.label.length > 2 ? 0.34 : 0.42)))
+    const content = (
+      <span
+        className={className}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          inlineSize: size,
+          blockSize: size,
+          opacity,
+          color: color ?? glyph.tone,
+          border: '1px solid currentColor',
+          borderRadius: '999px',
+          background: 'color-mix(in srgb, currentColor 10%, transparent)',
+          fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
+          fontWeight: 600,
+          lineHeight: 1,
+          boxSizing: 'border-box',
+          fontSize,
+          ...style,
+        }}
+      >
+        {glyph.label}
+      </span>
     )
+
+    return decorative ? <span aria-hidden="true">{content}</span> : <span role="img" aria-label={label}>{content}</span>
   }
 
   return null

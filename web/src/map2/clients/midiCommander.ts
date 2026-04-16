@@ -72,7 +72,7 @@ export interface MidiCommanderProjectionResponse {
   }
 }
 
-export interface MidiCommanderPatchMappingResponse extends MidiCommanderProjectionResponse {}
+export type MidiCommanderPatchMappingResponse = MidiCommanderProjectionResponse
 
 const midiCommanderApi = {
   getStatus: () => fetchJson<MidiCommanderStatusResponse>(`${MIDI_COMMANDER_API_BASE}/status`, { cache: 'no-store' }),

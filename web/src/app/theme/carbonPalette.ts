@@ -1,7 +1,6 @@
 /**
  * Carbon Design System full color palette.
- * All values sourced directly from @carbon/colors.
- * Used by the Theme Chooser to generate full theme sets from a primary color pick.
+ * Values are maintained inline for the Theme Chooser's palette generation.
  */
 
 export interface CarbonColorFamily {

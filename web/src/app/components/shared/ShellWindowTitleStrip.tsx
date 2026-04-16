@@ -1,4 +1,4 @@
-import { useShellWindowOptional } from '../../layout/ShellWindowContext'
+import { useShellWindowOptional } from '../../layout/useShellWindow'
 import { WindowTitleStrip } from './WindowTitleStrip'
 
 /**

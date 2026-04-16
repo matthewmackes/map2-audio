@@ -170,6 +170,7 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
     enabled: false,
     staleTime: 0,
   })
+  const refetchLauncherInterfaces = query.refetch
   const [audioInterfaces, setAudioInterfaces] = useState<string[]>([])
   const [midiInterfaces, setMidiInterfaces] = useState<string[]>([])
   const audioEmptyTimerRef = useRef<number | null>(null)
@@ -179,8 +180,8 @@ export function useLauncherInterfaceSummary(navOpen: boolean): LauncherInterface
     if (!navOpen) {
       return
     }
-    void query.refetch()
-  }, [navOpen, query.refetch])
+    void refetchLauncherInterfaces()
+  }, [navOpen, refetchLauncherInterfaces])
 
   useEffect(() => {
     return () => {

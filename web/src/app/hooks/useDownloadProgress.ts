@@ -2,35 +2,7 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { irLibraryApi } from '../../map2/api'
 import type { DownloadRequest, FileDownloadTask } from '../types/library'
-
-// WebSocket subscription helper
-let wsSubscribed = false
-let unsubscribe: (() => void) | null = null
-
-function subscribeToDownloadProgress(onUpdate: (data: any) => void) {
-  // Only subscribe once
-  if (wsSubscribed) return
-
-  try {
-    // Try to use WebSocket store if available
-    const { subscribeToTopic } = require('../stores/webSocketStore') || {}
-    if (subscribeToTopic) {
-      unsubscribe = subscribeToTopic('download:progress', onUpdate)
-      wsSubscribed = true
-    }
-  } catch (e) {
-    // WebSocket store not available, rely on polling
-    console.debug('WebSocket not available, using polling fallback')
-  }
-}
-
-function unsubscribeFromDownloadProgress() {
-  if (unsubscribe) {
-    unsubscribe()
-    unsubscribe = null
-    wsSubscribed = false
-  }
-}
+import { subscribeToDownloadProgressTopic } from './downloadProgressSocket'
 
 export function useDownloadProgress() {
   const queryClient = useQueryClient()
@@ -82,7 +54,6 @@ export function useDownloadProgress() {
   const cancelMutation = useMutation({
     mutationFn: irLibraryApi.cancelDownload,
     onSuccess: () => {
-      unsubscribeFromDownloadProgress()
       queryClient.invalidateQueries({ queryKey: ['ir', 'download'] })
       // Refresh IR list after cancel
       queryClient.invalidateQueries({ queryKey: ['ir', 'list'] })
@@ -108,24 +79,15 @@ export function useDownloadProgress() {
   // WebSocket subscription effect
   useEffect(() => {
     if (!statusQuery.data?.is_downloading) {
-      unsubscribeFromDownloadProgress()
       return
     }
 
-    // Subscribe to WebSocket updates
-    subscribeToDownloadProgress((message: any) => {
-      // Update query cache with WebSocket data
-      if (message.event === 'download:progress' || !message.event) {
-        queryClient.setQueryData(['ir', 'download', 'status'], message)
-      }
+    return subscribeToDownloadProgressTopic('download:progress', (message) => {
+      const nextStatus = typeof message.data === 'object' && message.data !== null
+        ? message.data
+        : message
+      queryClient.setQueryData(['ir', 'download', 'status'], nextStatus)
     })
-
-    return () => {
-      // Unsubscribe on unmount only if not downloading
-      if (!statusQuery.data?.is_downloading) {
-        unsubscribeFromDownloadProgress()
-      }
-    }
   }, [statusQuery.data?.is_downloading, queryClient])
 
   return {

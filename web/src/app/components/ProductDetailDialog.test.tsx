@@ -69,6 +69,7 @@ describe('ProductDetailDialog', () => {
     expect(screen.getByText('Linux compatibility')).toBeInTheDocument()
     expect(screen.getAllByText('4.2 ms').length).toBeGreaterThan(0)
     expect(screen.getByText('Typical used market price')).toBeInTheDocument()
+    expect(screen.getByText('Reference image unavailable')).toBeInTheDocument()
   })
 
   it('switches to specification tab content', () => {

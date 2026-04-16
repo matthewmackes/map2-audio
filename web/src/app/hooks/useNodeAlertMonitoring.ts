@@ -7,7 +7,7 @@ import { normalizeAlertTopologyNodes, syncNodeAlerts } from '../utils/nodeAlertS
 
 /**
  * Side-effect-only hook that monitors node topology and feeds the nodeAlertStore.
- * Extracted from the deprecated NodeAlertMonitor component.
+ * Sync node topology changes into the alert store and toast queue.
  * Must be called from a component that stays mounted (NodeNavBar).
  */
 export function useNodeAlertMonitoring(): void {
