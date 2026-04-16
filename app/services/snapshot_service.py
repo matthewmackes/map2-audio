@@ -3036,7 +3036,6 @@ class SnapshotService:
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
                 detail["channel_state_apply"] = await self._sync_snapshot_channel_state_to_runtime(detail)
-                await self._publish_snapshot_desired_state(detail)
         except Exception as exc:
             logger.debug("Snapshot channel live-state/authority sync skipped for %s: %s", snapshot_id, exc)
 
@@ -3339,7 +3338,6 @@ class SnapshotService:
                 detail["routing_mode_changed_live"] = requested_mode != previous_mode
                 detail["routing_apply"] = await snapshot_runtime_service.apply_snapshot_routing_to_engine(detail)
                 detail["morph_apply"] = await snapshot_runtime_service.apply_snapshot_morph_to_engine(detail)
-                await self._publish_snapshot_desired_state(detail)
         except Exception as exc:
             logger.debug("Snapshot routing live-state/authority sync skipped for %s: %s", snapshot.id, exc)
 

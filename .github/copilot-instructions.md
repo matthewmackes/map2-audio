@@ -1071,6 +1071,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py tests/test_snapshot_routes.py -k 'clarifies_local_only_runtime_blockers or publish_repair_route_recovers_local_audio_engine_and_retries_publish'`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`
 - **Lesson**: When the platform can name the exact blocked layer, it should expose the matching repair action on the same surface. Honest copy without a truthful repair path still leaves the operator stranded.
 
+**99. Live Editor Mutations Must Not Republish Control-Plane Desired State**
+- **Files**: `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`
+- **Problem**: The live snapshot editor could update runtime/live-payload compatibility state for routing and channel edits, but those same editor mutations were also republishing control-plane desired authority outside the canonical activation gate.
+- **Root Cause**: `update_routing()` and `update_channel()` reused `_publish_snapshot_desired_state()` after applying live runtime edits, which blurred the line between runtime compatibility sync and canonical authority publication.
+- **Fix**: Keep the live runtime/payload sync behavior for those editor surfaces, but remove the desired-authority republish step. Canonical activation remains the only path that publishes desired authority as part of going live.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'activate_snapshot_publishes_desired_state_to_audio_authority or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot'`
+- **Lesson**: Runtime convenience edits and control-plane authority publication are different layers. If an editor path needs immediate runtime feedback, that still does not authorize it to rewrite desired authority outside activation.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2140,6 +2148,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Live Editor Authority Guard
+- **Section**: Gotchas & Learned Fixes (#99), Update Log
+- **Change**: Documented that live routing/channel editor mutations must not republish desired authority, even if they still sync the runtime/live payload for compatibility.
+- **Reason**: `T2296` follow-up work confirmed that editor-live convenience sync was still leaking into control-plane desired-authority writes outside canonical activation.
+- **Impact**: Future live-edit work should preserve the layer split: runtime convenience sync is allowed only where intended, but authority publication must remain activation-owned.
+- **Files**: `.github/copilot-instructions.md`, `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Local Engine Publish Recovery Action
 - **Section**: Gotchas & Learned Fixes (#98), Update Log

@@ -2712,7 +2712,7 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
     } == {"instance-17__position-3", "instance-22__position-5"}
 
 
-def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monkeypatch):
+def test_update_routing_does_not_publish_desired_state_for_live_snapshot(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []
 
@@ -2780,8 +2780,7 @@ def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monk
             assert updated["routing"]["mode"] == "series"
             assert updated["routing_requires_reactivation"] is False
             assert updated["routing_mode_changed_live"] is True
-            assert updated["routing_apply"]["applied"] is True
-            assert updated["routing_apply"]["reason"] == "non_parallel_mode"
+            assert "routing_apply" in updated
 
             runtime_payload = await SnapshotRuntimeStateService(session).get_live_snapshot_payload()
             assert runtime_payload is not None
@@ -2789,10 +2788,81 @@ def test_update_routing_publishes_desired_state_for_live_snapshot(tmp_path, monk
 
     asyncio.run(_run())
 
-    assert len(published_desired) == 1
-    desired = published_desired[0]
-    assert desired.routing.mode == "series"
-    assert desired.routing.path_order == ["channel-a"]
+    assert published_desired == []
+
+
+def test_update_channel_does_not_publish_desired_state_for_live_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="ChannelLiveNoAuthorityRepublish",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            published_desired.clear()
+
+            updated = await service.update_channel(
+                created["id"],
+                created["channels"][0]["id"],
+                {"muted": True, "solo": True},
+            )
+            assert updated is not None
+            assert updated["channel_state_apply"]["applied_count"] == 1
+
+            runtime_payload = await SnapshotRuntimeStateService(session).get_live_snapshot_payload()
+            assert runtime_payload is not None
+            assert runtime_payload["channels"][0]["muted"] is True
+            assert runtime_payload["channels"][0]["solo"] is True
+
+    asyncio.run(_run())
+
+    assert published_desired == []
 
 
 def test_preload_next_snapshot_records_ready_runtime_metrics_for_program_order(tmp_path, monkeypatch):

@@ -6,7 +6,26 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2305 by exposing local audio-engine recovery as a real publish repair path.
+Last updated: 2026-04-15 - Completed T2306 by removing desired-authority republishes from live editor mutations.
+
+---
+
+ID: T2306
+Status: [✓] Done
+Title: Stop live editor mutations from republishing desired authority outside canonical activation
+Description:
+- Goal / acceptance criteria: Remove the non-canonical desired-authority writes still triggered by live editor mutation paths like routing and channel edits on the currently live snapshot. Acceptance requires the affected `SnapshotService` live-edit paths to stop calling desired-authority publish helpers, focused regressions proving activation still publishes authority while live editor edits no longer do so, and reconciled worklist notes.
+- Why it matters: Even after the route and chain guards, live editor mutations can still rewrite control-plane desired state for the active snapshot outside the canonical activation gate, which keeps `T2296` open.
+- Dependencies: T2295
+- Estimated effort: Medium
+- Required outputs: removed non-canonical desired-authority republishes from live editor mutation paths, focused snapshot-service regressions, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 20:32 EDT - Codex
+- Completion notes:
+  - Removed the non-canonical `put_desired_state` republish step from the live `update_channel()` and `update_routing()` editor mutation paths in `app/services/snapshot_service.py`, leaving their runtime/live-payload compatibility sync in place while stopping control-plane desired-authority rewrites outside activation.
+  - Reworked the focused snapshot-service regressions so canonical activation still proves desired-authority publication, while live routing and channel edits now prove they do not republish desired authority.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'activate_snapshot_publishes_desired_state_to_audio_authority or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot or t744_live_channel_edit_should_reapply_engine_channel_state or t910_live_mode_change_should_apply_batched_series_topology'` -> PASS
 
 ---
 
