@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (restart-boundary activation retry qualification documented)
+> **Last Updated**: April 16, 2026 (reconciliation overwrite qualification documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1175,6 +1175,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
 - **Lesson**: Restart-safety claims need a real boundary. If the invariant is “recovery survives process loss,” the qualification has to reopen the durable store with fresh service objects instead of reusing in-memory state.
 
+**112. Later Reconciliation Must Use The Current Committed Snapshot, Not An Older Activation**
+- **Files**: `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: `T2298` still needed proof that a later reconciliation attempt cannot silently roll authority back to an older snapshot after a newer activation has already succeeded.
+- **Root Cause**: The canonical activation flow reconciles authority after observation publication, but qualification had not yet exercised the case where older observations still exist and a later reconciliation runs after a newer committed snapshot replaces the earlier one.
+- **Fix**: Add version-aware qualification that activates two snapshots in sequence, retains both generations of observations, then triggers a later reconciliation attempt and asserts it reconciles the newer committed snapshot again instead of reverting to the older one.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
+- **Lesson**: Reconciliation is safe only if it is anchored to the current committed authority contract. Qualification should keep older observations around and prove they cannot drag the control plane backward once a newer snapshot is live.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2244,6 +2252,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Reconciliation Overwrite Qualification
+- **Section**: Gotchas & Learned Fixes (#112), Update Log
+- **Change**: Documented the version-aware reconciliation qualification and added coverage proving a later reconciliation attempt cannot overwrite a newer committed snapshot with older activation history.
+- **Reason**: `T2298` still had one remaining automated gap around reconciliation overwrite attempts after newer snapshots go live.
+- **Impact**: Future reconciliation changes should preserve current-committed anchoring and keep qualification evidence that older observations cannot roll authority backward.
+- **Files**: `.github/copilot-instructions.md`, `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Restart-Boundary Activation Retry Qualification
 - **Section**: Gotchas & Learned Fixes (#111), Update Log

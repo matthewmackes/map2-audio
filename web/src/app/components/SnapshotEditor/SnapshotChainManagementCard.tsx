@@ -3,7 +3,6 @@ import { Button, Layer, Tag } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
-import { MapAudioGridIcon } from '../icons/map'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 
 interface FlowSlotRef {
@@ -233,22 +232,6 @@ export function SnapshotChainManagementCard({
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
       <div className="juce-grid-page__snapshot-status-layout">
         <div className="juce-grid-page__snapshot-status-hero">
-          <div className="juce-grid-page__snapshot-status-top-row">
-            <div className="juce-grid-page__snapshot-status-brand">
-              <div className="juce-grid-page__snapshot-status-brand-row">
-                <div className="juce-grid-page__workspace-header-icon juce-grid-page__snapshot-status-brand-icon" aria-hidden="true">
-                  <MapAudioGridIcon size={32} />
-                </div>
-                <div className="juce-grid-page__snapshot-status-brand-copy">
-                  <h1 className="juce-grid-page__workspace-header-title">Audio Grid</h1>
-                  <p className="juce-grid-page__workspace-header-subtitle">
-                    Build signal flow, configure routing, and manage the live snapshot workspace.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="juce-grid-page__snapshot-status-content-row">
             <div className="juce-grid-page__snapshot-status-live-block">
               <div className="juce-grid-page__snapshot-status-state-row">

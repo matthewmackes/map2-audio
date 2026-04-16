@@ -381,6 +381,27 @@ Last updated: 2026-04-16 07:00 EDT - Codex
 
 ---
 
+ID: T2319
+Status: [✓] Done
+Title: Qualify reconciliation attempts against newer committed snapshot authority
+Description:
+- Goal / acceptance criteria: Extend `T2298` with executable coverage proving that a later reconciliation attempt cannot silently overwrite a newer committed snapshot after another activation succeeds. Acceptance requires version-aware qualification that keeps older observations present, any required persistence/reconciliation fix, and reconciled qualification/worklist notes.
+- Why it matters: `T2298` explicitly called out reconciliation overwrite attempts. The platform needs proof that older activation history cannot drag committed authority backward once a newer snapshot is live.
+- Dependencies: T2318
+- Estimated effort: Medium
+- Required outputs: reconciliation-overwrite qualification test, any required fix, and updated qualification/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 07:09 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_activation_qualification.py` with a version-aware authority capture and a qualification case that activates two snapshots in sequence, then triggers a later reconciliation attempt and proves it reconciles the newer committed snapshot again instead of reverting to the older one.
+  - Updated `docs/qualification/snapshot-activation-qualification.md` so reconciliation overwrite attempts are now tracked as automated evidence instead of an open gap.
+  - Reconciled repo memory in `.github/copilot-instructions.md` with the current-committed anchoring rule for later reconciliation attempts.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+
+---
+
 ID: T2297
 Status: [✓] Done
 Title: Enforce strict runtime-authority lock-step and explicit degraded signaling for snapshot activation

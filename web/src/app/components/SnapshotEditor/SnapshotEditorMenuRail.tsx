@@ -1,4 +1,4 @@
-import { List } from '@carbon/icons-react'
+import { Camera, List } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -7,6 +7,9 @@ const MENU_PINNED_STORAGE_KEY = 'map2_snapshot_menu_pinned'
 
 interface SnapshotEditorMenuRailProps {
   prefersReducedMotion: boolean
+  onCreateSnapshot: () => void
+  createSnapshotDisabled: boolean
+  createSnapshotPending: boolean
   onOpenControlCenter: () => void
   controlCenterDisabled: boolean
   onAddFlow: () => void
@@ -45,6 +48,9 @@ interface MenuItemConfig {
 
 export function SnapshotEditorMenuRail({
   prefersReducedMotion,
+  onCreateSnapshot,
+  createSnapshotDisabled,
+  createSnapshotPending,
   onOpenControlCenter,
   controlCenterDisabled,
   onAddFlow,
@@ -254,6 +260,7 @@ export function SnapshotEditorMenuRail({
         damping: 28,
         mass: 0.9,
       }
+  const primaryActionCount = primaryItems.length + 1
 
   return (
     <div
@@ -279,7 +286,7 @@ export function SnapshotEditorMenuRail({
               <div className="snapshot-menu-rail__header">
                 <div className="snapshot-menu-rail__header-copy">
                   <p className="snapshot-menu-rail__eyebrow">Snapshot Editor</p>
-                  <h2 className="snapshot-menu-rail__title">5 quick actions</h2>
+                  <h2 className="snapshot-menu-rail__title">{primaryActionCount} quick actions</h2>
                   <p className="snapshot-menu-rail__summary">
                     Carbon-aligned actions for the current snapshot workflow.
                   </p>
@@ -316,6 +323,19 @@ export function SnapshotEditorMenuRail({
 
               <div className="snapshot-menu-rail__section">
                 <p className="snapshot-menu-rail__section-label">Actions</p>
+                <Button
+                  size="sm"
+                  kind="primary"
+                  renderIcon={Camera}
+                  className="snapshot-menu-rail__create snapshot-menu-rail__create-button"
+                  role="menuitem"
+                  aria-label="Create Snapshot"
+                  title="Create Snapshot"
+                  onClick={() => runAction(onCreateSnapshot)}
+                  disabled={createSnapshotDisabled}
+                >
+                  {createSnapshotPending ? 'Creating…' : 'Create'}
+                </Button>
                 <div className="snapshot-menu-rail__list">
                   {primaryItems.map((item) => (
                     <Button

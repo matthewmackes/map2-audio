@@ -6207,6 +6207,9 @@ export function SnapshotEditorPage() {
   const renderEditorMenuRail = () => (
     <SnapshotEditorMenuRail
       prefersReducedMotion={prefersReducedMotion}
+      onCreateSnapshot={() => createCapturedSnapshot()}
+      createSnapshotDisabled={createSnapshotFromEditorMutation.isPending}
+      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
       onPrevious={goToPreviousSnapshot}
       previousDisabled={snapshotNavigationPending || !previousEditorSnapshot}
       previousTitle={previousSnapshotDisabledReason}

@@ -168,6 +168,66 @@ class _ObservationFailureRetryAuthorityCapture(_AlwaysHealthyAuthorityCapture):
         return SimpleNamespace(value=observation)
 
 
+class _VersionedReconcileAuthorityCapture(_AlwaysHealthyAuthorityCapture):
+    def __init__(self) -> None:
+        super().__init__()
+        self.current_committed = None
+        self.observations_by_state_version: dict[int, list[object]] = {}
+        self.reconciled_snapshot_ids: list[int] = []
+        self._merge_service = audio_state_authority_module.AudioStateAuthorityService(
+            audio_state_authority_module.AudioStateEtcdConfig(
+                endpoints=("http://127.0.0.1:2379",),
+                namespace="/map2/audio-state/v1",
+                connect_timeout_s=1.0,
+                request_timeout_s=1.0,
+                verify_tls=True,
+                observation_ttl_s=15,
+            )
+        )
+
+    async def get_committed_state(self):
+        if self.current_committed is None:
+            raise audio_state_authority_module.AudioStateAuthorityError(
+                "No committed authoritative audio state exists in etcd"
+            )
+        return SimpleNamespace(value=self.current_committed)
+
+    async def put_committed_state(self, state):
+        self.current_committed = state
+        self.committed_writes.append(state)
+        return SimpleNamespace(value=state)
+
+    async def put_observation(self, observation):
+        self.observations.append(observation)
+        state_version = int(observation.observed_state_version)
+        self.observations_by_state_version.setdefault(state_version, []).append(observation)
+        return SimpleNamespace(value=observation)
+
+    async def reconcile_committed_state(self):
+        self.reconciliations += 1
+        if self.current_committed is None:
+            raise audio_state_authority_module.AudioStateAuthorityError(
+                "No committed authoritative audio state exists in etcd"
+            )
+        state_version = int(self.current_committed.state_version)
+        envelopes = [
+            audio_state_authority_module.AudioStateObservationEnvelope(
+                namespace="/map2/audio-state/v1",
+                key=f"/map2/audio-state/v1/observed/{observation.node_id}",
+                revision=state_version,
+                ttl_seconds=15,
+                value=observation,
+            )
+            for observation in self.observations_by_state_version.get(state_version, [])
+        ]
+        self.current_committed = self._merge_service._merge_observations_into_committed_state(
+            self.current_committed,
+            envelopes,
+        )
+        self.reconciled_snapshot_ids.append(int(self.current_committed.source_snapshot.snapshot_id))
+        return SimpleNamespace(value=self.current_committed)
+
+
 def test_activation_qualification_retry_recovers_after_degraded_authority_confirmation(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
     authority_capture = _RetryAuthorityCapture()
@@ -467,3 +527,42 @@ def test_activation_qualification_restart_retry_recovers_after_runtime_live_degr
     assert len(second_authority_capture.committed_writes) == 1
     assert len(second_authority_capture.observations) == 1
     assert sorted(event["outcome"] for event in second_events) == ["degraded", "success"]
+
+
+def test_activation_qualification_late_reconciliation_does_not_overwrite_newer_snapshot(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    authority_capture = _VersionedReconcileAuthorityCapture()
+    _patch_activation_environment(monkeypatch, authority_capture)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            first_snapshot = await service.create_snapshot(
+                name="ReconcileOlder",
+                detail_payload=_detail_payload("ReconcileOlder"),
+                apply_default_system_blocks=False,
+            )
+            second_snapshot = await service.create_snapshot(
+                name="ReconcileNewer",
+                detail_payload=_detail_payload("ReconcileNewer"),
+                apply_default_system_blocks=False,
+            )
+            first = await service.activate_snapshot(first_snapshot["id"])
+            second = await service.activate_snapshot(second_snapshot["id"])
+            late_reconcile = await authority_capture.reconcile_committed_state()
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            live_state = await runtime_state_service.get_live_state()
+            events = await runtime_state_service.list_activation_events(limit=2)
+            return first_snapshot["id"], second_snapshot["id"], first, second, late_reconcile, live_state, events
+
+    first_snapshot_id, second_snapshot_id, first, second, late_reconcile, live_state, events = asyncio.run(_run())
+
+    assert first["status"] == "success"
+    assert second["status"] == "success"
+    assert live_state["snapshot_id"] == second_snapshot_id
+    assert late_reconcile.value.source_snapshot.snapshot_id == second_snapshot_id
+    assert authority_capture.current_committed.source_snapshot.snapshot_id == second_snapshot_id
+    assert authority_capture.reconciled_snapshot_ids == [first_snapshot_id, second_snapshot_id, second_snapshot_id]
+    assert len(authority_capture.observations_by_state_version) == 2
+    assert sorted(event["snapshot_id"] for event in events) == [first_snapshot_id, second_snapshot_id]
+    assert [event["outcome"] for event in events] == ["success", "success"]
