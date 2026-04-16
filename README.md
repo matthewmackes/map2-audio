@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1114** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2251** total commits | **3** stars | **0** forks | **0** open issues
+**1114** Python | **1199** TypeScript | **136** C++/H | **145** Docs | **2254** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`11943cff`](https://github.com/matthewmackes/map2-audio/commit/11943cffa6b3194320b7f66ec3cb63917be82afd) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
+| [`a804935b`](https://github.com/matthewmackes/map2-audio/commit/a804935bcd99839057597d962545faef52fc73d1) | Serialize overlapping snapshot activation | Map2 Audio | 2026-04-15 |
+| [`dd50f721`](https://github.com/matthewmackes/map2-audio/commit/dd50f7216eb90b290429d00e2a42d8c53c47bd1d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-16 |
 | [`ab4a4201`](https://github.com/matthewmackes/map2-audio/commit/ab4a420177ccfcf9291b97406c1c0e3717f89f34) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
 | [`bc4c04e1`](https://github.com/matthewmackes/map2-audio/commit/bc4c04e1c8324620bd0eaafaffa0365c1ba6cccd) | Qualify activation retry behavior | Map2 Audio | 2026-04-15 |
 | [`3d498f06`](https://github.com/matthewmackes/map2-audio/commit/3d498f06ca54fe408e275ca2b30852d942f34d1d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-16 |
 | [`cf526896`](https://github.com/matthewmackes/map2-audio/commit/cf5268963ebd5c5e13dae80184b812658b64b471) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
 | [`3cf44227`](https://github.com/matthewmackes/map2-audio/commit/3cf442273e994758b2c13b84ea8452626fe19641) | Close T2297 lock-step activation work | Map2 Audio | 2026-04-15 |
-| [`50819d44`](https://github.com/matthewmackes/map2-audio/commit/50819d444716fdfc7468c0179a93e1c967a09a44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-16 |
-| [`dc23cd36`](https://github.com/matthewmackes/map2-audio/commit/dc23cd36baf3ca2fd1d568711b9d868060664d79) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-15 |
-| [`733edcfc`](https://github.com/matthewmackes/map2-audio/commit/733edcfc465a4afb9c511fcbce29148a1887d8ea) | Track authority publication step timeline | Map2 Audio | 2026-04-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
