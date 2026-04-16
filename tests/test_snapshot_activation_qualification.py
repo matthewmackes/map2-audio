@@ -285,3 +285,66 @@ def test_activation_qualification_overlapping_same_snapshot_attempts_keep_histor
     assert len(authority_capture.observations) == 2
     assert len({event["request_id"] for event in events}) == 2
     assert [event["outcome"] for event in events] == ["success", "success"]
+
+
+def test_activation_qualification_overlapping_different_snapshots_leave_latest_snapshot_live(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    authority_capture = _ConcurrentSameSnapshotAuthorityCapture()
+    _patch_activation_environment(monkeypatch, authority_capture)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            first_snapshot = await service.create_snapshot(
+                name="ConcurrentFirst",
+                detail_payload=_detail_payload("ConcurrentFirst"),
+                apply_default_system_blocks=False,
+            )
+            second_snapshot = await service.create_snapshot(
+                name="ConcurrentSecond",
+                detail_payload=_detail_payload("ConcurrentSecond"),
+                apply_default_system_blocks=False,
+            )
+            session.add(
+                database_module.SnapshotNodeLiveState(
+                    node_id="LOCAL-NODE",
+                    state="stopped",
+                    seq=0,
+                    live_snapshot_payload={},
+                    runtime_metrics={},
+                )
+            )
+            await session.flush()
+
+        async def _activate(snapshot_id: int, triggered_by: str):
+            async with database_module.get_session() as session:
+                return await SnapshotService(session).activate_snapshot(snapshot_id, triggered_by=triggered_by)
+
+        first_task = asyncio.create_task(_activate(first_snapshot["id"], "ui"))
+        await authority_capture.first_commit_started.wait()
+        second_task = asyncio.create_task(_activate(second_snapshot["id"], "publish_retry"))
+        await asyncio.sleep(0.05)
+        assert second_task.done() is False
+        authority_capture.allow_first_commit.set()
+
+        first, second = await asyncio.gather(first_task, second_task)
+
+        async with database_module.get_session() as session:
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            live_state = await runtime_state_service.get_live_state()
+            events = await runtime_state_service.list_activation_events(limit=2)
+        return first_snapshot["id"], second_snapshot["id"], first, second, live_state, events
+
+    first_snapshot_id, second_snapshot_id, first, second, live_state, events = asyncio.run(_run())
+
+    assert first["status"] == "success"
+    assert second["status"] == "success"
+    assert first["snapshot_id"] == first_snapshot_id
+    assert second["snapshot_id"] == second_snapshot_id
+    assert live_state["snapshot_id"] == second_snapshot_id
+    assert live_state["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert len(authority_capture.desired_writes) == 2
+    assert len(authority_capture.committed_writes) == 2
+    assert len(authority_capture.observations) == 2
+    assert {event["snapshot_id"] for event in events} == {first_snapshot_id, second_snapshot_id}
+    assert [event["outcome"] for event in events] == ["success", "success"]

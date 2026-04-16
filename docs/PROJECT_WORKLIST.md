@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2314 by qualifying overlapping same-snapshot activation attempts and serializing canonical local activation per node.
+Last updated: 2026-04-16 - Completed T2315 by qualifying overlapping different-snapshot activation attempts and scoping local activation locks per event loop.
 
 ---
 
@@ -288,6 +288,28 @@ Last updated: 2026-04-16 02:27 EDT - Codex
   - Extended `tests/test_snapshot_activation_qualification.py` with a deterministic overlapping same-snapshot activation case and updated the qualification ledger in `docs/qualification/snapshot-activation-qualification.md`.
   - Fixed a real same-node concurrency gap uncovered by the new test by serializing canonical local activation requests per node inside `StateAuthorityActivationService`, preventing overlapping requests from racing each other into SQLite writer contention during activation-intent/runtime-state persistence.
   - Confirmed the serialized overlap path still preserves coherent live-state and activation-event history for both activation attempts.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+
+---
+
+ID: T2315
+Status: [✓] Done
+Title: Qualify overlapping activation attempts for different snapshots on the same node
+Description:
+- Goal / acceptance criteria: Extend the `T2298` qualification suite with a deterministic overlapping-activation case where two different snapshots target the same node, proving the canonical activation lock keeps event history coherent and leaves the final live-state on the later requested snapshot. Acceptance requires executable coverage, any required fixes, and updated qualification/worklist notes.
+- Why it matters: Same-snapshot overlap is covered, but same-node contention also has to stay correct when the later request targets a different snapshot and should become the final live state.
+- Dependencies: T2314
+- Estimated effort: Medium
+- Required outputs: different-snapshot overlap qualification test, any required runtime-state fixes, and reconciled qualification notes.
+Assigned to: Codex
+Last updated: 2026-04-16 06:13 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_activation_qualification.py` and `docs/qualification/snapshot-activation-qualification.md` with a deterministic overlapping different-snapshot activation case proving the later snapshot becomes the final live state after same-node contention.
+  - Fixed a real serialization-layer bug uncovered by that qualification: local activation locks are now scoped per event loop as well as per node, preventing cross-loop `asyncio.Lock` reuse failures.
+  - Confirmed the serialized different-snapshot overlap path preserves coherent event history and a confirmed final live-state on the later requested snapshot.
 - Validation:
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS

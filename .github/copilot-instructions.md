@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (same-snapshot activation serialization documented)
+> **Last Updated**: April 16, 2026 (cross-snapshot activation serialization documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1142,6 +1142,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Add a per-node async activation lock in `StateAuthorityActivationService` and qualify the behavior with an overlapping same-snapshot activation test that proves the second request waits, then completes successfully with coherent event history.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
 - **Lesson**: Qualification should test real overlap, not just repeated calls. If the platform claims one canonical activation path per node, the code should enforce that serialization explicitly.
+
+**108. Same-Node Activation Locks Must Be Scoped Per Event Loop**
+- **Files**: `app/services/state_authority_activation_service.py`, `tests/test_snapshot_activation_qualification.py`
+- **Problem**: After adding same-node activation serialization, a later overlap qualification using a fresh event loop failed with `Lock ... is bound to a different event loop`.
+- **Root Cause**: The activation lock cache was class-global by node id only, so the same `asyncio.Lock` instance could be reused across distinct event loops in the same process.
+- **Fix**: Store activation locks per running event loop and per node, then extend qualification coverage to overlapping different-snapshot activations on the same node.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
+- **Lesson**: Async coordination primitives are loop-local resources. Any process-wide cache of `asyncio.Lock` objects must be loop-aware or tests and long-lived workers will eventually trip cross-loop failures.
 
 ### Server Management Gotchas
 

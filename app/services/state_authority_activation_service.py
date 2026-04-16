@@ -12,6 +12,7 @@ import asyncio
 import copy
 import json
 import logging
+import weakref
 from typing import Any, Callable, Optional
 from uuid import uuid4
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class StateAuthorityActivationService:
     """Owns snapshot activation orchestration for the State Authority cutover."""
 
-    _activation_locks: dict[str, asyncio.Lock] = {}
+    _activation_locks_by_loop: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
     def __init__(
         self,
@@ -86,11 +87,16 @@ class StateAuthorityActivationService:
 
     @classmethod
     def _activation_lock_for_node(cls, node_id: str) -> asyncio.Lock:
+        loop = asyncio.get_running_loop()
+        loop_locks = cls._activation_locks_by_loop.get(loop)
+        if loop_locks is None:
+            loop_locks = {}
+            cls._activation_locks_by_loop[loop] = loop_locks
         normalized = str(node_id or "").strip() or "LOCAL-NODE"
-        lock = cls._activation_locks.get(normalized)
+        lock = loop_locks.get(normalized)
         if lock is None:
             lock = asyncio.Lock()
-            cls._activation_locks[normalized] = lock
+            loop_locks[normalized] = lock
         return lock
 
     @staticmethod
