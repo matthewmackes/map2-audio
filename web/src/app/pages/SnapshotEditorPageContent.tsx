@@ -45,7 +45,6 @@ import {
   Close,
   Edit,
   Information,
-  Network_3,
 } from '@carbon/icons-react'
 import {
   Accordion,
@@ -235,11 +234,8 @@ import {
   FLOW_CARD_LED_COLOR,
   FLOW_CARD_SLOT_COLORS,
   getFlowCardPaletteEntry,
-  buildFlowCardMetadataLines,
-  normalizeFlowCardLabel,
   resolveFlowEdgeClipTimestamp,
   resolveFlowClipTimestamp,
-  validateFlowCardLabel,
 } from '../components/SnapshotEditor/snapshotEditorFlowCard'
 import { buildJuceGridLivePath } from '../components/SnapshotEditor/snapshotEditorLivePath'
 import {
@@ -742,14 +738,6 @@ function buildTraceableChannelChainName(snapshotName: string | null, channelLabe
   return `${baseName} - ${formatCompactTimestamp()} - Channel ${normalizedChannelLabel}`
 }
 
-const FLOW_CARD_ROUTING_MODE_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
-  parallel_blend: 'MIX',
-  ab_switch: 'A/B',
-  series: 'SER',
-  parameter_morph: 'MOR',
-  sidechain: 'S/C',
-}
-
 function getRoutingFocusFlowSummary(
   routingMode: JuceGridRoutingState['mode'],
   flowIndex: number,
@@ -1094,9 +1082,6 @@ export function SnapshotEditorPage() {
   const [renameSnapshotName, setRenameSnapshotName] = useState('')
   const [showRenameChainModal, setShowRenameChainModal] = useState(false)
   const [renameChainName, setRenameChainName] = useState('')
-  const [editingFlowId, setEditingFlowId] = useState<string | null>(null)
-  const [editingFlowLabel, setEditingFlowLabel] = useState('')
-  const [editingFlowError, setEditingFlowError] = useState<string | null>(null)
   const [presetPendingDelete, setPresetPendingDelete] = useState<Snapshot | null>(null)
   const [showClearFlowsModal, setShowClearFlowsModal] = useState(false)
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false)
@@ -1600,6 +1585,13 @@ export function SnapshotEditorPage() {
     queryKey: ['audio', 'routing'],
     queryFn: audioApi.getRouting,
     refetchInterval: snapshotStandardCadence,
+  })
+
+  const activeFlowChainRoutingQuery = useQuery({
+    queryKey: ['audio', 'routing', 'chain', activeFlowChainId],
+    queryFn: () => audioApi.getChainRouting(activeFlowChainId!),
+    refetchInterval: snapshotStandardCadence,
+    enabled: activeFlowChainId !== null,
   })
 
   const expressionEngineParametersQuery = useQuery({
@@ -3300,6 +3292,7 @@ export function SnapshotEditorPage() {
   )
 
   const activeFlowLabel = SLOT_COLORS[activeFlowIndex]?.label || activeFlow?.label || 'A'
+  const activeChainDisplayName = currentChain ? `Chain ${activeFlowLabel}` : 'No active chain'
   const tabletFocusedBranchId = focusedBranchId && flowIndexById.has(focusedBranchId)
     ? focusedBranchId
     : activeFlow?.id ?? flowSlots[0]?.id ?? null
@@ -3508,12 +3501,12 @@ export function SnapshotEditorPage() {
           ? `Selected block: ${getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}`
           : 'Selected block'
       case 'active-chain':
-        return currentChain ? `Active chain: ${currentChain.name}` : 'Active chain'
+        return currentChain ? `Active chain: ${activeChainDisplayName}` : 'Active chain'
       case 'all':
       default:
         return 'All mappings'
     }
-  }, [currentChain, midiScope, selectedPlugin])
+  }, [activeChainDisplayName, currentChain, midiScope, selectedPlugin])
 
   const midiPluginNameByUri = useMemo(() => {
     const names = new Map<string, string>()
@@ -3844,39 +3837,50 @@ export function SnapshotEditorPage() {
     meterLevels: [audioLevels?.output_left || 0, audioLevels?.output_right || 0],
   }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
-  const flowCardRoutingSummary = useMemo(() => {
-    const inputCount = audioInterfaceStatus.channels || 0
-    const outputCount = audioOutputStatus.channels || 0
-    const sampleRate = Math.round((audioInterfaceStatus.sampleRate || audioOutputStatus.sampleRate || 48000) / 1000)
-    const bufferSize = audioInterfaceStatus.bufferSize || audioOutputStatus.bufferSize || 256
-    const routingMode = audioInterfaceStatus.routingMode
-      ? FLOW_CARD_ROUTING_MODE_LABELS[audioInterfaceStatus.routingMode]
-      : 'n/a'
-    const allBindings = [...(audioInterfaceStatus.bindings || []), ...(audioOutputStatus.bindings || [])]
-    const hasAvbRoutes = allBindings.some((binding) => binding.selection_type === 'avb_endpoint')
-    const hasAvbWarning = allBindings.some(
-      (binding) => binding.selection_type === 'avb_endpoint' && (binding.missing || !binding.available),
-    ) || (hasAvbRoutes && !['operational', 'ready', 'locked'].includes(avbReadinessState.toLowerCase()))
-    const statusLabel = audioInterfaceStatus.isRunning && audioOutputStatus.isRunning ? 'Run' : 'Stop'
-    const avbLabel = hasAvbRoutes ? (hasAvbWarning ? 'AVB warning' : 'AVB routed') : 'Local only'
+  const activeChannelStatusRail = useMemo(() => {
+    if (!activeFlow) {
+      return null
+    }
+
+    const flowState = livePathLayout.flowStates[activeFlow.id]
+    const blockCount = currentChain?.plugins.length ?? 0
+    const blendPercent = Math.max(0, Math.min(100, Math.round(routing.blendPositions[activeFlow.id] ?? 100)))
+    const routingSourceLabel = activeFlowChainId === null
+      ? 'No chain routing'
+      : activeFlowChainRoutingQuery.isLoading
+        ? 'Routing status loading'
+        : activeFlowChainRoutingQuery.data?.is_override
+          ? 'Channel routing override'
+          : 'Shared routing map'
 
     return {
-      statusLabel,
-      ioLabel: `${inputCount} in / ${outputCount} out`,
-      clockLabel: `${sampleRate}K / ${bufferSize}`,
-      routingMode,
-      avbLabel,
-      title: [
-        `Input: ${audioInterfaceStatus.deviceName || 'Audio interface'}`,
-        `Output: ${audioOutputStatus.deviceName || 'Audio interface'}`,
-        `State: ${statusLabel}`,
-        `Channels: ${inputCount} in / ${outputCount} out`,
-        `Clock: ${audioInterfaceStatus.sampleRate || audioOutputStatus.sampleRate || 48000}Hz / ${bufferSize} smp`,
-        `Routing: ${routingMode}`,
-        `Transport: ${avbLabel}`,
-      ].join('\n'),
+      channelLabel: activeFlowLabel,
+      chainLabel: currentChain ? `Chain ${activeFlowLabel}` : 'No chain assigned',
+      blockSummary: currentChain
+        ? `${blockCount} loaded ${blockCount === 1 ? 'block' : 'blocks'}`
+        : 'No chain assigned',
+      blendLabel: `${blendPercent}% blend`,
+      routingSourceLabel,
+      stateLabel: flowState?.activeAudio ? 'Live' : 'Snapshot',
+      muted: activeFlow.muted,
+      solo: activeFlow.solo,
+      inputClipActive: typeof flowInputClipTimestamps[activeFlow.id] === 'number',
+      outputClipActive: typeof flowOutputClipTimestamps[activeFlow.id] === 'number',
+      clipActive: typeof flowClipTimestamps[activeFlow.id] === 'number',
     }
-  }, [audioInterfaceStatus, audioOutputStatus, avbReadinessState])
+  }, [
+    activeFlow,
+    activeFlowChainId,
+    activeFlowChainRoutingQuery.data?.is_override,
+    activeFlowChainRoutingQuery.isLoading,
+    activeFlowLabel,
+    currentChain,
+    flowClipTimestamps,
+    flowInputClipTimestamps,
+    flowOutputClipTimestamps,
+    livePathLayout.flowStates,
+    routing.blendPositions,
+  ])
 
   const compactRoutingInspectorItems = useMemo(
     () => getJuceGridRoutingInspectorItems(routing.mode, true),
@@ -4674,39 +4678,6 @@ export function SnapshotEditorPage() {
     recordSnapshotUndoRedoStep(nextDraft, describeFlowUpdate(updates))
   }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditorMutationDisabled])
 
-  const beginFlowRename = useCallback((flowId: string, currentLabel: string) => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    setEditingFlowId(flowId)
-    setEditingFlowLabel(currentLabel)
-    setEditingFlowError(null)
-  }, [snapshotEditorMutationDisabled])
-
-  const cancelFlowRename = useCallback(() => {
-    setEditingFlowId(null)
-    setEditingFlowLabel('')
-    setEditingFlowError(null)
-  }, [])
-
-  useEffect(() => {
-    if (snapshotEditorMutationDisabled) {
-      cancelFlowRename()
-    }
-  }, [cancelFlowRename, snapshotEditorMutationDisabled])
-
-  const commitFlowRename = useCallback((flowId: string) => {
-    const validationError = validateFlowCardLabel(editingFlowLabel, flowId, flowSlots)
-    if (validationError) {
-      setEditingFlowError(validationError)
-      return false
-    }
-
-    updateFlow(flowId, { label: normalizeFlowCardLabel(editingFlowLabel) })
-    cancelFlowRename()
-    return true
-  }, [cancelFlowRename, editingFlowLabel, flowSlots, updateFlow])
-
   const selectFlowIndex = useCallback((index: number) => {
     if (snapshotEntryRequired) {
       return
@@ -5245,7 +5216,7 @@ export function SnapshotEditorPage() {
         return
       }
 
-      const bootstrapChainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, activeFlow.label)
+      const bootstrapChainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, activeFlowLabel)
 
       try {
         const newChain = await chainsApi.create(bootstrapChainName)
@@ -5314,6 +5285,7 @@ export function SnapshotEditorPage() {
     })
   }, [
     activeFlow,
+    activeFlowLabel,
     activeSnapshot?.name,
     captureCurrentState,
     currentChain,
@@ -5780,7 +5752,7 @@ export function SnapshotEditorPage() {
   const handleDuplicateChain = useCallback(() => {
     if (snapshotEditorMutationDisabled) return
     if (!currentChain) return
-    const newName = `${currentChain.name} Copy`
+    const newName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, activeFlowLabel)
     chainsApi.create(newName)
       .then((newChain) => {
         queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
@@ -5798,7 +5770,7 @@ export function SnapshotEditorPage() {
         pushToast(`Chain "${newName}" created`, 'success')
       })
       .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
-  }, [currentChain, queryClient, pushToast, markSnapshotsDirty, snapshotEditorMutationDisabled])
+  }, [activeFlowLabel, activeSnapshot?.name, currentChain, queryClient, pushToast, markSnapshotsDirty, snapshotEditorMutationDisabled])
 
   const handleRenameChain = useCallback(() => {
     if (snapshotEditorMutationDisabled) return
@@ -6414,7 +6386,7 @@ export function SnapshotEditorPage() {
               {snapshotBlockFocusRange ? 'Configured' : 'Not configured'}
             </Tag>
             <Tag type="cool-gray">
-              {currentChain ? `${currentChain.name} - ${blockFocusPlugins.length} blocks` : 'No active chain'}
+              {currentChain ? `${activeChainDisplayName} - ${blockFocusPlugins.length} blocks` : 'No active chain'}
             </Tag>
           </div>
         </div>
@@ -7116,12 +7088,12 @@ export function SnapshotEditorPage() {
     const isActive = activeFlowIndex === index
     const flowState = livePathLayout.flowStates[flowId]
     const pluginCpuSum = flowChain?.plugins.reduce((sum, plugin) => sum + (getPluginCpu(plugin.uri) || 0), 0) || 0
-    const flowLabel = flow.label || SLOT_COLORS[index]?.label || String.fromCharCode(65 + index)
-    const flowTitle = flowChain?.name || `Flow ${flowLabel}`
-    const isEditingFlow = editingFlowId === flow.id
+    const flowLabel = SLOT_COLORS[index]?.label || flow.label || String.fromCharCode(65 + index)
+    const flowTitle = flowChain ? `Chain ${flowLabel}` : `Channel ${flowLabel}`
     const flowSummary = flowChain
       ? `${flowChain.plugins.length} loaded ${flowChain.plugins.length === 1 ? 'block' : 'blocks'}`
       : 'Assign a chain to start editing'
+    const flowCaption = flowChain ? `Chain ${flowLabel}` : flowSummary
     const arrowTone = getLivePathArrowTone(flowState)
     const arrowDashed = Boolean(flowState?.dimmed || flowState?.sidechainKey)
     const stateLabel = getLivePathStateLabel(flowState)
@@ -7141,17 +7113,6 @@ export function SnapshotEditorPage() {
       flowChain ? `${flowChain.plugins.length} blocks` : null,
       flowPageCount > 1 ? `Page ${Math.min(flowCurrentPage, flowPageCount - 1) + 1}/${flowPageCount}` : null,
     ].filter((label): label is string => Boolean(label))
-    const [desktopFlowMetaLinePrimary, desktopFlowMetaLineSecondary] = buildFlowCardMetadataLines({
-      flowSummary,
-      isActive,
-      activeAudio: Boolean(flowState?.activeAudio),
-      branchLabel,
-      secondaryAnnotation: flowState?.secondaryAnnotation ?? null,
-      ioLabel: flowCardRoutingSummary.ioLabel,
-      clockLabel: flowCardRoutingSummary.clockLabel,
-      routingMode: flowCardRoutingSummary.routingMode,
-      avbLabel: flowCardRoutingSummary.avbLabel,
-    })
     const signalCanvas = (
       <JuceGridSignalCanvas
         chain={flowChain || null}
@@ -7347,46 +7308,7 @@ export function SnapshotEditorPage() {
                 <div className="juce-grid-page__tablet-flow-summary-main">
                   <div className="juce-grid-page__tablet-flow-summary-copy">
                     <p className="juce-grid-page__dense-card-kicker">{flowLabel}</p>
-                    {isEditingFlow ? (
-                      <input
-                        className="juce-grid-page__flow-card-title-input"
-                        aria-label={`Rename flow ${flowLabel}`}
-                        value={editingFlowLabel}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={(event) => {
-                          setEditingFlowLabel(event.target.value)
-                          setEditingFlowError(null)
-                        }}
-                        onBlur={() => { void commitFlowRename(flow.id) }}
-                        onKeyDown={(event) => {
-                          event.stopPropagation()
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            void commitFlowRename(flow.id)
-                          }
-                          if (event.key === 'Escape') {
-                            event.preventDefault()
-                            cancelFlowRename()
-                          }
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        className="juce-grid-page__flow-card-title-button"
-                        disabled={snapshotEditorMutationDisabled}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          beginFlowRename(flow.id, flowLabel)
-                        }}
-                      >
-                        <h3 className="juce-grid-page__flow-card-title-heading">{flowLabel}</h3>
-                      </button>
-                    )}
-                    {isEditingFlow && editingFlowError ? (
-                      <p className="juce-grid-page__flow-card-error">{editingFlowError}</p>
-                    ) : null}
+                    <h3 className="juce-grid-page__flow-card-title-heading">{flowLabel}</h3>
                     <p>
                       <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
                     </p>
@@ -7410,38 +7332,25 @@ export function SnapshotEditorPage() {
                   className="juce-grid-page__tablet-flow-details"
                 >
                   <div className="juce-grid-page__tablet-flow-details-row juce-grid-page__tablet-flow-details-row--actions">
-                    <button
-                      type="button"
-                      className="juce-grid-page__flow-card-routing-summary"
-                      disabled={snapshotEditorMutationDisabled}
-                      onClick={() => {
-                        selectFlowIndex(index)
-                        setPortSelectorFlowIndex(index)
-                      }}
-                      title={flowCardRoutingSummary.title}
-                    >
-                      <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--identity">
-                        <span className="juce-grid-page__flow-card-routing-copy">
-                          <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
-                          <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
-                        </span>
-                      </span>
-                      <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
-                      <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--metrics">
-                        <span className="juce-grid-page__flow-card-routing-readout">
-                          <SegmentedLedText value={flowCardRoutingSummary.ioLabel} size="sm" color={FLOW_CARD_LED_COLOR} />
-                        </span>
-                        <span className="juce-grid-page__flow-card-routing-readout">
-                          <SegmentedLedText value={flowCardRoutingSummary.clockLabel} size="sm" color={FLOW_CARD_LED_COLOR} />
-                        </span>
-                      </span>
-                      <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
-                      <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--context">
-                        <span className="juce-grid-page__flow-card-routing-badge">{flowCardRoutingSummary.routingMode}</span>
-                        <span className="juce-grid-page__flow-card-routing-badge">{flowCardRoutingSummary.avbLabel}</span>
-                      </span>
-                    </button>
                     <div className="juce-grid-page__tablet-flow-detail-actions">
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        renderIcon={Flow}
+                        onClick={() => openSnapshotProgressModal('advanced', 'routing')}
+                        disabled={snapshotEntryRequired}
+                      >
+                        Routing
+                      </Button>
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        renderIcon={SettingsAdjust}
+                        onClick={openSnapshotIoWorkspace}
+                        disabled={snapshotEntryRequired}
+                      >
+                        Devices
+                      </Button>
                       <Button
                         size="sm"
                         kind={!flowChain ? 'primary' : 'ghost'}
@@ -7450,15 +7359,6 @@ export function SnapshotEditorPage() {
                         disabled={snapshotEntryRequired}
                       >
                         {flowChain ? 'Edit chain' : 'Assign chain'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        kind="ghost"
-                        renderIcon={Network_3}
-                        onClick={() => openAssignmentDialog(flow)}
-                        disabled={snapshotEditorMutationDisabled}
-                      >
-                        Audio nodes
                       </Button>
                       <Button
                         size="sm"
@@ -7531,57 +7431,22 @@ export function SnapshotEditorPage() {
           ) : (
             <>
               <div className="juce-grid-page__flow-card-body">
-                <div className="juce-grid-page__flow-card-header">
-                  <div className="juce-grid-page__flow-card-main">
-                    <div className="juce-grid-page__flow-card-primary" role="group" aria-label={`${flowLabel} primary controls`}>
+                <div className="juce-grid-page__flow-card-content juce-grid-page__flow-card-content--compact">
+                  <div className="juce-grid-page__flow-card-inline-shell">
+                    <div className="juce-grid-page__flow-card-inline-main" role="group" aria-label={`${flowLabel} primary controls`}>
                       <span className="juce-grid-page__flow-card-label" title={flowTitle}>
                         <span className="juce-grid-page__flow-card-label-text">{flowLabel}</span>
                       </span>
 
-                      <div className="juce-grid-page__flow-card-title-wrap">
-                        {isEditingFlow ? (
-                          <input
-                            className="juce-grid-page__flow-card-title-input"
-                            aria-label={`Rename flow ${flowLabel}`}
-                            value={editingFlowLabel}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) => {
-                              setEditingFlowLabel(event.target.value)
-                              setEditingFlowError(null)
-                            }}
-                            onBlur={() => { void commitFlowRename(flow.id) }}
-                            onKeyDown={(event) => {
-                              event.stopPropagation()
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                void commitFlowRename(flow.id)
-                              }
-                              if (event.key === 'Escape') {
-                                event.preventDefault()
-                                cancelFlowRename()
-                              }
-                            }}
-                            autoFocus
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            className="juce-grid-page__flow-card-title-button"
-                            disabled={snapshotEditorMutationDisabled}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              beginFlowRename(flow.id, flowLabel)
-                            }}
-                            title={`Rename ${flowLabel}`}
-                          >
-                            <span className="juce-grid-page__flow-card-title-heading">{flowLabel}</span>
-                          </button>
-                        )}
-                        {isEditingFlow && editingFlowError ? (
-                          <span className="juce-grid-page__flow-card-error">{editingFlowError}</span>
-                        ) : null}
+                      <div className="juce-grid-page__flow-card-inline-copy">
+                        <span className="juce-grid-page__flow-card-title-heading">{flowLabel}</span>
+                        <span className="juce-grid-page__flow-card-inline-caption" title={flowCaption}>
+                          {flowCaption}
+                        </span>
                       </div>
+                    </div>
 
+                    <div className="juce-grid-page__flow-card-inline-tools" role="toolbar" aria-label={`${flowLabel} flow actions`}>
                       <div
                         className="juce-grid-page__flow-card-level"
                         onClick={(event) => event.stopPropagation()}
@@ -7594,25 +7459,6 @@ export function SnapshotEditorPage() {
                           disabled={snapshotEditorMutationDisabled}
                         />
                       </div>
-
-                      <button
-                        type="button"
-                        className="juce-grid-page__flow-card-meta juce-grid-page__flow-card-meta--inline"
-                        disabled={snapshotEditorMutationDisabled}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          selectFlowIndex(index)
-                          setPortSelectorFlowIndex(index)
-                        }}
-                        title={`${flowTitle}\n${flowCardRoutingSummary.title}`}
-                      >
-                        <span className="juce-grid-page__flow-card-meta-line">
-                          {desktopFlowMetaLinePrimary}
-                        </span>
-                        <span className="juce-grid-page__flow-card-meta-line">
-                          {desktopFlowMetaLineSecondary}
-                        </span>
-                      </button>
 
                       <div className="juce-grid-page__flow-card-clip-bank" aria-label={`${flowLabel} clipping status`}>
                         <div
@@ -7662,43 +7508,25 @@ export function SnapshotEditorPage() {
                       >
                         S
                       </button>
+
+                      {flowSlots.length > MIN_FLOWS && (
+                        <button
+                          type="button"
+                          className="juce-grid-page__flow-card-delete"
+                          disabled={snapshotEditorMutationDisabled}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            removeFlow(flow.id)
+                          }}
+                          title={`Delete flow ${flowLabel}`}
+                          aria-label={`Delete flow ${flowLabel}`}
+                        >
+                          <TrashCan size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="juce-grid-page__flow-card-side" role="toolbar" aria-label={`${flowLabel} flow services`}>
-                    <button
-                      type="button"
-                      className="juce-grid-page__flow-card-assign"
-                      disabled={snapshotEditorMutationDisabled}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        openAssignmentDialog(flow)
-                      }}
-                      title={`Assign ${flowLabel} to node`}
-                    >
-                      <Network_3 size={16} />
-                      <span>Assign</span>
-                    </button>
-
-                    {flowSlots.length > MIN_FLOWS && (
-                      <button
-                        type="button"
-                        className="juce-grid-page__flow-card-delete"
-                        disabled={snapshotEditorMutationDisabled}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          removeFlow(flow.id)
-                        }}
-                        title={`Delete flow ${flowLabel}`}
-                        aria-label={`Delete flow ${flowLabel}`}
-                      >
-                        <TrashCan size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="juce-grid-page__flow-card-content">
                   {signalCanvas}
                 </div>
               </div>
@@ -7940,6 +7768,73 @@ export function SnapshotEditorPage() {
                   Load snapshot
                 </Button>
               </Tile>
+            )}
+            {!snapshotEntryRequired && activeChannelStatusRail && (
+              <div className="juce-grid-page__active-channel-rail" role="status" aria-live="polite">
+                <div className="juce-grid-page__active-channel-rail-main">
+                  <div className="juce-grid-page__active-channel-rail-identity">
+                    <span className="juce-grid-page__active-channel-rail-kicker">Active channel</span>
+                    <div className="juce-grid-page__active-channel-rail-channel">
+                      <span
+                        className="juce-grid-page__flow-card-label"
+                        title={activeChannelStatusRail.chainLabel}
+                        style={{ '--flow-color': activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color } as CSSProperties}
+                      >
+                        <span className="juce-grid-page__flow-card-label-text">{activeChannelStatusRail.channelLabel}</span>
+                      </span>
+                      <div className="juce-grid-page__active-channel-rail-copy">
+                        <strong className="juce-grid-page__active-channel-rail-chain">{activeChannelStatusRail.chainLabel}</strong>
+                        <span className="juce-grid-page__active-channel-rail-summary">{activeChannelStatusRail.blockSummary}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="juce-grid-page__active-channel-rail-tags">
+                    <Tag type={activeChannelStatusRail.stateLabel === 'Live' ? 'green' : 'cool-gray'}>{activeChannelStatusRail.stateLabel}</Tag>
+                    <Tag type="blue">{activeChannelStatusRail.blendLabel}</Tag>
+                    <Tag type="cool-gray">{activeChannelStatusRail.routingSourceLabel}</Tag>
+                    <Tag type={activeChannelStatusRail.muted ? 'red' : 'cool-gray'}>{activeChannelStatusRail.muted ? 'Mute' : 'M'}</Tag>
+                    <Tag type={activeChannelStatusRail.solo ? 'warm-gray' : 'cool-gray'}>{activeChannelStatusRail.solo ? 'Solo' : 'S'}</Tag>
+                  </div>
+                </div>
+                <div className="juce-grid-page__active-channel-rail-tools">
+                  <div className="juce-grid-page__flow-card-clip-bank" aria-label={`Active channel ${activeChannelStatusRail.channelLabel} clipping status`}>
+                    <div
+                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.inputClipActive ? 'is-active' : ''}`}
+                      title={activeChannelStatusRail.inputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} input clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} input is clean`}
+                    >
+                      <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                    </div>
+                    <div
+                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.outputClipActive ? 'is-active' : ''}`}
+                      title={activeChannelStatusRail.outputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} output clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} output is clean`}
+                    >
+                      <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                    </div>
+                    <div
+                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.clipActive ? 'is-active' : ''}`}
+                      title={activeChannelStatusRail.clipActive ? `Channel ${activeChannelStatusRail.channelLabel} chain clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} chain is clean`}
+                    >
+                      <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    renderIcon={Flow}
+                    onClick={() => openSnapshotProgressModal('advanced', 'routing')}
+                  >
+                    Routing
+                  </Button>
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    renderIcon={SettingsAdjust}
+                    onClick={openSnapshotIoWorkspace}
+                  >
+                    Devices
+                  </Button>
+                </div>
+              </div>
             )}
             <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
               {livePathLayout.groups.map((group, groupIndex) => (

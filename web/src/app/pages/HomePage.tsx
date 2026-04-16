@@ -815,7 +815,13 @@ export function HomePage() {
                   </h1>
 
                   <p className="hp2-home-shell__operations-lede">
-                    A tighter, single-table control surface for live MIDI, routing, interfaces, AVB, snapshots, and latency telemetry across the cluster.
+                    The MAP2 (MACKES Audio Platform) is a high-performance, professional-grade system designed
+                    to turn a standard computer into a powerful audio processor and routing hub.
+                  </p>
+                  <p className="hp2-home-shell__operations-lede">
+                    An open-source alternative, It combines the
+                    flexibility of modern software with the speed and reliability of a dedicated guitar
+                    processor, giving artists a world-class tool for creating and routing sound.
                   </p>
 
                   {heroAlerts.length > 0 ? (
