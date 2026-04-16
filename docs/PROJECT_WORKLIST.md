@@ -238,7 +238,7 @@ Last updated: 2026-04-15 18:55 EDT - Codex
 ---
 
 ID: T2298
-Status: [>] In Progress
+Status: [✓] Done
 Title: Build activation-path crash, restart, concurrency, and reconciliation qualification for snapshot authority invariants
 Description:
 - Goal / acceptance criteria: Add an explicit qualification suite that stress-tests snapshot activation correctness across concurrent publish attempts, restart mid-activation, crash after runtime apply but before authority confirmation, authority write failure after runtime success, runtime success without observation publication, stale read windows, reconciliation overwrite attempts, and retry/idempotency paths. Acceptance requires executable automated coverage plus documented fault-injection/chaos procedures that verify the platform’s activation invariants and produce auditable artifacts.
@@ -247,7 +247,15 @@ Description:
 - Estimated effort: High
 - Required outputs: invariant-based integration/chaos test plan, new automated backend tests, restart/crash harness or scripted qualification flows, archived evidence expectations, and updated release/qualification documentation for activation correctness.
 Assigned to: Codex
-Last updated: 2026-04-16 06:48 EDT - Codex
+Last updated: 2026-04-16 07:18 EDT - Codex
+- Completion notes:
+  - Built a dedicated executable qualification suite in `tests/test_snapshot_activation_qualification.py` covering degraded-to-success retry recovery, same-snapshot and different-snapshot overlap, observation-publication failure, restart-boundary retry recovery, and later reconciliation safety against newer committed authority.
+  - Tightened publish readiness so stale observation timeouts do not hide explicit `authority_confirmation_failed` states, and captured that operator contract in focused readiness coverage.
+  - Archived the release-grade evidence procedure in `docs/qualification/snapshot-activation-fault-injection-procedure.md`, including the timestamped artifact tree, exact pytest/API/log capture commands, and the failure-family evidence matrix required for sign-off.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
 
 ---
 
@@ -399,6 +407,27 @@ Last updated: 2026-04-16 07:09 EDT - Codex
 - Validation:
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+
+---
+
+ID: T2320
+Status: [✓] Done
+Title: Archive the release fault-injection and operator-evidence procedure for snapshot activation
+Description:
+- Goal / acceptance criteria: Close the last `T2298` gap by documenting exactly how release qualification archives activation fault-injection evidence, including artifact layout, commands, endpoints, pass/fail expectations, and the operator-visible evidence that must exist for each failure family. Acceptance requires a concrete archived procedure tied to the shipped automated harnesses and live runtime/readiness endpoints, plus reconciled qualification/worklist notes.
+- Why it matters: The automated coverage is now broad, but `T2298` still requires a release-grade evidence procedure so future operators can reproduce the qualification and archive auditable artifacts instead of relying on memory or ad hoc commands.
+- Dependencies: T2319
+- Estimated effort: Medium
+- Required outputs: archived fault-injection/evidence procedure, explicit artifact tree, scenario/evidence matrix, and updated qualification/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 07:18 EDT - Codex
+- Completion notes:
+  - Added `docs/qualification/snapshot-activation-fault-injection-procedure.md` with the timestamped artifact-root contract, exact automated qualification commands, runtime/readiness/log capture commands, and the failure-family evidence matrix expected for release sign-off.
+  - Updated `docs/qualification/snapshot-activation-qualification.md` so it now declares the automated gap list closed and points release operators at the archived evidence procedure.
+  - Reconciled repo memory in `.github/copilot-instructions.md` so future activation qualification runs preserve the same evidence bundle layout and handoff expectations.
+- Validation:
+  - Documentation review against the shipped endpoints and command set in `app/routes/unified_snapshots.py`
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
 
 ---
 

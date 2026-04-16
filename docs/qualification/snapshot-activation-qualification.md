@@ -29,4 +29,4 @@ python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_
 
 ## Remaining qualification gaps
 
-- Archived fault-injection procedure and operator evidence expectations for release qualification.
+No automated gaps remain. Release operators should use `docs/qualification/snapshot-activation-fault-injection-procedure.md` to archive the required fault-injection evidence bundle.

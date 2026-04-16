@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (reconciliation overwrite qualification documented)
+> **Last Updated**: April 16, 2026 (activation evidence archive procedure documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1183,6 +1183,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
 - **Lesson**: Reconciliation is safe only if it is anchored to the current committed authority contract. Qualification should keep older observations around and prove they cannot drag the control plane backward once a newer snapshot is live.
 
+**113. Activation Qualification Must Archive A Timestamped Evidence Bundle**
+- **Files**: `docs/qualification/snapshot-activation-fault-injection-procedure.md`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: Broad automated coverage is not enough for release sign-off if operators cannot reproduce the exact evidence set or archive the runtime/readiness/log artifacts tied to those checks.
+- **Root Cause**: `T2298` originally tracked the test cases but not the concrete artifact tree, endpoint captures, and log expectations required to make the qualification auditable after the fact.
+- **Fix**: Define a timestamped archive root, exact pytest/API/log capture commands, and a failure-family evidence matrix that release operators must save for every snapshot activation qualification run.
+- **Verification**: Review `docs/qualification/snapshot-activation-fault-injection-procedure.md` for the artifact tree, command set, and sign-off checklist; ensure it is linked from `docs/qualification/snapshot-activation-qualification.md`.
+- **Lesson**: If a qualification claim matters at release time, the artifact layout is part of the contract. Tests, API snapshots, and logs need one documented archive path so evidence survives handoff and later audits.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2252,6 +2260,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Activation Evidence Archive Procedure
+- **Section**: Gotchas & Learned Fixes (#113), Update Log
+- **Change**: Documented the timestamped archive procedure, API/log captures, and release sign-off evidence matrix for snapshot activation qualification.
+- **Reason**: `T2298` was down to the final non-code deliverable: a reproducible operator procedure for archiving the activation fault-injection evidence bundle.
+- **Impact**: Future release qualification runs now have one canonical artifact layout and evidence checklist instead of relying on ad hoc capture habits.
+- **Files**: `.github/copilot-instructions.md`, `docs/qualification/snapshot-activation-fault-injection-procedure.md`, `docs/qualification/snapshot-activation-qualification.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Reconciliation Overwrite Qualification
 - **Section**: Gotchas & Learned Fixes (#112), Update Log

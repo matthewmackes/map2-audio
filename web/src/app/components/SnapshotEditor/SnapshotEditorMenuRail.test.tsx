@@ -6,6 +6,9 @@ import { SnapshotEditorMenuRail } from './SnapshotEditorMenuRail'
 function renderRail(overrides: Partial<React.ComponentProps<typeof SnapshotEditorMenuRail>> = {}) {
   const props: React.ComponentProps<typeof SnapshotEditorMenuRail> = {
     prefersReducedMotion: true,
+    onCreateSnapshot: jest.fn(),
+    createSnapshotDisabled: false,
+    createSnapshotPending: false,
     onOpenControlCenter: jest.fn(),
     controlCenterDisabled: false,
     onAddFlow: jest.fn(),
@@ -38,7 +41,7 @@ describe('SnapshotEditorMenuRail', () => {
     window.localStorage.clear()
   })
 
-  it('renders five statement-style primary actions in the quick menu', () => {
+  it('renders the quick menu create action followed by the primary workflow actions', () => {
     renderRail()
 
     act(() => {
@@ -46,6 +49,7 @@ describe('SnapshotEditorMenuRail', () => {
     })
 
     expect(screen.getByRole('menu', { name: 'Snapshot editor quick actions' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Create Snapshot' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Snapshot configuration' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Add signal path' })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Edit MIDI mappings' })).toBeInTheDocument()
@@ -57,6 +61,10 @@ describe('SnapshotEditorMenuRail', () => {
   it('routes the quick actions through the provided callbacks', async () => {
     const props = renderRail()
 
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
+    })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Create Snapshot' }))
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Quick actions' }))
     })
@@ -78,6 +86,7 @@ describe('SnapshotEditorMenuRail', () => {
     })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Open performance view' }))
 
+    expect(props.onCreateSnapshot).toHaveBeenCalledTimes(1)
     expect(props.onOpenControlCenter).toHaveBeenCalledTimes(1)
     expect(props.onAddFlow).toHaveBeenCalledTimes(1)
     expect(props.onOpenMidi).toHaveBeenCalledTimes(1)

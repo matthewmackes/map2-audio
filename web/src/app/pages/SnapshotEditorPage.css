@@ -558,6 +558,19 @@
   padding: 0.5rem 0;
 }
 
+.snapshot-menu-rail__create-button.cds--btn {
+  justify-content: space-between;
+  min-block-size: 2.5rem;
+  margin: 0 1rem 0.5rem;
+  padding-inline: 1rem 0.875rem;
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.snapshot-menu-rail__create-button.cds--btn .cds--btn__icon {
+  margin-inline-start: 0.75rem;
+}
+
 .snapshot-menu-rail__section--utility {
   border-block-start: 1px solid var(--cds-border-subtle, var(--border));
 }
