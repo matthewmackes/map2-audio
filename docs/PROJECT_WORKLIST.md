@@ -246,8 +246,8 @@ Description:
 - Dependencies: T2295, T2296, T2297
 - Estimated effort: High
 - Required outputs: invariant-based integration/chaos test plan, new automated backend tests, restart/crash harness or scripted qualification flows, archived evidence expectations, and updated release/qualification documentation for activation correctness.
-Assigned to: Unassigned
-Last updated: 2026-04-16 02:06 EDT - Codex
+Assigned to: Codex
+Last updated: 2026-04-16 06:52 EDT - Codex
 
 ---
 
@@ -336,6 +336,27 @@ Last updated: 2026-04-16 06:40 EDT - Codex
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication` -> PASS
+
+---
+
+ID: T2317
+Status: [✓] Done
+Title: Qualify stale-read readiness during degraded observation-publication gaps
+Description:
+- Goal / acceptance criteria: Prove the publish-readiness contract reports the exact degraded authority-confirmation failure during the window after observation publication failed and before retry/repair completes, rather than collapsing back to generic stale-confirmation wording. Acceptance requires focused readiness qualification, any backend contract fix required to suppress misleading stale blockers in this state, and reconciled qualification/worklist notes.
+- Why it matters: `T2298` still calls out stale-read windows explicitly. Operators need the publish surface to keep naming the true authority-confirmation failure even if observation absence ages into the generic stale-confirmation timeout.
+- Dependencies: T2316
+- Estimated effort: Medium
+- Required outputs: focused readiness qualification for the stale window, any required publish-readiness contract fix, and updated qualification/worklist documentation.
+Assigned to: Codex
+Last updated: 2026-04-16 07:03 EDT - Codex
+- Completion notes:
+  - Tightened `app/services/publish_readiness_service.py` so explicit `authority_confirmation_failed` activation events suppress generic `observation_stale` and `node_sync_pending` findings during the post-failure stale-read window.
+  - Updated the readiness requirement contract so `engine_accepted_publish` and `channels_confirmed_live` stay in `needs_attention` with exact authority-confirmation-failure messaging instead of drifting back to generic waiting/ready copy.
+  - Added focused regression coverage in `tests/test_publish_readiness_service.py` and updated `docs/qualification/snapshot-activation-qualification.md` so this stale-read gap is now tracked as executable evidence.
+- Validation:
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
 
 ---
 

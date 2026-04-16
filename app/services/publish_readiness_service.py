@@ -316,7 +316,11 @@ class PublishReadinessService:
             runtime_matches_requested
             and str(authority_publication.get("status") or "").strip().lower() == "failed"
         )
-        stale_nodes = self._stale_nodes(expected_nodes=expected_nodes, observations=observed_by_node, event=latest_event)
+        stale_nodes = (
+            set()
+            if authority_confirmation_failed
+            else self._stale_nodes(expected_nodes=expected_nodes, observations=observed_by_node, event=latest_event)
+        )
 
         for node_id in expected_nodes:
             if node_id in stale_nodes:
@@ -343,7 +347,7 @@ class PublishReadinessService:
                         related_node_ids=[node_id],
                     )
                 )
-            elif node_id not in observed_by_node:
+            elif not authority_confirmation_failed and node_id not in observed_by_node:
                 warnings.append(
                     PublishBlocker(
                         id=f"node_sync_pending:{node_id}",
@@ -602,6 +606,7 @@ class PublishReadinessService:
         has_engine_unavailable = PublishBlockerCode.ENGINE_UNAVAILABLE in affected_codes
         has_engine_apply_failed = PublishBlockerCode.ENGINE_APPLY_FAILED in affected_codes
         has_authority_diverged = PublishBlockerCode.AUTHORITY_DIVERGED in affected_codes
+        has_authority_confirmation_failed = PublishBlockerCode.AUTHORITY_CONFIRMATION_FAILED in affected_codes
 
         return [
             PublishRequirement(
@@ -720,6 +725,7 @@ class PublishReadinessService:
                         PublishBlockerCode.ENGINE_UNAVAILABLE,
                         PublishBlockerCode.ENGINE_APPLY_FAILED,
                         PublishBlockerCode.AUTHORITY_DIVERGED,
+                        PublishBlockerCode.AUTHORITY_CONFIRMATION_FAILED,
                     }
                     else (
                         PublishRequirementStatus.WAITING_FOR_CONFIRMATION
@@ -735,6 +741,9 @@ class PublishReadinessService:
                         "A required runtime is stopped or offline, so MAP2 cannot send this publish yet."
                         if has_engine_unavailable
                         else (
+                            "The runtime applied this snapshot, but MAP2 could not finish control-plane authority confirmation."
+                            if has_authority_confirmation_failed
+                            else (
                             "The last publish request was rejected by the runtime. Clear the runtime issue, then retry."
                             if has_engine_apply_failed
                             else (
@@ -750,6 +759,7 @@ class PublishReadinessService:
                                     )
                                 )
                             )
+                            )
                         )
                     )
                 ),
@@ -761,11 +771,15 @@ class PublishReadinessService:
                     PublishRequirementStatus.READY
                     if confirmed_revision_id is not None
                     else (
+                        PublishRequirementStatus.NEEDS_ATTENTION
+                        if has_authority_confirmation_failed
+                        else (
                         PublishRequirementStatus.NOT_APPLICABLE
                         if requested_revision_id is None and not channel_blocked and not channel_waiting
                         else _status_for(
                             blocker_codes=channel_requirement_codes,
                             waiting_only=PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes,
+                        )
                         )
                     )
                 ),
@@ -774,6 +788,9 @@ class PublishReadinessService:
                     "All required channels are confirmed live."
                     if confirmed_revision_id is not None
                     else (
+                        "MAP2 cannot confirm the required channels as live until control-plane authority confirmation finishes."
+                        if has_authority_confirmation_failed
+                        else (
                         "Fix routing before channels can go live."
                         if affected_codes
                         & {
@@ -788,6 +805,7 @@ class PublishReadinessService:
                                 if local_only_publish
                                 else "Waiting for channel confirmation from the required nodes."
                             )
+                        )
                         )
                     )
                 ),

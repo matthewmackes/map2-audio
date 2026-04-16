@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (observation-publication retry qualification documented)
+> **Last Updated**: April 16, 2026 (stale-read authority-confirmation dominance documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1159,6 +1159,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k authority_publication`
 - **Lesson**: Not all authority failures are equivalent. Qualification should pin the exact step boundary that failed so retry behavior is proven for committed-without-observation, not just for earlier commit failures.
 
+**110. Stale Observation Timeouts Must Not Hide Authority-Confirmation Failure**
+- **Files**: `app/services/publish_readiness_service.py`, `tests/test_publish_readiness_service.py`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: After observation publication failed, the same publish attempt could age past the stale-confirmation timeout and reintroduce `observation_stale` / `node_sync_pending` messaging even though the real degraded state was already known to be `authority_confirmation_failed`.
+- **Root Cause**: Publish readiness computed stale-node and pending-node findings before honoring the explicit `authority_publication.status=failed` result, so missing observations from the failed publication step leaked back into generic waiting/timeout copy.
+- **Fix**: Suppress stale/pending node confirmation findings when the latest activation event already records `authority_confirmation_failed`, and mark the runtime/channels requirements with exact authority-confirmation-failure messaging instead.
+- **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'`; `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`
+- **Lesson**: Once the platform knows the precise degraded layer, later timeout heuristics must defer to it. Generic stale-read symptoms should not overwrite a more specific confirmed failure cause.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2228,6 +2236,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Stale-Read Authority Confirmation Dominance
+- **Section**: Gotchas & Learned Fixes (#110), Update Log
+- **Change**: Documented that publish readiness must suppress generic stale/pending observation findings once the activation event already records `authority_confirmation_failed`, and added focused readiness qualification for that stale window.
+- **Reason**: The observation-publication retry qualification still left an operator-facing gap where aged missing observations could re-label the failure.
+- **Impact**: Future readiness work should keep exact degraded authority-confirmation messaging dominant until retry or repair resolves it.
+- **Files**: `.github/copilot-instructions.md`, `app/services/publish_readiness_service.py`, `tests/test_publish_readiness_service.py`, `docs/qualification/snapshot-activation-qualification.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Controller-Display Preview Audit Classification
 - **Section**: Gotchas & Learned Fixes (#102), Update Log

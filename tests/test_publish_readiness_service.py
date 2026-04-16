@@ -452,3 +452,82 @@ def test_publish_readiness_service_surfaces_authority_confirmation_failure_befor
     assert any(repair.id == "retry_publish" for repair in readiness.available_repairs)
     assert not any(blocker.code.value == "engine_unavailable" for blocker in readiness.blockers)
     assert not any(blocker.code.value == "authority_diverged" for blocker in readiness.blockers)
+
+
+def test_publish_readiness_service_preserves_authority_confirmation_failure_during_stale_observation_gap(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=17, name="Snapshot 17"))
+            session.add(
+                SnapshotRevision(
+                    snapshot_id=17,
+                    revision_number=8,
+                    snapshot_revision="rev-17",
+                    summary="summary",
+                    summary_metadata={},
+                    payload={},
+                    document={},
+                )
+            )
+            await session.flush()
+            service = PublishReadinessService(
+                session,
+                snapshot_service=_FakeSnapshotService(_detail(17, revision_number=8)),
+                authority_service=_FakeAuthorityService(
+                    _committed_state(
+                        17,
+                        revision_number=8,
+                        preferred_nodes=["node-local"],
+                        engine_state="live",
+                    ),
+                    [],
+                ),
+                runtime_state_service=_FakeRuntimeStateService(
+                    live_state={"state": "live", "snapshot_id": 17},
+                    activation_events=[
+                        {
+                            "snapshot_id": 17,
+                            "requested_at": (utc_now() - timedelta(seconds=30)).isoformat(),
+                            "runtime_metrics": {
+                                "activation_progress": {
+                                    "current_phase": "VERIFYING",
+                                },
+                                "authority_publication": {
+                                    "status": "failed",
+                                    "reason": "authority_confirmation_failed",
+                                    "technical_detail": "observation publish failed",
+                                },
+                            },
+                        }
+                    ],
+                ),
+                stale_after_seconds=3.0,
+            )
+            return await service.get_publish_readiness(17)
+
+    readiness = asyncio.run(_run())
+
+    assert readiness.status.value == "blocked"
+    assert not any(blocker.code.value == "observation_stale" for blocker in readiness.blockers)
+
+    authority_blocker = next(
+        blocker for blocker in readiness.blockers if blocker.code.value == "authority_confirmation_failed"
+    )
+    target_requirement = next(item for item in readiness.requirements if item.id == "target_node_reachable")
+    engine_requirement = next(item for item in readiness.requirements if item.id == "engine_accepted_publish")
+    channels_requirement = next(item for item in readiness.requirements if item.id == "channels_confirmed_live")
+
+    assert authority_blocker.technical_detail == "observation publish failed"
+    assert target_requirement.status.value == "ready"
+    assert target_requirement.operator_message == "The local node on this machine is reachable."
+    assert engine_requirement.status.value == "needs_attention"
+    assert engine_requirement.operator_message == (
+        "The runtime applied this snapshot, but MAP2 could not finish control-plane authority confirmation."
+    )
+    assert channels_requirement.status.value == "needs_attention"
+    assert channels_requirement.operator_message == (
+        "MAP2 cannot confirm the required channels as live until control-plane authority confirmation finishes."
+    )
+    assert any(repair.id == "retry_publish" for repair in readiness.available_repairs)
