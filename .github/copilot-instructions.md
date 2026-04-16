@@ -1063,6 +1063,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`; `npm --prefix web run build`
 - **Lesson**: Publish-readiness copy must describe the real failing platform layer. In local-only mode, remote-node wording is a correctness bug, not just weak UX.
 
+**98. Local Engine-Unavailable Publish Blockers Need A Real Recovery Action, Not Blind Retry**
+- **Files**: `app/services/publish_readiness_service.py`, `app/routes/unified_snapshots.py`, `tests/test_publish_readiness_service.py`, `tests/test_snapshot_routes.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`
+- **Problem**: After the local-only wording fix, the publish workspace could honestly say MAP2 was waiting on the local audio engine, but the only shipped repair action was still `retry_publish`, which could not fix a stopped engine.
+- **Root Cause**: The publish-repair contract only knew how to replay canonical activation; it had no typed path for invoking the existing local audio start/restart primitives before retrying publish.
+- **Fix**: Emit a dedicated `recover_local_audio_engine` repair action for local `engine_unavailable` blockers, wire the repair route through the engine-runtime service to start the local engine, then replay canonical snapshot activation and keep the publish page action generic so the button label stays truthful.
+- **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py tests/test_snapshot_routes.py -k 'clarifies_local_only_runtime_blockers or publish_repair_route_recovers_local_audio_engine_and_retries_publish'`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`
+- **Lesson**: When the platform can name the exact blocked layer, it should expose the matching repair action on the same surface. Honest copy without a truthful repair path still leaves the operator stranded.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2132,6 +2140,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Local Engine Publish Recovery Action
+- **Section**: Gotchas & Learned Fixes (#98), Update Log
+- **Change**: Documented that local `engine_unavailable` publish blockers must expose a dedicated engine-recovery repair action instead of reusing `retry_publish`.
+- **Reason**: Once the publish workspace correctly identified the local audio engine as the blocker, a plain retry no longer matched the real fix path.
+- **Impact**: Future publish/activation repair work should map each blocker to the platform layer that can actually resolve it, rather than offering generic retries for every failure family.
+- **Files**: `.github/copilot-instructions.md`, `app/services/publish_readiness_service.py`, `app/routes/unified_snapshots.py`, `tests/test_publish_readiness_service.py`, `tests/test_snapshot_routes.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Local-Only Publish Guidance
 - **Section**: Gotchas & Learned Fixes (#97), Update Log

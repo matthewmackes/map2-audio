@@ -368,6 +368,16 @@ class PublishReadinessService:
                 origin_node_id=committed_state.origin_node_id,
                 expected_nodes=expected_nodes,
             )
+            if local_only_targets:
+                repairs.append(
+                    PublishRepairAction(
+                        id="recover_local_audio_engine",
+                        label="Start audio engine",
+                        operator_message="Start the local audio engine on this machine and retry the publish.",
+                        scope=PublishScope.NODE,
+                        related_node_ids=expected_nodes,
+                    )
+                )
             blockers.append(
                 PublishBlocker(
                     id="engine_unavailable",
@@ -390,7 +400,7 @@ class PublishReadinessService:
                         if local_only_targets
                         else "Recover the runtime, then retry publish"
                     ),
-                    repair_action_id="retry_publish",
+                    repair_action_id="recover_local_audio_engine" if local_only_targets else "retry_publish",
                     related_node_ids=expected_nodes,
                 )
             )

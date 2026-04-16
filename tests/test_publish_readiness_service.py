@@ -384,5 +384,7 @@ def test_publish_readiness_service_clarifies_local_only_runtime_blockers(tmp_pat
     assert engine_requirement.label == "Runtime can accept this publish"
     assert engine_requirement.operator_message == "The local audio engine on this machine is stopped or offline, so MAP2 cannot send this publish yet."
     assert channels_requirement.operator_message == "Waiting for the local runtime on this machine to confirm that the required channels are live."
+    assert any(repair.id == "recover_local_audio_engine" for repair in readiness.available_repairs)
+    assert runtime_blocker.repair_action_id == "recover_local_audio_engine"
     assert runtime_blocker.operator_message == "The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet."
     assert runtime_blocker.technical_detail == "Local engine state: stopped."

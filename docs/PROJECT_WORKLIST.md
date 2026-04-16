@@ -6,12 +6,12 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2304 by clarifying local-only publish readiness guidance and added T2305 to expose a real local-engine repair path from the publish flow.
+Last updated: 2026-04-15 - Completed T2305 by exposing local audio-engine recovery as a real publish repair path.
 
 ---
 
 ID: T2305
-Status: [ ] Todo
+Status: [✓] Done
 Title: Expose local audio-engine recovery as a real publish repair path
 Description:
 - Goal / acceptance criteria: Replace the current blind `retry_publish` behavior for local `engine_unavailable` publish blockers with an operator-visible recovery path that can start or restart the local audio engine when that is the exact blocker. Acceptance requires a typed repair action contract for local engine recovery, backend wiring to the existing audio start/restart primitives, publish-page action handling, and focused regression coverage for both the repair contract and the operator flow.
@@ -20,7 +20,14 @@ Description:
 - Estimated effort: Medium
 - Required outputs: local engine repair action contract, backend recovery wiring, publish-page action support, focused backend/frontend tests, and reconciled worklist notes.
 Assigned to: Codex
-Last updated: 2026-04-15 20:11 EDT - Codex
+Last updated: 2026-04-15 20:20 EDT - Codex
+- Completion notes:
+  - Updated `app/services/publish_readiness_service.py` so local `engine_unavailable` blockers now advertise a dedicated `recover_local_audio_engine` repair action with a concrete `Start audio engine` operator label instead of reusing blind `retry_publish`.
+  - Added `_start_local_audio_engine()` and `recover_local_audio_engine` handling in `app/routes/unified_snapshots.py`, wiring the publish repair route to the existing engine-runtime service and then replaying canonical snapshot activation through `StateAuthorityActivationService`.
+  - Updated the focused publish-page regression so the guided issue action now runs the new local-engine repair action contract instead of a second retry button.
+- Validation:
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py tests/test_snapshot_routes.py -k 'clarifies_local_only_runtime_blockers or publish_readiness_and_retry_routes_use_typed_backend_services or publish_repair_route_recovers_local_audio_engine_and_retries_publish or publish_repair_route_rejects_unknown_action'` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
 
 ---
 

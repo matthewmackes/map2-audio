@@ -324,6 +324,29 @@ def _activation_error_detail(exc: ValueError) -> Any:
     return str(exc)
 
 
+async def _start_local_audio_engine() -> dict[str, Any]:
+    from app.services.engine_runtime_facade import get_engine_service
+
+    service = get_engine_service()
+    if not service.is_available:
+        raise HTTPException(status_code=503, detail="JUCE audio engine not available")
+
+    initialized = bool(getattr(service, "is_running", False))
+    if not initialized:
+        init_success = await service.initialize()
+        if not init_success:
+            raise HTTPException(status_code=500, detail="Failed to initialize audio engine")
+
+    success = await service.start_audio()
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to start audio")
+
+    return {
+        "success": True,
+        "message": "Local audio engine started",
+    }
+
+
 async def _run_publish_repair_action(
     *,
     snapshot_id: int,
@@ -346,6 +369,23 @@ async def _run_publish_repair_action(
             "status": "success",
             "snapshot_id": snapshot_id,
             "repair_action_id": normalized_action,
+            "result": payload,
+        }
+
+    if normalized_action == "recover_local_audio_engine":
+        engine_result = await _start_local_audio_engine()
+        service = SnapshotService(session)
+        payload = await service.state_authority_activation.activate_snapshot(
+            snapshot_id,
+            triggered_by="publish_repair_local_engine",
+        )
+        if payload is None:
+            _raise_not_found("Snapshot")
+        return {
+            "status": "success",
+            "snapshot_id": snapshot_id,
+            "repair_action_id": normalized_action,
+            "engine": engine_result,
             "result": payload,
         }
 
@@ -968,7 +1008,7 @@ async def repair_snapshot_publish(
                 repair_action_id=repair_action_id,
                 session=session,
             )
-        if repair_action_id == "retry_publish":
+        if repair_action_id in {"retry_publish", "recover_local_audio_engine"}:
             from app.routes.chains import _invalidate_chain_list_cache
             _invalidate_chain_list_cache()
         return payload

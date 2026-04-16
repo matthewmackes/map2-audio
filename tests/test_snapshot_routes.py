@@ -987,6 +987,48 @@ def test_publish_repair_route_rejects_unknown_action(monkeypatch):
     asyncio.run(_run())
 
 
+def test_publish_repair_route_recovers_local_audio_engine_and_retries_publish(monkeypatch):
+    activation_calls: list[tuple[int, str]] = []
+    engine_repairs: list[str] = []
+    cache_invalidations: list[str] = []
+
+    class _FakeActivationService:
+        async def activate_snapshot(self, snapshot_id: int, *, triggered_by: str = "ui"):
+            activation_calls.append((snapshot_id, triggered_by))
+            return {
+                "status": "success",
+                "snapshot_id": snapshot_id,
+                "triggered_by": triggered_by,
+            }
+
+    class _FakeSnapshotService:
+        def __init__(self, _session):
+            self.state_authority_activation = _FakeActivationService()
+
+    async def _fake_start_local_audio_engine():
+        engine_repairs.append("start")
+        return {"success": True, "message": "Local audio engine started"}
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(routes, "SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr(routes, "_start_local_audio_engine", _fake_start_local_audio_engine)
+    monkeypatch.setattr(routes, "get_session", lambda: _fake_session())
+    monkeypatch.setattr(chain_routes, "_invalidate_chain_list_cache", lambda: cache_invalidations.append("chains"))
+
+    async def _run():
+        repaired = await routes.repair_snapshot_publish(41, "recover_local_audio_engine")
+        assert repaired["repair_action_id"] == "recover_local_audio_engine"
+        assert repaired["engine"]["message"] == "Local audio engine started"
+        assert activation_calls == [(41, "publish_repair_local_engine")]
+        assert engine_repairs == ["start"]
+        assert cache_invalidations == ["chains"]
+
+    asyncio.run(_run())
+
+
 def test_snapshot_export_and_import_bundle_routes(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

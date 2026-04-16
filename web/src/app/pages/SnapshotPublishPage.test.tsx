@@ -176,7 +176,7 @@ describe('SnapshotPublishPage', () => {
           operator_message: 'The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet.',
           technical_detail: 'Local engine state: stopped.',
           recommended_action: 'Start the audio engine, then retry publish',
-          repair_action_id: 'retry_publish',
+          repair_action_id: 'recover_local_audio_engine',
           prerequisite_of: [],
           related_path_ids: [],
           related_node_ids: ['node-local'],
@@ -185,10 +185,10 @@ describe('SnapshotPublishPage', () => {
       warnings: [],
       available_repairs: [
         {
-          id: 'retry_publish',
-          label: 'Retry publish',
+          id: 'recover_local_audio_engine',
+          label: 'Start audio engine',
           related_path_ids: [],
-          related_node_ids: ['node-a'],
+          related_node_ids: ['node-local'],
         },
       ],
       applicable_steps: ['engine'],
@@ -206,17 +206,17 @@ describe('SnapshotPublishPage', () => {
     expect(screen.getByText('Runtime is not ready')).toBeTruthy()
     expect(screen.getByText('Runtime can accept this publish')).toBeTruthy()
     expect(screen.getByText(/MAP2 is not waiting for a remote node\./)).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: 'Retry publish' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Start audio engine' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Retry publish' })).toBeTruthy()
   })
 
-  it('retries publish from the guided issue action', async () => {
+  it('runs the guided engine repair action', async () => {
     renderPage()
 
-    const buttons = await screen.findAllByRole('button', { name: 'Retry publish' })
-    fireEvent.click(buttons[0])
+    fireEvent.click(await screen.findByRole('button', { name: 'Start audio engine' }))
 
     await waitFor(() => {
-      expect(mockRetryPublish).toHaveBeenCalledWith(12)
+      expect(mockRunPublishRepairAction).toHaveBeenCalledWith(12, 'recover_local_audio_engine')
     })
   })
 })
