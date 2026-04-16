@@ -149,6 +149,7 @@ Rules:
 - `seq` must be monotonic per node.
 - Consumers must ignore stale or out-of-order updates.
 - `live_snapshot_payload` is the node’s authoritative live copy.
+- `runtime_metrics.retained_runtime_edits`, when present, is a bounded oldest-first audit list of retained live-edit compatibility mutations that updated the currently live snapshot outside canonical activation.
 
 ### NodeActivationAuditEvent
 

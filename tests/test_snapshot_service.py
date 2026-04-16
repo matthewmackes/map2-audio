@@ -5784,6 +5784,127 @@ async def _create_and_activate_open_gap_snapshot(tmp_path, monkeypatch, *, detai
         return service, created, activated, engine_stub
 
 
+def test_retained_live_runtime_edit_paths_record_audit_entries(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    engine_stub = _OpenGapMatrixEngineStub()
+    audit_calls: list[dict[str, object]] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _healthy_channels(self, *, live_snapshot_payload):
+        return {
+            "snapshot_payload": live_snapshot_payload,
+            "active_count": 0,
+            "total_count": 0,
+            "inactive_channels": [],
+            "inactive_messages": [],
+        }
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    async def _capture_retained_runtime_edit(self, **kwargs):
+        audit_calls.append(dict(kwargs))
+        return None
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(snapshot_service_module, "get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: engine_stub)
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+    monkeypatch.setattr(SnapshotRuntimeStateService, "record_retained_runtime_edit", _capture_retained_runtime_edit)
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="RetainedLiveEditAudit",
+                detail_payload={
+                    "channels": [
+                        {"channel_key": "channel-a", "label": "A", "color": "#2563eb", "chain_id": 1},
+                        {"channel_key": "channel-b", "label": "B", "color": "#22c55e", "chain_id": 2},
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "A",
+                            "plugins": [{"uri": "urn:test:plugin-a", "position": 0, "bypass": False, "parameters": {"gain": 0.5}}],
+                        },
+                        {
+                            "id": 2,
+                            "name": "B",
+                            "plugins": [{"uri": "urn:test:plugin-b", "position": 0, "bypass": False, "parameters": {"mix": 0.25}}],
+                        },
+                    ],
+                    "routing": {
+                        "mode": "series",
+                        "active_channel_key": "channel-a",
+                        "series_order": ["channel-a", "channel-b"],
+                    },
+                    "midi_map": [],
+                },
+                apply_default_system_blocks=False,
+            )
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+
+            current_detail = await service.get_snapshot(created["id"])
+            assert current_detail is not None
+            channel_id = int(current_detail["channels"][0]["id"])
+            chain_id = int(current_detail["chains"][0]["id"])
+
+            await service.update_snapshot(created["id"], name="RetainedLiveEditAuditRenamed")
+            await service.update_channel(
+                created["id"],
+                channel_id,
+                {"muted": True, "solo": True, "dry_wet_mix": 35.0},
+            )
+            await service.update_plugin_parameter_by_position(created["id"], chain_id, 0, "gain", 0.75)
+            await service.update_routing(
+                created["id"],
+                {
+                    "mode": "parallel_blend",
+                    "active_channel_key": "channel-a",
+                    "blend_positions": {"channel-a": 25.0, "channel-b": 75.0},
+                    "series_order": ["channel-a", "channel-b"],
+                },
+            )
+            await service.replace_midi_map(
+                created["id"],
+                [{"action": "load_snapshot", "program_number": 7, "channel": 1}],
+            )
+
+    asyncio.run(_run())
+
+    assert [call["mutation_kind"] for call in audit_calls] == [
+        "update_snapshot",
+        "update_channel",
+        "update_plugin_parameter_by_position",
+        "update_routing",
+        "replace_midi_map",
+    ]
+    assert audit_calls[0]["metadata"]["changed_fields"] == ["name"]
+    assert audit_calls[1]["metadata"]["channel_label"] == "A"
+    assert audit_calls[1]["metadata"]["channel_state_apply"]["applied_count"] == 2
+    assert audit_calls[2]["metadata"]["parameter_key"] == "gain"
+    assert audit_calls[2]["metadata"]["parameter_value"] == 0.75
+    assert audit_calls[3]["metadata"]["routing_mode_changed_live"] is True
+    assert audit_calls[3]["metadata"]["requested_mode"] == "parallel_blend"
+    assert audit_calls[4]["metadata"]["entry_count"] == 1
+    assert audit_calls[4]["metadata"]["midi_map_sync_result"]["synced"] is True
+
+
 def test_t736_activation_should_push_loop_insertions_to_engine(tmp_path, monkeypatch):
     async def _run():
         _init_temp_db(tmp_path)

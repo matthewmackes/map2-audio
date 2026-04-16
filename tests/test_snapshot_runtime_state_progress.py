@@ -382,6 +382,72 @@ def test_refresh_live_snapshot_health_reruns_reconciliation_after_interval(tmp_p
     assert live_state["runtime_metrics"]["last_state_authority_correction_at"] == "2026-04-06T12:05:00+00:00"
 
 
+def test_record_retained_runtime_edit_persists_bounded_audit_trail_and_broadcasts(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    fake_ws = _FakeWSManager()
+
+    from app.services import websocket_manager
+
+    monkeypatch.setattr(websocket_manager, "ws_manager", fake_ws)
+    monkeypatch.setattr(runtime_state_module, "RETAINED_RUNTIME_EDIT_LIMIT", 2)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=19, name="Live Edit Audit"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=19,
+            snapshot_name="Live Edit Audit",
+            snapshot_revision="rev-19",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 19, "name": "Live Edit Audit", "live_state": {"paths": []}},
+            runtime_metrics={"preload": {"status": "ready"}},
+        )
+        await service.record_retained_runtime_edit(
+            snapshot_id=19,
+            snapshot_revision="rev-19",
+            mutation_kind="update_snapshot",
+            triggered_by="snapshot_service.update_snapshot",
+            metadata={"changed_fields": ["name"]},
+        )
+        await service.record_retained_runtime_edit(
+            snapshot_id=19,
+            snapshot_revision="rev-19",
+            mutation_kind="update_routing",
+            triggered_by="snapshot_service.update_routing",
+            metadata={"changed_fields": ["mode"]},
+        )
+        await service.record_retained_runtime_edit(
+            snapshot_id=19,
+            snapshot_revision="rev-19b",
+            mutation_kind="replace_midi_map",
+            triggered_by="snapshot_service.replace_midi_map",
+            metadata={"entry_count": 2},
+        )
+        return await service.get_live_state()
+
+    live_state = asyncio.run(_run())
+
+    retained_runtime_edits = live_state["runtime_metrics"]["retained_runtime_edits"]
+    assert [entry["mutation_kind"] for entry in retained_runtime_edits] == [
+        "update_routing",
+        "replace_midi_map",
+    ]
+    assert retained_runtime_edits[-1]["snapshot_revision"] == "rev-19b"
+    assert retained_runtime_edits[-1]["metadata"]["entry_count"] == 2
+    assert live_state["runtime_metrics"]["last_retained_runtime_edit_kind"] == "replace_midi_map"
+    assert live_state["runtime_metrics"]["last_retained_runtime_edit_triggered_by"] == (
+        "snapshot_service.replace_midi_map"
+    )
+    assert live_state["snapshot_revision"] == "rev-19b"
+    assert any(topic == "snapshot_runtime_live_state" for topic, _payload in fake_ws.messages)
+
+
 def test_cluster_reconciliation_report_summarizes_node_statuses(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

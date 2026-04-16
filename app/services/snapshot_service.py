@@ -982,6 +982,24 @@ class SnapshotService:
             runtime_metrics=runtime_metrics,
         )
 
+    async def _record_retained_live_runtime_edit(
+        self,
+        *,
+        runtime_state_service: Any,
+        snapshot_id: int,
+        snapshot_revision: Any,
+        mutation_kind: str,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> Optional[dict[str, Any]]:
+        revision = str(snapshot_revision).strip() if isinstance(snapshot_revision, str) and snapshot_revision.strip() else None
+        return await runtime_state_service.record_retained_runtime_edit(
+            snapshot_id=snapshot_id,
+            snapshot_revision=revision,
+            mutation_kind=mutation_kind,
+            triggered_by=f"snapshot_service.{mutation_kind}",
+            metadata=metadata,
+        )
+
     async def _load_current_audio_state_extensions(self) -> dict[str, Any]:
         try:
             from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
@@ -2670,6 +2688,27 @@ class SnapshotService:
         if detail is None:
             return None
 
+        changed_fields = [
+            field_name
+            for field_name, field_value in (
+                ("name", name),
+                ("description", description),
+                ("tags", tags),
+                ("program_number", program_number),
+                ("tempo_bpm", tempo_bpm),
+                ("derived_from_snapshot_id", derived_from_snapshot_id),
+                ("output_level_reference_dbfs", output_level_reference_dbfs),
+                ("output_level_warning_threshold_db", output_level_warning_threshold_db),
+                ("input_device", input_device),
+                ("output_device", output_device),
+                ("controls_payload", controls_payload),
+                ("is_favorite", is_favorite),
+                ("is_locked", is_locked),
+                ("display_order", display_order),
+                ("detail_payload", detail_payload),
+            )
+            if field_value is not UNSET
+        ]
         current_runtime_payload: dict[str, Any] | None = None
         is_current_live_snapshot = False
         device_binding_changed = (
@@ -2707,31 +2746,53 @@ class SnapshotService:
 
         if is_current_live_snapshot:
             try:
-                await SnapshotRuntimeStateService(self.session).sync_live_snapshot_payload(
+                runtime_state_service = SnapshotRuntimeStateService(self.session)
+                await runtime_state_service.sync_live_snapshot_payload(
                     snapshot_id=snapshot.id,
                     live_snapshot_payload=detail,
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
+                device_binding_result = None
                 if device_binding_changed:
-                    await self._apply_snapshot_audio_device_bindings(detail)
+                    device_binding_result = await self._apply_snapshot_audio_device_bindings(detail)
+                monitoring_output_result = None
                 if monitoring_output_changed:
-                    await self._apply_snapshot_monitoring_output_binding(detail)
+                    monitoring_output_result = await self._apply_snapshot_monitoring_output_binding(detail)
+                expression_mappings_result = None
                 if expression_mappings_changed:
-                    await self._sync_snapshot_expression_mappings_to_runtime(
+                    expression_mappings_result = await self._sync_snapshot_expression_mappings_to_runtime(
                         [
                             dict(entry)
                             for entry in current_controls_payload.get("expression_mappings", [])
                             if isinstance(entry, dict)
                         ]
                     )
+                automation_lanes_result = None
                 if automation_lanes_changed:
-                    await self._sync_snapshot_automation_lanes_to_runtime(
+                    automation_lanes_result = await self._sync_snapshot_automation_lanes_to_runtime(
                         [
                             dict(entry)
                             for entry in current_controls_payload.get("automation_lanes", [])
                             if isinstance(entry, dict)
                         ]
                     )
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot.id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind="update_snapshot",
+                    metadata={
+                        "changed_fields": changed_fields,
+                        "device_binding_changed": device_binding_changed,
+                        "device_binding_result": device_binding_result,
+                        "monitoring_output_changed": monitoring_output_changed,
+                        "monitoring_output_result": monitoring_output_result,
+                        "expression_mappings_changed": expression_mappings_changed,
+                        "expression_mappings_result": expression_mappings_result,
+                        "automation_lanes_changed": automation_lanes_changed,
+                        "automation_lanes_result": automation_lanes_result,
+                    },
+                )
             except Exception as exc:
                 logger.debug("Snapshot runtime live-state sync skipped for %s: %s", snapshot.id, exc)
 
@@ -3036,6 +3097,30 @@ class SnapshotService:
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
                 detail["channel_state_apply"] = await self._sync_snapshot_channel_state_to_runtime(detail)
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot_id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind="update_channel",
+                    metadata={
+                        "channel_id": int(channel.id),
+                        "channel_key": str(channel.channel_key or ""),
+                        "channel_label": str(channel.label or channel.channel_key or f"Channel {channel.id}"),
+                        "changed_fields": sorted(
+                            {
+                                {
+                                    "chainId": "chain_id",
+                                    "id": "channel_key",
+                                    "dryWetMix": "dry_wet_mix",
+                                    "order": "order_index",
+                                }.get(str(field_name), str(field_name))
+                                for field_name in payload.keys()
+                                if str(field_name)
+                            }
+                        ),
+                        "channel_state_apply": detail.get("channel_state_apply"),
+                    },
+                )
         except Exception as exc:
             logger.debug("Snapshot channel live-state/authority sync skipped for %s: %s", snapshot_id, exc)
 
@@ -3263,6 +3348,18 @@ class SnapshotService:
                     live_snapshot_payload=detail,
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot_id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind="update_plugin_parameter_by_position",
+                    metadata={
+                        "chain_id": int(chain_id),
+                        "plugin_position": int(plugin_position),
+                        "parameter_key": str(parameter_key),
+                        "parameter_value": float(value),
+                    },
+                )
         except Exception as exc:
             logger.debug("Snapshot parameter live sync skipped for %s: %s", snapshot_id, exc)
         return detail
@@ -3338,6 +3435,26 @@ class SnapshotService:
                 detail["routing_mode_changed_live"] = requested_mode != previous_mode
                 detail["routing_apply"] = await snapshot_runtime_service.apply_snapshot_routing_to_engine(detail)
                 detail["morph_apply"] = await snapshot_runtime_service.apply_snapshot_morph_to_engine(detail)
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot.id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind="update_routing",
+                    metadata={
+                        "changed_fields": sorted(
+                            {
+                                str(field_name)
+                                for field_name in payload.keys()
+                                if str(field_name)
+                            }
+                        ),
+                        "previous_mode": previous_mode,
+                        "requested_mode": requested_mode,
+                        "routing_mode_changed_live": bool(detail.get("routing_mode_changed_live")),
+                        "routing_apply": detail.get("routing_apply"),
+                        "morph_apply": detail.get("morph_apply"),
+                    },
+                )
         except Exception as exc:
             logger.debug("Snapshot routing live-state/authority sync skipped for %s: %s", snapshot.id, exc)
 
@@ -3388,7 +3505,17 @@ class SnapshotService:
                     live_snapshot_payload=detail,
                     snapshot_revision=detail.get("snapshot_revision"),
                 )
-                await self._sync_snapshot_midi_map_to_engine(snapshot.id, normalized_entries)
+                midi_map_sync_result = await self._sync_snapshot_midi_map_to_engine(snapshot.id, normalized_entries)
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot.id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind="replace_midi_map",
+                    metadata={
+                        "entry_count": len(normalized_entries),
+                        "midi_map_sync_result": midi_map_sync_result,
+                    },
+                )
         except Exception as exc:
             logger.debug("Snapshot MIDI-map live sync skipped for %s: %s", snapshot.id, exc)
 

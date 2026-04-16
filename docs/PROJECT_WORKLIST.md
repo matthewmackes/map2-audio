@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2306 by removing desired-authority republishes from live editor mutations.
+Last updated: 2026-04-15 - Completed T2307 by persisting retained live runtime edit audit entries on the runtime live-state row.
+
+---
+
+ID: T2307
+Status: [✓] Done
+Title: Audit-trail retained live runtime editor syncs on the persisted live-state row
+Description:
+- Goal / acceptance criteria: Preserve the remaining live-editor compatibility mutations under `T2296`, but make each retained live runtime sync leave a durable operator-visible audit trail on the persisted runtime live-state row instead of silently mutating the running snapshot. Acceptance requires a bounded `runtime_metrics.retained_runtime_edits` trail, backend wiring from the remaining retained live mutation paths, focused regressions proving the audit trail is persisted/broadcast for live snapshots only, and reconciled worklist notes.
+- Why it matters: `T2306` stopped the last desired-authority republish bypasses, but the platform still has retained live runtime sync paths for compatibility and recovery. Without an audit trail those paths still bypass the canonical activation narrative silently, which keeps `T2296` open.
+- Dependencies: T2306
+- Estimated effort: Medium
+- Required outputs: persisted retained-runtime-edit audit trail, snapshot-service/runtime-state wiring, focused regressions, and reconciled worklist/memory notes.
+Assigned to: Codex
+Last updated: 2026-04-15 21:04 EDT - Codex
+- Completion notes:
+  - Added `SnapshotRuntimeStateService.record_retained_runtime_edit()` so the persisted local live-state row now carries a bounded `runtime_metrics.retained_runtime_edits` audit trail plus last-edit metadata, and each retained entry rebroadcasts the updated live-state payload.
+  - Wired the remaining retained live compatibility mutation paths in `app/services/snapshot_service.py` (`update_snapshot`, `update_channel`, `update_plugin_parameter_by_position`, `update_routing`, and `replace_midi_map`) to append durable audit metadata after syncing the live runtime payload.
+  - Updated `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md` and `.github/copilot-instructions.md` so the retained live-edit audit breadcrumb is documented alongside the worklist ledger.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'retained_live_runtime_edit_paths_record_audit_entries or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot or replace_midi_map_resyncs_live_snapshot_commands_to_engine or update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot'` -> PASS
 
 ---
 

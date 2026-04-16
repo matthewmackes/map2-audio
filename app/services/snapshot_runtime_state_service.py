@@ -52,6 +52,7 @@ OFFLINE_AFTER_SECONDS = 15.0
 HEARTBEAT_INTERVAL_SECONDS = 1.0
 RECONCILIATION_INTERVAL_SECONDS = 5.0
 ACTIVATION_EVENT_LIMIT_PER_NODE = 100
+RETAINED_RUNTIME_EDIT_LIMIT = 50
 POST_ACTIVATION_VERIFY_DELAY_SECONDS = 2.5
 ACTIVATION_PROGRESS_TIMEOUT_SECONDS = 10.0
 ACTIVATION_PHASES = ("VALIDATING", "STAGING", "APPLYING", "VERIFYING", "LIVE")
@@ -1307,6 +1308,59 @@ class SnapshotRuntimeStateService:
             row.live_snapshot_payload = next_payload
             if runtime_metrics is not None:
                 row.runtime_metrics = copy.deepcopy(runtime_metrics)
+            row.last_runtime_event_at = emitted_at
+            await session.flush()
+            live_state_payload = self._serialize_live_state_row(row, now=emitted_at)
+
+        await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
+        return live_state_payload
+
+    async def record_retained_runtime_edit(
+        self,
+        *,
+        snapshot_id: int,
+        mutation_kind: str,
+        triggered_by: str,
+        snapshot_revision: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> Optional[dict[str, Any]]:
+        emitted_at = _utcnow()
+        async with self._session_scope() as session:
+            row = await self._get_local_state_row(session)
+            if row is None or str(row.state or "").lower() != "live" or int(row.snapshot_id or 0) != int(snapshot_id):
+                return None
+
+            next_metrics = copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {}
+            retained_runtime_edits = [
+                copy.deepcopy(item)
+                for item in next_metrics.get("retained_runtime_edits", [])
+                if isinstance(item, dict)
+            ]
+            live_payload = row.live_snapshot_payload if isinstance(row.live_snapshot_payload, dict) else {}
+            effective_revision = (
+                str(snapshot_revision).strip()
+                if isinstance(snapshot_revision, str) and snapshot_revision.strip()
+                else str(row.snapshot_revision or live_payload.get("snapshot_revision") or "").strip() or None
+            )
+            entry = {
+                "id": uuid4().hex,
+                "snapshot_id": int(snapshot_id),
+                "snapshot_revision": effective_revision,
+                "mutation_kind": str(mutation_kind or "unknown").strip() or "unknown",
+                "triggered_by": str(triggered_by or "system").strip() or "system",
+                "recorded_at": emitted_at.isoformat(),
+                "metadata": copy.deepcopy(metadata) if isinstance(metadata, dict) else {},
+            }
+            retained_runtime_edits.append(entry)
+            next_metrics["retained_runtime_edits"] = retained_runtime_edits[-RETAINED_RUNTIME_EDIT_LIMIT:]
+            next_metrics["last_retained_runtime_edit_at"] = entry["recorded_at"]
+            next_metrics["last_retained_runtime_edit_kind"] = entry["mutation_kind"]
+            next_metrics["last_retained_runtime_edit_triggered_by"] = entry["triggered_by"]
+
+            row.seq = int(row.seq or 0) + 1
+            if effective_revision:
+                row.snapshot_revision = effective_revision
+            row.runtime_metrics = next_metrics
             row.last_runtime_event_at = emitted_at
             await session.flush()
             live_state_payload = self._serialize_live_state_row(row, now=emitted_at)

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 15, 2026 (local-only publish readiness guidance documented)
+> **Last Updated**: April 15, 2026 (retained live runtime edit audit trail documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1079,6 +1079,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'activate_snapshot_publishes_desired_state_to_audio_authority or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot'`
 - **Lesson**: Runtime convenience edits and control-plane authority publication are different layers. If an editor path needs immediate runtime feedback, that still does not authorize it to rewrite desired authority outside activation.
 
+**100. Retained Live Runtime Edits Must Leave Durable Live-State Audit Breadcrumbs**
+- **Files**: `app/services/snapshot_runtime_state_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_snapshot_service.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`
+- **Problem**: After the desired-authority guard landed, the remaining live compatibility paths still mutated the active snapshot’s runtime projection silently, which left `T2296` forensics incomplete.
+- **Root Cause**: Those retained paths only synced `live_snapshot_payload` and runtime side effects; they did not append any durable audit record unless a full activation event happened.
+- **Fix**: Add a bounded `runtime_metrics.retained_runtime_edits` trail on the persisted live-state row and wire the remaining retained live mutation entry points (`update_snapshot`, `update_channel`, `update_plugin_parameter_by_position`, `update_routing`, `replace_midi_map`) through that helper.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'retained_live_runtime_edit_paths_record_audit_entries or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot or replace_midi_map_resyncs_live_snapshot_commands_to_engine or update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot'`
+- **Lesson**: If a live compatibility path survives outside canonical activation, it still needs a durable live-state audit breadcrumb even when it is intentionally not an activation event.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2148,6 +2156,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Retained Live Runtime Edit Audit Trail
+- **Section**: Gotchas & Learned Fixes (#100), Update Log
+- **Change**: Documented that retained live compatibility mutations must append a bounded `runtime_metrics.retained_runtime_edits` trail on the persisted live-state row instead of remaining silent.
+- **Reason**: `T2296` still allowed intentional live runtime compatibility syncs, but they needed durable audit breadcrumbs once desired-authority publication was removed from those paths.
+- **Impact**: Future live compatibility work must either stay fully inside canonical activation or leave a durable live-state audit entry that operators and tests can inspect.
+- **Files**: `.github/copilot-instructions.md`, `app/services/snapshot_runtime_state_service.py`, `app/services/snapshot_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_snapshot_service.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Live Editor Authority Guard
 - **Section**: Gotchas & Learned Fixes (#99), Update Log
