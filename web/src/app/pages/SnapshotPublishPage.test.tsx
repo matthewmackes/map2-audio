@@ -150,27 +150,36 @@ describe('SnapshotPublishPage', () => {
       status: 'blocked',
       requirements: [
         {
-          id: 'engine',
-          label: 'Engine accepted the publish request',
+          id: 'network_routing',
+          label: 'Remote-node routing is ready',
+          status: 'not_applicable',
+          scope: 'cluster',
+          operator_message: 'This snapshot stays on the local node on this machine. No remote-node routing is required.',
+          repair_actions: [],
+        },
+        {
+          id: 'engine_accepted_publish',
+          label: 'Runtime can accept this publish',
           status: 'needs_attention',
-          scope: 'node',
-          operator_message: 'Retry the publish after the engine failure is cleared.',
+          scope: 'intent',
+          operator_message: 'The local audio engine on this machine is stopped or offline, so MAP2 cannot send this publish yet.',
           repair_actions: [],
         },
       ],
       blockers: [
         {
-          id: 'engine_apply_failed',
-          code: 'engine_apply_failed',
+          id: 'engine_unavailable',
+          code: 'engine_unavailable',
           severity: 'blocking',
           scope: 'node',
-          title: 'Runtime apply failed',
-          operator_message: 'The runtime rejected the last publish request.',
-          recommended_action: 'Retry publish',
+          title: 'Runtime is not ready',
+          operator_message: 'The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet.',
+          technical_detail: 'Local engine state: stopped.',
+          recommended_action: 'Start the audio engine, then retry publish',
           repair_action_id: 'retry_publish',
           prerequisite_of: [],
           related_path_ids: [],
-          related_node_ids: ['node-a'],
+          related_node_ids: ['node-local'],
         },
       ],
       warnings: [],
@@ -194,8 +203,9 @@ describe('SnapshotPublishPage', () => {
 
     expect(await screen.findByText('Arena Main')).toBeTruthy()
     expect(screen.getByText('Publish snapshot')).toBeTruthy()
-    expect(screen.getByText('Runtime apply failed')).toBeTruthy()
-    expect(screen.getByText('Engine accepted the publish request')).toBeTruthy()
+    expect(screen.getByText('Runtime is not ready')).toBeTruthy()
+    expect(screen.getByText('Runtime can accept this publish')).toBeTruthy()
+    expect(screen.getByText(/MAP2 is not waiting for a remote node\./)).toBeTruthy()
     expect(screen.getAllByRole('button', { name: 'Retry publish' })).toHaveLength(2)
   })
 

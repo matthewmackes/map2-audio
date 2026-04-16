@@ -94,6 +94,8 @@ class PublishReadinessService:
         requested_revision_id: Optional[int] = None
         confirmed_revision_id: Optional[int] = None
         applicable_steps: list[str] = []
+        origin_node_id: Optional[str] = None
+        expected_nodes: list[str] = []
 
         runtime_live_state = await self.runtime_state_service.get_live_state()
         activation_events = await self.runtime_state_service.list_activation_events(limit=8)
@@ -101,6 +103,7 @@ class PublishReadinessService:
         if committed is not None and committed.value.source_snapshot is not None:
             source_snapshot = committed.value.source_snapshot
             if int(source_snapshot.snapshot_id) == int(snapshot_id):
+                origin_node_id = str(committed.value.origin_node_id or "").strip() or None
                 requested_revision_id = source_snapshot.snapshot_revision_id
                 authority_findings = self._collect_authority_findings(
                     detail=detail,
@@ -114,6 +117,7 @@ class PublishReadinessService:
                 for repair in authority_findings["repairs"]:
                     repairs.setdefault(repair.id, repair)
                 applicable_steps = authority_findings["applicable_steps"]
+                expected_nodes = authority_findings["expected_nodes"]
                 if authority_findings["confirmed"]:
                     confirmed_revision_id = requested_revision_id
 
@@ -126,6 +130,8 @@ class PublishReadinessService:
             warnings=warnings,
             requested_revision_id=requested_revision_id,
             confirmed_revision_id=confirmed_revision_id,
+            origin_node_id=origin_node_id,
+            expected_nodes=expected_nodes,
         )
         if not applicable_steps:
             applicable_steps = [
@@ -357,6 +363,11 @@ class PublishReadinessService:
 
         engine_state = self._enum_value(committed_state.engine.display_state)
         if engine_state in {"stopped", "offline"}:
+            local_only_targets = self._is_local_only_publish(
+                detail=detail,
+                origin_node_id=committed_state.origin_node_id,
+                expected_nodes=expected_nodes,
+            )
             blockers.append(
                 PublishBlocker(
                     id="engine_unavailable",
@@ -364,9 +375,21 @@ class PublishReadinessService:
                     severity=PublishBlockerSeverity.BLOCKING,
                     scope=PublishScope.NODE,
                     title="Runtime is not ready",
-                    operator_message="The runtime has not confirmed that it can run this snapshot yet.",
-                    technical_detail=f"Engine display state is {committed_state.engine.display_state}.",
-                    recommended_action="Retry publish",
+                    operator_message=(
+                        "The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet."
+                        if local_only_targets
+                        else "A required runtime is stopped or offline, so MAP2 cannot publish this snapshot yet."
+                    ),
+                    technical_detail=(
+                        f"Local engine state: {self._enum_value(committed_state.engine.display_state)}."
+                        if local_only_targets
+                        else f"Committed engine display state is {self._enum_value(committed_state.engine.display_state)}."
+                    ),
+                    recommended_action=(
+                        "Start the audio engine, then retry publish"
+                        if local_only_targets
+                        else "Recover the runtime, then retry publish"
+                    ),
                     repair_action_id="retry_publish",
                     related_node_ids=expected_nodes,
                 )
@@ -390,6 +413,7 @@ class PublishReadinessService:
             "repairs": repairs,
             "confirmed": confirmed,
             "applicable_steps": applicable_steps,
+            "expected_nodes": expected_nodes,
         }
 
     def _stale_nodes(
@@ -479,6 +503,8 @@ class PublishReadinessService:
         warnings: list[PublishBlocker],
         requested_revision_id: Optional[int],
         confirmed_revision_id: Optional[int],
+        origin_node_id: Optional[str],
+        expected_nodes: list[str],
     ) -> list[PublishRequirement]:
         affected_codes = {blocker.code for blocker in blockers}
         waiting_codes = {warning.code for warning in warnings}
@@ -495,11 +521,22 @@ class PublishReadinessService:
             return PublishRequirementStatus.READY
 
         monitoring_output_index = ((detail.get("controls") or {}).get("monitoring_output_index") if isinstance(detail.get("controls"), dict) else None)
-        remote_paths_present = any(
-            str(path.get("owner_node_id") or "").strip()
-            for path in detail.get("paths", [])
-            if isinstance(path, dict)
+        local_only_publish = self._is_local_only_publish(
+            detail=detail,
+            origin_node_id=origin_node_id,
+            expected_nodes=expected_nodes,
         )
+        channel_requirement_codes = {
+            PublishBlockerCode.CHANNEL_UNCONFIRMED,
+            PublishBlockerCode.OBSERVATION_STALE,
+            PublishBlockerCode.LOCAL_ROUTING_INVALID,
+            PublishBlockerCode.NETWORK_ROUTING_INVALID,
+        }
+        channel_waiting = bool(waiting_codes & channel_requirement_codes)
+        channel_blocked = bool(affected_codes & channel_requirement_codes)
+        has_engine_unavailable = PublishBlockerCode.ENGINE_UNAVAILABLE in affected_codes
+        has_engine_apply_failed = PublishBlockerCode.ENGINE_APPLY_FAILED in affected_codes
+        has_authority_diverged = PublishBlockerCode.AUTHORITY_DIVERGED in affected_codes
 
         return [
             PublishRequirement(
@@ -565,22 +602,22 @@ class PublishReadinessService:
             ),
             PublishRequirement(
                 id="network_routing",
-                label="Network node routing is valid",
+                label="Remote-node routing is ready",
                 status=(
                     PublishRequirementStatus.NOT_APPLICABLE
-                    if not remote_paths_present and requested_revision_id is None
+                    if local_only_publish
                     else _status_for(blocker_codes={PublishBlockerCode.NETWORK_ROUTING_INVALID})
                 ),
                 scope=PublishScope.CLUSTER,
                 operator_message=(
-                    "No remote-node routing is required."
-                    if not remote_paths_present and requested_revision_id is None
+                    "This snapshot stays on the local node on this machine. No remote-node routing is required."
+                    if local_only_publish
                     else "Network routing is ready."
                 ),
             ),
             PublishRequirement(
                 id="target_node_reachable",
-                label="Target node is reachable",
+                label="Required target nodes are responding",
                 status=_status_for(
                     blocker_codes={
                         PublishBlockerCode.NODE_OFFLINE,
@@ -591,14 +628,27 @@ class PublishReadinessService:
                 ),
                 scope=PublishScope.NODE,
                 operator_message=(
-                    "Target nodes are reachable."
-                    if PublishBlockerCode.OBSERVATION_STALE not in affected_codes and PublishBlockerCode.NODE_SYNC_PENDING not in waiting_codes
-                    else "Waiting for target nodes to confirm this snapshot."
+                    "Waiting for the local node on this machine to confirm this snapshot."
+                    if local_only_publish
+                    and (
+                        PublishBlockerCode.OBSERVATION_STALE in affected_codes
+                        or PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes
+                    )
+                    else (
+                        "The local node on this machine is reachable."
+                        if local_only_publish
+                        else (
+                            "Waiting for the required nodes to confirm this snapshot."
+                            if PublishBlockerCode.OBSERVATION_STALE in affected_codes
+                            or PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes
+                            else "All required target nodes are reachable."
+                        )
+                    )
                 ),
             ),
             PublishRequirement(
                 id="engine_accepted_publish",
-                label="Engine accepted the publish request",
+                label="Runtime can accept this publish",
                 status=(
                     PublishRequirementStatus.NEEDS_ATTENTION
                     if affected_codes & {
@@ -614,36 +664,67 @@ class PublishReadinessService:
                 ),
                 scope=PublishScope.INTENT,
                 operator_message=(
-                    "The engine accepted the publish request."
-                    if requested_revision_id is not None and confirmed_revision_id is not None
+                    "The local audio engine on this machine is stopped or offline, so MAP2 cannot send this publish yet."
+                    if has_engine_unavailable and local_only_publish
                     else (
-                        "Waiting for the runtime to confirm the publish request."
-                        if requested_revision_id is not None
-                        else "Publish has not been requested yet."
+                        "A required runtime is stopped or offline, so MAP2 cannot send this publish yet."
+                        if has_engine_unavailable
+                        else (
+                            "The last publish request was rejected by the runtime. Clear the runtime issue, then retry."
+                            if has_engine_apply_failed
+                            else (
+                                "The runtime and committed live state disagree. Review diagnostics before retrying."
+                                if has_authority_diverged
+                                else (
+                                    "The runtime accepted this publish request."
+                                    if requested_revision_id is not None and confirmed_revision_id is not None
+                                    else (
+                                        "The runtime is processing this publish request."
+                                        if requested_revision_id is not None
+                                        else "The runtime is ready. Publish has not been requested yet."
+                                    )
+                                )
+                            )
+                        )
                     )
                 ),
             ),
             PublishRequirement(
                 id="channels_confirmed_live",
-                label="Every required channel is confirmed live",
+                label="Required channels are live",
                 status=(
                     PublishRequirementStatus.READY
                     if confirmed_revision_id is not None
-                    else _status_for(
-                        blocker_codes={
-                            PublishBlockerCode.CHANNEL_UNCONFIRMED,
-                            PublishBlockerCode.OBSERVATION_STALE,
-                            PublishBlockerCode.LOCAL_ROUTING_INVALID,
-                            PublishBlockerCode.NETWORK_ROUTING_INVALID,
-                        },
-                        waiting_only=PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes,
+                    else (
+                        PublishRequirementStatus.NOT_APPLICABLE
+                        if requested_revision_id is None and not channel_blocked and not channel_waiting
+                        else _status_for(
+                            blocker_codes=channel_requirement_codes,
+                            waiting_only=PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes,
+                        )
                     )
                 ),
                 scope=PublishScope.CHANNEL,
                 operator_message=(
                     "All required channels are confirmed live."
                     if confirmed_revision_id is not None
-                    else "Waiting for channel confirmation."
+                    else (
+                        "Fix routing before channels can go live."
+                        if affected_codes
+                        & {
+                            PublishBlockerCode.LOCAL_ROUTING_INVALID,
+                            PublishBlockerCode.NETWORK_ROUTING_INVALID,
+                        }
+                        else (
+                            "Channels will be confirmed after you publish this snapshot."
+                            if requested_revision_id is None and not channel_blocked and not channel_waiting
+                            else (
+                                "Waiting for the local runtime on this machine to confirm that the required channels are live."
+                                if local_only_publish
+                                else "Waiting for channel confirmation from the required nodes."
+                            )
+                        )
+                    )
                 ),
             ),
         ]
@@ -669,3 +750,27 @@ class PublishReadinessService:
     @staticmethod
     def _enum_value(value: Any) -> str:
         return str(getattr(value, "value", value) or "")
+
+    def _is_local_only_publish(
+        self,
+        *,
+        detail: dict[str, Any],
+        origin_node_id: Optional[str],
+        expected_nodes: list[str],
+    ) -> bool:
+        normalized_origin = str(origin_node_id or "").strip()
+        normalized_expected = [str(node_id or "").strip() for node_id in expected_nodes if str(node_id or "").strip()]
+        if normalized_expected:
+            if normalized_origin:
+                return all(node_id == normalized_origin for node_id in normalized_expected)
+            return len(set(normalized_expected)) <= 1
+        for path in detail.get("paths", []):
+            if not isinstance(path, dict):
+                continue
+            owner_node_id = str(path.get("owner_node_id") or "").strip()
+            if not owner_node_id:
+                continue
+            if normalized_origin and owner_node_id == normalized_origin:
+                continue
+            return False
+        return True

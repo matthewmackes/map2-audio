@@ -88,7 +88,16 @@ def _detail(snapshot_id: int, *, revision_number: int | None = 7):
     }
 
 
-def _committed_state(snapshot_id: int, *, revision_number: int = 7, sync_status: str = "synced", path_status: str = "active"):
+def _committed_state(
+    snapshot_id: int,
+    *,
+    revision_number: int = 7,
+    sync_status: str = "synced",
+    path_status: str = "active",
+    preferred_nodes: list[str] | None = None,
+    engine_state: str = "live",
+):
+    resolved_preferred_nodes = preferred_nodes or ["node-local", "rack-2"]
     return AuthoritativeAudioState(
         state_version=12,
         leader_epoch=3,
@@ -105,12 +114,19 @@ def _committed_state(snapshot_id: int, *, revision_number: int = 7, sync_status:
             compiled_at=utc_now().isoformat(),
             io=AudioStateDesiredIO(requested_input_device="In", requested_output_device="Out", monitoring_output_index=2),
             routing=AudioStateRouting(mode="series", active_path_ids=["ch_a"], path_order=["ch_a", "ch_b"]),
-            deployment=AudioStateDeployment(placement_mode="cluster_deployed", preferred_nodes=["node-local", "rack-2"]),
+            deployment=AudioStateDeployment(
+                placement_mode="cluster_deployed" if resolved_preferred_nodes else "local_only",
+                preferred_nodes=resolved_preferred_nodes,
+            ),
             chains=[],
         ),
         observed_summary=AudioStateObservedIOSummary(effective_input_device="In", effective_output_device="Out"),
-        cluster=AudioStateClusterStatus(sync_status=sync_status, applied_node_ids=["node-local", "rack-2"] if sync_status == "synced" else ["node-local"], degraded_node_ids=[]),
-        engine=AudioStateEngineSummary(display_state="live", is_warning=False, is_offline=False),
+        cluster=AudioStateClusterStatus(
+            sync_status=sync_status,
+            applied_node_ids=resolved_preferred_nodes if sync_status == "synced" else ["node-local"],
+            degraded_node_ids=[],
+        ),
+        engine=AudioStateEngineSummary(display_state=engine_state, is_warning=False, is_offline=engine_state == "offline"),
         paths=[
             AudioStatePathRecord(
                 path_id="ch_a",
@@ -317,3 +333,56 @@ def test_publish_readiness_service_marks_diverged_when_runtime_disagrees_with_au
 
     assert readiness.status.value == "diverged"
     assert any(blocker.code.value == "authority_diverged" for blocker in readiness.blockers)
+
+
+def test_publish_readiness_service_clarifies_local_only_runtime_blockers(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=15, name="Snapshot 15"))
+            session.add(
+                SnapshotRevision(
+                    snapshot_id=15,
+                    revision_number=5,
+                    snapshot_revision="rev-15",
+                    summary="summary",
+                    summary_metadata={},
+                    payload={},
+                    document={},
+                )
+            )
+            await session.flush()
+            service = PublishReadinessService(
+                session,
+                snapshot_service=_FakeSnapshotService(_detail(15, revision_number=5)),
+                authority_service=_FakeAuthorityService(
+                    _committed_state(
+                        15,
+                        revision_number=5,
+                        preferred_nodes=["node-local"],
+                        engine_state="stopped",
+                    ),
+                    [_observation("node-local")],
+                ),
+                runtime_state_service=_FakeRuntimeStateService(live_state={"state": "stopped"}),
+            )
+            return await service.get_publish_readiness(15)
+
+    readiness = asyncio.run(_run())
+
+    assert readiness.status.value == "blocked"
+    network_requirement = next(item for item in readiness.requirements if item.id == "network_routing")
+    target_requirement = next(item for item in readiness.requirements if item.id == "target_node_reachable")
+    engine_requirement = next(item for item in readiness.requirements if item.id == "engine_accepted_publish")
+    channels_requirement = next(item for item in readiness.requirements if item.id == "channels_confirmed_live")
+    runtime_blocker = next(blocker for blocker in readiness.blockers if blocker.code.value == "engine_unavailable")
+
+    assert network_requirement.status.value == "not_applicable"
+    assert network_requirement.operator_message == "This snapshot stays on the local node on this machine. No remote-node routing is required."
+    assert target_requirement.operator_message == "The local node on this machine is reachable."
+    assert engine_requirement.label == "Runtime can accept this publish"
+    assert engine_requirement.operator_message == "The local audio engine on this machine is stopped or offline, so MAP2 cannot send this publish yet."
+    assert channels_requirement.operator_message == "Waiting for the local runtime on this machine to confirm that the required channels are live."
+    assert runtime_blocker.operator_message == "The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet."
+    assert runtime_blocker.technical_detail == "Local engine state: stopped."

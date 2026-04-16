@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 15, 2026 (Maschine MK1 LED transport correction documented)
+> **Last Updated**: April 15, 2026 (local-only publish readiness guidance documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1054,6 +1054,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Keep the persisted pin state in `AppShell`, derive shell layout widths from that single source of truth, and let `GlobalTreeNav` expose only the toggle UI. When unpinned, render the restore control from `AppShell` so the rail can be brought back without page-specific code.
 - **Verification**: `npm --prefix web run typecheck`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx`; `npm --prefix web run build`
 - **Lesson**: For shared shell controls, put state where the shell geometry lives. The nav component should render the control, but `AppShell` should own the pinned/unpinned layout contract.
+
+**97. Local-Only Publish Feedback Must Never Use Remote-Node Language**
+- **Files**: `app/services/publish_readiness_service.py`, `web/src/app/pages/SnapshotPublishPage.tsx`, `web/src/app/pages/SnapshotPublishPage.css`, `tests/test_publish_readiness_service.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`
+- **Problem**: The snapshot publish workspace could report `Network node routing is valid`, `Target node is reachable`, and `Engine accepted the publish request` even when the real blocker in all-in-one/local-only mode was simply that the local audio engine on this machine was stopped.
+- **Root Cause**: The readiness model reused generic cluster confirmation labels for both remote-node and local-only flows, and the page rendered those backend strings without adding any operator-oriented explanation of what MAP2 was actually waiting for.
+- **Fix**: Treat remote routing as permanently `not_applicable` for local-only publishes, rewrite runtime readiness copy around the local engine/local node when no remote targets exist, and render a guided issue-context message that explicitly says MAP2 is waiting on the local engine on this machine rather than on a remote node.
+- **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`; `npm --prefix web run build`
+- **Lesson**: Publish-readiness copy must describe the real failing platform layer. In local-only mode, remote-node wording is a correctness bug, not just weak UX.
 
 ### Server Management Gotchas
 
@@ -2124,6 +2132,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Local-Only Publish Guidance
+- **Section**: Gotchas & Learned Fixes (#97), Update Log
+- **Change**: Documented that local-only snapshot publish blockers must be described in terms of the local engine/local node, with remote-node routing left `not_applicable` and a guided explanation on the publish page.
+- **Reason**: The publish workspace was telling operators to think about target-node confirmation when the actual blocker was the local audio engine being stopped.
+- **Impact**: Future readiness/activation work should preserve a direct explanation of what MAP2 is waiting for instead of leaking generic cluster wording into local-only flows.
+- **Files**: `.github/copilot-instructions.md`, `app/services/publish_readiness_service.py`, `web/src/app/pages/SnapshotPublishPage.tsx`, `web/src/app/pages/SnapshotPublishPage.css`, `tests/test_publish_readiness_service.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-14] - Global Navigation Pin Toggle
 - **Section**: Gotchas & Learned Fixes (#96), Update Log

@@ -6,7 +6,43 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2303 by blocking generic snapshot-owned runtime chain activation outside the canonical snapshot activation path.
+Last updated: 2026-04-15 - Completed T2304 by clarifying local-only publish readiness guidance and added T2305 to expose a real local-engine repair path from the publish flow.
+
+---
+
+ID: T2305
+Status: [ ] Todo
+Title: Expose local audio-engine recovery as a real publish repair path
+Description:
+- Goal / acceptance criteria: Replace the current blind `retry_publish` behavior for local `engine_unavailable` publish blockers with an operator-visible recovery path that can start or restart the local audio engine when that is the exact blocker. Acceptance requires a typed repair action contract for local engine recovery, backend wiring to the existing audio start/restart primitives, publish-page action handling, and focused regression coverage for both the repair contract and the operator flow.
+- Why it matters: The publish workspace can now explain that it is waiting on the local engine, but it still cannot fix that state directly even though the platform already has explicit audio start/restart controls.
+- Dependencies: T2304
+- Estimated effort: Medium
+- Required outputs: local engine repair action contract, backend recovery wiring, publish-page action support, focused backend/frontend tests, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 20:11 EDT - Codex
+
+---
+
+ID: T2304
+Status: [✓] Done
+Title: Clarify local-only snapshot publish guidance and pre-request runtime readiness wording
+Description:
+- Goal / acceptance criteria: Remove the operator-facing contradiction on the snapshot publish workspace where local-only/all-in-one publishes still talk about remote-node confirmation or imply that a publish request already exists. Acceptance requires backend readiness copy that distinguishes local-only versus remote-node flows, clearer runtime-readiness wording before or during publish, a guided page explanation that tells the operator exactly what MAP2 is waiting for, and focused backend/frontend regression coverage.
+- Why it matters: The current publish-readiness surface exposes backend state fragments like `target nodes`, `engine accepted the publish request`, and `waiting for channel confirmation` without explaining that, in local-only mode, the real blocker is usually the local audio engine on this machine.
+- Dependencies: T2295
+- Estimated effort: Medium
+- Required outputs: refined publish-readiness copy/state mapping, updated snapshot publish page guidance, focused regression coverage, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 20:11 EDT - Codex
+- Completion notes:
+  - Updated `app/services/publish_readiness_service.py` so local-only publish readiness uses explicit local-engine/local-node wording, keeps remote-node routing permanently `not_applicable` for local-only snapshots, and separates runtime-readiness messaging from actual publish-confirmation messaging.
+  - Updated `web/src/app/pages/SnapshotPublishPage.tsx` and `SnapshotPublishPage.css` so the guided issue card explains when MAP2 is waiting on the local engine on this machine instead of implying a remote-node dependency.
+  - Added focused regressions in `tests/test_publish_readiness_service.py` and `web/src/app/pages/SnapshotPublishPage.test.tsx` to lock the local-only wording and guided explanation contract.
+- Validation:
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

@@ -149,6 +149,10 @@ function pickCurrentIssue(readiness: SnapshotPublishReadiness): PublishBlocker |
   return readiness.blockers[0] ?? readiness.warnings[0] ?? null
 }
 
+function findRequirement(readiness: SnapshotPublishReadiness, requirementId: string) {
+  return readiness.requirements.find((requirement) => requirement.id === requirementId) ?? null
+}
+
 function resolveRepairs(readiness: SnapshotPublishReadiness, issue: PublishBlocker | null): PublishRepairAction[] {
   if (!issue?.repair_action_id) {
     return []
@@ -256,6 +260,21 @@ function buildFlowSteps(readiness: SnapshotPublishReadiness, issue: PublishBlock
   ] as const
 }
 
+function buildIssueContextMessage(readiness: SnapshotPublishReadiness, issue: PublishBlocker | null): string | null {
+  const networkRouting = findRequirement(readiness, 'network_routing')
+  const isLocalOnlyPublish = networkRouting?.status === 'not_applicable'
+  if (issue?.code === 'engine_unavailable' && isLocalOnlyPublish) {
+    return 'This snapshot stays on the local node on this machine. MAP2 is not waiting for a remote node. It is waiting for the local audio engine to start responding so it can accept the publish request.'
+  }
+  if (isLocalOnlyPublish && readiness.requested_revision_id && !readiness.confirmed_revision_id) {
+    return 'This snapshot is already scoped to the local node on this machine. MAP2 is waiting for the local runtime to confirm that the publish finished and the channels are live.'
+  }
+  if (isLocalOnlyPublish && !readiness.requested_revision_id) {
+    return 'This snapshot is local-only. After you publish it, MAP2 will wait for the local runtime on this machine to confirm that the channels are live.'
+  }
+  return null
+}
+
 export function SnapshotPublishPage() {
   const { snapshotId: snapshotIdParam } = useParams<{ snapshotId: string }>()
   const snapshotId = Number(snapshotIdParam)
@@ -343,6 +362,7 @@ export function SnapshotPublishPage() {
   )
   const currentIssue = readiness ? pickCurrentIssue(readiness) : null
   const currentRepairs = readiness ? resolveRepairs(readiness, currentIssue) : []
+  const issueContextMessage = readiness ? buildIssueContextMessage(readiness, currentIssue) : null
   const nodeConfirmations = useMemo(() => asNodeConfirmations(latestEvent), [latestEvent])
   const channelConfirmations = useMemo(() => asChannelConfirmations(latestEvent), [latestEvent])
 
@@ -558,6 +578,9 @@ export function SnapshotPublishPage() {
               {currentIssue ? (
                 <div className="snapshot-publish-page__issue-card">
                   <p className="snapshot-publish-page__issue-message">{currentIssue.operator_message}</p>
+                  {issueContextMessage ? (
+                    <p className="snapshot-publish-page__issue-context">{issueContextMessage}</p>
+                  ) : null}
                   <p className="snapshot-publish-page__issue-action"><strong>Next action:</strong> {currentIssue.recommended_action}</p>
                   {currentIssue.technical_detail ? (
                     <p className="snapshot-publish-page__issue-detail">{currentIssue.technical_detail}</p>

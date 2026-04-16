@@ -63,6 +63,7 @@
 .snapshot-publish-page__hero-copy p,
 .snapshot-publish-page__plain-copy,
 .snapshot-publish-page__issue-message,
+.snapshot-publish-page__issue-context,
 .snapshot-publish-page__issue-action,
 .snapshot-publish-page__issue-detail,
 .snapshot-publish-page__checklist-row p,
@@ -134,6 +135,12 @@
 .snapshot-publish-page__issue-card {
   display: grid;
   gap: 0.85rem;
+}
+
+.snapshot-publish-page__issue-context {
+  padding: 0.75rem;
+  border-left: 3px solid var(--cds-border-interactive);
+  background: var(--cds-layer-accent);
 }
 
 .snapshot-publish-page__issue-detail {
