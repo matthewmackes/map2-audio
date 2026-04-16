@@ -2338,8 +2338,11 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
 
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            events = await runtime_state_service.list_activation_events(limit=1)
+            return activated, events[0]
 
-    asyncio.run(_run())
+    activated, event = asyncio.run(_run())
 
     assert len(published_desired) == 1
     assert len(committed_states) == 1
@@ -2351,6 +2354,94 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert observations[0].runtime_paths[0].status == "active"
     assert observations[0].runtime_paths[0].owner_node_id == "LOCAL-NODE"
     assert reconciliations == [True]
+    assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["published_observation"] is True
+    assert event["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert event["runtime_metrics"]["authority_publication"]["reconciled"] is True
+
+
+def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    published_desired: list[object] = []
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    async def _fake_apply(_snapshot_data):
+        return 0, 0
+
+    async def _fake_activate_chain(self, chain_id, *, preferred_detached_instance_ids=None):
+        result = await self.session.execute(select(database_module.Chain).filter(database_module.Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if chain is not None:
+            chain.is_active = True
+        return True
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            published_desired.append(desired)
+            return SimpleNamespace(value=desired)
+
+        async def next_state_version(self):
+            return 8
+
+        async def put_committed_state(self, state):
+            raise RuntimeError("committed authority write failed")
+
+        async def put_observation(self, observation):
+            raise AssertionError("put_observation should not run after committed-state failure")
+
+        async def reconcile_committed_state(self):
+            raise AssertionError("reconcile_committed_state should not run after committed-state failure")
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_runtime_service, "apply_snapshot_to_engine", _fake_apply)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+    monkeypatch.setattr(runtime_state_service_module, "schedule_post_activation_health_check", lambda **kwargs: None)
+    monkeypatch.setattr(runtime_state_service_module, "resolve_local_node_id", lambda: "LOCAL-NODE")
+    monkeypatch.setattr(ChainService, "activate_chain", _fake_activate_chain)
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="AuthorityConfirmFailed",
+                detail_payload={
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                apply_default_system_blocks=False,
+            )
+
+            activated = await service.activate_snapshot(created["id"])
+            assert activated is not None
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            events = await runtime_state_service.list_activation_events(limit=1)
+            return activated, events[0]
+
+    activated, event = asyncio.run(_run())
+
+    assert len(published_desired) == 1
+    authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
+    assert authority_publication["status"] == "failed"
+    assert authority_publication["reason"] == "authority_confirmation_failed"
+    assert authority_publication["technical_detail"] == "committed authority write failed"
+    assert event["runtime_metrics"]["authority_publication"]["status"] == "failed"
+    assert event["runtime_metrics"]["authority_publication"]["operator_message"] == (
+        "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
+    )
 
 
 def test_activate_snapshot_preserves_existing_authority_extensions_when_publishing_desired_state(tmp_path, monkeypatch):

@@ -1368,6 +1368,54 @@ class SnapshotRuntimeStateService:
         await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
         return live_state_payload
 
+    async def record_authority_publication_result(
+        self,
+        *,
+        snapshot_id: int,
+        request_id: str,
+        authority_publication: dict[str, Any],
+    ) -> Optional[dict[str, Any]]:
+        emitted_at = _utcnow()
+        activation_payload: Optional[dict[str, Any]] = None
+        live_state_payload: Optional[dict[str, Any]] = None
+        normalized_result = copy.deepcopy(authority_publication) if isinstance(authority_publication, dict) else {}
+
+        async with self._session_scope() as session:
+            row = await self._get_local_state_row(session)
+            if row is not None and str(row.state or "").lower() == "live" and int(row.snapshot_id or 0) == int(snapshot_id):
+                next_metrics = copy.deepcopy(row.runtime_metrics) if isinstance(row.runtime_metrics, dict) else {}
+                next_metrics["authority_publication"] = normalized_result
+                next_metrics["last_authority_publication_at"] = str(
+                    normalized_result.get("checked_at") or emitted_at.isoformat()
+                )
+                row.seq = int(row.seq or 0) + 1
+                row.runtime_metrics = next_metrics
+                row.last_runtime_event_at = emitted_at
+                live_state_payload = self._serialize_live_state_row(row, now=emitted_at)
+
+            result = await session.execute(
+                select(SnapshotActivationEvent).where(SnapshotActivationEvent.request_id == str(request_id))
+            )
+            event_row = result.scalar_one_or_none()
+            if event_row is not None:
+                event_metrics = copy.deepcopy(event_row.runtime_metrics) if isinstance(event_row.runtime_metrics, dict) else {}
+                event_metrics["authority_publication"] = normalized_result
+                event_metrics["last_authority_publication_at"] = str(
+                    normalized_result.get("checked_at") or emitted_at.isoformat()
+                )
+                event_row.runtime_metrics = event_metrics
+                activation_payload = self._serialize_activation_event(event_row)
+
+            await session.flush()
+
+        if live_state_payload is not None:
+            await self._broadcast_runtime_state(live_state_payload, emitted_at=emitted_at)
+        if activation_payload is not None:
+            cache = self._activation_event_cache[self.local_node_id]
+            cache.appendleft(activation_payload)
+            await self._broadcast_activation_event(activation_payload, emitted_at=emitted_at)
+        return live_state_payload
+
     async def sync_live_snapshot_paths(
         self,
         *,

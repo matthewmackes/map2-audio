@@ -1079,7 +1079,14 @@ class SnapshotService:
         *,
         runtime_live_state: dict[str, Any] | None = None,
         leader_epoch: int = 1,
-    ) -> None:
+    ) -> dict[str, Any]:
+        checked_at = _utcnow().isoformat()
+        desired_published = False
+        committed_published = False
+        observation_published = False
+        reconciled = False
+        state_version: int | None = None
+        authority_node_id = str((runtime_live_state or {}).get("node_id") or "").strip() or None
         try:
             from app.models.audio_state import (
                 AudioStateEngineSummary,
@@ -1107,6 +1114,20 @@ class SnapshotService:
                 extensions=merged_extensions,
             )
             await authority.put_desired_state(desired_state)
+            desired_published = True
+            result = {
+                "status": "confirmed",
+                "reason": "confirmed",
+                "checked_at": checked_at,
+                "node_id": authority_node_id,
+                "published_desired": desired_published,
+                "published_committed": committed_published,
+                "published_observation": observation_published,
+                "reconciled": reconciled,
+                "state_version": state_version,
+                "operator_message": "Runtime live state and control-plane authority are aligned.",
+                "technical_detail": None,
+            }
 
             required_methods = (
                 "next_state_version",
@@ -1115,12 +1136,16 @@ class SnapshotService:
                 "reconcile_committed_state",
             )
             if not all(hasattr(authority, method_name) for method_name in required_methods):
-                return
+                result["reason"] = "desired_only"
+                result["operator_message"] = "Desired state was refreshed, but full authority confirmation is unavailable."
+                return result
 
             node_id = str(
                 (runtime_live_state or {}).get("node_id")
                 or resolve_local_node_id()
             ).strip() or resolve_local_node_id()
+            authority_node_id = node_id
+            result["node_id"] = authority_node_id
             state_version = await authority.next_state_version()
             committed_state = build_initial_authoritative_audio_state(
                 detail,
@@ -1130,6 +1155,10 @@ class SnapshotService:
                 extensions=merged_extensions,
             )
             committed_envelope = await authority.put_committed_state(committed_state)
+            committed_published = True
+            state_version = committed_envelope.value.state_version
+            result["published_committed"] = committed_published
+            result["state_version"] = state_version
 
             runtime_payload = (
                 runtime_live_state.get("live_snapshot_payload")
@@ -1197,13 +1226,33 @@ class SnapshotService:
                 extensions=copy.deepcopy(merged_extensions),
             )
             await authority.put_observation(observation)
+            observation_published = True
+            result["published_observation"] = observation_published
             await authority.reconcile_committed_state()
+            reconciled = True
+            result["reconciled"] = reconciled
+            return result
         except Exception as exc:
             logger.debug(
                 "Snapshot live-state authority confirm skipped for %s: %s",
                 detail.get("id"),
                 exc,
             )
+            return {
+                "status": "failed",
+                "reason": "authority_confirmation_failed",
+                "checked_at": checked_at,
+                "node_id": authority_node_id,
+                "published_desired": desired_published,
+                "published_committed": committed_published,
+                "published_observation": observation_published,
+                "reconciled": reconciled,
+                "state_version": state_version,
+                "operator_message": (
+                    "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
+                ),
+                "technical_detail": str(exc),
+            }
 
     async def _reconcile_snapshot_brain_runtime_extensions(
         self,

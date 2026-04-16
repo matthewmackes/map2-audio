@@ -448,6 +448,54 @@ def test_record_retained_runtime_edit_persists_bounded_audit_trail_and_broadcast
     assert any(topic == "snapshot_runtime_live_state" for topic, _payload in fake_ws.messages)
 
 
+def test_record_authority_publication_result_updates_live_state_and_activation_event(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    fake_ws = _FakeWSManager()
+
+    from app.services import websocket_manager
+
+    monkeypatch.setattr(websocket_manager, "ws_manager", fake_ws)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=20, name="Authority Publication"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=20,
+            snapshot_name="Authority Publication",
+            snapshot_revision="rev-20",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 20, "name": "Authority Publication", "live_state": {"paths": []}},
+            runtime_metrics={},
+        )
+        live_state = await service.record_authority_publication_result(
+            snapshot_id=20,
+            request_id=str(intent["request_id"]),
+            authority_publication={
+                "status": "failed",
+                "reason": "authority_confirmation_failed",
+                "checked_at": "2026-04-16T01:15:00+00:00",
+                "technical_detail": "committed authority write failed",
+            },
+        )
+        events = await service.list_activation_events(limit=1)
+        return live_state, events
+
+    live_state, events = asyncio.run(_run())
+
+    assert live_state["runtime_metrics"]["authority_publication"]["status"] == "failed"
+    assert live_state["runtime_metrics"]["last_authority_publication_at"] == "2026-04-16T01:15:00+00:00"
+    assert events[0]["runtime_metrics"]["authority_publication"]["technical_detail"] == (
+        "committed authority write failed"
+    )
+    assert any(topic == "snapshot_activation_events" for topic, _payload in fake_ws.messages)
+
+
 def test_cluster_reconciliation_report_summarizes_node_statuses(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

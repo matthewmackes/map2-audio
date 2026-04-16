@@ -149,6 +149,7 @@ Rules:
 - `seq` must be monotonic per node.
 - Consumers must ignore stale or out-of-order updates.
 - `live_snapshot_payload` is the node’s authoritative live copy.
+- `runtime_metrics.authority_publication`, when present, records whether post-runtime desired/committed/observed authority confirmation completed or failed after the runtime went live.
 - `runtime_metrics.retained_runtime_edits`, when present, is a bounded oldest-first audit list of retained live-edit compatibility mutations that updated the currently live snapshot outside canonical activation.
 
 ### NodeActivationAuditEvent
@@ -178,6 +179,7 @@ Retention:
 - Keep the last 100 activation events per node.
 - Use an in-memory hot cache for reads.
 - Keep the database as the durable audit source.
+- Successful and failed activation events may carry `runtime_metrics.authority_publication` so operator/readiness surfaces can distinguish post-runtime authority-confirm failures from pre-runtime activation failures.
 
 ## API And Event Surface
 

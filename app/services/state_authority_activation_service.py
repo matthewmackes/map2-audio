@@ -977,10 +977,11 @@ class StateAuthorityActivationService:
                 live_snapshot_payload=refreshed_detail,
                 runtime_metrics=runtime_metrics,
             )
-            await self.owner._publish_confirmed_live_state_to_audio_authority(
+            authority_publication_result = await self.owner._publish_confirmed_live_state_to_audio_authority(
                 refreshed_detail,
                 runtime_live_state=live_runtime_state,
             )
+            runtime_metrics["authority_publication"] = authority_publication_result or {}
             brain_runtime_reconcile_result["broadcast_count"] = await self.owner._broadcast_snapshot_brain_runtime_updates(
                 brain_runtime_reconcile_result
             )
@@ -1017,6 +1018,13 @@ class StateAuthorityActivationService:
                 snapshot_revision=snapshot_revision,
                 runtime_metrics=runtime_metrics,
             )
+            updated_runtime_state = await runtime_state_service.record_authority_publication_result(
+                snapshot_id=snapshot.id,
+                request_id=str(intent["request_id"]),
+                authority_publication=runtime_metrics.get("authority_publication") or {},
+            )
+            if updated_runtime_state is not None:
+                live_runtime_state = updated_runtime_state
         except Exception as exc:
             logger.debug("Snapshot activation hook update skipped for %s: %s", snapshot.id, exc)
 

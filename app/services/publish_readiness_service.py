@@ -301,6 +301,21 @@ class PublishReadinessService:
             (event for event in activation_events if int(event.get("snapshot_id") or 0) == int(detail["id"])),
             None,
         )
+        authority_publication = (
+            latest_event.get("runtime_metrics", {}).get("authority_publication")
+            if isinstance(latest_event, dict)
+            and isinstance(latest_event.get("runtime_metrics"), dict)
+            and isinstance(latest_event.get("runtime_metrics", {}).get("authority_publication"), dict)
+            else {}
+        )
+        runtime_matches_requested = (
+            str(runtime_live_state.get("state") or "").lower() == "live"
+            and int(runtime_live_state.get("snapshot_id") or 0) == int(detail["id"])
+        )
+        authority_confirmation_failed = (
+            runtime_matches_requested
+            and str(authority_publication.get("status") or "").strip().lower() == "failed"
+        )
         stale_nodes = self._stale_nodes(expected_nodes=expected_nodes, observations=observed_by_node, event=latest_event)
 
         for node_id in expected_nodes:
@@ -343,7 +358,46 @@ class PublishReadinessService:
                     )
                 )
 
-        if runtime_live_state.get("state") == "live":
+        if authority_confirmation_failed:
+            related_node_ids = [
+                str(node_id)
+                for node_id in (
+                    [authority_publication.get("node_id")]
+                    if authority_publication.get("node_id")
+                    else expected_nodes
+                )
+                if str(node_id or "").strip()
+            ] or expected_nodes
+            blockers.append(
+                PublishBlocker(
+                    id="authority_confirmation_failed",
+                    code=PublishBlockerCode.AUTHORITY_CONFIRMATION_FAILED,
+                    severity=PublishBlockerSeverity.BLOCKING,
+                    scope=PublishScope.CLUSTER,
+                    title="Runtime is live but authority confirmation failed",
+                    operator_message=(
+                        "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
+                    ),
+                    technical_detail=(
+                        str(authority_publication.get("technical_detail") or "").strip()
+                        or str(authority_publication.get("reason") or "").strip()
+                        or None
+                    ),
+                    recommended_action="Retry publish",
+                    repair_action_id="retry_publish",
+                    related_node_ids=related_node_ids,
+                )
+            )
+            repairs.append(
+                PublishRepairAction(
+                    id="retry_publish",
+                    label="Retry publish",
+                    operator_message="Retry the publish so MAP2 can confirm control-plane authority for this live snapshot.",
+                    scope=PublishScope.INTENT,
+                    related_node_ids=related_node_ids,
+                )
+            )
+        elif runtime_live_state.get("state") == "live":
             runtime_snapshot_id = int(runtime_live_state.get("snapshot_id") or 0)
             if runtime_snapshot_id and runtime_snapshot_id != int(detail["id"]):
                 blockers.append(
@@ -362,7 +416,7 @@ class PublishReadinessService:
                 )
 
         engine_state = self._enum_value(committed_state.engine.display_state)
-        if engine_state in {"stopped", "offline"}:
+        if not authority_confirmation_failed and engine_state in {"stopped", "offline"}:
             local_only_targets = self._is_local_only_publish(
                 detail=detail,
                 origin_node_id=committed_state.origin_node_id,
@@ -405,10 +459,11 @@ class PublishReadinessService:
                 )
             )
 
-        for path in committed_state.paths:
-            path_blocker = self._blocker_from_path(path, origin_node_id=committed_state.origin_node_id)
-            if path_blocker is not None:
-                blockers.append(path_blocker)
+        if not authority_confirmation_failed:
+            for path in committed_state.paths:
+                path_blocker = self._blocker_from_path(path, origin_node_id=committed_state.origin_node_id)
+                if path_blocker is not None:
+                    blockers.append(path_blocker)
 
         confirmed = (
             not blockers

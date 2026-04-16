@@ -388,3 +388,67 @@ def test_publish_readiness_service_clarifies_local_only_runtime_blockers(tmp_pat
     assert runtime_blocker.repair_action_id == "recover_local_audio_engine"
     assert runtime_blocker.operator_message == "The local audio engine on this machine is stopped, so MAP2 cannot publish this snapshot yet."
     assert runtime_blocker.technical_detail == "Local engine state: stopped."
+
+
+def test_publish_readiness_service_surfaces_authority_confirmation_failure_before_generic_runtime_blockers(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=16, name="Snapshot 16"))
+            session.add(
+                SnapshotRevision(
+                    snapshot_id=16,
+                    revision_number=6,
+                    snapshot_revision="rev-16",
+                    summary="summary",
+                    summary_metadata={},
+                    payload={},
+                    document={},
+                )
+            )
+            await session.flush()
+            service = PublishReadinessService(
+                session,
+                snapshot_service=_FakeSnapshotService(_detail(16, revision_number=6)),
+                authority_service=_FakeAuthorityService(
+                    _committed_state(
+                        16,
+                        revision_number=6,
+                        sync_status="pending_apply",
+                        engine_state="stopped",
+                    ),
+                    [_observation("node-local"), _observation("rack-2")],
+                ),
+                runtime_state_service=_FakeRuntimeStateService(
+                    live_state={"state": "live", "snapshot_id": 16},
+                    activation_events=[
+                        {
+                            "snapshot_id": 16,
+                            "runtime_metrics": {
+                                "authority_publication": {
+                                    "status": "failed",
+                                    "reason": "authority_confirmation_failed",
+                                    "technical_detail": "committed authority write failed",
+                                }
+                            },
+                        }
+                    ],
+                ),
+            )
+            return await service.get_publish_readiness(16)
+
+    readiness = asyncio.run(_run())
+
+    assert readiness.status.value == "blocked"
+    authority_blocker = next(
+        blocker for blocker in readiness.blockers if blocker.code.value == "authority_confirmation_failed"
+    )
+    assert authority_blocker.operator_message == (
+        "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
+    )
+    assert authority_blocker.technical_detail == "committed authority write failed"
+    assert authority_blocker.repair_action_id == "retry_publish"
+    assert any(repair.id == "retry_publish" for repair in readiness.available_repairs)
+    assert not any(blocker.code.value == "engine_unavailable" for blocker in readiness.blockers)
+    assert not any(blocker.code.value == "authority_diverged" for blocker in readiness.blockers)

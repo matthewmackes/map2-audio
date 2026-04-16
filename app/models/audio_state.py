@@ -39,6 +39,7 @@ class PublishBlockerCode(str, Enum):
     CHANNEL_UNCONFIRMED = "channel_unconfirmed"
     OBSERVATION_STALE = "observation_stale"
     AUTHORITY_DIVERGED = "authority_diverged"
+    AUTHORITY_CONFIRMATION_FAILED = "authority_confirmation_failed"
 
 
 class PublishBlockerSeverity(str, Enum):

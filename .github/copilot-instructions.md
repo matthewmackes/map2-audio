@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 15, 2026 (retained live runtime edit audit trail documented)
+> **Last Updated**: April 15, 2026 (authority-confirmation failure signaling documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1087,6 +1087,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'retained_live_runtime_edit_paths_record_audit_entries or update_routing_does_not_publish_desired_state_for_live_snapshot or update_channel_does_not_publish_desired_state_for_live_snapshot or replace_midi_map_resyncs_live_snapshot_commands_to_engine or update_snapshot_reapplies_engine_expression_mappings_for_live_snapshot'`
 - **Lesson**: If a live compatibility path survives outside canonical activation, it still needs a durable live-state audit breadcrumb even when it is intentionally not an activation event.
 
+**101. Runtime-Live Authority Confirmation Failures Must Override Generic Publish Blockers**
+- **Files**: `app/services/snapshot_service.py`, `app/services/state_authority_activation_service.py`, `app/services/snapshot_runtime_state_service.py`, `app/services/publish_readiness_service.py`, `app/models/audio_state.py`, `web/src/map2/types.ts`, `tests/test_snapshot_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_publish_readiness_service.py`
+- **Problem**: The canonical activation path could mark runtime live, fail during desired/committed/observation authority confirmation, and then leave operators staring at misleading generic blockers such as `engine_unavailable` or `authority_diverged`.
+- **Root Cause**: `_publish_confirmed_live_state_to_audio_authority()` only logged failures, and publish readiness had no typed signal telling it that runtime succeeded but authority confirmation did not.
+- **Fix**: Return a structured `authority_publication` result from the authority-confirm step, persist it on both the live-state row and the activation event, add the typed `authority_confirmation_failed` blocker code, and have publish readiness prefer that explicit degraded blocker when runtime already matches the requested snapshot.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k 'authority_publication or retained_runtime_edit'`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`; `npm --prefix web run build`
+- **Lesson**: When runtime success and authority confirmation can fail independently, readiness must key off the explicit post-runtime authority result instead of inferring the problem from stale authority state alone.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2156,6 +2164,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-15] - Authority Confirmation Failure Signaling
+- **Section**: Gotchas & Learned Fixes (#101), Update Log
+- **Change**: Documented that post-runtime authority confirmation must emit a durable `authority_publication` result and that publish readiness must surface a typed `authority_confirmation_failed` blocker instead of generic stale-authority symptoms.
+- **Reason**: Canonical activation could already get runtime live before authority confirmation finished, so silent authority failures were still producing misleading publish guidance.
+- **Impact**: Future activation/readiness work should treat post-runtime authority confirmation as its own explicit platform layer and preserve that result across runtime-state, activation-event, and publish-readiness surfaces.
+- **Files**: `.github/copilot-instructions.md`, `app/services/snapshot_service.py`, `app/services/state_authority_activation_service.py`, `app/services/snapshot_runtime_state_service.py`, `app/services/publish_readiness_service.py`, `app/models/audio_state.py`, `web/src/map2/types.ts`, `tests/test_snapshot_service.py`, `tests/test_snapshot_runtime_state_progress.py`, `tests/test_publish_readiness_service.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-15] - Retained Live Runtime Edit Audit Trail
 - **Section**: Gotchas & Learned Fixes (#100), Update Log

@@ -6,7 +6,30 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-15 - Completed T2307 by persisting retained live runtime edit audit entries on the runtime live-state row.
+Last updated: 2026-04-15 - Completed T2308 by persisting authority-publication results and surfacing typed degraded publish blockers.
+
+---
+
+ID: T2308
+Status: [✓] Done
+Title: Expose post-runtime authority confirmation failures as durable degraded publish blockers
+Description:
+- Goal / acceptance criteria: Make the canonical activation path record whether post-runtime authority publication succeeded or failed, persist that result on the live-state/audit trail, and surface a typed publish-readiness blocker when runtime is live but authority confirmation failed. Acceptance requires durable `authority_publication` metrics on the activation/live-state path, explicit readiness messaging that avoids generic engine-offline/diverged wording for this failure family, focused regression coverage, and reconciled worklist notes.
+- Why it matters: The audit still shows a core trust gap: `confirm_live_intent()` can mark runtime live, `_publish_confirmed_live_state_to_audio_authority()` can then fail silently, and the publish surface falls back to misleading generic blockers instead of naming the real degraded state.
+- Dependencies: T2307
+- Estimated effort: Medium
+- Required outputs: authority-publication result contract, runtime-state/activation-event persistence, typed readiness blocker copy, focused regressions, and reconciled docs/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-15 21:20 EDT - Codex
+- Completion notes:
+  - Changed `SnapshotService._publish_confirmed_live_state_to_audio_authority()` to return a structured `authority_publication` result instead of failing silently, and wired canonical activation to persist that result on both the local live-state row and the matching activation event.
+  - Added the typed `authority_confirmation_failed` publish blocker contract and updated `PublishReadinessService` so runtime-live authority-confirm failures now override misleading generic `engine_unavailable` / `authority_diverged` blocker copy.
+  - Updated the runtime live-state spec, shared backend/frontend blocker enum contract, and Copilot memory notes to reflect the new authority-confirmation signaling path.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_runtime_state_progress.py -k 'authority_publication or retained_runtime_edit'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live'` -> PASS
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

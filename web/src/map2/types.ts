@@ -2470,7 +2470,8 @@ export type PublishBlockerCode =
   | 'engine_apply_failed'
   | 'channel_unconfirmed'
   | 'observation_stale'
-  | 'authority_diverged';
+  | 'authority_diverged'
+  | 'authority_confirmation_failed';
 
 export type PublishBlockerSeverity = 'blocking' | 'warning' | 'info';
 export type PublishScope = 'draft' | 'intent' | 'node' | 'channel' | 'cluster';
