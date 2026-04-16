@@ -112,6 +112,29 @@ A task is complete ONLY IF:
 
 ---
 
+### 6A. CONFIGURATION AUTHORITY MODEL
+
+MAP2 uses a plane-based configuration authority model.
+
+- `/etc/map2` = host desired configuration
+- `/var/lib/map2` = durable service / cluster state
+- `~/.map2` = user / operator / session-scoped state
+- runtime systems such as `/proc`, PipeWire state, etcd, and Raft = observed live state or control-plane authority
+
+Rules:
+
+- Do not treat all persistence as one source of truth.
+- Do not store the same concept in multiple planes unless one is explicitly a generated projection or compatibility cache.
+- Do not copy observed runtime state into static files and then treat the copy as authoritative.
+- For any new config or state, explicitly choose its plane before implementation.
+- If a concept is mirrored temporarily, document the canonical owner and reconciliation path.
+
+Reference:
+
+- `docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md`
+
+---
+
 ### 7. OUTPUT FORMAT (REQUIRED)
 
 For any meaningful task:

@@ -474,6 +474,27 @@ describe('PlatformModalContent', () => {
     expect(screen.queryByRole('treeitem', { name: 'Open Program Catalog' })).toBeNull()
   })
 
+  it('renders the overview authority model and audio artifact path map', () => {
+    mockActiveLayerId = 'overview'
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} initialLayer="overview" />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Configuration Authority Model' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '/etc/map2' })).toBeInTheDocument()
+    expect(screen.getByText('/workspace/artifacts')).toBeInTheDocument()
+    expect(screen.getAllByText('~/.local/share/map2/nam').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('/var/lib/map2/soundfonts').length).toBeGreaterThan(0)
+  })
+
   it('opens the update progress modal and triggers the management update workflow', () => {
     mockActiveLayerId = 'management'
 

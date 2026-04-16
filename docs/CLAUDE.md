@@ -318,6 +318,19 @@ Never assume:
 
 ## Critical System Rules
 
+### Configuration Authority Model
+
+- MAP2 uses a plane-based authority model for config and state, not a fake single-file source of truth.
+- `/etc/map2` is for host desired configuration and generated machine-scoped artifacts required by boot, systemd, or service startup.
+- `/var/lib/map2` is for durable service-managed state such as registries, event stores, backups, and cluster/service data.
+- `~/.map2` is for user/operator/session-scoped state, preferences, local content, and compatibility shims that are not host or cluster authority.
+- Runtime/control-plane systems such as `/proc`, PipeWire metadata/graph state, etcd, and Raft are live observed state or dedicated control-plane authority; they must not be flattened into static config and then treated as authoritative.
+- For any new field, decide its plane first. If that decision is unclear, the design is not ready.
+- If the same concept appears in multiple places, one location must be declared authoritative and the others must be documented as generated projections, caches, or compatibility layers.
+- Prefer reducing mirrors over adding new ones. Never add a new config store for an existing concept without removing ambiguity elsewhere.
+- Transitional exception: deployment mode currently spans `/etc/guitarfx-mode.conf`, `/etc/map2/environment`, `~/.map2/deployment.json`, and systemd mode drop-ins. Treat `map2-mode.sh` as the reconciliation entrypoint and do not introduce a fourth/fifth parallel store.
+- Reference: `docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md`
+
 ### Tier A Locked Settings (NEVER change at runtime via API)
 
 | Setting | Locked Value |

@@ -83,6 +83,7 @@ import {
   usePlatformAnimationState,
   usePlatformSummaryMetrics,
 } from '../../stores/platformStore'
+import { WORKSPACE_ARTIFACTS_BASE_PATH, buildWorkspaceArtifactsDiscoverPath } from '../../pages/audioArtifactsRoutes'
 
 const HostMachinePage = lazy(() => import('../../pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
 const AudioEnginePage = lazy(() => import('../../pages/AudioEnginePage').then(m => ({ default: m.AudioEnginePage })))
@@ -95,6 +96,21 @@ const PlatformAdoptionPage = lazy(() => import('../../pages/PlatformAdoptionPage
 const PAGE_SIZES = [5, 10, 20]
 const DEFAULT_PLATFORM_LAYER: PlatformLayerId = 'overview'
 type PlatformIcon = ComponentType<any>
+type OverviewAuthorityPlane = {
+  id: string
+  eyebrow: string
+  title: string
+  summary: string
+  rule: string
+  tag: string
+  paths: string[]
+}
+type OverviewReferencePath = {
+  id: string
+  label: string
+  path: string
+  hint: string
+}
 
 const LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
   overview: MapOs2DrivesIcon,
@@ -113,6 +129,139 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
 }
+
+const OVERVIEW_AUTHORITY_PLANES: OverviewAuthorityPlane[] = [
+  {
+    id: 'etc',
+    eyebrow: 'Host Desired Config',
+    title: '/etc/map2',
+    summary: 'Machine-scoped desired configuration and generated host artifacts required by boot, systemd, or service startup.',
+    rule: 'Use this plane for host role, launch-time inputs, and generated compatibility fragments. Do not use it for mutable telemetry.',
+    tag: 'Static authority',
+    paths: [
+      '/etc/map2',
+      '/etc/map2/node.conf',
+      '/etc/map2/environment',
+      '/etc/guitarfx-mode.conf',
+    ],
+  },
+  {
+    id: 'var-lib',
+    eyebrow: 'Durable Service State',
+    title: '/var/lib/map2',
+    summary: 'Service-managed durable state, cluster inventories, content staging, and operator-inspectable repositories.',
+    rule: 'Humans may inspect this plane, but new features should not depend on routine manual edits here.',
+    tag: 'Service-managed',
+    paths: [
+      '/var/lib/map2/cluster.db',
+      '/var/lib/map2/config',
+      '/var/lib/map2/config-repo',
+      '/var/lib/map2/nam',
+      '/var/lib/map2/ir',
+      '/var/lib/map2/soundfonts',
+    ],
+  },
+  {
+    id: 'home',
+    eyebrow: 'User And Session State',
+    title: '~/.map2 and ~/.local/share/map2',
+    summary: 'Per-user preferences, user-owned content, local operator state, and compatibility shims that are not cluster-wide authority.',
+    rule: 'User-scoped data can live here, but it must not silently override host-critical behavior unless the contract says it can.',
+    tag: 'User-scoped',
+    paths: [
+      '~/.map2/config.json',
+      '~/.map2/deployment.json',
+      '~/.map2/backups',
+      '~/.map2/cluster/raft/<node_id>.sqlite3',
+      '~/.local/share/map2/nam',
+      '~/.local/share/map2/ir',
+      '~/.local/share/map2/soundfonts',
+    ],
+  },
+  {
+    id: 'runtime',
+    eyebrow: 'Observed Live State',
+    title: 'Runtime and control-plane systems',
+    summary: 'Live authority stays in runtime and distributed systems, not in copied file projections pretending to be the source of truth.',
+    rule: 'Treat projections as projections. Runtime state belongs to the runtime authority that owns it.',
+    tag: 'Observed or live authority',
+    paths: [
+      '/proc/cmdline',
+      'PipeWire graph, pw-metadata, wpctl, pw-dump',
+      '/map2/audio-state/v1 (etcd authority prefix)',
+      'Raft state and leadership runtime',
+    ],
+  },
+]
+
+const OVERVIEW_AUDIO_ARTIFACT_PATHS: OverviewReferencePath[] = [
+  {
+    id: 'artifacts-route',
+    label: 'Workspace library route',
+    path: WORKSPACE_ARTIFACTS_BASE_PATH,
+    hint: 'Primary GUI surface for Audio Artifacts.',
+  },
+  {
+    id: 'artifacts-discover-route',
+    label: 'Discovery route',
+    path: buildWorkspaceArtifactsDiscoverPath(),
+    hint: 'Download and intake workspace for new artifact content.',
+  },
+  {
+    id: 'artifact-nam-user',
+    label: 'User NAM models',
+    path: '~/.local/share/map2/nam',
+    hint: 'Primary writable NAM model library.',
+  },
+  {
+    id: 'artifact-nam-system',
+    label: 'System NAM models',
+    path: '/var/lib/map2/nam',
+    hint: 'Service-owned shared NAM library.',
+  },
+  {
+    id: 'artifact-ir-cabs',
+    label: 'Cabinet IRs',
+    path: '~/.local/share/map2/ir/cabinets',
+    hint: 'User cabinet impulse responses.',
+  },
+  {
+    id: 'artifact-ir-reverbs',
+    label: 'Reverb IRs',
+    path: '~/.local/share/map2/ir/reverbs',
+    hint: 'User reverb impulse responses.',
+  },
+  {
+    id: 'artifact-ir-user',
+    label: 'Uploaded IR staging',
+    path: '~/.local/share/map2/ir/user',
+    hint: 'User-uploaded IR files before downstream assignment.',
+  },
+  {
+    id: 'artifact-ir-system',
+    label: 'System IR library',
+    path: '/var/lib/map2/ir',
+    hint: 'Service-owned IR library and managed downloads.',
+  },
+  {
+    id: 'artifact-soundfonts-user',
+    label: 'User SoundFonts',
+    path: '~/.local/share/map2/soundfonts',
+    hint: 'Primary writable SoundFont library.',
+  },
+  {
+    id: 'artifact-soundfonts-system',
+    label: 'System SoundFonts',
+    path: '/var/lib/map2/soundfonts',
+    hint: 'Service-owned SoundFont store.',
+  },
+  {
+    id: 'artifact-lv2-paths',
+    label: 'LV2 scan paths',
+    path: '/usr/lib64/lv2, /usr/lib/lv2, /usr/local/lib64/lv2, /usr/local/lib/lv2, ~/.lv2',
+    hint: 'Standard plugin discovery paths used by the artifact ecosystem.',
+  },
+]
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +302,70 @@ function renderCellValue(headerKey: string, value: PlatformTableValue) {
     return <span className={`platform-shell__table-alert${text === 'Clear' ? ' is-clear' : ''}`}>{text}</span>
   }
   return text
+}
+
+function OverviewAuthorityModelPanel() {
+  return (
+    <section className="platform-shell__authority" aria-label="Configuration authority model">
+      <article className="platform-shell__authority-intro">
+        <div className="platform-shell__authority-intro-copy">
+          <span className="platform-shell__authority-eyebrow">Guiding principle</span>
+          <h3 className="platform-shell__authority-title">Configuration Authority Model</h3>
+          <p className="platform-shell__authority-summary">
+            MAP2 uses a plane-based authority model. Host desired config, durable service state, user-scoped state,
+            and runtime authority stay in separate planes so the platform avoids fake sources of truth.
+          </p>
+        </div>
+        <Tag type="cool-gray">Option 3</Tag>
+      </article>
+
+      <div className="platform-shell__authority-grid">
+        {OVERVIEW_AUTHORITY_PLANES.map((plane) => (
+          <article key={plane.id} className="platform-shell__authority-card">
+            <div className="platform-shell__authority-card-head">
+              <div>
+                <span className="platform-shell__authority-eyebrow">{plane.eyebrow}</span>
+                <h4>{plane.title}</h4>
+              </div>
+              <Tag type="cool-gray">{plane.tag}</Tag>
+            </div>
+            <p className="platform-shell__authority-card-summary">{plane.summary}</p>
+            <p className="platform-shell__authority-card-rule">{plane.rule}</p>
+            <ul className="platform-shell__authority-path-list">
+              {plane.paths.map((path) => (
+                <li key={path}>
+                  <code>{path}</code>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+
+      <article className="platform-shell__authority-card platform-shell__authority-card--artifact-locations">
+        <div className="platform-shell__authority-card-head">
+          <div>
+            <span className="platform-shell__authority-eyebrow">Audio Artifacts</span>
+            <h4>Routes and storage locations</h4>
+          </div>
+          <Tag type="blue">Library map</Tag>
+        </div>
+        <p className="platform-shell__authority-card-summary">
+          The GUI route and the filesystem stores are different concerns. The workspace path opens the library; the
+          artifact directories hold the actual content scanned or managed by the platform.
+        </p>
+        <div className="platform-shell__authority-reference-grid">
+          {OVERVIEW_AUDIO_ARTIFACT_PATHS.map((entry) => (
+            <div key={entry.id} className="platform-shell__authority-reference">
+              <span className="platform-shell__authority-reference-label">{entry.label}</span>
+              <code>{entry.path}</code>
+              <p>{entry.hint}</p>
+            </div>
+          ))}
+        </div>
+      </article>
+    </section>
+  )
 }
 
 function parseMetricNumber(value: string | number | null | undefined): number | null {
@@ -882,6 +1095,7 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
         <NetworkDiscoveryWorkspace layer={layer} />
       ) : (
         <>
+          {layer.id === 'overview' ? <OverviewAuthorityModelPanel /> : null}
           <PlatformGrafanaPanelDeck panels={overviewGrafanaPanels} />
           <LayerSummaryTiles items={layer.gridItems} />
           <LayerDataTable layer={layer} />
