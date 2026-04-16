@@ -410,3 +410,60 @@ def test_activation_qualification_retry_recovers_after_observation_publication_f
     assert len(authority_capture.observations) == 1
     assert authority_capture.observation_attempts == 2
     assert sorted(event["outcome"] for event in events) == ["degraded", "success"]
+
+
+def test_activation_qualification_restart_retry_recovers_after_runtime_live_degrades(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    first_authority_capture = _RetryAuthorityCapture()
+    _patch_activation_environment(monkeypatch, first_authority_capture)
+
+    async def _first_run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            created = await service.create_snapshot(
+                name="RestartQualification",
+                detail_payload=_detail_payload("RestartQualification"),
+                apply_default_system_blocks=False,
+            )
+            activation = await service.activate_snapshot(created["id"])
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            live_state = await runtime_state_service.get_live_state()
+            events = await runtime_state_service.list_activation_events(limit=2)
+            return created["id"], activation, live_state, events
+
+    snapshot_id, first_activation, first_live_state, first_events = asyncio.run(_first_run())
+
+    second_authority_capture = _AlwaysHealthyAuthorityCapture()
+    _patch_activation_environment(monkeypatch, second_authority_capture)
+
+    async def _second_run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            activation = await service.activate_snapshot(snapshot_id, triggered_by="publish_retry")
+            runtime_state_service = SnapshotRuntimeStateService(session)
+            live_state = await runtime_state_service.get_live_state()
+            events = await runtime_state_service.list_activation_events(limit=2)
+            return activation, live_state, events
+
+    second_activation, second_live_state, second_events = asyncio.run(_second_run())
+
+    assert first_activation["status"] == "degraded"
+    assert first_activation["result_code"] == "authority_confirmation_failed"
+    assert first_live_state["snapshot_id"] == snapshot_id
+    assert first_live_state["runtime_metrics"]["authority_publication"]["status"] == "failed"
+    assert first_live_state["runtime_metrics"]["authority_publication"]["reason"] == "authority_confirmation_failed"
+    assert first_authority_capture.commit_attempts == 1
+    assert len(first_authority_capture.committed_writes) == 0
+    assert len(first_authority_capture.observations) == 0
+    assert first_events[0]["snapshot_id"] == snapshot_id
+    assert first_events[0]["outcome"] == "degraded"
+
+    assert second_activation["status"] == "success"
+    assert second_activation["result_code"] == "live_confirmed"
+    assert second_live_state["snapshot_id"] == snapshot_id
+    assert second_live_state["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
+    assert len(second_authority_capture.desired_writes) == 1
+    assert len(second_authority_capture.committed_writes) == 1
+    assert len(second_authority_capture.observations) == 1
+    assert sorted(event["outcome"] for event in second_events) == ["degraded", "success"]

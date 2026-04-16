@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (stale-read authority-confirmation dominance documented)
+> **Last Updated**: April 16, 2026 (restart-boundary activation retry qualification documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1167,6 +1167,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'`; `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`
 - **Lesson**: Once the platform knows the precise degraded layer, later timeout heuristics must defer to it. Generic stale-read symptoms should not overwrite a more specific confirmed failure cause.
 
+**111. Restart Qualification Must Reopen The Same Database With A Fresh Service Boundary**
+- **Files**: `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`
+- **Problem**: A retry that succeeds inside the same `SnapshotService`/session instance does not prove restart safety for `T2298`, because the recovery could still depend on in-memory state instead of persisted live-state and activation-event rows.
+- **Root Cause**: The original degraded-to-success qualification reused one service/session boundary, which was enough to prove retry logic but not enough to prove crash/restart continuation.
+- **Fix**: Add restart-aware qualification that performs the first degraded activation, closes that session, patches in a fresh authority service, opens a new session/service, and verifies `publish_retry` succeeds from persisted state alone.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_activation_qualification.py`; `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`
+- **Lesson**: Restart-safety claims need a real boundary. If the invariant is “recovery survives process loss,” the qualification has to reopen the durable store with fresh service objects instead of reusing in-memory state.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2236,6 +2244,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Restart-Boundary Activation Retry Qualification
+- **Section**: Gotchas & Learned Fixes (#111), Update Log
+- **Change**: Documented the restart-aware activation qualification pattern and added coverage proving a fresh service/session can recover from a runtime-live degraded state using persisted live-state and activation-event data alone.
+- **Reason**: `T2298` required crash/restart evidence, and the earlier retry qualification only proved recovery inside one process boundary.
+- **Impact**: Future restart-safety claims for activation should be backed by fresh-session qualification instead of same-process retries.
+- **Files**: `.github/copilot-instructions.md`, `tests/test_snapshot_activation_qualification.py`, `docs/qualification/snapshot-activation-qualification.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Stale-Read Authority Confirmation Dominance
 - **Section**: Gotchas & Learned Fixes (#110), Update Log

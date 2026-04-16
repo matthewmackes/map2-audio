@@ -247,7 +247,7 @@ Description:
 - Estimated effort: High
 - Required outputs: invariant-based integration/chaos test plan, new automated backend tests, restart/crash harness or scripted qualification flows, archived evidence expectations, and updated release/qualification documentation for activation correctness.
 Assigned to: Codex
-Last updated: 2026-04-16 06:52 EDT - Codex
+Last updated: 2026-04-16 06:48 EDT - Codex
 
 ---
 
@@ -357,6 +357,27 @@ Last updated: 2026-04-16 07:03 EDT - Codex
 - Validation:
   - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+
+---
+
+ID: T2318
+Status: [✓] Done
+Title: Qualify restart continuation after runtime apply degrades before authority confirmation
+Description:
+- Goal / acceptance criteria: Extend `T2298` with executable coverage that simulates a crash/restart boundary after runtime apply succeeds but before authority confirmation completes, then proves a fresh service/session can observe the degraded state and recover cleanly on retry. Acceptance requires restart-aware qualification, any required persistence fix, and reconciled qualification/worklist notes.
+- Why it matters: The current retry qualification covers degraded-to-success recovery inside one process, but `T2298` explicitly requires restart/crash proof that persisted live-state and activation-event data are sufficient for a clean retry after process loss.
+- Dependencies: T2317
+- Estimated effort: Medium
+- Required outputs: restart-boundary qualification test, any required persistence fix, and updated qualification/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 07:00 EDT - Codex
+- Completion notes:
+  - Extended `tests/test_snapshot_activation_qualification.py` with a restart-aware case that degrades after runtime goes live, closes the first service/session boundary, then proves a fresh `SnapshotService` session can recover cleanly on `publish_retry`.
+  - Updated `docs/qualification/snapshot-activation-qualification.md` so restart continuation after a runtime-live authority-confirmation failure is now tracked as shipped executable coverage, not an open gap.
+  - Reconciled repo memory in `.github/copilot-instructions.md` with the restart-boundary qualification pattern: restart-safety claims now require reopening the durable store with fresh service objects rather than same-process retries.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_activation_qualification.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
 
 ---
 
