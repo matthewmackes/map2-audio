@@ -948,7 +948,7 @@ def test_activation_routes_preserve_degraded_activation_contract(monkeypatch):
     asyncio.run(_run())
 
 
-def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypatch):
+def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypatch, caplog):
     activation_calls: list[tuple[int, str]] = []
     readiness_calls: list[int] = []
     cache_invalidations: list[str] = []
@@ -1019,7 +1019,11 @@ def test_publish_readiness_and_retry_routes_use_typed_backend_services(monkeypat
         assert readiness_calls == [31]
         assert cache_invalidations == ["chains", "chains"]
 
-    asyncio.run(_run())
+    with caplog.at_level("INFO"):
+        asyncio.run(_run())
+
+    assert "Snapshot publish repair snapshot_id=31 repair_action_id=retry_publish" in caplog.text
+    assert "request_id=req-1" in caplog.text
 
 
 def test_publish_repair_route_rejects_unknown_action(monkeypatch):

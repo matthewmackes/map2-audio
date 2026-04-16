@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+import logging
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -2381,7 +2382,7 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert event["runtime_metrics"]["authority_publication"]["reconciled"] is True
 
 
-def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live(tmp_path, monkeypatch):
+def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live(tmp_path, monkeypatch, caplog):
     _init_temp_db(tmp_path)
     published_desired: list[object] = []
 
@@ -2452,7 +2453,8 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
             events = await runtime_state_service.list_activation_events(limit=1)
             return activated, events[0]
 
-    activated, event = asyncio.run(_run())
+    with caplog.at_level(logging.WARNING):
+        activated, event = asyncio.run(_run())
 
     assert len(published_desired) == 1
     assert activated["status"] == "degraded"
@@ -2488,6 +2490,10 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
     assert event["runtime_metrics"]["authority_publication"]["operator_message"] == (
         "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
     )
+    assert "Snapshot activation outcome" in caplog.text
+    assert "result_code=authority_confirmation_failed" in caplog.text
+    assert "repair_action_id=retry_publish" in caplog.text
+    assert "node_id=LOCAL-NODE" in caplog.text
 
 
 def test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are_unavailable(tmp_path, monkeypatch):

@@ -180,6 +180,36 @@ function asChannelConfirmations(event: SnapshotActivationAuditEvent | null): Cha
   return Object.values(raw as Record<string, ChannelConfirmationState>)
 }
 
+function buildIssueMetadata(issue: PublishBlocker | null, event: SnapshotActivationAuditEvent | null) {
+  if (!issue && !event) {
+    return []
+  }
+
+  const rows: Array<{ label: string; value: string }> = []
+  if (issue?.code) {
+    rows.push({ label: 'Issue code', value: issue.code })
+  }
+  if (event?.request_id) {
+    rows.push({ label: 'Request ID', value: event.request_id })
+  }
+  if (event?.node_id) {
+    rows.push({ label: 'Node', value: event.node_id })
+  }
+  if (event?.triggered_by) {
+    rows.push({ label: 'Triggered by', value: event.triggered_by })
+  }
+  if (issue?.repair_action_id) {
+    rows.push({ label: 'Repair action', value: issue.repair_action_id })
+  }
+  if (issue?.related_node_ids?.length) {
+    rows.push({ label: 'Related nodes', value: issue.related_node_ids.join(', ') })
+  }
+  if (issue?.related_path_ids?.length) {
+    rows.push({ label: 'Related paths', value: issue.related_path_ids.join(', ') })
+  }
+  return rows
+}
+
 function buildDiffRows(args: {
   readiness: SnapshotPublishReadiness
   snapshot: Awaited<ReturnType<typeof snapshotsApi.get>>
@@ -366,6 +396,7 @@ export function SnapshotPublishPage() {
   const currentIssue = readiness ? pickCurrentIssue(readiness) : null
   const currentRepairs = readiness ? resolveRepairs(readiness, currentIssue) : []
   const issueContextMessage = readiness ? buildIssueContextMessage(readiness, currentIssue) : null
+  const issueMetadata = useMemo(() => buildIssueMetadata(currentIssue, latestEvent), [currentIssue, latestEvent])
   const nodeConfirmations = useMemo(() => asNodeConfirmations(latestEvent), [latestEvent])
   const channelConfirmations = useMemo(() => asChannelConfirmations(latestEvent), [latestEvent])
 
@@ -583,6 +614,16 @@ export function SnapshotPublishPage() {
                   <p className="snapshot-publish-page__issue-message">{currentIssue.operator_message}</p>
                   {issueContextMessage ? (
                     <p className="snapshot-publish-page__issue-context">{issueContextMessage}</p>
+                  ) : null}
+                  {issueMetadata.length > 0 ? (
+                    <div className="snapshot-publish-page__issue-metadata" role="list" aria-label="Issue metadata">
+                      {issueMetadata.map((item) => (
+                        <div key={item.label} className="snapshot-publish-page__issue-metadata-row" role="listitem">
+                          <strong>{item.label}</strong>
+                          <code>{item.value}</code>
+                        </div>
+                      ))}
+                    </div>
                   ) : null}
                   <p className="snapshot-publish-page__issue-action"><strong>Next action:</strong> {currentIssue.recommended_action}</p>
                   {currentIssue.technical_detail ? (

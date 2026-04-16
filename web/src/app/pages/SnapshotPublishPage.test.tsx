@@ -77,6 +77,9 @@ jest.mock('../hooks/useSnapshotRuntimeState', () => ({
           snapshot_id: 12,
           requested_at: '2026-04-10T17:20:00Z',
           outcome: 'failed',
+          request_id: 'req-12',
+          node_id: 'node-local',
+          triggered_by: 'publish_retry',
           runtime_metrics: {
             node_confirmations: {
               'node-a': {
@@ -216,6 +219,12 @@ describe('SnapshotPublishPage', () => {
     expect(screen.getByText('Runtime is not ready')).toBeTruthy()
     expect(screen.getByText('Runtime can accept this publish')).toBeTruthy()
     expect(screen.getByText(/MAP2 is not waiting for a remote node\./)).toBeTruthy()
+    expect(screen.getByText('Issue code')).toBeTruthy()
+    expect(screen.getByText('engine_unavailable')).toBeTruthy()
+    expect(screen.getByText('Request ID')).toBeTruthy()
+    expect(screen.getByText('req-12')).toBeTruthy()
+    expect(screen.getByText('Repair action')).toBeTruthy()
+    expect(screen.getByText('recover_local_audio_engine')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Start audio engine' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Retry publish' })).toBeTruthy()
   })

@@ -282,6 +282,32 @@ class StateAuthorityActivationService:
             "repair_action_id": None,
         }
 
+    @staticmethod
+    def _log_activation_outcome(
+        *,
+        snapshot_id: int,
+        snapshot_revision: str | None,
+        request_id: str,
+        node_id: str,
+        triggered_by: str,
+        outcome: dict[str, Any],
+    ) -> None:
+        log_fn = logger.warning if str(outcome.get("status")) == "degraded" else logger.info
+        log_fn(
+            "Snapshot activation outcome snapshot_id=%s snapshot_revision=%s request_id=%s node_id=%s "
+            "triggered_by=%s status=%s result_code=%s repair_action_id=%s related_node_ids=%s related_path_ids=%s",
+            snapshot_id,
+            snapshot_revision,
+            request_id,
+            node_id,
+            triggered_by,
+            outcome.get("status"),
+            outcome.get("result_code"),
+            outcome.get("repair_action_id"),
+            outcome.get("related_node_ids"),
+            outcome.get("related_path_ids"),
+        )
+
     def _canonicalize_json_value(self, value: Any) -> Any:
         if isinstance(value, dict):
             return {
@@ -1121,22 +1147,33 @@ class StateAuthorityActivationService:
             logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
 
         activation_result = self._activation_result_contract(live_runtime_state)
-
-        return {
+        activation_outcome = {
             "status": activation_result["status"],
             "result_code": activation_result["result_code"],
             "operator_message": activation_result["operator_message"],
             "technical_detail": activation_result["technical_detail"],
             "recommended_action": activation_result.get("recommended_action"),
             "repair_action_id": activation_result.get("repair_action_id"),
+            "related_node_ids": [str(intent["node_id"])],
+            "related_path_ids": [],
+        }
+        self._log_activation_outcome(
+            snapshot_id=snapshot.id,
+            snapshot_revision=snapshot_revision,
+            request_id=str(intent["request_id"]),
+            node_id=str(intent["node_id"]),
+            triggered_by=triggered_by,
+            outcome=activation_outcome,
+        )
+
+        return {
+            **activation_outcome,
             "snapshot_id": snapshot.id,
             "name": snapshot.name,
             "snapshot_data": refreshed_detail,
             "snapshot_revision": snapshot_revision,
             "request_id": str(intent["request_id"]),
             "node_id": str(intent["node_id"]),
-            "related_node_ids": [str(intent["node_id"])],
-            "related_path_ids": [],
             "activation_intent": intent,
             "runtime_live_state": live_runtime_state,
             "params_applied": params_applied,

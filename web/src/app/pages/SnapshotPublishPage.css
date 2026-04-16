@@ -137,6 +137,28 @@
   gap: 0.85rem;
 }
 
+.snapshot-publish-page__issue-metadata {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.snapshot-publish-page__issue-metadata-row {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.snapshot-publish-page__issue-metadata-row code {
+  width: fit-content;
+  padding: 0.12rem 0.35rem;
+  background: var(--cds-layer);
+  color: var(--cds-text-primary);
+  font-size: var(--cds-code-01-font-size);
+  line-height: var(--cds-code-01-line-height);
+}
+
 .snapshot-publish-page__issue-context {
   padding: 0.75rem;
   border-left: 3px solid var(--cds-border-interactive);

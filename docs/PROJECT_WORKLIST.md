@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2316 by qualifying observation-publication failure after committed success and retry recovery.
+Last updated: 2026-04-16 - Completed T2322 and closed T2299 by publishing the operator feedback matrix and correlation metadata across logs/API/UI.
 
 ---
 
@@ -224,7 +224,7 @@ Last updated: 2026-04-15 18:50 EDT - Codex
 ---
 
 ID: T2299
-Status: [>] In Progress
+Status: [✓] Done
 Title: Upgrade snapshot activation rejection and degraded-state feedback to operator-grade contracts
 Description:
 - Goal / acceptance criteria: Expand the snapshot publish/activation feedback model so every activation blocker, rejection, partial-apply state, stale-confirmation state, divergence state, retry path, and reconciliation side effect exposes a stable machine-readable code, exact failing guardrail, affected snapshot/version/node/path identity, precise operator-safe message, recommended remediation, and supporting log/event correlation hooks. Acceptance requires a full failure-feedback matrix tied to the live implementation, backend/frontend contract updates where needed, and regression coverage proving the platform never collapses these conditions into ambiguous generic success/failure messaging.
@@ -233,7 +233,17 @@ Description:
 - Estimated effort: High
 - Required outputs: audited failure-feedback matrix, updated typed readiness/activation contracts, UI copy/state handling updates, structured logging/event correlation additions, operator/runbook notes, and focused backend/frontend regression coverage for each high-risk failure family.
 Assigned to: Codex
-Last updated: 2026-04-16 07:22 EDT - Codex
+Last updated: 2026-04-16 07:40 EDT - Codex
+- Completion notes:
+  - Completed the operator-grade feedback contract across the publish-readiness, activation, and repair surfaces: stable blocker/result codes, operator-safe messages, recommended remediation, repair-action ids, related scope metadata, and durable activation-event/live-state authority publication outcomes are now all exposed without collapsing degraded cases into generic success/failure wording.
+  - Shipped the final operator-facing closeout through `T2321` and `T2322`: direct activation/repair responses now preserve top-level request/node/remediation identity, the publish workspace renders the same issue correlation metadata operators need during incidents, and backend activation/repair logs reuse that exact code/request/remediation contract.
+  - Archived the live implementation matrix in `docs/qualification/snapshot-activation-feedback-matrix.md` and closed the remaining ambiguity around which identifiers/remediation fields matter for each blocker/degraded family.
+- Validation:
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or stale_observation_gap or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
@@ -256,6 +266,30 @@ Last updated: 2026-04-16 07:31 EDT - Codex
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
   - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+
+---
+
+ID: T2322
+Status: [✓] Done
+Title: Publish the operator feedback matrix and surface correlation metadata in the publish UI/logs
+Description:
+- Goal / acceptance criteria: Close the remaining `T2299` ambiguity by documenting the live activation/publish failure-feedback matrix, surfacing correlation metadata directly in the publish UI, and emitting structured activation outcome logs that match the operator-visible contract. Acceptance requires a concrete matrix/runbook doc, UI state handling for feedback metadata, structured logging/event correlation hooks, focused backend/frontend coverage, and reconciled worklist notes.
+- Why it matters: The platform now exposes better result payloads, but operators still have to infer which ids and remediation data matter, and there is no single documented matrix tying the live codes/messages/remediations back to the implementation.
+- Dependencies: T2321
+- Estimated effort: Medium
+- Required outputs: operator feedback matrix doc, publish UI metadata surface, activation outcome logging, focused regressions, and updated worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 07:40 EDT - Codex
+- Completion notes:
+  - Added `docs/qualification/snapshot-activation-feedback-matrix.md` as the canonical matrix tying publish-readiness blockers and activation outcomes to their result codes, operator messages, remediation, and implementation anchors.
+  - Updated `app/services/state_authority_activation_service.py` and `app/routes/unified_snapshots.py` so activation outcomes and publish-repair actions emit structured logs using the same `request_id`/`node_id`/`result_code`/`repair_action_id` identity already exposed to operators.
+  - Updated `web/src/app/pages/SnapshotPublishPage.tsx` and `.css` so the guided publish issue card shows direct correlation metadata for the current blocker/event instead of forcing operators to infer it from hidden event payloads.
+  - Added focused backend/frontend coverage in `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, and `web/src/app/pages/SnapshotPublishPage.test.tsx` to lock the shared feedback matrix and metadata surface in place.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable or confirms_audio_authority_after_runtime_live'` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

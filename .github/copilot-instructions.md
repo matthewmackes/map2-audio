@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (activation feedback envelope documented)
+> **Last Updated**: April 16, 2026 (operator feedback matrix documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1199,6 +1199,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`
 - **Lesson**: If a response is user-facing, correlation ids and remediation should not be buried in nested objects. Direct mutation responses need the same identity and operator context that event streams already provide.
 
+**115. Operator Feedback Needs One Shared Matrix Across Logs, API, And UI**
+- **Files**: `docs/qualification/snapshot-activation-feedback-matrix.md`, `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `web/src/app/pages/SnapshotPublishPage.tsx`
+- **Problem**: Even after direct activation responses carried better metadata, operators still had no single matrix that explained which codes/remediations mattered, and the publish page still hid most of the correlation fields that backend logs and events already knew.
+- **Root Cause**: Feedback details were spread across blocker enums, activation responses, event payloads, and route wrappers without one documented crosswalk or one consistent UI surface for the correlation ids.
+- **Fix**: Publish a canonical activation feedback matrix, add issue metadata rows in the publish workspace for code/request/node/repair scope, and emit structured activation/repair logs that reuse the same identifiers.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable or confirms_audio_authority_after_runtime_live'`; `python3 -m pytest -q tests/test_snapshot_routes.py -k 'preserve_degraded_activation_contract or publish_readiness_and_retry_routes_use_typed_backend_services'`; `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx`; `npm --prefix web run build`
+- **Lesson**: Operator-grade feedback is a three-surface contract. If the logs, API, and UI don’t show the same code/request/remediation identity, the platform still forces guesswork during incidents.
+
 ### Server Management Gotchas
 
 **82. Shared SysEx Device Bridges Must Preserve Prefixed Event Compatibility**
@@ -2268,6 +2276,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-16] - Operator Feedback Matrix
+- **Section**: Gotchas & Learned Fixes (#115), Update Log
+- **Change**: Documented the shared activation feedback matrix, added correlation metadata to the publish issue card, and aligned activation/repair logs with the same request/node/result identifiers.
+- **Reason**: `T2299` required the platform to stop scattering operator context across nested payloads and implicit event lookups.
+- **Impact**: Future feedback work should keep one visible code/request/remediation contract across logs, API mutations, and the publish workspace.
+- **Files**: `.github/copilot-instructions.md`, `docs/qualification/snapshot-activation-feedback-matrix.md`, `app/services/state_authority_activation_service.py`, `app/routes/unified_snapshots.py`, `web/src/app/pages/SnapshotPublishPage.tsx`, `web/src/app/pages/SnapshotPublishPage.css`, `tests/test_snapshot_service.py`, `tests/test_snapshot_routes.py`, `web/src/app/pages/SnapshotPublishPage.test.tsx`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Activation Feedback Envelope
 - **Section**: Gotchas & Learned Fixes (#114), Update Log
