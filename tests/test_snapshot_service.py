@@ -2356,8 +2356,20 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert reconciliations == [True]
     assert activated["status"] == "success"
     assert activated["result_code"] == "live_confirmed"
-    assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
-    assert activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]["published_observation"] is True
+    authority_publication = activated["runtime_live_state"]["runtime_metrics"]["authority_publication"]
+    assert authority_publication["status"] == "confirmed"
+    assert authority_publication["published_observation"] is True
+    step_status = {
+        entry["step"]: entry["status"]
+        for entry in authority_publication["publication_steps"]
+    }
+    assert step_status == {
+        "runtime_live_confirmed": "completed",
+        "publish_desired": "completed",
+        "publish_committed": "completed",
+        "publish_observation": "completed",
+        "reconcile_committed": "completed",
+    }
     assert event["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
     assert event["outcome"] == "success"
     assert event["runtime_metrics"]["authority_publication"]["reconciled"] is True
@@ -2447,6 +2459,17 @@ def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_
     assert authority_publication["status"] == "failed"
     assert authority_publication["reason"] == "authority_confirmation_failed"
     assert authority_publication["technical_detail"] == "committed authority write failed"
+    step_status = {
+        entry["step"]: entry["status"]
+        for entry in authority_publication["publication_steps"]
+    }
+    assert step_status == {
+        "runtime_live_confirmed": "completed",
+        "publish_desired": "completed",
+        "publish_committed": "failed",
+        "publish_observation": "not_run",
+        "reconcile_committed": "not_run",
+    }
     assert event["outcome"] == "degraded"
     assert event["failure_reason"] == "authority_confirmation_failed"
     assert event["runtime_metrics"]["authority_publication"]["status"] == "failed"
@@ -2531,6 +2554,17 @@ def test_activate_snapshot_degrades_when_authority_confirmation_capabilities_are
     assert authority_publication["published_desired"] is True
     assert authority_publication["published_committed"] is False
     assert authority_publication["published_observation"] is False
+    step_status = {
+        entry["step"]: entry["status"]
+        for entry in authority_publication["publication_steps"]
+    }
+    assert step_status == {
+        "runtime_live_confirmed": "completed",
+        "publish_desired": "completed",
+        "publish_committed": "unavailable",
+        "publish_observation": "unavailable",
+        "reconcile_committed": "unavailable",
+    }
     assert event["outcome"] == "degraded"
     assert event["failure_reason"] == "authority_confirmation_unavailable"
 

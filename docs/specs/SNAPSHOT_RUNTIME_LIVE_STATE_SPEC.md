@@ -150,6 +150,7 @@ Rules:
 - Consumers must ignore stale or out-of-order updates.
 - `live_snapshot_payload` is the node’s authoritative live copy.
 - `runtime_metrics.authority_publication`, when present, records whether post-runtime desired/committed/observed authority confirmation completed or failed after the runtime went live.
+- `runtime_metrics.authority_publication.publication_steps`, when present, is the ordered runtime-live -> desired -> committed -> observed -> reconcile step timeline for that canonical authority publication attempt.
 - `runtime_metrics.retained_runtime_edits`, when present, is a bounded oldest-first audit list of retained live-edit compatibility mutations that updated the currently live snapshot outside canonical activation.
 
 ### NodeActivationAuditEvent
@@ -180,6 +181,7 @@ Retention:
 - Use an in-memory hot cache for reads.
 - Keep the database as the durable audit source.
 - Successful, degraded, and failed activation events may carry `runtime_metrics.authority_publication` so operator/readiness surfaces can distinguish post-runtime authority-confirm failures from pre-runtime activation failures.
+- `runtime_metrics.authority_publication.publication_steps[*].status` must use bounded step outcomes such as `completed`, `failed`, `unavailable`, or `not_run` so later consumers can reconstruct exactly where the canonical authority path stopped.
 
 ## API And Event Surface
 

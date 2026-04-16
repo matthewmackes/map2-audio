@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (partial authority-confirmation degraded contract documented)
+> **Last Updated**: April 16, 2026 (authority publication step timeline documented)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1118,6 +1118,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Treat missing committed/observed authority capabilities as `status: failed` with reason `authority_confirmation_unavailable`, surface the missing-method detail, and let the canonical activation contract degrade on that result instead of reporting success.
 - **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`
 - **Lesson**: Refreshing only `desired` state does not count as authority confirmation. Canonical success requires the full desired/committed/observed chain or an explicit degraded result.
+
+**105. Authority Publication Must Persist An Ordered Step Timeline, Not Just Booleans**
+- **Files**: `app/services/snapshot_service.py`, `tests/test_snapshot_service.py`, `docs/specs/SNAPSHOT_RUNTIME_LIVE_STATE_SPEC.md`
+- **Problem**: Even after degraded results were surfaced, the persisted authority publication payload still reduced the canonical runtime-to-authority workflow to booleans like `published_committed` and `published_observation`, which made it hard to prove exactly where the sequence stopped.
+- **Root Cause**: The helper reported aggregate flags but did not persist the ordered statuses for `runtime_live_confirmed`, `publish_desired`, `publish_committed`, `publish_observation`, and `reconcile_committed`.
+- **Fix**: Persist `authority_publication.publication_steps` as an ordered bounded-status timeline and update the success, failed-after-committed, and desired-only-unavailable regressions to assert the exact step sequence.
+- **Verification**: `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'`; `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'`
+- **Lesson**: If a correctness claim depends on sequence, store the sequence. High-level booleans are not enough for restart-safe audits or degraded-state reasoning.
 
 ### Server Management Gotchas
 

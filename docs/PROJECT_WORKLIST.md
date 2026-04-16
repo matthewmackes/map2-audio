@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Completed T2311 so desired-only authority refresh now degrades canonical activation instead of reporting success.
+Last updated: 2026-04-16 - Completed T2312 so authority publication now exposes an ordered canonical step timeline instead of only aggregate booleans.
 
 ---
 
@@ -303,6 +303,27 @@ Last updated: 2026-04-16 00:39 EDT - Codex
   - Changed `SnapshotService._publish_confirmed_live_state_to_audio_authority()` so the legacy desired-only branch now returns `status: failed` with reason `authority_confirmation_unavailable` and explicit missing-method diagnostics instead of masquerading as a confirmed authority result.
   - Added focused regression coverage proving canonical activation now degrades when the authority backend can refresh only `desired` state and cannot publish `committed`/`observed` confirmation.
   - Reconciled the runtime-live spec and Copilot memory notes so partial authority capability is documented as a degraded activation outcome rather than a compatibility success case.
+- Validation:
+  - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS
+
+---
+
+ID: T2312
+Status: [✓] Done
+Title: Add ordered authority-publication step semantics to canonical activation
+Description:
+- Goal / acceptance criteria: Extend the post-runtime authority-publication result so it records the ordered runtime-live, desired, committed, observed, and reconciliation step outcomes with bounded statuses/timestamps for success and degraded paths. Acceptance requires code/docs that make the exact ordering contract explicit, focused regressions for success/failure/unavailable branches, and reconciled worklist notes.
+- Why it matters: `T2310` and `T2311` stop false-success contracts, but the persisted authority result still collapses the exact transition sequence into a few booleans. `T2297` still needs a concrete ordering/acknowledgment contract for the canonical runtime-to-authority workflow.
+- Dependencies: T2311
+- Estimated effort: Medium
+- Required outputs: ordered authority-publication step contract, focused regressions, and reconciled spec/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 01:04 EDT - Codex
+- Completion notes:
+  - Extended `SnapshotService._publish_confirmed_live_state_to_audio_authority()` so every authority publication now persists `publication_steps` for `runtime_live_confirmed`, `publish_desired`, `publish_committed`, `publish_observation`, and `reconcile_committed`, with bounded statuses such as `completed`, `failed`, `unavailable`, and `not_run`.
+  - Added focused regressions proving the step timeline is correct for fully confirmed authority publication, committed-write failure after desired publication, and the desired-only unavailable-capability branch.
+  - Reconciled the runtime-live spec and Copilot memory notes so the exact canonical step ordering is documented for future restart-safe audit and degraded-state work.
 - Validation:
   - `python3 -m pytest -q tests/test_snapshot_service.py -k 'confirms_audio_authority_after_runtime_live or authority_confirmation_failure_after_runtime_live or authority_confirmation_capabilities_are_unavailable'` -> PASS
   - `python3 -m pytest -q tests/test_publish_readiness_service.py -k 'authority_confirmation_failure or clarifies_local_only_runtime_blockers or marks_diverged'` -> PASS

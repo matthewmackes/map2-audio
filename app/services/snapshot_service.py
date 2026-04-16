@@ -1087,6 +1087,31 @@ class SnapshotService:
         reconciled = False
         state_version: int | None = None
         authority_node_id = str((runtime_live_state or {}).get("node_id") or "").strip() or None
+        runtime_live_confirmed_at = str((runtime_live_state or {}).get("emitted_at") or checked_at)
+        publication_steps = [
+            {"step": "runtime_live_confirmed", "status": "completed", "at": runtime_live_confirmed_at},
+            {"step": "publish_desired", "status": "pending", "at": None},
+            {"step": "publish_committed", "status": "pending", "at": None},
+            {"step": "publish_observation", "status": "pending", "at": None},
+            {"step": "reconcile_committed", "status": "pending", "at": None},
+        ]
+        publication_steps_by_name = {entry["step"]: entry for entry in publication_steps}
+        current_step = "publish_desired"
+
+        def _mark_publication_step(step: str, status: str, *, at: str | None = None, detail: str | None = None) -> None:
+            entry = publication_steps_by_name[step]
+            entry["status"] = status
+            entry["at"] = at if at is not None else (str(_utcnow().isoformat()) if status != "pending" else None)
+            if detail:
+                entry["detail"] = detail
+            else:
+                entry.pop("detail", None)
+
+        def _mark_remaining_publication_steps(status: str, *, detail: str | None = None) -> None:
+            for entry in publication_steps:
+                if entry["status"] == "pending":
+                    _mark_publication_step(str(entry["step"]), status, at=None, detail=detail)
+
         try:
             from app.models.audio_state import (
                 AudioStateEngineSummary,
@@ -1115,6 +1140,7 @@ class SnapshotService:
             )
             await authority.put_desired_state(desired_state)
             desired_published = True
+            _mark_publication_step("publish_desired", "completed")
             result = {
                 "status": "confirmed",
                 "reason": "confirmed",
@@ -1125,6 +1151,7 @@ class SnapshotService:
                 "published_observation": observation_published,
                 "reconciled": reconciled,
                 "state_version": state_version,
+                "publication_steps": publication_steps,
                 "operator_message": "Runtime live state and control-plane authority are aligned.",
                 "technical_detail": None,
             }
@@ -1137,12 +1164,16 @@ class SnapshotService:
             )
             missing_methods = [method_name for method_name in required_methods if not hasattr(authority, method_name)]
             if missing_methods:
+                missing_detail = f"Authority backend missing methods: {', '.join(missing_methods)}"
+                _mark_publication_step("publish_committed", "unavailable", detail=missing_detail)
+                _mark_publication_step("publish_observation", "unavailable", detail=missing_detail)
+                _mark_publication_step("reconcile_committed", "unavailable", detail=missing_detail)
                 result["status"] = "failed"
                 result["reason"] = "authority_confirmation_unavailable"
                 result["operator_message"] = (
                     "Desired state was refreshed, but committed and observed authority confirmation is unavailable."
                 )
-                result["technical_detail"] = f"Authority backend missing methods: {', '.join(missing_methods)}"
+                result["technical_detail"] = missing_detail
                 return result
 
             node_id = str(
@@ -1151,6 +1182,7 @@ class SnapshotService:
             ).strip() or resolve_local_node_id()
             authority_node_id = node_id
             result["node_id"] = authority_node_id
+            current_step = "publish_committed"
             state_version = await authority.next_state_version()
             committed_state = build_initial_authoritative_audio_state(
                 detail,
@@ -1162,6 +1194,7 @@ class SnapshotService:
             committed_envelope = await authority.put_committed_state(committed_state)
             committed_published = True
             state_version = committed_envelope.value.state_version
+            _mark_publication_step("publish_committed", "completed")
             result["published_committed"] = committed_published
             result["state_version"] = state_version
 
@@ -1230,14 +1263,21 @@ class SnapshotService:
                 observed_at=observed_at,
                 extensions=copy.deepcopy(merged_extensions),
             )
+            current_step = "publish_observation"
             await authority.put_observation(observation)
             observation_published = True
+            _mark_publication_step("publish_observation", "completed", at=observed_at)
             result["published_observation"] = observation_published
+            current_step = "reconcile_committed"
             await authority.reconcile_committed_state()
             reconciled = True
+            _mark_publication_step("reconcile_committed", "completed")
             result["reconciled"] = reconciled
             return result
         except Exception as exc:
+            if current_step in publication_steps_by_name and publication_steps_by_name[current_step]["status"] == "pending":
+                _mark_publication_step(current_step, "failed", detail=str(exc))
+            _mark_remaining_publication_steps("not_run")
             logger.debug(
                 "Snapshot live-state authority confirm skipped for %s: %s",
                 detail.get("id"),
@@ -1253,6 +1293,7 @@ class SnapshotService:
                 "published_observation": observation_published,
                 "reconciled": reconciled,
                 "state_version": state_version,
+                "publication_steps": publication_steps,
                 "operator_message": (
                     "The audio engine applied this snapshot, but control-plane authority confirmation did not complete."
                 ),
