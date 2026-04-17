@@ -575,6 +575,42 @@ class MaschineService(Singleton):
             "updated_at": _utcnow_iso(),
         }
 
+    async def run_hw_test(self, *, test_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Run a hardware diagnostic test via the daemon websocket.
+
+        The daemon handles the actual USB I/O; we just relay the command
+        and collect the result. If no daemon is connected, return an error.
+        """
+        if not self._state.connected:
+            return {"success": False, "message": "Daemon not connected"}
+
+        # Build the test command to broadcast to the daemon client
+        test_payload = {
+            "type": "maschine:hw_test",
+            "data": {"test": test_name, "params": params or {}},
+        }
+
+        # Send to all connected WS clients (the daemon listens on WS)
+        sent = False
+        for client in list(self._clients):
+            try:
+                await client.send_json(test_payload)
+                sent = True
+                break  # Only need to reach the daemon once
+            except Exception:
+                continue
+
+        if not sent:
+            return {"success": False, "message": "No websocket client to relay test command"}
+
+        # For now, return success — the daemon will execute the test asynchronously.
+        # Real hardware results come back via the WS status stream.
+        return {
+            "success": True,
+            "message": f"Test '{test_name}' dispatched to daemon",
+            "test": test_name,
+        }
+
     async def _get_active_snapshot(self, session: AsyncSession) -> Snapshot | None:
         from app.services.snapshot_service import SnapshotService
 

@@ -5,6 +5,10 @@
    ============================================================================ */
 
 .window-title-strip {
+  --window-title-strip-muted: var(
+    --window-shell-titlebar-contrast-muted,
+    color-mix(in srgb, var(--window-shell-titlebar-contrast, var(--text-inverse)) 78%, transparent)
+  );
   position: sticky;
   top: 0;
   z-index: 3;
@@ -31,7 +35,7 @@
   width: 2.35rem;
   border-right: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--border-strong)) 88%, transparent);
   background: var(--window-shell-titlebar-accent, color-mix(in srgb, var(--window-shell-accent, var(--interactive)) 12%, var(--surface)));
-  color: var(--text-primary);
+  color: var(--window-shell-titlebar-contrast, var(--text-inverse));
 }
 
 .window-title-strip__icon {
@@ -54,7 +58,7 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.1;
-  color: var(--text-secondary);
+  color: var(--window-title-strip-muted);
 }
 
 .window-title-strip__title-row {
@@ -67,7 +71,7 @@
 .window-title-strip__title {
   min-width: 0;
   overflow: hidden;
-  color: var(--text-primary);
+  color: var(--window-shell-titlebar-contrast, var(--text-inverse));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
@@ -78,7 +82,7 @@
 
 .window-title-strip__meta {
   overflow: hidden;
-  color: var(--text-secondary);
+  color: var(--window-title-strip-muted);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 500;
@@ -96,16 +100,24 @@
   gap: 0.18rem;
   padding: 0.2rem 0.25rem;
   border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border, var(--border-strong)) 80%, transparent);
-  background: color-mix(in srgb, var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 90%, var(--window-shell-surface, var(--bg)) 10%);
+  background: color-mix(
+    in srgb,
+    var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 92%,
+    var(--window-shell-titlebar-contrast, var(--text-inverse)) 8%
+  );
 }
 
 .window-title-strip__close {
   min-width: 1.85rem;
   min-height: 1.75rem;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--window-shell-border, var(--border-strong)) 88%, transparent);
-  background: color-mix(in srgb, var(--window-shell-surface-strong, color-mix(in srgb, var(--surface) 92%, var(--bg))) 82%, var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 18%);
-  color: var(--text-primary);
+  border: 1px solid color-mix(in srgb, var(--window-shell-titlebar-contrast, var(--text-inverse)) 28%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--window-shell-titlebar, color-mix(in srgb, var(--surface-2) 96%, var(--bg) 4%)) 84%,
+    var(--window-shell-titlebar-contrast, var(--text-inverse)) 16%
+  );
+  color: var(--window-shell-titlebar-contrast, var(--text-inverse));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 700;
@@ -116,9 +128,10 @@
 
 .window-title-strip__close:hover,
 .window-title-strip__close:focus-visible {
-  border-color: color-mix(in srgb, var(--support-danger) 42%, var(--window-shell-border, color-mix(in srgb, var(--border-subtle) 28%, transparent)));
-  background: color-mix(in srgb, var(--support-danger) 10%, var(--window-shell-surface-strong, var(--surface)));
-  outline: 2px solid var(--support-danger);
+  border-color: color-mix(in srgb, var(--support-danger) 44%, var(--window-shell-titlebar-contrast, var(--text-inverse)));
+  background: color-mix(in srgb, var(--support-danger) 72%, var(--window-shell-titlebar, var(--primary-strong)) 28%);
+  color: var(--text-inverse);
+  outline: 2px solid color-mix(in srgb, var(--support-danger) 72%, var(--text-inverse) 28%);
   outline-offset: 2px;
 }
 

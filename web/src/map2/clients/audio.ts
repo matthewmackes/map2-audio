@@ -56,16 +56,18 @@ export const audioApi = {
   unmute: (nodeId?: string | null) =>
     fetchJson<{ success: boolean }>(appendNodeQuery(`${API_BASE}/audio/health/unmute`, nodeId), { method: 'POST' }),
 
-  getPorts: () => fetchJson<Api.AudioPortsResponse>(`${API_BASE}/audio/ports`),
+  getPorts: (nodeId?: string | null) =>
+    fetchJson<Api.AudioPortsResponse>(appendNodeQuery(`${API_BASE}/audio/ports`, nodeId)),
 
-  getRouting: () => fetchJson<Api.AudioRoutingResponse>(`${API_BASE}/audio/routing`),
+  getRouting: (nodeId?: string | null) =>
+    fetchJson<Api.AudioRoutingResponse>(appendNodeQuery(`${API_BASE}/audio/routing`, nodeId)),
 
   setRouting: (config: {
     inputPorts?: number[]
     outputPorts?: number[]
     inputAvbEndpoints?: string[]
     outputAvbEndpoints?: string[]
-  }) => {
+  }, nodeId?: string | null) => {
     const params = new URLSearchParams()
     if (config.inputPorts) {
       config.inputPorts.forEach((port) => params.append('input_ports', port.toString()))
@@ -79,22 +81,24 @@ export const audioApi = {
     if (config.outputAvbEndpoints) {
       config.outputAvbEndpoints.forEach((endpointId) => params.append('output_avb_endpoints', endpointId))
     }
-    return fetchJson<Api.AudioRoutingUpdateResponse>(`${API_BASE}/audio/routing?${params.toString()}`, {
-      method: 'POST',
-    })
+    return fetchJson<Api.AudioRoutingUpdateResponse>(
+      appendNodeQuery(`${API_BASE}/audio/routing?${params.toString()}`, nodeId),
+      { method: 'POST' },
+    )
   },
 
-  getPortPresets: () => fetchJson<Api.AudioPortPresetsResponse>(`${API_BASE}/audio/ports/presets`),
+  getPortPresets: (nodeId?: string | null) =>
+    fetchJson<Api.AudioPortPresetsResponse>(appendNodeQuery(`${API_BASE}/audio/ports/presets`, nodeId)),
 
-  getChainRouting: (chainId: number) =>
-    fetchJson<Api.ChainRoutingResponse>(`${API_BASE}/audio/routing/chain/${chainId}`),
+  getChainRouting: (chainId: number, nodeId?: string | null) =>
+    fetchJson<Api.ChainRoutingResponse>(appendNodeQuery(`${API_BASE}/audio/routing/chain/${chainId}`, nodeId)),
 
   setChainRouting: (chainId: number, config: {
     inputPorts?: number[]
     outputPorts?: number[]
     inputAvbEndpoints?: string[]
     outputAvbEndpoints?: string[]
-  }) => {
+  }, nodeId?: string | null) => {
     const params = new URLSearchParams()
     if (config.inputPorts) {
       config.inputPorts.forEach((port) => params.append('input_ports', port.toString()))
@@ -108,12 +112,13 @@ export const audioApi = {
     if (config.outputAvbEndpoints) {
       config.outputAvbEndpoints.forEach((endpointId) => params.append('output_avb_endpoints', endpointId))
     }
-    return fetchJson<Api.ChainRoutingUpdateResponse>(`${API_BASE}/audio/routing/chain/${chainId}?${params.toString()}`, {
-      method: 'POST',
-    })
+    return fetchJson<Api.ChainRoutingUpdateResponse>(
+      appendNodeQuery(`${API_BASE}/audio/routing/chain/${chainId}?${params.toString()}`, nodeId),
+      { method: 'POST' },
+    )
   },
 
-  clearChainRouting: (chainId: number) =>
+  clearChainRouting: (chainId: number, nodeId?: string | null) =>
     fetchJson<{
       success: boolean
       message: string
@@ -125,7 +130,7 @@ export const audioApi = {
       input_bindings: Api.AudioRoutingSelectionBinding[]
       output_bindings: Api.AudioRoutingSelectionBinding[]
       is_override: boolean
-    }>(`${API_BASE}/audio/routing/chain/${chainId}`, { method: 'DELETE' }),
+    }>(appendNodeQuery(`${API_BASE}/audio/routing/chain/${chainId}`, nodeId), { method: 'DELETE' }),
 }
 
 export const diagnosticsApi = {

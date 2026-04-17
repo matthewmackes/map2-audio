@@ -198,6 +198,89 @@ def test_activate_snapshot_marks_validating_phase_before_preflight_failure(monke
     assert recorded_calls[-1] == ("FAIL", "VALIDATING", "preflight failed")
 
 
+def test_activate_snapshot_auto_saves_missing_revision_before_creating_intent(monkeypatch):
+    revision_state = {"revision_number": None}
+    append_calls: list[tuple[int, int | None]] = []
+
+    class _FakeRuntimeStateService:
+        def __init__(self, _session):
+            pass
+
+        async def create_activation_intent(self, **kwargs):
+            assert revision_state["revision_number"] == 1
+            return {
+                "request_id": "req-autosave",
+                "snapshot_id": kwargs["snapshot_id"],
+                "snapshot_revision": kwargs["snapshot_revision"],
+                "triggered_by": kwargs["triggered_by"],
+                "requested_at": "2026-04-06T00:00:00",
+                "activation_progress": {"current_phase": "VALIDATING"},
+            }
+
+        async def mark_intent_phase(self, *, intent, phase, status="in_progress", note=None, extra=None):
+            next_intent = dict(intent)
+            next_intent["activation_progress"] = {"current_phase": phase, "status": status}
+            return next_intent
+
+        async def fail_intent(self, *, intent, failure_reason, runtime_metrics=None):
+            return {}
+
+    from app.services import snapshot_runtime_state_service as runtime_state_service_module
+
+    monkeypatch.setattr(runtime_state_service_module, "SnapshotRuntimeStateService", _FakeRuntimeStateService)
+
+    class _FakeSession:
+        async def flush(self):
+            return None
+
+    snapshot = SimpleNamespace(id=6, name="Needs Save", document=None)
+
+    async def _get_snapshot_model(snapshot_id):
+        return snapshot if snapshot_id == 6 else None
+
+    async def _snapshot_to_normalized(_snapshot):
+        return {"chains": []}
+
+    async def _get_snapshot(_snapshot_id):
+        return {
+            "id": 6,
+            "name": "Needs Save",
+            "chains": [],
+            "channels": [],
+            "routing": {"mode": "series", "series_order": []},
+            "revision_number": revision_state["revision_number"],
+        }
+
+    async def _append_snapshot_revision(snapshot_id, detail):
+        append_calls.append((snapshot_id, detail.get("revision_number")))
+        revision_state["revision_number"] = 1
+        return {"revision_number": 1}
+
+    async def _validate_snapshot_activation_preflight(_detail):
+        raise ValueError("stop after autosave")
+
+    owner = SimpleNamespace(
+        _get_snapshot_model=_get_snapshot_model,
+        _snapshot_to_normalized=_snapshot_to_normalized,
+        _snapshot_revision_from_normalized=lambda _normalized: "rev-6",
+        _canonicalize_snapshot_normalized=lambda normalized: normalized,
+        get_snapshot=_get_snapshot,
+        _append_snapshot_revision=_append_snapshot_revision,
+        _validate_snapshot_activation_preflight=_validate_snapshot_activation_preflight,
+    )
+    fake_engine = _FakeAudioEngine()
+    service = _build_service(fake_engine, owner=owner)
+    service.session = _FakeSession()
+
+    async def _activate():
+        await service.activate_snapshot(6)
+
+    with pytest.raises(ValueError, match="stop after autosave"):
+        asyncio.run(_activate())
+
+    assert append_calls == [(6, None)]
+
+
 def test_run_activation_hooks_uses_configured_order():
     fake_engine = _FakeAudioEngine()
     executed: list[str] = []

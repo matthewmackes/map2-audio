@@ -16,6 +16,7 @@ import { buildWorkspacePhysicalSurfacesPath } from './physicalSurfacesRoutes'
 import { useTheme } from '../theme'
 import { buildWorkspaceHubPlatformPath } from '../platform/routes'
 import { useUnifiedWorkspaceData, type UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
+import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
 import {
   WorkspaceHubContext,
   type WorkspaceHubContextValue,
@@ -136,6 +137,9 @@ export function WorkspaceHubShell() {
   const { theme } = useTheme()
   const resolvedTheme = theme.carbonTheme ?? 'g100'
   const workspaceData = useUnifiedWorkspaceData()
+  useRouteScrollRestoration({
+    storageKey: `map2.route-scroll.workspace:${location.pathname}${location.search}`,
+  })
   const navSections = useMemo(() => buildWorkspaceHubSections(), [])
   const contextValue = useMemo<WorkspaceHubContextValue>(
     () => ({

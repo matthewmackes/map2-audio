@@ -44,6 +44,8 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
   const [levels, setLevels] = useState<VuLevels>(DEFAULT_LEVELS)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const pendingLevelsRef = useRef<VuLevels | null>(null)
   const scopeKey = clusterScopeKey(nodeId)
 
   // Peak hold state
@@ -105,6 +107,48 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
     const topic = withNodeTopic('meters', nodeId)
     wsRef.current = ws
 
+    const cancelScheduledFlush = () => {
+      if (animationFrameRef.current == null) {
+        return
+      }
+
+      if (typeof window.cancelAnimationFrame === 'function') {
+        window.cancelAnimationFrame(animationFrameRef.current)
+      } else {
+        window.clearTimeout(animationFrameRef.current)
+      }
+      animationFrameRef.current = null
+    }
+
+    const scheduleFlush = () => {
+      if (typeof window.requestAnimationFrame === 'function') {
+        animationFrameRef.current = window.requestAnimationFrame(flushPendingLevels)
+        return
+      }
+
+      animationFrameRef.current = window.setTimeout(flushPendingLevels, 16)
+    }
+
+    const flushPendingLevels = () => {
+      animationFrameRef.current = null
+      const pendingLevels = pendingLevelsRef.current
+      if (!pendingLevels) {
+        return
+      }
+
+      pendingLevelsRef.current = null
+      setLevels(pendingLevels)
+    }
+
+    const enqueueLevels = (nextLevels: VuLevels) => {
+      pendingLevelsRef.current = nextLevels
+      if (animationFrameRef.current != null) {
+        return
+      }
+
+      scheduleFlush()
+    }
+
     ws.onopen = () => {
       setIsConnected(true)
       ws.send(JSON.stringify({ action: 'subscribe', topic }))
@@ -114,7 +158,7 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
       try {
         const message = JSON.parse(event.data)
         if (message.type === 'meters_update' && message.data) {
-          setLevels({
+          enqueueLevels({
             inputLeft: message.data.input_left ?? -60,
             inputRight: message.data.input_right ?? -60,
             outputLeft: message.data.output_left ?? -60,
@@ -131,6 +175,8 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
     ws.onerror = () => setIsConnected(false)
 
     return () => {
+      cancelScheduledFlush()
+      pendingLevelsRef.current = null
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }

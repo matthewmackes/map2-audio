@@ -100,11 +100,16 @@ class PublishReadinessService:
         runtime_live_state = await self.runtime_state_service.get_live_state()
         activation_events = await self.runtime_state_service.list_activation_events(limit=8)
 
-        if committed is not None and committed.value.source_snapshot is not None:
+        if (
+            draft_revision_id is not None
+            and committed is not None
+            and committed.value.source_snapshot is not None
+            and isinstance(committed.value.source_snapshot.snapshot_revision_id, int)
+        ):
             source_snapshot = committed.value.source_snapshot
             if int(source_snapshot.snapshot_id) == int(snapshot_id):
                 origin_node_id = str(committed.value.origin_node_id or "").strip() or None
-                requested_revision_id = source_snapshot.snapshot_revision_id
+                requested_revision_id = int(source_snapshot.snapshot_revision_id)
                 authority_findings = self._collect_authority_findings(
                     detail=detail,
                     committed_state=committed.value,
@@ -687,7 +692,7 @@ class PublishReadinessService:
             ),
             PublishRequirement(
                 id="target_node_reachable",
-                label="Required target nodes are responding",
+                label="Local runtime is responding" if local_only_publish else "Required target nodes are responding",
                 status=_status_for(
                     blocker_codes={
                         PublishBlockerCode.NODE_OFFLINE,
@@ -698,14 +703,14 @@ class PublishReadinessService:
                 ),
                 scope=PublishScope.NODE,
                 operator_message=(
-                    "Waiting for the local node on this machine to confirm this snapshot."
+                    "Waiting for the local runtime on this machine to confirm this snapshot."
                     if local_only_publish
                     and (
                         PublishBlockerCode.OBSERVATION_STALE in affected_codes
                         or PublishBlockerCode.NODE_SYNC_PENDING in waiting_codes
                     )
                     else (
-                        "The local node on this machine is reachable."
+                        "The local runtime on this machine is responding."
                         if local_only_publish
                         else (
                             "Waiting for the required nodes to confirm this snapshot."

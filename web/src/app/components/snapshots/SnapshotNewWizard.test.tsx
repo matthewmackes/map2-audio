@@ -3,10 +3,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockGetDevices = jest.fn()
+const mockListNodes = jest.fn()
 
 jest.mock('../../../map2/api', () => ({
   pipewireApi: {
     getDevices: (...args: unknown[]) => mockGetDevices(...args),
+  },
+}))
+
+jest.mock('../../../map2/clients/snapshots', () => ({
+  snapshotsApi: {
+    listNodes: (...args: unknown[]) => mockListNodes(...args),
   },
 }))
 
@@ -40,6 +47,13 @@ function renderWizard(props: Partial<React.ComponentProps<typeof SnapshotNewWiza
 describe('SnapshotNewWizard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockListNodes.mockResolvedValue({
+      nodes: [
+        { id: 'node-a', status: 'online', hostname: 'rack-a' },
+        { id: 'node-b', status: 'online', hostname: 'rack-b' },
+      ],
+      count: 2,
+    })
     mockGetDevices.mockResolvedValue({
       devices: [
         { id: 1, name: 'Input Alpha', nick: 'Input Alpha', driver: '', bus: '', media_class: 'Audio/Device', is_default: true, properties: {} },
@@ -74,13 +88,13 @@ describe('SnapshotNewWizard', () => {
     renderWizard({ initialName: 'FreshSnapshot' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
-    expect(await screen.findByText('Choose a routing mode')).toBeTruthy()
+    expect(await screen.findByText('Choose a live host')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Pick an input device')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(await screen.findByText('Choose a routing mode')).toBeTruthy()
+    expect(await screen.findByText('Choose a live host')).toBeTruthy()
   })
 
   it('lets device steps continue when no devices are available', async () => {
@@ -90,7 +104,8 @@ describe('SnapshotNewWizard', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
-    expect(await screen.findByText('No PipeWire devices are available right now. This step can be skipped.')).toBeTruthy()
+    expect(await screen.findByText('No PipeWire devices are available right now')).toBeTruthy()
+    expect(screen.getByText('This step can be skipped.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText('Pick an output device')).toBeTruthy()
   })
@@ -99,7 +114,7 @@ describe('SnapshotNewWizard', () => {
     const { onSubmit } = renderWizard({ initialName: 'FreshSnapshot' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }))
-    fireEvent.click(screen.getByLabelText('Morph'))
+    fireEvent.change(await screen.findByLabelText('Live host'), { target: { value: 'node-b' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
     const inputSelect = await screen.findByLabelText('Input device')
@@ -108,12 +123,12 @@ describe('SnapshotNewWizard', () => {
 
     const outputSelect = await screen.findByLabelText('Output device')
     fireEvent.change(outputSelect, { target: { value: 'Input Alpha' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Commit' }))
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
         name: 'FreshSnapshot',
-        routingMode: 'morph',
+        hostId: 'node-b',
         inputDevice: 'Output Beta',
         outputDevice: 'Input Alpha',
       })

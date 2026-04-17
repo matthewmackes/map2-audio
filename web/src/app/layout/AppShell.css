@@ -179,10 +179,11 @@
   --window-shell-border: color-mix(in srgb, var(--border) 72%, transparent);
   --window-shell-surface: var(--bg);
   --window-shell-surface-strong: color-mix(in srgb, var(--surface) 92%, var(--bg));
-  --window-shell-titlebar: color-mix(in srgb, var(--surface-2) 96%, black 4%);
-  --window-shell-titlebar-border: color-mix(in srgb, var(--border-strong) 88%, transparent);
-  --window-shell-titlebar-contrast: var(--text-primary);
-  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--interactive)) 12%, var(--surface));
+  --window-shell-titlebar: var(--primary-strong);
+  --window-shell-titlebar-border: color-mix(in srgb, var(--text-inverse) 18%, var(--primary-strong));
+  --window-shell-titlebar-contrast: var(--text-inverse);
+  --window-shell-titlebar-contrast-muted: color-mix(in srgb, var(--text-inverse) 78%, transparent);
+  --window-shell-titlebar-accent: color-mix(in srgb, var(--window-shell-accent, var(--text-inverse)) 14%, var(--primary-strong));
   --window-shell-usable-height: 100vh;
 }
 
@@ -1048,14 +1049,14 @@ button.window-taskbar__pill {
 }
 
 .shell-power-modal .cds--modal-header__label {
-  color: var(--cds-text-secondary, var(--text-secondary));
+  color: var(--window-shell-titlebar-contrast-muted, var(--window-shell-titlebar-contrast));
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
 .shell-power-modal .cds--modal-header__heading {
-  color: var(--cds-text-primary, var(--text-primary));
+  color: var(--window-shell-titlebar-contrast);
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
@@ -1063,7 +1064,8 @@ button.window-taskbar__pill {
 
 .shell-power-modal .cds--modal-close {
   border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border) 82%, transparent);
-  background: color-mix(in srgb, var(--window-shell-titlebar) 90%, var(--window-shell-surface) 10%);
+  background: color-mix(in srgb, var(--window-shell-titlebar) 88%, var(--window-shell-titlebar-contrast) 12%);
+  color: var(--window-shell-titlebar-contrast);
 }
 
 .shell-power-modal .cds--modal-content {
@@ -1115,7 +1117,7 @@ button.window-taskbar__pill {
   padding: 0.42rem 0.88rem;
   border-bottom: 1px solid var(--window-shell-titlebar-border);
   background: var(--window-shell-titlebar);
-  color: var(--cds-text-secondary, var(--text-secondary));
+  color: var(--window-shell-titlebar-contrast-muted, var(--window-shell-titlebar-contrast));
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }

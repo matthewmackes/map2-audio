@@ -42,6 +42,10 @@ class SnapshotOwnedChainActivationError(RuntimeError):
     """Raised when a snapshot-owned runtime chain is activated outside the canonical snapshot path."""
 
 
+class SnapshotOwnedChainMutationError(RuntimeError):
+    """Raised when generic chain tooling mutates a snapshot-owned runtime chain."""
+
+
 _ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "true").lower() in {
     "1",
     "true",
@@ -642,6 +646,43 @@ class ChainService:
         if reason:
             payload["reason"] = reason
         return payload
+
+    @staticmethod
+    def _chain_snapshot_contract_payload(chain_config: Any) -> Dict[str, Any]:
+        source_kind = chain_config.get("source_kind") if isinstance(chain_config, dict) else None
+        snapshot_id = None
+        snapshot_chain_id = None
+        if isinstance(chain_config, dict):
+            try:
+                if chain_config.get("snapshot_id") is not None:
+                    snapshot_id = int(chain_config.get("snapshot_id"))
+            except (TypeError, ValueError):
+                snapshot_id = None
+            try:
+                if chain_config.get("snapshot_chain_id") is not None:
+                    snapshot_chain_id = int(chain_config.get("snapshot_chain_id"))
+            except (TypeError, ValueError):
+                snapshot_chain_id = None
+
+        snapshot_owned = source_kind == "snapshot_path"
+        return {
+            "source_kind": source_kind,
+            "snapshot_id": snapshot_id,
+            "snapshot_chain_id": snapshot_chain_id,
+            "snapshot_name": None,
+            "path_id": chain_config.get("path_id") if isinstance(chain_config, dict) else None,
+            "management_scope": "snapshot" if snapshot_owned else "runtime",
+            "can_activate_directly": not snapshot_owned,
+            "can_mutate_from_chains": not snapshot_owned,
+        }
+
+    @staticmethod
+    def _raise_if_snapshot_owned_chain_mutation(chain_id: int, chain_config: Any, action: str) -> None:
+        if isinstance(chain_config, dict) and chain_config.get("source_kind") == "snapshot_path":
+            raise SnapshotOwnedChainMutationError(
+                f"Chain {chain_id} is owned by a live snapshot and cannot be {action} from /api/chains. "
+                "Use Snapshot Editor or Snapshot Publish instead."
+            )
 
     async def _apply_persisted_loader_state(self, engine_service: Any, chain_plugin: Any, instance_id: int) -> List[str]:
         warnings: List[str] = []
@@ -1367,7 +1408,8 @@ class ChainService:
                 },
                 "runtime_sync": chain_config.get("runtime_sync"),
                 "created_at": chain.created_at.isoformat() if chain.created_at else None,
-                "updated_at": chain.updated_at.isoformat() if chain.updated_at else None
+                "updated_at": chain.updated_at.isoformat() if chain.updated_at else None,
+                **self._chain_snapshot_contract_payload(chain_config),
             }
         except Exception as e:
             logger.error(f"Error getting chain {chain_id}: {e}")
@@ -1383,15 +1425,37 @@ class ChainService:
             if not self.session:
                 return []
 
-            from app.database import Chain, ChainPlugin, EffectsLoop, EffectsLoopInsertion
+            from app.database import Chain, ChainPlugin, EffectsLoop, EffectsLoopInsertion, Snapshot
 
             # Get all chains
             result = await self.session.execute(select(Chain))
             chains = result.scalars().all()
 
-            chains_list = []
+            parsed_chain_config_by_id: Dict[int, Dict[str, Any]] = {}
+            snapshot_ids: set[int] = set()
             for chain in chains:
                 chain_config = self._parse_chain_config(chain.config)
+                parsed_chain_config_by_id[int(chain.id)] = chain_config
+                try:
+                    snapshot_id = int(chain_config.get("snapshot_id")) if chain_config.get("snapshot_id") is not None else None
+                except (AttributeError, TypeError, ValueError):
+                    snapshot_id = None
+                if snapshot_id is not None:
+                    snapshot_ids.add(snapshot_id)
+
+            snapshot_name_by_id: Dict[int, str] = {}
+            if snapshot_ids:
+                snapshot_result = await self.session.execute(
+                    select(Snapshot.id, Snapshot.name).filter(Snapshot.id.in_(snapshot_ids))
+                )
+                snapshot_name_by_id = {
+                    int(snapshot_id): snapshot_name
+                    for snapshot_id, snapshot_name in snapshot_result.all()
+                }
+
+            chains_list = []
+            for chain in chains:
+                chain_config = parsed_chain_config_by_id.get(int(chain.id), {})
                 system_blocks = chain_config.get("system_blocks") if isinstance(chain_config.get("system_blocks"), list) else []
                 # Get plugins for this chain
                 plugins_result = await self.session.execute(
@@ -1411,8 +1475,12 @@ class ChainService:
                     "effects_loops": [],
                     "plugin_count": len(plugins),
                     "runtime_sync": chain_config.get("runtime_sync"),
-                    "created_at": chain.created_at.isoformat() if chain.created_at else None
+                    "created_at": chain.created_at.isoformat() if chain.created_at else None,
+                    "updated_at": chain.updated_at.isoformat() if chain.updated_at else None,
+                    **self._chain_snapshot_contract_payload(chain_config),
                 }
+                if chain_data.get("snapshot_id") is not None:
+                    chain_data["snapshot_name"] = snapshot_name_by_id.get(int(chain_data["snapshot_id"]))
 
                 for p in plugins:
                     chain_data["plugins"].append(
@@ -1469,6 +1537,12 @@ class ChainService:
             if not chain:
                 return False
 
+            self._raise_if_snapshot_owned_chain_mutation(
+                chain_id,
+                self._parse_chain_config(chain.config),
+                "deleted",
+            )
+
             # Delete related performance logs first (FK constraint workaround for existing DBs)
             await self.session.execute(
                 delete(PluginPerformanceLog).where(PluginPerformanceLog.chain_id == chain_id)
@@ -1488,6 +1562,8 @@ class ChainService:
 
             logger.info(f"Chain {chain_id} deleted and verified")
             return True
+        except SnapshotOwnedChainMutationError:
+            raise
         except Exception as e:
             logger.error(f"Error deleting chain {chain_id}: {e}")
             return False
@@ -2102,12 +2178,20 @@ class ChainService:
             
             if not chain:
                 return False
-            
+
+            self._raise_if_snapshot_owned_chain_mutation(
+                chain_id,
+                self._parse_chain_config(chain.config),
+                "renamed",
+            )
+
             chain.name = new_name
             await self.session.flush()
             
             logger.info(f"Renamed chain {chain_id} to '{new_name}'")
             return True
+        except SnapshotOwnedChainMutationError:
+            raise
         except Exception as e:
             logger.error(f"Error renaming chain {chain_id}: {e}")
             return False

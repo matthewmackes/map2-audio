@@ -11,8 +11,8 @@ pip install -r requirements-backend-runtime.txt
 ## Summary
 
 - Runtime manifest packages: `18`
-- Schema-backed environment variables: `47`
-- Direct environment reads in `app/`: `95`
+- Schema-backed environment variables: `55`
+- Direct environment reads in `app/`: `96`
 - Direct-only environment variables (not modeled in `app/config.py`): `73`
 - Inline backend systemd environment entries: `11`
 
@@ -64,6 +64,7 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 - `cryptography`: Optional secrets management and certificate authority helpers
 - `jsonschema`: Optional config validation helpers
 - `py7zr`: Optional archive handling for soundfont content
+- `pyudev`: Optional USB hotplug subscriptions for hardware daemons such as Maschine MK1
 - `watchdog`: Optional config hot-reload support
 
 ## Environment precedence for the backend service
@@ -103,6 +104,14 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 | `MAP2_AUDIO_ENGINE` | `audio.engine` | `juce` | `True` | `False` | Audio engine to use: 'juce' (recommended) or 'python' (deprecated) |
 | `MAP2_PIPEWIRE_USE_JACK` | `audio.pipewire_use_jack` | `true` | `True` | `False` | Use PipeWire's JACK compatibility layer (recommended) |
 | `MAP2_SAMPLE_RATE` | `audio.sample_rate` | `48000` | `True` | `True` | Audio sample rate in Hz (LOCKED for Tier A performance - set in systemd service only) |
+| `MAP2_AUDIO_STATE_AUTHORITY_BACKEND` | `audio_state.authority_backend` | `etcd` | `True` | `False` | Cluster authority backend for committed audio state |
+| `MAP2_AUDIO_STATE_ETCD_CA_CERT_PATH` | `audio_state.etcd_ca_cert_path` | `` | `True` | `False` | Optional CA bundle path for etcd TLS validation |
+| `MAP2_AUDIO_STATE_ETCD_CONNECT_TIMEOUT_S` | `audio_state.etcd_connect_timeout_s` | `2.0` | `True` | `False` | Connection timeout in seconds for etcd control-plane requests |
+| `MAP2_AUDIO_STATE_ETCD_ENDPOINTS` | `audio_state.etcd_endpoints` | `["http://127.0.0.1:2379"]` | `True` | `False` | Ordered etcd endpoint list for the authoritative audio state control plane |
+| `MAP2_AUDIO_STATE_ETCD_NAMESPACE` | `audio_state.etcd_namespace` | `/map2/audio-state/v1` | `True` | `False` | etcd namespace root for the authoritative audio state keyspace |
+| `MAP2_AUDIO_STATE_ETCD_REQUEST_TIMEOUT_S` | `audio_state.etcd_request_timeout_s` | `5.0` | `True` | `False` | Total request timeout in seconds for etcd control-plane operations |
+| `MAP2_AUDIO_STATE_ETCD_VERIFY_TLS` | `audio_state.etcd_verify_tls` | `true` | `True` | `False` | Verify TLS certificates for etcd authority connections |
+| `MAP2_AUDIO_STATE_NODE_OBSERVATION_TTL_S` | `audio_state.node_observation_ttl_s` | `15` | `True` | `False` | TTL in seconds for node observation leases in etcd |
 | `MAP2_AVDECC_ENABLED` | `avb.avdecc_enabled` | `false` | `True` | `False` | Enable AVDECC (IEEE 1722.1) discovery/control for third-party AVB devices |
 | `MAP2_AVB_ENABLED` | `avb.enabled` | `false` | `True` | `False` | Enable AVB/TSN network audio transport (requires compatible NIC) |
 | `MAP2_AVB_FAILOVER_INTERFACES` | `avb.failover_interfaces` | `[]` | `False` | `False` | Ordered interface candidates for AVB stream failover |
@@ -148,79 +157,79 @@ These variables are read directly in code and are not represented in `app/config
 
 | Variable | First observed source | Default | Occurrences |
 | --- | --- | --- | ---: |
-| `CLUSTER_MODE` | `app/routes/special_settings.py:39` | `'disabled'` | 1 |
-| `DEBUG` | `app/routes/www.py:166` | `'false'` | 1 |
+| `CLUSTER_MODE` | `app/routes/special_settings.py:46` | `'disabled'` | 1 |
+| `DEBUG` | `app/routes/www.py:172` | `'false'` | 1 |
 | `DEBUG_RESILIENCE` | `app/deployment/resilience_config.py:98` | `'false'` | 1 |
 | `ENABLE_CIRCUIT_BREAKER` | `app/deployment/resilience_config.py:85` | `'true'` | 1 |
 | `ENABLE_CONNECTION_POOLING` | `app/deployment/resilience_config.py:87` | `'true'` | 1 |
 | `ENABLE_GRACEFUL_DEGRADATION` | `app/deployment/resilience_config.py:89` | `'true'` | 1 |
 | `ENABLE_HEALTH_MONITORING` | `app/deployment/resilience_config.py:86` | `'true'` | 1 |
 | `ENABLE_REQUEST_QUEUING` | `app/deployment/resilience_config.py:88` | `'true'` | 1 |
-| `HOME` | `app/services/pipewire_service.py:32` | `'/home/mm'` | 1 |
-| `INTELFX_SIMULATOR` | `app/services/intelfx_service.py:53` | `''` | 1 |
-| `LV2_PATH` | `app/services/plugin_loader_unified.py:388` | `''` | 2 |
+| `LV2_PATH` | `app/services/plugin_loader_unified.py:391` | `''` | 2 |
 | `MAP2_API_ADMIN_TOKEN` | `app/middleware/api_auth.py:55` | `''` | 1 |
 | `MAP2_API_AUTH_MODE` | `app/middleware/api_auth.py:53` | `'disabled'` | 1 |
 | `MAP2_API_CLUSTER_TOKEN` | `app/middleware/api_auth.py:56` | `''` | 1 |
 | `MAP2_API_OPERATOR_TOKEN` | `app/middleware/api_auth.py:54` | `''` | 1 |
-| `MAP2_API_PORT` | `app/main.py:351` | `'8080'` | 1 |
+| `MAP2_API_PORT` | `app/main.py:426` | `'8080'` | 2 |
 | `MAP2_APP_DIR` | `app/services/backup_service.py:1649` | `` | 1 |
-| `MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS` | `app/routes/audio.py:118` | `'0.50'` | 1 |
-| `MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio.py:102` | `'0.20'` | 1 |
-| `MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS` | `app/routes/audio.py:106` | `'0.04'` | 1 |
-| `MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio.py:110` | `'0.25'` | 1 |
-| `MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS` | `app/routes/audio.py:114` | `'0.06'` | 1 |
-| `MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS` | `app/routes/audio.py:122` | `'0.20'` | 1 |
-| `MAP2_AUTO_UPDATE` | `app/services/cluster/management_orchestrator.py:32` | `'0'` | 1 |
-| `MAP2_BACKEND_URL` | `app/services/maschine/maschine_mk1_daemon.py:150` | `DEFAULT_BACKEND_URL` | 2 |
+| `MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS` | `app/routes/audio.py:122` | `'0.50'` | 1 |
+| `MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio.py:106` | `'0.20'` | 1 |
+| `MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS` | `app/routes/audio.py:110` | `'0.04'` | 1 |
+| `MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio.py:114` | `'0.25'` | 1 |
+| `MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS` | `app/routes/audio.py:118` | `'0.06'` | 1 |
+| `MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS` | `app/routes/audio.py:126` | `'0.20'` | 1 |
+| `MAP2_AUTO_UPDATE` | `app/services/cluster/management_orchestrator.py:34` | `'0'` | 1 |
+| `MAP2_BACKEND_URL` | `app/services/maschine/maschine_mk1_daemon.py:202` | `DEFAULT_BACKEND_URL` | 2 |
 | `MAP2_BOOTSTRAP_ALLOW_REMOTE_CODE` | `app/routes/bootstrap.py:101` | `'false'` | 1 |
-| `MAP2_BOOTSTRAP_TOKEN_SECRET` | `app/services/cluster/adoption_bootstrap.py:84` | `` | 1 |
-| `MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS` | `app/routes/chains.py:84` | `'2.0'` | 1 |
-| `MAP2_CLUSTER_ENABLED` | `app/main.py:494` | `'false'` | 2 |
-| `MAP2_CONFIG_GIT_REPO` | `app/main.py:508` | `` | 1 |
-| `MAP2_CORE_CONFIG_FILE` | `app/routes/system.py:31` | `'/tmp/map2_core_config_state.json'` | 1 |
-| `MAP2_DEPLOYMENT_MODE` | `app/deployment/deployment.py:149` | `'ALL-IN-ONE'` | 7 |
+| `MAP2_BOOTSTRAP_TOKEN_SECRET` | `app/services/cluster/adoption_bootstrap.py:85` | `` | 1 |
+| `MAP2_BRAIN_ROOT` | `app/services/performance_brain_service.py:69` | `Path.home() / '.map2' / 'performance_brain'` | 1 |
+| `MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS` | `app/routes/chains.py:88` | `'2.0'` | 1 |
+| `MAP2_CLUSTER_ENABLED` | `app/main.py:585` | `'false'` | 2 |
+| `MAP2_CONFIG_GIT_REPO` | `app/main.py:599` | `` | 1 |
+| `MAP2_CORE_CONFIG_FILE` | `app/routes/system.py:33` | `'/tmp/map2_core_config_state.json'` | 1 |
+| `MAP2_DEPLOYMENT_MODE` | `app/deployment/deployment.py:184` | `'ALL-IN-ONE'` | 7 |
 | `MAP2_DEV_PROXY` | `app/routes/dev_proxy.py:64` | `''` | 1 |
-| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:677` | `'true'` | 1 |
+| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:784` | `'true'` | 1 |
 | `MAP2_DRUMS_ACTIVE_KIT_STATE_PATH` | `app/services/drum_kit_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'active_kit.json'` | 1 |
 | `MAP2_DRUMS_AUTOSAVE_PATH` | `app/services/drum_sequencer_service.py:25` | `_DEFAULT_DRUMS_ROOT / 'sequencer-autosave.json'` | 1 |
+| `MAP2_DRUMS_BACKING_TRACK_STATE_PATH` | `app/services/drum_machine_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'backing_track_state.json'` | 1 |
 | `MAP2_DRUMS_BUNDLES_DIR` | `app/services/drum_sequencer_service.py:24` | `_DEFAULT_DRUMS_ROOT / 'bundles'` | 1 |
-| `MAP2_DRUMS_CC_MAPPINGS_PATH` | `app/services/drum_machine_service.py:32` | `_DEFAULT_DRUMS_ROOT / 'cc_mappings.json'` | 1 |
+| `MAP2_DRUMS_CC_MAPPINGS_PATH` | `app/services/drum_machine_service.py:36` | `_DEFAULT_DRUMS_ROOT / 'cc_mappings.json'` | 1 |
 | `MAP2_DRUMS_FACTORY_KITS_DIR` | `app/services/drum_kit_service.py:28` | `_PROJECT_ROOT / 'data' / 'drums' / 'factory_kits'` | 1 |
-| `MAP2_DRUMS_FACTORY_PACKS_DIR` | `app/services/drum_machine_service.py:28` | `_PROJECT_ROOT / 'data' / 'drums' / 'factory_packs'` | 1 |
-| `MAP2_DRUMS_GENERATED_PACKS_DIR` | `app/services/drum_machine_service.py:29` | `_PROJECT_ROOT / 'data' / 'drums' / 'generated'` | 1 |
-| `MAP2_DRUMS_MIDI_CONFIGS_DIR` | `app/services/drum_machine_service.py:31` | `_DEFAULT_DRUMS_ROOT / 'midi_configs'` | 1 |
+| `MAP2_DRUMS_FACTORY_PACKS_DIR` | `app/services/drum_machine_service.py:32` | `_PROJECT_ROOT / 'data' / 'drums' / 'factory_packs'` | 1 |
+| `MAP2_DRUMS_GENERATED_PACKS_DIR` | `app/services/drum_machine_service.py:33` | `_PROJECT_ROOT / 'data' / 'drums' / 'generated'` | 1 |
+| `MAP2_DRUMS_MIDI_CONFIGS_DIR` | `app/services/drum_machine_service.py:35` | `_DEFAULT_DRUMS_ROOT / 'midi_configs'` | 1 |
 | `MAP2_DRUMS_PATTERNS_DIR` | `app/services/drum_sequencer_service.py:23` | `_DEFAULT_DRUMS_ROOT / 'patterns'` | 1 |
 | `MAP2_DRUMS_ROOT` | `app/services/drum_kit_service.py:27` | `Path.home() / '.map2' / 'drums'` | 3 |
-| `MAP2_DRUMS_STATE_PATH` | `app/services/drum_machine_service.py:27` | `_DEFAULT_DRUMS_ROOT / 'state.json'` | 1 |
+| `MAP2_DRUMS_STATE_PATH` | `app/services/drum_machine_service.py:28` | `_DEFAULT_DRUMS_ROOT / 'state.json'` | 1 |
 | `MAP2_DRUMS_USER_KITS_DIR` | `app/services/drum_kit_service.py:29` | `_DEFAULT_DRUMS_ROOT / 'user_kits'` | 1 |
-| `MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS` | `app/services/drum_machine_service.py:30` | `'0.05'` | 1 |
-| `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` | `app/services/chain_service.py:30` | `'true'` | 1 |
-| `MAP2_ENABLE_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:181` | `'false'` | 1 |
-| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:462` | `'true'` | 1 |
-| `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:187` | `'false'` | 1 |
-| `MAP2_ENGINE_OP_MAX_RETRIES` | `app/routes/plugins.py:194` | `'6'` | 1 |
-| `MAP2_ENGINE_OP_QUEUE_MAX` | `app/routes/plugins.py:193` | `'2048'` | 1 |
-| `MAP2_ENGINE_OP_RETRY_BASE_DELAY` | `app/routes/plugins.py:195` | `'0.05'` | 1 |
+| `MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS` | `app/services/drum_machine_service.py:34` | `'0.05'` | 1 |
+| `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` | `app/services/chain_service.py:49` | `'true'` | 1 |
+| `MAP2_ENABLE_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:231` | `'false'` | 1 |
+| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:553` | `'true'` | 1 |
+| `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:237` | `'false'` | 1 |
+| `MAP2_ENGINE_OP_MAX_RETRIES` | `app/routes/plugins.py:244` | `'6'` | 1 |
+| `MAP2_ENGINE_OP_QUEUE_MAX` | `app/routes/plugins.py:243` | `'2048'` | 1 |
+| `MAP2_ENGINE_OP_RETRY_BASE_DELAY` | `app/routes/plugins.py:245` | `'0.05'` | 1 |
 | `MAP2_HEADLESS_LIVE` | `app/services/runtime_profiles.py:76` | `''` | 1 |
-| `MAP2_NODE_ID` | `app/services/cluster/audio_path_discovery.py:507` | `'local'` | 2 |
-| `MAP2_NODE_LABEL` | `app/services/push_surface/drum_registry.py:25` | `` | 1 |
-| `MAP2_PLUGIN_APPEARANCES_FILE` | `app/services/plugin_appearance_service.py:79` | `` | 1 |
-| `MAP2_PUSH_DEVICE_ASSIGNMENTS_PATH` | `app/services/push_surface/device_assignment_service.py:22` | `Path.home() / '.map2' / 'push_surface' / 'device_assignments.json'` | 1 |
+| `MAP2_MASCHINE_ALLOW_KERNEL_DETACH` | `app/services/maschine/maschine_mk1_daemon.py:197` | `` | 1 |
+| `MAP2_NODE_ID` | `app/services/cluster/audio_path_discovery.py:500` | `'local'` | 2 |
+| `MAP2_NODE_LABEL` | `app/services/push_surface/drum_registry.py:28` | `` | 1 |
+| `MAP2_PLUGIN_APPEARANCES_FILE` | `app/services/plugin_appearance_service.py:80` | `` | 1 |
+| `MAP2_PUSH_DEVICE_ASSIGNMENTS_PATH` | `app/services/push_surface/device_assignment_service.py:24` | `Path.home() / '.map2' / 'push_surface' / 'device_assignments.json'` | 1 |
 | `MAP2_PUSH_SURFACE_CONFIG` | `app/services/push_surface/config.py:34` | `Path.home() / '.map2' / 'push_surface.json'` | 1 |
-| `MAP2_PUSH_SURFACE_LABS_STORE` | `app/services/push_surface/labs_store.py:13` | `Path.home() / '.map2' / 'push_surface_labs.json'` | 1 |
-| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:332` | `` | 1 |
+| `MAP2_PUSH_SURFACE_LABS_STORE` | `app/services/push_surface/labs_store.py:15` | `Path.home() / '.map2' / 'push_surface_labs.json'` | 1 |
+| `MAP2_RAFT_STATE_DIR` | `app/services/cluster/raft_consensus.py:189` | `''` | 1 |
+| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:407` | `` | 1 |
 | `MAP2_REQUEST_LOGGING` | `app/middleware/request_logging.py:39` | `''` | 1 |
 | `MAP2_RUNTIME_BOOT_PROFILE` | `app/services/runtime_profiles.py:73` | `''` | 1 |
 | `MAP2_SECRETS_MASTER_PASSWORD` | `app/services/secrets_manager.py:120` | `` | 1 |
-| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:730` | `'true'` | 1 |
-| `MAP2_TEST_MODE` | `app/main.py:259` | `'false'` | 3 |
-| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:703` | `'true'` | 1 |
-| `MAP2_USE_MOCK_LCD` | `app/main.py:350` | `'true'` | 1 |
-| `MPX1_SIMULATOR` | `app/services/mpx1_service.py:53` | `''` | 1 |
-| `NODE_ID` | `app/routes/special_settings.py:133` | `'standalone'` | 3 |
+| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:840` | `'true'` | 1 |
+| `MAP2_TEST_MODE` | `app/main.py:331` | `'false'` | 3 |
+| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:810` | `'true'` | 1 |
+| `MAP2_USE_MOCK_LCD` | `app/main.py:425` | `'true'` | 1 |
+| `NODE_ID` | `app/routes/special_settings.py:148` | `'standalone'` | 3 |
 | `PROMETHEUS_URL` | `app/services/cluster/post_update_health.py:360` | `'http://localhost:9090'` | 1 |
-| `XDG_RUNTIME_DIR` | `app/services/pipewire_service.py:30` | `'/run/user/1000'` | 1 |
 
 ## Notes
 

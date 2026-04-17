@@ -1,0 +1,669 @@
+MAP2 PLATFORM ARCHITECTURE INFOGRAPHIC PROMPT
+For Gemini Banana 2
+Prepared from repo review on 2026-04-17
+
+Purpose
+Create one ultra-high-resolution, technically accurate, poster-grade infographic that explains MAP2 as a layered platform, not as a single app. The image must show service relationships, workflows, signal paths, authority layers, operator surfaces, node roles, cluster/network relationships, hardware integrations, and real use cases.
+
+This image is not a marketing fantasy piece. It is a dense technical infographic for engineers, operators, contributors, and advanced musicians. Accuracy is more important than visual drama.
+
+Non-Negotiable Accuracy Rules
+1. Present MAP2 as an open-source educational and research platform with serious implementation depth, not as a universally production-ready commercial appliance.
+2. Do not claim "measured sub-3 ms latency." The accurate framing is:
+   - 64-sample theoretical floor at 48 kHz = 2.67 ms per buffer
+   - measured realistic latency on the current audit host is about 4-7 ms
+3. Show that live truth is not inferred from the editor or cached UI state.
+   - The node-local realtime runtime is the only authority for whether a snapshot is actually live.
+   - Backend and UI may show requested, pending, warning, offline, or failed, but must not fake live confirmation.
+4. Show the current configuration authority model exactly:
+   - /etc/map2 = host desired configuration
+   - /var/lib/map2 = durable service and cluster state
+   - ~/.map2 = user, operator, and session-scoped state
+   - runtime/external systems such as PipeWire, /proc, etcd, and Raft = observed or control-plane state, not static config
+5. Show that authoritative audio state uses etcd by default, under the namespace /map2/audio-state/v1, with desired, committed, and observed layers.
+6. Show that snapshot persistence authority is the graph-document model:
+   - snapshots.document
+   - snapshot_revisions.document
+   - state_authority_assets
+   Legacy snapshot_* tables are compatibility projections, not the future source of truth.
+7. Show the three primary deployment modes:
+   - Audio
+   - All-in-One
+   - Management
+   Do not elevate "frontend-only" as a primary mode. It appears in some backend deployment APIs, but the shipped mode-switching workflow is built around the three primary modes above.
+8. Show the supported web/backend/observability port contract:
+   - 3000 = production web UI
+   - 8080 = FastAPI backend and WebSocket services
+   - 9090 = Prometheus on management or all-in-one nodes only
+   - 3001 = Grafana on management or all-in-one nodes only
+   - optional port 80 proxy exists only as legacy compatibility
+9. Show that audio nodes export lightweight metrics only. They do not host local Prometheus or Grafana by default.
+10. Do not invent a Kubernetes layer, message bus, cloud SaaS backend, or proprietary orchestration stack. Keep everything grounded in the repo.
+11. Do not draw every subsystem as equally mature. Use visible maturity badges where the repo provides them.
+12. If space becomes tight, compress route-level details, but do not remove any of the 25 required concept blocks below.
+
+Desired Output
+- One single image
+- Landscape
+- Ultra-high-resolution poster quality
+- Equivalent of roughly 12000x8000 or higher
+- Crisp, vector-like edges
+- Text must remain legible when zoomed in
+- Dense but organized, with strong hierarchy
+- Use a technical infographic style, not a photoreal scene
+
+Visual Style
+- Mood: dark control-room blueprint meets IBM/Carbon technical architecture poster
+- Background: deep charcoal or near-black, not pure black
+- Typography:
+  - primary: IBM Plex Sans style
+  - secondary and technical labels: IBM Plex Mono style
+- Visual language:
+  - flat, precise, technical
+  - subtle depth only where needed
+  - clean line work
+  - no glossy fantasy UI
+  - no random floating 3D effects
+- Icons:
+  - minimal schematic icons
+  - simple rack, node, waveform, controller, network, database, and screen symbols
+  - do not use literal vendor logos unless they are abstracted into neutral schematic labels
+- The image should feel like a canonical architecture poster that could hang in a lab, studio, or engineering room.
+
+Color and Semantic Encoding
+Use one consistent legend across the poster.
+
+Line colors
+- Cyan = audio signal flow
+- Blue = operator command or API control flow
+- Green = authoritative state publication or confirmed state
+- Amber = discovery, heartbeat, visibility, adoption, or readiness checks
+- Magenta = WebSocket events, telemetry streams, or realtime broadcast channels
+- Gray = install, boot, service start, config generation, or compatibility projection
+
+Line styles
+- Solid = primary active relationship
+- Dashed = discovery, monitoring, or optional relationship
+- Dotted = event stream, broadcast topic, or observability feed
+- Double-line = source of truth or critical authority path
+
+Badge colors
+- production = green
+- qualified-with-waiver = cool blue-gray
+- beta = amber
+- experimental = orange-red
+- hardware-blocked = dim gray
+- compatibility-only = muted purple-gray
+
+Authority plane markers
+- Host desired config marker for /etc/map2
+- Durable state marker for /var/lib/map2
+- User/session state marker for ~/.map2
+- Live observed/control-plane marker for PipeWire, /proc, etcd, Raft, and runtime observations
+
+Overall Composition
+Build the poster as one coherent layered map with the following global structure:
+
+Top title rail
+- Title: "MAP2 Audio Platform"
+- Subtitle: "Layered Real-Time Audio, Control, State Authority, Network Audio, and Operator Workflow Architecture"
+- Small factual callout line:
+  - "Open-source educational/research platform"
+  - "JUCE + FastAPI + React + PipeWire/JACK + multi-node control"
+  - "64-sample theoretical floor; ~4-7 ms measured on current audit host"
+- Include a compact legend for colors, line styles, authority markers, and maturity badges
+
+Main body layout
+Use 6 vertical macro lanes from left to right:
+1. Operators and entry surfaces
+2. Provisioning, boot, config, and service management
+3. Backend control plane and business services
+4. Realtime audio runtime and local host media graph
+5. Authority, persistence, and live-state truth
+6. Cluster, network audio, external devices, and hardware ecosystems
+
+Bottom strip
+- Use cases ribbon
+- Platform posture summary
+- Maturity note
+- Ports and role split mini-reference
+
+Important composition rule
+Do not make the image only a backend service graph.
+It must simultaneously show:
+- operator surfaces
+- service relationships
+- realtime audio path
+- state authority path
+- cluster/network transport path
+- hardware/controller integrations
+- use-case outcomes
+
+The 25 Required Concept Blocks
+These are the 25 mandatory concept blocks. Number them visibly from 01 to 25 in the image. Every one of these must appear.
+
+01. Deployment Modes and Node Roles
+Show three primary node role cards:
+- Audio Node
+  - dedicated realtime audio processing
+  - minimal background load
+  - no local Prometheus/Grafana
+- All-in-One Node
+  - audio + web + management
+  - mixed workload tradeoff
+- Management Node
+  - control UI, cluster management, observability
+  - no realtime audio emphasis
+Show arrows from this block into systemd policy, observability role, and UI surfaces.
+
+02. Installer and Provisioning Workflow
+Show that MAP2 has an interactive Textual installer and unattended kickstart-style flow.
+Visually include installer stages:
+- welcome/detect
+- mode
+- network
+- storage
+- software
+- audio
+- realtime
+- users
+- review
+- install
+- verify
+Show that installer output feeds host configuration, packages, services, PipeWire config, GRUB/RT tuning, and post-install verification.
+
+03. Configuration Authority Planes
+Show four stacked authority boxes:
+- /etc/map2 = host desired config
+- /var/lib/map2 = durable service and cluster state
+- ~/.map2 = user/session state
+- runtime and external systems = observed/control-plane truth
+This block must visually explain that MAP2 does not use one fake single-file source of truth.
+
+04. Mode Reconciliation and Systemd Policy
+Show map2-mode.sh as the reconciliation entrypoint between:
+- /etc/guitarfx-mode.conf
+- /etc/map2/environment
+- ~/.map2/deployment.json
+- active backend mode drop-in
+Show mode-specific backend service policies:
+- audio mode pins backend to isolated cores and stricter RT policy
+- all-in-one keeps audio and UI together with compromise tuning
+- management mode removes realtime emphasis
+
+05. Node Service Graph
+Show the core service relationships on one host:
+- map2-boot-manager.service
+- map2-backend.service
+- map2-web-prod.service
+- map2-lcd.service
+- map2-lcd-boot.service
+- map2-port80-proxy.service
+Use arrows to show:
+- boot manager before backend/web
+- backend as the central runtime hub
+- web served separately on port 3000
+- LCD and legacy port80 proxy as auxiliary services
+Include exact ports:
+- 3000 web
+- 8080 backend
+
+06. FastAPI Backend Control Plane
+Draw the backend as the main control-plane spine.
+Show these backend truths:
+- FastAPI lifespan startup and shutdown orchestration
+- route families for audio, snapshots, MIDI, cluster, AVB, deployment, PipeWire, surfaces, and hardware
+- middleware layer including API auth and cluster proxy
+Show auth boundaries:
+- public
+- operator
+- admin
+- cluster
+
+07. Service Orchestrator
+Show the dependency-aware ServiceOrchestrator and its managed services.
+Include at least these service nodes:
+- database
+- juce_engine
+- midi_engine
+- command_queue
+- websocket_manager
+- meter_broadcaster
+- event_publisher
+- folder_scanner
+- rt_monitor
+- plugin_profiler
+- lcd_display
+- metrics_collector
+- backup_service
+- pipewire
+This block should visually connect backend startup to local services and event publication.
+
+08. JUCE Audio Engine and Realtime Runtime
+Place this block in the center of the poster. It is one of the most important concepts.
+Show:
+- C++ JUCE engine
+- realtime callback thread
+- SCHED_FIFO audio callback thread model
+- 48 kHz sample rate
+- 64-sample graph quantum as current enforced host policy
+- CPU isolation and RT tuning context
+Important note to include:
+- the Python/uvicorn process is not itself the realtime scheduler target; the callback thread is
+
+09. PipeWire/JACK Audio Transport and Host Media Graph
+Show PipeWire as the local media graph and device I/O fabric around the JUCE engine.
+Include:
+- PipeWire graph
+- JACK compatibility layer
+- devices
+- nodes
+- streams
+- links
+- metrics
+- forced rate and forced quantum via pw-metadata at service start
+Make it visually clear that PipeWire is live observed state, not static config.
+
+10. Plugin and DSP Ecosystem
+Show the processing ecosystem around the engine.
+Include:
+- LV2 hosting
+- native JUCE processors
+- NAM models
+- cabinet IR support
+- convolution reverb IR support
+- modulation
+- dynamics
+- filters/EQ
+- pitch
+- delay
+- parallel/multieffect families
+Show one canonical example path:
+- Input -> NAM -> Modulation -> Cabinet IR -> EQ -> Gate -> Compressor -> Limiter -> Reverb IR -> Output
+Also include a note that actual graphs can be more complex than this linear example.
+
+11. JUCE-GRID and Signal-Flow Editing
+Show the React/graph-editor side of signal-chain authoring.
+Important truth to encode:
+- JUCE-GRID is the sole supported editor path for signal-flow editing
+- legacy grid routes are retired or compatibility aliases
+Show a graph-style editor canvas tied to chain nodes, audio plugins, routing nodes, device nodes, plugin meters, and graph/flow sync.
+
+12. Snapshots, Graph Documents, and Revisions
+Show snapshots as durable authored rig state.
+Include these truths:
+- snapshot graph document model
+- canonical normalization and revision hashing
+- graph schema backing
+- program-change activation compatibility
+- snapshot draft vs compiled intent vs published state are different things
+Show that snapshots are durable configuration artifacts, not proof that anything is currently live.
+
+13. Authoritative Audio-State Control Plane
+This is one of the most important source-of-truth blocks.
+Show etcd with namespace /map2/audio-state/v1 and the three canonical layers:
+- desired
+- committed
+- observed
+Show that this is the platform authority object for live audio state, path state, and related topology, not random route-local caches.
+Show that desired and committed are distinct, and observed is per-node.
+
+14. Runtime Live-State and Activation Audit
+Show the live-state projection model with one direct rule:
+- runtime confirmation makes a snapshot live
+Draw the state flow:
+- activation intent
+- runtime staging/apply
+- runtime live update
+- activation audit event
+- stale/warning/offline thresholds
+Include event topics:
+- snapshot_runtime_live_state
+- snapshot_activation_events
+Show that UI badges come from runtime-confirmed truth, not from draft state or simple API requests.
+
+15. Performance Brain and Authority Sync
+Show the Performance Brain as a scoped runtime subsystem that syncs into the authority model, not as a separate competing truth store.
+Include:
+- brain runtime state
+- authority extension under performance_brain
+- restore from authority projections before local caches
+- sync back into committed and observed authority state
+Visually connect it to snapshots, audio-state authority, and WebSocket runtime updates.
+
+16. Cluster Discovery, Visibility, and Node Health
+Show cluster services around node-to-node awareness.
+Include:
+- mDNS discovery
+- node identity
+- heartbeat monitoring
+- visibility contract
+- online/offline/degraded status
+- trust state
+- readiness status
+- activation state
+Visually differentiate:
+- local node
+- visible remote nodes
+- adopted vs unmanaged candidates
+
+17. Adoption, Bootstrap, and Trust Workflow
+Show the unmanaged-node adoption path as a first-class cluster workflow.
+Include stages such as:
+- discover candidate
+- readiness checks
+- claim candidate
+- adopt/promote
+- clone profile
+- optional strict AVB auto-provision
+This should read as cluster onboarding, not generic cloud provisioning.
+
+18. AVB, TSN, PTP, SRP, and AVDECC Routing Matrix
+This is a core network-audio concept and should be prominent.
+Show:
+- AVB/TSN transport
+- PTP sync
+- SRP admission/reservation
+- TSN qdisc policy
+- AVDECC device discovery/control
+- MAP2 talkers and listeners
+- third-party AVDECC endpoints
+- cross-node routing matrix
+Use a routing matrix visual or topology panel with talker/listener endpoints and node-color grouping.
+Make it clear that this is network audio, not just generic Ethernet.
+
+19. Tesira Fleet Integration
+Show Tesira as a serious but beta subsystem.
+Include:
+- Biamp Tesira Forte AVB fleet
+- device discovery
+- PTP coordination
+- preset interlock
+- AVB-related device posture
+- nested device workflows in the web UI
+Show it as attached to both the cluster/network lane and the operator UI lane.
+
+20. MIDI Hub and MIDI v2 Workstation Domain
+Show MIDI Hub as far more than simple MIDI passthrough.
+Include:
+- routing matrix
+- presets
+- event lists
+- macro and script engine
+- clock engine
+- traffic monitor
+- network sessions
+- RTP-MIDI
+- OSC namespace
+- MIDI 2.0 tooling
+- Tesira TTP
+- virtual GPIO
+- string interface
+This block should visually show MIDI Hub as its own workstation-like domain inside MAP2.
+
+21. Enriched MIDI Physical Surfaces Stack
+Show the shared physical-surface architecture in layers:
+- discovery
+- transport
+- surface runtime
+- rendering/feedback
+- operator GUI
+Show that this is a unified stack, not a pile of one-off controller hacks.
+Include that surfaces can keep independent views and recent-target state.
+
+22. Surface Families with Maschine Highlight
+Inside or beside the physical-surfaces stack, show the surface families MAP2 explicitly carries:
+- Native Instruments Maschine MK1
+- Ableton Push
+- Novation Launch Control
+- MeloAudio MIDI Commander
+- Mackie MCU Pro
+- Voodoo Lab Ground Control Pro
+Give Maschine MK1 extra detail because the repo has unusually specific transport posture:
+- ALSA MIDI baseline
+- optional pyusb-bulk rich path
+- transport preference: auto, hidapi, pyusb-bulk
+- allow_kernel_detach posture
+- LED/LCD/encoder feedback
+Show this as a hybrid control surface, not an audio interface.
+
+23. Drums, Sequencer, Sample Editing, and Backing Tracks
+Show the drum subsystem as a meaningful platform feature, not a tiny side widget.
+Include:
+- drum machine state
+- kits
+- patterns
+- songs
+- sample editor
+- backing track transport
+- MIDI learn
+- CC learn
+- pad control and bus mixer
+- sequencer position and song transport
+Visually connect it to the engine, MIDI, and operator surfaces.
+
+24. Outboard Rack and Legacy Hardware Integrations
+Show the non-drum outboard hardware domain.
+Include:
+- Lexicon MPX-1
+- Rocktron Intellifex
+- Ground Control Pro SysEx workflow
+For MPX-1 and IntelFX, show:
+- perform view
+- editor
+- library
+- MIDI map
+- diagnostics or matrix/flow views
+For Ground Control Pro, show:
+- backup/restore
+- validation
+- transmit
+This block should communicate that MAP2 also acts as a modern control hub for older rack hardware.
+
+25. Operator Surfaces, Workspace Shell, TUI, LCD, and Observability
+This final block should unify the human-facing operational surfaces.
+Show:
+- production web UI on port 3000
+- home shell
+- platforms workspace
+- audio artifacts catalog
+- stage mode / perform
+- API observatory
+- host machine page
+- platform guide/about
+- Ink TUI
+- legacy Textual console / node console
+- Quad Cortex-style touchscreen shell
+- LCD boot display and LCD service
+- observability split:
+  - backend Prometheus exporter on all nodes
+  - Prometheus on 9090 and Grafana on 3001 only for management or all-in-one nodes
+This block should close the loop by showing how humans actually operate MAP2.
+
+Required Cross-Cutting Workflows
+In addition to the 25 blocks, draw the following named workflows across the poster as highlighted path overlays. These should cross multiple lanes and be labeled.
+
+Workflow A. Provision a Host
+Installer -> host config -> packages -> systemd units -> mode policy -> verify
+
+Workflow B. Launch Local Services
+boot manager -> backend -> orchestrator -> local services -> web UI -> optional LCD
+
+Workflow C. Author and Publish a Snapshot
+JUCE-GRID or snapshot editor -> snapshot draft -> compiled intent -> authoritative desired state -> committed state -> runtime apply -> runtime live confirmation -> WebSocket/UI update
+
+Workflow D. Local Audio Signal Path
+physical input or audio interface -> PipeWire/JACK -> JUCE engine graph -> plugin chain -> output paths -> local outputs and/or AVB talkers
+
+Workflow E. Multi-Node Audio Path
+local node -> AVB talker/listener matrix -> PTP-synced network -> remote node -> remote path confirmation
+
+Workflow F. Controller-Driven Performance
+physical surface or MIDI controller -> MIDI Hub or surface runtime -> backend route/service -> snapshot/brain/engine action -> runtime state update -> surface feedback and UI update
+
+Workflow G. Cluster Adoption
+discover remote candidate -> readiness/trust -> claim/adopt -> optional clone profile -> optional AVB auto-provision -> visibility/heartbeat integration
+
+Workflow H. Observability
+backend exporter on each node -> Prometheus on management/all-in-one -> Grafana dashboards -> operator view
+
+Required Use Case Ribbon
+Add a bottom ribbon or side strip with at least six clear use-case tiles. These are not fantasy personas; they are platform-aligned operational scenarios.
+
+Use case 1. Guitar rig replacement / open amp-and-effects platform
+- NAM
+- IRs
+- direct-to-FOH
+- snapshots
+
+Use case 2. Keyboard live rig brain
+- fast patch recall
+- centralized monitoring
+- layered routing around external synths
+
+Use case 3. Hybrid drum rig and backing tracks
+- triggers
+- sequencer
+- click and track routing
+
+Use case 4. Digital artist / controller-centric live set
+- controller surfaces
+- MIDI Hub
+- stage-safe recall
+
+Use case 5. Shared band digital backbone
+- multiple performers
+- shared routing
+- cluster nodes
+- AVB network audio
+
+Use case 6. Remote management and maintenance
+- web UI
+- TUI over SSH
+- observability
+- adoption and cluster health
+
+Optional but Recommended Use Case Tiles
+- Tesira and installed sound control
+- outboard rack preservation and modernization
+
+Maturity Labels to Show
+Apply maturity labels where the repo explicitly provides them. Use these exact labels.
+
+qualified-with-waiver
+- Core audio engine and realtime runtime
+- Runtime profiles and RT hardening
+- AVB/TSN transport and routing
+
+beta
+- Tesira control and fleet workflows
+- MIDI Hub and MIDI v2 workflows
+- Cluster deployment and orchestration
+- Snapshots, sessions, presets, and exchange flows
+- MPX-1 integration
+- PipeWire diagnostics and audio path tooling
+- JUCE-GRID signal-flow editing and routing workflows
+
+experimental
+- NAM/IR/Soundfont acquisition and scraper-driven libraries
+
+hardware-blocked
+- LCD and dedicated hardware panels
+
+If a block does not have an explicit maturity from the canonical matrix, use a neutral "core platform" presentation rather than inventing a maturity.
+
+Text Labels That Should Appear Somewhere in the Graphic
+The following exact phrases or near-exact phrases should appear in the infographic because they anchor important repo truths:
+- "Open-source educational/research platform"
+- "FastAPI control plane"
+- "JUCE audio engine"
+- "PipeWire / JACK"
+- "Authoritative audio state"
+- "desired / committed / observed"
+- "runtime-confirmed live truth"
+- "snapshot draft"
+- "compiled snapshot intent"
+- "etcd namespace: /map2/audio-state/v1"
+- "mDNS visibility"
+- "AVB / TSN / PTP / SRP / AVDECC"
+- "MIDI Hub"
+- "Enriched MIDI physical surfaces"
+- "Maschine MK1"
+- "Performance Brain"
+- "Audio Node / All-in-One / Management"
+- "3000 web UI"
+- "8080 backend API"
+- "9090 Prometheus"
+- "3001 Grafana"
+
+How to Draw the Source-of-Truth Story
+This is critical. Make the authority model obvious at a glance.
+
+Use a dedicated mini-legend called "Truth Layers" or "Authority Layers" with this hierarchy:
+1. Authored draft
+2. Requested live intent
+3. Committed control-plane truth
+4. Observed node runtime truth
+5. Operator-facing effective status
+
+Do not collapse these into one box.
+Do not imply that clicking a button instantly means the system is live.
+
+How to Draw the Audio Story
+The audio story must not disappear into pure control-plane boxes.
+Make the realtime signal path visually central and easy to follow.
+
+Include at least one clearly readable path:
+- Instrument or input
+- PipeWire/JACK transport
+- JUCE engine graph
+- plugin/effect blocks
+- output paths
+- local outputs
+- AVB network paths when relevant
+
+Add a small note that the engine can host more complex graph routing than the simple example path.
+
+How to Draw the Platform Story
+MAP2 should read as a stack that unifies:
+- host provisioning
+- boot and services
+- realtime DSP
+- control plane
+- state authority
+- network audio
+- controllers
+- operator surfaces
+
+The viewer should come away with this understanding:
+"MAP2 is a headless, Linux-based, low-latency audio platform that joins JUCE realtime DSP, FastAPI control, React/TUI operators, authoritative state, MIDI/controller integration, and multi-node AVB-oriented workflows into one layered system."
+
+Explicit Mistakes to Avoid
+1. Do not turn the image into a generic cloud microservices diagram.
+2. Do not draw Kubernetes, Docker, or browser-only SaaS architecture.
+3. Do not present the web UI as the system brain. The backend and runtime are the system brain.
+4. Do not present the backend database as the live truth for snapshot activation.
+5. Do not omit PipeWire.
+6. Do not omit etcd.
+7. Do not omit cluster/adoption/visibility just because they are less glamorous than DSP.
+8. Do not omit the operator layers. MAP2 includes web UI, TUIs, touchscreen clone, and LCD.
+9. Do not omit hardware ecosystems. MAP2 is not only a software editor.
+10. Do not depict all features as equally stable.
+11. Do not use bright rainbow colors everywhere. Use a controlled technical palette.
+12. Do not use decorative gradients as the main design language.
+13. Do not use tiny unreadable labels. Fewer words per label is acceptable, but the key labels must remain legible.
+14. Do not draw musical instruments as the main subject. The main subject is the platform architecture.
+15. Do not claim that MAP2 is a full DAW replacement in the image.
+
+Rendering Priorities
+If the model must prioritize, use this order:
+1. Accuracy of relationships
+2. Visibility of the 25 concept blocks
+3. Clear authority and live-state story
+4. Clear audio signal path
+5. Clear cluster and AVB story
+6. Legible labels and legend
+7. Attractive technical styling
+
+Final Generation Instruction
+Generate a single, ultra-high-resolution, print-grade, dark technical architecture poster that accurately represents MAP2 as a layered Linux audio platform with realtime DSP, FastAPI control plane, authoritative state, cluster networking, AVB transport, MIDI/controller integration, hardware workflows, and multiple operator surfaces. The image must contain all 25 numbered concept blocks, all required workflows, the truth-layer explanation, the maturity labels where applicable, and the use-case ribbon. Favor exactness, clarity, and systems thinking over spectacle.

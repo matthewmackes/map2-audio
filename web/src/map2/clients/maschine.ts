@@ -47,9 +47,56 @@ export interface MaschineWebSocketWelcome {
 }
 
 export interface MaschineTransportConfig {
-  transport_preference: 'auto' | 'hidapi' | 'pyusb-bulk'
+  transport_preference: 'auto' | 'hidapi' | 'pyusb-bulk' | 'usb-bulk'
   allow_kernel_detach: boolean
   applies_on: string
+}
+
+export interface MaschineHwTestRequest {
+  test: 'led_walk' | 'led_all_on' | 'led_all_off' | 'lcd_checkerboard' | 'lcd_gradient' | 'lcd_clear' | 'pad_readback'
+  params?: Record<string, unknown>
+}
+
+export interface MaschineHwTestResponse {
+  status: string
+  test: string
+  result: Record<string, unknown>
+}
+
+export interface PadMidiMapping {
+  note: number
+  message_type: 'note' | 'cc' | 'program_change'
+  velocity_curve: 'linear' | 'log' | 'exp'
+  label: string
+}
+
+export interface ButtonMidiMapping {
+  number: number
+  message_type: 'note' | 'cc' | 'program_change'
+  label: string
+}
+
+export interface EncoderMidiMapping {
+  cc: number
+  mode: 'relative' | 'absolute'
+  label: string
+}
+
+export interface MaschineMidiMap {
+  channel: number
+  pads: PadMidiMapping[]
+  buttons: Record<string, ButtonMidiMapping>
+  encoders: EncoderMidiMapping[]
+  button_labels: Record<string, string>
+  button_zones: Record<string, string>
+  button_led_slots: Record<string, number>
+  encoder_labels: string[]
+  pad_labels: string[]
+}
+
+export interface MaschineMidiMapResponse {
+  status: string
+  midi_map: MaschineMidiMap
 }
 
 export interface MaschineTransportConfigResponse {
@@ -86,6 +133,43 @@ export const maschineApi = {
     fetchJson<MaschineTransportConfigResponse>(`${MASCHINE_API_BASE}/transport-config`, {
       method: 'PUT',
       body: JSON.stringify(payload),
+    }),
+
+  runHwTest: (request: MaschineHwTestRequest) =>
+    fetchJson<MaschineHwTestResponse>(`${MASCHINE_API_BASE}/hw-test`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+
+  getMidiMap: () =>
+    fetchJson<MaschineMidiMapResponse>(`${MASCHINE_API_BASE}/midi-map`, { cache: 'no-store' }),
+
+  updateMidiMap: (payload: {
+    channel: number
+    pads: PadMidiMapping[]
+    buttons: Record<string, ButtonMidiMapping>
+    encoders: EncoderMidiMapping[]
+  }) =>
+    fetchJson<MaschineMidiMapResponse>(`${MASCHINE_API_BASE}/midi-map`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  resetMidiMap: () =>
+    fetchJson<MaschineMidiMapResponse>(`${MASCHINE_API_BASE}/midi-map/reset`, {
+      method: 'POST',
+    }),
+
+  testMidiElement: (payload: { element_type: 'pad' | 'button' | 'encoder'; index: number; brightness?: number }) =>
+    fetchJson<MaschineHwTestResponse>(`${MASCHINE_API_BASE}/midi-map/test`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  setLed: (slot: number, brightness: number) =>
+    fetchJson<MaschineHwTestResponse>(`${MASCHINE_API_BASE}/led/set`, {
+      method: 'POST',
+      body: JSON.stringify({ slot, brightness }),
     }),
 }
 

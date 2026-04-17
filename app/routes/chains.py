@@ -16,7 +16,11 @@ try:
     from pydantic import BaseModel
     from typing import List
     from app.services.api_readiness import ensure_chain_route_ready, raise_route_transient_unavailable
-    from app.services.chain_service import ChainService, SnapshotOwnedChainActivationError
+    from app.services.chain_service import (
+        ChainService,
+        SnapshotOwnedChainActivationError,
+        SnapshotOwnedChainMutationError,
+    )
     from app.services.event_publisher import event_publisher, EventType
 
     router = APIRouter(prefix="/api/chains", tags=["chains"])
@@ -837,7 +841,10 @@ try:
         from app.database import get_session
         async with get_session() as session:
             service = ChainService(session)
-            success = await service.delete_chain(chain_id)
+            try:
+                success = await service.delete_chain(chain_id)
+            except SnapshotOwnedChainMutationError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             if not success:
                 raise HTTPException(status_code=404, detail="Chain not found")
 
@@ -863,7 +870,10 @@ try:
         from app.database import get_session
         async with get_session() as session:
             service = ChainService(session)
-            success = await service.rename_chain(chain_id, new_name)
+            try:
+                success = await service.rename_chain(chain_id, new_name)
+            except SnapshotOwnedChainMutationError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             if not success:
                 raise HTTPException(status_code=404, detail="Chain not found")
 
@@ -1012,6 +1022,15 @@ try:
                     session.add(chain)
                     await session.flush()
                 else:
+                    try:
+                        chain_config = ChainService._parse_chain_config(chain.config)
+                    except Exception:
+                        chain_config = {}
+                    ChainService._raise_if_snapshot_owned_chain_mutation(
+                        request.chain_id,
+                        chain_config,
+                        "deployed",
+                    )
                     chain.name = chain_name
                     chain.is_active = False
                     await session.flush()
@@ -1032,7 +1051,18 @@ try:
                         )
                     )
                 await session.flush()
-
+        except SnapshotOwnedChainMutationError as exc:
+            return {
+                "status": "failed",
+                "applied": False,
+                "message": str(exc),
+                "chain_id": request.chain_id,
+                "chain_name": chain_name,
+                "plugin_count": len(normalized_plugins),
+                "mode": request.mode,
+                "activate": request.activate,
+            }
+        try:
             activated = False
             message = "Chain staged on node"
             status = "staged"

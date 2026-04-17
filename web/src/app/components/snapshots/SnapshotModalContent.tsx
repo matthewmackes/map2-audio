@@ -305,7 +305,7 @@ export function SnapshotModalContent({
         paths: pathDefinitions,
         chains: chainDefinitions,
         routing: {
-          mode: values.routingMode,
+          mode: 'parallel_blend',
           active_channel_key: 'ch_a',
           blend_positions: { ch_a: 100, ch_b: 100 },
           morph_position: 0.5,
@@ -314,6 +314,11 @@ export function SnapshotModalContent({
           series_order: ['ch_a', 'ch_b'],
         },
         midi_map: [],
+      })
+      await snapshotsApi.deploy({
+        snapshot_id: created.snapshot_id,
+        node_id: values.hostId,
+        redundancy_enabled: false,
       })
       const activated = await audioStateApi.activateSnapshot(created.snapshot_id, {
         triggered_by: 'snapshot_modal',

@@ -672,15 +672,6 @@ export function usePlatformShellData(): PlatformShellData {
       ],
       gridItems: [
         {
-          id: 'platform-health',
-          title: 'Platform Health',
-          eyebrow: 'Overview',
-          metric: clusterHealthScore !== null && clusterHealthScore !== undefined ? formatPercent(clusterHealthScore, 0) : `${onlineNodes}/${totalNodes || 1}`,
-          helper: `Deployment mode: ${deploymentMode}`,
-          status: overviewHealth,
-          alertCount: overviewNotifications.length,
-        },
-        {
           id: 'active-alerts',
           title: 'Active Alerts',
           eyebrow: 'Signals',
@@ -1259,13 +1250,21 @@ export function usePlatformShellData(): PlatformShellData {
       ],
       gridItems: [
         {
+          id: 'cluster-platform-health',
+          title: 'Platform Health',
+          eyebrow: 'Cluster Dashboard',
+          metric: clusterHealthScore !== null && clusterHealthScore !== undefined ? formatPercent(clusterHealthScore, 0) : `${onlineNodes}/${totalNodes || 1}`,
+          helper: `Deployment mode: ${deploymentMode}`,
+          status: clusterHealth,
+          alertCount: clusterNotifications.length,
+        },
+        {
           id: 'cluster-node-groups',
           title: 'Node Groups',
           eyebrow: 'Cluster Dashboard',
           metric: `${onlineNodes}/${totalNodes || 1}`,
           helper: `${criticalNodes} critical/offline · ${warningNodes} warning`,
           status: clusterHealth,
-          alertCount: clusterNotifications.length,
         },
         {
           id: 'cluster-zones',
@@ -1274,14 +1273,6 @@ export function usePlatformShellData(): PlatformShellData {
           metric: String(Math.max(1, activeNetworkEdges)),
           helper: `${discoveryPeers.length} discovery peers · ${avbDiscoveredNodes.length} AVB peers`,
           status: activeNetworkEdges > 0 || totalNodes <= 1 ? 'healthy' : 'warning',
-        },
-        {
-          id: 'cluster-deployment',
-          title: 'Deployment',
-          eyebrow: 'Mode',
-          metric: deploymentMode,
-          helper: localNode?.role.replace('_', ' ') ?? 'pending role',
-          status: deploymentMode === 'ALL-IN-ONE' ? 'healthy' : clusterHealth,
         },
         {
           id: 'cluster-workload',

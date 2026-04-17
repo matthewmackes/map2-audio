@@ -189,24 +189,19 @@ describe('ThemePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Theme', level: 1 })).toBeTruthy()
     expect(screen.getByRole('tablist', { name: 'Theme workspace sections' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Library' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('heading', { name: 'Desktop Themes' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Scheme' })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Appearance' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Scheme and Preview' })).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: 'Preview' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Color Scheme' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Personalization' })).toBeNull()
 
-    openThemeTab('Color Scheme')
-    expect(screen.getByRole('heading', { name: 'Scheme' })).toBeTruthy()
+    openThemeTab('Fonts and Objects')
+    expect(screen.getByRole('heading', { name: 'Fonts and Objects' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Objects' })).toBeTruthy()
 
-    openThemeTab('Preview')
-    expect(screen.getByRole('heading', { name: 'Preview target' })).toBeTruthy()
-
-    openThemeTab('Token Studio')
-    expect(screen.getByRole('heading', { name: 'Token studio' })).toBeTruthy()
-
-    openThemeTab('Appearance Assets')
-    expect(screen.getByRole('heading', { name: 'Appearance assets' })).toBeTruthy()
-
-    openThemeTab('Personalization')
-    expect(screen.getByRole('heading', { name: 'Desktop personalization' })).toBeTruthy()
+    openThemeTab('Background')
+    expect(screen.getByRole('heading', { name: 'Background' })).toBeTruthy()
 
     openThemeTab('Behavior')
     expect(screen.getByRole('heading', { name: 'Behavior and accessibility' })).toBeTruthy()
@@ -217,28 +212,29 @@ describe('ThemePage', () => {
     renderThemePage()
 
     expect(screen.queryByRole('combobox', { name: /^theme$/i })).toBeNull()
+    expect(screen.getByRole('combobox', { name: /^scheme$/i })).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /Carbon gray 10/i }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: /Windows 95/i })).toBeTruthy()
-    expect(screen.getByText('Suggested directions')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Carbon white/i })).toBeTruthy()
+    expect(screen.getByText('Quick Starts')).toBeTruthy()
   })
 
-  it('persists desktop wallpaper mode selections from the personalization section', () => {
+  it('persists desktop wallpaper mode selections from the background section', () => {
     renderThemePage()
-    openThemeTab('Personalization')
+    openThemeTab('Background')
 
-    fireEvent.click(screen.getByRole('radio', { name: /theme solid color/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /theme color/i }))
 
     expect(window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)).toContain('"mode":"solid-theme"')
   })
 
   it('selects uploaded wallpaper mode without auto-opening the file picker', () => {
     renderThemePage()
-    openThemeTab('Personalization')
+    openThemeTab('Background')
 
     const uploadInput = screen.getByLabelText('Upload desktop wallpaper')
     const clickSpy = jest.spyOn(uploadInput, 'click')
 
-    fireEvent.click(screen.getByRole('radio', { name: /uploaded image/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /upload image/i }))
 
     expect(window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)).toContain('"mode":"uploaded-image"')
     expect(clickSpy).not.toHaveBeenCalled()
@@ -247,25 +243,36 @@ describe('ThemePage', () => {
 
   it('opens the hidden wallpaper upload input from the explicit choose-file action', async () => {
     renderThemePage()
-    openThemeTab('Personalization')
+    openThemeTab('Background')
 
     const uploadInput = screen.getByLabelText('Upload desktop wallpaper')
     const clickSpy = jest.spyOn(uploadInput, 'click')
 
-    fireEvent.click(screen.getByRole('radio', { name: /uploaded image/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /upload image/i }))
     fireEvent.click(await screen.findByRole('button', { name: /choose file/i }))
 
     expect(clickSpy).toHaveBeenCalled()
   })
 
-  it('exposes a classic preview target radio group for the desktop preview', () => {
+  it('exposes a classic preview target radio group inside the appearance tab', () => {
     renderThemePage()
-    openThemeTab('Preview')
 
     const previewTargetGroup = screen.getByRole('radiogroup', { name: /preview target/i })
 
     expect(within(previewTargetGroup).getAllByRole('radio')).toHaveLength(4)
     expect(within(previewTargetGroup).getByRole('radio', { name: /^Active window/i })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('uses Primary Strong and Text Inverse for active preview title bars', () => {
+    renderThemePage()
+
+    const activeWindowBar = screen.getByText('Active Window').closest('.theme-page__desktop-window-bar')
+    const messageBoxBar = screen.getByText('Message Box').closest('.theme-page__desktop-window-bar')
+
+    expect(activeWindowBar).not.toBeNull()
+    expect(messageBoxBar).not.toBeNull()
+    expect(activeWindowBar).toHaveStyle('background: rgb(0, 67, 206); color: rgb(255, 255, 255);')
+    expect(messageBoxBar).toHaveStyle('background: rgb(0, 67, 206); color: rgb(255, 255, 255);')
   })
 
   it('opens the special settings menu from the behavior section', () => {
@@ -280,7 +287,7 @@ describe('ThemePage', () => {
 
   it('moves focus into the token palette picker and restores it to the slot trigger on close', () => {
     renderThemePage()
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
 
     const primarySlot = screen.getByRole('button', { name: /^Primary\s+#/i })
     fireEvent.click(primarySlot)
@@ -292,9 +299,9 @@ describe('ThemePage', () => {
     expect(primarySlot).toHaveFocus()
   })
 
-  it('persists category color overrides from the appearance assets section with the constrained palette picker', async () => {
+  it('persists category color overrides from the fonts and objects section with the constrained palette picker', async () => {
     renderThemePage()
-    openThemeTab('Appearance Assets')
+    openThemeTab('Fonts and Objects')
 
     expect(screen.queryByDisplayValue('#112233')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Dynamics color' }))
@@ -314,7 +321,7 @@ describe('ThemePage', () => {
 
     expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
 
-    openThemeTab('Typography')
+    openThemeTab('Fonts and Objects')
     const interTile = screen.getByRole('radio', { name: /inter/i })
     fireEvent.click(interTile)
 
@@ -351,35 +358,33 @@ describe('ThemePage', () => {
 
   it('cancels theme switching when unsaved token overrides exist', async () => {
     renderThemePage()
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
 
     fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
-    openThemeTab('Library')
-    fireEvent.click(screen.getByRole('button', { name: /windows 95/i }))
+    fireEvent.click(screen.getByRole('button', { name: /carbon white/i }))
 
     expect(screen.getByText('Discard unsaved token edits?')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByText('Draft preview active')).toBeTruthy()
-    expect(screen.getByText('Blue / Gray 10')).toBeTruthy()
+    expect(screen.getAllByText('Blue / Gray 10').length).toBeGreaterThan(0)
   })
 
   it('discards token overrides only after explicit confirmation during theme switching', async () => {
     renderThemePage()
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
 
     fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
-    openThemeTab('Library')
-    fireEvent.click(screen.getByRole('button', { name: /windows 95/i }))
+    fireEvent.click(screen.getByRole('button', { name: /carbon white/i }))
     fireEvent.click(screen.getByRole('button', { name: /discard and switch/i }))
 
     await waitFor(() => {
-      expect(screen.getAllByText('Windows 95').length).toBeGreaterThan(0)
-      expect(screen.getByText('Live shell')).toBeTruthy()
+      expect(screen.getAllByText('Carbon white').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Live shell').length).toBeGreaterThan(0)
     })
   })
 
@@ -389,11 +394,10 @@ describe('ThemePage', () => {
     expect(screen.getByRole('button', { name: /reset draft/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /save and apply custom theme/i })).toBeDisabled()
 
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
     fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
-    openThemeTab('Library')
 
     expect(screen.getByRole('button', { name: /reset draft/i })).toBeEnabled()
     expect(screen.getByRole('button', { name: /save and apply custom theme/i })).toBeEnabled()
@@ -401,12 +405,11 @@ describe('ThemePage', () => {
 
   it('shows a persistent draft warning with a save-now action for token overrides', async () => {
     renderThemePage()
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
 
     fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan family/i }))
     fireEvent.click(screen.getByRole('radio', { name: /select cyan 50/i }))
-    openThemeTab('Library')
 
     expect(screen.getByText('Token overrides are still in draft.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /save now/i }))
@@ -419,7 +422,7 @@ describe('ThemePage', () => {
 
   it('exposes radio semantics for the custom token palette picker', () => {
     renderThemePage()
-    openThemeTab('Token Studio')
+    fireEvent.click(screen.getByRole('button', { name: /^Customize$/i }))
 
     fireEvent.click(screen.getByRole('button', { name: /^Primary\s+#/i }))
 
@@ -430,10 +433,10 @@ describe('ThemePage', () => {
     expect(within(shadeGroup).getAllByRole('radio').length).toBeGreaterThan(0)
   })
 
-  it('shows plugin override controls inside the appearance assets section', async () => {
+  it('shows plugin override controls inside the fonts and objects section', async () => {
     renderThemePage()
-    openThemeTab('Appearance Assets')
-    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
+    openThemeTab('Fonts and Objects')
+    fireEvent.click(screen.getByRole('button', { name: /plugin appearance/i }))
 
     await waitFor(() => {
       expect(mockDiscover).toHaveBeenCalled()
@@ -441,14 +444,14 @@ describe('ThemePage', () => {
     })
 
     const modeGroup = screen.getByRole('group', { name: /appearance assets mode/i })
-    expect(within(modeGroup).getByRole('button', { name: /plugin overrides/i })).toBeTruthy()
-    expect(within(modeGroup).getByRole('button', { name: /category accents/i })).toBeTruthy()
+    expect(within(modeGroup).getByRole('button', { name: /plugin appearance/i })).toBeTruthy()
+    expect(within(modeGroup).getByRole('button', { name: /category colors/i })).toBeTruthy()
   })
 
   it('uses display-friendly labels for plugin source filters', async () => {
     renderThemePage()
-    openThemeTab('Appearance Assets')
-    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
+    openThemeTab('Fonts and Objects')
+    fireEvent.click(screen.getByRole('button', { name: /plugin appearance/i }))
 
     await waitFor(() => {
       expect(mockDiscover).toHaveBeenCalled()
@@ -465,10 +468,10 @@ describe('ThemePage', () => {
   it('switches active panels from the top tabs', () => {
     renderThemePage()
 
-    expect(screen.getByRole('tab', { name: 'Library' })).toHaveAttribute('aria-selected', 'true')
-    openThemeTab('Preview')
-    expect(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.queryByRole('heading', { name: 'Desktop personalization' })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Appearance' })).toHaveAttribute('aria-selected', 'true')
+    openThemeTab('Background')
+    expect(screen.getByRole('tab', { name: 'Background' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('heading', { name: 'Behavior and accessibility' })).toBeNull()
   })
 
   it('keeps library actions available while other panels replace the main view', () => {
@@ -483,8 +486,8 @@ describe('ThemePage', () => {
     mockDiscover.mockRejectedValueOnce(new Error('Plugin inventory warming'))
 
     renderThemePage()
-    openThemeTab('Appearance Assets')
-    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
+    openThemeTab('Fonts and Objects')
+    fireEvent.click(screen.getByRole('button', { name: /plugin appearance/i }))
 
     await waitFor(() => {
       expect(mockDiscover).toHaveBeenCalled()

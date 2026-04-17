@@ -69,6 +69,22 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
   return null
 }
 
+function resolveScopedTransitionMode(
+  scope: TransitionScope,
+  preferredMode: TransitionMode,
+): TransitionMode {
+  if (preferredMode !== 'block') {
+    return preferredMode
+  }
+
+  // Keep the heaviest reveal effect only on the most intentionally branded landing surfaces.
+  if (scope.id === 'home' || scope.id === 'audio-artifacts') {
+    return 'block'
+  }
+
+  return 'fade'
+}
+
 export function PageTransition({ children }: PageTransitionProps) {
   const location = useLocation()
   const navigationType = useNavigationType()
@@ -97,17 +113,18 @@ export function PageTransition({ children }: PageTransitionProps) {
       timeoutRef.current = null
     }
 
-    const mode: TransitionMode =
+    const preferredMode: TransitionMode =
       resolvedPageTransitionMode === 'fade'
         ? 'fade'
         : resolvedPageTransitionMode === 'pager-slide'
           ? 'pager'
           : 'block'
+    const scope = currentScope ?? previousScope ?? FALLBACK_SCOPE
 
     const nextTransition: TransitionSnapshot = {
       key: Date.now(),
-      mode,
-      scope: currentScope ?? previousScope ?? FALLBACK_SCOPE,
+      mode: resolveScopedTransitionMode(scope, preferredMode),
+      scope,
       direction: navigationType === 'POP' ? 'backward' : 'forward',
     }
 

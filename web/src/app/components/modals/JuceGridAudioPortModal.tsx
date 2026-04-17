@@ -98,13 +98,13 @@ export function JuceGridAudioPortModal({
 
   const portsQuery = useQuery({
     queryKey: ['audio', 'ports'],
-    queryFn: audioApi.getPorts,
+    queryFn: () => audioApi.getPorts(),
     enabled: open,
   })
 
   const routingQuery = useQuery({
     queryKey: ['audio', 'routing'],
-    queryFn: audioApi.getRouting,
+    queryFn: () => audioApi.getRouting(),
     enabled: open,
   })
 
@@ -116,7 +116,7 @@ export function JuceGridAudioPortModal({
 
   const portPresetsQuery = useQuery({
     queryKey: ['audio', 'ports', 'presets'],
-    queryFn: audioApi.getPortPresets,
+    queryFn: () => audioApi.getPortPresets(),
     enabled: open,
   })
 

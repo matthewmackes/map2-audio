@@ -7,7 +7,11 @@ from sqlalchemy import select
 
 from app import database as database_module
 from app.routes import chains as chains_routes
-from app.services.chain_service import ChainService, SnapshotOwnedChainActivationError
+from app.services.chain_service import (
+    ChainService,
+    SnapshotOwnedChainActivationError,
+    SnapshotOwnedChainMutationError,
+)
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 
 
@@ -761,6 +765,68 @@ async def test_activate_snapshot_runtime_chain_requires_canonical_opt_in(tmp_pat
             match="must be activated through /api/snapshots/\\{id\\}/activate",
         ):
             await service.activate_chain(chain.id)
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_snapshot_owned_chain_list_exposes_snapshot_contract_metadata(tmp_path):
+    _init_temp_async_db(tmp_path, "chain-snapshot-contract-list.db")
+
+    async with database_module.get_session() as session:
+        snapshot = database_module.Snapshot(name="Sunday Set", description="Live set", document={})
+        session.add(snapshot)
+        await session.flush()
+        snapshot_id = snapshot.id
+
+        chain = database_module.Chain(
+            name="Runtime Path Chain",
+            is_active=True,
+            config=json.dumps({
+                "source_kind": "snapshot_path",
+                "snapshot_id": snapshot_id,
+                "snapshot_chain_id": 42,
+                "path_id": "guitar-main",
+                "runtime_sync": {"enabled": True, "status": "active", "warnings": [], "runtime_items": 1, "restored_positions": [0], "missing_positions": []},
+            }),
+        )
+        session.add(chain)
+        await session.flush()
+
+        payload = await ChainService(session).list_chains()
+
+    assert len(payload) == 1
+    assert payload[0]["source_kind"] == "snapshot_path"
+    assert payload[0]["snapshot_id"] == snapshot_id
+    assert payload[0]["snapshot_chain_id"] == 42
+    assert payload[0]["snapshot_name"] == "Sunday Set"
+    assert payload[0]["path_id"] == "guitar-main"
+    assert payload[0]["management_scope"] == "snapshot"
+    assert payload[0]["can_activate_directly"] is False
+    assert payload[0]["can_mutate_from_chains"] is False
+    assert payload[0]["updated_at"] is not None
+
+    await _dispose_db()
+
+
+@pytest.mark.asyncio
+async def test_snapshot_owned_chain_blocks_generic_rename_and_delete(tmp_path):
+    _init_temp_async_db(tmp_path, "chain-snapshot-mutation-guard.db")
+
+    async with database_module.get_session() as session:
+        chain = database_module.Chain(
+            name="Snapshot Runtime Chain",
+            is_active=False,
+            config=json.dumps({"source_kind": "snapshot_path", "snapshot_id": 7, "path_id": "A"}),
+        )
+        session.add(chain)
+        await session.flush()
+
+        service = ChainService(session)
+        with pytest.raises(SnapshotOwnedChainMutationError, match="cannot be renamed from /api/chains"):
+            await service.rename_chain(chain.id, "Renamed")
+        with pytest.raises(SnapshotOwnedChainMutationError, match="cannot be deleted from /api/chains"):
+            await service.delete_chain(chain.id)
 
     await _dispose_db()
 

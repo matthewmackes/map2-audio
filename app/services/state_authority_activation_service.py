@@ -688,6 +688,18 @@ class StateAuthorityActivationService:
 
         from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
+        detail = await self.owner.get_snapshot(snapshot_id)
+        if detail is None:
+            return None
+        if not isinstance(detail.get("revision_number"), int):
+            await self.owner._append_snapshot_revision(snapshot.id, detail)
+            await self.session.flush()
+            detail = await self.owner.get_snapshot(snapshot_id)
+            if detail is None:
+                return None
+            if not isinstance(detail.get("revision_number"), int):
+                raise ValueError("Snapshot could not be saved as a revision before publish.")
+
         normalized = await self.owner._snapshot_to_normalized(snapshot)
         snapshot_revision = self.owner._snapshot_revision_from_normalized(normalized)
         runtime_state_service = SnapshotRuntimeStateService(self.session)
@@ -704,10 +716,6 @@ class StateAuthorityActivationService:
             status="in_progress",
             note="Running activation preflight checks.",
         )
-
-        detail = await self.owner.get_snapshot(snapshot_id)
-        if detail is None:
-            return None
 
         params_applied = 0
         bypass_applied = 0

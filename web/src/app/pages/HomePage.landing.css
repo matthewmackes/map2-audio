@@ -116,20 +116,19 @@
 }
 
 .hp2-home-shell__operations-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
+  display: block;
   margin: 0;
-  font-size: clamp(2rem, 3.8vw, 3.45rem);
-  line-height: 0.94;
-  letter-spacing: -0.05em;
+  max-width: min(100%, 44rem);
+  height: clamp(4rem, 12vw, 7.25rem);
 }
 
-.hp2-home-shell__title-icon {
-  flex-shrink: 0;
-  width: clamp(2rem, 3vw, 3rem);
-  height: clamp(2rem, 3vw, 3rem);
-  margin-top: 0.22rem;
+.hp2-home-shell__title-brand-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: min(100%, 42rem);
+  object-fit: contain;
+  object-position: left center;
 }
 
 .hp2-home-shell__operations-lede,
@@ -365,7 +364,12 @@
   }
 
   .hp2-home-shell__operations-title {
-    font-size: clamp(1.7rem, 8vw, 2.4rem);
+    max-width: 100%;
+    height: clamp(3.25rem, 15vw, 4.5rem);
+  }
+
+  .hp2-home-shell__title-brand-image {
+    max-width: 100%;
   }
 
   .hp2-home-shell__operations-kicker-row {

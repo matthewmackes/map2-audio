@@ -9,7 +9,7 @@ export function useNodeTopology() {
     queryKey: ['nodeTopology'],
     queryFn: getNodeTopology,
     refetchInterval: NODE_POLL_INTERVAL_MS,
-    staleTime: 0,
+    staleTime: NODE_POLL_INTERVAL_MS,
   })
 }
 
@@ -18,7 +18,7 @@ export function useNodeHealth() {
     queryKey: ['nodeHealth'],
     queryFn: getNodeHealth,
     refetchInterval: NODE_POLL_INTERVAL_MS,
-    staleTime: 0,
+    staleTime: NODE_POLL_INTERVAL_MS,
   })
 }
 
@@ -29,4 +29,3 @@ export function useNodeIdentity() {
     staleTime: 30_000,
   })
 }
-

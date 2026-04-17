@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { MAP2_PLATFORM_VERSION } from './branding/map2Branding'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
+import { useShellStatusCadence } from '../hooks/useShellStatusCadence'
 
 const CLOCK_REFRESH_MS = 30_000
 
@@ -43,7 +44,8 @@ function formatUptime(totalMs: number): string {
 export function TaskbarClock() {
   const [open, setOpen] = useState(false)
   const [now, setNow] = useState(() => new Date())
-  const platformStatus = useHomePlatformStatus()
+  const shellStatusCadence = useShellStatusCadence()
+  const platformStatus = useHomePlatformStatus(shellStatusCadence)
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
   const bootedAt = useMemo(() => Date.now(), [])
 

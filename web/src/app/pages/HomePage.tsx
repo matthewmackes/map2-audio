@@ -24,10 +24,10 @@ import {
 
 import {
   MAP2_PLATFORM_NAME,
-  Map2BrandMark,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
+import landingHeroBrandImage from '../../../../branding/NEW-map2-landing-bg.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences } from './homeLandingPreferences'
@@ -810,8 +810,11 @@ export function HomePage() {
                   </div>
 
                   <h1 className="hp2-home-shell__operations-title">
-                    <Map2BrandMark decorative className="hp2-home-shell__title-icon" />
-                    MAP: Mackes Audio Platform
+                    <img
+                      src={landingHeroBrandImage}
+                      alt="MAP: Mackes Audio Platform"
+                      className="hp2-home-shell__title-brand-image"
+                    />
                   </h1>
 
                   <p className="hp2-home-shell__operations-lede">

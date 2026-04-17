@@ -186,9 +186,18 @@ export interface Chain {
   loop_insertions?: LoopInsertion[];
   effects_loops?: EffectsLoop[];
   runtime_sync?: ChainRuntimeSync | null;
+  source_kind?: string | null;
+  snapshot_id?: number | null;
+  snapshot_chain_id?: number | null;
+  snapshot_name?: string | null;
+  path_id?: string | null;
+  management_scope?: 'snapshot' | 'runtime' | (string & {});
+  can_activate_directly?: boolean;
+  can_mutate_from_chains?: boolean;
 }
 
 export interface ChainPlugin {
+  snapshot_plugin_id?: number | null;
   uri: string;
   name: string;
   plugin_display_type?: string;
@@ -238,6 +247,7 @@ export interface MaschinePadLedState {
 
 export interface MaschineLedState {
   pads: MaschinePadLedState[];
+  led_array?: number[] | null;
   updated_at?: string | null;
 }
 
@@ -294,6 +304,7 @@ export interface MaschineDaemonStatus {
   connected: boolean;
   status: string;
   daemon_version?: string | null;
+  protocol_version?: string | null;
   websocket_connected: boolean;
   virtual_port_name: string;
   hid_device: Record<string, unknown>;
@@ -310,7 +321,11 @@ export interface MaschineDaemonStatus {
     right: MaschineLcdBitmap;
   };
   led_state: MaschineLedState;
+  led_array?: number[] | null;
   audio_grid: MaschineAudioGridProjection;
+  led_slots?: number;
+  encoders?: number;
+  pad_count?: number;
 }
 
 export interface MaschineTransportCandidate {
@@ -2850,6 +2865,7 @@ export interface SnapshotDetail extends SnapshotSummary {
   lineage: SnapshotLineage;
   active_channel_index: number;
   deployments: SnapshotDeployment[];
+  revision_number?: number | null;
   snapshot_revision?: string;
 }
 
@@ -2902,6 +2918,7 @@ export interface RoutingConfigSnapshot {
 
 /** Plugin state within a chain snapshot */
 export interface PluginSnapshot {
+  snapshot_plugin_id?: number | null;
   uri: string;
   position: number;
   bypass: boolean;

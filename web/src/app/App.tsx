@@ -1,8 +1,9 @@
 import React, { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes, unstable_HistoryRouter as HistoryRouter, useLocation, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DataTableSkeleton, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
+import { appHistory } from './history'
 import { Map2BrandMark } from './components/branding/map2Branding'
 import { ViewportPolicyGate } from './components/ViewportPolicyGate'
 import { ToastProvider, useToasts } from './components/Toasts'
@@ -15,7 +16,6 @@ import {
   buildWorkspaceHubPlatformPath,
   isPlatformWorkspaceId,
 } from './platform/routes'
-import { useHomePlatformStatus } from './hooks/useHomePlatformStatus'
 import { LoadingState } from './components/shared/LoadingState'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
 import { buildWorkspacePhysicalSurfacesPath } from './pages/physicalSurfacesRoutes'
@@ -46,6 +46,7 @@ const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m 
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
+const MaschineMidiMapPage   = lazy(() => import('./pages/MaschineMidiMapPage').then(m => ({ default: m.MaschineMidiMapPage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
@@ -249,18 +250,6 @@ function LegacyOutboardHardwareRedirect() {
   return <Navigate to={`${buildWorkspaceOutboardHardwarePath(params.deviceId)}${location.search || ''}`} replace />
 }
 
-function PlatformStatusHeartbeat() {
-  const location = useLocation()
-  const isDesktopRoute = location.pathname === '/'
-
-  useHomePlatformStatus({
-    pollMs: isDesktopRoute ? 10_000 : 30_000,
-    staleMs: isDesktopRoute ? 8_000 : 25_000,
-  })
-
-  return null
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -320,18 +309,20 @@ function BackendConnectionMonitor() {
 }
 
 export function App() {
+  const routerHistory = appHistory as unknown as Parameters<typeof HistoryRouter>[0]['history']
+
   return (
     <QueryClientProvider client={queryClient}>
       <ViewportPolicyGate>
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
+    <HistoryRouter
+      history={routerHistory}
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
     >
           <ClusterProvider>
             <ToastProvider>
-              <PlatformStatusHeartbeat />
               <BackendConnectionMonitor />
               <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
                 <div className="platform-brand-frame">
@@ -390,6 +381,7 @@ export function App() {
                                 </Route>
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
+                                <Route path="/maschine/midi-map" element={<MaschineMidiMapPage />} />
                                 <Route path="/mcu" element={<McuPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />
@@ -486,7 +478,7 @@ export function App() {
               </ErrorBoundary>
             </ToastProvider>
           </ClusterProvider>
-    </BrowserRouter>
+    </HistoryRouter>
       </ViewportPolicyGate>
       <Suspense fallback={null}>
         <ReactQueryDevtools initialIsOpen={false} />

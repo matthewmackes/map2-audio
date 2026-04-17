@@ -1,13 +1,9 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   Button,
-  InlineLoading,
   InlineNotification,
   Layer,
-  Modal,
-  OverflowMenu,
-  OverflowMenuItem,
   Search,
   Table,
   TableBody,
@@ -17,11 +13,8 @@ import {
   TableHeader,
   TableRow,
   Tag,
-  TextInput,
 } from '@carbon/react'
 import {
-  Add,
-  CheckmarkFilled,
   Flow,
   Renew,
 } from '@carbon/icons-react'
@@ -29,14 +22,8 @@ import type { Chain, ChainsResponse } from '../../map2/types'
 import { chainsApi } from '../../map2/api'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
-import { useToasts } from '../components/Toasts'
 import { MapAudioGridIcon } from '../components/icons/map'
-import { SidechainPanel } from '../components/Routing/SidechainPanel'
-import { ParallelRoutingPanel } from '../components/Routing/ParallelRoutingPanel'
-import { EffectsLoopSummaryPanel } from '../components/Routing/EffectsLoopSummaryPanel'
-import { ChainDeployModal } from '../components/chains/ChainDeployModal'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { useCluster } from '../contexts/useCluster'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../stores/viewedNodeStore'
@@ -49,10 +36,15 @@ type ClusterChainsFanoutResponse = {
 
 type MetricTone = 'gray' | 'green' | 'warm-gray'
 
-const RUNTIME_CHAIN_CONTROL_NOTICE = 'These controls switch runtime chains directly. Control-plane snapshot truth lives in Audio Grid.'
+const SNAPSHOT_PATH_SOURCE_KIND = 'snapshot_path'
+const RUNTIME_CHAIN_CONTROL_NOTICE = 'This page is a read-only runtime view of snapshot-owned paths. Edit and publish live truth from Audio Grid and Snapshot Publish.'
 
 function AudioGridActionIcon(props: { className?: string }) {
   return <MapAudioGridIcon {...props} size={16} />
+}
+
+function isSnapshotOwnedChain(chain: Chain): boolean {
+  return chain.source_kind === SNAPSHOT_PATH_SOURCE_KIND || chain.management_scope === 'snapshot' || chain.snapshot_id != null
 }
 
 function formatUpdatedAt(value: string | undefined): string {
@@ -66,6 +58,49 @@ function formatUpdatedAt(value: string | undefined): string {
   }
 
   return parsed.toLocaleString()
+}
+
+function formatSnapshotLabel(chain: Chain): string {
+  if (typeof chain.snapshot_name === 'string' && chain.snapshot_name.trim()) {
+    return chain.snapshot_name
+  }
+  if (typeof chain.snapshot_id === 'number') {
+    return `Snapshot #${chain.snapshot_id}`
+  }
+  return 'Snapshot-owned path'
+}
+
+function formatPathLabel(chain: Chain): string {
+  if (typeof chain.path_id === 'string' && chain.path_id.trim()) {
+    return chain.path_id
+  }
+  if (typeof chain.snapshot_chain_id === 'number') {
+    return `Snapshot chain ${chain.snapshot_chain_id}`
+  }
+  return chain.name
+}
+
+function formatRuntimeSyncStatus(value: string | undefined): string {
+  if (!value) {
+    return 'Runtime status unavailable'
+  }
+
+  return value
+    .split(/[_-]+/g)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function runtimeSyncTone(chain: Chain): MetricTone {
+  const status = chain.runtime_sync?.status
+  if (status === 'active') {
+    return 'green'
+  }
+  if (status === 'inactive') {
+    return 'warm-gray'
+  }
+  return 'gray'
 }
 
 function statusTagType(statusCode: number | undefined): 'green' | 'red' | 'warm-gray' {
@@ -98,13 +133,7 @@ function ChainsMetricCard({ label, value, helper, tone = 'gray' }: ChainsMetricC
 }
 
 export function ChainsPage() {
-  const queryClient = useQueryClient()
-  const isMobile = useIsMobile()
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [deployChain, setDeployChain] = useState<Chain | null>(null)
-  const [chainName, setChainName] = useState('')
   const [searchValue, setSearchValue] = useState('')
-  const { pushToast } = useToasts()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.chains)
   const { activeNodeId, nodes: clusterNodes, localNodeId, setActiveNode, isClusterMode } = useCluster()
@@ -122,10 +151,8 @@ export function ChainsPage() {
     ? selectedNode.latencyMs ?? null
     : null
 
-  const chainsKey = ['chains', scopeKey] as const
-
   const chainsQuery = useQuery<ChainsResponse>({
-    queryKey: chainsKey,
+    queryKey: ['chains', scopeKey],
     queryFn: () => chainsApi.list(apiNodeId),
     enabled: !allNodesSelected,
   })
@@ -143,112 +170,45 @@ export function ChainsPage() {
     staleTime: 5000,
   })
 
+  const allNodeChains = chainsQuery.data?.chains ?? []
+  const snapshotOwnedChains = useMemo(
+    () => allNodeChains.filter(isSnapshotOwnedChain),
+    [allNodeChains],
+  )
+  const hiddenLegacyChainCount = Math.max(0, allNodeChains.length - snapshotOwnedChains.length)
+
   const filteredChains = useMemo(() => {
     const query = searchValue.trim().toLowerCase()
     if (!query) {
-      return chainsQuery.data?.chains ?? []
+      return snapshotOwnedChains
     }
 
-    return chainsQuery.data?.chains.filter((chain) => chain.name.toLowerCase().includes(query)) ?? []
-  }, [chainsQuery.data, searchValue])
+    return snapshotOwnedChains.filter((chain) => (
+      chain.name.toLowerCase().includes(query)
+      || formatSnapshotLabel(chain).toLowerCase().includes(query)
+      || formatPathLabel(chain).toLowerCase().includes(query)
+    ))
+  }, [searchValue, snapshotOwnedChains])
 
-  const createChain = useMutation({
-    mutationFn: (name: string) => chainsApi.create(name, apiNodeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      setChainName('')
-      setCreateDialogOpen(false)
-      pushToast('Chain created', 'success')
-    },
-    onError: () => pushToast('Failed to create chain', 'error'),
-  })
-
-  const activateChain = useMutation({
-    mutationFn: (id: number) => chainsApi.activate(id, apiNodeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Runtime chain activated', 'success')
-    },
-    onError: () => pushToast('Failed to activate runtime chain', 'error'),
-  })
-
-  const deactivateChain = useMutation({
-    mutationFn: (id: number) => chainsApi.deactivate(id, apiNodeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Runtime chain stopped', 'info')
-    },
-    onError: () => pushToast('Failed to stop runtime chain', 'error'),
-  })
-
-  const deleteChain = useMutation({
-    mutationFn: (id: number) => chainsApi.delete(id, apiNodeId),
-    onSuccess: (_, id) => {
-      queryClient.setQueryData(chainsKey, (data?: ChainsResponse) => {
-        if (!data) {
-          return data
-        }
-
-        return {
-          ...data,
-          count: Math.max(0, data.count - 1),
-          chains: data.chains.filter((chain) => chain.id !== id),
-        }
-      })
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain deleted', 'warn')
-    },
-    onError: () => pushToast('Failed to delete chain', 'error'),
-  })
-
-  const renameChain = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => chainsApi.rename(id, name, apiNodeId),
-    onSuccess: (_, { id, name }) => {
-      queryClient.setQueryData(chainsKey, (data?: ChainsResponse) => {
-        if (!data) {
-          return data
-        }
-
-        return {
-          ...data,
-          chains: data.chains.map((chain) => (chain.id === id ? { ...chain, name, updated_at: new Date().toISOString() } : chain)),
-        }
-      })
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      pushToast('Chain renamed', 'success')
-    },
-    onError: () => pushToast('Failed to rename chain', 'error'),
-  })
-
-  const activeChain = chainsQuery.data?.chains.find((chain) => chain.is_active)
-  const totalPlugins = chainsQuery.data?.chains.reduce((acc, chain) => acc + chain.plugins.length, 0) ?? 0
+  const activeSnapshotPath = snapshotOwnedChains.find((chain) => chain.is_active)
 
   const clusterRows = useMemo(() => {
     const payload = clusterChainsQuery.data?.nodes ?? {}
     return clusterNodes.map((node) => {
-      const body = payload[node.nodeId]?.body
-      const chains = body?.chains ?? []
+      const chains = (payload[node.nodeId]?.body?.chains ?? []).filter(isSnapshotOwnedChain)
+      const fullInventory = payload[node.nodeId]?.body?.chains ?? []
       const active = chains.find((chain) => chain.is_active)
-      const plugins = chains.reduce((acc, chain) => acc + chain.plugins.length, 0)
 
       return {
         node,
         chainCount: chains.length,
-        activeName: active?.name ?? null,
-        totalPlugins: plugins,
+        activeName: active ? formatPathLabel(active) : null,
+        snapshotLabel: active ? formatSnapshotLabel(active) : null,
+        hiddenLegacyCount: Math.max(0, fullInventory.length - chains.length),
         statusCode: payload[node.nodeId]?.status_code ?? (node.isOnline ? 200 : undefined),
       }
     })
   }, [clusterChainsQuery.data?.nodes, clusterNodes])
-
-  const handleCreate = () => {
-    const trimmed = chainName.trim()
-    if (!trimmed) {
-      return
-    }
-
-    createChain.mutate(trimmed)
-  }
 
   const handleRefresh = () => {
     if (allNodesSelected) {
@@ -261,8 +221,8 @@ export function ChainsPage() {
 
   if (allNodesSelected) {
     const totalClusterChains = clusterRows.reduce((sum, row) => sum + row.chainCount, 0)
-    const nodesWithActiveChains = clusterRows.filter((row) => row.activeName).length
-    const totalClusterPlugins = clusterRows.reduce((sum, row) => sum + row.totalPlugins, 0)
+    const nodesWithLivePaths = clusterRows.filter((row) => row.activeName).length
+    const totalHiddenLegacyChains = clusterRows.reduce((sum, row) => sum + row.hiddenLegacyCount, 0)
 
     return (
       <div className="chains-page">
@@ -273,7 +233,7 @@ export function ChainsPage() {
               <Flow size={32} aria-hidden="true" className="chains-page__title-icon" />
               <div>
                 <h1 className="chains-page__title">Chains</h1>
-                <p className="chains-page__subtitle">Cluster-wide runtime chain inventory and direct runtime-selection comparison</p>
+                <p className="chains-page__subtitle">Cluster view of snapshot-owned runtime paths only</p>
               </div>
             </div>
             <div className="chains-page__actions">
@@ -287,7 +247,7 @@ export function ChainsPage() {
             <div className="chains-page__scope-label">Chain scope</div>
             <strong className="chains-page__scope-title">All nodes cluster comparison</strong>
             <p className="chains-page__scope-copy">
-              Compare chain counts, runtime-active chains, and plugin footprint across the cluster, then inspect one node to manage direct runtime chain switching.
+              Compare snapshot-owned runtime path projections across the cluster. Legacy standalone chains are intentionally omitted here.
             </p>
           </Layer>
 
@@ -295,22 +255,22 @@ export function ChainsPage() {
             kind="warning"
             lowContrast
             hideCloseButton
-            title="Runtime-only chain controls"
+            title="Snapshot-owned runtime view"
             subtitle={RUNTIME_CHAIN_CONTROL_NOTICE}
           />
         </Layer>
 
         <div className="chains-page__metrics-grid">
-          <ChainsMetricCard label="Total chains" value={totalClusterChains} helper="Across all nodes" />
-          <ChainsMetricCard label="Nodes with runtime-active chain" value={nodesWithActiveChains} helper="Runtime selection" tone="green" />
-          <ChainsMetricCard label="Plugins across chains" value={totalClusterPlugins} helper="Cluster footprint" />
+          <ChainsMetricCard label="Snapshot paths" value={totalClusterChains} helper="Across all nodes" />
+          <ChainsMetricCard label="Nodes with live path" value={nodesWithLivePaths} helper="Runtime projection" tone="green" />
+          <ChainsMetricCard label="Hidden legacy chains" value={totalHiddenLegacyChains} helper="Excluded from this page" tone="warm-gray" />
         </div>
 
         <Layer className="chains-page__panel">
           <div className="chains-page__panel-header">
             <div>
-              <h2 className="chains-page__panel-title">Cluster chain inventory</h2>
-              <p className="chains-page__panel-subtitle">Inspect a node to manage its signal-chain inventory.</p>
+              <h2 className="chains-page__panel-title">Cluster snapshot path inventory</h2>
+              <p className="chains-page__panel-subtitle">Inspect a node to review its snapshot-owned runtime projections.</p>
             </div>
           </div>
 
@@ -330,9 +290,9 @@ export function ChainsPage() {
                 <TableHead>
                   <TableRow>
                     <TableHeader>Node</TableHeader>
-                    <TableHeader>Chains</TableHeader>
-                    <TableHeader>Runtime-active chain</TableHeader>
-                    <TableHeader>Plugins</TableHeader>
+                    <TableHeader>Snapshot paths</TableHeader>
+                    <TableHeader>Live path</TableHeader>
+                    <TableHeader>Hidden legacy chains</TableHeader>
                     <TableHeader>Status</TableHeader>
                     <TableHeader className="chains-page__table-cell--actions">Action</TableHeader>
                   </TableRow>
@@ -347,8 +307,11 @@ export function ChainsPage() {
                         <div className="chains-page__row-secondary">{row.node.nodeId}</div>
                       </TableCell>
                       <TableCell>{row.chainCount}</TableCell>
-                      <TableCell>{row.activeName ?? 'None runtime-active'}</TableCell>
-                      <TableCell>{row.totalPlugins}</TableCell>
+                      <TableCell>
+                        <div className="chains-page__row-primary">{row.activeName ?? 'No live snapshot path'}</div>
+                        <div className="chains-page__row-secondary">{row.snapshotLabel ?? 'No active snapshot'}</div>
+                      </TableCell>
+                      <TableCell>{row.hiddenLegacyCount}</TableCell>
                       <TableCell>
                         <Tag type={statusTagType(row.statusCode)}>{row.statusCode === 200 ? 'Online' : 'Unavailable'}</Tag>
                       </TableCell>
@@ -386,23 +349,20 @@ export function ChainsPage() {
               <h1 className="chains-page__title">{remoteSelected ? `Chains - ${selectedNode?.hostname ?? viewedNodeId}` : 'Chains'}</h1>
               <p className="chains-page__subtitle">
                 {remoteSelected
-                  ? `Inspect and runtime-switch processing chains on ${selectedNode?.hostname ?? viewedNodeId}.`
-                  : 'Inspect and runtime-switch processing chains for this node.'}
+                  ? `Inspect snapshot-owned runtime paths on ${selectedNode?.hostname ?? viewedNodeId}.`
+                  : 'Inspect snapshot-owned runtime paths for this node.'}
               </p>
             </div>
           </div>
 
           <div className="chains-page__actions">
             {remoteSelected ? <Tag type="warm-gray">Audio Grid local only</Tag> : (
-              <Button kind="ghost" size="sm" href="/juce-grid" renderIcon={AudioGridActionIcon}>
+              <Button kind="ghost" size="sm" href="/snapshot-editor" renderIcon={AudioGridActionIcon}>
                 Audio Grid
               </Button>
             )}
             <Button kind="ghost" size="sm" renderIcon={Renew} onClick={handleRefresh}>
               Refresh
-            </Button>
-            <Button kind="primary" size="sm" renderIcon={Add} onClick={() => setCreateDialogOpen(true)}>
-              New chain
             </Button>
           </div>
         </div>
@@ -413,8 +373,8 @@ export function ChainsPage() {
             <strong className="chains-page__scope-title">{remoteSelected ? selectedNode?.hostname ?? viewedNodeId : 'Local node'}</strong>
             <p className="chains-page__scope-copy">
               {remoteSelected
-                ? `Runtime chain actions are proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
-                : 'This page edits local runtime chain inventory. Select all nodes for comparison, or switch to a peer node to manage remote runtime chain inventory.'}
+                ? `Runtime path inspection is proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
+                : 'This page is limited to snapshot-owned runtime projections. Legacy standalone chains are hidden, and canonical edits live in the snapshot workflow.'}
             </p>
           </Layer>
         ) : null}
@@ -423,37 +383,52 @@ export function ChainsPage() {
           kind="warning"
           lowContrast
           hideCloseButton
-          title="Runtime-only chain controls"
+          title="Snapshot-owned runtime view"
           subtitle={RUNTIME_CHAIN_CONTROL_NOTICE}
         />
+
+        {hiddenLegacyChainCount > 0 ? (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Legacy standalone chains hidden"
+            subtitle={`${hiddenLegacyChainCount} non-snapshot runtime chain${hiddenLegacyChainCount === 1 ? '' : 's'} omitted from this page.`}
+          />
+        ) : null}
       </Layer>
 
       <div className="chains-page__metrics-grid">
         <ChainsMetricCard
-          label="Total chains"
-          value={chainsQuery.data?.count ?? '--'}
-          helper={chainsQuery.isFetching ? 'Refreshing' : 'Inventory'}
+          label="Snapshot paths"
+          value={snapshotOwnedChains.length}
+          helper={chainsQuery.isFetching ? 'Refreshing' : 'Visible on this node'}
         />
         <ChainsMetricCard
-          label="Runtime-active chain"
-          value={activeChain?.name ?? 'None runtime-active'}
-          helper={activeChain ? 'Runtime only' : 'Direct switch'}
-          tone={activeChain ? 'green' : 'warm-gray'}
+          label="Live path"
+          value={activeSnapshotPath ? formatPathLabel(activeSnapshotPath) : 'No live snapshot path'}
+          helper={activeSnapshotPath ? formatSnapshotLabel(activeSnapshotPath) : 'Runtime projection'}
+          tone={activeSnapshotPath ? 'green' : 'warm-gray'}
         />
-        <ChainsMetricCard label="Plugins across chains" value={totalPlugins} helper="Footprint" />
+        <ChainsMetricCard
+          label="Hidden legacy chains"
+          value={hiddenLegacyChainCount}
+          helper="Excluded from this page"
+          tone="warm-gray"
+        />
       </div>
 
       <Layer className="chains-page__panel">
         <div className="chains-page__panel-header">
           <div>
-            <h2 className="chains-page__panel-title">All chains</h2>
-            <p className="chains-page__panel-subtitle">Search, deploy, and manage runtime chain inventory.</p>
+            <h2 className="chains-page__panel-title">Live snapshot paths</h2>
+            <p className="chains-page__panel-subtitle">Search the snapshot-owned runtime projections currently known for this node.</p>
           </div>
           <Search
             id="chains-search"
             size="sm"
-            labelText="Search chains"
-            placeholder="Filter by chain name"
+            labelText="Search snapshot paths"
+            placeholder="Filter by path or snapshot"
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
             className="chains-page__search"
@@ -472,8 +447,10 @@ export function ChainsPage() {
           />
         ) : filteredChains.length === 0 ? (
           <EmptyState
-            title={searchValue.trim() ? 'No chains match this filter' : 'No chains yet'}
-            description={searchValue.trim() ? 'Try a different chain name.' : 'Create a chain to begin routing plugins.'}
+            title={searchValue.trim() ? 'No snapshot paths match this filter' : 'No snapshot-owned runtime paths'}
+            description={searchValue.trim()
+              ? 'Try a different snapshot or path label.'
+              : 'Open Snapshot Editor or Snapshot Publish to stage and activate a live snapshot path.'}
             compact
           />
         ) : (
@@ -481,246 +458,43 @@ export function ChainsPage() {
             <Table size="sm" className="chains-page__table">
               <TableHead>
                 <TableRow>
-                  <TableHeader>Name</TableHeader>
-                  <TableHeader>Plugins</TableHeader>
-                  <TableHeader>Status</TableHeader>
+                  <TableHeader>Path</TableHeader>
+                  <TableHeader>Snapshot</TableHeader>
+                  <TableHeader>Runtime state</TableHeader>
                   <TableHeader>Updated</TableHeader>
-                  <TableHeader className="chains-page__table-cell--actions">Actions</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredChains.map((chain) => (
-                  <ChainRow
-                    key={chain.id}
-                    chain={chain}
-                    isMobile={isMobile}
-                    canDeploy={isClusterMode}
-                    onActivate={() => activateChain.mutate(chain.id)}
-                    onDeactivate={() => deactivateChain.mutate(chain.id)}
-                    onDelete={() => deleteChain.mutate(chain.id)}
-                    onDeploy={() => setDeployChain(chain)}
-                    onRename={(newName) => renameChain.mutate({ id: chain.id, name: newName })}
-                    disableActions={activateChain.isPending || deactivateChain.isPending || deleteChain.isPending}
-                  />
+                  <TableRow key={chain.id}>
+                    <TableCell>
+                      <div className="chains-page__row-primary">{formatPathLabel(chain)}</div>
+                      <div className="chains-page__row-secondary">{chain.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="chains-page__row-primary">{formatSnapshotLabel(chain)}</div>
+                      <div className="chains-page__row-secondary">
+                        {typeof chain.snapshot_id === 'number' ? `Snapshot ID ${chain.snapshot_id}` : 'Snapshot-owned'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="chains-page__row-primary">
+                        <Tag type={chain.is_active ? 'green' : 'warm-gray'}>
+                          {chain.is_active ? 'Runtime live' : 'Runtime standby'}
+                        </Tag>
+                      </div>
+                      <div className="chains-page__row-secondary">
+                        <Tag type={runtimeSyncTone(chain)}>{formatRuntimeSyncStatus(chain.runtime_sync?.status)}</Tag>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatUpdatedAt(chain.updated_at)}</TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
         )}
       </Layer>
-
-      <Layer className="chains-page__panel chains-page__panel--routing">
-        <div className="chains-page__panel-header">
-          <div>
-            <h2 className="chains-page__panel-title">Advanced routing</h2>
-            <p className="chains-page__panel-subtitle">
-              Sidechain, parallel, and external-loop controls for {remoteSelected ? `${selectedNode?.hostname ?? viewedNodeId}` : 'the local node'}.
-            </p>
-          </div>
-        </div>
-
-        <div className="chains-page__routing-grid">
-          <Layer className="chains-page__routing-surface">
-            <ParallelRoutingPanel nodeId={apiNodeId} remoteLabel={remoteLabel} latencyMs={remoteLatencyMs} />
-          </Layer>
-          <Layer className="chains-page__routing-surface">
-            <SidechainPanel nodeId={apiNodeId} remoteLabel={remoteLabel} latencyMs={remoteLatencyMs} />
-          </Layer>
-        </div>
-
-        <Layer className="chains-page__routing-summary">
-          <EffectsLoopSummaryPanel
-            nodeId={apiNodeId}
-            chains={chainsQuery.data?.chains ?? []}
-            remoteLabel={remoteLabel}
-            latencyMs={remoteLatencyMs}
-          />
-        </Layer>
-      </Layer>
-
-      <Modal
-        open={createDialogOpen}
-        size={isMobile ? 'lg' : 'sm'}
-        modalLabel={remoteSelected ? `Target ${selectedNode?.hostname ?? viewedNodeId}` : 'Local node'}
-        modalHeading="Create a new chain"
-        primaryButtonText={createChain.isPending ? 'Creating...' : 'Create chain'}
-        secondaryButtonText="Cancel"
-        primaryButtonDisabled={createChain.isPending || !chainName.trim()}
-        onRequestClose={() => {
-          if (createChain.isPending) {
-            return
-          }
-          setCreateDialogOpen(false)
-          setChainName('')
-        }}
-        onRequestSubmit={handleCreate}
-        selectorPrimaryFocus="#chains-create-name-input"
-      >
-        <p className="chains-page__modal-copy">Name the chain, then add plugins from the plugins view.</p>
-        <TextInput
-          id="chains-create-name-input"
-          labelText="Chain name"
-          placeholder="Example: modern crunch"
-          autoFocus
-          value={chainName}
-          onChange={(event) => setChainName(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && chainName.trim()) {
-              event.preventDefault()
-              handleCreate()
-            }
-          }}
-        />
-      </Modal>
-
-      <ChainDeployModal
-        open={Boolean(deployChain)}
-        chain={deployChain}
-        sourceNodeId={apiNodeId ?? resolvedLocalNodeId}
-        onClose={() => setDeployChain(null)}
-      />
     </div>
-  )
-}
-
-function ChainRow({
-  chain,
-  isMobile,
-  canDeploy,
-  onActivate,
-  onDeactivate,
-  onDelete,
-  onDeploy,
-  onRename,
-  disableActions,
-}: {
-  chain: Chain
-  isMobile: boolean
-  canDeploy?: boolean
-  onActivate: () => void
-  onDeactivate: () => void
-  onDelete: () => void
-  onDeploy?: () => void
-  onRename: (name: string) => void
-  disableActions: boolean
-}) {
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [renameValue, setRenameValue] = useState(chain.name)
-  const pluginCount = chain.plugins.length
-  const renameInputId = `chains-rename-input-${chain.id}`
-
-  const handleRenameSubmit = () => {
-    const trimmed = renameValue.trim()
-    if (!trimmed) {
-      return
-    }
-
-    onRename(trimmed)
-    setRenameDialogOpen(false)
-  }
-
-  const handleDeleteSubmit = () => {
-    onDelete()
-    setDeleteDialogOpen(false)
-  }
-
-  return (
-    <TableRow>
-      <TableCell>
-        <div className="chains-page__row-primary">{chain.name}</div>
-      </TableCell>
-      <TableCell>{pluginCount} plugin{pluginCount === 1 ? '' : 's'}</TableCell>
-      <TableCell>
-        <Tag type={chain.is_active ? 'green' : 'gray'}>
-          {chain.is_active ? (
-            <span className="chains-page__tag-with-icon">
-              <CheckmarkFilled size={14} aria-hidden="true" />
-              Runtime active
-            </span>
-          ) : (
-            'Runtime standby'
-          )}
-        </Tag>
-      </TableCell>
-      <TableCell>{formatUpdatedAt(chain.updated_at)}</TableCell>
-      <TableCell className="chains-page__table-cell--actions">
-        <OverflowMenu
-          ariaLabel={`Actions for ${chain.name}`}
-          iconDescription={`Actions for ${chain.name}`}
-          size="sm"
-          flipped
-          disabled={disableActions}
-        >
-          {!chain.is_active ? (
-            <OverflowMenuItem itemText="Set runtime active" onClick={onActivate} disabled={disableActions} />
-          ) : (
-            <OverflowMenuItem itemText="Stop runtime chain" onClick={onDeactivate} disabled={disableActions} />
-          )}
-          {canDeploy && onDeploy ? (
-            <OverflowMenuItem itemText="Deploy" onClick={onDeploy} disabled={disableActions} />
-          ) : null}
-          <OverflowMenuItem
-            itemText="Rename"
-            onClick={() => {
-              setRenameValue(chain.name)
-              setRenameDialogOpen(true)
-            }}
-            disabled={disableActions}
-          />
-          <OverflowMenuItem
-            itemText="Delete"
-            isDelete
-            onClick={() => setDeleteDialogOpen(true)}
-            disabled={disableActions}
-          />
-        </OverflowMenu>
-
-        <Modal
-          open={renameDialogOpen}
-          size={isMobile ? 'lg' : 'sm'}
-          modalHeading="Rename chain"
-          primaryButtonText="Rename"
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={disableActions || !renameValue.trim()}
-          onRequestClose={() => setRenameDialogOpen(false)}
-          onRequestSubmit={handleRenameSubmit}
-          selectorPrimaryFocus={`#${renameInputId}`}
-        >
-          <p className="chains-page__modal-copy">Update the chain name while preserving routing and plugin order.</p>
-          <TextInput
-            id={renameInputId}
-            labelText="Chain name"
-            placeholder="Example: modern crunch"
-            autoFocus
-            value={renameValue}
-            onChange={(event) => setRenameValue(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && renameValue.trim()) {
-                event.preventDefault()
-                handleRenameSubmit()
-              }
-            }}
-          />
-        </Modal>
-
-        <Modal
-          open={deleteDialogOpen}
-          danger
-          size={isMobile ? 'lg' : 'sm'}
-          modalHeading="Delete this chain?"
-          primaryButtonText="Delete chain"
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={disableActions}
-          onRequestClose={() => setDeleteDialogOpen(false)}
-          onRequestSubmit={handleDeleteSubmit}
-        >
-          <p className="chains-page__modal-copy">
-            Deleting removes the chain and its routing from inventory. Presets remain available.
-          </p>
-          <p className="chains-page__modal-copy chains-page__modal-copy--strong">Chain: {chain.name}</p>
-        </Modal>
-      </TableCell>
-    </TableRow>
   )
 }

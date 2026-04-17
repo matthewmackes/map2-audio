@@ -72,6 +72,11 @@ try:
 except Exception:  # pragma: no cover - optional runtime dependency
     rtmidi = None
 
+try:
+    import pyudev  # type: ignore
+except Exception:  # pragma: no cover - optional runtime dependency
+    pyudev = None
+
 LOGGER = logging.getLogger("maschine_mk1_daemon")
 
 MASCHINE_VIRTUAL_PORT_NAME = "MAP2:Maschine-MK1"
@@ -88,6 +93,7 @@ ENCODER_CC_BASE = 1
 MASTER_CC_BASE = 9
 TOP_LEVEL_MENU_ITEMS = ("Audio Grid", "Stats", "---", "---", "---")
 BACKEND_MESSAGE_QUEUE_LIMIT = 256
+_TOP_LEVEL_MENU_CONTEXTS = ("audio_grid", "stats")
 
 # Button → transport action mapping
 _TRANSPORT_BUTTONS: dict[int, str] = {
@@ -155,6 +161,10 @@ def _midi_cc_message(channel: int, control: int, value: int) -> bytes:
     return bytes([(0xB0 | ((channel - 1) & 0x0F)), control & 0x7F, value & 0x7F])
 
 
+def _midi_poly_aftertouch_message(channel: int, note: int, pressure: int) -> bytes:
+    return bytes([(0xA0 | ((channel - 1) & 0x0F)), note & 0x7F, pressure & 0x7F])
+
+
 def _json_dumps(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
@@ -209,6 +219,7 @@ class SharedRuntimeState:
     reconnecting: bool = True
     device_connected: bool = False
     display_context: str = "audio_grid"
+    menu_return_context: str = "audio_grid"
     top_level_menu_index: int = 0
     stats_metric_keys: list[str] = field(default_factory=list)
     stats_focus_metric: str | None = None
@@ -274,6 +285,116 @@ class VirtualMidiOutput:
         self._is_open = False
 
 
+class MaschineDeviceHotplugMonitor:
+    def __init__(self) -> None:
+        self._event = threading.Event()
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    @property
+    def available(self) -> bool:
+        return pyudev is not None
+
+    def start(self) -> None:
+        if not self.available or self._thread is not None:
+            return
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._watch_loop,
+            name="maschine-udev-hotplug",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+        self._event.set()
+        thread = self._thread
+        self._thread = None
+        if thread is not None:
+            thread.join(timeout=1.0)
+
+    def notify_relevant_event(self) -> None:
+        self._event.set()
+
+    def wait_for_event(self, *, stop_event: threading.Event, timeout: float | None = None) -> bool:
+        deadline = None if timeout is None else time.monotonic() + max(timeout, 0.0)
+        while not stop_event.is_set() and not self._stop_event.is_set():
+            if self._event.wait(timeout=0.25):
+                self._event.clear()
+                return True
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+        return False
+
+    @staticmethod
+    def _normalize_hex(value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, bytes):
+            try:
+                value = value.decode("utf-8")
+            except Exception:
+                return None
+        text = str(value).strip().lower()
+        if not text:
+            return None
+        if text.startswith("0x"):
+            text = text[2:]
+        return text.zfill(4)
+
+    @classmethod
+    def _matches_maschine_device(cls, device: Any) -> bool:
+        candidate_vendor = None
+        candidate_product = None
+
+        try:
+            candidate_vendor = cls._normalize_hex(device.get("ID_VENDOR_ID"))
+        except Exception:
+            candidate_vendor = None
+        try:
+            candidate_product = cls._normalize_hex(device.get("ID_MODEL_ID"))
+        except Exception:
+            candidate_product = None
+
+        attributes = getattr(device, "attributes", None)
+        if attributes is not None:
+            try:
+                candidate_vendor = candidate_vendor or cls._normalize_hex(attributes.get("idVendor"))
+            except Exception:
+                pass
+            try:
+                candidate_product = candidate_product or cls._normalize_hex(attributes.get("idProduct"))
+            except Exception:
+                pass
+
+        return candidate_vendor == f"{0x17CC:04x}".lower() and candidate_product == f"{0x0808:04x}".lower()
+
+    def _watch_loop(self) -> None:
+        if pyudev is None:
+            return
+        try:
+            context = pyudev.Context()
+            monitor = pyudev.Monitor.from_netlink(context)
+            monitor.filter_by(subsystem="usb")
+        except Exception as exc:  # pragma: no cover - depends on host udev
+            LOGGER.warning("Maschine hotplug monitor disabled: %s", exc)
+            return
+
+        LOGGER.info("Maschine hotplug monitor armed via pyudev")
+        while not self._stop_event.is_set():
+            try:
+                device = monitor.poll(timeout=0.5)
+            except Exception as exc:  # pragma: no cover - depends on host udev
+                LOGGER.debug("Maschine hotplug monitor poll failed: %s", exc)
+                time.sleep(0.5)
+                continue
+            if device is None:
+                continue
+            if self._matches_maschine_device(device):
+                self._event.set()
+
+
 def build_reconnecting_frames() -> dict[str, dict[str, Any]]:
     left = _Canvas()
     left.draw_text(_safe_label("RECONNECTING", limit=12), 8, 8, scale=2)
@@ -305,6 +426,33 @@ def build_last_touched_bitmap(control: LastTouchedControl) -> dict[str, Any]:
     return _canvas_panel(canvas)
 
 
+def build_top_level_menu_frames(*, selected_index: int, active_context: str) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text("MENU", 4, 4, scale=2)
+    left.draw_hline(4, 22, 72)
+    for index, item in enumerate(TOP_LEVEL_MENU_ITEMS):
+        row_y = 28 + (index * 8)
+        if index == selected_index:
+            left.fill_rect(2, row_y - 1, 76, 8)
+            left.draw_text(item, 6, row_y)
+            left.invert_rect(2, row_y - 1, 76, 8)
+        else:
+            left.draw_text(item, 6, row_y)
+
+    right = _Canvas()
+    selected_label = TOP_LEVEL_MENU_ITEMS[selected_index] if 0 <= selected_index < len(TOP_LEVEL_MENU_ITEMS) else "---"
+    right.draw_text("LCD MENU", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(_safe_label(selected_label, limit=14), 4, 20, scale=2)
+    right.draw_text(f"ACTIVE {_safe_label(active_context.replace('_', ' '), limit=12)}", 4, 38)
+    right.draw_text("NAV MOVE", 4, 48)
+    right.draw_text("NR SEL CTRL BK", 4, 56)
+    return {
+        "left": _canvas_panel(left),
+        "right": _canvas_panel(right),
+    }
+
+
 class MaschineMK1Daemon:
     def __init__(self, config: DaemonConfig) -> None:
         self.config = config
@@ -315,6 +463,7 @@ class MaschineMK1Daemon:
         self._state.lcd_frames = build_reconnecting_frames()
         self._transport: MaschineMK1UsbTransport | None = None
         self._midi = VirtualMidiOutput(config.virtual_port_name)
+        self._hotplug_monitor = MaschineDeviceHotplugMonitor()
         self._outbound_messages: "queue.Queue[dict[str, Any]]" = queue.Queue(maxsize=BACKEND_MESSAGE_QUEUE_LIMIT)
         self._input_thread = threading.Thread(target=self._input_loop, name="maschine-input", daemon=True)
         self._display_thread = threading.Thread(target=self._display_loop, name="maschine-display", daemon=True)
@@ -323,6 +472,7 @@ class MaschineMK1Daemon:
     def run(self) -> int:
         LOGGER.info("Starting Maschine MK1 daemon")
         self._midi.open()
+        self._hotplug_monitor.start()
         self._input_thread.start()
         self._display_thread.start()
         self._output_thread.start()
@@ -344,6 +494,7 @@ class MaschineMK1Daemon:
         transport = self._transport
         if transport is not None:
             transport.close()
+        self._hotplug_monitor.stop()
         self._midi.close()
         for thread in (self._input_thread, self._display_thread, self._output_thread):
             if thread.is_alive():
@@ -364,6 +515,7 @@ class MaschineMK1Daemon:
         prev_encoder_values: list[int] = [0] * N_ENCODERS
         encoder_initialized: bool = False
         pad_press_started: dict[int, float] = {}
+        active_pad_pressures: dict[int, int] = {}
         held_groups: set[int] = set()
 
         try:
@@ -387,14 +539,21 @@ class MaschineMK1Daemon:
                         prev_encoder_values = [0] * N_ENCODERS
                         encoder_initialized = False
                         pad_press_started.clear()
+                        active_pad_pressures.clear()
                         held_groups.clear()
                         LOGGER.info("Maschine MK1 device connected and initialized")
                         self._request_render()
                     except MaschineMK1NotFound:
-                        LOGGER.debug("Maschine MK1 not found; retrying in %.1fs", reconnect_sleep)
+                        LOGGER.debug("Maschine MK1 not found")
                         self._set_device_connected(False)
-                        self._stop_event.wait(reconnect_sleep)
-                        reconnect_sleep = min(reconnect_sleep * 2.0, self.config.reconnect_backoff_max_seconds)
+                        if self._hotplug_monitor.available:
+                            self._hotplug_monitor.wait_for_event(
+                                stop_event=self._stop_event,
+                                timeout=self.config.reconnect_backoff_max_seconds,
+                            )
+                        else:
+                            self._stop_event.wait(reconnect_sleep)
+                            reconnect_sleep = min(reconnect_sleep * 2.0, self.config.reconnect_backoff_max_seconds)
                         continue
                     except Exception as exc:
                         LOGGER.warning("Maschine MK1 connect failed: %s", exc)
@@ -417,7 +576,7 @@ class MaschineMK1Daemon:
                 if pad_data is not None:
                     events = decode_pad_report(pad_data, prev_pad_pressed)
                     for event in events:
-                        self._dispatch_pad_event(client, event, pad_press_started)
+                        self._dispatch_pad_event(client, event, pad_press_started, active_pad_pressures)
 
                 # Read buttons/encoders
                 try:
@@ -468,34 +627,50 @@ class MaschineMK1Daemon:
         client: httpx.Client,
         event: PadEvent,
         pad_press_started: dict[int, float],
+        active_pad_pressures: dict[int, int],
     ) -> None:
+        note = PAD_NOTE_BASE + event.pad
         velocity_midi = _clamp(int(event.pressure * 127 / 4095), 0, 127) if event.pressed else 0
-        midi_msg = _midi_note_message(1, PAD_NOTE_BASE + event.pad, velocity_midi, note_on=event.pressed)
-        self._midi.send_messages((midi_msg,))
+        previous_pressure = active_pad_pressures.get(event.pad)
+        midi_messages: list[bytes] = []
+        decoded_type = "pad_release"
+        if event.pressed:
+            if previous_pressure is None:
+                midi_messages.append(_midi_note_message(1, note, velocity_midi, note_on=True))
+                pad_press_started[event.pad] = time.monotonic()
+                active_pad_pressures[event.pad] = velocity_midi
+                self._select_block_for_pad(client, event.pad)
+                decoded_type = "pad_press"
+            elif velocity_midi != previous_pressure:
+                midi_messages.append(_midi_poly_aftertouch_message(1, note, velocity_midi))
+                active_pad_pressures[event.pad] = velocity_midi
+                decoded_type = "pad_aftertouch"
+            else:
+                return
+        else:
+            midi_messages.append(_midi_note_message(1, note, 0, note_on=False))
+            active_pad_pressures.pop(event.pad, None)
+            started_at = pad_press_started.pop(event.pad, None)
+            if started_at is not None and (time.monotonic() - started_at) >= 0.5:
+                self._toggle_block_bypass_for_pad(client, event.pad)
+            decoded_type = "pad_release"
 
+        self._midi.send_messages(midi_messages)
         self._enqueue_backend_message({
             "type": "hid_event",
             "payload": {
                 "timestamp": _utcnow_iso(),
                 "direction": "in",
-                "decoded_type": "pad_press" if event.pressed else "pad_release",
+                "decoded_type": decoded_type,
                 "pad_index": event.pad,
                 "velocity": velocity_midi,
                 "pressure": event.pressure,
                 "pressed": event.pressed,
                 "channel": 1,
-                "note": PAD_NOTE_BASE + event.pad,
-                "midi_hex": [midi_msg.hex().upper()],
+                "note": note,
+                "midi_hex": [message.hex().upper() for message in midi_messages],
             },
         })
-
-        if event.pressed:
-            pad_press_started[event.pad] = time.monotonic()
-            self._select_block_for_pad(client, event.pad)
-        else:
-            started_at = pad_press_started.pop(event.pad, None)
-            if started_at is not None and (time.monotonic() - started_at) >= 0.5:
-                self._toggle_block_bypass_for_pad(client, event.pad)
 
     # ------------------------------------------------------------------
     # Button dispatch
@@ -558,9 +733,21 @@ class MaschineMK1Daemon:
 
         # Control/Navigate/NoteRepeat — encoder push equivalents
         if button == int(Button.Control) and pressed:
-            self._toggle_display_context()
+            with self._state_lock:
+                in_menu = self._state.display_context == "menu"
+            if in_menu:
+                self._close_top_level_menu()
+            else:
+                self._toggle_display_context()
         elif button == int(Button.Navigate) and pressed:
-            self._set_display_context("audio_grid")
+            self._open_top_level_menu()
+        elif button == int(Button.NoteRepeat) and pressed:
+            with self._state_lock:
+                in_menu = self._state.display_context == "menu"
+            if in_menu:
+                self._activate_top_level_menu_selection()
+            else:
+                self._open_top_level_menu()
 
         # All other button events → websocket
         self._enqueue_backend_message({
@@ -826,6 +1013,8 @@ class MaschineMK1Daemon:
                 "hidapi_available": False,
                 "pyusb_available": True,
                 "rtmidi_available": rtmidi is not None,
+                "pyudev_available": self._hotplug_monitor.available,
+                "hotplug_mode": "udev" if self._hotplug_monitor.available else "polling",
                 "pads": 16,
                 "encoders": 11,
                 "master_knobs": 3,
@@ -866,6 +1055,8 @@ class MaschineMK1Daemon:
         with self._state_lock:
             reconnecting = self._state.reconnecting
             display_context = self._state.display_context
+            menu_return_context = self._state.menu_return_context
+            top_level_menu_index = self._state.top_level_menu_index
             focus_metric = self._state.stats_focus_metric
             led_state = dict(self._state.led_state)
             last_touched = self._state.last_touched_control
@@ -874,6 +1065,11 @@ class MaschineMK1Daemon:
 
         if reconnecting:
             frames = build_reconnecting_frames()
+        elif display_context == "menu":
+            frames = build_top_level_menu_frames(
+                selected_index=top_level_menu_index,
+                active_context=menu_return_context,
+            )
         elif display_context == "stats":
             rendered = renderer._render_stats(stats=current_stats, focus_metric=focus_metric)
             frames = {"left": rendered["left"], "right": rendered["right"]}
@@ -1049,13 +1245,39 @@ class MaschineMK1Daemon:
     def _set_display_context(self, context: str) -> None:
         with self._state_lock:
             self._state.display_context = "stats" if context == "stats" else "audio_grid"
+            self._state.menu_return_context = self._state.display_context
             self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
         self._request_render()
 
     def _toggle_display_context(self) -> None:
         with self._state_lock:
             self._state.display_context = "stats" if self._state.display_context == "audio_grid" else "audio_grid"
+            self._state.menu_return_context = self._state.display_context
             self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
+        self._request_render()
+
+    def _open_top_level_menu(self) -> None:
+        with self._state_lock:
+            current_context = self._state.display_context
+            if current_context != "menu":
+                self._state.menu_return_context = "stats" if current_context == "stats" else "audio_grid"
+            self._state.display_context = "menu"
+            self._state.top_level_menu_index = 1 if self._state.menu_return_context == "stats" else 0
+        self._request_render()
+
+    def _close_top_level_menu(self) -> None:
+        with self._state_lock:
+            self._state.display_context = self._state.menu_return_context
+            self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
+        self._request_render()
+
+    def _activate_top_level_menu_selection(self) -> None:
+        with self._state_lock:
+            selected_index = _clamp(self._state.top_level_menu_index, 0, len(_TOP_LEVEL_MENU_CONTEXTS) - 1)
+            selected_context = _TOP_LEVEL_MENU_CONTEXTS[selected_index]
+            self._state.display_context = selected_context
+            self._state.menu_return_context = selected_context
+            self._state.top_level_menu_index = selected_index
         self._request_render()
 
     def _request_render(self) -> None:
@@ -1099,6 +1321,12 @@ class MaschineMK1Daemon:
             display_context = self._state.display_context
             metric_keys = list(self._state.stats_metric_keys)
             current_metric = self._state.stats_focus_metric
+            current_menu_index = self._state.top_level_menu_index
+        if display_context == "menu":
+            with self._state_lock:
+                self._state.top_level_menu_index = (current_menu_index + delta) % len(_TOP_LEVEL_MENU_CONTEXTS)
+            self._request_render()
+            return
         if display_context == "stats":
             if not metric_keys:
                 return

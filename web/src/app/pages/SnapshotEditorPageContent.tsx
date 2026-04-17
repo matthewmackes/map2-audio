@@ -70,6 +70,9 @@ import {
 } from '@carbon/react'
 import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useFocusReturnTarget } from '../hooks/useFocusReturnTarget'
+import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../hooks/usePendingLiveChangesNavigationGuard'
+import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
@@ -263,8 +266,16 @@ import {
   applySnapshotDraftToChainsResponse,
   buildEffectiveLiveSnapshotChains,
   buildSnapshotEditorLiveSnapshotHydration,
+  type SnapshotEditorLiveSnapshotHydration,
 } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
+import { resolveSnapshotPluginIdentity } from '../components/SnapshotEditor/snapshotEditorMutationIdentity'
 import { isSystemNoiseGatePlugin } from '../utils/snapshotSystemBlocks'
+import {
+  clearLiveWorkingSnapshotDraft,
+  readCompatibleLiveWorkingSnapshotDraft,
+  readLiveWorkingSnapshotDraft,
+  writeLiveWorkingSnapshotDraft,
+} from '../utils/liveWorkingSnapshotDraft'
 import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { PluginCardRouter } from '../components/PluginCards'
@@ -283,6 +294,7 @@ const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
 const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device'
 const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
 const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = 'snapshots.default_monitoring_output_index'
+const LIVE_CHANGES_LEAVE_MESSAGE = 'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
 const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
   thresholdDb: -40,
   releaseMs: 100,
@@ -1105,7 +1117,7 @@ export function SnapshotEditorPage() {
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
-  const [progressModalInitialTab, setProgressModalInitialTab] = useState<'guided' | 'advanced'>('guided')
+  const [progressModalInitialTab, setProgressModalInitialTab] = useState<'wizard' | 'advanced'>('wizard')
   const [progressModalInitialSection, setProgressModalInitialSection] = useState<'overview' | 'routing' | 'devices' | 'runtime' | 'cleanup'>('overview')
   const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
@@ -1114,6 +1126,10 @@ export function SnapshotEditorPage() {
   const [branchPageByFlowId, setBranchPageByFlowId] = useState<Record<string, number>>({})
   const [tabletEditorOpen, setTabletEditorOpen] = useState(false)
   const [pendingTabletDeletePlugin, setPendingTabletDeletePlugin] = useState<PendingTabletDeletePluginState | null>(null)
+  const {
+    capture: captureWorkspaceModalLauncher,
+    restore: restoreWorkspaceModalLauncher,
+  } = useFocusReturnTarget<HTMLElement>()
   const missingSelectedPluginMetaWarningKeyRef = useRef<string | null>(null)
   const openPlatformDocs = useCallback((doc?: string) => {
     const params = new URLSearchParams({ context: 'juce-grid' })
@@ -1122,6 +1138,26 @@ export function SnapshotEditorPage() {
     }
     navigate(`/platforms/about?${params.toString()}`)
   }, [navigate])
+  const closeAudioRoutingWorkspace = useCallback(() => {
+    setShowAudioNodesModal(false)
+    restoreWorkspaceModalLauncher()
+  }, [restoreWorkspaceModalLauncher])
+  const closeMidiMappingsWorkspace = useCallback(() => {
+    setMidiModalOpen(false)
+    restoreWorkspaceModalLauncher()
+  }, [restoreWorkspaceModalLauncher])
+  const closeLiveRuntimeWorkspace = useCallback(() => {
+    setShowLiveRuntimeModal(false)
+    restoreWorkspaceModalLauncher()
+  }, [restoreWorkspaceModalLauncher])
+  const closePerformWorkspace = useCallback(() => {
+    setShowPerformModal(false)
+    restoreWorkspaceModalLauncher()
+  }, [restoreWorkspaceModalLauncher])
+  const closeVersionHistoryWorkspace = useCallback(() => {
+    setShowVersionHistoryModal(false)
+    restoreWorkspaceModalLauncher()
+  }, [restoreWorkspaceModalLauncher])
 
   // Special settings for plugin filtering and snapshot editor setlist mode
   const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
@@ -1166,6 +1202,9 @@ export function SnapshotEditorPage() {
   const [confirmedGoLiveSnapshotId, setConfirmedGoLiveSnapshotId] = useState<number | null>(null)
   const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
   const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
+  useRouteScrollRestoration({
+    storageKey: JUCE_GRID_SCROLL_TOP_KEY,
+  })
   const [goLiveFailureDetail, setGoLiveFailureDetail] = useState<ReturnType<typeof extractSnapshotActivationFailureDetail> | null>(null)
   const [goLiveDiffExpanded, setGoLiveDiffExpanded] = useState(false)
   const [dismissedGoLiveDiffKey, setDismissedGoLiveDiffKey] = useState<string | null>(null)
@@ -1289,26 +1328,6 @@ export function SnapshotEditorPage() {
     observer.observe(panelNode)
     return () => observer.disconnect()
   }, [automationTimelineExpanded, automationLanes.length])
-
-  useEffect(() => {
-    const persistScrollPosition = () => {
-      try {
-        localStorage.setItem(JUCE_GRID_SCROLL_TOP_KEY, String(window.scrollY || window.pageYOffset || 0))
-      } catch {}
-    }
-
-    const rafId = window.requestAnimationFrame(() => {
-      if ((initialPluginPersistence.scrollTop || 0) > 0) {
-        window.scrollTo({ top: initialPluginPersistence.scrollTop, behavior: 'auto' })
-      }
-    })
-
-    window.addEventListener('scroll', persistScrollPosition, { passive: true })
-    return () => {
-      window.cancelAnimationFrame(rafId)
-      window.removeEventListener('scroll', persistScrollPosition)
-    }
-  }, [initialPluginPersistence.scrollTop])
 
   const markSnapshotsDirty = useCallback(() => {
     setSnapshotsDirty(true)
@@ -1577,13 +1596,13 @@ export function SnapshotEditorPage() {
   // Fetch audio port routing
   const portsQuery = useQuery({
     queryKey: ['audio', 'ports'],
-    queryFn: audioApi.getPorts,
+    queryFn: () => audioApi.getPorts(),
     refetchInterval: snapshotSlowCadence,
   })
 
   const routingQuery = useQuery({
     queryKey: ['audio', 'routing'],
-    queryFn: audioApi.getRouting,
+    queryFn: () => audioApi.getRouting(),
     refetchInterval: snapshotStandardCadence,
   })
 
@@ -2478,6 +2497,28 @@ export function SnapshotEditorPage() {
   ])
 
   const currentSnapshotDraft = useMemo(() => captureCurrentState(), [captureCurrentState])
+  useEffect(() => {
+    if (!activeSnapshot) {
+      return
+    }
+
+    const cleanDraft = cleanSnapshotDraftRef.current
+    if (!cleanDraft) {
+      return
+    }
+
+    if (!snapshotsDirty) {
+      clearLiveWorkingSnapshotDraft(activeSnapshot.id)
+      return
+    }
+
+    writeLiveWorkingSnapshotDraft({
+      snapshotId: activeSnapshot.id,
+      snapshotName: activeSnapshot.name,
+      baseFingerprint: fingerprintSnapshotDraftData(cleanDraft),
+      draft: currentSnapshotDraft,
+    })
+  }, [activeSnapshot, currentSnapshotDraft, snapshotsDirty])
   const renameSnapshotError = useMemo(() => {
     if (!activeSnapshot) {
       return null
@@ -2903,7 +2944,7 @@ export function SnapshotEditorPage() {
       ).snapshotData
       syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
-      setShowVersionHistoryModal(false)
+      closeVersionHistoryWorkspace()
       hydrateEditorFromSnapshot(response.snapshot, {
         toastMessage: `Restored revision ${response.restored_revision_number}`,
         invalidateSnapshots: true,
@@ -2988,6 +3029,72 @@ export function SnapshotEditorPage() {
     queryClient,
     setControlPlaneSnapshotCaches,
   ])
+
+  const syncSnapshotMutationResult = useCallback((snapshot: SnapshotDetail) => {
+    syncSnapshotDetailCaches(snapshot, {
+      updateAuthorityActiveSnapshot: true,
+    })
+    queryClient.setQueryData<ChainsResponse>(
+      ['chains'],
+      buildEffectiveLiveSnapshotChains(
+        snapshot,
+        queryClient.getQueryData<ChainsResponse>(['chains']),
+      ),
+    )
+  }, [queryClient, syncSnapshotDetailCaches])
+
+  const requireSnapshotPluginId = useCallback((
+    chainId: number,
+    pluginUri: string,
+    pluginPosition?: number,
+  ): { snapshotChainId: number; snapshotPluginId: number } => {
+    const identity = resolveSnapshotPluginIdentity({
+      detail: activeSnapshot,
+      effectiveChain: effectiveChainById.get(chainId),
+      chainId,
+      pluginUri,
+      pluginPosition,
+    })
+    if (identity) {
+      return identity
+    }
+    throw new Error(`Snapshot plugin id missing for ${pluginUri}`)
+  }, [activeSnapshot, effectiveChainById])
+
+  const requireSnapshotPluginOrderIds = useCallback((
+    chainId: number,
+    pluginOrder: PluginOrderRef[],
+  ): { snapshotChainId: number; snapshotPluginIds: number[] } => {
+    const identities = pluginOrder.map((plugin) => requireSnapshotPluginId(chainId, plugin.uri, plugin.position))
+    return {
+      snapshotChainId: identities[0]?.snapshotChainId ?? chainId,
+      snapshotPluginIds: identities.map((identity) => identity.snapshotPluginId),
+    }
+  }, [
+    requireSnapshotPluginId,
+  ])
+
+  const createEditorChain = useCallback(async (name: string): Promise<Chain> => {
+    if (activeSnapshot?.id != null) {
+      const snapshot = await snapshotsApi.addChain(activeSnapshot.id, name)
+      syncSnapshotMutationResult(snapshot)
+      const addedChain = [...snapshot.chains]
+        .reverse()
+        .find((chain) => chain.name === name && typeof chain.id === 'number')
+      if (!addedChain?.id) {
+        throw new Error('Created snapshot chain was not returned by the API')
+      }
+      const effectiveChain = buildEffectiveLiveSnapshotChains(
+        snapshot,
+        queryClient.getQueryData<ChainsResponse>(['chains']),
+      ).chains.find((chain) => chain.id === addedChain.id)
+      if (!effectiveChain) {
+        throw new Error(`Created chain ${addedChain.id} was not present in the editor cache`)
+      }
+      return effectiveChain
+    }
+    return chainsApi.create(name)
+  }, [activeSnapshot?.id, queryClient, syncSnapshotMutationResult])
 
   type SnapshotRoutingMutationResponse = SnapshotDetail & {
     routing_requires_reactivation?: boolean
@@ -3075,6 +3182,28 @@ export function SnapshotEditorPage() {
     }
   }, [clearSnapshotsDirty, pushToast, queryClient, seedSnapshotUndoRedo, setEditorSnapshotState, setSelectedPluginSelection])
 
+  const restorePersistedLiveWorkingDraft = useCallback((
+    detail: SnapshotDetail,
+    baseHydration: SnapshotEditorLiveSnapshotHydration,
+    persistedDraft: SnapshotDraftData,
+  ) => {
+    setEditorSnapshotContext(detail)
+    queryClient.setQueryData(
+      ['chains'],
+      applySnapshotDraftToChainsResponse(baseHydration.chainsResponse, persistedDraft),
+    )
+    queryClient.setQueryData(['snapshots', 'detail', detail.id], detail)
+    lastHydratedLiveSnapshotFingerprintRef.current = baseHydration.fingerprint
+    cleanSnapshotDraftRef.current = cloneSnapshotDraftData(baseHydration.snapshotData)
+    pendingParameterUndoStartRef.current = null
+    pendingParameterUndoNextRef.current = null
+    pendingParameterUndoDescriptionRef.current = null
+    const restoredDraft = cloneSnapshotDraftData(persistedDraft)
+    setEditorSnapshotState(restoredDraft)
+    snapshotUndoRedo.reset(restoredDraft)
+    markSnapshotsDirty()
+  }, [markSnapshotsDirty, queryClient, setEditorSnapshotState, snapshotUndoRedo.reset])
+
   const applySnapshotDraftPreview = useCallback(async (draft: SnapshotDraftData) => {
     const preview = await snapshotsApi.preview(draft)
     const detail = mergePreviewIntoSnapshotDetail(preview.snapshot_data, activeSnapshot)
@@ -3131,6 +3260,21 @@ export function SnapshotEditorPage() {
       activeSnapshot,
       queryClient.getQueryData<ChainsResponse>(['chains']),
     )
+    const persistedWorkingDraft = readCompatibleLiveWorkingSnapshotDraft(activeSnapshot.id, hydration.fingerprint)
+    if (persistedWorkingDraft) {
+      if (
+        persistedWorkingDraft.workingFingerprint === hydration.fingerprint
+        || snapshotDraftsEqual(persistedWorkingDraft.draft, hydration.snapshotData)
+      ) {
+        clearLiveWorkingSnapshotDraft(activeSnapshot.id)
+      } else {
+        restorePersistedLiveWorkingDraft(activeSnapshot, hydration, persistedWorkingDraft.draft)
+        return
+      }
+    } else if (readLiveWorkingSnapshotDraft(activeSnapshot.id)) {
+      clearLiveWorkingSnapshotDraft(activeSnapshot.id)
+    }
+
     if (lastHydratedLiveSnapshotFingerprintRef.current === hydration.fingerprint) {
       return
     }
@@ -3142,6 +3286,7 @@ export function SnapshotEditorPage() {
     committedAudioStateQuery.isSuccess,
     hydrateEditorFromSnapshot,
     queryClient,
+    restorePersistedLiveWorkingDraft,
     setEditorSnapshotState,
     setSelectedPluginSelection,
     snapshotUndoRedo.clear,
@@ -4197,8 +4342,23 @@ export function SnapshotEditorPage() {
       pluginOrder: PluginOrderRef[]
       undoRedoDraft?: SnapshotDraftData
       undoRedoDescription?: string
-    }) => chainsApi.reorderPlugins(chainId, pluginOrder),
-    onSuccess: (_data, variables) => {
+    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugins: PluginOrderRef[] }> => {
+      if (activeSnapshot?.id != null) {
+        const identity = requireSnapshotPluginOrderIds(chainId, pluginOrder)
+        return snapshotsApi.reorderPlugins(
+          activeSnapshot.id,
+          identity.snapshotChainId,
+          identity.snapshotPluginIds,
+        )
+      }
+      return chainsApi.reorderPlugins(chainId, pluginOrder)
+    },
+    onSuccess: (data, variables) => {
+      if (activeSnapshot?.id != null) {
+        syncSnapshotMutationResult(data as SnapshotDetail)
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['chains'] })
+      }
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       if (variables.undoRedoDraft) {
         recordSnapshotUndoRedoStep(
@@ -4228,8 +4388,24 @@ export function SnapshotEditorPage() {
       pluginPosition?: number
       undoRedoDraft?: SnapshotDraftData
       undoRedoDescription?: string
-    }) => chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition),
-    onSuccess: (_data, variables) => {
+    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugin: string; bypass: boolean }> => {
+      if (activeSnapshot?.id != null) {
+        const identity = requireSnapshotPluginId(chainId, pluginUri, pluginPosition)
+        return snapshotsApi.setPluginBypass(
+          activeSnapshot.id,
+          identity.snapshotChainId,
+          identity.snapshotPluginId,
+          bypass,
+        )
+      }
+      return chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition)
+    },
+    onSuccess: (data, variables) => {
+      if (activeSnapshot?.id != null) {
+        syncSnapshotMutationResult(data as SnapshotDetail)
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['chains'] })
+      }
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       if (variables.undoRedoDraft) {
         recordSnapshotUndoRedoStep(
@@ -4271,7 +4447,18 @@ export function SnapshotEditorPage() {
     markDirty?: boolean
   }
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useMutation<
+    SnapshotDetail | { status: string; chain_id: number },
+    Error,
+    {
+      chainId,
+      pluginUri,
+      pluginPosition,
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    },
+    PluginMutationContext
+  >({
     mutationFn: ({
       chainId,
       pluginUri,
@@ -4282,7 +4469,17 @@ export function SnapshotEditorPage() {
       pluginPosition?: number
       undoRedoDraft?: SnapshotDraftData
       undoRedoDescription?: string
-    }) => chainsApi.removePlugin(chainId, pluginUri, pluginPosition),
+    }): Promise<SnapshotDetail | { status: string; chain_id: number }> => {
+      if (activeSnapshot?.id != null) {
+        const identity = requireSnapshotPluginId(chainId, pluginUri, pluginPosition)
+        return snapshotsApi.removePlugin(
+          activeSnapshot.id,
+          identity.snapshotChainId,
+          identity.snapshotPluginId,
+        )
+      }
+      return chainsApi.removePlugin(chainId, pluginUri, pluginPosition)
+    },
     onMutate: async (variables): Promise<PluginMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
@@ -4313,7 +4510,10 @@ export function SnapshotEditorPage() {
         previousSelectedPluginPosition,
       }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      if (activeSnapshot?.id != null) {
+        syncSnapshotMutationResult(data as SnapshotDetail)
+      }
       if (variables.undoRedoDraft) {
         recordSnapshotUndoRedoStep(
           variables.undoRedoDraft,
@@ -4338,7 +4538,17 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const addPluginMutation = useMutation({
+  const addPluginMutation = useMutation<
+    SnapshotDetail | { status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number },
+    Error,
+    {
+      chainId,
+      pluginUri,
+      undoRedoDraft?: SnapshotDraftData
+      undoRedoDescription?: string
+    },
+    AddPluginMutationContext
+  >({
     mutationFn: ({
       chainId,
       pluginUri,
@@ -4347,7 +4557,17 @@ export function SnapshotEditorPage() {
       pluginUri: string
       undoRedoDraft?: SnapshotDraftData
       undoRedoDescription?: string
-    }) => chainsApi.addPlugin(chainId, pluginUri),
+    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number }> => {
+      if (activeSnapshot?.id != null) {
+        const meta = pluginMeta[pluginUri]
+        return snapshotsApi.addPlugin(activeSnapshot.id, chainId, {
+          plugin_uri: pluginUri,
+          plugin_name: meta?.name,
+          loader_state: {},
+        })
+      }
+      return chainsApi.addPlugin(chainId, pluginUri)
+    },
     onMutate: async (variables): Promise<AddPluginMutationContext> => {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
@@ -4386,7 +4606,10 @@ export function SnapshotEditorPage() {
         previousPluginSearchQuery,
       }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      if (activeSnapshot?.id != null) {
+        syncSnapshotMutationResult(data as SnapshotDetail)
+      }
       if (variables.undoRedoDraft) {
         recordSnapshotUndoRedoStep(
           variables.undoRedoDraft,
@@ -4526,9 +4749,14 @@ export function SnapshotEditorPage() {
   })
 
   const renameMutation = useMutation({
-    mutationFn: ({ chainId, name }: { chainId: number; name: string }) =>
-      chainsApi.rename(chainId, name),
-    onSuccess: () => {
+    mutationFn: ({ chainId, name }: { chainId: number; name: string }): Promise<SnapshotDetail | { status: string; chain_id: number; name: string }> =>
+      activeSnapshot?.id != null
+        ? snapshotsApi.renameChain(activeSnapshot.id, chainId, name)
+        : chainsApi.rename(chainId, name),
+    onSuccess: (data) => {
+      if (activeSnapshot?.id != null) {
+        syncSnapshotMutationResult(data as SnapshotDetail)
+      }
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       markSnapshotsDirty()
       setShowRenameChainModal(false)
@@ -4548,11 +4776,11 @@ export function SnapshotEditorPage() {
 
     const nextIndex = flowSlots.length
     const colorConfig = getFlowCardPaletteEntry(nextIndex)
-    const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
-    const beforeDraft = captureCurrentState()
+      const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
+      const beforeDraft = captureCurrentState()
 
-    try {
-      const newChain = await chainsApi.create(chainName)
+      try {
+      const newChain = await createEditorChain(chainName)
       const newSlot: FlowSlot = {
         id: `flow-${Date.now()}`,
         chainId: newChain.id,
@@ -4591,6 +4819,7 @@ export function SnapshotEditorPage() {
   }, [
     activeSnapshot?.name,
     captureCurrentState,
+    createEditorChain,
     flowSlots.length,
     pushToast,
     queryClient,
@@ -5219,7 +5448,7 @@ export function SnapshotEditorPage() {
       const bootstrapChainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, activeFlowLabel)
 
       try {
-        const newChain = await chainsApi.create(bootstrapChainName)
+        const newChain = await createEditorChain(bootstrapChainName)
         targetChain = newChain
         queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
           if (!current) {
@@ -5290,6 +5519,7 @@ export function SnapshotEditorPage() {
     captureCurrentState,
     currentChain,
     addPluginMutation,
+    createEditorChain,
     pushToast,
     queryClient,
     setEditorSnapshotState,
@@ -5753,7 +5983,7 @@ export function SnapshotEditorPage() {
     if (snapshotEditorMutationDisabled) return
     if (!currentChain) return
     const newName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, activeFlowLabel)
-    chainsApi.create(newName)
+    createEditorChain(newName)
       .then((newChain) => {
         queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
           if (!current) return current
@@ -5770,7 +6000,7 @@ export function SnapshotEditorPage() {
         pushToast(`Chain "${newName}" created`, 'success')
       })
       .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
-  }, [activeFlowLabel, activeSnapshot?.name, currentChain, queryClient, pushToast, markSnapshotsDirty, snapshotEditorMutationDisabled])
+  }, [activeFlowLabel, activeSnapshot?.name, createEditorChain, currentChain, queryClient, pushToast, markSnapshotsDirty, snapshotEditorMutationDisabled])
 
   const handleRenameChain = useCallback(() => {
     if (snapshotEditorMutationDisabled) return
@@ -6016,13 +6246,25 @@ export function SnapshotEditorPage() {
     }
   }, [pushToast, snapshotSetlistMode, updateSpecialSettings])
   const snapshotNavigationPending = openEditorSnapshotMutation.isPending
+  const snapshotSwitchBlockedReason = snapshotsDirty
+    ? 'Publish or discard the live changes on this snapshot before switching.'
+    : undefined
+  usePendingLiveChangesNavigationGuard({
+    when: snapshotsDirty,
+    message: LIVE_CHANGES_LEAVE_MESSAGE,
+    allowNavigation: (nextLocation) => isSnapshotFlowRoute(nextLocation.pathname, activeSnapshot?.id),
+  })
   const previousSnapshotDisabledReason = !activeSnapshot
     ? 'No previous snapshot'
+    : snapshotSwitchBlockedReason
+      ? snapshotSwitchBlockedReason
     : activeSnapshotSequenceIndex === -1
       ? (snapshotSetlistMode ? 'Current snapshot is not in the setlist.' : 'No previous snapshot')
       : (previousEditorSnapshot ? undefined : 'No previous snapshot')
   const nextSnapshotDisabledReason = !activeSnapshot
     ? 'No next snapshot'
+    : snapshotSwitchBlockedReason
+      ? snapshotSwitchBlockedReason
     : activeSnapshotSequenceIndex === -1
       ? (snapshotSetlistMode ? 'Current snapshot is not in the setlist.' : 'No next snapshot')
       : (nextEditorSnapshot ? undefined : 'No next snapshot')
@@ -6030,8 +6272,12 @@ export function SnapshotEditorPage() {
     if (!snapshot) {
       return
     }
+    if (snapshotsDirty) {
+      pushToast('Publish or discard live changes before switching snapshots.', 'warn')
+      return
+    }
     openEditorSnapshotMutation.mutate(snapshot.id)
-  }, [openEditorSnapshotMutation])
+  }, [openEditorSnapshotMutation, pushToast, snapshotsDirty])
   const goToPreviousSnapshot = useCallback(() => {
     loadEditorSnapshot(previousEditorSnapshot)
   }, [loadEditorSnapshot, previousEditorSnapshot])
@@ -6071,7 +6317,7 @@ export function SnapshotEditorPage() {
     updateActiveSnapshotMutation,
   ])
   const openSnapshotProgressModal = useCallback((
-    tab: 'guided' | 'advanced' = 'guided',
+    tab: 'wizard' | 'guided' | 'advanced' = 'wizard',
     section: 'overview' | 'routing' | 'devices' | 'runtime' | 'cleanup' = 'overview',
   ) => {
     if (!activeSnapshot?.id) {
@@ -6079,37 +6325,42 @@ export function SnapshotEditorPage() {
       return
     }
     const params = new URLSearchParams()
-    params.set('mode', tab)
+    params.set('mode', tab === 'guided' ? 'wizard' : tab)
     params.set('section', section)
     navigate(`/snapshots/${activeSnapshot.id}/publish?${params.toString()}`)
   }, [activeSnapshot?.id, navigate, pushToast])
   const openAudioRoutingWorkspace = useCallback(() => {
+    captureWorkspaceModalLauncher()
     setShowProgressModal(false)
     setShowAudioNodesModal(true)
-  }, [])
+  }, [captureWorkspaceModalLauncher])
   const openSnapshotIoWorkspace = useCallback(() => {
     openSnapshotProgressModal('advanced', 'devices')
   }, [openSnapshotProgressModal])
   const openMidiMappingsWorkspace = useCallback(() => {
+    captureWorkspaceModalLauncher()
     setShowProgressModal(false)
     setMidiModalOpen(true)
-  }, [])
+  }, [captureWorkspaceModalLauncher])
   const openLiveRuntimeWorkspace = useCallback(() => {
+    captureWorkspaceModalLauncher()
     setShowProgressModal(false)
     setShowLiveRuntimeModal(true)
-  }, [])
+  }, [captureWorkspaceModalLauncher])
   const openPerformWorkspace = useCallback(() => {
+    captureWorkspaceModalLauncher()
     setShowProgressModal(false)
     setShowPerformModal(true)
-  }, [])
+  }, [captureWorkspaceModalLauncher])
   const openVersionHistoryWorkspace = useCallback(() => {
+    captureWorkspaceModalLauncher()
     setShowVersionHistoryModal(true)
-  }, [])
+  }, [captureWorkspaceModalLauncher])
   const openControlCenter = useCallback(() => {
     openSnapshotProgressModal('advanced', 'overview')
   }, [openSnapshotProgressModal])
   const openGuidedProgress = useCallback(() => {
-    openSnapshotProgressModal('guided', 'overview')
+    openSnapshotProgressModal('wizard', 'overview')
   }, [openSnapshotProgressModal])
   const goLiveFixActions = useMemo(() => {
     if (!goLiveFailureDetail?.repairActions.length) {
@@ -6183,10 +6434,10 @@ export function SnapshotEditorPage() {
       createSnapshotDisabled={createSnapshotFromEditorMutation.isPending}
       createSnapshotPending={createSnapshotFromEditorMutation.isPending}
       onPrevious={goToPreviousSnapshot}
-      previousDisabled={snapshotNavigationPending || !previousEditorSnapshot}
+      previousDisabled={snapshotNavigationPending || Boolean(snapshotSwitchBlockedReason) || !previousEditorSnapshot}
       previousTitle={previousSnapshotDisabledReason}
       onNext={goToNextSnapshot}
-      nextDisabled={snapshotNavigationPending || !nextEditorSnapshot}
+      nextDisabled={snapshotNavigationPending || Boolean(snapshotSwitchBlockedReason) || !nextEditorSnapshot}
       nextTitle={nextSnapshotDisabledReason}
       onUndo={() => undoMutation.mutate()}
       undoDisabled={!snapshotUndoRedo.canUndo || undoMutation.isPending}
@@ -6884,10 +7135,12 @@ export function SnapshotEditorPage() {
             else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
             else if (presetPendingDelete) setPresetPendingDelete(null)
             else if (showClearFlowsModal) setShowClearFlowsModal(false)
+            else if (showPerformModal) closePerformWorkspace()
+            else if (showAudioNodesModal) closeAudioRoutingWorkspace()
             else if (showProgressModal) setShowProgressModal(false)
-            else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
-            else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
-            else if (midiModalOpen) setMidiModalOpen(false)
+            else if (showLiveRuntimeModal) closeLiveRuntimeWorkspace()
+            else if (showVersionHistoryModal) closeVersionHistoryWorkspace()
+            else if (midiModalOpen) closeMidiMappingsWorkspace()
             else if (routingInspectorId) setRoutingInspectorId(null)
           }
         return
@@ -7041,10 +7294,12 @@ export function SnapshotEditorPage() {
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
+        else if (showPerformModal) closePerformWorkspace()
+        else if (showAudioNodesModal) closeAudioRoutingWorkspace()
         else if (showProgressModal) setShowProgressModal(false)
-        else if (showLiveRuntimeModal) setShowLiveRuntimeModal(false)
-        else if (showVersionHistoryModal) setShowVersionHistoryModal(false)
-        else if (midiModalOpen) setMidiModalOpen(false)
+        else if (showLiveRuntimeModal) closeLiveRuntimeWorkspace()
+        else if (showVersionHistoryModal) closeVersionHistoryWorkspace()
+        else if (midiModalOpen) closeMidiMappingsWorkspace()
         else if (routingInspectorId) setRoutingInspectorId(null)
         else if (showPluginBrowser) setShowPluginBrowser(false)
         else if (showPresetBrowser) setShowPresetBrowser(false)
@@ -7063,10 +7318,11 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
     deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showProgressModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, showPerformModal, showAudioNodesModal, showProgressModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot, createCapturedSnapshot,
+    closeAudioRoutingWorkspace, closePerformWorkspace, closeLiveRuntimeWorkspace, closeVersionHistoryWorkspace, closeMidiMappingsWorkspace,
     snapshotEditingLocked, snapshotEntryRequired,
   ])
 
@@ -8366,8 +8622,8 @@ export function SnapshotEditorPage() {
           size="lg"
           modalHeading="Audio Grid MIDI mappings"
           primaryButtonText="Close"
-          onRequestClose={() => { setMidiModalOpen(false) }}
-          onRequestSubmit={() => { setMidiModalOpen(false) }}
+          onRequestClose={closeMidiMappingsWorkspace}
+          onRequestSubmit={closeMidiMappingsWorkspace}
         >
           <div className="juce-grid-page__modal-stack juce-grid-page__midi-modal-shell" id="juce-grid-midi-modal">
             <div className="juce-grid-page__midi-modal-panel">
@@ -8944,7 +9200,7 @@ export function SnapshotEditorPage() {
             ? (restoreSnapshotRevisionMutation.variables?.revisionNumber ?? null)
             : null
         }
-        onClose={() => setShowVersionHistoryModal(false)}
+        onClose={closeVersionHistoryWorkspace}
         onRestore={(revision) => {
           if (!activeSnapshot) {
             return
@@ -9070,7 +9326,7 @@ export function SnapshotEditorPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
         >
-          <PerformPage onExit={() => setShowPerformModal(false)} />
+          <PerformPage onExit={closePerformWorkspace} />
         </motion.div>
       )}
 
@@ -9078,14 +9334,14 @@ export function SnapshotEditorPage() {
       {showAudioNodesModal && (
         <AudioNodesModal
           open={showAudioNodesModal}
-          onClose={() => setShowAudioNodesModal(false)}
+          onClose={closeAudioRoutingWorkspace}
         />
       )}
 
       {showLiveRuntimeModal ? (
         <LiveRuntimePathsModal
           open={showLiveRuntimeModal}
-          onClose={() => setShowLiveRuntimeModal(false)}
+          onClose={closeLiveRuntimeWorkspace}
           projections={liveChainProjection}
           summaryOnly={showLiveChainSummaryOnly}
           mismatch={liveChainMismatch}

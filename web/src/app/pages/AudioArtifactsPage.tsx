@@ -1467,15 +1467,18 @@ export function AudioArtifactsPage({
 
   if (!renderShell) {
     return (
-      <section className="aap aap--embedded">
-        <div className={`aap__embedded-layout${showArtifactsAside ? ' aap__embedded-layout--with-aside' : ''}`}>
-          <div className={`aap__embedded-content${tableAnimated ? ' aap__embedded-content--visible' : ''}`}>
-            {artifactsContent}
+      <>
+        <ShellWindowTitleStrip />
+        <section className="aap aap--embedded">
+          <div className={`aap__embedded-layout${showArtifactsAside ? ' aap__embedded-layout--with-aside' : ''}`}>
+            <div className={`aap__embedded-content${tableAnimated ? ' aap__embedded-content--visible' : ''}`}>
+              {artifactsContent}
+            </div>
+            {artifactsAside ? <aside className="aap__embedded-aside">{artifactsAside}</aside> : null}
           </div>
-          {artifactsAside ? <aside className="aap__embedded-aside">{artifactsAside}</aside> : null}
-        </div>
-        {artifactsModals}
-      </section>
+          {artifactsModals}
+        </section>
+      </>
     )
   }
 

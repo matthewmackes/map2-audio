@@ -7,6 +7,8 @@ const mockPushToast = jest.fn()
 const mockSnapshotsList = jest.fn()
 const mockSnapshotsCreate = jest.fn()
 const mockSnapshotsGet = jest.fn()
+const mockSnapshotsDeploy = jest.fn()
+const mockSnapshotsListNodes = jest.fn()
 const mockAudioStateActivateSnapshot = jest.fn()
 const mockAudioStateGetCommitted = jest.fn()
 const mockGetDevices = jest.fn()
@@ -51,6 +53,8 @@ jest.mock('../../../map2/clients/snapshots', () => {
       list: (...args: unknown[]) => mockSnapshotsList(...args),
       create: (...args: unknown[]) => mockSnapshotsCreate(...args),
       get: (...args: unknown[]) => mockSnapshotsGet(...args),
+      deploy: (...args: unknown[]) => mockSnapshotsDeploy(...args),
+      listNodes: (...args: unknown[]) => mockSnapshotsListNodes(...args),
     },
   }
 })
@@ -236,6 +240,30 @@ describe('SnapshotModalContent', () => {
         { id: 2, name: 'Output Beta', nick: 'Output Beta', driver: '', bus: '', media_class: 'Audio/Device', is_default: false, properties: {} },
       ],
     })
+    mockSnapshotsListNodes.mockResolvedValue({
+      nodes: [
+        { id: 'node-a', status: 'online', hostname: 'rack-a' },
+        { id: 'node-b', status: 'online', hostname: 'rack-b' },
+      ],
+      count: 2,
+    })
+    mockSnapshotsDeploy.mockResolvedValue({
+      status: 'deployed',
+      snapshot_id: 101,
+      node_id: 'node-b',
+      snapshot: buildSnapshotDetail(101, 'FreshSnapshot'),
+      deployment: {
+        id: 55,
+        snapshot_id: 101,
+        primary_node_id: 'node-b',
+        standby_node_ids: [],
+        deployment_status: 'active',
+        assignment_strategy: 'manual',
+        redundancy_enabled: false,
+        history: [],
+      },
+      redundancy_enabled: false,
+    })
     mockSnapshotsGet.mockReset()
     mockAudioStateActivateSnapshot.mockReset()
     mockAudioStateGetCommitted.mockReset()
@@ -371,7 +399,7 @@ describe('SnapshotModalContent', () => {
         { id: 202, name: 'FreshSnapshot Path B', plugins: [], loop_insertions: [], effects_loops: [] },
       ],
       routing: {
-        mode: 'series',
+        mode: 'parallel_blend',
         active_channel_key: 'ch_a',
         blend_positions: { ch_a: 100, ch_b: 100 },
         morph_position: 0.5,
@@ -473,13 +501,18 @@ describe('SnapshotModalContent', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Create New' }))
     fireEvent.change(await screen.findByLabelText('Snapshot name'), { target: { value: 'FreshSnapshot' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    fireEvent.click(screen.getByLabelText('Series'))
+    fireEvent.change(await screen.findByLabelText('Live host'), { target: { value: 'node-b' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.change(await screen.findByLabelText('Input device'), { target: { value: 'Input Alpha' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.change(await screen.findByLabelText('Output device'), { target: { value: 'Output Beta' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Commit' }))
 
+    await waitFor(() => expect(mockSnapshotsDeploy).toHaveBeenCalledWith({
+      snapshot_id: 101,
+      node_id: 'node-b',
+      redundancy_enabled: false,
+    }))
     await waitFor(() => expect(mockAudioStateActivateSnapshot).toHaveBeenCalledWith(101, { triggered_by: 'snapshot_modal' }))
 
     expect(mockSnapshotsCreate).toHaveBeenCalledWith(expect.objectContaining({
@@ -511,11 +544,12 @@ describe('SnapshotModalContent', () => {
         }),
       ],
       routing: expect.objectContaining({
-        mode: 'series',
+        mode: 'parallel_blend',
         active_channel_key: 'ch_a',
       }),
     }))
-    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockAudioStateActivateSnapshot.mock.invocationCallOrder[0])
+    expect(mockSnapshotsCreate.mock.invocationCallOrder[0]).toBeLessThan(mockSnapshotsDeploy.mock.invocationCallOrder[0])
+    expect(mockSnapshotsDeploy.mock.invocationCallOrder[0]).toBeLessThan(mockAudioStateActivateSnapshot.mock.invocationCallOrder[0])
 
     await waitFor(() => expect(applySnapshotData).toHaveBeenCalled())
     expect(applySnapshotData).toHaveBeenCalledWith(

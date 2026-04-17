@@ -10,29 +10,6 @@ import {
 } from '@carbon/react'
 import type { MaschineDaemonStatus } from '../../../map2/types'
 
-function preferredBulkPair(status: MaschineDaemonStatus | null): string {
-  const selectedTransport = status?.transport?.selected_transport
-  const selectedWrite = typeof selectedTransport?.write_endpoint_address_hex === 'string'
-    ? selectedTransport.write_endpoint_address_hex
-    : null
-  const selectedRead = typeof selectedTransport?.read_endpoint_address_hex === 'string'
-    ? selectedTransport.read_endpoint_address_hex
-    : null
-  if (selectedWrite && selectedRead) {
-    return `${selectedWrite} -> ${selectedRead}`
-  }
-  const bulkCandidate = Array.isArray(status?.transport_candidates)
-    ? status.transport_candidates.find((candidate) => candidate.transport_id === 'pyusb-bulk')
-    : null
-  const candidateWrite = typeof bulkCandidate?.write_endpoint_address_hex === 'string'
-    ? bulkCandidate.write_endpoint_address_hex
-    : null
-  const candidateRead = typeof bulkCandidate?.read_endpoint_address_hex === 'string'
-    ? bulkCandidate.read_endpoint_address_hex
-    : null
-  return candidateWrite && candidateRead ? `${candidateWrite} -> ${candidateRead}` : 'n/a'
-}
-
 export function MaschineFirmwarePanel({
   status,
   onRefresh,
@@ -41,15 +18,15 @@ export function MaschineFirmwarePanel({
   onRefresh: () => void
 }) {
   const rows = [
-    ['MK1 Firmware Version', String(status?.firmware_info?.version ?? 'n/a')],
-    ['USB VID:PID', `${String(status?.hid_device?.vendor_id ?? 'n/a')}:${String(status?.hid_device?.product_id ?? 'n/a')}`],
-    ['Selected Transport', String(status?.transport?.transport_id ?? 'none')],
-    ['Transport Preference', String(status?.transport?.preference ?? status?.capabilities?.transport_preference ?? 'n/a')],
-    ['Transport Candidates', String(Array.isArray(status?.transport_candidates) ? status?.transport_candidates.length : 0)],
-    ['Preferred Bulk Pair', preferredBulkPair(status)],
-    ['NHL Protocol Version', String(status?.capabilities?.protocol_version ?? 'n/a')],
+    ['USB VID:PID', `${String(status?.hid_device?.vendor_id ?? '17cc')}:${String(status?.hid_device?.product_id ?? '0808')}`],
+    ['Protocol Version', String(status?.protocol_version ?? status?.capabilities?.protocol_version ?? 'n/a')],
     ['Daemon Version', String(status?.daemon_version ?? 'n/a')],
+    ['Transport', String(status?.transport?.transport_id ?? 'none')],
+    ['LED Slots', String(status?.led_slots ?? status?.capabilities?.led_slots ?? 62)],
+    ['Encoders', String(status?.encoders ?? status?.capabilities?.encoders ?? 11)],
+    ['Pad Count', String(status?.pad_count ?? 16)],
     ['Virtual Port Name', String(status?.virtual_port_name ?? 'n/a')],
+    ['Registered At', String(status?.registered_at ?? 'n/a')],
     ['Last Seen', String(status?.last_seen_at ?? 'n/a')],
   ] as const
 
@@ -58,7 +35,7 @@ export function MaschineFirmwarePanel({
       <div className="maschine-page__panel-head">
         <h2>Firmware Info</h2>
         <div className="maschine-page__tag-row">
-          <Tag type="cool-gray">Structured list</Tag>
+          <Tag type="cool-gray">Device details</Tag>
           <IconButton label="Refresh firmware info" kind="ghost" size="sm" onClick={onRefresh}>
             <Renew />
           </IconButton>

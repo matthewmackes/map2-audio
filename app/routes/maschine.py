@@ -11,6 +11,11 @@ from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
+from app.services.maschine.midi_map_config import (
+    load_midi_map_config,
+    save_midi_map_config,
+    MaschineMidiMapConfig,
+)
 
 router = APIRouter(prefix="/api/maschine", tags=["maschine"])
 
@@ -39,6 +44,17 @@ class MaschineLcdRequest(BaseModel):
 
     side: Literal["left", "right"]
     bitmap: dict[str, Any] = Field(default_factory=dict)
+
+
+class MaschineHwTestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    test: Literal[
+        "led_walk", "led_all_on", "led_all_off",
+        "lcd_checkerboard", "lcd_gradient", "lcd_clear",
+        "pad_readback",
+    ]
+    params: dict[str, Any] = Field(default_factory=dict)
 
 
 class MaschineAudioGridSelectRequest(BaseModel):
@@ -205,6 +221,84 @@ async def render_maschine_lcd(
         "status": "ok",
         "render": render,
         "lcd": lcd_state,
+    }
+
+
+@router.get("/midi-map")
+async def get_maschine_midi_map() -> dict[str, Any]:
+    """Return the full MIDI map config with labels and zone metadata."""
+    config = load_midi_map_config()
+    return {
+        "status": "ok",
+        "midi_map": config.to_dict(),
+    }
+
+
+@router.put("/midi-map")
+async def update_maschine_midi_map(request: dict[str, Any]) -> dict[str, Any]:
+    """Update MIDI map config and persist to disk."""
+    config = MaschineMidiMapConfig.from_dict(request)
+    save_midi_map_config(config)
+    return {
+        "status": "ok",
+        "midi_map": config.to_dict(),
+    }
+
+
+@router.post("/midi-map/test")
+async def test_maschine_midi_element(request: dict[str, Any]) -> dict[str, Any]:
+    """Test a single MIDI element: send MIDI + light LED.
+
+    Body: { "element_type": "pad"|"button"|"encoder", "index": 0, "brightness": 255 }
+    """
+    service = get_maschine_service()
+    result = await service.run_hw_test(
+        test_name="midi_element_test",
+        params=request,
+    )
+    return {
+        "status": "ok" if result.get("success", False) else "error",
+        "result": result,
+    }
+
+
+@router.post("/midi-map/reset")
+async def reset_maschine_midi_map() -> dict[str, Any]:
+    """Reset MIDI map to factory defaults."""
+    config = MaschineMidiMapConfig()
+    save_midi_map_config(config)
+    return {
+        "status": "ok",
+        "midi_map": config.to_dict(),
+    }
+
+
+@router.post("/led/set")
+async def set_maschine_led(request: dict[str, Any]) -> dict[str, Any]:
+    """Set a single LED slot brightness.
+
+    Body: { "slot": 0, "brightness": 255 }
+    """
+    service = get_maschine_service()
+    result = await service.run_hw_test(
+        test_name="led_set",
+        params=request,
+    )
+    return {
+        "status": "ok" if result.get("success", False) else "error",
+        "result": result,
+    }
+
+
+@router.post("/hw-test")
+async def run_maschine_hw_test(request: MaschineHwTestRequest) -> dict[str, Any]:
+    """Run a hardware diagnostic test against the physical MK1 device."""
+    service = get_maschine_service()
+    result = await service.run_hw_test(test_name=request.test, params=request.params)
+    return {
+        "status": "ok" if result.get("success", False) else "error",
+        "test": request.test,
+        "result": result,
     }
 
 

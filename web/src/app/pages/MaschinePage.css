@@ -121,7 +121,7 @@
   border: 1px solid var(--border);
   background: var(--surface);
   width: 100%;
-  max-width: 384px;
+  max-width: 765px;
 }
 
 .maschine-page__toolbar {
@@ -145,6 +145,153 @@
   padding: 0.85rem;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background: color-mix(in srgb, var(--surface-2) 68%, transparent);
+}
+
+/* ── LED Preview Panel ── */
+
+.maschine-led-panel {
+  grid-column: 1 / -1;
+}
+
+.maschine-led__layout {
+  display: flex;
+  gap: 1rem;
+}
+
+.maschine-led__left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 7rem;
+}
+
+.maschine-led__center-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.maschine-led__group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.maschine-led__group-title {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.maschine-led__grid {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.maschine-led__slot {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 3px;
+  cursor: default;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.maschine-led__slot--sm {
+  min-height: 2rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.65rem;
+}
+
+.maschine-led__slot--md {
+  min-height: 2.75rem;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.7rem;
+}
+
+.maschine-led__slot--lg {
+  min-height: 4rem;
+  padding: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.maschine-led__slot[onclick] {
+  cursor: pointer;
+}
+
+.maschine-led__label {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.maschine-led__value {
+  font-size: 0.6rem;
+  opacity: 0.75;
+  font-family: var(--cds-code-02-font-family, monospace);
+}
+
+/* ── Hardware Test Suite Panel ── */
+
+.maschine-test-suite {
+  grid-column: 1 / -1;
+}
+
+.maschine-test-suite__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.maschine-test-suite__results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.maschine-test-suite__result-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cds-layer-02) 50%, transparent);
+}
+
+.maschine-test-suite__result-card--pass {
+  border-color: var(--cds-support-success);
+}
+
+.maschine-test-suite__result-card--fail {
+  border-color: var(--cds-support-error);
+}
+
+.maschine-test-suite__result-card--running {
+  border-color: var(--cds-support-info);
+  animation: maschine-test-pulse 1.5s ease-in-out infinite;
+}
+
+.maschine-test-suite__input-monitor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.maschine-test-suite__input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-size: 0.8rem;
+}
+
+@keyframes maschine-test-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 @keyframes maschine-pad-pulse {

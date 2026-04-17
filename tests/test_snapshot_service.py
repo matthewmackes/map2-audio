@@ -2262,6 +2262,7 @@ def test_activate_snapshot_publishes_desired_state_to_audio_authority(tmp_path, 
     assert len(published_desired) == 1
     desired = published_desired[0]
     assert desired.snapshot_id == 1
+    assert desired.snapshot_revision_id == 1
     assert desired.routing.mode == "parallel_blend"
     assert desired.routing.active_path_ids == ["channel-a"]
 
@@ -2346,8 +2347,10 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     activated, event = asyncio.run(_run())
 
     assert len(published_desired) == 1
+    assert published_desired[0].snapshot_revision_id == 1
     assert len(committed_states) == 1
     assert committed_states[0].source_snapshot.snapshot_id == 1
+    assert committed_states[0].source_snapshot.snapshot_revision_id == 1
     assert committed_states[0].engine.display_state == "stopped"
     assert len(observations) == 1
     assert observations[0].node_id == "LOCAL-NODE"
@@ -2380,6 +2383,62 @@ def test_activate_snapshot_confirms_audio_authority_after_runtime_live(tmp_path,
     assert event["runtime_metrics"]["authority_publication"]["status"] == "confirmed"
     assert event["outcome"] == "success"
     assert event["runtime_metrics"]["authority_publication"]["reconciled"] is True
+
+
+def test_publish_confirmed_live_state_to_audio_authority_rejects_missing_revision(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    authority_calls: list[str] = []
+
+    class _AuthorityCapture:
+        async def get_committed_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
+
+        async def get_desired_state(self):
+            raise audio_state_authority_module.AudioStateAuthorityError("No desired audio state exists in etcd")
+
+        async def put_desired_state(self, desired):
+            authority_calls.append("put_desired_state")
+            return SimpleNamespace(value=desired)
+
+    monkeypatch.setattr(
+        audio_state_authority_module,
+        "AudioStateAuthorityService",
+        lambda *args, **kwargs: _AuthorityCapture(),
+    )
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+            return await service._publish_confirmed_live_state_to_audio_authority(
+                {
+                    "id": 44,
+                    "name": "Missing Revision",
+                    "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
+                    "chains": [{"id": 1, "name": "Chain A", "plugins": []}],
+                    "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
+                },
+                runtime_live_state={"node_id": "LOCAL-NODE"},
+            )
+
+    result = asyncio.run(_run())
+
+    assert authority_calls == []
+    assert result["status"] == "failed"
+    assert result["reason"] == "missing_snapshot_revision"
+    assert result["operator_message"] == (
+        "The audio engine applied this snapshot, but MAP2 could not confirm it until the snapshot was saved as a revision."
+    )
+    step_status = {
+        entry["step"]: entry["status"]
+        for entry in result["publication_steps"]
+    }
+    assert step_status == {
+        "runtime_live_confirmed": "completed",
+        "publish_desired": "failed",
+        "publish_committed": "not_run",
+        "publish_observation": "not_run",
+        "reconcile_committed": "not_run",
+    }
 
 
 def test_activate_snapshot_records_authority_confirmation_failure_after_runtime_live(tmp_path, monkeypatch, caplog):

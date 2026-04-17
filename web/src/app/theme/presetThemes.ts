@@ -1,5 +1,5 @@
 /**
- * MAP2 Preset Theme Library — 50 static Carbon-based themes.
+ * MAP2 Preset Theme Library — 100 static themes.
  *
  * Organised into five sections:
  *   1. Windows Classic Era        (themes 1–8)
@@ -10,11 +10,16 @@
  *   6. Microsoft Product Themes   (themes 33–37)
  *   7. Developer / Web Themes     (themes 38–50)
  *
- * Every entry is built on top of `generateThemeFromPalette` so it inherits
- * full Carbon token coverage, with targeted hex overrides for character.
+ *   8. External palette extensions (themes 51–100)
+ *
+ * The hand-authored entries below are built on top of `generateThemeFromPalette`
+ * so they inherit full Carbon token coverage, with targeted hex overrides for
+ * character. External palette extensions are generated in
+ * `externalPaletteThemes.ts`.
  */
 
 import { generateThemeFromPalette } from './themeFactory';
+import { EXTERNAL_PALETTE_THEMES } from './externalPaletteThemes';
 import type { Theme, ThemeColors, ThemeWidgets } from './types';
 
 /* ─── helper ──────────────────────────────────────────────────────────────── */
@@ -1574,6 +1579,7 @@ export const PRESET_THEMES: Theme[] = [
   materialPalenight,
   tokyoNight,
   cyberpunk2077,
+  ...EXTERNAL_PALETTE_THEMES,
 ];
 
 export const PRESET_THEME_MAP: Record<string, Theme> = Object.fromEntries(

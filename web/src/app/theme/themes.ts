@@ -84,7 +84,7 @@ const coreThemes: Record<string, Theme> = {
 
 const coreThemeOrder = ['default', 'gray-90', 'gray-10', 'white'];
 
-/** All built-in themes: 4 core Carbon shells + 50 preset themes. */
+/** All built-in themes: 4 core Carbon shells + 100 preset themes. */
 export const themes: Record<string, Theme> = {
   ...coreThemes,
   ...PRESET_THEME_MAP,

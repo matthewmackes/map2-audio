@@ -3,12 +3,14 @@ import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Package } from '@carbon/icons-react'
 import { AudioArtifactsPage } from './AudioArtifactsPage'
 import {
   WORKSPACE_ARTIFACTS_BASE_PATH,
   buildWorkspaceArtifactsDiscoverPath,
   buildWorkspaceArtifactsPath,
 } from './audioArtifactsRoutes'
+import { ShellWindowProvider, type ShellWindowContextValue } from '../layout/ShellWindowContext'
 
 const mockUseCluster = jest.fn()
 const mockUseNodePageContext = jest.fn()
@@ -148,13 +150,17 @@ function renderArtifacts(initialEntry: string) {
   )
 }
 
-function renderWorkspaceArtifacts(initialEntry: string) {
+function renderWorkspaceArtifacts(initialEntry: string, shellWindowValue?: ShellWindowContextValue) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   })
+
+  const wrapWithShell = (node: React.ReactNode) => (
+    shellWindowValue ? <ShellWindowProvider value={shellWindowValue}>{node}</ShellWindowProvider> : node
+  )
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -168,7 +174,7 @@ function renderWorkspaceArtifacts(initialEntry: string) {
         <Routes>
           <Route
             path="/workspace/artifacts"
-            element={(
+            element={wrapWithShell(
               <>
                 <AudioArtifactsPage
                   renderShell={false}
@@ -182,7 +188,7 @@ function renderWorkspaceArtifacts(initialEntry: string) {
           />
           <Route
             path="/workspace/artifacts/discover"
-            element={(
+            element={wrapWithShell(
               <>
                 <AudioArtifactsPage
                   discoverMode
@@ -348,6 +354,20 @@ describe('AudioArtifactsPage routed workspace', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Return to library' })[0])
 
     expect(await screen.findByTestId('location-probe')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
+  })
+
+  it('renders the shared window title strip for embedded workspace artifact routes when shell context is present', async () => {
+    renderWorkspaceArtifacts('/workspace/artifacts?category=snapshots', {
+      title: 'Audio Artifacts',
+      titleIcon: Package,
+      routeHint: 'workspaces / artifacts',
+      accentColor: 'var(--primary-strong)',
+      onClose: jest.fn(),
+    })
+
+    expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Close Audio Artifacts' })).toBeInTheDocument()
+    expect(document.querySelector('.window-title-strip__title')).toHaveTextContent('Audio Artifacts')
   })
 
   it('uses Carbon loading feedback while plugin scans are running from the empty state', async () => {

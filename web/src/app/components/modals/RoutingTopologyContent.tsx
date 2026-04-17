@@ -73,6 +73,10 @@ export interface RoutingTopologyContentProps {
   liveStatusLabel: 'Draft' | 'Live' | 'Pending live' | 'Applying'
   liveStatusTagType: 'cool-gray' | 'green' | 'warm-gray' | 'blue'
   liveStatusMessage: string
+  portActionLabel?: string
+  assignActionLabel?: string
+  showAssignAction?: boolean
+  showMidiPanel?: boolean
   readOnly?: boolean
 }
 
@@ -218,6 +222,10 @@ export function RoutingTopologyContent({
   liveStatusLabel,
   liveStatusTagType,
   liveStatusMessage,
+  portActionLabel = 'Route ports',
+  assignActionLabel = 'Assign flow',
+  showAssignAction = true,
+  showMidiPanel = true,
   readOnly = false,
 }: RoutingTopologyContentProps) {
   const queryClient = useQueryClient()
@@ -440,7 +448,11 @@ export function RoutingTopologyContent({
 
         <Tile className="rtm__tile">
           <span className="rtm__tile-label">Actions</span>
-          <p className="rtm__tile-copy">Open port routing or assign the active flow to a cluster node.</p>
+          <p className="rtm__tile-copy">
+            {showAssignAction
+              ? 'Open port routing or jump to the host assignment step for the active flow.'
+              : 'Jump to the I/O step for the active live host.'}
+          </p>
           <div className="rtm__button-row">
             <Button
               size="sm"
@@ -449,17 +461,19 @@ export function RoutingTopologyContent({
               onClick={() => onOpenPortRouting(activeFlowIndex)}
               disabled={readOnly}
             >
-              Route ports
+              {portActionLabel}
             </Button>
-            <Button
-              size="sm"
-              kind="ghost"
-              renderIcon={Branch}
-              disabled={readOnly || !activeFlow}
-              onClick={() => activeFlow && onOpenAssignFlow(activeFlow.id)}
-            >
-              Assign flow
-            </Button>
+            {showAssignAction ? (
+              <Button
+                size="sm"
+                kind="ghost"
+                renderIcon={Branch}
+                disabled={readOnly || !activeFlow}
+                onClick={() => activeFlow && onOpenAssignFlow(activeFlow.id)}
+              >
+                {assignActionLabel}
+              </Button>
+            ) : null}
           </div>
         </Tile>
       </div>
@@ -729,19 +743,21 @@ export function RoutingTopologyContent({
               <Flow size={14} style={{ marginRight: 6 }} />
               Topology
             </Tab>
-            <Tab>
-              <Music size={14} style={{ marginRight: 6 }} />
-              MIDI Control
-              {midiAssignedCount > 0 ? (
-                <Tag type="blue" size="sm">
-                  {midiAssignedCount}
-                </Tag>
-              ) : null}
-            </Tab>
+            {showMidiPanel ? (
+              <Tab>
+                <Music size={14} style={{ marginRight: 6 }} />
+                MIDI Control
+                {midiAssignedCount > 0 ? (
+                  <Tag type="blue" size="sm">
+                    {midiAssignedCount}
+                  </Tag>
+                ) : null}
+              </Tab>
+            ) : null}
           </TabList>
           <TabPanels>
             <TabPanel>{renderTopologyPanel()}</TabPanel>
-            <TabPanel>{renderMidiPanel()}</TabPanel>
+            {showMidiPanel ? <TabPanel>{renderMidiPanel()}</TabPanel> : null}
           </TabPanels>
         </Tabs>
       </Layer>

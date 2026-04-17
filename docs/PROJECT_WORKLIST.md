@@ -6,12 +6,274 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-16 - Started T2337 to guard live snapshot edits against leaving the flow via route changes or browser close.
+Last updated: 2026-04-17 - Completed T2342 to unify route scroll restoration, modal focus return, and shell background polling cadence.
+
+---
+
+ID: T2348
+Status: [✓] Done
+Title: Move deployment-mode platform health context from Overview into the Cluster Dashboard workspace
+Description:
+- Goal / acceptance criteria: Remove the overview-only `Platform Health` summary card content that currently carries deployment mode context in `web/src/app/hooks/usePlatformShellData.ts`, surface that same deployment/platform-health information in an appropriate visible location inside `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.tsx`, and update focused frontend tests so the moved context is covered without leaving duplicate operator copy behind.
+- Why it matters: Deployment mode and cluster platform-health posture belong with the node-fleet workspace rather than the generic overview surface, and the current overview card duplicates nearby cluster status tiles instead of strengthening the Cluster Dashboard.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Cluster Dashboard UI relocation, reconciled overview/cluster layer data, focused regression coverage, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 15:25 EDT - Codex
+- Completion notes:
+  - Removed the overview-layer `Platform Health` summary tile from `web/src/app/hooks/usePlatformShellData.ts` so the Overview workspace no longer owns the deployment-mode context card shown in the screenshot.
+  - Reworked the Cluster Dashboard summary tile set in that same hook so the dashboard now surfaces `Platform Health` with the same health metric/fallback and `Deployment mode: ...` helper in the dashboard snapshot grid.
+  - Updated `web/src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx` to assert the moved dashboard copy renders and corrected the test’s stale `useCluster` mock path while preserving the existing node-selection behavior check.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/ClusterDashboard/ClusterDashboardWorkspace.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2347
+Status: [✓] Done
+Title: Consolidate Theme workspace tabs into screenshot-aligned Background and Appearance flows
+Description:
+- Goal / acceptance criteria: Rework `web/src/app/pages/ThemePage.tsx` so Color Scheme content no longer lives in a separate tab, Preview and Library no longer duplicate each other, Background options move into a dedicated Background tab, and a screenshot-aligned Appearance flow contains the theme configuration surface plus live preview. Acceptance requires removing redundant tabs, reconciling the remaining content without duplication, landing focused Theme page regression coverage, and documenting any residual UX decisions still needed from the user.
+- Why it matters: The current Theme workspace is fragmented across eight tabs, which duplicates related controls and diverges from the requested classic Display Properties-style workflow.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Theme page tab/layout refactor, updated Theme page tests, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 15:34 EDT - Codex
+- Completion notes:
+  - User confirmed the final top-level tabs should keep `Behavior` and fold `Preview`, `Color Scheme`, and `Personalization` ideas into the larger interface instead of keeping them as separate tabs.
+  - `Library` should disappear into `Appearance`, `Color Scheme` should become a compact scheme control, `Typography` and `Appearance Assets` should become `Fonts and Objects`, `Token Studio` should surface as a `Customize` action inside `Appearance`, and the background surface should drop the desktop-launch action.
+  - Reworked `web/src/app/pages/ThemePage.tsx` and `web/src/app/pages/ThemePage.css` so the workspace now exposes only `Appearance`, `Fonts and Objects`, `Background`, and `Behavior`, with the Appearance tab merging the former library/preview/color-scheme flows into a screenshot-aligned layout that keeps the live preview, compact `Scheme` control, preview focus controls, simplified de-duplicated theme catalog, and inline `Customize` action.
+  - Moved typography and appearance-asset controls into `Fonts and Objects`, preserved category/plugin appearance editing there, and kept background-only controls in `Background` while removing the old desktop-launch action.
+  - Added fifty new palette-driven presets in `web/src/app/theme/externalPaletteThemes.ts` using inline Material Design and Open Color reference values, extended the preset/theme registries to surface them without adding runtime dependencies, and documented the palette-source attribution in `docs/THIRD_PARTY_NOTICES.md`.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2346
+Status: [✓] Done
+Title: Preserve snapshot plugin identities through draft resequencing so block deletion remains stable
+Description:
+- Goal / acceptance criteria: Fix Snapshot Editor block deletion failures caused by losing snapshot plugin IDs after local draft resequencing or duplicate-plugin edits. Acceptance requires the editor draft/hydration layer to preserve snapshot plugin IDs for snapshot-owned blocks, snapshot-scoped delete mutations to keep resolving the correct backend plugin IDs after local position changes, and focused regression coverage to pass.
+- Why it matters: Snapshot Editor now routes mutations through snapshot-scoped APIs, but delete still fails for some snapshot-owned duplicate blocks when local draft state drops the backend plugin identity before the remove call resolves.
+- Dependencies: T2338
+- Estimated effort: Low
+- Required outputs: draft identity preservation fix, focused regression coverage, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 14:43 EDT - Codex
+- Completion notes:
+  - Extended the draft-side plugin snapshot shape so snapshot-owned plugins retain `snapshot_plugin_id` instead of dropping it during `snapshotDetailToDraftData`.
+  - Updated snapshot-editor live hydration to preserve that ID even when local draft resequencing changes plugin positions, which keeps snapshot-scoped remove mutations stable for duplicate plugin URIs such as `map2://juce/brain`.
+  - Added focused regression coverage proving `applySnapshotDraftToChainsResponse` preserves snapshot plugin IDs after local resequencing.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts src/app/components/SnapshotEditor/snapshotEditorMutationIdentity.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+
+---
+
+ID: T2345
+Status: [✓] Done
+Title: Add the shared window title bar to embedded Audio Artifacts workspace subpages
+Description:
+- Goal / acceptance criteria: Ensure the embedded `/workspace/artifacts` workspace surfaces render the shared route window title bar above the Audio Artifacts content for the Overview/library, category-filtered subpages, and Discover mode without changing unrelated workspace-hub sections. Acceptance requires the embedded Audio Artifacts render path to show `ShellWindowTitleStrip` when shell context is available, coverage proving the workspace-hub mount renders the strip, and focused frontend validation to pass.
+- Why it matters: Audio Artifacts currently bypasses the shared title strip in the workspace-hub mount because it renders in embedded mode, which leaves the category subpages inconsistent with the rest of the routed window surfaces.
+- Dependencies: T2344
+- Estimated effort: Low
+- Required outputs: embedded Audio Artifacts title-strip integration, focused regression coverage, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 14:23 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/AudioArtifactsPage.tsx` so the embedded workspace-hub render path now emits `ShellWindowTitleStrip` above the Audio Artifacts content, which gives the shared window title bar to Overview, all category-filtered artifact views, and Discover whenever the outer `AppShell` context is present.
+  - Added focused workspace-hub coverage in `web/src/app/pages/AudioArtifactsPage.test.tsx` proving the embedded `/workspace/artifacts` route renders the shared close/title strip when shell context is supplied, while preserving the existing routed-library and discover behavior.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/AudioArtifactsPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2344
+Status: [✓] Done
+Title: Align shared route window title bars with Primary Strong and Text Inverse theme tokens
+Description:
+- Goal / acceptance criteria: Update the shared window title-bar styling used across windowed routes so the title bar background reflects the theme token `Primary Strong` and its foreground copy/icons reflect `Text Inverse`, while keeping the Theme page preview consistent with the live shell treatment. Acceptance requires the shared title strip and related shell title-bar surfaces to use the new token pair, the Theme page active-window preview to match, and focused frontend validation to pass.
+- Why it matters: The current title bar still reads like a neutral surface-layer strip, which diverges from the requested theme contract and leaves the Theme preview out of sync with the operator-facing window chrome.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: shared title-bar token updates, Theme page preview alignment, focused validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 14:17 EDT - Codex
+- Completion notes:
+  - Updated the shared windowed-shell title-bar tokens in `web/src/app/layout/AppShell.css` so route window chrome, shell power-modal headers, and restart-overlay title rows now derive from `--primary-strong` with `--text-inverse` contrast instead of neutral surface-layer tokens.
+  - Updated `web/src/app/components/shared/WindowTitleStrip.css` so the shared title-strip copy, icon badge, controls rail, and close button all render against the new inverse-contrast title-bar treatment rather than falling back to `text-primary` / `text-secondary`.
+  - Updated the Theme workspace preview in `web/src/app/pages/ThemePage.tsx` so the active-window and message-box title bars match the live shell treatment, then added focused regression coverage in `web/src/app/pages/ThemePage.test.tsx`.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ThemePage.test.tsx src/app/layout/AppShell.test.tsx --testNamePattern "uses Primary Strong and Text Inverse for active preview title bars|renders non-landing routes with the title strip and the global tree rail"` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2343
+Status: [ ] Todo
+Title: Reduce frontend framework and dense-graph overhead on critical operator routes
+Description:
+- Goal / acceptance criteria: Cut avoidable render and CSS recalculation overhead on high-traffic routes by identifying the highest-cost MUI islands that sit inside the Carbon shell, defining a phased replacement plan for those islands, and evaluating dense graph surfaces for virtualization or canvas fallback thresholds before large-node workspaces become visibly unstable. Acceptance requires a documented priority order for MUI retirements, at least one validated follow-up implementation target, and explicit ReactFlow density thresholds or instrumentation requirements for future graph-engine changes.
+- Why it matters: The responsiveness audit found roughly fifty MUI import sites and broad ReactFlow usage across the app. Those architectural leftovers add style/runtime cost to the same routes already carrying heavy data and animation workloads.
+- Dependencies: T2341, T2342
+- Estimated effort: High
+- Required outputs: prioritized framework-retirement plan, dense-graph evaluation notes, follow-up implementation task(s), and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 06:55 EDT - Codex
+
+---
+
+ID: T2342
+Status: [✓] Done
+Title: Normalize route-level polling, scroll restoration, and modal focus return
+Description:
+- Goal / acceptance criteria: Reduce perceived route churn by unifying scroll restoration and modal focus-return behavior across routed shells, and by tightening polling cadence so low-value background status requests do not overlap with high-frequency editor and metering routes. Acceptance requires a shared restoration/focus contract used by multiple routed surfaces, reduced duplicate polling on at least one heavy route family, and focused validation for the new behavior.
+- Why it matters: The audit found inconsistent scroll persistence, route-local focus restoration, and stacked background polling that collectively make navigation feel unstable even when the UI is technically functional.
+- Dependencies: T2341
+- Estimated effort: Medium
+- Required outputs: shared restoration/focus utility work, polling-cadence refinements, focused regression coverage, and reconciled worklist state.
+Subtasks:
+  - ID: T2342-subA
+    Status: [✓] Done
+    Title: Add shared route-state hooks and apply them to the snapshot/editor and workspace shell paths
+    Description:
+    - Goal / acceptance criteria: Introduce one shared route-scroll restoration hook and one shared modal-launch focus-return hook, then adopt them in at least two routed surfaces while also removing at least one duplicate shell-level status polling path. Acceptance requires replacing page-local scroll/focus persistence in the touched routes, proving the new hooks restore state correctly in focused tests, and validating that background shell status polling is reduced on heavy routes without regressing the visible shell.
+    - Why it matters: `SnapshotEditorPageContent`, `ThemePage`, and workspace shells currently manage scroll/focus state independently, and the shell still keeps low-value platform status polling active while heavy routes are open.
+    - Dependencies: T2341
+    - Estimated effort: Medium
+    - Required outputs: shared hooks, routed-surface adoption, shell poll cleanup, focused tests, and validation notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-17 16:16 EDT - Codex
+    - Completion notes:
+      - Added `web/src/app/hooks/useRouteScrollRestoration.ts`, a shared scroll-persistence hook that batches writes with `requestAnimationFrame`, restores either window or element scroll state, and now replaces the ad hoc scroll-localStorage logic in `web/src/app/pages/SnapshotEditorPageContent.tsx` while also preserving window scroll per route in `web/src/app/pages/WorkspaceHubShell.tsx`.
+      - Added `web/src/app/hooks/useFocusReturnTarget.ts`, a shared focus-return hook for transient overlays. `web/src/app/pages/ThemePage.tsx` now uses it for the inline token/category pickers, and `web/src/app/pages/SnapshotEditorPageContent.tsx` now uses it to return focus after closing the version history, live runtime, audio nodes, MIDI mappings, and perform overlays.
+      - Reduced duplicate shell status polling on heavy routes by deleting the extra `PlatformStatusHeartbeat` observer from `web/src/app/App.tsx`, then routing taskbar platform-status reads through `web/src/app/hooks/useShellStatusCadence.ts` so `web/src/app/components/TaskbarClock.tsx` slows to a background cadence on snapshot/editor/metering/audio-engine paths instead of polling at the desktop rate everywhere.
+      - Added focused hook regression coverage for scroll restoration, focus return, and shell status cadence, and kept the existing Theme/AppShell route suites as the integration guardrails for the touched UI paths.
+    - Validation:
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useFocusReturnTarget.test.tsx src/app/hooks/useRouteScrollRestoration.test.tsx src/app/hooks/useShellStatusCadence.test.tsx src/app/pages/ThemePage.test.tsx src/app/layout/AppShell.test.tsx` -> PASS (`5 suites, 33 tests`; one pre-existing Carbon controlled/uncontrolled warning in `AppShell.test.tsx` unchanged)
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
+Assigned to: Codex
+Last updated: 2026-04-17 16:16 EDT - Codex
+- Completion notes:
+  - Unified route-state behavior around two shared primitives instead of more page-local storage and focus code: one shared scroll-restoration hook is now used by the snapshot editor and workspace shell, and one shared focus-return hook is now used by both Theme pickers and snapshot-editor overlays.
+  - Removed the extra shell-wide platform-status observer and slowed taskbar status polling on heavy routes, which reduces low-value background status churn while snapshot/editor and metering-class routes are active.
+  - This completes the responsiveness-audit slice for route churn and unblocks `T2343`, which can now focus on framework overhead and dense-graph evaluation without carrying the scroll/focus/polling cleanup debt forward.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useFocusReturnTarget.test.tsx src/app/hooks/useRouteScrollRestoration.test.tsx src/app/hooks/useShellStatusCadence.test.tsx src/app/pages/ThemePage.test.tsx src/app/layout/AppShell.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2341
+Status: [✓] Done
+Title: Unblock first paint and throttle high-frequency frontend rendering paths
+Description:
+- Goal / acceptance criteria: Improve perceived responsiveness by removing avoidable startup blocking before the first React paint, reducing route-transition overhead on non-trivial navigation, and throttling real-time metering updates so React state does not outpace the display refresh budget. Acceptance requires `web/src/main.tsx` to render the shell without stylesheet-gated double waits, page-transition behavior to prefer lighter motion outside the explicitly themed landing scopes, frame-budget-aware throttling for at least one real-time metering path, and focused frontend validation covering the changed behavior.
+- Why it matters: The audit confirmed that startup latency, broad transition overlays, and unthrottled real-time updates are concrete contributors to the current “jagged” feel before larger architectural work even begins.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: startup/transition/render-throttle code changes, focused regression coverage where practical, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 09:34 EDT - Codex
+- Completion notes:
+  - Removed the stylesheet-gated double wait in `web/src/main.tsx` so React mounts as soon as the app bundle loads, while theme initialization still lands before first paint and typography settlement now happens after the shell is visible.
+  - Updated `web/src/app/components/PageTransition.tsx` so the heaviest Hyperactive Block Reveal stays limited to the intentionally branded landing scopes and falls back to a lighter fade inside route families like MIDI Hub and JUCE-grid-adjacent navigation.
+  - Added frame-budget-aware buffering to `web/src/app/hooks/useVuMeters.ts`, batching incoming WebSocket meter updates to one React state commit per animation frame instead of one commit per socket message.
+  - Raised `staleTime` in `web/src/app/hooks/useNodeTopology.ts` and `useNodeHealth()` to match the existing poll cadence so the shell stops treating each scheduled refresh as instantly stale.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PageTransition.test.tsx src/app/hooks/__tests__/useRealtimePollingGating.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2340
+Status: [✓] Done
+Title: Restore snapshot-editor plugin removal when snapshot plugin ids are absent from the effective chain cache
+Description:
+- Goal / acceptance criteria: Eliminate the snapshot-editor removal failure `Snapshot plugin id missing for ...` by ensuring delete/bypass/reorder snapshot-scoped mutations can still resolve the correct snapshot plugin id for existing snapshot-owned plugins. Acceptance requires a deterministic lookup path that works for hydrated snapshot chains and editor draft/effective-chain projections, focused regression coverage for the lookup/removal path, and passing relevant web validation.
+- Why it matters: T2338 moved snapshot-editor plugin mutations onto the correct snapshot-scoped APIs, but existing plugins can still fail removal when the effective chain cache loses the snapshot plugin id and the editor cannot build the backend request.
+- Dependencies: T2338
+- Estimated effort: Low
+- Required outputs: snapshot plugin id lookup fix, focused regression coverage, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 06:18 EDT - Codex
+- Completion notes:
+  - Added `snapshotEditorMutationIdentity.ts` to resolve snapshot chain ids and snapshot plugin ids from the active snapshot detail, including the case where the editor is focused on a runtime chain id that maps back to a snapshot-owned path.
+  - Updated `SnapshotEditorPageContent.tsx` so snapshot-scoped remove, bypass, and reorder mutations use the resolved snapshot chain/plugin identities instead of assuming the effective chain cache always carries `snapshot_plugin_id`.
+  - Added focused regression coverage proving runtime-chain projections can still resolve the correct snapshot plugin id for `map2://juce/brain`-style plugins when the effective runtime chain lacks that field.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/snapshotEditorMutationIdentity.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2339
+Status: [✓] Done
+Title: Rework `/chains` into a snapshot-owned runtime inspection surface
+Description:
+- Goal / acceptance criteria: Update the `/chains` backend payload and web page so the route clearly exposes chain provenance/capabilities, honors the snapshot-authority single-source-of-truth contract, and removes legacy chain-management affordances unrelated to snapshot-owned live paths. Acceptance requires surfacing snapshot ownership metadata in the chain list response, preventing `/chains` UI actions that would mutate snapshot-owned truth outside canonical snapshot flows, pruning stale create/deploy/rename/delete UI that implies generic chain management, and landing focused frontend regression coverage plus validation notes.
+- Why it matters: The current `/chains` page warns that snapshot truth lives elsewhere, but it still behaves like a generic runtime chain manager, which leaves a misleading operator surface and bypass-adjacent affordances under the repo’s snapshot-first contract.
+- Dependencies: T2338
+- Estimated effort: Medium
+- Required outputs: updated chain list payload/types, reworked `/chains` page UI, focused regression coverage, and reconciled worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-16 21:26 EDT - Codex
+- Completion notes:
+  - Added snapshot contract metadata to generic chain payloads in `app/services/chain_service.py`, including `source_kind`, `snapshot_id`, `snapshot_chain_id`, `snapshot_name`, `path_id`, and explicit `/chains` capability flags so the UI can stop inferring ownership from runtime residue.
+  - Closed the remaining generic mutation gaps for snapshot-owned runtime chains by rejecting `/api/chains` rename/delete/deploy attempts with a typed snapshot-ownership failure instead of allowing non-canonical edits.
+  - Reworked `web/src/app/pages/ChainsPage.tsx` into a read-only runtime inspection surface for snapshot-owned paths only, removed the stale create/deploy/rename/delete and advanced-routing management UI, hid legacy standalone chains from the operator surface, and surfaced explicit hidden-legacy counts so the page no longer pretends they are source-of-truth data.
+  - Added focused regression coverage in `web/src/app/pages/ChainsPage.test.tsx` and `tests/test_chain_plugin_loader_state_persistence.py` for the new list metadata and mutation guards.
+- Validation:
+  - `python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS
+  - `pytest -q tests/test_chain_plugin_loader_state_persistence.py -k 'snapshot_owned_chain_list_exposes_snapshot_contract_metadata or snapshot_owned_chain_blocks_generic_rename_and_delete or activate_snapshot_runtime_chain_requires_canonical_opt_in'` -> PASS
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/ChainsPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2338
+Status: [✓] Done
+Title: Route snapshot-editor chain and plugin mutations through snapshot-scoped APIs
+Description:
+- Goal / acceptance criteria: Eliminate `404 Not Found` failures when adding effect plugins from Snapshot Editor by ensuring snapshot-owned chain/plugin mutations use `/api/snapshots/{snapshot_id}/chains/*` instead of legacy `/api/chains/*` routes. Acceptance requires preserving snapshot plugin IDs through the editor’s synthetic chain projection so add/remove/bypass/reorder can resolve the correct backend identifiers, updating any affected snapshot-editor mutation flows that currently assume runtime-chain endpoints, and landing focused validation for the repaired path.
+- Why it matters: Snapshot Editor now presents snapshot-authored chains as the working source of truth, but several mutation handlers still post to runtime-chain routes. That contract split causes plugin edits to fail as soon as a selected chain exists only in the snapshot document rather than the live chain table.
+- Dependencies: T2337
+- Estimated effort: Medium
+- Required outputs: snapshot-editor mutation routing fix, any required chain/plugin type plumbing, focused regression coverage or equivalent validation evidence, and updated notes.
+Assigned to: Codex
+Last updated: 2026-04-16 20:36 EDT - Codex
+- Completion notes:
+  - Added `snapshot_plugin_id` to the editor-side `ChainPlugin` model and preserved it when hydrating snapshot chains and synthetic runtime chains so snapshot-authored plugins retain the backend identifiers required by `/api/snapshots/.../plugins/*`.
+  - Updated `buildEffectiveLiveSnapshotChains` to hydrate snapshot chains alongside runtime chains, which keeps snapshot-owned chains present in the editor cache even before they have a live runtime counterpart.
+  - Switched Snapshot Editor chain creation/rename and plugin add/remove/bypass/reorder mutations to the snapshot-scoped APIs whenever an `activeSnapshot` is being edited, while preserving the legacy live-chain calls for non-snapshot contexts.
+  - Added focused hydration coverage to verify snapshot plugin IDs survive into the effective chain cache used by later snapshot-scoped mutations.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
 ID: T2337
-Status: [>] In Progress
+Status: [✓] Done
 Title: Guard live snapshot edits against leaving the flow via route changes or browser close
 Description:
 - Goal / acceptance criteria: Prevent a guitarist from silently losing unpublished live snapshot edits by leaving the snapshot flow through app navigation, browser back/forward, or tab close. Acceptance requires route-level navigation guards for the Snapshot Editor and Snapshot Publish surfaces, browser `beforeunload` protection while live changes are pending, explicit allow-listing for the editor<->publish handoff inside the same snapshot flow, and focused regression coverage for both blocked and allowed transitions.
@@ -20,7 +282,17 @@ Description:
 - Estimated effort: Medium
 - Required outputs: shared navigation-guard hook/utilities, snapshot editor/publish integration, focused tests, and validation notes.
 Assigned to: Codex
-Last updated: 2026-04-16 19:01 EDT - Codex
+Last updated: 2026-04-16 19:25 EDT - Codex
+- Completion notes:
+  - Added a shared `history`-backed router bridge in `web/src/app/history.ts` and switched `web/src/app/App.tsx` to `unstable_HistoryRouter` so snapshot surfaces can participate in route-level navigation blocking instead of relying only on local button guards.
+  - Added `web/src/app/hooks/usePendingLiveChangesNavigationGuard.ts` to guard in-app route changes plus browser `beforeunload`, with explicit allow-listing for the same-snapshot editor/publish/grid flow while unpublished live edits exist.
+  - Integrated the guard into `SnapshotEditorPageContent.tsx` and `SnapshotPublishPage.tsx`, then added focused regressions for allowed editor handoff, blocked external navigation, re-blocking after allowed transitions, and browser-close prompts.
+  - Applied a minimal strict-cast fix in `web/src/app/components/Maschine/MaschineLedPreviewPanel.tsx` so the full frontend production build stays green after the router/history changes.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run lint` -> PASS
+  - `npm --prefix web test -- --runTestsByPath src/app/hooks/usePendingLiveChangesNavigationGuard.test.tsx src/app/pages/SnapshotPublishPage.test.tsx src/app/utils/liveWorkingSnapshotDraft.test.ts src/app/components/snapshots/SnapshotNewWizard.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx --runInBand` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 
@@ -6095,17 +6367,26 @@ Assigned to: Claude
 Last updated: 2026-04-16 - Claude
 
 ID: T666-subP
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extensions E3-E6 — aftertouch, encoder-push menu, pyudev hotplug
 Description:
 - E1 (stats LCD context): Done — Control button toggles display context between audio_grid and stats
 - E2 (button LED transport feedback): Done in T666-subN — Play/Rec/Loop LEDs driven by transport state
 - E3 (pad velocity to MIDI velocity): Done in T666-subN — 12-bit pressure mapped to MIDI 0-127
-- E4 (aftertouch / channel pressure): Pending — continuous pressure from held pads to polyphonic aftertouch
-- E5 (encoder-push menu navigation): Pending — encoder-1 push for back/select in LCD menu
-- E6 (pyudev hotplug): Pending — subscribe to udev events instead of reconnect polling
+- E4 (aftertouch / channel pressure): Done — held pads now emit polyphonic aftertouch when pressure changes, without retriggering duplicate note-ons for unchanged pressure samples
+- E5 (encoder-push menu navigation): Done — Navigate opens a top-level LCD menu, encoder 1 moves selection, Note Repeat selects, and Control backs out to the prior context
+- E6 (pyudev hotplug): Done — daemon now exposes optional pyudev-backed USB hotplug monitoring with a clean polling fallback when pyudev is unavailable
 Assigned to: Unassigned
-Last updated: 2026-04-16 - Claude
+Last updated: 2026-04-16 22:03 EDT - Codex
+- Completion notes:
+  - Updated `app/services/maschine/maschine_mk1_daemon.py` so sustained pad pressure is translated into MIDI polyphonic aftertouch instead of repeated note-on spam, while release handling still preserves the long-press bypass toggle path.
+  - Added a real top-level LCD menu renderer and menu-state handling inside the daemon; Navigate opens the menu, encoder 1 rotates between top-level contexts, Note Repeat confirms the selection, and Control returns to the previously active page.
+  - Added an optional `MaschineDeviceHotplugMonitor` that listens for MK1 USB add/remove events via `pyudev` when installed and otherwise falls back to the existing reconnect polling path, with the daemon registration payload now advertising whether hotplug is running in `udev` or `polling` mode.
+  - Updated focused daemon tests to cover the new poly-aftertouch translation, menu navigation semantics, hotplug capability reporting, and menu frame rendering; updated `scripts/generate_backend_contract.py` and regenerated the backend runtime contract docs so `pyudev` is documented as an optional runtime feature without making it a required installer dependency.
+- Validation:
+  - `python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py scripts/generate_backend_contract.py` -> PASS
+  - `pytest -q tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3 scripts/generate_backend_contract.py` -> PASS
 
 ID: T663
 Status: [✓] Done
@@ -24653,8 +24934,31 @@ Subtasks:
       - Kept the existing backend publish readiness and route coverage from `T961-subC` and `T961-subD` as the canonical pytest protection for the typed publish model while extending the frontend side to cover the new route.
     - Validation:
       - `CI=1 npm --prefix web test -- --runInBand src/app/pages/SnapshotPublishPage.test.tsx src/app/utils/snapshotGoLiveState.test.ts` -> PASS
+  - ID: T961-subI
+    Status: [✓] Done
+    Title: Harden local-only publish semantics and add a true operator wizard mode
+    Description:
+    - Goal / acceptance criteria: Fix the remaining local-only publish contradictions in the source-of-truth publish workspace: unsaved drafts must auto-save or block cleanly before publish, authority publication must never persist a `snapshot_revision_id=None` live state, local-only readiness copy must stop implying remote-node approval, and the current dense workspace must be preserved as an explicit `Advanced` mode while a second `Wizard` mode walks the operator through the minimum choices needed to publish quickly.
+    - Why it matters: The current page can still show impossible mixed states such as `unsaved_draft` plus `waiting for target nodes`, and the existing `guided` variant is still just a resized advanced layout rather than a genuinely faster user path.
+    - Dependencies: T961-subC, T961-subF, T961-subH
+    - Estimated effort: High
+    - Required outputs: backend readiness/activation hardening, publish-page advanced/wizard mode split, focused pytest/Jest coverage, and reconciled worklist notes.
+    Subtasks: None
+    Assigned to: Codex
+    Last updated: 2026-04-17 15:06 EDT - Codex
+    - Completion notes:
+      - Hardened backend publish semantics so local-only readiness no longer shows impossible mixed states: authority-confirmation findings only appear after a real saved revision exists, local-only checklist copy now refers to the local runtime rather than remote target nodes, and publish activation auto-saves a first revision before creating the authority intent.
+      - Prevented revision-less authority persistence by teaching snapshot detail serialization to expose the latest `revision_number`, skipping desired-state publication until a saved revision exists, and failing confirmed-live authority publication early when `snapshot_revision_id` would otherwise be `None`.
+      - Preserved the current dense publish surface as the explicit `Advanced` mode while replacing the old pseudo-guided variant with a real four-step `Wizard` flow for save, host, sound-path, and publish decisions, including local-machine host fallback, auto-save-aware publish CTA behavior, and issue-card actions that keep operators on one fast path.
+      - Added focused pytest and Jest coverage for the local-only wording fix, missing-revision guardrails, auto-save-before-publish behavior, true wizard rendering, and local-host fallback behavior.
+    - Validation:
+      - `python3 -m pytest -q tests/test_publish_readiness_service.py tests/test_state_authority_activation_service.py tests/test_snapshot_service.py -k 'missing_revision or clarifies_local_only_runtime_blockers or confirms_audio_authority_after_runtime_live or publishes_desired_state_to_audio_authority or auto_saves_missing_revision_before_creating_intent'` -> PASS (`5 passed, 71 deselected`)
+      - `python3 -m pytest -q tests/test_snapshot_routes.py` -> PASS (`14 passed`, existing SQLAlchemy warnings unchanged)
+      - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+      - `npm --prefix web run typecheck` -> PASS
+      - `npm --prefix web run build` -> PASS
 Assigned to: Codex
-Last updated: 2026-04-10 17:44 EDT - Codex
+Last updated: 2026-04-17 15:06 EDT - Codex
 - Progress notes:
   - Imported the external redesign plan from `/home/mm/.claude/plans/humble-forging-manatee.md` into the canonical worklist so the work is tracked in one global ledger rather than split between side plans and repository state.
   - This epic intentionally supersedes the modal-centered direction of `T960` without rewriting history: `T960` remains a completed intermediate step, and `T961` is now the explicit phase-1 replacement path for the snapshot publish workflow.
@@ -24664,6 +24968,8 @@ Last updated: 2026-04-10 17:44 EDT - Codex
   - `T961-subC` is now complete and validated. The next backend-critical slice is `T961-subD`: expose the typed readiness model through unified snapshot routes and add publish-retry / repair endpoints so the frontend can stop reading legacy modal-specific state.
   - `T961-subD` is now complete and validated. The next integration slice is `T961-subE`: mirror the typed publish-readiness contract in shared web types and snapshot client helpers so the frontend can start replacing modal-specific inference with direct backend reads.
   - `T961-subE` through `T961-subH` are now complete: the typed publish contract is mirrored in shared web types and clients, `/snapshots/:id/publish` exists as the new source-of-truth workspace, legacy modal surfaces were retired, and focused frontend coverage was rewritten around the publish route plus publish-language helpers.
+  - Re-opened `T961` for follow-up slice `T961-subI`: the local-only publish path still needs one hardening pass so unsaved snapshots cannot leak into waiting-for-confirmation UI, `snapshot_revision_id=None` never reaches authority publication, and the current dense surface is explicitly preserved as `Advanced` while a true step-by-step `Wizard` mode is added for fast operator publishing.
+  - `T961-subI` is now complete and validated. Local-only publish now auto-saves before activation, no longer surfaces remote-target wording on single-node confirmation, refuses revision-less authority publication, and ships a true step-by-step `Wizard` alongside the preserved `Advanced` workspace. `T961` is complete again.
 - Completion notes:
   - Closed the phase-1 publish-workspace epic by landing the deep-linkable `/snapshots/:id/publish` route, reusing the backend readiness contract directly for summary/checklist/guided issue/comparison support views, and wiring the snapshot editor’s publish entry points into that route instead of the old progress modal stack.
   - Mirrored the typed publish blocker, repair, requirement, confirmation, and readiness contracts in the shared web type/client layer so the frontend now reads one canonical backend publish model instead of inferring state from string-parsed modal payloads.

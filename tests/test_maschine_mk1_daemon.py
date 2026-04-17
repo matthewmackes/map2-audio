@@ -7,11 +7,14 @@ import app.services.maschine.maschine_mk1_daemon as maschine_mk1_daemon_module
 from app.services.maschine.maschine_mk1_daemon import (
     DaemonConfig,
     LastTouchedControl,
+    MaschineDeviceHotplugMonitor,
     MaschineMK1Daemon,
     VirtualMidiOutput,
     build_last_touched_bitmap,
     build_reconnecting_frames,
+    build_top_level_menu_frames,
 )
+from app.services.maschine.mk1_protocol import Button, PadEvent
 from app.services.maschine_lcd_service import LCD_HEIGHT, LCD_WIDTH
 
 
@@ -38,6 +41,14 @@ def test_last_touched_bitmap_produces_valid_output() -> None:
     assert result["height"] == LCD_HEIGHT
     assert "framebuffer" in result
     assert len(result["framebuffer"]) == 21760
+
+
+def test_top_level_menu_frames_render_valid_bitmaps() -> None:
+    result = build_top_level_menu_frames(selected_index=1, active_context="audio_grid")
+    assert result["left"]["width"] == LCD_WIDTH
+    assert result["right"]["height"] == LCD_HEIGHT
+    assert "framebuffer" in result["left"]
+    assert len(result["right"]["framebuffer"]) == 21760
 
 
 def test_audio_grid_with_last_touched_inserts_parameter_into_selected_block() -> None:
@@ -73,6 +84,76 @@ def test_encoder_delta_wraparound_matches_relative_navigation_expectations() -> 
     assert MaschineMK1Daemon._resolve_encoder_delta(15, 10) == -1
     assert MaschineMK1Daemon._resolve_encoder_delta(126, 2) == 1
     assert MaschineMK1Daemon._resolve_encoder_delta(2, 126) == -1
+
+
+def test_dispatch_pad_event_emits_poly_aftertouch_without_duplicate_note_ons() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+    sent_messages: list[bytes] = []
+    daemon._midi.send_messages = lambda messages: sent_messages.extend(messages)
+    daemon._enqueue_backend_message = lambda payload: None
+
+    class _FakeClient:
+        def post(self, *_args, **_kwargs):
+            raise AssertionError("pad selection should not post without audio-grid blocks")
+
+    pad_press_started: dict[int, float] = {}
+    active_pad_pressures: dict[int, int] = {}
+    client = _FakeClient()
+
+    daemon._dispatch_pad_event(client, PadEvent(pad=0, pressure=1024, pressed=True), pad_press_started, active_pad_pressures)
+    daemon._dispatch_pad_event(client, PadEvent(pad=0, pressure=2048, pressed=True), pad_press_started, active_pad_pressures)
+    daemon._dispatch_pad_event(client, PadEvent(pad=0, pressure=2048, pressed=True), pad_press_started, active_pad_pressures)
+    daemon._dispatch_pad_event(client, PadEvent(pad=0, pressure=0, pressed=False), pad_press_started, active_pad_pressures)
+
+    assert sent_messages == [
+        bytes([0x90, 36, 31]),
+        bytes([0xA0, 36, 63]),
+        bytes([0x80, 36, 0]),
+    ]
+
+
+def test_menu_buttons_use_back_and_select_semantics() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+
+    class _FakeClient:
+        def post(self, *_args, **_kwargs):
+            raise AssertionError("menu navigation should not hit the backend")
+
+    client = _FakeClient()
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), False)
+    assert daemon._state.display_context == "menu"
+    assert daemon._state.top_level_menu_index == 0
+
+    daemon._handle_navigation_encoder(client, 1)
+    assert daemon._state.top_level_menu_index == 1
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.NoteRepeat), "pressed": True})(), set(), False)
+    assert daemon._state.display_context == "stats"
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), False)
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Control), "pressed": True})(), set(), False)
+    assert daemon._state.display_context == "stats"
+
+
+def test_hotplug_monitor_matches_vendor_and_product_ids() -> None:
+    class _FakeAttributes:
+        @staticmethod
+        def get(key: str) -> bytes:
+            return {"idVendor": b"17cc", "idProduct": b"0808"}[key]
+
+    class _FakeDevice(dict):
+        attributes = _FakeAttributes()
+
+    assert MaschineDeviceHotplugMonitor._matches_maschine_device(_FakeDevice())
+
+
+def test_registration_payload_reports_hotplug_capability() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+    payload = daemon._registration_payload(status="connected")
+
+    assert payload["capabilities"]["pyudev_available"] is False
+    assert payload["capabilities"]["hotplug_mode"] == "polling"
 
 
 def test_virtual_midi_output_disposes_rtmidi_client(monkeypatch) -> None:

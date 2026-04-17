@@ -68,6 +68,10 @@ OPTIONAL_PYTHON_FEATURES = [
         "why": "Optional archive handling for soundfont content",
     },
     {
+        "module": "pyudev",
+        "why": "Optional USB hotplug subscriptions for hardware daemons such as Maschine MK1",
+    },
+    {
         "module": "watchdog",
         "why": "Optional config hot-reload support",
     },

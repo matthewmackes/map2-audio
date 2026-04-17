@@ -67,6 +67,7 @@ function buildSyntheticRuntimeChains(detail: SnapshotDetail): Chain[] {
       created_at: detail.created_at ?? detail.live_state?.activated_at ?? new Date(0).toISOString(),
       updated_at: detail.updated_at ?? detail.live_state?.activated_at ?? new Date(0).toISOString(),
       plugins: [...(path.plugins ?? [])].map((plugin, index) => ({
+        snapshot_plugin_id: plugin.id ?? null,
         uri: plugin.uri,
         name: plugin.name,
         plugin_display_type: undefined,
@@ -77,6 +78,35 @@ function buildSyntheticRuntimeChains(detail: SnapshotDetail): Chain[] {
       })),
       loop_insertions: [...(path.loop_insertions ?? [])],
       effects_loops: [...(path.effects_loops ?? [])],
+      runtime_sync: null,
+    }]
+  })
+}
+
+function buildSyntheticSnapshotChains(detail: SnapshotDetail): Chain[] {
+  return (detail.chains ?? []).flatMap((chain) => {
+    if (typeof chain.id !== 'number' || !Number.isFinite(chain.id)) {
+      return []
+    }
+
+    return [{
+      id: chain.id,
+      name: chain.name,
+      is_active: false,
+      created_at: detail.created_at ?? new Date(0).toISOString(),
+      updated_at: detail.updated_at ?? new Date(0).toISOString(),
+      plugins: [...(chain.plugins ?? [])].map((plugin, pluginIndex) => ({
+        snapshot_plugin_id: plugin.id ?? null,
+        uri: plugin.uri,
+        name: plugin.name ?? plugin.uri,
+        plugin_display_type: undefined,
+        position: plugin.position ?? pluginIndex,
+        bypassed: plugin.bypass ?? false,
+        parameters: { ...plugin.parameters },
+        loader_state: plugin.loader_state,
+      })),
+      loop_insertions: [...(chain.loop_insertions ?? [])],
+      effects_loops: [...(chain.effects_loops ?? [])],
       runtime_sync: null,
     }]
   })
@@ -146,6 +176,7 @@ function mergeDraftChainIntoRuntimeChain(
       const runtimePlugin = takeDraftPluginRuntimeMatch(remainingPlugins, plugin)
       return {
         ...runtimePlugin,
+        snapshot_plugin_id: runtimePlugin?.snapshot_plugin_id ?? plugin.snapshot_plugin_id ?? null,
         uri: plugin.uri,
         position: plugin.position,
         bypassed: plugin.bypass,
@@ -188,6 +219,7 @@ export function buildEffectiveLiveSnapshotChains(
   detail: SnapshotDetail,
   currentChains: ChainsResponse | undefined,
 ): ChainsResponse {
+  const snapshotChains = buildSyntheticSnapshotChains(detail)
   const runtimeChains = detail.live_state?.runtime_chains ?? []
   const syntheticRuntimeChains = buildSyntheticRuntimeChains(detail)
   const syntheticRuntimeChainById = new Map(
@@ -197,7 +229,10 @@ export function buildEffectiveLiveSnapshotChains(
     mergeRuntimeChainWithSynthetic(chain, syntheticRuntimeChainById.get(chain.id))
   ))
   return upsertRuntimeChains(
-    upsertRuntimeChains(currentChains, syntheticRuntimeChains),
+    upsertRuntimeChains(
+      upsertRuntimeChains(currentChains, snapshotChains),
+      syntheticRuntimeChains,
+    ),
     mergedRuntimeChains,
   )
 }

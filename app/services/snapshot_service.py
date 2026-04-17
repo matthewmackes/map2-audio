@@ -1047,6 +1047,12 @@ class SnapshotService:
         return await self._load_current_audio_state_extensions()
 
     async def _publish_snapshot_desired_state(self, detail: dict[str, Any]) -> None:
+        if not isinstance(detail.get("revision_number"), int):
+            logger.debug(
+                "Snapshot desired-state publish skipped for %s: missing saved revision",
+                detail.get("id"),
+            )
+            return
         try:
             from app.services.audio_state_authority import AudioStateAuthorityService
             from app.services.audio_state_snapshot_compiler import (
@@ -1111,6 +1117,32 @@ class SnapshotService:
             for entry in publication_steps:
                 if entry["status"] == "pending":
                     _mark_publication_step(str(entry["step"]), status, at=None, detail=detail)
+
+        if not isinstance(detail.get("revision_number"), int):
+            missing_detail = "Snapshot has no saved revision number; authority confirmation requires a saved draft."
+            _mark_publication_step("publish_desired", "failed", detail=missing_detail)
+            _mark_remaining_publication_steps("not_run", detail=missing_detail)
+            logger.debug(
+                "Snapshot live-state authority confirm skipped for %s: %s",
+                detail.get("id"),
+                missing_detail,
+            )
+            return {
+                "status": "failed",
+                "reason": "missing_snapshot_revision",
+                "checked_at": checked_at,
+                "node_id": authority_node_id,
+                "published_desired": desired_published,
+                "published_committed": committed_published,
+                "published_observation": observation_published,
+                "reconciled": reconciled,
+                "state_version": state_version,
+                "publication_steps": publication_steps,
+                "operator_message": (
+                    "The audio engine applied this snapshot, but MAP2 could not confirm it until the snapshot was saved as a revision."
+                ),
+                "technical_detail": missing_detail,
+            }
 
         try:
             from app.models.audio_state import (
@@ -4874,6 +4906,13 @@ class SnapshotService:
 
         normalized = await self._snapshot_to_normalized(snapshot)
         detail = self._normalized_to_detail(normalized, snapshot)
+        latest_revision_result = await self.session.execute(
+            select(SnapshotRevision.revision_number)
+            .where(SnapshotRevision.snapshot_id == int(snapshot.id))
+            .order_by(SnapshotRevision.revision_number.desc(), SnapshotRevision.id.desc())
+            .limit(1)
+        )
+        latest_revision_number = latest_revision_result.scalar_one_or_none()
         runtime_state = await SnapshotRuntimeStateService(self.session).get_live_state()
         runtime_payload = runtime_state.get("live_snapshot_payload")
         runtime_live_paths: list[dict[str, Any]] = []
@@ -4899,6 +4938,7 @@ class SnapshotService:
                     if isinstance(item, dict) and item.get("id") is not None
                 ]
         detail["snapshot_revision"] = self._snapshot_revision_from_normalized(normalized)
+        detail["revision_number"] = int(latest_revision_number) if latest_revision_number is not None else None
         detail["controls"] = self._normalize_controls_payload(
             snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
             detail,

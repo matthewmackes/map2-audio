@@ -278,7 +278,11 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
 
     const effective = buildEffectiveLiveSnapshotChains(detail, { chains: [], count: 0 })
 
-    expect(effective.chains).toEqual([
+    expect(effective.chains).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 201,
+        name: 'Snapshot Path A',
+      }),
       expect.objectContaining({
         id: 501,
         name: 'Snapshot Path A',
@@ -286,7 +290,7 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
           expect.objectContaining({ uri: 'urn:test:gain', position: 0 }),
         ],
       }),
-    ])
+    ]))
   })
 
   it('preserves snapshot-authored parameters and loader state when runtime chains replace synthetic chains', () => {
@@ -409,7 +413,7 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
 
     const effective = buildEffectiveLiveSnapshotChains(detail, { chains: [], count: 0 })
 
-    expect(effective.chains).toEqual([
+    expect(effective.chains).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 701,
         plugins: [
@@ -424,7 +428,110 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
           }),
         ],
       }),
-    ])
+    ]))
+  })
+
+  it('preserves snapshot plugin ids on snapshot-authored chains for later snapshot-scoped mutations', () => {
+    const detail: SnapshotDetail = {
+      id: 20,
+      name: 'Snapshot 4',
+      description: '',
+      tags: [],
+      program_number: null,
+      input_device: null,
+      output_device: null,
+      is_active: false,
+      is_favorite: false,
+      display_order: 0,
+      channels: [
+        {
+          id: 1,
+          snapshot_id: 20,
+          channel_key: 'ch_a',
+          label: 'A',
+          color: '#2563eb',
+          muted: false,
+          solo: false,
+          dry_wet_mix: 100,
+          order_index: 0,
+          chain_id: 201,
+        },
+      ],
+      chains: [
+        {
+          id: 201,
+          name: 'Snapshot Path A',
+          plugins: [
+            {
+              id: 9001,
+              uri: 'urn:test:gain',
+              name: 'Gain',
+              position: 0,
+              bypass: false,
+              parameters: { gain: 0.75 },
+            },
+          ],
+          loop_insertions: [],
+          effects_loops: [],
+        },
+      ],
+      paths: [],
+      routing: {
+        mode: 'parallel_blend',
+        active_channel_key: 'ch_a',
+        blend_positions: { ch_a: 100 },
+        morph_position: 0.5,
+        morph_source_channel_key: null,
+        morph_target_channel_key: null,
+        series_order: ['ch_a'],
+      },
+      midi_map: [],
+      io_bindings: {
+        input_device: null,
+        output_device: null,
+        remap_required: false,
+      },
+      controls: {
+        midi_map: [],
+        automation_lanes: [],
+        expression_mappings: [],
+      },
+      assets: [],
+      live_state: {
+        is_live: false,
+        activated_at: null,
+        paths: [],
+        runtime_chains: [],
+      },
+      lineage: {
+        derived_from_snapshot_id: null,
+      },
+      active_channel_index: 0,
+      channel_count: 1,
+      chain_count: 1,
+      community_uuid: null,
+      community_shared: false,
+      community_author: null,
+      community_download_count: 0,
+      community_rating: null,
+      community_rating_count: 0,
+      created_at: null,
+      updated_at: null,
+      deployments: [],
+    }
+
+    const effective = buildEffectiveLiveSnapshotChains(detail, { chains: [], count: 0 })
+    const snapshotChain = effective.chains.find((chain) => chain.id === 201)
+
+    expect(snapshotChain).toEqual(expect.objectContaining({
+      id: 201,
+      plugins: [
+        expect.objectContaining({
+          uri: 'urn:test:gain',
+          snapshot_plugin_id: 9001,
+        }),
+      ],
+    }))
   })
 
   it('overlays draft-only loader assignments onto the effective runtime chains', () => {
@@ -503,6 +610,100 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
               selected_asset_name: 'George B',
               selected_asset_path: '/models/george-b.nam',
             },
+          }),
+        ],
+      }),
+    ])
+  })
+
+  it('preserves snapshot plugin ids after draft resequencing changes plugin positions', () => {
+    const current: ChainsResponse = {
+      chains: [
+        {
+          ...buildRuntimeChain(301, 'Chain B'),
+          plugins: [
+            {
+              snapshot_plugin_id: 5001,
+              uri: 'map2://juce/brain',
+              name: 'Performance Brain',
+              position: 1,
+              bypassed: false,
+              parameters: {},
+            },
+            {
+              snapshot_plugin_id: 5002,
+              uri: 'map2://juce/brain',
+              name: 'Performance Brain',
+              position: 2,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      count: 1,
+    }
+
+    const draft: SnapshotDraftData = {
+      flowSlots: [
+        {
+          id: 'ch_b',
+          chainId: 301,
+          label: 'B',
+          color: '#ff6666',
+          muted: false,
+          solo: false,
+          dryWetMix: 100,
+        },
+      ],
+      routing: {
+        mode: 'parallel_blend',
+        activeSlotId: 'ch_b',
+        blendPositions: { ch_b: 100 },
+        morphProgress: 0.5,
+        morphSourceSlotId: null,
+        morphTargetSlotId: null,
+        seriesOrder: ['ch_b'],
+      },
+      activeFlowIndex: 0,
+      chains: {
+        '301': {
+          name: 'Chain B',
+          plugins: [
+            {
+              snapshot_plugin_id: 5001,
+              uri: 'map2://juce/brain',
+              position: 0,
+              bypass: false,
+              parameters: {},
+            },
+            {
+              snapshot_plugin_id: 5002,
+              uri: 'map2://juce/brain',
+              position: 1,
+              bypass: false,
+              parameters: {},
+            },
+          ],
+        },
+      },
+    }
+
+    const next = applySnapshotDraftToChainsResponse(current, draft)
+
+    expect(next.chains).toEqual([
+      expect.objectContaining({
+        id: 301,
+        plugins: [
+          expect.objectContaining({
+            uri: 'map2://juce/brain',
+            position: 0,
+            snapshot_plugin_id: 5001,
+          }),
+          expect.objectContaining({
+            uri: 'map2://juce/brain',
+            position: 1,
+            snapshot_plugin_id: 5002,
           }),
         ],
       }),

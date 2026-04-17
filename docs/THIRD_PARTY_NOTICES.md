@@ -14,6 +14,7 @@ that file.
 | NeuralAmpModelerCore | `juce-engine/Modules/NeuralAmpModelerCore/` | MIT (`juce-engine/Modules/NeuralAmpModelerCore/LICENSE`) |
 | PiPedal-derived UI code | `web/src/pipedal/` | MIT (see file headers, e.g. `web/src/pipedal/AlsaDeviceInfo.tsx`) |
 | Fonts (Roboto and others) | `web/public/fonts/` | See `web/public/fonts/LICENSE.txt` |
+| Theme palette reference values | `web/src/app/theme/externalPaletteThemes.ts` | Open Color palette values are derived from `yeun/open-color` under MIT. Material palette reference values are derived from Google's published Material Design color palette documentation; no upstream runtime package or source code is vendored. |
 
 ## Fetched / installed dependencies
 

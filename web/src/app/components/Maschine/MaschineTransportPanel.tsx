@@ -1,66 +1,54 @@
-import { Button, Layer, Select, SelectItem, Tag, Toggle } from '@carbon/react'
+import { Button, Layer, Tag, Toggle } from '@carbon/react'
 import type { MaschineDaemonStatus } from '../../../map2/types'
 import type { MaschineTransportConfig } from '../../../map2/clients/maschine'
 
-function candidateTagType(connectable: unknown, deviceVisible: unknown): 'green' | 'blue' | 'red' | 'cool-gray' {
-  if (connectable) return 'green'
-  if (deviceVisible) return 'blue'
-  return 'cool-gray'
-}
-
-function candidateText(value: unknown): string | null {
-  if (typeof value === 'string' && value.trim()) return value.trim()
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
-  return null
-}
+const USB_ENDPOINTS = [
+  { label: 'EP 0x01 OUT', desc: 'LED control + primer' },
+  { label: 'EP 0x08 OUT', desc: 'LCD frame data' },
+  { label: 'EP 0x81 IN', desc: 'Buttons / encoders' },
+  { label: 'EP 0x84 IN', desc: 'Pad pressure (12-bit)' },
+] as const
 
 export function MaschineTransportPanel({
   status,
   config,
   isSaving,
-  onChangePreference,
   onToggleKernelDetach,
   onRefresh,
 }: {
   status: MaschineDaemonStatus | null
   config: MaschineTransportConfig | null
   isSaving: boolean
-  onChangePreference: (value: 'auto' | 'hidapi' | 'pyusb-bulk') => void
+  onChangePreference?: (value: string) => void
   onToggleKernelDetach: (value: boolean) => void
   onRefresh: () => void
 }) {
-  const candidates = Array.isArray(status?.transport_candidates) ? status.transport_candidates : []
+  const transportId = status?.transport?.transport_id ?? 'none'
+  const isConnected = Boolean(status?.transport?.connected)
 
   return (
     <Layer className="maschine-page__panel" data-testid="maschine-transport-panel">
       <div className="maschine-page__panel-head">
-        <h2>Transport Policy</h2>
+        <h2>USB Protocol</h2>
         <div className="maschine-page__tag-row">
-          <Tag type="blue">{String(status?.transport?.transport_id ?? 'none')}</Tag>
+          <Tag type={isConnected ? 'green' : 'red'}>{transportId}</Tag>
           <Button kind="ghost" size="sm" onClick={onRefresh} disabled={isSaving}>
             Refresh
           </Button>
         </div>
       </div>
       <p className="maschine-page__panel-copy">
-        Select the richer MK1 transport policy for this host. Runtime config changes apply on the next reconnect or daemon start.
+        Raw USB bulk transport using cabl-derived MK1 protocol. VID 0x17CC, PID 0x0808. Interface 0, alt setting 1.
       </p>
+      <div className="maschine-page__tag-row">
+        {USB_ENDPOINTS.map((ep) => (
+          <Tag key={ep.label} type="cool-gray" title={ep.desc}>{ep.label}</Tag>
+        ))}
+      </div>
       <div className="maschine-page__toolbar">
-        <Select
-          id="maschine-transport-preference"
-          labelText="Transport preference"
-          size="sm"
-          value={config?.transport_preference ?? 'auto'}
-          onChange={(event) => onChangePreference(event.currentTarget.value as 'auto' | 'hidapi' | 'pyusb-bulk')}
-          disabled={isSaving}
-        >
-          <SelectItem value="auto" text="Auto" />
-          <SelectItem value="hidapi" text="HIDAPI" />
-          <SelectItem value="pyusb-bulk" text="PyUSB Bulk" />
-        </Select>
         <Toggle
           id="maschine-kernel-detach"
-          labelText="Allow kernel detach for vendor bulk transport"
+          labelText="Auto-detach snd_usb_caiaq kernel driver"
           labelA="Off"
           labelB="On"
           size="sm"
@@ -69,40 +57,32 @@ export function MaschineTransportPanel({
           disabled={isSaving}
         />
       </div>
-      <div className="maschine-page__tag-row">
-        <Tag type="cool-gray">Applies on: {config?.applies_on ?? 'next-reconnect-or-daemon-start'}</Tag>
-      </div>
-      <ul className="maschine-page__candidate-list">
-        {candidates.length ? candidates.map((candidate, index) => (
-          <li key={`${String(candidate.transport_id ?? 'candidate')}-${index}`} className="maschine-page__candidate-card">
-            <div className="maschine-page__panel-head">
-              <strong>{String(candidate.transport_id ?? 'candidate')}</strong>
-              <Tag type={candidateTagType(candidate.connectable, candidate.device_visible)}>
-                {candidate.connectable ? 'connectable' : candidate.device_visible ? 'detected' : 'offline'}
-              </Tag>
-            </div>
-            <p className="maschine-page__panel-copy">
-              {String(candidate.note ?? candidate.error ?? 'No candidate note available.')}
-            </p>
-            <div className="maschine-page__tag-row">
-              <Tag type="cool-gray">module {candidate.module_available ? 'ready' : 'missing'}</Tag>
-              <Tag type="cool-gray">device {candidate.device_visible ? 'visible' : 'hidden'}</Tag>
-              {candidateText(candidate.interface_number) ? (
-                <Tag type="cool-gray">if {candidateText(candidate.interface_number)}</Tag>
-              ) : null}
-              {candidateText(candidate.alternate_setting) ? (
-                <Tag type="cool-gray">alt {candidateText(candidate.alternate_setting)}</Tag>
-              ) : null}
-              {candidateText(candidate.write_endpoint_address_hex) ? (
-                <Tag type="cool-gray">out {candidateText(candidate.write_endpoint_address_hex)}</Tag>
-              ) : null}
-              {candidateText(candidate.read_endpoint_address_hex) ? (
-                <Tag type="cool-gray">in {candidateText(candidate.read_endpoint_address_hex)}</Tag>
-              ) : null}
-            </div>
-          </li>
-        )) : <li className="maschine-page__candidate-card">No transport candidates were reported by the daemon.</li>}
-      </ul>
+      <dl className="maschine-page__kv-grid">
+        <div>
+          <dt>Protocol</dt>
+          <dd>cabl-mk1-v1 (USB bulk)</dd>
+        </div>
+        <div>
+          <dt>LED scheme</dt>
+          <dd>2 × 33B packets, 62 slots mono</dd>
+        </div>
+        <div>
+          <dt>LCD</dt>
+          <dd>255×64 5bpp KS0713, 10,880B/display</dd>
+        </div>
+        <div>
+          <dt>Pad input</dt>
+          <dd>16 pads × 12-bit pressure (0–4095)</dd>
+        </div>
+        <div>
+          <dt>Buttons</dt>
+          <dd>42 buttons (7-byte bitmap)</dd>
+        </div>
+        <div>
+          <dt>Encoders</dt>
+          <dd>11 × 16-bit counters</dd>
+        </div>
+      </dl>
     </Layer>
   )
 }

@@ -24,7 +24,7 @@ jest.mock('../../hooks/useNodeTopology', () => ({
   useNodeTopology: () => mockUseNodeTopology(),
 }))
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => ({
     activeNodeId: null,
     localNodeId: 'node-local',
@@ -76,6 +76,15 @@ const layer: PlatformLayerData = {
     },
   ],
   gridItems: [
+    {
+      id: 'cluster-platform-health',
+      title: 'Platform Health',
+      eyebrow: 'Cluster Dashboard',
+      metric: '1/1',
+      helper: 'Deployment mode: ALL-IN-ONE',
+      status: 'healthy',
+      alertCount: 0,
+    },
     {
       id: 'cluster-health',
       title: 'Cluster Health',
@@ -167,6 +176,9 @@ describe('ClusterDashboardWorkspace', () => {
         <ClusterDashboardWorkspace layer={layer} />
       </MemoryRouter>,
     )
+
+    expect(screen.getByText('Platform Health')).toBeInTheDocument()
+    expect(screen.getByText('Deployment mode: ALL-IN-ONE')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('cluster-dashboard-graph'))
 

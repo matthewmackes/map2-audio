@@ -117,15 +117,10 @@ async function mountApp() {
   installDevResponsivenessDiagnostics()
   installVitePreloadRecovery()
   removeExternalGoogleFontLinks()
-
-  await waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS)
-
   const { App } = await import('./app/App')
-  await waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS)
 
-  // Initialize theme before render, but do not block first paint on non-critical fonts.
+  // Apply the saved theme immediately so the first paint lands in the right color system.
   initializeTheme()
-  initializePlatformTypography()
   createRoot(rootElement).render(
     <ErrorBoundary>
       <App />
@@ -134,6 +129,11 @@ async function mountApp() {
 
   await nextAnimationFrame()
   markShellReady()
+
+  // Typography settlement is cosmetic; do it after the shell is already visible.
+  void waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS).then(() => {
+    initializePlatformTypography()
+  })
   preloadNonCriticalFonts()
 }
 

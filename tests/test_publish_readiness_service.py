@@ -256,6 +256,49 @@ def test_publish_readiness_service_maps_preflight_issues_to_typed_blockers(tmp_p
     assert plugins_requirement.status.value == "needs_attention"
 
 
+def test_publish_readiness_service_does_not_show_confirmation_waiting_when_draft_revision_is_missing(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=18, name="Snapshot 18"))
+            await session.flush()
+            service = PublishReadinessService(
+                session,
+                snapshot_service=_FakeSnapshotService(_detail(18, revision_number=None)),
+                authority_service=_FakeAuthorityService(
+                    _committed_state(18, revision_number=7, preferred_nodes=["node-local"], sync_status="pending_apply"),
+                    [],
+                ),
+                runtime_state_service=_FakeRuntimeStateService(
+                    activation_events=[
+                        {
+                            "snapshot_id": 18,
+                            "requested_at": (utc_now() - timedelta(seconds=20)).isoformat(),
+                            "runtime_metrics": {
+                                "activation_progress": {
+                                    "current_phase": "APPLYING",
+                                }
+                            },
+                        }
+                    ]
+                ),
+            )
+            return await service.get_publish_readiness(18)
+
+    readiness = asyncio.run(_run())
+
+    assert readiness.status.value == "blocked"
+    assert {blocker.code.value for blocker in readiness.blockers} == {"unsaved_draft"}
+    assert readiness.requested_revision_id is None
+    assert readiness.confirmed_revision_id is None
+    assert readiness.warnings == []
+    target_requirement = next(item for item in readiness.requirements if item.id == "target_node_reachable")
+    assert target_requirement.label == "Local runtime is responding"
+    assert target_requirement.status.value == "ready"
+    assert target_requirement.operator_message == "The local runtime on this machine is responding."
+
+
 def test_publish_readiness_service_escalates_missing_node_observation_to_stale_blocker(tmp_path):
     _init_temp_db(tmp_path)
     requested_at = (utc_now() - timedelta(seconds=5)).isoformat()
@@ -380,7 +423,8 @@ def test_publish_readiness_service_clarifies_local_only_runtime_blockers(tmp_pat
 
     assert network_requirement.status.value == "not_applicable"
     assert network_requirement.operator_message == "This snapshot stays on the local node on this machine. No remote-node routing is required."
-    assert target_requirement.operator_message == "The local node on this machine is reachable."
+    assert target_requirement.label == "Local runtime is responding"
+    assert target_requirement.operator_message == "The local runtime on this machine is responding."
     assert engine_requirement.label == "Runtime can accept this publish"
     assert engine_requirement.operator_message == "The local audio engine on this machine is stopped or offline, so MAP2 cannot send this publish yet."
     assert channels_requirement.operator_message == "Waiting for the local runtime on this machine to confirm that the required channels are live."

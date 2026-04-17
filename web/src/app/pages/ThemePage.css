@@ -30,7 +30,12 @@
 .theme-page__hero-meta,
 .theme-page__top-tabs,
 .theme-page__panel-header,
+.theme-page__appearance-layout,
+.theme-page__appearance-stage,
+.theme-page__appearance-sidebar,
+.theme-page__fonts-objects-layout,
 .theme-page__preview-layout,
+.theme-page__compact-field-grid,
 .theme-page__typography-panel,
 .theme-page__behavior-panel,
 .theme-page__library-panel {
@@ -46,7 +51,7 @@
 }
 
 .theme-page__top-tabs {
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -97,9 +102,24 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.theme-page__appearance-layout {
+  grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 0.9fr);
+  align-items: start;
+}
+
+.theme-page__fonts-objects-layout {
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+}
+
 .theme-page__library-panel {
   grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 0.8fr);
   align-items: start;
+}
+
+.theme-page__compact-field-grid {
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 1fr);
+  align-items: end;
 }
 
 .theme-page__dialog-group {
@@ -420,6 +440,15 @@
 .theme-page__option-detail-copy {
   color: var(--cds-text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+.theme-page__compact-field-note {
+  display: grid;
+  gap: 0.2rem;
+  min-block-size: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer);
 }
 
 .theme-page__font-inline-sample {
@@ -1198,7 +1227,10 @@
 @media (max-width: 82rem) {
   .theme-page__hero,
   .theme-page__panel-header,
+  .theme-page__appearance-layout,
+  .theme-page__fonts-objects-layout,
   .theme-page__preview-layout,
+  .theme-page__compact-field-grid,
   .theme-page__typography-panel,
   .theme-page__behavior-panel,
   .theme-page__library-panel,

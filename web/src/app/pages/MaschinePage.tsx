@@ -1,13 +1,15 @@
 import './MaschinePage.css'
 
-import { InlineNotification, Tag } from '@carbon/react'
+import { Button, InlineNotification, Tag } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnectionPanel'
 import { MaschineEncoderMapPanel } from '../components/Maschine/MaschineEncoderMapPanel'
 import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePanel'
 import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTrafficPanel'
+import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
 import { MaschineLedPreviewPanel } from '../components/Maschine/MaschineLedPreviewPanel'
 import { MaschineTransportPanel } from '../components/Maschine/MaschineTransportPanel'
@@ -76,6 +78,17 @@ export function MaschinePage() {
     },
   })
 
+  const selectBlockMutation = useMutation({
+    mutationFn: (blockId: string) =>
+      maschineApi.getAudioGrid().then(() =>
+        fetch(`/api/maschine/audio-grid/select`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ block_id: blockId }),
+        }).then((r) => r.json()),
+      ),
+  })
+
   useEffect(() => {
     const socket = new WebSocket(`${getWsBaseUrl()}/api/maschine/ws`)
 
@@ -109,9 +122,24 @@ export function MaschinePage() {
   const encoderMap = liveEncoderMap ?? encoderMapQuery.data?.encoder_map ?? null
   const lcdState = status?.lcd ?? lcdRenderQuery.data?.lcd ?? null
   const resolvedTransportConfig = transportConfig ?? transportConfigQuery.data?.config ?? null
+  const ledArray = status?.led_array ?? status?.led_state?.led_array ?? null
+  const isDeviceConnected = Boolean(status?.connected && status?.transport?.connected)
+
+  const handlePadClick = useCallback(
+    (padIndex: number) => {
+      const blocks = status?.audio_grid?.blocks ?? []
+      const block = blocks.find((b) => b.pad_index === padIndex)
+      if (block) {
+        selectBlockMutation.mutate(block.block_id)
+      }
+    },
+    [status, selectBlockMutation],
+  )
+
+  const navigate = useNavigate()
 
   const subtitle = useMemo(
-    () => 'Dedicated Carbon workstation for Maschine daemon state, transport policy, encoder ownership, LED preview, LCD simulation, HID traffic, and firmware diagnostics.',
+    () => 'NI Maschine MK1 control surface — cabl-derived USB bulk protocol, 62 LED slots, 255\u00d764 dual LCD, 16-pad 12-bit pressure input.',
     [],
   )
 
@@ -120,7 +148,12 @@ export function MaschinePage() {
       <PageHeader
         title="Maschine MK1"
         subtitle={subtitle}
-        actions={<Tag type={pageStatusTone(status)}>{pageStatusLabel(status)}</Tag>}
+        actions={
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Button kind="ghost" size="sm" onClick={() => navigate('/maschine/midi-map')}>MIDI Map Editor</Button>
+            <Tag type={pageStatusTone(status)}>{pageStatusLabel(status)}</Tag>
+          </div>
+        }
       />
 
       {statusQuery.isError ? (
@@ -129,7 +162,7 @@ export function MaschinePage() {
           lowContrast
           hideCloseButton
           title="Maschine status could not be loaded"
-          subtitle="The dedicated route is present, but the backend did not return a valid Maschine status payload."
+          subtitle="The backend did not return a valid status payload."
         />
       ) : null}
 
@@ -139,7 +172,6 @@ export function MaschinePage() {
           status={status}
           config={resolvedTransportConfig}
           isSaving={updateTransportConfigMutation.isPending}
-          onChangePreference={(value) => updateTransportConfigMutation.mutate({ transport_preference: value })}
           onToggleKernelDetach={(value) => updateTransportConfigMutation.mutate({ allow_kernel_detach: value })}
           onRefresh={() => {
             void transportConfigQuery.refetch()
@@ -147,10 +179,15 @@ export function MaschinePage() {
           }}
         />
         <MaschineEncoderMapPanel encoderMap={encoderMap} />
-        <MaschineLedPreviewPanel ledState={status?.led_state ?? null} />
-        <MaschineLcdSimulatorPanel left={lcdState?.left ?? null} right={lcdState?.right ?? null} />
-        <MaschineHidTrafficPanel events={hidEvents} />
         <MaschineFirmwarePanel status={status} onRefresh={() => void statusQuery.refetch()} />
+        <MaschineLedPreviewPanel
+          ledState={status?.led_state ?? null}
+          ledArray={ledArray}
+          onPadClick={handlePadClick}
+        />
+        <MaschineLcdSimulatorPanel left={lcdState?.left ?? null} right={lcdState?.right ?? null} />
+        <MaschineHwTestPanel isConnected={isDeviceConnected} />
+        <MaschineHidTrafficPanel events={hidEvents} />
       </div>
     </div>
   )

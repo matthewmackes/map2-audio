@@ -227,6 +227,7 @@ function snapshotBundleFilenameFromHeaders(contentDisposition: string | null, fa
 
 function normalizeSnapshotPlugin(plugin: SnapshotPlugin): SnapshotPlugin {
   return {
+    id: plugin.id ?? null,
     uri: plugin.uri,
     position: plugin.position,
     bypass: plugin.bypass,

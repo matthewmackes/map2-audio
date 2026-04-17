@@ -96,13 +96,14 @@ describe('PageTransition', () => {
     expect(screen.queryByTestId('landing-route-transition')).toBeNull()
   })
 
-  it('animates navigation within the MIDI Hub route family', () => {
+  it('uses a lighter transition inside the MIDI Hub route family', () => {
     renderHarness('/midi-hub/connections')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go MIDI Presets' }))
 
     expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/midi-hub/presets')
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--midi-hub')
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--fade')
   })
 
   it('uses the pager slide preset when selected in effects settings', () => {

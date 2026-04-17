@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } fro
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ChartLine,
+  Devices,
   Home,
   IbmWatsonMachineLearning,
   Music,
@@ -91,6 +92,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/launch-control': Music,
   '/midi-commander': Music,
   '/maschine': Music,
+  '/maschine/midi-map': Music,
   '/ground-control-pro': Music,
   '/labs/push-surface': IbmWatsonMachineLearning,
   '/expression': ChartLine,
@@ -204,7 +206,7 @@ function buildHardwareTree(): TreeItemDefinition {
   return {
     id: HARDWARE_TREE_ID,
     label: 'Hardware',
-    icon: MapRackDeviceIcon,
+    icon: Devices,
     children: [
       {
         id: HARDWARE_PHYSICAL_SURFACES_ID,
