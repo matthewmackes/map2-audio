@@ -52,3 +52,17 @@
 .react-flow__background {
   opacity: 0.3;
 }
+
+.react-flow-density--high .react-flow__node,
+.react-flow-density--critical .react-flow__node {
+  transition: none;
+}
+
+.react-flow-density--high .react-flow__edge-path,
+.react-flow-density--critical .react-flow__edge-path {
+  transition: none;
+}
+
+.react-flow-density--critical .react-flow__controls {
+  display: none;
+}

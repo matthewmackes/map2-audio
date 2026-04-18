@@ -15,6 +15,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
+import { analyzeReactFlowDensity } from '../shared/reactFlowDensity'
 import type {
   ManagementWorkspaceGraphModel,
   ManagementWorkspaceGraphSelection,
@@ -117,19 +118,30 @@ function ManagementWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
 function ManagementWorkspaceGraphCanvas({
   nodes,
   edges,
+  densityTier,
+  showBackground,
+  showControls,
+  fitViewDurationMs,
 }: {
   nodes: Array<Node<RenderNodeData>>
   edges: Edge[]
+  densityTier: string
+  showBackground: boolean
+  showControls: boolean
+  fitViewDurationMs: number
 }) {
   const { fitView } = useReactFlow()
 
   useEffect(() => {
-    fitView({ padding: 0.16, duration: 180 })
-  }, [edges, fitView, nodes])
+    fitView({
+      padding: 0.16,
+      ...(fitViewDurationMs > 0 ? { duration: fitViewDurationMs } : {}),
+    })
+  }, [edges, fitView, fitViewDurationMs, nodes])
 
   return (
     <ReactFlow
-      className="management-workspace__graph-flow"
+      className={`management-workspace__graph-flow react-flow-density--${densityTier}`}
       fitView
       nodes={nodes}
       edges={edges}
@@ -142,8 +154,8 @@ function ManagementWorkspaceGraphCanvas({
       panOnDrag
       zoomOnScroll
     >
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--cds-border-subtle-01)" />
-      <Controls showInteractive={false} />
+      {showBackground ? <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--cds-border-subtle-01)" /> : null}
+      {showControls ? <Controls showInteractive={false} /> : null}
     </ReactFlow>
   )
 }
@@ -164,6 +176,7 @@ export function ManagementWorkspaceGraph({
       },
     }))
   ), [model.nodes, onSelect])
+  const density = useMemo(() => analyzeReactFlowDensity(graphNodes.length, model.edges.length), [graphNodes.length, model.edges.length])
 
   if (graphNodes.length === 0) {
     return (
@@ -174,13 +187,25 @@ export function ManagementWorkspaceGraph({
   }
 
   return (
-    <div className="management-workspace__graph">
+    <div
+      className={`management-workspace__graph react-flow-density--${density.tier}`}
+      data-density-tier={density.tier}
+      data-node-count={density.nodeCount}
+      data-edge-count={density.edgeCount}
+    >
       <div className="management-workspace__graph-toolbar" aria-hidden="true">
         <span>Management map</span>
         <span>Pan and zoom to inspect service posture</span>
       </div>
       <ReactFlowProvider>
-        <ManagementWorkspaceGraphCanvas nodes={graphNodes} edges={model.edges} />
+        <ManagementWorkspaceGraphCanvas
+          nodes={graphNodes}
+          edges={model.edges}
+          densityTier={density.tier}
+          showBackground={density.showBackground}
+          showControls={density.showControls}
+          fitViewDurationMs={density.fitViewDurationMs}
+        />
       </ReactFlowProvider>
     </div>
   )

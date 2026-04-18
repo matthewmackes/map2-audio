@@ -162,7 +162,7 @@ Last updated: 2026-04-17 14:17 EDT - Codex
 ---
 
 ID: T2343
-Status: [ ] Todo
+Status: [✓] Done
 Title: Reduce frontend framework and dense-graph overhead on critical operator routes
 Description:
 - Goal / acceptance criteria: Cut avoidable render and CSS recalculation overhead on high-traffic routes by identifying the highest-cost MUI islands that sit inside the Carbon shell, defining a phased replacement plan for those islands, and evaluating dense graph surfaces for virtualization or canvas fallback thresholds before large-node workspaces become visibly unstable. Acceptance requires a documented priority order for MUI retirements, at least one validated follow-up implementation target, and explicit ReactFlow density thresholds or instrumentation requirements for future graph-engine changes.
@@ -171,7 +171,16 @@ Description:
 - Estimated effort: High
 - Required outputs: prioritized framework-retirement plan, dense-graph evaluation notes, follow-up implementation task(s), and reconciled worklist state.
 Assigned to: Codex
-Last updated: 2026-04-17 06:55 EDT - Codex
+Last updated: 2026-04-17 23:45 EDT - Codex
+- Completion notes:
+  - Added `docs/design/FRONTEND_FRAMEWORK_RETIREMENT_AUDIT_2026-04-17.md`, which records the current `web/src/app/**` vs `web/src/map2/**` MUI inventory, prioritizes the remaining Carbon-shell MUI islands (AVB routing first, then Edirol/MOTU pages, then MIDI cluster holdouts), and defines the shared ReactFlow density thresholds plus future canvas/virtualization trigger.
+  - Removed the legacy MUI/Emotion alert-stack wrapper from `web/src/app/hooks/useAlertNotifications.tsx`, replaced it with lightweight DOM/CSS in `web/src/app/hooks/useAlertNotifications.css`, and added focused coverage in `web/src/app/hooks/useAlertNotifications.test.tsx`.
+  - Added shared ReactFlow density instrumentation in `web/src/app/components/shared/reactFlowDensity.ts` and applied it to the active workspace graphs (`NodeGraph`, `ClusterDashboardWorkspaceGraph`, `ManagementWorkspaceGraph`, `NetworkDiscoveryWorkspaceGraph`, `AudioEngineWorkspaceGraph`, and `AvbRoutingWorkspaceGraph`) so high-density graphs now drop decorative background chrome, critical-density graphs hide controls, and animated `fitView` scales down or disappears as density rises.
+  - Recorded the new ReactFlow density rule and MUI alert de-islanding pattern in `.gemini/instructions.md` so future performance work reuses the same thresholds rather than inventing route-local heuristics.
+- Validation:
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/shared/reactFlowDensity.test.ts src/app/hooks/useAlertNotifications.test.tsx src/app/components/ClusterDashboard/clusterDashboardWorkspaceGraph.test.ts src/app/components/NodeGraph/nodeGraphLayout.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
 
 ---
 

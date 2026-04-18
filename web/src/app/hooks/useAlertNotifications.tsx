@@ -3,6 +3,8 @@
  * Supports toast notifications, sound alerts, and browser notifications
  */
 
+import './useAlertNotifications.css'
+
 import { useState, useCallback, useRef } from 'react'
 import { Activity, Close, DataBase, TemperatureHot, WarningAltFilled } from '@carbon/icons-react'
 
@@ -51,7 +53,6 @@ export function useAlertNotifications() {
    * Get alert message based on type
    */
   const getAlertMessage = useCallback((type: AlertType, value: number, threshold: number) => {
-    const diff = Math.abs(value - threshold)
     const unit = type === 'temperature' ? '°C' : '%'
 
     const messages: Record<AlertType, { title: string; message: string }> = {
@@ -267,20 +268,12 @@ export function useAlertNotifications() {
   }
 }
 
-/**
- * React component for displaying alert notifications
- */
-import { Box, Paper, Typography, IconButton, Collapse } from '@mui/material'
-
 export interface AlertNotificationsProps {
   notifications: AlertNotification[]
   onDismiss: (id: string) => void
 }
 
 export function AlertNotificationsContainer({ notifications, onDismiss }: AlertNotificationsProps) {
-  const getSeverityColor = (severity: AlertSeverity) =>
-    severity === 'critical' ? '#ef4444' : '#f59e0b'
-
   const getTypeIconNode = (type: AlertType) => {
     const icons: Record<AlertType, React.ReactNode> = {
       temperature: <TemperatureHot size={16} />,
@@ -292,65 +285,31 @@ export function AlertNotificationsContainer({ notifications, onDismiss }: AlertN
   }
 
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        bottom: 20,
-        right: 20,
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        maxWidth: 400,
-      }}
-    >
+    <div className="alert-notification-stack" aria-live="assertive">
       {notifications.map((notification) => (
-        <Paper
+        <section
           key={notification.id}
-          sx={{
-            p: 2,
-            backgroundColor: getSeverityColor(notification.severity),
-            color: '#fff',
-            borderRadius: 1,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            animation: 'slideIn 0.3s ease-in-out',
-            '@keyframes slideIn': {
-              from: {
-                transform: 'translateX(400px)',
-                opacity: 0,
-              },
-              to: {
-                transform: 'translateX(0)',
-                opacity: 1,
-              },
-            },
-          }}
+          className={`alert-notification-card alert-notification-card--${notification.severity}`}
+          role="alert"
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 14, mb: 0.5 }}>
-                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                  {getTypeIconNode(notification.type)} {notification.title}
-                </Box>
-              </Typography>
-              <Typography sx={{ fontSize: 12, opacity: 0.95 }}>
-                {notification.message}
-              </Typography>
-            </Box>
-            <IconButton
-              size="small"
-              onClick={() => onDismiss(notification.id)}
-              sx={{
-                color: '#fff',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-                ml: 1,
-              }}
-            >
-              <Close size={16} />
-            </IconButton>
-          </Box>
-        </Paper>
+          <div className="alert-notification-card__body">
+            <p className="alert-notification-card__title">
+              {getTypeIconNode(notification.type)}
+              <span>{notification.title}</span>
+            </p>
+            <p className="alert-notification-card__message">{notification.message}</p>
+          </div>
+          <button
+            type="button"
+            className="alert-notification-card__dismiss"
+            aria-label={`Dismiss ${notification.title}`}
+            title={`Dismiss ${notification.title}`}
+            onClick={() => onDismiss(notification.id)}
+          >
+            <Close size={16} />
+          </button>
+        </section>
       ))}
-    </Box>
+    </div>
   )
 }

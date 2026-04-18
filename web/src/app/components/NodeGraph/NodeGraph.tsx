@@ -11,6 +11,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
+import { analyzeReactFlowDensity } from '../shared/reactFlowDensity'
 import type { NodeTopology } from '../../types/node'
 import { NodeGraphCard, type NodeGraphCardData } from './NodeGraphCard'
 import { buildNodeGraphEdges, buildNodeGraphNodes, layoutNodeGraph } from './nodeGraphLayout'
@@ -34,9 +35,17 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
     return buildNodeGraphEdges(topology)
   }, [topology])
 
+  const density = useMemo(() => analyzeReactFlowDensity(nodes.length, edges.length), [edges.length, nodes.length])
+
   return (
-    <div className="node-graph">
+    <div
+      className={`node-graph react-flow-density--${density.tier}`}
+      data-density-tier={density.tier}
+      data-node-count={density.nodeCount}
+      data-edge-count={density.edgeCount}
+    >
       <ReactFlow
+        className={`react-flow-density--${density.tier}`}
         fitView
         nodes={nodes}
         edges={edges}
@@ -45,8 +54,10 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
         elementsSelectable={false}
         minZoom={0.5}
       >
-        <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#c6c6c6" />
-        <Controls showInteractive={false} />
+        {density.showBackground ? (
+          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#c6c6c6" />
+        ) : null}
+        {density.showControls ? <Controls showInteractive={false} /> : null}
       </ReactFlow>
     </div>
   )
