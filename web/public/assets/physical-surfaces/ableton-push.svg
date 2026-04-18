@@ -1,40 +1,255 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">Ableton Push hero artwork</title>
-  <desc id="desc">Stylized product hero artwork for the Ableton Push controller.</desc>
+  <desc id="desc">Stylized product hero artwork for the Ableton Push controller, redrawn from an interface diagram.</desc>
   <defs>
     <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#1a1f2c" />
-      <stop offset="100%" stop-color="#ff832b" />
+      <stop offset="0%" stop-color="#e7edf4" />
+      <stop offset="58%" stop-color="#c7d4e3" />
+      <stop offset="100%" stop-color="#7d96b6" />
     </linearGradient>
+    <linearGradient id="panel" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#dce4ee" />
+      <stop offset="100%" stop-color="#bcc9d8" />
+    </linearGradient>
+    <linearGradient id="frame" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#7f97b9" />
+      <stop offset="100%" stop-color="#58749b" />
+    </linearGradient>
+    <linearGradient id="pad" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#7288a3" />
+      <stop offset="100%" stop-color="#5f7591" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#2d3f55" flood-opacity="0.28" />
+    </filter>
   </defs>
+
   <rect width="1600" height="900" fill="url(#bg)" />
-  <rect x="110" y="120" width="840" height="660" rx="28" fill="#171717" stroke="#525252" stroke-width="4" />
-  <g transform="translate(180 190)">
-    <rect width="700" height="520" rx="24" fill="#111315" />
-    <g fill="#f4f4f4">
-      <rect x="50" y="54" width="92" height="92" rx="12" />
-      <rect x="156" y="54" width="92" height="92" rx="12" />
-      <rect x="262" y="54" width="92" height="92" rx="12" />
-      <rect x="368" y="54" width="92" height="92" rx="12" />
-      <rect x="474" y="54" width="92" height="92" rx="12" />
-      <rect x="580" y="54" width="70" height="92" rx="12" />
-      <rect x="50" y="162" width="92" height="92" rx="12" />
-      <rect x="156" y="162" width="92" height="92" rx="12" />
-      <rect x="262" y="162" width="92" height="92" rx="12" />
-      <rect x="368" y="162" width="92" height="92" rx="12" />
-      <rect x="474" y="162" width="92" height="92" rx="12" />
-      <rect x="580" y="162" width="70" height="92" rx="12" />
-      <rect x="50" y="270" width="92" height="92" rx="12" />
-      <rect x="156" y="270" width="92" height="92" rx="12" />
-      <rect x="262" y="270" width="92" height="92" rx="12" />
-      <rect x="368" y="270" width="92" height="92" rx="12" />
-      <rect x="474" y="270" width="92" height="92" rx="12" />
-      <rect x="580" y="270" width="70" height="92" rx="12" />
+  <circle cx="1350" cy="148" r="180" fill="#ffffff" fill-opacity="0.2" />
+  <circle cx="1464" cy="104" r="96" fill="#ffffff" fill-opacity="0.16" />
+
+  <g filter="url(#shadow)">
+    <rect x="112" y="112" width="934" height="676" rx="24" fill="url(#panel)" stroke="#6f86a6" stroke-width="4" />
+    <path d="M160 154h790" stroke="#6f86a6" stroke-width="3" />
+    <path d="M160 748h790" stroke="#6f86a6" stroke-width="3" />
+
+    <g fill="#d8e1ed" stroke="#7f97b9" stroke-width="2.5">
+      <rect x="162" y="172" width="82" height="18" rx="3" />
+      <rect x="162" y="236" width="68" height="22" rx="3" />
+      <rect x="162" y="288" width="68" height="22" rx="3" />
+      <rect x="162" y="340" width="68" height="22" rx="3" />
+      <rect x="162" y="392" width="68" height="22" rx="3" />
+      <rect x="162" y="444" width="68" height="22" rx="3" />
+      <rect x="162" y="496" width="68" height="22" rx="3" />
+      <rect x="162" y="548" width="68" height="22" rx="3" />
+      <rect x="162" y="600" width="68" height="22" rx="3" />
+      <rect x="162" y="652" width="68" height="22" rx="3" />
+
+      <rect x="828" y="172" width="120" height="18" rx="3" />
+      <rect x="828" y="244" width="58" height="22" rx="3" />
+      <rect x="908" y="244" width="58" height="22" rx="3" />
+      <rect x="828" y="296" width="58" height="22" rx="3" />
+      <rect x="908" y="296" width="58" height="22" rx="3" />
+      <rect x="828" y="368" width="58" height="22" rx="3" />
+      <rect x="908" y="368" width="58" height="22" rx="3" />
+      <rect x="828" y="420" width="58" height="22" rx="3" />
+      <rect x="908" y="420" width="58" height="22" rx="3" />
+      <rect x="828" y="472" width="58" height="22" rx="3" />
+      <rect x="908" y="472" width="58" height="22" rx="3" />
+      <rect x="828" y="524" width="58" height="22" rx="3" />
+      <rect x="908" y="524" width="58" height="22" rx="3" />
+      <rect x="828" y="596" width="58" height="22" rx="3" />
+      <rect x="908" y="596" width="58" height="22" rx="3" />
+      <rect x="828" y="648" width="58" height="22" rx="3" />
+      <rect x="908" y="648" width="58" height="22" rx="3" />
     </g>
-    <rect x="50" y="402" width="236" height="56" rx="14" fill="#ff832b" />
-    <rect x="306" y="402" width="344" height="56" rx="14" fill="#8a3ffc" />
+
+    <g fill="none" stroke="#8aa1c1" stroke-width="2.5">
+      <circle cx="298" cy="176" r="20" />
+      <circle cx="360" cy="176" r="20" />
+      <circle cx="422" cy="176" r="20" />
+      <circle cx="484" cy="176" r="20" />
+      <circle cx="546" cy="176" r="20" />
+      <circle cx="608" cy="176" r="20" />
+      <circle cx="670" cy="176" r="20" />
+      <circle cx="732" cy="176" r="20" />
+      <circle cx="794" cy="176" r="20" />
+    </g>
+    <g fill="none" stroke="#6f86a6" stroke-width="2.5">
+      <circle cx="298" cy="176" r="12" />
+      <circle cx="360" cy="176" r="12" />
+      <circle cx="422" cy="176" r="12" />
+      <circle cx="484" cy="176" r="12" />
+      <circle cx="546" cy="176" r="12" />
+      <circle cx="608" cy="176" r="12" />
+      <circle cx="670" cy="176" r="12" />
+      <circle cx="732" cy="176" r="12" />
+    </g>
+
+    <text x="166" y="209" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">SIDE_STRIP</text>
+    <text x="274" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_01</text>
+    <text x="336" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_02</text>
+    <text x="398" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_03</text>
+    <text x="460" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_04</text>
+    <text x="522" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_05</text>
+    <text x="584" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_06</text>
+    <text x="646" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_07</text>
+    <text x="708" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">ENC_08</text>
+    <text x="836" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">BTN_12</text>
+    <text x="908" y="214" fill="#3d526a" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">BTN_13</text>
+
+    <rect x="280" y="236" width="492" height="58" fill="#d4deea" stroke="#7f97b9" stroke-width="3" />
+    <rect x="286" y="242" width="480" height="46" fill="none" stroke="#8aa1c1" stroke-width="2" />
+    <text x="526" y="257" fill="#31475f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="14" font-weight="700" text-anchor="middle">WELCOME</text>
+    <text x="526" y="277" fill="#31475f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="14" font-weight="700" text-anchor="middle">SCREEN</text>
+
+    <g fill="#d8e1ed" stroke="#7f97b9" stroke-width="2.5">
+      <rect x="282" y="314" width="42" height="16" rx="2" />
+      <rect x="346" y="314" width="42" height="16" rx="2" />
+      <rect x="410" y="314" width="42" height="16" rx="2" />
+      <rect x="474" y="314" width="42" height="16" rx="2" />
+      <rect x="538" y="314" width="42" height="16" rx="2" />
+      <rect x="602" y="314" width="42" height="16" rx="2" />
+      <rect x="666" y="314" width="42" height="16" rx="2" />
+      <rect x="730" y="314" width="42" height="16" rx="2" />
+      <rect x="282" y="334" width="42" height="16" rx="2" />
+      <rect x="346" y="334" width="42" height="16" rx="2" />
+      <rect x="410" y="334" width="42" height="16" rx="2" />
+      <rect x="474" y="334" width="42" height="16" rx="2" />
+      <rect x="538" y="334" width="42" height="16" rx="2" />
+      <rect x="602" y="334" width="42" height="16" rx="2" />
+      <rect x="666" y="334" width="42" height="16" rx="2" />
+      <rect x="730" y="334" width="42" height="16" rx="2" />
+    </g>
+
+    <g transform="translate(282 356)" fill="url(#pad)" stroke="url(#frame)" stroke-width="3">
+      <rect x="0" y="0" width="48" height="48" />
+      <rect x="62" y="0" width="48" height="48" />
+      <rect x="124" y="0" width="48" height="48" />
+      <rect x="186" y="0" width="48" height="48" />
+      <rect x="248" y="0" width="48" height="48" />
+      <rect x="310" y="0" width="48" height="48" />
+      <rect x="372" y="0" width="48" height="48" />
+      <rect x="434" y="0" width="48" height="48" />
+      <rect x="0" y="62" width="48" height="48" />
+      <rect x="62" y="62" width="48" height="48" />
+      <rect x="124" y="62" width="48" height="48" />
+      <rect x="186" y="62" width="48" height="48" />
+      <rect x="248" y="62" width="48" height="48" />
+      <rect x="310" y="62" width="48" height="48" />
+      <rect x="372" y="62" width="48" height="48" />
+      <rect x="434" y="62" width="48" height="48" />
+      <rect x="0" y="124" width="48" height="48" />
+      <rect x="62" y="124" width="48" height="48" />
+      <rect x="124" y="124" width="48" height="48" />
+      <rect x="186" y="124" width="48" height="48" />
+      <rect x="248" y="124" width="48" height="48" />
+      <rect x="310" y="124" width="48" height="48" />
+      <rect x="372" y="124" width="48" height="48" />
+      <rect x="434" y="124" width="48" height="48" />
+      <rect x="0" y="186" width="48" height="48" />
+      <rect x="62" y="186" width="48" height="48" />
+      <rect x="124" y="186" width="48" height="48" />
+      <rect x="186" y="186" width="48" height="48" />
+      <rect x="248" y="186" width="48" height="48" />
+      <rect x="310" y="186" width="48" height="48" />
+      <rect x="372" y="186" width="48" height="48" />
+      <rect x="434" y="186" width="48" height="48" />
+      <rect x="0" y="248" width="48" height="48" />
+      <rect x="62" y="248" width="48" height="48" />
+      <rect x="124" y="248" width="48" height="48" />
+      <rect x="186" y="248" width="48" height="48" />
+      <rect x="248" y="248" width="48" height="48" />
+      <rect x="310" y="248" width="48" height="48" />
+      <rect x="372" y="248" width="48" height="48" />
+      <rect x="434" y="248" width="48" height="48" />
+      <rect x="0" y="310" width="48" height="48" />
+      <rect x="62" y="310" width="48" height="48" />
+      <rect x="124" y="310" width="48" height="48" />
+      <rect x="186" y="310" width="48" height="48" />
+      <rect x="248" y="310" width="48" height="48" />
+      <rect x="310" y="310" width="48" height="48" />
+      <rect x="372" y="310" width="48" height="48" />
+      <rect x="434" y="310" width="48" height="48" />
+      <rect x="0" y="372" width="48" height="48" />
+      <rect x="62" y="372" width="48" height="48" />
+      <rect x="124" y="372" width="48" height="48" />
+      <rect x="186" y="372" width="48" height="48" />
+      <rect x="248" y="372" width="48" height="48" />
+      <rect x="310" y="372" width="48" height="48" />
+      <rect x="372" y="372" width="48" height="48" />
+      <rect x="434" y="372" width="48" height="48" />
+      <rect x="0" y="434" width="48" height="48" />
+      <rect x="62" y="434" width="48" height="48" />
+      <rect x="124" y="434" width="48" height="48" />
+      <rect x="186" y="434" width="48" height="48" />
+      <rect x="248" y="434" width="48" height="48" />
+      <rect x="310" y="434" width="48" height="48" />
+      <rect x="372" y="434" width="48" height="48" />
+      <rect x="434" y="434" width="48" height="48" />
+    </g>
+
+    <g fill="#dfe7f0" stroke="#7f97b9" stroke-width="2.5">
+      <rect x="808" y="438" width="74" height="36" rx="3" />
+      <rect x="808" y="484" width="74" height="36" rx="3" />
+      <rect x="808" y="530" width="74" height="36" rx="3" />
+      <circle cx="846" cy="600" r="24" fill="none" />
+      <circle cx="846" cy="600" r="16" fill="none" />
+      <rect x="904" y="662" width="54" height="22" rx="2" />
+      <rect x="904" y="692" width="54" height="22" rx="2" />
+      <path d="M931 669l10 12h-20z" fill="#4c617b" stroke="none" />
+      <path d="M931 707l-10-12h20z" fill="#4c617b" stroke="none" />
+    </g>
+
+    <text x="166" y="258" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_01</text>
+    <text x="166" y="278" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Tap Tempo</text>
+    <text x="166" y="310" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_02</text>
+    <text x="166" y="330" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Metronome</text>
+    <text x="166" y="362" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_03</text>
+    <text x="166" y="382" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Undo</text>
+    <text x="166" y="414" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_04</text>
+    <text x="166" y="434" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Volume</text>
+    <text x="166" y="466" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_05</text>
+    <text x="166" y="486" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Pan / Send</text>
+    <text x="166" y="518" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_06</text>
+    <text x="166" y="538" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Track</text>
+    <text x="166" y="570" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_07</text>
+    <text x="166" y="590" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Clip / Device</text>
+    <text x="166" y="622" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_08</text>
+    <text x="166" y="642" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Scales</text>
+    <text x="166" y="674" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">BTN_16</text>
+    <text x="166" y="694" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Note</text>
+
+    <text x="838" y="266" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Master</text>
+    <text x="910" y="266" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Accent</text>
+    <text x="838" y="318" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Stop</text>
+    <text x="910" y="318" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Browse</text>
+    <text x="838" y="390" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Track</text>
+    <text x="910" y="390" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Clip</text>
+    <text x="838" y="442" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Add Effect</text>
+    <text x="910" y="442" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Add Track</text>
+    <text x="838" y="494" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Duplicate</text>
+    <text x="910" y="494" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Delete</text>
+    <text x="838" y="546" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Double</text>
+    <text x="910" y="546" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">Quantize</text>
+    <text x="818" y="460" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">LED ZONE</text>
+    <text x="818" y="506" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">INNER PAD</text>
+    <text x="818" y="520" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">ZONE</text>
+    <text x="818" y="552" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">VELOCITY</text>
+    <text x="818" y="566" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">ZONE</text>
+    <text x="818" y="674" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Octave Up</text>
+    <text x="818" y="704" fill="#415770" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">Octave Down</text>
   </g>
-  <text x="1010" y="284" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
-  <text x="1010" y="368" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="76" font-weight="700">ABLETON PUSH</text>
-  <text x="1010" y="438" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">session pads, encoders, and performance views</text>
+
+  <g>
+    <text x="1106" y="286" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+    <text x="1106" y="368" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="74" font-weight="700">ABLETON PUSH</text>
+    <text x="1106" y="438" fill="#edf3f8" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">pads, encoders, and clip-focused surface navigation</text>
+
+    <rect x="1106" y="510" width="324" height="2" fill="#eef3f8" fill-opacity="0.55" />
+    <text x="1106" y="556" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="22" font-weight="700">Interface redraw</text>
+    <text x="1106" y="592" fill="#eef3f8" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">Push surface zones translated from the supplied</text>
+    <text x="1106" y="622" fill="#eef3f8" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">diagram into the established 16:9 MAP2 hero</text>
+    <text x="1106" y="652" fill="#eef3f8" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">format used across the controller catalog.</text>
+  </g>
 </svg>

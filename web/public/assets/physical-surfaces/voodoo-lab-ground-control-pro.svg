@@ -1,30 +1,210 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">Ground Control Pro hero artwork</title>
-  <desc id="desc">Stylized product hero artwork for the Voodoo Lab Ground Control Pro.</desc>
+  <desc id="desc">Stylized product hero artwork for the Voodoo Lab Ground Control Pro, redrawn from a controller diagram.</desc>
   <defs>
     <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#2d0709" />
-      <stop offset="100%" stop-color="#5c1f14" />
+      <stop offset="0%" stop-color="#140708" />
+      <stop offset="54%" stop-color="#402124" />
+      <stop offset="100%" stop-color="#8c5d46" />
     </linearGradient>
+    <linearGradient id="pedalboard" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#faf8f6" />
+      <stop offset="100%" stop-color="#e3ddd8" />
+    </linearGradient>
+    <linearGradient id="panel" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fdfcfa" />
+      <stop offset="100%" stop-color="#efe7e0" />
+    </linearGradient>
+    <linearGradient id="lcd" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbfaf7" />
+      <stop offset="100%" stop-color="#ddd7ce" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#050304" flood-opacity="0.42" />
+    </filter>
   </defs>
+
   <rect width="1600" height="900" fill="url(#bg)" />
-  <rect x="120" y="200" width="1360" height="420" rx="36" fill="#1d1d1d" stroke="#8d8d8d" stroke-width="4" />
-  <g transform="translate(190 290)">
-    <rect width="1220" height="240" rx="28" fill="#111111" />
-    <g fill="#d0d0d0">
-      <circle cx="118" cy="170" r="52" />
-      <circle cx="266" cy="170" r="52" />
-      <circle cx="414" cy="170" r="52" />
-      <circle cx="562" cy="170" r="52" />
-      <circle cx="710" cy="170" r="52" />
-      <circle cx="858" cy="170" r="52" />
-      <circle cx="1006" cy="170" r="52" />
+  <circle cx="1366" cy="132" r="190" fill="#ffffff" fill-opacity="0.08" />
+  <circle cx="1480" cy="94" r="92" fill="#f3e8dc" fill-opacity="0.12" />
+
+  <g filter="url(#shadow)">
+    <rect x="86" y="138" width="1040" height="620" rx="26" fill="url(#pedalboard)" />
+    <rect x="86" y="138" width="1040" height="620" rx="26" fill="none" stroke="#8c8177" stroke-width="4" />
+    <rect x="124" y="162" width="964" height="582" rx="12" fill="url(#panel)" stroke="#5f554d" stroke-width="3" />
+
+    <rect x="156" y="188" width="898" height="118" rx="10" fill="#faf8f5" stroke="#5f554d" stroke-width="3" />
+    <path d="M156 272h898" stroke="#5f554d" stroke-width="3" />
+    <text x="198" y="224" fill="#14110f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30" font-weight="700">GROUND</text>
+    <text x="198" y="252" fill="#14110f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30" font-weight="700">CONTROL</text>
+    <text x="390" y="254" fill="#14110f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="24" font-style="italic">Pro</text>
+    <text x="190" y="288" fill="#3b332d" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">PROGRAMMABLE MIDI FOOT CONTROLLER</text>
+    <rect x="442" y="206" width="324" height="58" rx="4" fill="url(#lcd)" stroke="#80756b" stroke-width="2.5" />
+    <path d="M474 206v58M512 206v58M550 206v58M588 206v58M626 206v58M664 206v58M702 206v58M740 206v58" stroke="#80756b" stroke-width="1.6" />
+    <text x="462" y="248" fill="#241f1b" font-family="IBM Plex Mono, IBM Plex Sans, Arial, sans-serif" font-size="28" font-weight="700">08.INIT88888</text>
+    <text x="812" y="238" fill="#14110f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="26" font-weight="700">Voodoo Lab</text>
+    <path d="M804 208l26 8 28-8 28 8 28-8 28 8 28-8" fill="none" stroke="#14110f" stroke-width="4" />
+    <path d="M804 262l26-8 28 8 28-8 28 8 28-8 28 8" fill="none" stroke="#14110f" stroke-width="4" />
+
+    <g fill="#161210" font-family="IBM Plex Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle">
+      <text x="210" y="382">1</text>
+      <text x="418" y="382">2</text>
+      <text x="626" y="382">3</text>
+      <text x="834" y="382">4</text>
+      <text x="1040" y="382">EDIT</text>
+      <text x="210" y="540">5</text>
+      <text x="418" y="540">6</text>
+      <text x="626" y="540">7</text>
+      <text x="834" y="540">8</text>
+      <text x="210" y="694">9</text>
+      <text x="418" y="694">0</text>
     </g>
-    <rect x="78" y="44" width="280" height="46" rx="14" fill="#ff832b" />
-    <rect x="390" y="44" width="280" height="46" rx="14" fill="#24a148" />
-    <rect x="702" y="44" width="280" height="46" rx="14" fill="#0f62fe" />
+
+    <g fill="none" stroke="#1d1814" stroke-width="2.5">
+      <g transform="translate(210 430)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(418 430)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(626 430)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(834 430)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(1040 430)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(210 588)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(418 588)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(626 588)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(834 588)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+      <g transform="translate(1040 588)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+        <circle cx="0" cy="0" r="10" />
+      </g>
+    </g>
+
+    <g fill="#1b1612">
+      <circle cx="210" cy="396" r="7" />
+      <circle cx="418" cy="396" r="7" />
+      <circle cx="626" cy="396" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="834" cy="396" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="1040" cy="396" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="210" cy="554" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="418" cy="554" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="626" cy="554" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="834" cy="554" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="210" cy="708" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="418" cy="708" r="7" />
+      <circle cx="626" cy="708" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+      <circle cx="834" cy="708" r="7" fill="none" stroke="#1b1612" stroke-width="2" />
+    </g>
+
+    <g fill="#faf8f5" stroke="#5f554d" stroke-width="2.5">
+      <rect x="166" y="462" width="280" height="20" />
+      <rect x="584" y="462" width="140" height="20" />
+      <rect x="782" y="462" width="192" height="20" />
+      <rect x="166" y="620" width="144" height="20" />
+      <rect x="360" y="620" width="420" height="20" />
+      <rect x="162" y="744" width="356" height="22" />
+      <rect x="576" y="744" width="330" height="22" />
+      <rect x="994" y="744" width="92" height="22" />
+    </g>
+    <g fill="#191512" font-family="IBM Plex Sans, Arial, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+      <text x="212" y="477">SETUP</text>
+      <text x="306" y="477">DEVICE NAME/CHANNEL</text>
+      <text x="654" y="477">PEDAL</text>
+      <text x="878" y="477">EXPANDERS</text>
+      <text x="1036" y="477">SETUP</text>
+      <text x="216" y="635">MIDI</text>
+      <text x="572" y="635">INSTANT ACCESS</text>
+      <text x="680" y="635">UTILITY</text>
+      <text x="860" y="635">SPECIAL</text>
+      <text x="340" y="760">CURSOR</text>
+      <text x="742" y="760">DATA</text>
+      <text x="1040" y="760">SELECT</text>
+    </g>
+
+    <g fill="none" stroke="#201914" stroke-width="2.5">
+      <path d="M214 708h568" stroke-dasharray="8 8" />
+      <g transform="translate(214 746)">
+        <circle cx="0" cy="0" r="30" />
+        <circle cx="0" cy="0" r="20" />
+      </g>
+      <g transform="translate(418 746)">
+        <circle cx="0" cy="0" r="30" />
+        <circle cx="0" cy="0" r="20" />
+      </g>
+      <g transform="translate(620 746)">
+        <circle cx="0" cy="0" r="30" />
+        <circle cx="0" cy="0" r="20" />
+      </g>
+      <g transform="translate(834 746)">
+        <circle cx="0" cy="0" r="30" />
+        <circle cx="0" cy="0" r="20" />
+      </g>
+      <g transform="translate(1040 746)">
+        <circle cx="0" cy="0" r="24" />
+        <circle cx="0" cy="0" r="16" />
+      </g>
+    </g>
+
+    <g fill="#17120f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle">
+      <text x="250" y="760">1</text>
+      <text x="454" y="760">2</text>
+      <text x="656" y="760">3</text>
+      <text x="870" y="760">4</text>
+    </g>
+
+    <g fill="#17120f" font-family="IBM Plex Sans, Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle">
+      <text x="214" y="758">◀</text>
+      <text x="416" y="758">▶</text>
+      <text x="648" y="758">-/NO</text>
+      <text x="848" y="758">+/YES</text>
+      <text x="1040" y="686">BANK</text>
+      <text x="1040" y="718">▲</text>
+      <text x="1040" y="732">▼</text>
+    </g>
   </g>
-  <text x="150" y="130" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
-  <text x="150" y="760" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="72" font-weight="700">GROUND CONTROL PRO</text>
-  <text x="150" y="824" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">foot control, preset recall, and stage transport mapping</text>
+
+  <g>
+    <text x="1166" y="300" fill="#ecd9d0" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+    <text x="1166" y="382" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="72" font-weight="700">GROUND CONTROL PRO</text>
+    <text x="1166" y="450" fill="#f2e8e1" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">footswitch scenes, bank navigation, and stage-ready MIDI recall</text>
+
+    <rect x="1166" y="520" width="324" height="2" fill="#e8d3c7" fill-opacity="0.45" />
+    <text x="1166" y="566" fill="#fff8f3" font-family="IBM Plex Sans, Arial, sans-serif" font-size="22" font-weight="700">Pedalboard redraw</text>
+    <text x="1166" y="602" fill="#f2e8e1" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">Wide Voodoo Lab foot controller zones translated</text>
+    <text x="1166" y="632" fill="#f2e8e1" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">from the supplied diagram into the same 16:9</text>
+    <text x="1166" y="662" fill="#f2e8e1" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">MAP2 hero system used across the catalog.</text>
+  </g>
 </svg>
