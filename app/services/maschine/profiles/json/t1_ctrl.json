@@ -1,0 +1,60 @@
+{
+  "id": "t1_ctrl",
+  "name": "T1 CTRL",
+  "description": "Primary control view for snapshot and chain selection.",
+  "bars": {
+    "left": {
+      "top_left": "T1 CTRL",
+      "top_right": "{{ snapshot_name }}",
+      "bottom_left": "PROFILE NAV",
+      "bottom_right": "{{ block_count }} FX"
+    },
+    "right": {
+      "top_left": "{{ selected_plugin_name }}",
+      "top_right": "LIVE",
+      "bottom_left": "{{ selected_path_label }}",
+      "bottom_right": "{{ selected_block_id }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ snapshot_name }}" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "block_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ selected_plugin_name }}" },
+      { "type": "text", "font": "cozette", "text": "{{ selected_param_name }}" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "progress",
+        "value": "selected_index",
+        "min": "0",
+        "max": "selected_index_max",
+        "fill_brightness": 31,
+        "track_brightness": 7
+      },
+      { "type": "text", "font": "terminus", "text": "{{ selected_param_value }}", "align": "center" }
+    ]
+  }
+}

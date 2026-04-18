@@ -1,0 +1,52 @@
+{
+  "id": "t7_b_l",
+  "name": "T7 B-L",
+  "description": "Observer-backed Brain left-bank slot roster.",
+  "bars": {
+    "left": {
+      "top_left": "T7 B-L",
+      "top_right": "{{ brain_left_mode }}",
+      "bottom_left": "{{ brain_left_focus }}",
+      "bottom_right": "SLOTS 1-8"
+    },
+    "right": {
+      "top_left": "{{ brain_left_focus }}",
+      "top_right": "{{ brain_left_mode }}",
+      "bottom_left": "BRAIN LEFT",
+      "bottom_right": "{{ brain_left_label }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "BRAIN LEFT" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "brain_left_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ brain_left_focus }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ brain_left_mode }}" },
+      { "type": "text", "font": "unscii", "text": "{{ brain_left_label }}" }
+    ]
+  }
+}

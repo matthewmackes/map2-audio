@@ -387,10 +387,10 @@ function DetailEditor({
 }
 
 // ---------------------------------------------------------------------------
-// Main page
+// Main page / embedded editor
 // ---------------------------------------------------------------------------
 
-export function MaschineMidiMapPage() {
+export function MaschineMidiMapEditor({ embedded = false }: { embedded?: boolean }) {
   const [selected, setSelected] = useState<SelectedElement>(null)
   const [localMap, setLocalMap] = useState<MaschineMidiMap | null>(null)
   const [isDirty, setIsDirty] = useState(false)
@@ -546,23 +546,25 @@ export function MaschineMidiMapPage() {
   if (!midiMap) {
     return (
       <div className="midi-map-page">
-        <PageHeader title="MIDI Map Editor" subtitle="Loading MIDI map configuration..." />
+        {embedded ? <p>Loading MIDI map configuration...</p> : <PageHeader title="MIDI Map Editor" subtitle="Loading MIDI map configuration..." />}
       </div>
     )
   }
 
   return (
-    <div className="midi-map-page">
-      <PageHeader
-        title="MIDI Map Editor"
-        subtitle="NI Maschine MK1 \u2014 hardware-faithful layout. Click any element to edit its MIDI assignment."
-        actions={
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Tag type={isConnected ? 'green' : 'red'}>{isConnected ? 'Connected' : 'Offline'}</Tag>
-            <Tag type="blue">Ch {midiMap.channel}</Tag>
-          </div>
-        }
-      />
+    <div className={embedded ? 'midi-map-page midi-map-page--embedded' : 'midi-map-page'}>
+      {!embedded ? (
+        <PageHeader
+          title="MIDI Map Editor"
+          subtitle="NI Maschine MK1 \u2014 hardware-faithful layout. Click any element to edit its MIDI assignment."
+          actions={
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Tag type={isConnected ? 'green' : 'red'}>{isConnected ? 'Connected' : 'Offline'}</Tag>
+              <Tag type="blue">Ch {midiMap.channel}</Tag>
+            </div>
+          }
+        />
+      ) : null}
 
       {statusQuery.isError && (
         <InlineNotification kind="error" lowContrast hideCloseButton title="Cannot reach backend" />
@@ -709,6 +711,10 @@ export function MaschineMidiMapPage() {
       </div>
     </div>
   )
+}
+
+export function MaschineMidiMapPage() {
+  return <MaschineMidiMapEditor />
 }
 
 export default MaschineMidiMapPage

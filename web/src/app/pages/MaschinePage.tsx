@@ -3,7 +3,6 @@ import './MaschinePage.css'
 import { Button, InlineNotification, Tag } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnectionPanel'
 import { MaschineEncoderMapPanel } from '../components/Maschine/MaschineEncoderMapPanel'
@@ -13,6 +12,7 @@ import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
 import { MaschineLedPreviewPanel } from '../components/Maschine/MaschineLedPreviewPanel'
 import { MaschineTransportPanel } from '../components/Maschine/MaschineTransportPanel'
+import { MaschineMidiMapEditor } from './MaschineMidiMapPage'
 import {
   maschineApi,
   type MaschineTransportConfig,
@@ -136,8 +136,6 @@ export function MaschinePage() {
     [status, selectBlockMutation],
   )
 
-  const navigate = useNavigate()
-
   const subtitle = useMemo(
     () => 'NI Maschine MK1 control surface — cabl-derived USB bulk protocol, 62 LED slots, 255\u00d764 dual LCD, 16-pad 12-bit pressure input.',
     [],
@@ -150,7 +148,13 @@ export function MaschinePage() {
         subtitle={subtitle}
         actions={
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Button kind="ghost" size="sm" onClick={() => navigate('/maschine/midi-map')}>MIDI Map Editor</Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              onClick={() => document.getElementById('hardware-layout')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              Hardware Layout + MIDI Map
+            </Button>
             <Tag type={pageStatusTone(status)}>{pageStatusLabel(status)}</Tag>
           </div>
         }
@@ -189,6 +193,17 @@ export function MaschinePage() {
         <MaschineHwTestPanel isConnected={isDeviceConnected} />
         <MaschineHidTrafficPanel events={hidEvents} />
       </div>
+
+      <section id="hardware-layout" className="maschine-page__embedded-map">
+        <div className="maschine-page__panel-head">
+          <h2>Hardware Layout + MIDI Map</h2>
+          <Tag type="blue">/maschine canonical surface</Tag>
+        </div>
+        <p className="maschine-page__panel-copy">
+          Phase 1 merges the physical layout editor into the main Maschine workspace. The legacy `/maschine/midi-map` route now redirects here.
+        </p>
+        <MaschineMidiMapEditor embedded />
+      </section>
     </div>
   )
 }

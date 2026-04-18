@@ -1,0 +1,52 @@
+{
+  "id": "t18_admin_console",
+  "name": "T18 ADMIN CONSOLE",
+  "description": "Locked admin posture view; entry stays hidden until the later unlock flow ships.",
+  "bars": {
+    "left": {
+      "top_left": "T18 ADMIN",
+      "top_right": "{{ admin_lock_label }}",
+      "bottom_left": "{{ admin_mode_label }}",
+      "bottom_right": "LOCKED"
+    },
+    "right": {
+      "top_left": "{{ admin_lock_label }}",
+      "top_right": "ADMIN",
+      "bottom_left": "{{ admin_mode_label }}",
+      "bottom_right": "T18"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "ADMIN CONSOLE" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "admin_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ admin_lock_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ admin_mode_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ admin_detail_label }}" }
+    ]
+  }
+}

@@ -556,7 +556,16 @@ class MaschineService(Singleton):
         for index in range(16):
             block = blocks[index] if index < len(blocks) else None
             if not isinstance(block, dict):
-                pads.append({"index": index, "state": "off", "color": "empty", "selected": False})
+                pads.append(
+                    {
+                        "index": index,
+                        "state": "off",
+                        "color": "empty",
+                        "selected": False,
+                        "brightness_level": "off",
+                        "animation": "steady",
+                    }
+                )
                 continue
             bypassed = bool(block.get("bypassed", False))
             is_selected = str(block.get("block_id")) == str(selected_block_id)
@@ -566,6 +575,8 @@ class MaschineService(Singleton):
                     "state": "pulsing" if is_selected else ("dim" if bypassed else "bright"),
                     "color": "selected" if is_selected else ("bypassed" if bypassed else "active"),
                     "selected": is_selected,
+                    "brightness_level": "full" if is_selected else ("dim" if bypassed else "bright"),
+                    "animation": "pulse_fast" if is_selected else "steady",
                     "block_id": block.get("block_id"),
                     "plugin_name": block.get("plugin_name"),
                 }

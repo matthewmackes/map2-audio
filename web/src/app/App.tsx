@@ -46,7 +46,6 @@ const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m 
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
-const MaschineMidiMapPage   = lazy(() => import('./pages/MaschineMidiMapPage').then(m => ({ default: m.MaschineMidiMapPage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
@@ -405,7 +404,7 @@ export function App() {
                                 </Route>
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
-                                <Route path="/maschine/midi-map" element={<MaschineMidiMapPage />} />
+                                <Route path="/maschine/midi-map" element={<Navigate to="/maschine#hardware-layout" replace />} />
                                 <Route path="/mcu" element={<McuPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />

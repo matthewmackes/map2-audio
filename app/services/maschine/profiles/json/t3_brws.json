@@ -1,0 +1,52 @@
+{
+  "id": "t3_brws",
+  "name": "T3 BRWS",
+  "description": "Observer-backed browser over the live Brain library collections.",
+  "bars": {
+    "left": {
+      "top_left": "T3 BRWS",
+      "top_right": "{{ browser_featured_count }} FEAT",
+      "bottom_left": "{{ browser_collection_label }}",
+      "bottom_right": "BRAIN"
+    },
+    "right": {
+      "top_left": "{{ browser_asset_label }}",
+      "top_right": "{{ browser_source_label }}",
+      "bottom_left": "LIBRARY",
+      "bottom_right": "{{ browser_collection_label }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "BROWSER" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "browser_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ browser_collection_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ browser_asset_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ browser_source_label }}" }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "t21_diagnostics",
+  "name": "T21 DIAGNOSTICS",
+  "description": "Connectivity and runtime diagnostics for the daemon and backend.",
+  "bars": {
+    "left": {
+      "top_left": "T21 DIAG",
+      "top_right": "{{ daemon_state_label }}",
+      "bottom_left": "FULL STACK",
+      "bottom_right": "{{ block_count }} BLKS"
+    },
+    "right": {
+      "top_left": "{{ device_state_label }}",
+      "top_right": "CHECKS",
+      "bottom_left": "{{ transport_state_label }}",
+      "bottom_right": "{{ diagnostics_summary }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "DIAGNOSTICS" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "diagnostics_rows",
+        "limit": 5,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "spleen", "text": "{{ daemon_state_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ device_state_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ transport_state_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ diagnostics_summary }}" }
+    ]
+  }
+}

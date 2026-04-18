@@ -1,0 +1,52 @@
+{
+  "id": "t14_kit_browser",
+  "name": "T14 KIT BROWSER",
+  "description": "Observer-backed browser for the live drum-kit inventory and active kit.",
+  "bars": {
+    "left": {
+      "top_left": "T14 KIT",
+      "top_right": "{{ kit_count_label }} KITS",
+      "bottom_left": "{{ kit_active_label }}",
+      "bottom_right": "{{ kit_category_label }}"
+    },
+    "right": {
+      "top_left": "{{ kit_active_label }}",
+      "top_right": "{{ kit_category_label }}",
+      "bottom_left": "{{ kit_instrument_label }}",
+      "bottom_right": "DRUMS"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "KIT BROWSER" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "kit_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ kit_active_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ kit_category_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ kit_instrument_label }}" }
+    ]
+  }
+}

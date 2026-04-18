@@ -211,6 +211,418 @@ Last updated: 2026-04-18 13:05 EDT - Codex
 
 ---
 
+ID: T2352
+Status: [>] In Progress
+Title: Maschine MK1 Headless Primary Interface — full 75-decision epic
+Description:
+- Goal / acceptance criteria: Transform the NI Maschine MK1 from a studio-only controller into the platform's primary headless operator console. Deliver a retained-mode render pipeline for both 255x64 KS0713 LCDs, a 25-profile LCD catalog, a full LED animation system, snapshot/tempo/automation integration aligned with the State Authority directive, a system-admin console accessible from the device, and a complete operator manual. Acceptance requires every locked decision (Q1-Q75) from the 2026-04-17/18 brainstorming rounds to be implemented or explicitly deferred with worklist follow-up, the daemon to remain a pure observer of platform source-of-truth services, and the device to survive plug/unplug/reboot/shutdown cycles without state loss.
+- Why it matters: The user directive is that MAP2 must be fully operable from the MK1 without a keyboard or monitor. Without this epic the MK1 remains a code-complete-but-operationally-dormant surface (per T666 audit) and the platform cannot be used headless in live-performance or standalone-studio contexts. The MK1 is also the anchor for the Brain instrument, snapshot recall, tempo/clock authority, and the system-admin flow when no other console is present.
+- Dependencies: T666 (cabl-derived USB protocol foundation must be functional on real hardware), T1006 (State Authority refactor), T203 (MIDI Hub v2 surfaces), existing SnapshotService / SnapshotRuntimeStateService / SnapshotTempoService / AutomationEngine / CommandHistory / C++ MorphEngine, Brain instance endpoints under `/api/engine/brain/*`
+- Estimated effort: Very High (phased over 5 sub-deliveries, see T2352-ph1..T2352-ph5)
+- Required outputs: retained-mode LCD render pipeline, six-font roster plus custom MAP2 display face, 25-profile LCD catalog, LED animation catalog (25 per slot), pressure gesture stack, boot/shutdown ceremony, onboarding flow, incident log with on-device viewer, system admin console with power/service/update controls, snapshot/tempo/automation/MorphEngine integration audit, snapshot-embedded MK1 config at `document.controllers.maschine_mk1`, updated web UI redirect from `/maschine/midi-map` to merged page, systemd unit verification, physical hardware verification, and `docs/MASCHINE_MK1_OPERATION_GUIDE.md` as final epic deliverable.
+Locked decisions reference: `~/.claude/projects/-home-mm-map2-audio/memory/project_t700_mk1_headless.md` (75 decisions Q1-Q75 with State Authority audit refinements)
+Subtasks: T2352-ph1, T2352-ph2, T2352-ph3, T2352-ph4, T2352-ph5
+Assigned to: Codex
+Last updated: 2026-04-18 14:00 EDT - Codex
+- Progress notes:
+  - Phase 1 is now complete and shipped, including live-backend and connected-MK1 verification.
+  - Phase 2 is now the next unblocked slice and inherits the retained-mode render/runtime foundation landed in Phase 1.
+- Scope highlights:
+  - Single operator identity (matthewmackes), no multi-user or per-performer layering
+  - MK1 is an observer of platform source-of-truth; never computes snapshot/morph/automation/tempo state locally
+  - All crossfades and morphs run in C++ MorphEngine (equal-power, <=500ms, audio-callback rate); MK1 displays engine-reported position only
+  - Snapshot-embedded MK1 config as JSONB key `document.controllers.maschine_mk1` (NOT a schema extension)
+  - Per-key scope flagging: button bindings global, pad layout / LCD profile / LED animations per-snapshot
+  - "Instant" defined as <50ms for normal actions; destructive actions have tiered confirmations (Q41)
+  - Admin console gated by session unlock + per-action tier-3 confirmation
+  - All edits write to source-of-truth instantly (debounced ~100ms only for encoder sweeps)
+  - LCD typography: Spleen/Cozette/Tamsyn/Terminus/Unscii/Nerd-Font + custom 32px MAP2 display face
+  - 1-bpp state-of-the-art techniques: Bayer/blue-noise/Atkinson/Floyd-Steinberg dithering, hinted bitmap fonts, damage tracking, double-buffered framebuffer
+- Non-goals:
+  - No MK1-side authoring (rename/edit/version/template remain in web UI per Q73)
+  - No chord binding system (modifier-first only per Q55)
+  - No live-reload of profile DSL (daemon restart required per Q67)
+  - No template live-link for MK1 config (single-operator keeps it simple per Q74)
+  - No RGB LED support (hardware constraint; chain-color metadata stored forward-compat only)
+
+---
+
+ID: T2352-ph1
+Status: [✓] Done
+Title: T2352 Phase 1 — Foundation: render pipeline, fonts, DSL, merged page, 3 essential profiles
+Description:
+- Goal / acceptance criteria: Build the LCD retained-mode render pipeline with damage tracking and double-buffered framebuffer, implement the six-font roster plus custom 32px MAP2 display face, implement the JSON+flexbox+reactive-bindings profile DSL and the Python profile base class, redirect `/maschine/midi-map` to the merged hardware-layout page, and ship the 3 essential profiles: T1 CTRL, T9 Effect Chain Editor, T16 Monitor. Acceptance requires all three profiles to render correctly on real MK1 hardware at 30fps effective refresh, reactive bindings to auto-update on backend state changes without manual refresh, and `/maschine` to be the single canonical route.
+- Why it matters: Without the render pipeline and DSL, every subsequent profile is hand-rolled imperative code that's hard to maintain. Shipping 3 essential profiles proves the architecture end-to-end before committing to 25.
+- Dependencies: T666 protocol foundation complete, T666-subL/M/N/O physical verification complete
+- Estimated effort: Very High
+- Required outputs:
+  - `app/services/maschine/render/` module with scene graph, damage tracking, framebuffer, dithering algorithms (Bayer/blue-noise/Atkinson/Floyd-Steinberg)
+  - `app/services/maschine/fonts/` with Spleen/Cozette/Tamsyn/Terminus/Unscii/Nerd-Font bitmap atlases
+  - Custom MAP2 display face design brief + initial 32px ASCII+digits+MAP2-logo glyph set
+  - `app/services/maschine/profiles/` module with Python base class + JSON schema + reactive binding resolver
+  - `app/services/maschine/profiles/json/t1_ctrl.json`, `t16_monitor.json` (JSON tier)
+  - `app/services/maschine/profiles/t9_effect_chain_editor.py` (Python tier)
+  - 12px top bar + 12px bottom bar always-on elements on both LCDs
+  - `/maschine/midi-map` React route redirects to `/maschine` with merged hardware-layout page
+  - `scripts/maschine_render_bench.py` measuring render latency on real hardware
+  - Physical hardware verification script showing all three profiles rendering + auto-updating on state changes
+  - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` (stub sections for Phase 1 features)
+Assigned to: Codex
+Last updated: 2026-04-18 14:00 EDT - Codex
+- Completion notes:
+  - Added the retained-mode LCD render core under `app/services/maschine/render/` with grayscale framebuffers, 8x8 damage tracking, double-buffered retained rendering, and Bayer / blue-noise / Atkinson / Floyd-Steinberg dithering support.
+  - Added the Phase 1 font roster under `app/services/maschine/fonts/` and the accompanying design brief `docs/design/MASCHINE_MK1_DISPLAY_FACE_BRIEF_2026-04-18.md`, including the initial `MAP2 Display 32` face alongside Spleen / Cozette / Tamsyn / Terminus / Unscii / Nerd Font atlases.
+  - Added the profile runtime under `app/services/maschine/profiles/`, including the JSON DSL + reactive binding resolver, shipped JSON profiles `t1_ctrl.json` and `t16_monitor.json`, and the Python-tier `t9_effect_chain_editor.py` profile.
+  - Rewired `app/services/maschine_lcd_service.py`, `app/services/maschine/maschine_mk1_daemon.py`, and `app/routes/maschine.py` onto the profile runtime so the MK1 and API now render the 3 Phase 1 profiles with always-on 12px top/bottom bars and hardware-ready framebuffer payloads.
+  - Merged the web hardware-layout and MIDI-map flows into `/maschine`, redirected `/maschine/midi-map` back to `/maschine#hardware-layout`, and embedded the MIDI-map editor into the main page via `web/src/app/pages/MaschinePage.tsx`.
+  - Added the benchmark + verification tooling in `scripts/maschine_render_bench.py` and `scripts/maschine_phase1_verify.py`, plus the Phase 1 operator-guide stub in `docs/MASCHINE_MK1_OPERATION_GUIDE.md`.
+- Validation:
+  - `pytest -q tests/test_maschine_mk1_daemon.py tests/test_maschine_lcd_service.py tests/test_maschine_routes.py` -> PASS
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/MaschinePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `python3 scripts/maschine_render_bench.py --iterations 3` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py --hardware --dwell-ms 500` -> PASS
+Subtasks:
+
+ID: T2352-ph1-subA
+Status: [✓] Done
+Title: Land the retained-mode LCD render core with fonts, damage tracking, and profile runtime
+Description:
+- Goal / acceptance criteria: Replace the ad hoc `_Canvas`-only LCD renderer with a retained-mode render core under `app/services/maschine/render/`, add the six-font roster plus the initial custom MAP2 display face assets under `app/services/maschine/fonts/`, and introduce the Phase-1 profile runtime plus JSON schema/reactive binding resolution under `app/services/maschine/profiles/`. Acceptance requires the daemon/backend to render T1/T9/T16 through the new profile runtime, include always-on top/bottom bars, emit hardware-ready framebuffer payloads, and keep regression coverage green.
+- Why it matters: The current LCD implementation is enough for a prototype, but not for the 25-profile catalog or the headless-operator contract.
+- Dependencies: T666, T1006, T203
+- Estimated effort: Very High
+- Required outputs: render core, fonts package, profile runtime, T1/T9/T16 profile definitions, daemon/backend integration, and focused tests.
+Assigned to: Codex
+Last updated: 2026-04-18 14:00 EDT - Codex
+- Completion notes:
+  - Landed the retained-mode render core, font roster, profile runtime, and T1/T9/T16 profile definitions across `app/services/maschine/render/`, `app/services/maschine/fonts/`, and `app/services/maschine/profiles/`.
+
+ID: T2352-ph1-subB
+Status: [✓] Done
+Title: Merge the web hardware-layout and MIDI-map flows under `/maschine`
+Description:
+- Goal / acceptance criteria: Make `/maschine` the canonical Maschine route, fold the MIDI-map editor into the main hardware page, and redirect `/maschine/midi-map` to `/maschine`. Acceptance requires the old route to redirect cleanly, the main page to expose both hardware diagnostics and mapping controls, and focused frontend tests/build validation to pass.
+- Why it matters: Phase 1 explicitly requires one canonical operator surface instead of split pages.
+- Dependencies: T2352-ph1-subA
+- Estimated effort: High
+- Required outputs: merged React page, redirect route, tests, and build validation.
+Assigned to: Codex
+Last updated: 2026-04-18 14:00 EDT - Codex
+- Completion notes:
+  - Embedded the hardware-faithful MIDI-map editor into `web/src/app/pages/MaschinePage.tsx` and redirected `/maschine/midi-map` to the canonical `/maschine#hardware-layout` route in `web/src/app/App.tsx`.
+
+ID: T2352-ph1-subC
+Status: [✓] Done
+Title: Add render benchmark, Phase-1 verification hooks, and operator-guide stub
+Description:
+- Goal / acceptance criteria: Add `scripts/maschine_render_bench.py`, extend hardware verification scripting to exercise the 3 Phase-1 profiles with auto-update evidence, and create the initial `docs/MASCHINE_MK1_OPERATION_GUIDE.md` stub covering Phase-1 features. Acceptance requires runnable scripts, explicit notes on hardware-only validation, and a reconciled worklist entry.
+- Why it matters: The phase is not shippable without verification tooling and a documentation handoff.
+- Dependencies: T2352-ph1-subA, T2352-ph1-subB
+- Estimated effort: Medium
+- Required outputs: benchmark script, verification script/path, guide stub, and validation notes.
+Assigned to: Codex
+Last updated: 2026-04-18 14:00 EDT - Codex
+- Completion notes:
+  - Added `scripts/maschine_render_bench.py`, `scripts/maschine_phase1_verify.py`, and `docs/MASCHINE_MK1_OPERATION_GUIDE.md`; the verification script passed against the live backend and connected MK1 hardware.
+
+---
+
+ID: T2352-ph2
+Status: [✓] Done
+Title: T2352 Phase 2 — Full 25-profile LCD catalog
+Description:
+- Goal / acceptance criteria: Implement the full 25-profile catalog from Q68: T1 CTRL, T2 STEP, T3 BRWS, T4 SMPL, T5 SNAP, T6 AUTO, T7 B-L, T8 B-R, T9 Effect Chain Editor, T10 Brain Seq, T11 Tuner, T12 Metronome, T13 Incident Log, T14 Kit Browser, T15 Quad Morph Editor, T16 Monitor, T17 System Health, T18 Admin Console, T19 MIDI Learn, T20 Macro Recorder, T21 Diagnostics, T22 Log Viewer, T23 Preferences, T24 Help/Manual, T25 Reference Card. Profile cycler with category grouping (Control/Chain/Brain/View/Sampler/Monitor/Admin/Help) via SHIFT+NOTE-REPEAT. Profile-switch OSD on every change (Left LCD=name, Right LCD=description+bindings, 1.5s). Acceptance requires every profile to function correctly against real backend state on hardware, admin profiles gated per Q52 (SHIFT+T-selector + session unlock), and the profile cycler to work reliably with the modifier-first rule (Q55).
+- Why it matters: Profiles are the primary user surface for all non-trivial operations. 25 covers the full operational range from live performance to system admin.
+- Dependencies: T2352-ph1 (render pipeline + DSL + 3 essential profiles as reference patterns)
+- Estimated effort: Very High
+- Required outputs:
+  - 22 new profile implementations (JSON or Python per complexity tier per Q67)
+  - Profile cycler logic with category grouping
+  - Profile-switch OSD animation
+  - T15 Quad Morph Editor wired to C++ MorphEngine (observer, never computes)
+  - T14 Kit Browser wired to Brain `/library` endpoint with MorphEngine-backed crossfade
+  - T13 Incident Log reader for `~/.map2/maschine_incident_log.jsonl`
+  - T18 Admin Console with hidden-from-cycle access pattern + session-unlock state machine
+  - T19 MIDI Learn integrated with AutomationEngine ModulationSource registry (Q42)
+  - T24 Help/Manual with in-device documentation content
+  - T25 Reference Card with most-used gesture overlay
+  - Physical hardware verification for all 25 profiles
+  - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with per-profile reference sections
+Assigned to: Codex
+Last updated: 2026-04-18 15:18 EDT - Codex
+- Progress notes:
+  - Phase 2 is now split into restartable profile bundles so work can ship incrementally without losing the canonical sequence.
+  - Bundle A is complete: the monitor/help catalog tranche (`T13`, `T17`, `T21`, `T22`, `T23`, `T24`, `T25`) now ships with category-aware menu metadata, live diagnostics/health/preferences collectors, and empty-state-safe incident-log rendering.
+  - Bundle B is complete: `T2 STEP`, `T5 SNAP`, `T6 AUTO`, and `T12 METRONOME` are now backed by live sequencer, snapshot, automation, tempo, clock, and transport-owner state.
+  - Bundle C is complete: `T3 BRWS`, `T4 SMPL`, and `T14 KIT BROWSER` now render against live Brain library/sample-editor and drum-kit/sample-editor state.
+  - Bundle D is complete: `T7 B-L`, `T8 B-R`, `T10 BRAIN SEQ`, and `T15 QUAD MORPH` now render as read-only observers over Brain runtime, live snapshot routing, and JUCE morph state.
+  - Bundle E is complete: `T11 TUNER`, `T18 ADMIN CONSOLE`, `T19 MIDI LEARN`, and `T20 MACRO RECORDER` now render against live learn/macro/recorder/deployment state, with `T18` hidden from cycle navigation and locked until the later unlock flow.
+- Bundle F is complete: the daemon now uses the registry-backed category cycler and profile-switch OSD path, `/api/maschine/lcd/render` verification covers the full catalog, and the live backend + connected MK1 hardware pass both completed.
+Subtasks:
+
+ID: T2352-ph2-subA
+Status: [✓] Done
+Title: Ship the monitor/help catalog bundle and category-aware profile registry
+Description:
+- Goal / acceptance criteria: Extend the profile runtime/state surface and register the low-risk Phase-2 profiles `T13 Incident Log`, `T17 System Health`, `T21 Diagnostics`, `T22 Log Viewer`, `T23 Preferences`, `T24 Help/Manual`, and `T25 Reference Card`, while also tagging every registered profile with its Phase-2 category so the eventual cycler has canonical metadata. Acceptance requires each of the seven profiles to render against real backend/runtime state via `/api/maschine/lcd/render`, menu metadata to expose category + admin-hidden flags, focused regression coverage for the new profile ids, and operator-guide notes for the added profiles.
+- Why it matters: This bundle expands the catalog quickly using state that already exists or can be derived locally, proving the runtime can scale beyond the three Phase-1 references without waiting on more invasive transport/admin wiring.
+- Dependencies: T2352-ph1
+- Estimated effort: High
+- Required outputs: expanded runtime state surface, seven new profile implementations, category-aware registry metadata, focused tests, and docs/worklist reconciliation.
+Assigned to: Codex
+Last updated: 2026-04-18 14:39 EDT - Codex
+- Completion notes:
+  - Expanded `app/services/maschine_lcd_service.py` with live health/audio/MIDI diagnostics collectors, retained incident-log ingestion from `~/.map2/maschine_incident_log.jsonl`, transport preference snapshots, and the derived row/detail state needed by the first Phase-2 catalog slice.
+  - Registered `T13 Incident Log`, `T17 System Health`, `T21 Diagnostics`, `T22 Log Viewer`, `T23 Preferences`, `T24 Help Manual`, and `T25 Reference Card` under `app/services/maschine/profiles/json/`, and upgraded `app/services/maschine/profiles/runtime.py` to expose category/order/admin metadata for the eventual full cycler.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with the new Phase-2 Bundle A profile references.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3` AST parse check for touched backend files/tests -> PASS
+
+ID: T2352-ph2-subB
+Status: [✓] Done
+Title: Ship transport, snapshot, and clock operator profiles
+Description:
+- Goal / acceptance criteria: Implement `T2 STEP`, `T5 SNAP`, `T6 AUTO`, and `T12 Metronome` against real transport/snapshot/automation state with modifier-first navigation semantics and the shared profile-switch OSD hook points. Acceptance requires backend-backed renders, clear bindings in the right LCD, and focused coverage for any new state collectors.
+- Why it matters: These profiles cover the core live-operation surfaces after the monitor/help tranche and establish the reusable conventions for action-oriented profiles.
+- Dependencies: T2352-ph2-subA
+- Estimated effort: High
+- Required outputs: four new profiles, any necessary state collectors, tests, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 14:53 EDT - Codex
+- Completion notes:
+  - Extended `app/services/maschine_lcd_service.py` with live snapshot/recent-snapshot collection, snapshot tempo + MIDI-clock status, transport-owner state, automation runtime status, and drum-sequencer pattern summaries so Bundle B profiles bind to existing source-of-truth services.
+  - Added Bundle B profile definitions `t2_step.json`, `t5_snap.json`, `t6_auto.json`, and `t12_metronome.json`, and registered them in `app/services/maschine/profiles/runtime.py` with the canonical category/order metadata used by the growing Phase-2 catalog.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with the Bundle B profile references.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3` AST/JSON parse checks for touched backend/profile files -> PASS
+
+ID: T2352-ph2-subC
+Status: [✓] Done
+Title: Ship browser and sampler profiles
+Description:
+- Goal / acceptance criteria: Implement `T3 BRWS`, `T4 SMPL`, and `T14 Kit Browser` against the real browsing/library surfaces, including Brain library data where available and safe fallback states where it is not. Acceptance requires responsive list/detail renders, current-selection feedback, and no MK1-side authority drift.
+- Why it matters: Browser flows are central to headless use, but they need to consume live library state instead of hard-coded catalog data.
+- Dependencies: T2352-ph2-subA
+- Estimated effort: High
+- Required outputs: three new profiles, runtime collectors for library/sample data, tests, and guide updates.
+Assigned to: Codex
+Last updated: 2026-04-18 15:02 EDT - Codex
+- Completion notes:
+  - Extended `app/services/maschine_lcd_service.py` with live Brain library/sample-editor, drum-kit inventory, active-kit, and drum-sample waveform collectors, then derived the roster/detail state needed by the browser/sampler profiles.
+  - Added and registered `t3_brws.json`, `t4_smpl.json`, and `t14_kit_browser.json` so the catalog now includes observer-backed browser and sampler surfaces under the canonical Phase-2 registry metadata.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with the Bundle C profile references.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3` AST/JSON parse checks for touched backend/profile files -> PASS
+
+ID: T2352-ph2-subD
+Status: [✓] Done
+Title: Ship Brain and Morph observer profiles
+Description:
+- Goal / acceptance criteria: Implement `T7 B-L`, `T8 B-R`, `T10 Brain Seq`, and `T15 Quad Morph Editor` as observer-only views over Brain runtime and MorphEngine state, preserving the State Authority rule that the MK1 never computes morph/brain state locally. Acceptance requires live engine-backed values, clean fallback messaging when instances are absent, and tests proving observer-only behavior.
+- Why it matters: Brain and Morph are the most differentiated headless workflows in the epic and they rely on the profile architecture staying honest about authority boundaries.
+- Dependencies: T2352-ph2-subA
+- Estimated effort: High
+- Required outputs: four new profiles, runtime collectors for Brain/Morph state, tests, and guide notes.
+Assigned to: Codex
+Last updated: 2026-04-18 15:09 EDT - Codex
+- Completion notes:
+  - Extended `app/services/maschine_lcd_service.py` with Brain runtime collectors for slot banks, sequence summaries, live snapshot morph routing, and JUCE morph-engine inspection, keeping the MK1 firmly observer-only.
+  - Added and registered `t7_b_l.json`, `t8_b_r.json`, `t10_brain_seq.json`, and `t15_quad_morph_editor.json` under the Brain category in the Phase-2 runtime registry.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with the Bundle D profile references.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3` AST/JSON parse checks for touched backend/profile files -> PASS
+
+ID: T2352-ph2-subE
+Status: [✓] Done
+Title: Ship performance-tool profiles and admin gating
+Description:
+- Goal / acceptance criteria: Implement `T11 Tuner`, `T18 Admin Console`, `T19 MIDI Learn`, and `T20 Macro Recorder`, including the hidden-from-cycle + session-unlock gating required for admin surfaces. Acceptance requires real backend state where available, hard gating for admin entry, and explicit operator feedback for unavailable runtime capabilities.
+- Why it matters: These are the remaining high-value operational tools and they introduce the gating semantics the full Phase-2 cycler depends on.
+- Dependencies: T2352-ph2-subA
+- Estimated effort: High
+- Required outputs: four new profiles, unlock/gating metadata, tests, and guide/worklist reconciliation.
+Assigned to: Codex
+Last updated: 2026-04-18 15:18 EDT - Codex
+- Completion notes:
+  - Extended `app/services/maschine_lcd_service.py` with observer-only tool collectors for tuner unsupported-state messaging, engine/hub/drum MIDI learn status, macro and recorder sessions, and locked admin posture/deployment context.
+  - Added and registered `t11_tuner.json`, `t18_admin_console.json`, `t19_midi_learn.json`, and `t20_macro_recorder.json`; `T18` now carries `hidden_from_cycle=true` and `admin_only=true` registry metadata so later cycler work can enforce the hidden-entry rule.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with the Bundle E profile references.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3` AST/JSON parse checks for touched backend/profile files -> PASS
+
+ID: T2352-ph2-subF
+Status: [✓] Done
+Title: Finish the full profile cycler, profile-switch OSD, and Phase-2 hardware verification
+Description:
+- Goal / acceptance criteria: Complete the SHIFT+NOTE-REPEAT category cycler, implement the 1.5-second profile-switch OSD on both LCDs, verify every Phase-2 profile on real hardware, and update the operator guide with per-profile reference coverage. Acceptance requires all 25 profiles to be reachable per the category rules, admin profiles to stay hidden unless explicitly unlocked, and the verification notes to be captured in the worklist.
+- Why it matters: The profile catalog is only operationally complete once switching and hardware verification behave consistently across the whole set.
+- Dependencies: T2352-ph2-subA, T2352-ph2-subB, T2352-ph2-subC, T2352-ph2-subD, T2352-ph2-subE
+- Estimated effort: High
+- Required outputs: cycler implementation, OSD flow, hardware verification evidence, documentation, and completion notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+- Completion notes:
+  - Replaced the daemon's stale three-profile menu path with registry-backed category cycling, `SHIFT+NOTE-REPEAT` category jumps, and a 1.5-second profile-switch OSD driven by live profile metadata.
+  - Moved live daemon profile rendering onto `/api/maschine/lcd/render` so the hardware daemon now consumes the same backend-backed profile contract the tests and API expose.
+  - Extended `scripts/maschine_phase1_verify.py` into a full-catalog verifier with hidden-profile coverage and reran it successfully against the restarted live backend and connected MK1 hardware.
+- Validation:
+  - `pytest -q tests/test_maschine_lcd_service.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py --include-hidden` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py --include-hidden --hardware --dwell-ms 250` -> PASS
+
+---
+
+ID: T2352-ph3
+Status: [>] In Progress
+Title: T2352 Phase 3 — LED animation system, pressure gestures, Brain-aware animations
+Description:
+- Goal / acceptance criteria: Implement the 25-animation-per-LED catalog (Q17), the 5-tier brightness semantics (Q48: off/dim/mid/bright/full), profile signature animations (Q57: 1s on profile entry), dedicated heartbeat LEDs (backend + MK1-daemon), the full pressure routing stack (Q42: ALSA poly aftertouch + AutomationEngine ModulationSource + Brain per-pad curves + snapshot-scoped automation recording), audio-reactive LED behavior (Q64: beat flash + clip indication + spectrum-reactive pads + Brain-aware sequencer choreography scoped to Brain profiles), the inspection overlay mode (Q48: SHIFT+VIEW cycles assigned/muted/automated), and chain-color metadata forward-compat. Acceptance requires 62-slot LED array to render all animation types without frame drops, pad pressure to drive all four destinations simultaneously without timing jitter, and Brain-aware animations to activate only in Brain profiles with clean handoff to Q17 catalog elsewhere.
+- Why it matters: LEDs are the primary peripheral-vision feedback channel on a headless device. Without rich animation + pressure routing, the device feels dead and the pressure data is wasted.
+- Dependencies: T2352-ph2 (profile catalog provides the context for profile-scoped animation behavior)
+- Estimated effort: High
+- Required outputs:
+  - `app/services/maschine/led_animations.py` with 25-animation catalog + per-slot assignment
+  - 5-tier brightness model applied uniformly across all profiles
+  - Profile signature animation dictionary (25 entries, one per profile)
+  - Heartbeat LED logic (backend health + MK1-daemon health)
+  - Pressure routing: extend T666 input decoder to emit to ALSA + AutomationEngine source + Brain per-pad-curve consumer + snapshot-scoped automation lane
+  - Audio-reactive LED module consuming engine metering + SnapshotTempoService beat events
+  - Brain-aware sequencer-driven choreography (kit-aware group flash, pattern preview)
+  - SHIFT+VIEW inspection overlay state machine
+  - Chain-color metadata schema addition (forward-compat only, no behavior change on MK1)
+  - Physical hardware verification of all animation and pressure features
+  - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with LED + pressure sections
+Assigned to: Claude
+Last updated: 2026-04-18 16:38 EDT - Codex
+- Progress notes:
+  - Phase 3 is now split into restartable bundles so the LED/pressure stack can ship incrementally without blocking on the later Brain-reactive and hardware-verification slices.
+  - Bundle A is complete: the new LED animation core, 5-tier brightness semantics, profile-signature overlays, and initial heartbeat/selector feedback are wired into the MK1 daemon.
+  - Bundle B is now the active next slice for category-aware/menu-aware overlays and inspection-mode LED state.
+Subtasks:
+
+ID: T2352-ph3-subA
+Status: [✓] Done
+Title: Ship the LED animation core, brightness tiers, and profile-entry signature plumbing
+Description:
+- Goal / acceptance criteria: Introduce the reusable LED animation catalog foundation, define the Phase-3 five-tier brightness semantics (`off/dim/mid/bright/full`), wire profile-entry signature overlays into the daemon output path, and add initial backend/device heartbeat visibility plus direct-selector button emphasis. Acceptance requires a canonical animation module, profile-signature coverage for all 25 profiles, daemon integration that preserves existing transport feedback, and focused regression coverage for the new LED behavior.
+- Why it matters: Phase 3 needs a deterministic LED foundation before the more invasive pressure-routing and Brain-reactive behaviors can build on top of it.
+- Dependencies: T2352-ph2
+- Estimated effort: High
+- Required outputs: animation module, brightness-tier mapping, profile-signature registry, daemon integration, tests, and worklist/guide notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/led_animations.py` with a 25-entry animation catalog, five brightness tiers, per-profile signature metadata, and helpers for pad-state normalization and overlay generation.
+  - Updated `app/services/maschine/maschine_mk1_daemon.py` to consume the new animation helpers for pad output, heartbeat LEDs, direct-selector emphasis, and profile-signature overlays while preserving transport/button LED feedback.
+  - Extended `app/services/maschine_service.py` so audio-grid pad state now carries explicit brightness-tier and animation metadata for the daemon path.
+- Validation:
+  - `pytest -q tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/led_animations.py app/services/maschine/maschine_mk1_daemon.py app/services/maschine_service.py tests/test_maschine_led_animations.py` -> PASS
+
+ID: T2352-ph3-subB
+Status: [>] In Progress
+Title: Ship category-aware profile overlays and inspection-mode LED state
+Description:
+- Goal / acceptance criteria: Extend the LED system so menu/category state, direct profile changes, and the later `SHIFT+VIEW` inspection overlay can reuse the same animation primitives without conflicting with pad-selection feedback. Acceptance requires menu/profile/category-aware LED ownership rules, a restartable inspection-mode state model, and regression coverage for overlay precedence.
+- Why it matters: The LED system needs deterministic ownership semantics before pressure/audio-reactive behavior joins the same 62-slot surface.
+- Dependencies: T2352-ph3-subA
+- Estimated effort: High
+- Required outputs: overlay ownership rules, inspection-mode state machine scaffolding, daemon integration, tests, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+
+ID: T2352-ph3-subC
+Status: [ ] Todo
+Title: Ship pad-pressure routing into ALSA, automation, and Brain observers
+Description:
+- Goal / acceptance criteria: Route MK1 pad pressure into ALSA poly-aftertouch, AutomationEngine modulation sources, and Brain per-pad observer hooks without creating a second state-authority path. Acceptance requires simultaneous fanout, deterministic value scaling, and focused coverage around press/aftertouch/release behavior.
+- Why it matters: Pressure is one of the differentiators of the MK1 surface and Phase 3 is where it becomes useful beyond raw MIDI output.
+- Dependencies: T2352-ph3-subA
+- Estimated effort: High
+- Required outputs: daemon/input decoder updates, observer-only routing hooks, tests, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+
+ID: T2352-ph3-subD
+Status: [ ] Todo
+Title: Ship audio-reactive and Brain-aware choreography
+Description:
+- Goal / acceptance criteria: Drive LEDs from transport/tempo/audio metering and Brain context so beat flash, clip indication, and Brain-profile choreography reuse the shared animation foundation. Acceptance requires profile-scoped activation rules, no frame-drop regressions, and focused validation against live engine/Brain state.
+- Why it matters: This is the high-signal visual layer that makes the headless MK1 feel alive during live use.
+- Dependencies: T2352-ph3-subA, T2352-ph3-subC
+- Estimated effort: High
+- Required outputs: choreography module, daemon integration, tests, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+
+ID: T2352-ph3-subE
+Status: [ ] Todo
+Title: Finish Phase 3 hardware verification and operator-guide LED coverage
+Description:
+- Goal / acceptance criteria: Verify the final Phase-3 LED and pressure behaviors on the connected MK1, capture any remaining edge cases as follow-up tasks, and update the operator guide with the shipped LED/pressure rules. Acceptance requires physical validation of animation ownership, pressure fanout, and Brain-aware choreography plus the corresponding worklist/docs evidence.
+- Why it matters: The LED/pressure system is only shippable once the physical controller behavior matches the software model under live conditions.
+- Dependencies: T2352-ph3-subB, T2352-ph3-subC, T2352-ph3-subD
+- Estimated effort: High
+- Required outputs: hardware verification evidence, guide updates, and completion notes.
+Assigned to: Codex
+Last updated: 2026-04-18 16:38 EDT - Codex
+
+---
+
+ID: T2352-ph4
+Status: [ ] Todo
+Title: T2352 Phase 4 — Boot/shutdown ceremony, onboarding, incident log, admin console
+Description:
+- Goal / acceptance criteria: Implement the full boot sequence (Q60: wordmark pixel-wipe -> system status scroll -> 62-slot LED chase -> LCD pixel test -> profile load, 2-4s, skippable via any button), the full shutdown ceremony (Q61: saving-state + per-item receipts + session summary + LED farewell wave + goodbye, ~3s), the first-connection guided LCD tour (Q50: 10 steps, ~2min, skippable via ERASE, writes initial config on completion), the incident log writer with severity tiers (Q46: info/warn/error/critical), the idle screensaver + ambient mode (Q62: 10min idle, per-LCD content, presence wake via pressure 50-200), long-operation feedback (Q63: LCD progress + transport LED bar + op-specific signatures + cancel affordance), and the full admin console (Q51/52: MAP2 services + systemctl + power controls + OS updates + hardware health, gated by session unlock + per-action tier-3 confirmation, sudoers NOPASSWD whitelist). Acceptance requires clean state persistence across reboot/shutdown cycles, the first-boot tour to produce a valid initial config, all admin actions to complete through sudoers without prompts, and incident log entries to survive process crashes.
+- Why it matters: Boot/shutdown ceremony gives the device its "premium instrument" feel. Admin console makes the platform truly headless-operable. Incident log closes the operator feedback loop for error recovery. Without these, the MK1 works but feels incomplete.
+- Dependencies: T2352-ph3 (LED animation system needed for boot/shutdown LED sequences and admin visual feedback)
+- Estimated effort: High
+- Required outputs:
+  - `app/services/maschine/boot_sequence.py` implementing Q60 flow
+  - `app/services/maschine/shutdown_sequence.py` implementing Q61 flow
+  - `app/services/maschine/onboarding.py` implementing Q50 10-step tour
+  - `app/services/maschine/incident_log.py` writing to `~/.map2/maschine_incident_log.jsonl`
+  - `app/services/maschine/screensaver.py` implementing Q62 ambient mode + presence detection
+  - `app/services/maschine/long_op_feedback.py` implementing Q63 visualizations + cancel
+  - `app/services/maschine/admin_console.py` implementing Q51/52 power/service/update/health operations
+  - `sudoers.d/map2-maschine-admin` whitelist (delivered as scripted install, user confirmation required)
+  - State-save persistence hook list (MIDI map / snapshot / incident log / engine / audio)
+  - Physical hardware verification of boot, shutdown, first-connection, long-op, admin flows
+  - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with boot/shutdown/admin/recovery sections
+Assigned to: Claude
+Last updated: 2026-04-18 - scaffolded; pending ph3.
+
+---
+
+ID: T2352-ph5
+Status: [ ] Todo
+Title: T2352 Phase 5 — Polish, final verification, operator manual
+Description:
+- Goal / acceptance criteria: Complete the custom MAP2 display face (all A-Z, 0-9, punctuation, MAP2 logo, musical symbols), complete `docs/MASCHINE_MK1_OPERATION_GUIDE.md` as the final epic deliverable (detailed end-user manual per Q43 addendum), run the full physical E2E verification against the real MK1 including all 25 profiles + all LED animations + all admin actions + boot/shutdown/onboarding, reconcile any deferred decisions or discovered edge cases into follow-up tasks, and verify the State Authority audit remains clean (no Python-side snapshot/morph computation introduced during phases 1-4). Acceptance requires the operator manual to be complete and accurate against shipped behavior, zero known regressions on real hardware, all phase-1-4 sub-features to work end-to-end, and the final git commit to land on master and push to both GitHub and GitLab.
+- Why it matters: This is the deliverable the user explicitly asked for at Q43: "create a complete instruction guide as the how the Machine and MAP2 work together. Detailed." Without the manual, the platform is not shippable for a new operator. Polish phase also catches accumulated debt from the previous four phases.
+- Dependencies: T2352-ph1 through T2352-ph4
+- Estimated effort: High
+- Required outputs:
+  - Custom MAP2 display face complete glyph set
+  - Complete `docs/MASCHINE_MK1_OPERATION_GUIDE.md` covering: overview, hardware diagram reference, every button/encoder/pad binding, all 25 LCD profiles with example renders, LED animation catalog with visual examples, boot/shutdown sequences, onboarding tour walkthrough, recovery procedures, admin console operations, snapshot/tempo/automation/MorphEngine integration, Brain mode workflows, MIDI routing diagrams, troubleshooting, gesture cheat-sheet, quick-reference card content
+  - Full E2E hardware verification checklist (extends `scripts/maschine_e2e_verify.sh`)
+  - State Authority audit sign-off (no parallel state paths introduced)
+  - Physical verification recording/screenshots for manual
+  - Any deferred decisions filed as follow-up T-numbered tasks
+  - Final `git push origin master && git push gitlab master` after epic sign-off
+Assigned to: Claude
+Last updated: 2026-04-18 - scaffolded; pending ph4.
+
+---
+
 ID: T2349
 Status: [✓] Done
 Title: Keep local snapshot publish readiness confirmed after transient authority observations expire
@@ -27441,3 +27853,101 @@ Last updated: 2026-04-14 13:30 EDT - Codex
 - Validation:
   - `npm --prefix web run typecheck` -> PASS
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/WorkspaceHubShell.test.tsx` -> PASS
+
+---
+
+ID: T2353
+Status: [ ] Todo
+Title: Add a guitar-player onboarding entry point to the HomePage landing shell
+Description:
+- Goal / acceptance criteria: Give a first-time operator a discoverable "Play guitar live" entry point on `web/src/app/pages/HomePage.tsx` that walks them from device detection through chain activation in order, so they do not have to already know which sidebar destinations to visit. The entry must link to `/hotone-jogg` (or the active USB interface page), `/snapshot-editor`, and `/metering` as the canonical destinations, and must respect the existing Carbon landing shell pattern (no coaching banners or wizard overlays).
+- Why it matters: Per `.claude/plans/review-the-workflow-a-vivid-shore.md` Step 1, the HomePage today has no surfaced path for a guitarist sitting down at the MAP for the first time. They see the shell but cannot locate the device/chain/metering route set without prior knowledge.
+- Dependencies: T2271, T2272
+- Estimated effort: Medium
+- Required outputs: landing-shell entry card or strip on `HomePage`, route links that respect the current `homeShellNavigation` model, focused `HomePage.test.tsx` coverage, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2354
+Status: [ ] Todo
+Title: Expose a manual audio-interface selector on `/hotone-jogg` and `/edirol-ua1000`
+Description:
+- Goal / acceptance criteria: Add a Carbon `Dropdown` (or equivalent) to `web/src/map2/components/AudioInterfaceControl.tsx` that lists every detected USB audio device from `/api/usb/devices` and lets the operator pick which one the engine should initialize. Persist the selection through the engine init contract so the chosen device wins over "primary" auto-detection. Fall back to the current auto-detected primary when no explicit selection exists.
+- Why it matters: Per review Step 2, the HoTone page today auto-picks the "primary" USB device with no UI override. Operators with both an Edirol UA-1000 and a Hotone Jogg attached cannot deterministically choose which drives the engine from the GUI.
+- Dependencies: T2355
+- Estimated effort: Medium
+- Required outputs: updated `AudioInterfaceControl` selector UI, engine init wiring that accepts a device identifier, backend route update if `/api/engine/initialize` needs a `device` parameter surface, focused regression coverage, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2355
+Status: [ ] Todo
+Title: Add a "Start Audio" / "Stop Audio" control to `HoToneJoGGPage` matching the Edirol page pattern
+Description:
+- Goal / acceptance criteria: Add a visible Start/Stop audio control to `web/src/app/pages/HoToneJoGGPage.tsx` (or to `AudioInterfaceControl` when rendered in that page context) that is wired to `POST /api/audio/start` and `POST /api/audio/stop`. Match the existing Edirol reference at `web/src/app/pages/EdirolUA1000Page.tsx:281`, including the toast error handling pattern. Engine state must be reflected correctly (disable Start while running, disable Stop while stopped).
+- Why it matters: Per review Step 4, the HoTone page has no Start button today — operators can reach the page, see the device, and still have no way to begin audio processing from the GUI. This is the highest-friction blocker for the first-time guitar workflow.
+- Dependencies: T2354
+- Estimated effort: Low
+- Required outputs: Start/Stop button(s) in the HoTone page, mutation plumbing, Toasts integration, focused regression coverage in `HoToneJoGGPage.test.tsx` or `AudioInterfaceControl.test.tsx`, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2356
+Status: [ ] Todo
+Title: Add an input-channel selector (Mono L / Mono R / Stereo) to `AudioInterfaceControl` and the engine init contract
+Description:
+- Goal / acceptance criteria: Introduce an explicit input-channel-mode control (Mono Left, Mono Right, Stereo) in `web/src/map2/components/AudioInterfaceControl.tsx`, persisted through engine initialization so the JUCE engine knows whether to treat a single input channel as mono source material (duplicated into both graph channels) or to pass the stereo pair through untouched. Update `app/services/juce_engine_service.py` and the audio-engine routing layer so the selection is a real contract, not a UI affordance only.
+- Why it matters: Per review Step 5 (CRITICAL gap), the guitar lives on input 1 but the GUI has no way to say "use input 1 only, mono." Today the right-channel output relies on downstream stereo-spreading plugins (Cabinet IR convolution, reverb) to mask the silent right channel — which is luck, not design.
+- Dependencies: T2355
+- Estimated effort: High
+- Required outputs: Carbon selector in `AudioInterfaceControl`, engine init and C++ routing changes (JUCE `JuceAudioIO` or the `audioCallback` input copy stage), API contract updates with matching Pydantic validation, regression coverage on both sides, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2357
+Status: [ ] Todo
+Title: Clarify the Snapshot "Publish" step so first-time operators understand it activates the live chain
+Description:
+- Goal / acceptance criteria: Update the user-facing language and supporting copy on `web/src/app/pages/SnapshotPublishPage.tsx` (and the Publish entry points in `SnapshotEditorPageContent.tsx` / `SnapshotDeployModal.tsx` / `SnapshotModalContent.tsx`) so an operator can tell at a glance that "publishing" is what makes the chain go live for audio. The language must stay consistent with the existing snapshot vocabulary rather than fork a new term, and must not introduce coaching/wizard banners — a Carbon `Tag` or short `shortLabel` style hint is the target.
+- Why it matters: Per review Step 7, "Publish" is unfamiliar to a guitarist who just wants to hear sound. The term lands fine for engineers but breaks the first-run mental model of "load pedals → play."
+- Dependencies: T2351-subC
+- Estimated effort: Low
+- Required outputs: copy updates on the Publish page and associated snapshot dialogs, optional short-label tag additions, focused regression coverage to prove the label/tag renders, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2358
+Status: [ ] Todo
+Title: Inline a compact VU strip on `/hotone-jogg` (and other device pages) so signal presence is visible without leaving the page
+Description:
+- Goal / acceptance criteria: Embed a compact input/output VU strip directly inside `AudioInterfaceControl` (or as a sibling panel on `HoToneJoGGPage` / `EdirolUA1000Page`) that reuses the existing metering data path already broadcast to `/metering`. The strip must be read-only, Carbon-styled, and respect the 30 fps meter broadcast floor from CLAUDE.md's Service Polling Floors section.
+- Why it matters: Per review Step 8, a first-timer must navigate to `/metering` to confirm any signal is present. A compact inline meter on the device page shortens the "does this work?" feedback loop without duplicating the full metering dashboard.
+- Dependencies: T2355
+- Estimated effort: Medium
+- Required outputs: shared small-footprint VU component (or reuse of an existing one under `web/src/app/components/Metering/`), integration point on the device page, focused regression coverage, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex
+
+---
+
+ID: T2359
+Status: [ ] Todo
+Title: Add software input-gain and output-gain controls to the engine API and device page
+Description:
+- Goal / acceptance criteria: Expose explicit input-gain and output-gain controls as a first-class part of the audio engine API (`app/routes/engine.py` or `app/routes/audio.py`) and surface them in `AudioInterfaceControl`. These must be separate from plugin-internal trim (NAM input, limiter threshold, etc.) so the operator can set I/O levels independently of the chain. Values must persist through engine restart via the existing config authority model (see CLAUDE.md Configuration Authority Model).
+- Why it matters: Per review Step 9, today the operator's only level adjustments are the Hotone's physical knob and whatever internal trims the chain plugins happen to expose. That is an undocumented dependency and makes headroom management opaque.
+- Dependencies: T2355, T2356
+- Estimated effort: High
+- Required outputs: backend API routes and Pydantic models, JUCE engine gain-stage hooks at the input copy and output copy stages, `AudioInterfaceControl` controls, config-authority persistence, regression coverage on both stacks, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 EDT - Codex

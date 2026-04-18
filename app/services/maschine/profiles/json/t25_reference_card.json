@@ -1,0 +1,51 @@
+{
+  "id": "t25_reference_card",
+  "name": "T25 REFERENCE CARD",
+  "description": "Most-used live gestures and reminders for the MK1 surface.",
+  "bars": {
+    "left": {
+      "top_left": "T25 REF",
+      "top_right": "LIVE",
+      "bottom_left": "GESTURES",
+      "bottom_right": "CHEAT"
+    },
+    "right": {
+      "top_left": "{{ reference_focus }}",
+      "top_right": "CARD",
+      "bottom_left": "OBSERVER MODE",
+      "bottom_right": "T25"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "REFERENCE CARD" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "reference_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ reference_focus }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ reference_detail }}" }
+    ]
+  }
+}

@@ -167,10 +167,12 @@ def test_maschine_routes_rest_and_websocket(tmp_path):
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "get_audio_grid_projection", _fake_get_audio_grid_projection)
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "select_audio_grid_block", _fake_select_audio_grid_block)
     monkeypatch.setattr(maschine_routes.get_maschine_service(), "toggle_audio_grid_block_bypass", _fake_toggle_audio_grid_block_bypass)
-    async def _fake_render(*, session, maschine_service, context="audio_grid", focus_metric=None):
+    async def _fake_render(*, session, maschine_service, context="audio_grid", focus_metric=None, profile_id=None):
         assert context in {"audio_grid", "stats"}
+        assert profile_id in {None, "t9_effect_chain_editor"}
         return {
             "context": context,
+            "profile_id": profile_id or "t1_ctrl",
             "left": {"width": 128, "height": 64, "format": "xbm", "data": "AA"},
             "right": {"width": 128, "height": 64, "format": "xbm", "data": "55"},
             "meta": {"focus_metric": focus_metric},
@@ -226,9 +228,10 @@ def test_maschine_routes_rest_and_websocket(tmp_path):
     assert lcd_response.status_code == 200
     assert lcd_response.json()["lcd"]["left"]["data"] == "AA55"
 
-    rendered_lcd_response = client.get("/api/maschine/lcd/render?context=stats&focus_metric=audio.cpu_load")
+    rendered_lcd_response = client.get("/api/maschine/lcd/render?context=stats&focus_metric=audio.cpu_load&profile_id=t9_effect_chain_editor")
     assert rendered_lcd_response.status_code == 200
     assert rendered_lcd_response.json()["render"]["context"] == "stats"
+    assert rendered_lcd_response.json()["render"]["profile_id"] == "t9_effect_chain_editor"
     assert rendered_lcd_response.json()["lcd"]["left"]["source"] == "render:stats"
     assert rendered_lcd_response.json()["render"]["meta"]["focus_metric"] == "audio.cpu_load"
 

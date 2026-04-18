@@ -24,6 +24,8 @@ export interface MaschineLcdRenderResponse {
   status: string
   render: {
     context: 'audio_grid' | 'stats'
+    profile_id?: string
+    profile_name?: string
     left: MaschineLcdBitmap
     right: MaschineLcdBitmap
     meta?: Record<string, unknown>
@@ -113,10 +115,17 @@ export const maschineApi = {
   getEncoderMap: () =>
     fetchJson<MaschineEncoderMapResponse>(`${MASCHINE_API_BASE}/encoder-map`, { cache: 'no-store' }),
 
-  renderLcd: (context: 'audio_grid' | 'stats' = 'audio_grid', focusMetric?: string | null) => {
+  renderLcd: (
+    context: 'audio_grid' | 'stats' = 'audio_grid',
+    focusMetric?: string | null,
+    profileId?: string | null,
+  ) => {
     const query = new URLSearchParams({ context })
     if (focusMetric) {
       query.set('focus_metric', focusMetric)
+    }
+    if (profileId) {
+      query.set('profile_id', profileId)
     }
     return fetchJson<MaschineLcdRenderResponse>(`${MASCHINE_API_BASE}/lcd/render?${query.toString()}`, {
       cache: 'no-store',

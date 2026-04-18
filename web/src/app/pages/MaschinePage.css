@@ -9,6 +9,15 @@
   gap: 1rem;
 }
 
+.maschine-page__embedded-map {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, var(--layer) 10%), var(--surface));
+}
+
 .maschine-page__panel {
   display: grid;
   gap: 0.9rem;

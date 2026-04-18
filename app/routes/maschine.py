@@ -202,6 +202,7 @@ async def update_maschine_lcd(request: MaschineLcdRequest) -> dict[str, Any]:
 async def render_maschine_lcd(
     context: Literal["audio_grid", "stats"] = Query(default="audio_grid"),
     focus_metric: str | None = Query(default=None),
+    profile_id: str | None = Query(default=None),
 ) -> dict[str, Any]:
     service = get_maschine_service()
     renderer = get_maschine_lcd_render_service()
@@ -211,6 +212,7 @@ async def render_maschine_lcd(
             maschine_service=service,
             context=context,
             focus_metric=focus_metric,
+            profile_id=profile_id,
         )
     lcd_state = await service.update_lcd_pair(
         left=render.get("left") or {},

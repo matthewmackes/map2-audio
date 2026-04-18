@@ -1,0 +1,59 @@
+{
+  "id": "t17_system_health",
+  "name": "T17 SYSTEM HEALTH",
+  "description": "Live health summary from the backend health snapshot.",
+  "bars": {
+    "left": {
+      "top_left": "T17 HEALTH",
+      "top_right": "{{ system_status }}",
+      "bottom_left": "BACKEND HEALTH",
+      "bottom_right": "{{ health_issue_count }} ISS"
+    },
+    "right": {
+      "top_left": "{{ system_status }}",
+      "top_right": "LIVE",
+      "bottom_left": "{{ health_summary }}",
+      "bottom_right": "{{ stats_updated_at_short }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "SYSTEM HEALTH" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "health_rows",
+        "limit": 5,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ system_status }}" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "progress",
+        "value": "system_health_ratio",
+        "min": "0",
+        "max": "1",
+        "fill_brightness": 31,
+        "track_brightness": 8
+      },
+      { "type": "text", "font": "terminus", "text": "{{ health_summary }}", "align": "center" }
+    ]
+  }
+}

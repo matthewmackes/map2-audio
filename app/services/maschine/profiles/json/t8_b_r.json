@@ -1,0 +1,52 @@
+{
+  "id": "t8_b_r",
+  "name": "T8 B-R",
+  "description": "Observer-backed Brain right-bank slot roster.",
+  "bars": {
+    "left": {
+      "top_left": "T8 B-R",
+      "top_right": "{{ brain_right_mode }}",
+      "bottom_left": "{{ brain_right_focus }}",
+      "bottom_right": "SLOTS 9-16"
+    },
+    "right": {
+      "top_left": "{{ brain_right_focus }}",
+      "top_right": "{{ brain_right_mode }}",
+      "bottom_left": "BRAIN RIGHT",
+      "bottom_right": "{{ brain_right_label }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "BRAIN RIGHT" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "brain_right_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ brain_right_focus }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ brain_right_mode }}" },
+      { "type": "text", "font": "unscii", "text": "{{ brain_right_label }}" }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "t11_tuner",
+  "name": "T11 TUNER",
+  "description": "Explicit unsupported-state tuner profile until a dedicated runtime surface exists.",
+  "bars": {
+    "left": {
+      "top_left": "T11 TUNER",
+      "top_right": "{{ tuner_status_label }}",
+      "bottom_left": "{{ tuner_focus_label }}",
+      "bottom_right": "MONITOR"
+    },
+    "right": {
+      "top_left": "{{ tuner_status_label }}",
+      "top_right": "INFO",
+      "bottom_left": "{{ tuner_focus_label }}",
+      "bottom_right": "T11"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "TUNER" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "tuner_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ tuner_status_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ tuner_focus_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ tuner_detail_label }}" }
+    ]
+  }
+}

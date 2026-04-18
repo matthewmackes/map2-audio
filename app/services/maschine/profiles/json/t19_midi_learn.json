@@ -1,0 +1,52 @@
+{
+  "id": "t19_midi_learn",
+  "name": "T19 MIDI LEARN",
+  "description": "Observer-backed MIDI learn status across engine, hub, and drum surfaces.",
+  "bars": {
+    "left": {
+      "top_left": "T19 LEARN",
+      "top_right": "{{ midi_learn_status_label }}",
+      "bottom_left": "{{ midi_learn_target_label }}",
+      "bottom_right": "MIDI"
+    },
+    "right": {
+      "top_left": "{{ midi_learn_status_label }}",
+      "top_right": "SCOPE",
+      "bottom_left": "{{ midi_learn_scope_label }}",
+      "bottom_right": "T19"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "MIDI LEARN" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "midi_learn_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ midi_learn_status_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ midi_learn_target_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ midi_learn_scope_label }}" }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "t5_snap",
+  "name": "T5 SNAP",
+  "description": "Live snapshot identity, recent snapshot roster, and active tempo view.",
+  "bars": {
+    "left": {
+      "top_left": "T5 SNAP",
+      "top_right": "{{ snapshot_live_id }}",
+      "bottom_left": "{{ snapshot_live_name }}",
+      "bottom_right": "{{ snapshot_count }} RECENT"
+    },
+    "right": {
+      "top_left": "{{ snapshot_tempo_label }}",
+      "top_right": "{{ snapshot_source_label }}",
+      "bottom_left": "LIVE SNAPSHOT",
+      "bottom_right": "{{ stats_updated_at_short }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ snapshot_live_name }}" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "snapshot_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ snapshot_live_id }}" },
+      { "type": "text", "font": "cozette", "text": "{{ snapshot_tempo_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ snapshot_source_label }}" }
+    ]
+  }
+}

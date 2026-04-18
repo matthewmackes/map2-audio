@@ -1,0 +1,53 @@
+{
+  "id": "t15_quad_morph_editor",
+  "name": "T15 QUAD MORPH",
+  "description": "Observer-backed quad-morph state from snapshot routing and JUCE runtime.",
+  "bars": {
+    "left": {
+      "top_left": "T15 MORPH",
+      "top_right": "{{ morph_position_label }}",
+      "bottom_left": "{{ morph_source_label }}",
+      "bottom_right": "{{ morph_target_label }}"
+    },
+    "right": {
+      "top_left": "{{ morph_engine_label }}",
+      "top_right": "ENGINE",
+      "bottom_left": "{{ morph_source_label }}",
+      "bottom_right": "{{ morph_target_label }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "QUAD MORPH" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "morph_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ morph_position_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ morph_engine_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ morph_source_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ morph_target_label }}" }
+    ]
+  }
+}

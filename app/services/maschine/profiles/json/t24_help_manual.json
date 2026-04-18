@@ -1,0 +1,51 @@
+{
+  "id": "t24_help_manual",
+  "name": "T24 HELP MANUAL",
+  "description": "On-device quick-start help for the current MK1 workflow.",
+  "bars": {
+    "left": {
+      "top_left": "T24 HELP",
+      "top_right": "GUIDE",
+      "bottom_left": "QUICK START",
+      "bottom_right": "MK1"
+    },
+    "right": {
+      "top_left": "{{ help_focus }}",
+      "top_right": "READY",
+      "bottom_left": "MODIFIER FIRST",
+      "bottom_right": "T24"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "HELP MANUAL" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "help_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ help_focus }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ help_detail }}" }
+    ]
+  }
+}

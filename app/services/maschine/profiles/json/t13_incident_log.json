@@ -1,0 +1,53 @@
+{
+  "id": "t13_incident_log",
+  "name": "T13 INCIDENT LOG",
+  "description": "Recent Maschine incident entries from the local retained log.",
+  "bars": {
+    "left": {
+      "top_left": "T13 INCIDENT",
+      "top_right": "{{ incident_status }}",
+      "bottom_left": "LATEST FIRST",
+      "bottom_right": "{{ incident_count }} ROWS"
+    },
+    "right": {
+      "top_left": "{{ incident_selected_severity }}",
+      "top_right": "{{ incident_selected_when }}",
+      "bottom_left": "{{ incident_selected_source }}",
+      "bottom_right": "JSONL"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "INCIDENT LOG" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "incident_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "spleen", "text": "{{ incident_selected_severity }}" },
+      { "type": "text", "font": "cozette", "text": "{{ incident_selected_when }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ incident_selected_message }}" },
+      { "type": "text", "font": "unscii", "text": "{{ incident_selected_detail }}" }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "t12_metronome",
+  "name": "T12 METRONOME",
+  "description": "Snapshot tempo, MIDI-clock source, and transport-owner monitor.",
+  "bars": {
+    "left": {
+      "top_left": "T12 METRO",
+      "top_right": "{{ metronome_bpm_label }} BPM",
+      "bottom_left": "{{ metronome_source_label }}",
+      "bottom_right": "{{ metronome_tap_count }} TAPS"
+    },
+    "right": {
+      "top_left": "{{ metronome_clock_label }}",
+      "top_right": "{{ transport_owner_label }}",
+      "bottom_left": "CLOCK OWNER",
+      "bottom_right": "{{ stats_updated_at_short }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "METRONOME" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "metronome_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ metronome_bpm_label }} BPM" },
+      { "type": "text", "font": "cozette", "text": "{{ metronome_clock_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ transport_owner_label }}" }
+    ]
+  }
+}

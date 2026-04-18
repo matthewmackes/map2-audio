@@ -1,0 +1,52 @@
+{
+  "id": "t10_brain_seq",
+  "name": "T10 BRAIN SEQ",
+  "description": "Observer-backed Brain sequencer summary.",
+  "bars": {
+    "left": {
+      "top_left": "T10 BSEQ",
+      "top_right": "{{ brain_sequence_label }}",
+      "bottom_left": "{{ brain_sequence_fill }}",
+      "bottom_right": "{{ brain_sequence_song }}"
+    },
+    "right": {
+      "top_left": "{{ brain_sequence_label }}",
+      "top_right": "SEQ",
+      "bottom_left": "{{ brain_sequence_fill }}",
+      "bottom_right": "{{ brain_sequence_song }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "BRAIN SEQUENCE" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "brain_sequence_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ brain_sequence_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ brain_sequence_fill }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "unscii", "text": "{{ brain_sequence_song }}" }
+    ]
+  }
+}

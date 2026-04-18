@@ -1,0 +1,52 @@
+{
+  "id": "t20_macro_recorder",
+  "name": "T20 MACRO RECORDER",
+  "description": "Observer-backed macro and MIDI recorder status.",
+  "bars": {
+    "left": {
+      "top_left": "T20 MACRO",
+      "top_right": "{{ macro_status_label }}",
+      "bottom_left": "{{ macro_focus_label }}",
+      "bottom_right": "RECORDER"
+    },
+    "right": {
+      "top_left": "{{ macro_status_label }}",
+      "top_right": "DETAIL",
+      "bottom_left": "{{ macro_focus_label }}",
+      "bottom_right": "T20"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "MACRO RECORDER" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "macro_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ macro_status_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ macro_focus_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ macro_detail_label }}" }
+    ]
+  }
+}

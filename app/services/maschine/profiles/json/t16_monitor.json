@@ -1,0 +1,60 @@
+{
+  "id": "t16_monitor",
+  "name": "T16 MONITOR",
+  "description": "Monitor view for live system metrics and health focus.",
+  "bars": {
+    "left": {
+      "top_left": "T16 MON",
+      "top_right": "{{ metric_count }} METRICS",
+      "bottom_left": "NAV METRIC",
+      "bottom_right": "{{ focus_metric_source }}"
+    },
+    "right": {
+      "top_left": "{{ focus_metric_label }}",
+      "top_right": "HEALTH",
+      "bottom_left": "{{ focus_metric_min }} / {{ focus_metric_max }}",
+      "bottom_right": "{{ stats_updated_at_short }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "SYSTEM HEALTH" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "metric_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ focus_metric_label }}" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "progress",
+        "value": "focus_metric_normalized",
+        "min": "0",
+        "max": "1",
+        "fill_brightness": 31,
+        "track_brightness": 8
+      },
+      { "type": "text", "font": "terminus", "text": "{{ focus_metric_value }}", "align": "center" },
+      { "type": "text", "font": "cozette", "text": "{{ focus_metric_source }}", "align": "right" }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "t2_step",
+  "name": "T2 STEP",
+  "description": "Observer view over the live drum-sequencer pattern summary.",
+  "bars": {
+    "left": {
+      "top_left": "T2 STEP",
+      "top_right": "{{ step_pattern_label }}",
+      "bottom_left": "{{ step_variation_label }}",
+      "bottom_right": "{{ step_swing_label }}"
+    },
+    "right": {
+      "top_left": "{{ step_pattern_label }}",
+      "top_right": "SEQ",
+      "bottom_left": "DRUM OBSERVER",
+      "bottom_right": "{{ block_count }} FX"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "STEP SUMMARY" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "step_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ step_pattern_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ step_variation_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "terminus", "text": "{{ step_swing_label }}", "align": "center" }
+    ]
+  }
+}

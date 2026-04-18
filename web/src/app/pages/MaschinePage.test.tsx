@@ -15,6 +15,11 @@ jest.mock('../../map2/clients/maschine', () => ({
     getTransportConfig: jest.fn(),
     updateTransportConfig: jest.fn(),
     runHwTest: jest.fn(),
+    getMidiMap: jest.fn(),
+    updateMidiMap: jest.fn(),
+    resetMidiMap: jest.fn(),
+    testMidiElement: jest.fn(),
+    setLed: jest.fn(),
   },
 }))
 
@@ -27,6 +32,11 @@ const { maschineApi } = jest.requireMock('../../map2/clients/maschine') as {
     getTransportConfig: jest.Mock
     updateTransportConfig: jest.Mock
     runHwTest: jest.Mock
+    getMidiMap: jest.Mock
+    updateMidiMap: jest.Mock
+    resetMidiMap: jest.Mock
+    testMidiElement: jest.Mock
+    setLed: jest.Mock
   }
 }
 
@@ -175,6 +185,91 @@ describe('MaschinePage', () => {
       test: 'led_walk',
       result: { success: true, message: 'Test passed' },
     })
+
+    const midiMapResponse = {
+      status: 'ok',
+      midi_map: {
+        channel: 1,
+        pads: Array.from({ length: 16 }, (_, index) => ({
+          note: 36 + index,
+          message_type: 'note',
+          velocity_curve: 'linear',
+          label: `PAD ${index + 1}`,
+        })),
+        buttons: {
+          '0': { number: 0, message_type: 'cc', label: 'MUTE' },
+          '1': { number: 1, message_type: 'cc', label: 'SOLO' },
+          '2': { number: 2, message_type: 'cc', label: 'SELECT' },
+          '3': { number: 3, message_type: 'cc', label: 'DUPLICATE' },
+          '4': { number: 4, message_type: 'cc', label: 'NAV' },
+          '5': { number: 5, message_type: 'cc', label: 'KEYBOARD' },
+          '6': { number: 6, message_type: 'cc', label: 'PATTERN' },
+          '7': { number: 7, message_type: 'cc', label: 'SCENE' },
+          '9': { number: 9, message_type: 'cc', label: 'REC' },
+          '10': { number: 10, message_type: 'cc', label: 'ERASE' },
+          '11': { number: 11, message_type: 'cc', label: 'SHIFT' },
+          '12': { number: 12, message_type: 'cc', label: 'GRID' },
+          '13': { number: 13, message_type: 'cc', label: 'RIGHT' },
+          '14': { number: 14, message_type: 'cc', label: 'LEFT' },
+          '15': { number: 15, message_type: 'cc', label: 'LOOP' },
+          '16': { number: 16, message_type: 'cc', label: 'GROUP E' },
+          '17': { number: 17, message_type: 'cc', label: 'GROUP F' },
+          '18': { number: 18, message_type: 'cc', label: 'GROUP G' },
+          '19': { number: 19, message_type: 'cc', label: 'GROUP H' },
+          '20': { number: 20, message_type: 'cc', label: 'GROUP D' },
+          '21': { number: 21, message_type: 'cc', label: 'GROUP C' },
+          '22': { number: 22, message_type: 'cc', label: 'GROUP B' },
+          '23': { number: 23, message_type: 'cc', label: 'GROUP A' },
+          '24': { number: 24, message_type: 'cc', label: 'CONTROL' },
+          '25': { number: 25, message_type: 'cc', label: 'BROWSE' },
+          '26': { number: 26, message_type: 'cc', label: 'BROWSE LEFT' },
+          '27': { number: 27, message_type: 'cc', label: 'SNAP' },
+          '28': { number: 28, message_type: 'cc', label: 'AUTO WRITE' },
+          '29': { number: 29, message_type: 'cc', label: 'BROWSE RIGHT' },
+          '30': { number: 30, message_type: 'cc', label: 'SAMPLING' },
+          '31': { number: 31, message_type: 'cc', label: 'STEP' },
+          '32': { number: 32, message_type: 'cc', label: 'D8' },
+          '33': { number: 33, message_type: 'cc', label: 'D7' },
+          '34': { number: 34, message_type: 'cc', label: 'D6' },
+          '35': { number: 35, message_type: 'cc', label: 'D5' },
+          '36': { number: 36, message_type: 'cc', label: 'D4' },
+          '37': { number: 37, message_type: 'cc', label: 'D3' },
+          '38': { number: 38, message_type: 'cc', label: 'D2' },
+          '39': { number: 39, message_type: 'cc', label: 'D1' },
+          '40': { number: 40, message_type: 'cc', label: 'NOTE REPEAT' },
+          '41': { number: 41, message_type: 'cc', label: 'PLAY' },
+        },
+        encoders: Array.from({ length: 11 }, (_, index) => ({
+          cc: index + 1,
+          mode: 'relative',
+          label: `ENC ${index}`,
+        })),
+        button_labels: {},
+        button_zones: {},
+        button_led_slots: {
+          '24': 48,
+          '25': 46,
+          '28': 41,
+          '31': 47,
+        },
+        encoder_labels: Array.from({ length: 11 }, (_, index) => `ENC ${index}`),
+        pad_labels: Array.from({ length: 16 }, (_, index) => `PAD ${index + 1}`),
+      },
+    }
+
+    maschineApi.getMidiMap.mockResolvedValue(midiMapResponse)
+    maschineApi.updateMidiMap.mockResolvedValue(midiMapResponse)
+    maschineApi.resetMidiMap.mockResolvedValue(midiMapResponse)
+    maschineApi.testMidiElement.mockResolvedValue({
+      status: 'ok',
+      test: 'midi_element_test',
+      result: { success: true },
+    })
+    maschineApi.setLed.mockResolvedValue({
+      status: 'ok',
+      test: 'led_set',
+      result: { success: true },
+    })
   })
 
   it('renders all Maschine panels with cabl protocol info and shows connected status', async () => {
@@ -190,6 +285,7 @@ describe('MaschinePage', () => {
     expect(screen.getByRole('heading', { name: 'Input Monitor' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Firmware Info' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Hardware Test Suite' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Hardware Layout + MIDI Map' })).toBeTruthy()
     expect(screen.getAllByText('MAP2:Maschine-MK1').length).toBeGreaterThan(0)
     expect(within(screen.getByTestId('maschine-transport-panel')).getByText('usb-bulk')).toBeTruthy()
     expect(screen.getByText('Mix')).toBeTruthy()

@@ -1,0 +1,53 @@
+{
+  "id": "t4_smpl",
+  "name": "T4 SMPL",
+  "description": "Observer-backed sample editor summary for the current Brain slot.",
+  "bars": {
+    "left": {
+      "top_left": "T4 SMPL",
+      "top_right": "{{ sample_slot_label }}",
+      "bottom_left": "{{ sample_duration_label }}",
+      "bottom_right": "EDITOR"
+    },
+    "right": {
+      "top_left": "{{ sample_path_label }}",
+      "top_right": "BRAIN",
+      "bottom_left": "{{ sample_waveform_label }}",
+      "bottom_right": "{{ sample_slot_label }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "SAMPLE EDITOR" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "sample_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ sample_slot_label }}" },
+      { "type": "text", "font": "cozette", "text": "{{ sample_duration_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ sample_path_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ sample_waveform_label }}" }
+    ]
+  }
+}

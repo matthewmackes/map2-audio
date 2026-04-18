@@ -51,6 +51,11 @@ from app.services.maschine.mk1_protocol import (
     decode_pad_report,
     is_shift_held,
 )
+from app.services.maschine.led_animations import (
+    build_profile_signature_overlay,
+    normalize_pad_led_entry,
+    resolve_led_value,
+)
 from app.services.maschine.mk1_usb_transport import (
     MaschineMK1NotFound,
     MaschineMK1UsbTransport,
@@ -91,9 +96,9 @@ TRANSPORT_NOTE_BASE = 60
 GROUP_CC_BASE = 20
 ENCODER_CC_BASE = 1
 MASTER_CC_BASE = 9
-TOP_LEVEL_MENU_ITEMS = ("Audio Grid", "Stats", "---", "---", "---")
 BACKEND_MESSAGE_QUEUE_LIMIT = 256
-_TOP_LEVEL_MENU_CONTEXTS = ("audio_grid", "stats")
+_CATEGORY_ORDER = ("Control", "Chain", "Brain", "Sampler", "Monitor", "Admin", "Help")
+_PROFILE_SWITCH_OSD_SECONDS = 1.5
 
 # Button → transport action mapping
 _TRANSPORT_BUTTONS: dict[int, str] = {
@@ -218,9 +223,12 @@ class SharedRuntimeState:
     backend_connected: bool = False
     reconnecting: bool = True
     device_connected: bool = False
-    display_context: str = "audio_grid"
-    menu_return_context: str = "audio_grid"
+    display_context: str = "t1_ctrl"
+    menu_return_context: str = "t1_ctrl"
+    menu_category_index: int = 0
     top_level_menu_index: int = 0
+    profile_switch_osd_until: float = 0.0
+    profile_switch_osd_profile_id: str | None = None
     stats_metric_keys: list[str] = field(default_factory=list)
     stats_focus_metric: str | None = None
     audio_grid: dict[str, Any] = field(
@@ -426,31 +434,59 @@ def build_last_touched_bitmap(control: LastTouchedControl) -> dict[str, Any]:
     return _canvas_panel(canvas)
 
 
-def build_top_level_menu_frames(*, selected_index: int, active_context: str) -> dict[str, dict[str, Any]]:
+def build_top_level_menu_frames(
+    *,
+    menu_items: list[dict[str, Any]],
+    selected_index: int,
+    active_context: str,
+    category_label: str,
+) -> dict[str, dict[str, Any]]:
     left = _Canvas()
     left.draw_text("MENU", 4, 4, scale=2)
     left.draw_hline(4, 22, 72)
-    for index, item in enumerate(TOP_LEVEL_MENU_ITEMS):
-        row_y = 28 + (index * 8)
+    start_index = 0 if selected_index < 4 else selected_index - 3
+    visible_items = menu_items[start_index:start_index + 4]
+    for offset, item in enumerate(visible_items):
+        index = start_index + offset
+        row_y = 28 + (offset * 8)
+        label = _safe_label(item.get("name") or item.get("profile_id") or "---", limit=12)
         if index == selected_index:
             left.fill_rect(2, row_y - 1, 76, 8)
-            left.draw_text(item, 6, row_y)
+            left.draw_text(label, 6, row_y)
             left.invert_rect(2, row_y - 1, 76, 8)
         else:
-            left.draw_text(item, 6, row_y)
+            left.draw_text(label, 6, row_y)
 
     right = _Canvas()
-    selected_label = TOP_LEVEL_MENU_ITEMS[selected_index] if 0 <= selected_index < len(TOP_LEVEL_MENU_ITEMS) else "---"
+    selected_item = menu_items[selected_index] if 0 <= selected_index < len(menu_items) else {}
+    selected_label = _safe_label(selected_item.get("name") or "---", limit=14)
     right.draw_text("LCD MENU", 4, 4)
     right.draw_hline(4, 14, LCD_WIDTH - 8)
     right.draw_text(_safe_label(selected_label, limit=14), 4, 20, scale=2)
-    right.draw_text(f"ACTIVE {_safe_label(active_context.replace('_', ' '), limit=12)}", 4, 38)
-    right.draw_text("NAV MOVE", 4, 48)
-    right.draw_text("NR SEL CTRL BK", 4, 56)
+    right.draw_text(_safe_label(category_label, limit=14), 4, 38)
+    right.draw_text(f"ACTIVE {_safe_label(active_context.replace('_', ' '), limit=12)}", 4, 48)
+    right.draw_text("NAV MOVE", 120, 48)
+    right.draw_text("NR SEL SH+NR CAT", 4, 56)
     return {
         "left": _canvas_panel(left),
         "right": _canvas_panel(right),
     }
+
+
+def build_profile_switch_osd_frames(*, profile_name: str, description: str, category: str) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text("PROFILE", 4, 4)
+    left.draw_hline(4, 14, LCD_WIDTH - 8)
+    left.draw_text(_safe_label(profile_name, limit=14), 4, 20, scale=2)
+    left.draw_text(_safe_label(category, limit=12), 4, 46)
+
+    right = _Canvas()
+    right.draw_text("SWITCHED", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(_safe_label(description, limit=18), 4, 20)
+    right.draw_text("NOTE REP OPEN", 4, 48)
+    right.draw_text("SHIFT+NR CATEGORY", 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
 
 
 class MaschineMK1Daemon:
@@ -461,6 +497,7 @@ class MaschineMK1Daemon:
         self._state_lock = threading.Lock()
         self._state = SharedRuntimeState()
         self._state.lcd_frames = build_reconnecting_frames()
+        self._menu_catalog = MaschineLCDRenderService().menu_items()
         self._transport: MaschineMK1UsbTransport | None = None
         self._midi = VirtualMidiOutput(config.virtual_port_name)
         self._hotplug_monitor = MaschineDeviceHotplugMonitor()
@@ -731,23 +768,30 @@ class MaschineMK1Daemon:
             })
             return
 
-        # Control/Navigate/NoteRepeat — encoder push equivalents
+        # Direct profile selectors + menu navigation
         if button == int(Button.Control) and pressed:
             with self._state_lock:
                 in_menu = self._state.display_context == "menu"
             if in_menu:
                 self._close_top_level_menu()
             else:
-                self._toggle_display_context()
+                self._set_display_context("t1_ctrl", show_osd=True)
+        elif button == int(Button.Step) and pressed:
+            self._set_display_context("t9_effect_chain_editor", show_osd=True)
+        elif button == int(Button.AutoWrite) and pressed:
+            self._set_display_context("t16_monitor", show_osd=True)
         elif button == int(Button.Navigate) and pressed:
             self._open_top_level_menu()
         elif button == int(Button.NoteRepeat) and pressed:
-            with self._state_lock:
-                in_menu = self._state.display_context == "menu"
-            if in_menu:
-                self._activate_top_level_menu_selection()
+            if shift:
+                self._cycle_menu_category(activate=False)
             else:
-                self._open_top_level_menu()
+                with self._state_lock:
+                    in_menu = self._state.display_context == "menu"
+                if in_menu:
+                    self._activate_top_level_menu_selection()
+                else:
+                    self._open_top_level_menu()
 
         # All other button events → websocket
         self._enqueue_backend_message({
@@ -938,32 +982,25 @@ class MaschineMK1Daemon:
         and display backlight into the flat 62-slot array that the device needs.
         """
         led = [0] * LED_DATA_SIZE
+        now = time.monotonic()
 
         # Pad LEDs from audio grid
         pads = list(led_state.get("pads") or [])
         for i, pad_entry in enumerate(pads[:16]):
             if not isinstance(pad_entry, dict):
                 continue
-            state = str(pad_entry.get("state") or "off")
-            if state == "off":
-                brightness = 0
-            elif state == "dim":
-                brightness = 40
-            elif state == "bright":
-                brightness = 180
-            elif state == "pulsing":
-                # Simple pulse: oscillate based on time
-                phase = (time.monotonic() * 3.0) % 1.0
-                brightness = int(80 + 175 * abs(phase - 0.5) * 2)
-            else:
-                brightness = 0
+            brightness = normalize_pad_led_entry(pad_entry, now=now, phase_offset=(i / 16.0))
             if i < len(LED_PAD_INDEX):
                 led[LED_PAD_INDEX[i]] = _clamp(brightness, 0, 255)
 
         # Transport button LEDs (E2)
-        transport_state = None
         with self._state_lock:
             transport_state = dict(self._state.transport_state)
+            backend_connected = bool(self._state.backend_connected)
+            device_connected = bool(self._state.device_connected)
+            display_context = str(self._state.display_context or "t1_ctrl")
+            profile_switch_osd_until = self._state.profile_switch_osd_until
+            profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
         if transport_state:
             is_playing = bool(transport_state.get("is_playing"))
             is_recording = bool(transport_state.get("is_recording"))
@@ -983,6 +1020,58 @@ class MaschineMK1Daemon:
                 led[int(Led.Loop)] = 255
             else:
                 led[int(Led.Loop)] = 20
+
+        led[int(Led.Navigate)] = max(
+            led[int(Led.Navigate)],
+            resolve_led_value(
+                level="mid" if backend_connected else "dim",
+                animation="heartbeat" if backend_connected else "blink_slow",
+                now=now,
+                phase_offset=0.0,
+            ),
+        )
+        led[int(Led.NoteRepeat)] = max(
+            led[int(Led.NoteRepeat)],
+            resolve_led_value(
+                level="bright" if display_context == "menu" else "mid",
+                animation="steady" if display_context == "menu" else "pulse_slow",
+                now=now,
+                phase_offset=0.15,
+            ),
+        )
+        led[int(Led.Control)] = max(
+            led[int(Led.Control)],
+            resolve_led_value(
+                level="full" if display_context == "t1_ctrl" else ("bright" if device_connected else "dim"),
+                animation="steady" if display_context == "t1_ctrl" else ("pulse_fast" if device_connected else "blink_slow"),
+                now=now,
+                phase_offset=0.25,
+            ),
+        )
+        led[int(Led.Step)] = max(
+            led[int(Led.Step)],
+            resolve_led_value(
+                level="full" if display_context == "t9_effect_chain_editor" else "off",
+                animation="steady",
+                now=now,
+                phase_offset=0.0,
+            ),
+        )
+        led[int(Led.AutoWrite)] = max(
+            led[int(Led.AutoWrite)],
+            resolve_led_value(
+                level="full" if display_context == "t16_monitor" else "off",
+                animation="steady",
+                now=now,
+                phase_offset=0.0,
+            ),
+        )
+
+        if profile_switch_osd_profile_id and now < profile_switch_osd_until:
+            overlay = build_profile_signature_overlay(profile_switch_osd_profile_id, now=now, pad_count=16)
+            for index, brightness in enumerate(overlay[:16]):
+                led_index = LED_PAD_INDEX[index]
+                led[led_index] = max(led[led_index], brightness)
 
         # Display backlight always on
         led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
@@ -1056,28 +1145,37 @@ class MaschineMK1Daemon:
             reconnecting = self._state.reconnecting
             display_context = self._state.display_context
             menu_return_context = self._state.menu_return_context
+            menu_category_index = self._state.menu_category_index
             top_level_menu_index = self._state.top_level_menu_index
             focus_metric = self._state.stats_focus_metric
             led_state = dict(self._state.led_state)
-            last_touched = self._state.last_touched_control
-            current_audio_grid = dict(self._state.audio_grid)
-            current_stats = dict(self._state.stats_payload)
+            profile_switch_osd_until = self._state.profile_switch_osd_until
+            profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
 
         if reconnecting:
             frames = build_reconnecting_frames()
         elif display_context == "menu":
+            menu_items, category_label = self._menu_items_for_category_index(menu_category_index)
             frames = build_top_level_menu_frames(
+                menu_items=menu_items,
                 selected_index=top_level_menu_index,
                 active_context=menu_return_context,
+                category_label=category_label,
             )
-        elif display_context == "stats":
-            rendered = renderer._render_stats(stats=current_stats, focus_metric=focus_metric)
-            frames = {"left": rendered["left"], "right": rendered["right"]}
+        elif profile_switch_osd_profile_id and time.monotonic() < profile_switch_osd_until:
+            profile_meta = self._profile_meta(profile_switch_osd_profile_id)
+            frames = build_profile_switch_osd_frames(
+                profile_name=str(profile_meta.get("name") or profile_switch_osd_profile_id),
+                description=str(profile_meta.get("description") or "Profile ready"),
+                category=str(profile_meta.get("category") or "Profile"),
+            )
         else:
-            rendered_audio_grid = self._audio_grid_with_last_touched(current_audio_grid, last_touched)
-            rendered = renderer._render_audio_grid(audio_grid=rendered_audio_grid)
-            right = build_last_touched_bitmap(last_touched) if last_touched else rendered["right"]
-            frames = {"left": rendered["left"], "right": right}
+            rendered = self._poll_profile_render(
+                client,
+                profile_id=display_context,
+                focus_metric=focus_metric,
+            )
+            frames = rendered or build_reconnecting_frames()
 
         self._set_output_state(lcd_frames=frames, led_state=led_state)
 
@@ -1242,42 +1340,143 @@ class MaschineMK1Daemon:
             self._state.reconnecting = bool(reconnecting)
         self._request_render()
 
-    def _set_display_context(self, context: str) -> None:
+    def _visible_menu_catalog(self) -> list[dict[str, Any]]:
+        return [
+            item
+            for item in self._menu_catalog
+            if not bool(item.get("hidden_from_cycle")) and not bool(item.get("admin_only"))
+        ]
+
+    def _menu_categories(self) -> list[str]:
+        categories = {
+            str(item.get("category") or "Other")
+            for item in self._visible_menu_catalog()
+        }
+        ordered = [category for category in _CATEGORY_ORDER if category in categories]
+        extras = sorted(category for category in categories if category not in _CATEGORY_ORDER)
+        return ordered + extras or ["Control"]
+
+    def _menu_items_for_category(self, category: str) -> list[dict[str, Any]]:
+        return [
+            item
+            for item in self._visible_menu_catalog()
+            if str(item.get("category") or "") == category
+        ]
+
+    def _menu_items_for_category_index(self, category_index: int) -> tuple[list[dict[str, Any]], str]:
+        categories = self._menu_categories()
+        normalized_index = _clamp(category_index, 0, len(categories) - 1) if categories else 0
+        category = categories[normalized_index] if categories else "Control"
+        items = self._menu_items_for_category(category)
+        if items:
+            return items, category
+        fallback = self._visible_menu_catalog()
+        return fallback, category
+
+    def _profile_meta(self, profile_id: str) -> dict[str, Any]:
+        for item in self._menu_catalog:
+            if str(item.get("profile_id") or "") == profile_id:
+                return item
+        return {}
+
+    def _resolve_display_context(self, context: str) -> str:
+        resolved = str(context or "").strip()
+        if self._profile_meta(resolved):
+            return resolved
+        return "t1_ctrl"
+
+    def _menu_position_for_context(self, context: str) -> tuple[int, int]:
+        resolved = self._resolve_display_context(context)
+        target = self._profile_meta(resolved)
+        categories = self._menu_categories()
+        if not target:
+            return 0, 0
+        category = str(target.get("category") or "")
+        if category in categories:
+            category_index = categories.index(category)
+            items = self._menu_items_for_category(category)
+            for index, item in enumerate(items):
+                if str(item.get("profile_id") or "") == resolved:
+                    return category_index, index
+            return category_index, 0
+        return 0, 0
+
+    def _show_profile_switch_osd(self, profile_id: str) -> None:
+        self._state.profile_switch_osd_profile_id = profile_id
+        self._state.profile_switch_osd_until = time.monotonic() + _PROFILE_SWITCH_OSD_SECONDS
+
+    def _set_display_context(self, context: str, *, show_osd: bool = False) -> None:
+        resolved = self._resolve_display_context(context)
+        category_index, item_index = self._menu_position_for_context(resolved)
         with self._state_lock:
-            self._state.display_context = "stats" if context == "stats" else "audio_grid"
-            self._state.menu_return_context = self._state.display_context
-            self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
+            self._state.display_context = resolved
+            self._state.menu_return_context = resolved
+            self._state.menu_category_index = category_index
+            self._state.top_level_menu_index = item_index
+            if show_osd:
+                self._show_profile_switch_osd(resolved)
         self._request_render()
 
     def _toggle_display_context(self) -> None:
-        with self._state_lock:
-            self._state.display_context = "stats" if self._state.display_context == "audio_grid" else "audio_grid"
-            self._state.menu_return_context = self._state.display_context
-            self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
-        self._request_render()
+        self._cycle_menu_category(activate=True)
 
     def _open_top_level_menu(self) -> None:
+        default_context = "t1_ctrl"
         with self._state_lock:
             current_context = self._state.display_context
             if current_context != "menu":
-                self._state.menu_return_context = "stats" if current_context == "stats" else "audio_grid"
+                self._state.menu_return_context = self._resolve_display_context(current_context)
+            elif not self._profile_meta(self._state.menu_return_context):
+                self._state.menu_return_context = default_context
             self._state.display_context = "menu"
-            self._state.top_level_menu_index = 1 if self._state.menu_return_context == "stats" else 0
+            category_index, item_index = self._menu_position_for_context(self._state.menu_return_context)
+            self._state.menu_category_index = category_index
+            self._state.top_level_menu_index = item_index
         self._request_render()
 
     def _close_top_level_menu(self) -> None:
         with self._state_lock:
-            self._state.display_context = self._state.menu_return_context
-            self._state.top_level_menu_index = 1 if self._state.display_context == "stats" else 0
+            resolved = self._resolve_display_context(self._state.menu_return_context)
+            category_index, item_index = self._menu_position_for_context(resolved)
+            self._state.display_context = resolved
+            self._state.menu_return_context = resolved
+            self._state.menu_category_index = category_index
+            self._state.top_level_menu_index = item_index
         self._request_render()
 
     def _activate_top_level_menu_selection(self) -> None:
         with self._state_lock:
-            selected_index = _clamp(self._state.top_level_menu_index, 0, len(_TOP_LEVEL_MENU_CONTEXTS) - 1)
-            selected_context = _TOP_LEVEL_MENU_CONTEXTS[selected_index]
-            self._state.display_context = selected_context
-            self._state.menu_return_context = selected_context
-            self._state.top_level_menu_index = selected_index
+            category_index = self._state.menu_category_index
+            item_index = self._state.top_level_menu_index
+        menu_items, _category_label = self._menu_items_for_category_index(category_index)
+        if not menu_items:
+            return
+        selected_index = _clamp(item_index, 0, len(menu_items) - 1)
+        selected_context = str(menu_items[selected_index].get("profile_id") or "t1_ctrl")
+        self._set_display_context(selected_context, show_osd=True)
+
+    def _cycle_menu_category(self, *, activate: bool) -> None:
+        categories = self._menu_categories()
+        if not categories:
+            return
+        with self._state_lock:
+            current_context = self._state.menu_return_context if self._state.display_context == "menu" else self._state.display_context
+            current_category_index, _item_index = self._menu_position_for_context(current_context)
+            next_category_index = (current_category_index + 1) % len(categories)
+            next_items, _category_label = self._menu_items_for_category_index(next_category_index)
+            if not next_items:
+                return
+            next_context = str(next_items[0].get("profile_id") or "t1_ctrl")
+            if self._state.display_context == "menu" and not activate:
+                self._state.menu_return_context = next_context
+                self._state.menu_category_index = next_category_index
+                self._state.top_level_menu_index = 0
+            else:
+                self._state.display_context = next_context
+                self._state.menu_return_context = next_context
+                self._state.menu_category_index = next_category_index
+                self._state.top_level_menu_index = 0
+                self._show_profile_switch_osd(next_context)
         self._request_render()
 
     def _request_render(self) -> None:
@@ -1321,13 +1520,17 @@ class MaschineMK1Daemon:
             display_context = self._state.display_context
             metric_keys = list(self._state.stats_metric_keys)
             current_metric = self._state.stats_focus_metric
+            current_menu_category_index = self._state.menu_category_index
             current_menu_index = self._state.top_level_menu_index
         if display_context == "menu":
+            menu_items, _category_label = self._menu_items_for_category_index(current_menu_category_index)
+            if not menu_items:
+                return
             with self._state_lock:
-                self._state.top_level_menu_index = (current_menu_index + delta) % len(_TOP_LEVEL_MENU_CONTEXTS)
+                self._state.top_level_menu_index = (current_menu_index + delta) % len(menu_items)
             self._request_render()
             return
-        if display_context == "stats":
+        if display_context == "t16_monitor":
             if not metric_keys:
                 return
             try:
@@ -1340,6 +1543,36 @@ class MaschineMK1Daemon:
             self._request_render()
             return
         self._select_relative_audio_grid_block(client, delta)
+
+    def _render_context_for_profile(self, profile_id: str) -> str:
+        category = str(self._profile_meta(profile_id).get("category") or "")
+        return "stats" if category == "Monitor" else "audio_grid"
+
+    def _poll_profile_render(
+        self,
+        client: httpx.Client,
+        *,
+        profile_id: str,
+        focus_metric: str | None = None,
+    ) -> dict[str, dict[str, Any]] | None:
+        params: dict[str, Any] = {
+            "profile_id": profile_id,
+            "context": self._render_context_for_profile(profile_id),
+        }
+        if focus_metric and profile_id == "t16_monitor":
+            params["focus_metric"] = focus_metric
+        try:
+            response = client.get("/api/maschine/lcd/render", params=params)
+            response.raise_for_status()
+            payload = response.json()
+            render = dict(payload.get("render") or {})
+            left = dict(render.get("left") or {})
+            right = dict(render.get("right") or {})
+            if left and right:
+                return {"left": left, "right": right}
+        except Exception as exc:
+            LOGGER.debug("Maschine LCD render poll failed for %s: %s", profile_id, exc)
+        return None
 
     def _select_relative_audio_grid_block(self, client: httpx.Client, delta: int) -> None:
         with self._state_lock:

@@ -1,0 +1,52 @@
+{
+  "id": "t6_auto",
+  "name": "T6 AUTO",
+  "description": "Observer view for automation playback, record state, and lane count.",
+  "bars": {
+    "left": {
+      "top_left": "T6 AUTO",
+      "top_right": "{{ automation_state_label }}",
+      "bottom_left": "{{ automation_count }} LANES",
+      "bottom_right": "{{ automation_time_label }}"
+    },
+    "right": {
+      "top_left": "{{ automation_state_label }}",
+      "top_right": "ENGINE",
+      "bottom_left": "AUTOMATION",
+      "bottom_right": "{{ automation_count }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "AUTOMATION" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "automation_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "tamsyn", "text": "{{ automation_state_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "terminus", "text": "{{ automation_count }} LANES", "align": "center" },
+      { "type": "text", "font": "cozette", "text": "{{ automation_time_label }}", "align": "right" }
+    ]
+  }
+}

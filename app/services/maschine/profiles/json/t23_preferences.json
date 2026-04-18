@@ -1,0 +1,53 @@
+{
+  "id": "t23_preferences",
+  "name": "T23 PREFERENCES",
+  "description": "Current MK1 transport and runtime preferences.",
+  "bars": {
+    "left": {
+      "top_left": "T23 PREFS",
+      "top_right": "{{ transport_preference }}",
+      "bottom_left": "RUNTIME CFG",
+      "bottom_right": "{{ allow_kernel_detach_label }}"
+    },
+    "right": {
+      "top_left": "{{ virtual_port_label }}",
+      "top_right": "PERSIST",
+      "bottom_left": "{{ transport_apply_label }}",
+      "bottom_right": "{{ preference_summary }}"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "PREFERENCES" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "preference_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "spleen", "text": "{{ transport_preference }}" },
+      { "type": "text", "font": "cozette", "text": "DETACH {{ allow_kernel_detach_label }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ virtual_port_label }}" },
+      { "type": "text", "font": "unscii", "text": "{{ transport_apply_label }}" }
+    ]
+  }
+}

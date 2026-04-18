@@ -44,7 +44,15 @@ def test_last_touched_bitmap_produces_valid_output() -> None:
 
 
 def test_top_level_menu_frames_render_valid_bitmaps() -> None:
-    result = build_top_level_menu_frames(selected_index=1, active_context="audio_grid")
+    result = build_top_level_menu_frames(
+        menu_items=[
+            {"profile_id": "t1_ctrl", "name": "T1 CTRL"},
+            {"profile_id": "t2_step", "name": "T2 STEP"},
+        ],
+        selected_index=1,
+        active_context="t1_ctrl",
+        category_label="Control",
+    )
     assert result["left"]["width"] == LCD_WIDTH
     assert result["right"]["height"] == LCD_HEIGHT
     assert "framebuffer" in result["left"]
@@ -129,11 +137,16 @@ def test_menu_buttons_use_back_and_select_semantics() -> None:
     assert daemon._state.top_level_menu_index == 1
 
     daemon._dispatch_button(client, type("Change", (), {"button": int(Button.NoteRepeat), "pressed": True})(), set(), False)
-    assert daemon._state.display_context == "stats"
+    assert daemon._state.display_context == "t2_step"
+    assert daemon._state.profile_switch_osd_profile_id == "t2_step"
 
     daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), False)
     daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Control), "pressed": True})(), set(), False)
-    assert daemon._state.display_context == "stats"
+    assert daemon._state.display_context == "t2_step"
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.NoteRepeat), "pressed": True})(), set(), True)
+    assert daemon._state.display_context == "t9_effect_chain_editor"
+    assert daemon._state.menu_category_index == 1
 
 
 def test_hotplug_monitor_matches_vendor_and_product_ids() -> None:

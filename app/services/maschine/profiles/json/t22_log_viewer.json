@@ -1,0 +1,53 @@
+{
+  "id": "t22_log_viewer",
+  "name": "T22 LOG VIEWER",
+  "description": "Focused viewer for the retained Maschine incident log file.",
+  "bars": {
+    "left": {
+      "top_left": "T22 LOGS",
+      "top_right": "{{ incident_status }}",
+      "bottom_left": "SOURCE VIEW",
+      "bottom_right": "{{ incident_selected_when }}"
+    },
+    "right": {
+      "top_left": "{{ incident_selected_source }}",
+      "top_right": "{{ incident_selected_severity }}",
+      "bottom_left": "{{ incident_log_path }}",
+      "bottom_right": "TAIL"
+    }
+  },
+  "left": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "LOG VIEWER" },
+      { "type": "rule", "brightness": 18 },
+      {
+        "type": "repeat",
+        "direction": "column",
+        "gap": 1,
+        "binding": "incident_rows",
+        "limit": 4,
+        "template": {
+          "type": "text",
+          "font": "cozette",
+          "text": "{{ item.display }}",
+          "invert_when": "item.is_selected"
+        }
+      }
+    ]
+  },
+  "right": {
+    "type": "column",
+    "gap": 2,
+    "padding": 2,
+    "children": [
+      { "type": "text", "font": "cozette", "text": "{{ incident_selected_source }}" },
+      { "type": "text", "font": "unscii", "text": "{{ incident_selected_when }}" },
+      { "type": "rule", "brightness": 18 },
+      { "type": "text", "font": "cozette", "text": "{{ incident_selected_message }}" },
+      { "type": "text", "font": "unscii", "text": "{{ incident_log_path }}" }
+    ]
+  }
+}
