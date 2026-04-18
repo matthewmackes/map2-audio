@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1117** Python | **1122** TypeScript | **136** C++/H | **143** Docs | **2305** total commits | **3** stars | **0** forks | **0** open issues
+**1132** Python | **1122** TypeScript | **136** C++/H | **144** Docs | **2308** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Maschine MK1 Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-18 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-18 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-04-17 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-17 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-16 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-16 |
-| [Home Visual Smoke](https://github.com/matthewmackes/map2-audio/blob/master/docs/HOME_VISUAL_SMOKE.md) | 2026-04-14 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`010a5863`](https://github.com/matthewmackes/map2-audio/commit/010a5863093729e04e58044df32af282d0622423) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-18 |
+| [`267e4b0f`](https://github.com/matthewmackes/map2-audio/commit/267e4b0f6ce6aa541a2c9c7b838c9c3a9facd762) | Ship Maschine phase 2 catalog and phase 3 LED foundation | Map2 Audio | 2026-04-18 |
+| [`7e857d69`](https://github.com/matthewmackes/map2-audio/commit/7e857d6928211698674abb7924ec00f4973fb3a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`e42e7e8d`](https://github.com/matthewmackes/map2-audio/commit/e42e7e8dba6431ded6da21ca2a915d10c8900149) | Implement stage notification runtime and refresh web assets | Map2 Audio | 2026-04-18 |
 | [`0d9ae3c7`](https://github.com/matthewmackes/map2-audio/commit/0d9ae3c7b9967be4342a4084bc4fdbbd4e4a3213) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`6f4d5af0`](https://github.com/matthewmackes/map2-audio/commit/6f4d5af07fa58d3220078d57dfa3e0112dd1e2df) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`f0d03ffc`](https://github.com/matthewmackes/map2-audio/commit/f0d03ffcd310d64b412db45f6a2ecf50b70cdd6b) | Reduce graph chrome overhead and retire alert MUI island | Map2 Audio | 2026-04-17 |
 | [`775b2892`](https://github.com/matthewmackes/map2-audio/commit/775b2892450be14ab933254842c173f1bdedab42) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
-| [`ba35e377`](https://github.com/matthewmackes/map2-audio/commit/ba35e3773526f234c5aee93c2b2ac76576b659f7) | Confirm local publish readiness and document stage notifi... | Map2 Audio | 2026-04-17 |
-| [`007994d1`](https://github.com/matthewmackes/map2-audio/commit/007994d1046b5149ee89c55ad40afd81e916458c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
-| [`b6a9da2d`](https://github.com/matthewmackes/map2-audio/commit/b6a9da2df8fad1f07b74cba101b685b1e8910824) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
