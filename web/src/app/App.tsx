@@ -276,9 +276,21 @@ function BackendConnectionMonitor() {
       pushToast('Backend unreachable - click to retry.', 'error', {
         id: UNREACHABLE_TOAST_ID,
         persistent: true,
+        title: 'Backend unreachable',
         action: {
           label: 'Retry now',
           onClick: () => client.retryNow(),
+        },
+        stage: {
+          kind: 'critical_alert',
+          severity: 'critical',
+          resource: {
+            kind: 'backend',
+            id: 'primary',
+          },
+          compactLabel: 'Backend',
+          sourceLabel: 'MAP2 backend',
+          replaceLiveBanner: true,
         },
       })
     })
@@ -298,6 +310,18 @@ function BackendConnectionMonitor() {
       pushToast('Backend connection lost - retrying...', 'warn', {
         id: RETRYING_TOAST_ID,
         persistent: true,
+        title: 'Backend reconnecting',
+        stage: {
+          kind: 'warning_alert',
+          severity: 'warning',
+          resource: {
+            kind: 'backend',
+            id: 'primary',
+          },
+          compactLabel: 'Backend',
+          sourceLabel: 'MAP2 backend',
+          replaceLiveBanner: true,
+        },
       })
       return
     }

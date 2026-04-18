@@ -5,8 +5,9 @@
 
 import './useAlertNotifications.css'
 
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { Activity, Close, DataBase, TemperatureHot, WarningAltFilled } from '@carbon/icons-react'
+import { useNotifications as useAppNotifications } from '../components/Toasts'
 
 export type AlertSeverity = 'warning' | 'critical'
 export type AlertType = 'temperature' | 'cpu' | 'memory' | 'disk'
@@ -24,9 +25,12 @@ export interface AlertNotification {
  * Hook for managing alert notifications
  */
 export function useAlertNotifications() {
-  const [notifications, setNotifications] = useState<AlertNotification[]>([])
-  const audioRef = useRef<HTMLAudioElement | null>(null)
   const notificationPermissionRef = useRef<NotificationPermission | null>(null)
+  const {
+    notifications: appNotifications,
+    pushNotification,
+    dismissNotification: dismissAppNotification,
+  } = useAppNotifications()
 
   // Request notification permission on first use
   const requestNotificationPermission = useCallback(async () => {
@@ -137,26 +141,27 @@ export function useAlertNotifications() {
     threshold: number
   ) => {
     const { title, message } = getAlertMessage(type, value, threshold)
-    const id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
-    const notification: AlertNotification = {
+    const id = `system-alert:${type}`
+    pushNotification(message, severity === 'critical' ? 'error' : 'warn', {
       id,
-      type,
-      severity,
       title,
-      message,
-      timestamp: Date.now(),
-    }
-
-    setNotifications((prev) => [...prev, notification])
-
-    // Auto-remove after 8 seconds
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== id))
-    }, 8000)
+      persistent: severity === 'critical',
+      durationMs: 8000,
+      stage: {
+        kind: severity === 'critical' ? 'critical_alert' : 'warning_alert',
+        severity: severity === 'critical' ? 'critical' : 'warning',
+        resource: {
+          kind: 'device',
+          id: type,
+        },
+        compactLabel: title,
+        sourceLabel: 'System monitor',
+        replaceLiveBanner: true,
+      },
+    })
 
     return id
-  }, [getAlertMessage])
+  }, [getAlertMessage, pushNotification])
 
   /**
    * Show browser notification
@@ -224,15 +229,17 @@ export function useAlertNotifications() {
    * Dismiss a notification
    */
   const dismissNotification = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }, [])
+    dismissAppNotification(id)
+  }, [dismissAppNotification])
 
   /**
    * Dismiss all notifications
    */
   const dismissAllNotifications = useCallback(() => {
-    setNotifications([])
-  }, [])
+    appNotifications
+      .filter((notification) => notification.id.startsWith('system-alert:'))
+      .forEach((notification) => dismissAppNotification(notification.id))
+  }, [appNotifications, dismissAppNotification])
 
   /**
    * Get severity badge color
@@ -253,6 +260,22 @@ export function useAlertNotifications() {
     }
     return icons[type] || 'alert'
   }, [])
+
+  const notifications = useMemo<AlertNotification[]>(() => (
+    appNotifications
+      .filter((notification) => notification.id.startsWith('system-alert:'))
+      .map((notification) => {
+        const type = notification.id.replace('system-alert:', '') as AlertType
+        return {
+          id: notification.id,
+          type,
+          severity: notification.tone === 'error' ? 'critical' : 'warning',
+          title: notification.title,
+          message: notification.message,
+          timestamp: notification.updatedAt,
+        }
+      })
+  ), [appNotifications])
 
   return {
     notifications,

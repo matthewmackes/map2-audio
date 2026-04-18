@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-17 - Completed T2350 to define the stage-first notification surface spec, design brief, and implementation plan.
+Last updated: 2026-04-18 - Rehomed the full Toastify notification implementation backlog into this canonical project worklist as T2351.
 
 ---
 
@@ -25,8 +25,189 @@ Last updated: 2026-04-17 23:12 EDT - Codex
   - Added `docs/specs/STAGE_NOTIFICATION_SURFACE_SPEC.md`, a formal contract for the approved banner/rail/takeover model, live snapshot rules, merge/dedupe behavior, priority ladder, and explicit non-goals derived from the user's poll answers.
   - Added `docs/design/STAGE_NOTIFICATION_SURFACE_BRIEF_2026-04-17.md`, a product/design handoff describing the desired Carbon-aligned but stage-first visual language, information hierarchy, motion model, and snapshot-specific layout expectations.
   - Added `docs/plans/STAGE_NOTIFICATION_SURFACE_IMPLEMENTATION_PLAN_2026-04-17.md`, a phased implementation plan tied to the current React files that own notifications and snapshot workflows, including React-Toastify integration strategy and migration order.
+  - Reconciled the still-unimplemented frontend build follow-up back into `docs/PROJECT_WORKLIST.md` as `T2351` after the operator removed the global ledger and requested that all planned phases live in the canonical local worklist instead.
 - Validation:
   - Docs-only planning slice; no runtime tests executed.
+
+---
+
+ID: T2351
+Status: [✓] Done
+Title: Implement the stage-first Toastify notification surface for live snapshots and critical alerts
+Description:
+- Goal / acceptance criteria: Implement the approved stage-first notification system in the MAP2 React GUI using the completed spec, design brief, and implementation plan. Acceptance requires a Toastify-backed notification domain, the expanded full-width bottom banner, the collapsed floating right rail, initial takeover alert states, read-only live snapshot persistence outside the Snapshot Editor, replacement/restore behavior for temporary overlays, and focused validation covering the new notification behavior.
+- Why it matters: The planning work is complete, but the operator still cannot see any of the requested notification changes in the GUI because the implementation has not been started.
+- Dependencies: T2350
+- Estimated effort: High
+- Required outputs: notification provider/runtime implementation, banner and rail UI, snapshot/live-state integration, focused tests, build validation, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Notes:
+  - This task now owns the full Toastify implementation backlog after the operator deleted `docs/global-work-list.md` and requested that the same phase breakdown live in the canonical project worklist.
+  - Use `docs/specs/STAGE_NOTIFICATION_SURFACE_SPEC.md`, `docs/design/STAGE_NOTIFICATION_SURFACE_BRIEF_2026-04-17.md`, and `docs/plans/STAGE_NOTIFICATION_SURFACE_IMPLEMENTATION_PLAN_2026-04-17.md` as the source package.
+- Completion notes:
+  - Landed the unified React-Toastify-backed notification runtime in `web/src/app/components/Toasts.tsx` and `web/src/app/components/Toasts.css`, replacing the old custom panel with one typed notification domain, the stage banner, the compact right rail, takeover/downgrade behavior, and live snapshot pinning outside the Snapshot Editor.
+  - Rewired the main stage-relevant producers onto that domain: backend reconnect/unreachable events in `web/src/app/App.tsx`, node alerts in `web/src/app/components/NodeAlerts/NodeAlertToast.tsx`, system alert monitoring in `web/src/app/hooks/useAlertNotifications.tsx`, and rich snapshot workflow descriptors in `web/src/app/utils/snapshotActivationToast.ts`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, `web/src/app/components/snapshots/SnapshotDeployModal.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx`, and `web/src/app/pages/SnapshotPublishPage.tsx`.
+  - Reserved shell layout space for the expanded banner in `web/src/app/layout/AppShell.css`, kept local/context-bound messages off the banner/rail unless a producer opts into the stage surface, and added focused regression coverage in `web/src/app/components/Toasts.test.tsx` and `web/src/app/hooks/useAlertNotifications.test.tsx` alongside the touched snapshot suites.
+- Validation:
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useAlertNotifications.test.tsx src/app/components/Toasts.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/components/snapshots/SnapshotDeployModal.test.tsx src/app/pages/SnapshotPublishPage.test.tsx` -> PASS
+  - `npm --prefix web run build` -> PASS
+Subtasks:
+
+ID: T2351-subA
+Status: [✓] Done
+Title: Land Toastify foundation, provider, and compatibility adapter
+Description:
+- Goal / acceptance criteria: Add `react-toastify` to the frontend dependency set, replace the current custom notification panel with a Toastify-backed canonical provider, preserve the existing `useToasts()` contract during migration, and define typed notification ids, severity mapping, and resource-key mapping for later phases.
+- Why it matters: Every later phase depends on a single notification runtime and a compatibility layer that prevents a large unsafe flag day across the app.
+- Dependencies: T2350
+- Estimated effort: Medium
+- Required outputs: `web/package.json` and lockfile update, provider/adapter implementation in the current notification entry points, focused provider tests, and any installer or environment artifact updates required by changed frontend build assumptions.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Added `react-toastify` to `web/package.json` / `web/package-lock.json` and replaced the old notification panel with the shared provider/adapter in `web/src/app/components/Toasts.tsx` while preserving `useToasts()`.
+
+ID: T2351-subB
+Status: [✓] Done
+Title: Unify backend, node-alert, and custom alert flows into one notification domain
+Description:
+- Goal / acceptance criteria: Eliminate split notification logic between the provider panel, `NodeAlertToast.tsx`, the custom alert hook, and reconnect/unreachable handling in `App.tsx` so the app has one event model and one visible source of truth.
+- Why it matters: The current GUI still has multiple overlapping notification systems, which will otherwise fight the new banner and rail surfaces.
+- Dependencies: T2351-subA
+- Estimated effort: Medium
+- Required outputs: migrated `NodeAlertToast.tsx`, refactored `useAlertNotifications.tsx`, adapted AVB routing notification path, stable-id reconnect event updates in `App.tsx`, and focused regression coverage proving the duplicate systems are gone.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Unified backend reconnect handling, node alerts, AVB notification adapter usage, and the custom alert hook onto the shared notification domain via `App.tsx`, `NodeAlertToast.tsx`, `components/AvbRouting/hooks/useNotifications.ts`, and `hooks/useAlertNotifications.tsx`.
+
+ID: T2351-subC
+Status: [✓] Done
+Title: Convert snapshot workflows to rich Toastify-backed notification descriptors
+Description:
+- Goal / acceptance criteria: Replace flat string-only snapshot activation/publish/deploy notifications with typed rich descriptors or payloads, using `toast.promise` or `toast.loading` plus `toast.update` where appropriate, and introduce rich templates for publish requested, live confirmed, deactivated, deploy succeeded, deploy failed, and recovery states.
+- Why it matters: Snapshot flows are the first operator-visible workflows that need to benefit from the richer notification model instead of plain sentence toasts.
+- Dependencies: T2351-subA, T2351-subB
+- Estimated effort: Medium
+- Required outputs: updated snapshot notification producers in `SnapshotModalContent.tsx`, `SnapshotDeployModal.tsx`, `SnapshotPublishPage.tsx`, and `SnapshotEditorPageContent.tsx`; richer descriptor support in the snapshot toast utility path; and focused tests covering richer content.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Converted snapshot activation/publish/deploy paths to typed stage descriptors through `utils/snapshotActivationToast.ts` and the touched snapshot pages/components so major snapshot outcomes now drive rich stage notifications instead of flat strings alone.
+
+ID: T2351-subD
+Status: [✓] Done
+Title: Build the expanded full-width bottom banner and reserve shell layout space
+Description:
+- Goal / acceptance criteria: Implement the `StageNotificationBanner` surface, integrate it into the app shell, reserve bottom layout space so content reflows upward, and define stable expanded templates for critical, warning, live snapshot, workflow, and recovery states with one dominant primary alert area.
+- Why it matters: The full-width bottom banner is the primary stage-usable surface the operator asked for, and the layout reservation is necessary to avoid obscuring controls during live use.
+- Dependencies: T2351-subA, T2351-subB, T2351-subC
+- Estimated effort: High
+- Required outputs: banner component, shell/layout integration, stable template set, and integration coverage for reserved-space rendering.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Implemented the full-width bottom stage banner and shell-space reservation in `components/Toasts.tsx` and `layout/AppShell.css`, with one dominant primary alert area plus subordinate related alerts.
+
+ID: T2351-subE
+Status: [✓] Done
+Title: Add critical and warning takeover behavior with steady-state downgrade
+Description:
+- Goal / acceptance criteria: Add temporary full-width takeover mode for high-priority alerts, use the approved red/white critical palette and yellow/black warning palette, automatically downgrade into the persistent banner after the configured interval, and preserve the same alert record identity between takeover and steady-state presentation.
+- Why it matters: Severe alerts must be impossible to miss on stage without leaving the interface permanently loud or spawning duplicate events.
+- Dependencies: T2351-subD
+- Estimated effort: Medium
+- Required outputs: takeover state logic, timing/downgrade behavior, alert-identity continuity, and focused tests for takeover-to-steady-state transitions.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Added warning/critical takeover behavior with timed downgrade while preserving alert identity in the shared provider state, covered by `web/src/app/components/Toasts.test.tsx`.
+
+ID: T2351-subF
+Status: [✓] Done
+Title: Implement the pinned live snapshot banner outside the Snapshot Editor
+Description:
+- Goal / acceptance criteria: Detect live snapshot state when any non-editor window is active, render a persistent read-only live snapshot banner in expanded mode, add hide/collapse control behavior, and expose only an icon-based navigation affordance to the relevant snapshot window.
+- Why it matters: The live snapshot state needs a persistent stage-usable home that stays visible outside the Snapshot Editor without turning into an inline control surface.
+- Dependencies: T2351-subD
+- Estimated effort: Medium
+- Required outputs: live snapshot detection/integration, pinned banner rendering, read-only presentation rules, icon-only navigation affordance, and focused coverage for live-state visibility outside the editor.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Added the pinned live snapshot banner outside Snapshot Editor routes, with read-only content, hide/collapse behavior, and icon-only navigation back to the snapshot workspace.
+
+ID: T2351-subG
+Status: [✓] Done
+Title: Build the collapsed floating right rail as the compact mode of the same surface
+Description:
+- Goal / acceptance criteria: Implement the collapsed floating right rail at roughly 25% width, keep it backed by the same provider state as expanded mode, use icon/color/few-word compact items, and allow clicking a compact item to expand the banner focused on that alert.
+- Why it matters: Hidden state must remain useful and readable on stage instead of devolving into a separate generic toast stack.
+- Dependencies: T2351-subD, T2351-subF
+- Estimated effort: Medium
+- Required outputs: collapsed rail component/layout, compact item templates, focus/expand behavior, and coverage proving it is not a separate notification stack.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Implemented the collapsed right rail as the compact mode of the same provider-backed surface, with click-to-expand behavior validated in `web/src/app/components/Toasts.test.tsx`.
+
+ID: T2351-subH
+Status: [✓] Done
+Title: Enforce replacement and restoration rules between live snapshot and temporary overlays
+Description:
+- Goal / acceptance criteria: Ensure critical and warning overlays fully replace the live snapshot banner while active, restore the live snapshot banner when the overlay settles, and remember whether the operator had the surface expanded or collapsed before the temporary overlay took ownership.
+- Why it matters: The live-state banner and alert overlays need deterministic ownership rules or the resulting surface will feel erratic under pressure.
+- Dependencies: T2351-subE, T2351-subF, T2351-subG
+- Estimated effort: Medium
+- Required outputs: replacement/restore state machine behavior, persisted expanded-versus-collapsed restoration rules, and regression coverage for hide/replace/restore flows.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Enforced replacement and restoration between temporary overlays and the live snapshot banner, including expanded/collapsed restoration behavior after dismissing higher-priority alerts.
+
+ID: T2351-subI
+Status: [✓] Done
+Title: Add merge, dedupe, rate limiting, and noise-control rules to the notification domain
+Description:
+- Goal / acceptance criteria: Use stable ids or resource keys for reconnect, node-alert, and snapshot workflow states; add repeated-failure count updates; rate-limit polling and websocket failure surfaces; suppress low-value background success messages; and show timestamps only where operationally useful.
+- Why it matters: The operator asked for evolving high-signal alert state, not bursts of duplicate cards or low-value success spam.
+- Dependencies: T2351-subB, T2351-subC, T2351-subD
+- Estimated effort: Medium
+- Required outputs: typed merge/dedupe rules in the provider domain, updated producer usage, and focused unit coverage for priority, merge, and noise-control behavior.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Added stable ids/resource keys and in-place update behavior for reconnect, node, system-alert, and snapshot workflow notifications so duplicate events merge into the current surface instead of spawning competing cards.
+
+ID: T2351-subJ
+Status: [✓] Done
+Title: Audit inline-versus-global feedback and remove context-bound messages from the global surface
+Description:
+- Goal / acceptance criteria: Audit snapshot publish/activation/deactivation, upload, and editor-local messages; convert panel-local validation and form failures into inline notifications where appropriate; and keep only cross-surface or stage-relevant items in the global banner/rail system.
+- Why it matters: The global notification surface will stay readable only if panel-local form and validation noise is moved back to the panels that own it.
+- Dependencies: T2351-subC, T2351-subD, T2351-subI
+- Estimated effort: Medium
+- Required outputs: inline/global audit notes reflected in touched code paths, migrated local-only feedback where appropriate, and updated tests proving the global surface is carrying only stage-relevant items.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Restricted the stage banner/rail to producers that explicitly opt into stage descriptors, leaving context-bound/editor-local feedback on the transient/local path so the global stage surface carries only stage-relevant notifications.
+
+ID: T2351-subK
+Status: [✓] Done
+Title: Validate the full notification migration against the planned exit criteria
+Description:
+- Goal / acceptance criteria: Add the provider/banner/rail/priority/merge test coverage planned in the implementation document, run integration coverage for takeover, live snapshot, collapse/expand, and snapshot workflows, and confirm the initiative meets the exit criteria defined in the implementation plan.
+- Why it matters: The notification rewrite crosses provider state, shell layout, and snapshot behavior boundaries, so it needs explicit exit validation rather than ad hoc spot checks.
+- Dependencies: T2351-subA, T2351-subB, T2351-subC, T2351-subD, T2351-subE, T2351-subF, T2351-subG, T2351-subH, T2351-subI, T2351-subJ
+- Estimated effort: Medium
+- Required outputs: new or updated notification tests, passing focused validation commands, and completion notes proving the custom panel, node-alert stack, and alert hook no longer operate as separate systems.
+Assigned to: Codex
+Last updated: 2026-04-18 13:05 EDT - Codex
+- Completion notes:
+  - Added focused provider/hook regression coverage and reran the touched snapshot suites plus production build validation to confirm the full migration exit criteria now pass.
 
 ---
 

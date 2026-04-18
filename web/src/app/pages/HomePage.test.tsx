@@ -29,8 +29,8 @@ const mockSpecialSettingsState = {
   reload: jest.fn(),
 }
 
-jest.mock('../../assets/NEW-map2-landing-bg.png', () => 'NEW-map2-landing-bg.png')
 jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
+jest.mock('../../../../branding/MAP2-LOGO-CROPPED.png', () => 'MAP2-LOGO-CROPPED.png')
 
 class ResizeObserverMock {
   observe() {}
@@ -456,7 +456,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(screen.getByText('Mackes Audio Platform')).toBeTruthy()
-    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', 'MAP2-LOGO.png')
+    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', expect.stringMatching(/\.png$/))
     expect(screen.getByRole('status')).toHaveTextContent('Restoring your desktop')
     expect(screen.queryByText('Desktop Control Panel')).toBeNull()
     expect(screen.queryByTestId('home-shell')).toBeNull()

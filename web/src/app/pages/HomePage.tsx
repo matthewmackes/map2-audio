@@ -27,7 +27,7 @@ import {
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
 import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
-import landingHeroBrandImage from '../../../../branding/NEW-map2-landing-bg.png'
+import landingHeroBrandImage from '../../../../branding/MAP2-LOGO-CROPPED.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences } from './homeLandingPreferences'

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 16, 2026 (operator feedback matrix documented)
+> **Last Updated**: April 18, 2026 (stage notification runtime landed)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -143,6 +143,7 @@ When adding significant updates, append to this log:
 - **Carbon Design System (target standard)**: `@carbon/react` (required for new/updated UI under T114)
 - **Carbon packages currently present**: `@carbon/colors`, `@carbon/icons-react`
 - **MUI (Material-UI, legacy surface)**: 6.5.0 (@mui/material, @mui/icons-material)
+- **React-Toastify**: 10.x (canonical toast lifecycle engine for the unified stage notification surface)
 - **Phosphor Icons**: 2.1.10 (@phosphor-icons/react)
 - **Ariakit**: 0.4.21 (accessible UI primitives)
 - **Framer Motion**: 12.34.0 (animations)

@@ -1,64 +1,253 @@
-.notification-panel-layer {
+.stage-notification-surface {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  width: min(420px, 90vw);
-  max-height: 60vh;
-  z-index: 50;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 46;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border-strong) 84%, transparent);
+  box-shadow: none;
 }
 
-.notification-panel {
+.stage-notification-surface--takeover {
+  animation: stage-notification-takeover 180ms ease-out;
+}
+
+.stage-notification-surface--critical {
+  background: #8a1515;
+  color: #fff;
+}
+
+.stage-notification-surface--warning {
+  background: #f1c21b;
+  color: #161616;
+}
+
+.stage-notification-surface--success,
+.stage-notification-surface--info {
+  background: color-mix(in srgb, var(--surface) 98%, var(--bg));
+  color: var(--text-primary);
+}
+
+.stage-notification-surface__primary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: clamp(7rem, 20vh, 12rem);
+  padding: 1rem 1.25rem;
+}
+
+.stage-notification-surface__signal {
   display: flex;
-  flex-direction: column;
-  max-height: 60vh;
-  overflow: hidden;
-  background: var(--cds-layer);
-  border: 1px solid var(--cds-border-subtle-01);
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-notification-surface__content {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stage-notification-surface__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+
+.stage-notification-surface__content h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.5vw, 2rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.stage-notification-surface__content p {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  line-height: 1.4;
+}
+
+.stage-notification-surface__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+
+.stage-notification-surface__meta span {
+  padding: 0.18rem 0.45rem;
+  border: 1px solid currentColor;
+}
+
+.stage-notification-surface__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stage-notification-surface__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stage-notification-surface__icon-button:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.stage-notification-surface__icon-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.stage-notification-surface__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.stage-notification-secondary-chip {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage-notification-secondary-chip span {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.stage-notification-secondary-chip small {
+  font-size: 0.75rem;
+  opacity: 0.82;
+}
+
+.stage-notification-rail {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 46;
+  display: grid;
+  gap: 0.6rem;
+  inline-size: min(22rem, calc(100vw - 2rem));
+}
+
+.stage-notification-rail__item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 97%, var(--bg));
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage-notification-rail__item--critical {
+  border-color: #da1e28;
+}
+
+.stage-notification-rail__item--warning {
+  border-color: #8e6a00;
+}
+
+.stage-notification-rail__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.stage-notification-rail__message {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.stage-notification-transient-container {
+  width: min(24rem, calc(100vw - 1.5rem));
+  padding-top: 0.75rem;
+}
+
+.stage-notification-transient {
+  min-height: auto;
+  margin-bottom: 0.6rem;
   border-radius: 0;
   box-shadow: none;
-  backdrop-filter: none;
-  background-image: none;
 }
 
-.notification-panel-header {
-  padding: var(--space-5);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer);
+.stage-notification-transient__wrap {
+  padding: 0;
 }
 
-.notification-panel-header h3 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: var(--cds-heading-01-font-size, 0.875rem);
-  font-weight: 600;
-  line-height: var(--cds-heading-01-line-height, 1.125rem);
+.stage-notification-transient__body {
+  display: grid;
+  gap: 0.3rem;
 }
 
-.notification-panel-header .cds--btn {
-  padding: 6px 10px;
-  font-size: var(--cds-label-01-font-size, 0.75rem);
+.stage-notification-transient__body strong {
+  font-size: 0.84rem;
 }
 
-.notification-panel-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cds-spacing-03);
-  padding: var(--cds-spacing-03);
+.stage-notification-transient__body span {
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
-.notification-item {
+.stage-notification-transient__body button {
+  justify-self: flex-start;
   padding: 0;
   border: 0;
   background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
-.notification-item .cds--toast-notification,
-.notification-item .cds--actionable-notification {
-  margin: 0;
-  max-width: 100%;
+@keyframes stage-notification-takeover {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .stage-notification-surface__primary {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .stage-notification-surface__actions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .stage-notification-rail {
+    right: 0.75rem;
+    left: 0.75rem;
+    inline-size: auto;
+  }
 }

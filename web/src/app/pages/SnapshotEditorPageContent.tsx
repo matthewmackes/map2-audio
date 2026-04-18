@@ -110,6 +110,7 @@ import {
 import { audioStateApi } from '../../map2/clients/audioState'
 import { ApiError, fetchJson } from '../../map2/http'
 import { useToasts } from '../components/Toasts'
+import type { NotificationOptions, NotificationTone } from '../components/Toasts'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
@@ -161,7 +162,9 @@ import {
 } from '../utils/snapshotNames'
 import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+  buildSnapshotActivationFailureStageToast,
   buildSnapshotActivationFailureToastMessage,
+  buildSnapshotActivationStageToast,
   buildSnapshotActivationToastMessage,
   extractSnapshotActivationFailureDetail,
   extractSnapshotActivationFailureReason,
@@ -1719,10 +1722,16 @@ export function SnapshotEditorPage() {
         setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
         clearSnapshotsDirty()
         queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+        const stageToast = buildSnapshotActivationStageToast(event.snapshot_data, { programNumber: event.program_number ?? null })
         pushToast(
           buildSnapshotActivationToastMessage(event.snapshot_data, { programNumber: event.program_number ?? null }),
           'success',
-          { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+          {
+            durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+            id: stageToast.options.id,
+            title: stageToast.title,
+            stage: stageToast.options.stage,
+          },
         )
       }
     }, [clearSnapshotsDirty, invalidateControlPlaneSnapshotCaches, pushToast, queryClient, setControlPlaneSnapshotCaches]),
@@ -2581,6 +2590,10 @@ export function SnapshotEditorPage() {
       hydrateEditorFromSnapshot(response.snapshot_data, {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        toast: {
+          ...buildSnapshotActivationStageToast(response.snapshot_data),
+          tone: 'success',
+        },
         resetSelectedBlock: true,
         invalidateSnapshots: true,
       })
@@ -2591,10 +2604,16 @@ export function SnapshotEditorPage() {
       }
     },
     onError: (error, variables) => {
+      const stageToast = buildSnapshotActivationFailureStageToast(variables.snapshotName, error)
       pushToast(
         buildSnapshotActivationFailureToastMessage(variables.snapshotName, error),
         'warn',
-        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+        {
+          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
   })
@@ -2680,6 +2699,10 @@ export function SnapshotEditorPage() {
       hydrateEditorFromSnapshot(response.snapshot_data, {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        toast: {
+          ...buildSnapshotActivationStageToast(response.snapshot_data),
+          tone: 'success',
+        },
         resetSelectedBlock: true,
         invalidateSnapshots: true,
       })
@@ -2695,10 +2718,16 @@ export function SnapshotEditorPage() {
       setFailedGoLiveSnapshotId(snapshotId)
       setGoLiveFailureReason(failureReason)
       setGoLiveFailureDetail(failureDetail)
+      const stageToast = buildSnapshotActivationFailureStageToast(snapshotName, error, { snapshotId })
       pushToast(
         buildSnapshotActivationFailureToastMessage(snapshotName, error),
         'warn',
-        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+        {
+          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
   })
@@ -3141,6 +3170,7 @@ export function SnapshotEditorPage() {
     options?: {
       toastMessage?: string | null
       toastDurationMs?: number
+      toast?: { message: string; tone?: NotificationTone; options?: NotificationOptions } | null
       resetSelectedBlock?: boolean
       invalidateSnapshots?: boolean
       resetUndoHistory?: boolean
@@ -3179,6 +3209,9 @@ export function SnapshotEditorPage() {
         'success',
         options.toastDurationMs ? { durationMs: options.toastDurationMs } : undefined,
       )
+    }
+    if (options?.toast) {
+      pushToast(options.toast.message, options.toast.tone ?? 'success', options.toast.options)
     }
   }, [clearSnapshotsDirty, pushToast, queryClient, seedSnapshotUndoRedo, setEditorSnapshotState, setSelectedPluginSelection])
 

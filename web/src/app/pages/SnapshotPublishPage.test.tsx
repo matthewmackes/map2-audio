@@ -152,7 +152,13 @@ function renderPage(initialPath = '/snapshots/12/publish') {
 
   render(
     <QueryClientProvider client={client}>
-      <HistoryRouter history={history}>
+      <HistoryRouter
+        history={history}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route path="/home" element={<div>Home route</div>} />
           <Route path="/snapshot-editor" element={<div>Editor route</div>} />
@@ -543,7 +549,7 @@ describe('SnapshotPublishPage', () => {
       expect(mockRunPublishRepairAction).toHaveBeenCalledWith(12, 'recover_local_audio_engine')
     })
     await waitFor(() => {
-      expect(mockPushToast).toHaveBeenCalledWith('Local audio engine started', 'success')
+      expect(mockPushToast).toHaveBeenCalledWith('Local audio engine started', 'success', expect.any(Object))
     })
   })
 
@@ -756,7 +762,7 @@ describe('SnapshotPublishPage', () => {
       expect(window.localStorage.getItem(LIVE_WORKING_SNAPSHOT_DRAFT_TEST_ONLY.STORAGE_KEY)).toBeNull()
     })
     await waitFor(() => {
-      expect(mockPushToast).toHaveBeenCalledWith('Editor live changes saved and live host moved to node-b', 'success')
+      expect(mockPushToast).toHaveBeenCalledWith('Editor live changes saved and live host moved to node-b', 'success', expect.any(Object))
     })
   })
 

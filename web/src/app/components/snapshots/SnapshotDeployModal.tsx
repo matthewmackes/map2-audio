@@ -20,6 +20,7 @@ import type { PluginLoaderState, SnapshotDetail, SnapshotPlugin } from '../../..
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/useCluster'
 import { useToasts } from '../Toasts'
+import { buildSnapshotWorkflowStageToast } from '../../utils/snapshotActivationToast'
 import './SnapshotDeployModal.css'
 
 type PluginSnapshotSummary = {
@@ -363,11 +364,39 @@ export function SnapshotDeployModal({
         queryClient.invalidateQueries({ queryKey: ['plugin-snapshots', 'cluster-catalog'] }),
         queryClient.invalidateQueries({ queryKey: ['cluster', 'library'] }),
       ])
-      pushToast(`Deployed snapshot to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`, 'success')
+      const message = `Deployed snapshot to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-deploy',
+        snapshotId: snapshot.id,
+        snapshotName: snapshot.name,
+        title: 'Snapshot deployed',
+        message,
+        severity: 'success',
+        nodeId: sourceNodeId,
+      })
+      pushToast(message, 'success', {
+        id: stageToast.options.id,
+        title: stageToast.title,
+        stage: stageToast.options.stage,
+      })
       onClose()
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Snapshot deployment failed', 'error')
+      const message = error instanceof Error ? error.message : 'Snapshot deployment failed'
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-deploy-failed',
+        snapshotId: snapshot?.id ?? null,
+        snapshotName: snapshot?.name ?? 'Snapshot',
+        title: 'Snapshot deploy failed',
+        message,
+        severity: 'warning',
+        nodeId: sourceNodeId,
+      })
+      pushToast(message, 'error', {
+        id: stageToast.options.id,
+        title: stageToast.title,
+        stage: stageToast.options.stage,
+      })
     },
   })
 

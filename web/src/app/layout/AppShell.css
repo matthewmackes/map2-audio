@@ -127,6 +127,7 @@
   min-width: 0;
   min-height: 100vh;
   overflow: hidden;
+  padding-bottom: var(--stage-notification-reserved-height, 0px);
 }
 
 .app-shell__nav-collapsed-rail {
@@ -196,6 +197,7 @@
   left: calc(var(--global-tree-banner-left-offset, 16rem) + var(--cds-spacing-04, 0.75rem));
   right: var(--cds-spacing-04, 0.75rem);
   bottom: var(--cds-spacing-04, 0.75rem);
+  bottom: calc(var(--cds-spacing-04, 0.75rem) + var(--stage-notification-reserved-height, 0px));
   z-index: 41;
   display: flex;
   align-items: center;

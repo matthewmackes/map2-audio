@@ -16,6 +16,7 @@ import {
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
 import { useToasts } from '../Toasts'
+import type { NotificationOptions, NotificationTone } from '../Toasts'
 import { NumberInput } from '../ParameterControl'
 import { useCommittedAudioState } from '../../hooks/useAuthoritativeAudioState'
 import { useSpecialSettings } from '../../hooks/useSpecialSettings'
@@ -38,7 +39,9 @@ import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import { formatSnapshotLastUsedLabel } from '../../utils/snapshotLastUsed'
 import {
   SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+  buildSnapshotActivationFailureStageToast,
   buildSnapshotActivationFailureToastMessage,
+  buildSnapshotActivationStageToast,
   buildSnapshotActivationToastMessage,
 } from '../../utils/snapshotActivationToast'
 import {
@@ -80,7 +83,12 @@ export interface SnapshotModalContentProps {
   snapshotDraft: SnapshotDraftData
   applySnapshotData: (
     snapshotData: SnapshotDraftData,
-    options?: { toastMessage?: string | null; toastDurationMs?: number; invalidateChains?: boolean },
+    options?: {
+      toastMessage?: string | null
+      toastDurationMs?: number
+      toast?: { message: string; tone?: NotificationTone; options?: NotificationOptions } | null
+      invalidateChains?: boolean
+    },
   ) => void
 }
 
@@ -345,15 +353,25 @@ export function SnapshotModalContent({
       applySnapshotData(snapshotDetailToDraftData(response.snapshotData), {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshotData),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        toast: {
+          ...buildSnapshotActivationStageToast(response.snapshotData),
+          tone: 'success',
+        },
         invalidateChains: false,
       })
       onRecall?.()
     },
     onError: (error, values) => {
+      const stageToast = buildSnapshotActivationFailureStageToast(values.name, error)
       pushToast(
         buildSnapshotActivationFailureToastMessage(values.name, error),
         'warn',
-        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+        {
+          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
   })
@@ -383,16 +401,26 @@ export function SnapshotModalContent({
       applySnapshotData(snapshotDetailToDraftData(data.snapshotData), {
         toastMessage: buildSnapshotActivationToastMessage(data.snapshotData),
         toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+        toast: {
+          ...buildSnapshotActivationStageToast(data.snapshotData),
+          tone: 'success',
+        },
         invalidateChains: false,
       })
       onRecall?.()
     },
     onError: (error, snapshotId) => {
       const snapshotName = savedSnapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
+      const stageToast = buildSnapshotActivationFailureStageToast(snapshotName, error, { snapshotId })
       pushToast(
         buildSnapshotActivationFailureToastMessage(snapshotName, error),
         'warn',
-        { durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS },
+        {
+          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
   })

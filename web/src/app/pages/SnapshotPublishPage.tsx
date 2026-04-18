@@ -52,6 +52,7 @@ import {
   type LiveWorkingSnapshotDraftRecord,
 } from '../utils/liveWorkingSnapshotDraft'
 import { buildWorkspaceArtifactsPath } from './audioArtifactsRoutes'
+import { buildSnapshotWorkflowStageToast } from '../utils/snapshotActivationToast'
 import './SnapshotPublishPage.css'
 
 type PublishMode = 'wizard' | 'advanced'
@@ -540,14 +541,32 @@ export function SnapshotPublishPage() {
     },
     onSuccess: ({ activation, savedDraftRevision, savedEditorDraft }) => {
       refreshPublishState()
-      pushToast(
+      const operatorMessage =
         activation.operator_message
           ?? (savedEditorDraft
             ? 'Editor live changes saved and publish requested'
             : savedDraftRevision
               ? 'Draft saved and publish requested'
-              : 'Publish requested'),
+              : 'Publish requested')
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-publish',
+        snapshotId,
+        snapshotName: snapshot?.name ?? `Snapshot ${snapshotId}`,
+        title: activation.status === 'degraded' ? 'Publish warning' : 'Publish requested',
+        message: operatorMessage,
+        severity: activation.status === 'degraded' ? 'warning' : 'success',
+        nodeId: activation.node_id ?? selectedHostId ?? null,
+        durationMs: 8000,
+      })
+      pushToast(
+        operatorMessage,
         activation.status === 'degraded' ? 'warn' : 'success',
+        {
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+          durationMs: 8000,
+        },
       )
     },
     onError: (error) => {
@@ -577,7 +596,21 @@ export function SnapshotPublishPage() {
     mutationFn: () => snapshotsApi.retryPublish(snapshotId),
     onSuccess: (response) => {
       refreshPublishState()
-      pushToast(response.operator_message ?? 'Publish retried', response.status === 'degraded' ? 'warn' : 'success')
+      const operatorMessage = response.operator_message ?? 'Publish retried'
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-publish-retry',
+        snapshotId,
+        snapshotName: snapshot?.name ?? `Snapshot ${snapshotId}`,
+        title: response.status === 'degraded' ? 'Retry warning' : 'Publish retried',
+        message: operatorMessage,
+        severity: response.status === 'degraded' ? 'warning' : 'success',
+        nodeId: selectedHostId ?? null,
+      })
+      pushToast(operatorMessage, response.status === 'degraded' ? 'warn' : 'success', {
+        id: stageToast.options.id,
+        title: stageToast.title,
+        stage: stageToast.options.stage,
+      })
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Retry failed', 'error')
@@ -587,9 +620,24 @@ export function SnapshotPublishPage() {
     mutationFn: (repairActionId: string) => snapshotsApi.runPublishRepairAction(snapshotId, repairActionId),
     onSuccess: (response) => {
       refreshPublishState()
+      const operatorMessage = response.operator_message ?? 'Repair action requested'
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-publish-repair',
+        snapshotId,
+        snapshotName: snapshot?.name ?? `Snapshot ${snapshotId}`,
+        title: response.status === 'degraded' ? 'Repair warning' : 'Repair requested',
+        message: operatorMessage,
+        severity: response.status === 'degraded' ? 'warning' : 'success',
+        nodeId: selectedHostId ?? null,
+      })
       pushToast(
-        response.operator_message ?? 'Repair action requested',
+        operatorMessage,
         response.status === 'degraded' ? 'warn' : 'success',
+        {
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
     onError: (error) => {
@@ -774,12 +822,28 @@ export function SnapshotPublishPage() {
       setSelectedHostId(response.node_id)
       refreshPublishState()
       const remoteActivation = (response.deployment as SnapshotDeployment & { remote_activation?: { message?: string } }).remote_activation
-      pushToast(
+      const operatorMessage =
         remoteActivation?.message
           ?? (savedEditorDraft
             ? `Editor live changes saved and live host moved to ${response.node_id}`
-            : `Live host moved to ${response.node_id}`),
+            : `Live host moved to ${response.node_id}`)
+      const stageToast = buildSnapshotWorkflowStageToast({
+        workflowId: 'snapshot-move-host',
+        snapshotId,
+        snapshotName: snapshot?.name ?? `Snapshot ${snapshotId}`,
+        title: 'Live host moved',
+        message: operatorMessage,
+        severity: 'success',
+        nodeId: response.node_id,
+      })
+      pushToast(
+        operatorMessage,
         'success',
+        {
+          id: stageToast.options.id,
+          title: stageToast.title,
+          stage: stageToast.options.stage,
+        },
       )
     },
     onError: (error) => {

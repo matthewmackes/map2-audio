@@ -44,6 +44,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^6.28.0",
+    "react-toastify": "^10.0.6",
     "react-virtualized-auto-sizer": "^1.0.25",
     "react-window": "^1.8.11",
     "reactflow": "^11.11.4",

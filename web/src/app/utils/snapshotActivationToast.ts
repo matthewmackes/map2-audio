@@ -1,5 +1,7 @@
 import { ApiError } from '../../map2/http'
 import type { Chain, SnapshotChain, SnapshotDetail, SnapshotLivePathState, SnapshotPath } from '../../map2/types'
+import type { NotificationOptions } from '../components/Toasts'
+import { withNodeQuery } from './clusterTransport'
 
 export const SNAPSHOT_ACTIVATION_TOAST_DURATION_MS = 3000
 
@@ -36,8 +38,14 @@ export interface SnapshotActivationFailureDetail {
 
 type SnapshotActivationToastSource = Pick<
   SnapshotDetail,
-  'name' | 'channel_count' | 'channels' | 'chains' | 'paths' | 'live_state'
+  'id' | 'name' | 'channel_count' | 'channels' | 'chains' | 'paths' | 'live_state'
 >
+
+export interface SnapshotStageToastDescriptor {
+  title: string
+  message: string
+  options: NotificationOptions
+}
 
 type PluginLike = {
   bypass?: boolean
@@ -321,4 +329,126 @@ export function buildSnapshotActivationToastMessage(
 export function buildSnapshotActivationFailureToastMessage(snapshotName: string, error: unknown): string {
   const reason = extractSnapshotActivationFailureReason(error, { separator: ' • ' }) ?? 'Activation failed.'
   return `Failed: ${snapshotName} - ${reason}`
+}
+
+export function buildSnapshotActivationStageToast(
+  snapshot: SnapshotActivationToastSource,
+  options?: { programNumber?: number | null },
+): SnapshotStageToastDescriptor {
+  const activeChannels = countActiveSnapshotChannels(snapshot)
+  const activeBlocks = countActiveSnapshotBlocks(snapshot)
+  const programSuffix = typeof options?.programNumber === 'number' ? ` · PC ${options.programNumber}` : ''
+  const liveLabel = snapshot.live_state?.display_label?.trim() || 'Live'
+  const nodeId = snapshot.live_state?.node_id ?? null
+
+  return {
+    title: 'Live snapshot',
+    message: `${snapshot.name} is ${liveLabel.toLowerCase()} on ${formatCountLabel(activeChannels, 'channel')} with ${formatCountLabel(activeBlocks, 'block')}${programSuffix}`,
+    options: {
+      id: `snapshot-live:${snapshot.id}`,
+      persistent: true,
+      title: snapshot.name,
+      stage: {
+        kind: 'live_snapshot',
+        severity: snapshot.live_state?.is_warning ? 'warning' : 'success',
+        resource: {
+          kind: 'snapshot',
+          id: String(snapshot.id),
+        },
+        compactLabel: snapshot.name,
+        sourceLabel: nodeId ?? '',
+        route: withNodeQuery('/snapshot-editor', nodeId),
+        routeLabel: `Open ${snapshot.name} in Snapshot Editor`,
+        liveSnapshotPinned: true,
+        replaceLiveBanner: false,
+        sticky: true,
+        suppressTransient: true,
+        meta: [
+          liveLabel,
+          formatCountLabel(activeChannels, 'channel'),
+          formatCountLabel(activeBlocks, 'block'),
+        ],
+      },
+    },
+  }
+}
+
+export function buildSnapshotActivationFailureStageToast(
+  snapshotName: string,
+  error: unknown,
+  options?: { snapshotId?: number | null; nodeId?: string | null },
+): SnapshotStageToastDescriptor {
+  const failureDetail = extractSnapshotActivationFailureDetail(error)
+  const failureMessage = extractSnapshotActivationFailureReason(error, { separator: ' • ' }) ?? 'Activation failed.'
+
+  return {
+    title: 'Snapshot activation failed',
+    message: `${snapshotName}: ${failureMessage}`,
+    options: {
+      id: `snapshot-activation-failed:${options?.snapshotId ?? snapshotName}`,
+      title: snapshotName,
+      durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
+      stage: {
+        kind: 'warning_alert',
+        severity: 'warning',
+        resource: {
+          kind: 'snapshot',
+          id: String(options?.snapshotId ?? snapshotName),
+        },
+        compactLabel: snapshotName,
+        sourceLabel: options?.nodeId ?? '',
+        route: options?.nodeId != null ? withNodeQuery('/snapshot-editor', options.nodeId) : '/snapshot-editor',
+        routeLabel: `Open ${snapshotName} in Snapshot Editor`,
+        replaceLiveBanner: true,
+        suppressTransient: true,
+        meta: [
+          failureDetail?.phase ? `Phase: ${failureDetail.phase}` : '',
+          failureDetail?.blocking ? 'Blocking' : '',
+        ].filter(Boolean),
+      },
+    },
+  }
+}
+
+export function buildSnapshotWorkflowStageToast(params: {
+  workflowId: string
+  snapshotId?: number | null
+  snapshotName: string
+  title: string
+  message: string
+  severity?: 'info' | 'success' | 'warning' | 'critical'
+  nodeId?: string | null
+  durationMs?: number
+  persistent?: boolean
+  replaceLiveBanner?: boolean
+  compactLabel?: string
+}): SnapshotStageToastDescriptor {
+  const severity = params.severity ?? 'success'
+
+  return {
+    title: params.title,
+    message: params.message,
+    options: {
+      id: `${params.workflowId}:${params.snapshotId ?? params.snapshotName}`,
+      persistent: params.persistent,
+      durationMs: params.durationMs,
+      title: params.snapshotName,
+      stage: {
+        kind: severity === 'warning' || severity === 'critical' ? 'warning_alert' : 'workflow',
+        severity,
+        resource: {
+          kind: 'snapshot',
+          id: String(params.snapshotId ?? params.snapshotName),
+        },
+        compactLabel: params.compactLabel ?? params.snapshotName,
+        sourceLabel: params.nodeId ?? '',
+        route: params.nodeId != null ? withNodeQuery('/snapshot-editor', params.nodeId) : '/snapshot-editor',
+        routeLabel: `Open ${params.snapshotName} in Snapshot Editor`,
+        replaceLiveBanner: params.replaceLiveBanner ?? true,
+        sticky: Boolean(params.persistent),
+        suppressTransient: true,
+        meta: [params.title],
+      },
+    },
+  }
 }

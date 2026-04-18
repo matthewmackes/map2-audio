@@ -13,7 +13,7 @@ jest.mock('../../../map2/clients/snapshots', () => ({
   },
 }))
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => ({
     localNodeId: 'node-local',
     nodes: [
