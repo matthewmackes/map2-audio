@@ -6,7 +6,48 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-17 - Completed T2342 to unify route scroll restoration, modal focus return, and shell background polling cadence.
+Last updated: 2026-04-17 - Completed T2350 to define the stage-first notification surface spec, design brief, and implementation plan.
+
+---
+
+ID: T2350
+Status: [✓] Done
+Title: Define the stage-first web notification surface for live snapshots and critical alerts
+Description:
+- Goal / acceptance criteria: Convert the user's 100-question notification poll into one formal product/engineering spec, one design brief, and one implementation plan that align with current MAP2 snapshot and notification entry points. Acceptance requires the new docs to capture the approved interaction model for expanded bottom banner, collapsed right rail, alert takeover states, live snapshot persistence rules, and React-Toastify-based consolidation guidance; to reference the current web files that would carry the work; and to leave the canonical worklist reconciled.
+- Why it matters: The web app currently splits notification behavior across multiple ad hoc systems, while the user has now specified a detailed stage-usable alert model for live snapshots, critical failures, and collapsed/expanded alert states that needs to be preserved as an implementation-grade source of truth.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: notification surface spec, notification design brief, implementation plan, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 23:12 EDT - Codex
+- Completion notes:
+  - Added `docs/specs/STAGE_NOTIFICATION_SURFACE_SPEC.md`, a formal contract for the approved banner/rail/takeover model, live snapshot rules, merge/dedupe behavior, priority ladder, and explicit non-goals derived from the user's poll answers.
+  - Added `docs/design/STAGE_NOTIFICATION_SURFACE_BRIEF_2026-04-17.md`, a product/design handoff describing the desired Carbon-aligned but stage-first visual language, information hierarchy, motion model, and snapshot-specific layout expectations.
+  - Added `docs/plans/STAGE_NOTIFICATION_SURFACE_IMPLEMENTATION_PLAN_2026-04-17.md`, a phased implementation plan tied to the current React files that own notifications and snapshot workflows, including React-Toastify integration strategy and migration order.
+- Validation:
+  - Docs-only planning slice; no runtime tests executed.
+
+---
+
+ID: T2349
+Status: [✓] Done
+Title: Keep local snapshot publish readiness confirmed after transient authority observations expire
+Description:
+- Goal / acceptance criteria: Fix the snapshot publish-readiness contract so a local snapshot that already reached runtime-live success and committed authority confirmation does not regress back to `waiting_for_confirmation` / `node_sync_pending` once the transient etcd observation lease expires. Acceptance requires backend readiness logic to honor confirmed local runtime truth for the active snapshot without masking real remote-node confirmation gaps, focused regression coverage for the lease-expiry case, and reconciled worklist state.
+- Why it matters: Current local publish flows can succeed fully, yet the publish workspace falls back to a misleading warning state and encourages unnecessary retry clicks after the observation TTL window, which matches the operator-visible error reported on 2026-04-17.
+- Dependencies: T2304, T2299
+- Estimated effort: Low
+- Required outputs: publish-readiness confirmation fix, focused backend regression coverage, validation notes, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-17 22:14 EDT - Codex
+- Completion notes:
+  - Updated `app/services/publish_readiness_service.py` so local publish readiness treats a matching local runtime live-state plus successful activation event confirmation as sufficient confirmation for the local node even after the transient authority observation lease expires.
+  - Added focused regression coverage in `tests/test_publish_readiness_service.py` proving a local-only snapshot stays `live_confirmed` when observation rows have expired but committed authority, runtime live-state, and the activation event already confirm success.
+  - Verified the live snapshot reported in the user screenshot (`snapshot_id=11`) now resolves to `status='live_confirmed'`, `confirmed_revision_id=1`, with no blockers or warnings when evaluated through the patched backend code path against the current local database.
+- Validation:
+  - `python3 -m pytest -q tests/test_publish_readiness_service.py` -> PASS
+  - `python3 -m pytest -q tests/test_snapshot_routes.py -k 'publish_readiness_and_retry_routes_use_typed_backend_services or activation_routes_preserve_degraded_activation_contract'` -> PASS
 
 ---
 

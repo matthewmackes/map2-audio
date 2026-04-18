@@ -317,6 +317,15 @@ class PublishReadinessService:
             str(runtime_live_state.get("state") or "").lower() == "live"
             and int(runtime_live_state.get("snapshot_id") or 0) == int(detail["id"])
         )
+        local_runtime_confirmed_node_id = self._resolve_local_runtime_confirmed_node_id(
+            detail=detail,
+            committed_state=committed_state,
+            runtime_live_state=runtime_live_state,
+            latest_event=latest_event,
+            runtime_matches_requested=runtime_matches_requested,
+        )
+        if local_runtime_confirmed_node_id and local_runtime_confirmed_node_id not in observed_by_node:
+            observed_by_node[local_runtime_confirmed_node_id] = runtime_live_state
         authority_confirmation_failed = (
             runtime_matches_requested
             and str(authority_publication.get("status") or "").strip().lower() == "failed"
@@ -489,6 +498,33 @@ class PublishReadinessService:
             "applicable_steps": applicable_steps,
             "expected_nodes": expected_nodes,
         }
+
+    def _resolve_local_runtime_confirmed_node_id(
+        self,
+        *,
+        detail: dict[str, Any],
+        committed_state: Any,
+        runtime_live_state: dict[str, Any],
+        latest_event: Optional[dict[str, Any]],
+        runtime_matches_requested: bool,
+    ) -> Optional[str]:
+        if not runtime_matches_requested:
+            return None
+        if not isinstance(latest_event, dict):
+            return None
+        if int(latest_event.get("snapshot_id") or 0) != int(detail["id"]):
+            return None
+        if str(latest_event.get("outcome") or "").strip().lower() != "success":
+            return None
+        if not str(latest_event.get("confirmed_live_at") or "").strip():
+            return None
+
+        runtime_node_id = str(
+            runtime_live_state.get("node_id")
+            or committed_state.origin_node_id
+            or ""
+        ).strip()
+        return runtime_node_id or None
 
     def _stale_nodes(
         self,

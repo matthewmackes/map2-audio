@@ -213,6 +213,58 @@ def test_publish_readiness_service_reports_live_confirmed_happy_path(tmp_path):
     assert readiness.warnings == []
 
 
+def test_publish_readiness_service_keeps_local_publish_confirmed_after_observation_lease_expires(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=19, name="Snapshot 19"))
+            session.add(
+                SnapshotRevision(
+                    snapshot_id=19,
+                    revision_number=9,
+                    snapshot_revision="rev-19",
+                    summary="summary",
+                    summary_metadata={},
+                    payload={},
+                    document={},
+                )
+            )
+            await session.flush()
+            service = PublishReadinessService(
+                session,
+                snapshot_service=_FakeSnapshotService(_detail(19, revision_number=9)),
+                authority_service=_FakeAuthorityService(
+                    _committed_state(19, revision_number=9, preferred_nodes=["node-local"]),
+                    [],
+                ),
+                runtime_state_service=_FakeRuntimeStateService(
+                    live_state={"state": "live", "snapshot_id": 19, "node_id": "node-local"},
+                    activation_events=[
+                        {
+                            "snapshot_id": 19,
+                            "outcome": "success",
+                            "confirmed_live_at": utc_now().isoformat(),
+                            "runtime_metrics": {
+                                "authority_publication": {
+                                    "status": "confirmed",
+                                }
+                            },
+                        }
+                    ],
+                ),
+            )
+            return await service.get_publish_readiness(19)
+
+    readiness = asyncio.run(_run())
+
+    assert readiness.status.value == "live_confirmed"
+    assert readiness.requested_revision_id == 9
+    assert readiness.confirmed_revision_id == 9
+    assert readiness.blockers == []
+    assert readiness.warnings == []
+
+
 def test_publish_readiness_service_maps_preflight_issues_to_typed_blockers(tmp_path):
     _init_temp_db(tmp_path)
     preflight_error = SnapshotActivationPreflightError(
@@ -565,7 +617,8 @@ def test_publish_readiness_service_preserves_authority_confirmation_failure_duri
 
     assert authority_blocker.technical_detail == "observation publish failed"
     assert target_requirement.status.value == "ready"
-    assert target_requirement.operator_message == "The local node on this machine is reachable."
+    assert target_requirement.label == "Local runtime is responding"
+    assert target_requirement.operator_message == "The local runtime on this machine is responding."
     assert engine_requirement.status.value == "needs_attention"
     assert engine_requirement.operator_message == (
         "The runtime applied this snapshot, but MAP2 could not finish control-plane authority confirmation."
