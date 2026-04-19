@@ -412,6 +412,17 @@ class PlatformEventStore(Singleton):
         with self._lock:
             return self._cleanup_old_events_locked(normalized_days)
 
+    def status_snapshot(self) -> dict[str, object]:
+        size_bytes = self.db_path.stat().st_size if self.db_path.exists() else 0
+        return {
+            "available": True,
+            "db_path": str(self.db_path),
+            "exists": self.db_path.exists(),
+            "retention_days": self.retention_days,
+            "size_bytes": size_bytes,
+            "legacy_source_path": str(self.legacy_db_path),
+        }
+
     def _cleanup_old_events_locked(self, days: int) -> int:
         cutoff = (_utc_now() - timedelta(days=days)).isoformat()
         conn = self._connect()

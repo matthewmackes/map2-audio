@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Callable
 import asyncio
 
-from app.lcd_models.lcd_event import LCDEvent
+from app.services.platform_event.lcd_feed import LCDFeedEntry
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class EventRecorder:
         self.recording = False
         logger.info(f"Stopped event recording")
     
-    def record(self, event: LCDEvent):
+    def record(self, event: LCDFeedEntry):
         """Record an event to file"""
         if not self.recording:
             return
@@ -111,9 +111,9 @@ class EventReplayer:
                 if not self.replaying:
                     break
                 
-                # Convert to LCDEvent
+                # Convert to LCD feed entry
                 event_dict['timestamp'] = datetime.fromisoformat(event_dict['timestamp'])
-                event = LCDEvent.from_dict(event_dict)
+                event = LCDFeedEntry.from_dict(event_dict)
                 
                 # Call handler
                 await event_handler(event)

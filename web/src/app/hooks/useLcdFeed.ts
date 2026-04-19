@@ -1,14 +1,14 @@
 /**
- * React hook for LCD event projections driven by the canonical PlatformEvent API.
+ * React hook for LCD feed projections driven by the canonical PlatformEvent API.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getWsUrl } from '../../map2/api';
 import type { PlatformEvent } from '../../map2/platformEvent';
-import type { EventSeverity, EventType, LCDEvent, LCDStatistics } from '../models/lcd_event';
+import type { LCDFeedCategory, LCDFeedEntry, LCDFeedSeverity, LCDFeedStats } from '../models/lcdFeed';
 
-interface UseLCDEventsOptions {
+interface UseLcdFeedOptions {
   autoConnect?: boolean;
   onError?: (error: Error) => void;
 }
@@ -22,7 +22,7 @@ function normalizeNodeId(value: string | null | undefined): string {
   return String(value || '').trim().toLowerCase();
 }
 
-function platformEventType(event: PlatformEvent): EventType {
+function lcdFeedCategory(event: PlatformEvent): LCDFeedCategory {
   const explicit = String(event.context?.lcd_event_type || '').trim().toLowerCase();
   if (explicit === 'audio' || explicit === 'system' || explicit === 'network' || explicit === 'service' || explicit === 'user' || explicit === 'alert') {
     return explicit;
@@ -59,13 +59,13 @@ function isLcdRelevant(event: PlatformEvent): boolean {
   return event.kind.startsWith('lcd.') || Boolean(event.context?.lcd_event_type);
 }
 
-function projectPlatformEvent(event: PlatformEvent): LCDEvent {
+function projectPlatformEvent(event: PlatformEvent): LCDFeedEntry {
   return {
     event_id: event.event_id,
     timestamp: event.occurred_at,
     source_node: event.source_node,
-    event_type: platformEventType(event),
-    severity: event.severity as EventSeverity,
+    category: lcdFeedCategory(event),
+    severity: event.severity as LCDFeedSeverity,
     title: event.title,
     message: event.message,
     icon: event.icon || '•',
@@ -95,14 +95,14 @@ async function fetchPeerDiscoverySnapshot(): Promise<PeerDiscoverySnapshot> {
   return response.json() as Promise<PeerDiscoverySnapshot>;
 }
 
-function isLocalEvent(event: LCDEvent, localNodeId: string): boolean {
+function isLocalFeedEntry(event: LCDFeedEntry, localNodeId: string): boolean {
   return localNodeId.length > 0 && normalizeNodeId(event.source_node) === localNodeId;
 }
 
-export function useLCDEvents(options: UseLCDEventsOptions = {}) {
+export function useLcdFeed(options: UseLcdFeedOptions = {}) {
   const { autoConnect = true, onError } = options;
 
-  const [events, setEvents] = useState<LCDEvent[]>([]);
+  const [entries, setEntries] = useState<LCDFeedEntry[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -123,8 +123,8 @@ export function useLCDEvents(options: UseLCDEventsOptions = {}) {
           if (message.type !== 'platform_event' || !message.data || !isLcdRelevant(message.data)) {
             return;
           }
-          const lcdEvent = projectPlatformEvent(message.data);
-          setEvents((prev) => [lcdEvent, ...prev].slice(0, 100));
+          const feedEntry = projectPlatformEvent(message.data);
+          setEntries((prev) => [feedEntry, ...prev].slice(0, 100));
         } catch (parseError) {
           console.error('Failed to parse event:', parseError);
         }
@@ -167,22 +167,22 @@ export function useLCDEvents(options: UseLCDEventsOptions = {}) {
   }, [autoConnect, connect, disconnect]);
 
   return {
-    events,
+    entries,
     connected,
     error,
     connect,
     disconnect,
-    setEvents,
+    setEntries,
   };
 }
 
-export function useLCDEventHistory(
+export function useLcdFeedHistory(
   limit: number = 50,
-  eventType?: string,
+  category?: string,
   severity?: string,
   source?: 'local' | 'remote',
 ) {
-  const [events, setEvents] = useState<LCDEvent[]>([]);
+  const [entries, setEntries] = useState<LCDFeedEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -207,15 +207,15 @@ export function useLCDEventHistory(
         const projected = ((data.events || []) as PlatformEvent[])
           .filter(isLcdRelevant)
           .map(projectPlatformEvent)
-          .filter((event) => !eventType || event.event_type === eventType)
-          .filter((event) => {
+          .filter((entry) => !category || entry.category === category)
+          .filter((entry) => {
             if (!source) {
               return true;
             }
-            const local = isLocalEvent(event, localNodeId);
+            const local = isLocalFeedEntry(entry, localNodeId);
             return source === 'local' ? local : !local;
           });
-        setEvents(projected);
+        setEntries(projected);
         setError(null);
       } catch (err) {
         const nextError = err instanceof Error ? err : new Error(String(err));
@@ -229,17 +229,17 @@ export function useLCDEventHistory(
     const interval = setInterval(fetchEvents, 5000);
 
     return () => clearInterval(interval);
-  }, [eventType, limit, severity, source]);
+  }, [category, limit, severity, source]);
 
-  return { events, loading, error };
+  return { entries, loading, error };
 }
 
-export function useLCDStatistics() {
-  const [stats, setStats] = useState<LCDStatistics>({
+export function useLcdFeedStats() {
+  const [stats, setStats] = useState<LCDFeedStats>({
     local_events: 0,
     remote_events: 0,
     total_events: 0,
-    by_type: {},
+    by_category: {},
     by_severity: {},
     active_nodes: [],
     connected_peers: [],
@@ -264,15 +264,15 @@ export function useLCDStatistics() {
         const projected = ((data.events || []) as PlatformEvent[])
           .filter(isLcdRelevant)
           .map(projectPlatformEvent);
-        const byType: Record<string, number> = {};
+        const byCategory: Record<string, number> = {};
         const bySeverity: Record<string, number> = {};
         let localEvents = 0;
         let remoteEvents = 0;
 
-        for (const event of projected) {
-          byType[event.event_type] = (byType[event.event_type] || 0) + 1;
-          bySeverity[event.severity] = (bySeverity[event.severity] || 0) + 1;
-          if (isLocalEvent(event, localNodeId)) {
+        for (const entry of projected) {
+          byCategory[entry.category] = (byCategory[entry.category] || 0) + 1;
+          bySeverity[entry.severity] = (bySeverity[entry.severity] || 0) + 1;
+          if (isLocalFeedEntry(entry, localNodeId)) {
             localEvents += 1;
           } else {
             remoteEvents += 1;
@@ -283,9 +283,9 @@ export function useLCDStatistics() {
           local_events: localEvents,
           remote_events: remoteEvents,
           total_events: projected.length,
-          by_type: byType,
+          by_category: byCategory,
           by_severity: bySeverity,
-          active_nodes: Array.from(new Set(projected.map((event) => event.source_node))).sort(),
+          active_nodes: Array.from(new Set(projected.map((entry) => entry.source_node))).sort(),
           connected_peers: Array.isArray(peerSnapshot.peers)
             ? peerSnapshot.peers
                 .filter((peer) => peer?.is_online && peer?.node_id)

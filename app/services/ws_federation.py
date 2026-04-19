@@ -93,6 +93,21 @@ class WebSocketFederator(Singleton):
             if conn.task is not None:
                 conn.task.cancel()
 
+    def status_snapshot(self) -> dict[str, object]:
+        active_connections = [
+            {"node_id": node_id, "topic": topic}
+            for (node_id, topic), connection in self.connections.items()
+            if connection.task is not None and not connection.task.done()
+        ]
+        return {
+            "available": True,
+            "mesh_running": self._platform_mesh_task is not None and not self._platform_mesh_task.done(),
+            "mesh_interval_seconds": self._mesh_interval_seconds,
+            "connection_count": len(active_connections),
+            "connected_nodes": sorted({item["node_id"] for item in active_connections}),
+            "topics": sorted({item["topic"] for item in active_connections}),
+        }
+
     async def _platform_event_mesh_loop(self) -> None:
         while True:
             await self.subscribe_all("platform:events")

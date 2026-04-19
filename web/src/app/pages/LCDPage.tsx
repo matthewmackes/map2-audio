@@ -79,9 +79,9 @@ import { StatCard } from '../components/StatCard'
 import { NumberInput } from '../components/ParameterControl'
 import { useToasts } from '../components/Toasts'
 import { lcdApi } from '../../map2/lcd'
-import { useLCDEvents, useLCDStatistics, useLCDEventHistory } from '../hooks/useLCDEvents'
-import { LCDEventFeed } from '../components/LCDEventFeed'
-import { LCDEmulator } from '../components/LCDEmulator'
+import { useLcdFeed, useLcdFeedHistory, useLcdFeedStats } from '../hooks/useLcdFeed'
+import { LCDFeed } from '../components/LCDFeed'
+import { LCDDisplayEmulator } from '../components/LCDDisplayEmulator'
 import { NodeLCDGrid } from '../components/NodeLCDCard'
 import { MapRackDeviceIcon } from '../components/icons/map'
 import type {
@@ -99,7 +99,7 @@ import type {
   FT232HScanResult,
   FT232HStatus,
 } from '../../map2/lcd'
-import type { LCDEvent, EventSeverity } from '../models/lcd_event'
+import type { LCDFeedEntry, LCDFeedSeverity } from '../models/lcdFeed'
 import './LCDPage.css'
 
 
@@ -724,7 +724,7 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
 // ════════════════════════════════════════════════════════════════════════════
 
 interface EventDetailsModalProps {
-  event: LCDEvent
+  event: LCDFeedEntry
   onClose: () => void
   onPin: () => void
   onUnpin: () => void
@@ -754,7 +754,7 @@ function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDe
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div><label style={{ fontSize: 12, color: '#6b7280' }}>Severity</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.severity.toUpperCase()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Type</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.event_type.toUpperCase()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Category</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.category.toUpperCase()}</p></div>
             <div><label style={{ fontSize: 12, color: '#6b7280' }}>Time</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: '4px 0 0' }}>{new Date(event.timestamp).toLocaleString()}</p></div>
             <div><label style={{ fontSize: 12, color: '#6b7280' }}>Event ID</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: '4px 0 0' }}>{event.event_id.substring(0, 12)}…</p></div>
           </div>
@@ -928,19 +928,19 @@ export function LCDPage() {
   }, [messageMutation, pushToast])
 
   // ── Events tab state (from LCDDashboardPage) ─────────────────────────
-  const { events: wsEvents, connected: wsEventConnected, error: wsEventError } = useLCDEvents()
-  const { stats: lcdEventStats } = useLCDStatistics()
-  const [filterSeverity, setFilterSeverity] = useState<EventSeverity | 'all'>('all')
+  const { entries: wsEntries, connected: wsEventConnected, error: wsEventError } = useLcdFeed()
+  const { stats: lcdFeedStats } = useLcdFeedStats()
+  const [filterSeverity, setFilterSeverity] = useState<LCDFeedSeverity | 'all'>('all')
   const [filterType, setFilterType] = useState<string | 'all'>('all')
   const [pinned, setPinned] = useState<Set<string>>(new Set())
-  const [selectedEvent, setSelectedEvent] = useState<LCDEvent | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<LCDFeedEntry | null>(null)
 
-  const filteredEvents = wsEvents.filter(e => {
+  const filteredEvents = wsEntries.filter(e => {
     if (filterSeverity !== 'all' && e.severity !== filterSeverity) return false
-    if (filterType !== 'all' && e.event_type !== filterType) return false
+    if (filterType !== 'all' && e.category !== filterType) return false
     return true
   })
-  const pinnedEvents = wsEvents.filter(e => pinned.has(e.event_id))
+  const pinnedEvents = wsEntries.filter(e => pinned.has(e.event_id))
 
   // ── Nodes tab state (from NodeLCDPage) ────────────────────────────────
   const [selectedNode, setSelectedNode] = useState<string>('CONTROL-NODE-E5F6')
@@ -950,7 +950,7 @@ export function LCDPage() {
     { nodeId: 'CONTROL-NODE-E5F6', status: 'local', eventCount: 127, lastEvent: '14:32:22' },
     { nodeId: 'AUDIO-NODE-G7H8', status: 'offline', eventCount: 25, lastEvent: '14:15:43' },
   ])
-  const { events: nodeEvents } = useLCDEventHistory(50, undefined, undefined, 'local')
+  const { entries: nodeEvents } = useLcdFeedHistory(50, undefined, undefined, 'local')
   const selectedNodeData = nodes.find(n => n.nodeId === selectedNode)
   const currentNodeEvent = nodeEvents[0]
 
@@ -1070,11 +1070,11 @@ export function LCDPage() {
 
             {/* Statistics */}
             <div className="grid five" style={{ marginBottom: 20 }}>
-              <StatCard label="Total Events" value={lcdEventStats.total_events} tone="default" />
-              <StatCard label="Local Events" value={lcdEventStats.local_events} tone="success" />
-              <StatCard label="Remote Events" value={lcdEventStats.remote_events} tone="default" />
-              <StatCard label="Active Nodes" value={(lcdEventStats as any).active_nodes?.length ?? 0} tone="default" />
-              <StatCard label="Connected Peers" value={(lcdEventStats as any).connected_peers?.length ?? 0} tone="default" />
+              <StatCard label="Total Events" value={lcdFeedStats.total_events} tone="default" />
+              <StatCard label="Local Events" value={lcdFeedStats.local_events} tone="success" />
+              <StatCard label="Remote Events" value={lcdFeedStats.remote_events} tone="default" />
+              <StatCard label="Active Nodes" value={(lcdFeedStats as any).active_nodes?.length ?? 0} tone="default" />
+              <StatCard label="Connected Peers" value={(lcdFeedStats as any).connected_peers?.length ?? 0} tone="default" />
             </div>
 
             {/* Filters */}
@@ -1110,7 +1110,7 @@ export function LCDPage() {
                 <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f59e0b', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Pin size={16} /> Pinned Events ({pinnedEvents.length})
                 </h3>
-                <LCDEventFeed events={pinnedEvents} maxHeight="200px" onEventClick={(e) => setSelectedEvent(e)} />
+                <LCDFeed entries={pinnedEvents} maxHeight="200px" onEntryClick={(e) => setSelectedEvent(e)} />
               </div>
             )}
 
@@ -1119,7 +1119,7 @@ export function LCDPage() {
               <h3 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 12 }}>
                 Event Feed ({filteredEvents.length})
               </h3>
-              <LCDEventFeed events={filteredEvents} maxHeight="500px" onEventClick={(e) => setSelectedEvent(e)} />
+              <LCDFeed entries={filteredEvents} maxHeight="500px" onEntryClick={(e) => setSelectedEvent(e)} />
             </div>
 
             {/* Event Details Modal */}
@@ -1151,7 +1151,7 @@ export function LCDPage() {
                 <div className="lcd-section-card">
                   <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>LCD Preview</h4>
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <LCDEmulator event={currentNodeEvent} nodeLabel={selectedNode} loading={!selectedNodeData} />
+                    <LCDDisplayEmulator entry={currentNodeEvent} nodeLabel={selectedNode} loading={!selectedNodeData} />
                   </div>
                 </div>
 
@@ -1184,7 +1184,7 @@ export function LCDPage() {
                 {/* Recent Events */}
                 <div className="lcd-section-card">
                   <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 12 }}>Recent Events (10)</h4>
-                  <LCDEventFeed events={nodeEvents.slice(0, 10)} maxHeight="300px" />
+                  <LCDFeed entries={nodeEvents.slice(0, 10)} maxHeight="300px" />
                 </div>
               </div>
             </div>

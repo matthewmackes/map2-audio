@@ -911,6 +911,12 @@ class ServiceOrchestrator(Singleton):
 
         Returns status of all critical services and overall ready state.
         """
+        platform_event_status = {
+            "legacy_buses_removed": False,
+            "dual_emitters_remaining": None,
+            "platform_event_store": {"available": False},
+            "platform_event_federation": {"available": False},
+        }
         critical_services = {}
         all_critical_healthy = True
         issues = []
@@ -961,6 +967,12 @@ class ServiceOrchestrator(Singleton):
         ready = self._running and all_critical_healthy
         accepting_traffic = accepting_traffic and ready
         startup_map = self.get_startup_dependency_map()
+        try:
+            from app.services.platform_event.status import get_platform_event_status_snapshot
+
+            platform_event_status = get_platform_event_status_snapshot()
+        except Exception as exc:
+            issues.append(f"PlatformEvent status unavailable: {exc}")
 
         return {
             "ready": ready,
@@ -972,6 +984,10 @@ class ServiceOrchestrator(Singleton):
             "traffic_gate_services": traffic_gate_services,
             "dependency_levels": startup_map["dependency_levels"],
             "issues": issues,
+            "legacy_buses_removed": platform_event_status["legacy_buses_removed"],
+            "dual_emitters_remaining": platform_event_status["dual_emitters_remaining"],
+            "platform_event_store": platform_event_status["platform_event_store"],
+            "platform_event_federation": platform_event_status["platform_event_federation"],
             "summary": {
                 "total_critical": len(critical_services),
                 "healthy": sum(1 for s in critical_services.values() if s["running"] and s["healthy"]),

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .envelope import PlatformEvent
-from .kind import kind_for_lcd_event_value
+from .kind import kind_for_lcd_surface_type
 from .severity import Severity
 
 
@@ -245,7 +245,7 @@ def make_lcd_surface_event(
     kind = (
         normalized_event_type
         if normalized_event_type.startswith("lcd.")
-        else kind_for_lcd_event_value(normalized_event_type)
+        else kind_for_lcd_surface_type(normalized_event_type)
     )
     lcd_target_surfaces = list(target_surfaces or [])
     if "lcd" not in lcd_target_surfaces:

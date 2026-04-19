@@ -1,14 +1,14 @@
-/** TypeScript model for LCD Events */
+/** TypeScript model for LCD feed entries derived from canonical PlatformEvents. */
 
-export type EventType = 'audio' | 'system' | 'network' | 'service' | 'user' | 'alert';
-export type EventSeverity = 'info' | 'warning' | 'error' | 'critical';
+export type LCDFeedCategory = 'audio' | 'system' | 'network' | 'service' | 'user' | 'alert';
+export type LCDFeedSeverity = 'info' | 'warning' | 'error' | 'critical';
 
-export interface LCDEvent {
+export interface LCDFeedEntry {
   event_id: string;
   timestamp: string;
   source_node: string;
-  event_type: EventType;
-  severity: EventSeverity;
+  category: LCDFeedCategory;
+  severity: LCDFeedSeverity;
   title: string;
   message: string;
   icon: string;
@@ -21,11 +21,11 @@ export interface LCDEvent {
   context: Record<string, unknown>;
 }
 
-export interface LCDStatistics {
+export interface LCDFeedStats {
   local_events: number;
   remote_events: number;
   total_events: number;
-  by_type: Record<string, number>;
+  by_category: Record<string, number>;
   by_severity: Record<string, number>;
   active_nodes: string[];
   connected_peers: string[];

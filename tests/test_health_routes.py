@@ -62,6 +62,24 @@ class _FakeOrchestrator:
             },
             "dependency_levels": [{"level": 1, "services": ["database", "websocket_manager"]}],
             "issues": [],
+            "legacy_buses_removed": True,
+            "dual_emitters_remaining": 0,
+            "platform_event_store": {
+                "available": True,
+                "db_path": "/var/lib/map2/platform-events.db",
+                "exists": True,
+                "retention_days": 7,
+                "size_bytes": 4096,
+                "legacy_source_path": "/var/lib/map2/cluster-events.db",
+            },
+            "platform_event_federation": {
+                "available": True,
+                "mesh_running": True,
+                "mesh_interval_seconds": 5.0,
+                "connection_count": 1,
+                "connected_nodes": ["node-a"],
+                "topics": ["platform:events"],
+            },
         }
 
 
@@ -90,6 +108,33 @@ async def _fake_get_metrics_collector():
     return _FakeMetricsCollector()
 
 
+def _patch_platform_event_status(monkeypatch):
+    monkeypatch.setattr(
+        system_health_summary,
+        "get_platform_event_status_snapshot",
+        lambda: {
+            "legacy_buses_removed": True,
+            "dual_emitters_remaining": 0,
+            "platform_event_store": {
+                "available": True,
+                "db_path": "/var/lib/map2/platform-events.db",
+                "exists": True,
+                "retention_days": 7,
+                "size_bytes": 4096,
+                "legacy_source_path": "/var/lib/map2/cluster-events.db",
+            },
+            "platform_event_federation": {
+                "available": True,
+                "mesh_running": True,
+                "mesh_interval_seconds": 5.0,
+                "connection_count": 1,
+                "connected_nodes": ["node-a"],
+                "topics": ["platform:events"],
+            },
+        },
+    )
+
+
 class _FakeOrchestratorWithOptionalStopped(_FakeOrchestrator):
     def __init__(self) -> None:
         super().__init__()
@@ -98,6 +143,7 @@ class _FakeOrchestratorWithOptionalStopped(_FakeOrchestrator):
 
 def test_health_check_returns_healthy_without_dependency_errors(monkeypatch):
     _patch_psutil(monkeypatch)
+    _patch_platform_event_status(monkeypatch)
     fake_orchestrator = _FakeOrchestrator()
 
     monkeypatch.setattr(
@@ -116,6 +162,10 @@ def test_health_check_returns_healthy_without_dependency_errors(monkeypatch):
     assert payload["nam_available"] is True
     assert payload["dependency_errors"] == []
     assert payload["issues"] == []
+    assert payload["legacy_buses_removed"] is True
+    assert payload["dual_emitters_remaining"] == 0
+    assert payload["platform_event_store"]["available"] is True
+    assert payload["platform_event_federation"]["mesh_running"] is True
     assert payload["services_total"] == 2
     assert payload["services_running"] == payload["services_total"]
     assert payload["buffer_underruns"] == 0
@@ -129,6 +179,7 @@ def test_health_check_returns_healthy_without_dependency_errors(monkeypatch):
 
 def test_health_check_uses_juce_engine_service_lookup(monkeypatch):
     _patch_psutil(monkeypatch)
+    _patch_platform_event_status(monkeypatch)
     fake_orchestrator = _FakeOrchestrator()
 
     monkeypatch.setattr(
@@ -149,6 +200,7 @@ def test_health_check_uses_juce_engine_service_lookup(monkeypatch):
 
 def test_health_check_ignores_optional_services_in_degraded_status(monkeypatch):
     _patch_psutil(monkeypatch)
+    _patch_platform_event_status(monkeypatch)
     fake_orchestrator = _FakeOrchestratorWithOptionalStopped()
 
     monkeypatch.setattr(
@@ -174,6 +226,7 @@ def test_health_check_ignores_optional_services_in_degraded_status(monkeypatch):
 
 def test_health_check_includes_midi_cluster_section(monkeypatch):
     _patch_psutil(monkeypatch)
+    _patch_platform_event_status(monkeypatch)
     fake_orchestrator = _FakeOrchestrator()
 
     monkeypatch.setattr(
@@ -244,3 +297,5 @@ def test_ready_check_returns_accepting_traffic_details(monkeypatch):
     assert '"ready":true' in payload
     assert '"accepting_traffic":true' in payload
     assert '"traffic_gate_services"' in payload
+    assert '"legacy_buses_removed":true' in payload
+    assert '"platform_event_store"' in payload

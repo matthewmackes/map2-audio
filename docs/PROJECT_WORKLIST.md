@@ -28807,7 +28807,7 @@ Validation:
 - `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> no matches
 
 ID: T2363-subJ
-Status: [>] In Progress
+Status: [✓] Done
 Title: Purge legacy event models/imports and modernize health/readiness around the hard cut
 Description:
 - Goal / acceptance criteria: Delete all remaining legacy event model files, legacy mapping helpers, and dead imports after the runtime/public cutover is complete. `/api/health` and `/api/ready` must expose the new steady-state explicitly: `legacy_buses_removed: true`, `dual_emitters_remaining: 0`, `platform_event_store` status, and `platform_event_federation` status. Update installer/environment artifacts for the new DB path and any service/runtime assumptions introduced by the cutover.
@@ -28816,16 +28816,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: deleted legacy files/imports, health/readiness payload updates, installer/env updates, and no stale references in backend/frontend code.
 - Notes: `event_publisher` may remain only for non-PlatformEvent realtime UI messages; do not use it as a cross-system event abstraction.
-- Last updated: 2026-04-19 14:46 EDT - Codex
-- Progress notes:
-  - 2026-04-19 14:46 EDT - Codex: Began the post-cutover audit immediately after shipping `T2363-subI`; next work is removing the remaining legacy LCD model/projection layer under `app/lcd_models` and `app/services/platform_event/lcd_projection.py`, then updating `/api/health` and `/api/ready` to report `legacy_buses_removed`, `dual_emitters_remaining`, `platform_event_store`, and `platform_event_federation`.
+- Last updated: 2026-04-19 16:18 EDT - Codex
+- Completion notes:
+  - 2026-04-19 16:18 EDT - Codex: Deleted the remaining backend legacy LCD event model layer by removing [app/lcd_models/lcd_event.py](app/lcd_models/lcd_event.py) and the unused [app/init.py](app/init.py), replacing them with the platform-native LCD feed model in [app/services/platform_event/lcd_feed.py](app/services/platform_event/lcd_feed.py), and rewiring [app/services/platform_event/lcd_projection.py](app/services/platform_event/lcd_projection.py), [app/services/platform_event/presenters/lcd_presenter.py](app/services/platform_event/presenters/lcd_presenter.py), [app/services/lcd_manager.py](app/services/lcd_manager.py), and [app/services/event_replay.py](app/services/event_replay.py) to use `LCDFeedEntry` instead of `LCDEvent`.
+  - 2026-04-19 16:18 EDT - Codex: Removed the last legacy mapping/helper imports by collapsing [app/services/platform_event/kind.py](app/services/platform_event/kind.py) down to canonical kind handling plus `kind_for_lcd_surface_type()`, updating [app/services/platform_event/factories.py](app/services/platform_event/factories.py) and [app/services/platform_event/severity.py](app/services/platform_event/severity.py), and rewriting [tests/test_platform_event_mapping.py](tests/test_platform_event_mapping.py) around the platform-native LCD feed vocabulary.
+  - 2026-04-19 16:18 EDT - Codex: Renamed the web LCD feed surface off `LCDEvent`/`ClusterEvent` terminology by replacing [web/src/app/models/lcd_event.ts](web/src/app/models/lcd_event.ts), [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts), [web/src/app/components/LCDEventFeed.tsx](web/src/app/components/LCDEventFeed.tsx), [web/src/app/components/LCDEmulator.tsx](web/src/app/components/LCDEmulator.tsx), and [web/src/app/hooks/useMidiClusterEvents.ts](web/src/app/hooks/useMidiClusterEvents.ts) with [web/src/app/models/lcdFeed.ts](web/src/app/models/lcdFeed.ts), [web/src/app/hooks/useLcdFeed.ts](web/src/app/hooks/useLcdFeed.ts), [web/src/app/components/LCDFeed.tsx](web/src/app/components/LCDFeed.tsx), [web/src/app/components/LCDDisplayEmulator.tsx](web/src/app/components/LCDDisplayEmulator.tsx), and [web/src/app/hooks/useMidiClusterFeed.ts](web/src/app/hooks/useMidiClusterFeed.ts), then rewired [web/src/app/pages/LCDPage.tsx](web/src/app/pages/LCDPage.tsx) and [web/src/app/hooks/useMidiCluster.ts](web/src/app/hooks/useMidiCluster.ts).
+  - 2026-04-19 16:18 EDT - Codex: Added explicit platform-event operational status in [app/services/platform_event/status.py](app/services/platform_event/status.py), [app/services/platform_event/store.py](app/services/platform_event/store.py), [app/services/ws_federation.py](app/services/ws_federation.py), [app/services/system_health_summary.py](app/services/system_health_summary.py), [app/services/service_orchestrator.py](app/services/service_orchestrator.py), and [app/routes/health.py](app/routes/health.py) so `/api/health` and `/api/ready` now report `legacy_buses_removed`, `dual_emitters_remaining`, `platform_event_store`, and `platform_event_federation`.
 Validation:
-- `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py -q` -> must PASS
+- `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py tests/test_platform_event_mapping.py tests/test_platform_event_lcd_runtime.py -q` -> PASS (`32 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/health.py app/services/event_replay.py app/services/lcd_manager.py app/services/platform_event/factories.py app/services/platform_event/kind.py app/services/platform_event/lcd_feed.py app/services/platform_event/lcd_projection.py app/services/platform_event/presenters/lcd_presenter.py app/services/platform_event/severity.py app/services/platform_event/status.py app/services/platform_event/store.py app/services/service_orchestrator.py app/services/system_health_summary.py app/services/ws_federation.py tests/test_health_routes.py tests/test_platform_event_mapping.py tests/test_service_orchestrator_health.py` -> PASS
+- `/home/mm/map2-audio/web/node_modules/.bin/tsc --noEmit -p /tmp/map2-ship/web/tsconfig.json` -> PASS
 - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web` -> no matches
 - `rg -n "legacy_buses_removed|dual_emitters_remaining|platform_event_store|platform_event_federation" app/routes app/services tests` -> intended matches only
 
 ID: T2363-subK
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Run full hard-cut validation and prove there are no remaining legacy runtime paths
 Description:
 - Goal / acceptance criteria: Run the full validation sweep for the hard cutover after all deletions are complete. Acceptance requires all targeted backend suites, frontend PlatformEvent suites, and production build checks to pass, plus a repo scan proving no remaining runtime imports of removed legacy event modules.
@@ -28834,6 +28839,9 @@ Description:
 - Estimated effort: High
 - Required outputs: completion notes with concrete command results, any necessary final test repairs, and a clean post-cutover repo state.
 - Notes: If a removed route or model breaks tests, rewrite the tests to validate the new canonical behavior instead of restoring the old contract.
+- Last updated: 2026-04-19 16:18 EDT - Codex
+- Progress notes:
+  - 2026-04-19 16:18 EDT - Codex: Began the full hard-cut sweep immediately after shipping `T2363-subJ`; next work is the full backend `pytest tests/ -q`, frontend Jest run, production build validation, and the final repo-wide scan for removed legacy runtime paths.
 Validation:
 - `pytest tests/ -q` -> must PASS
 - `CI=1 npm --prefix web test -- --runInBand` -> must PASS
