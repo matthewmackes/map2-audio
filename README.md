@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1176** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2340** total commits | **3** stars | **0** forks | **0** open issues
+**1176** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2345** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1312f3ac`](https://github.com/matthewmackes/map2-audio/commit/1312f3ac26b01f99417468c4bdd880d6d7babaca) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
+| [`6e6389c3`](https://github.com/matthewmackes/map2-audio/commit/6e6389c3fb53fff3ba3f432ad6f651e5f759defe) | chore: sync current working tree | Map2 Audio | 2026-04-19 |
+| [`f4bd6828`](https://github.com/matthewmackes/map2-audio/commit/f4bd68289a59d2064bb56e7dee44945febd9aee9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`268a009b`](https://github.com/matthewmackes/map2-audio/commit/268a009b563fba8bfe38fc2e47626ca27e0a58ce) | T2363-subJ purge legacy LCD models and health signals | Map2 Audio | 2026-04-19 |
 | [`d04b7935`](https://github.com/matthewmackes/map2-audio/commit/d04b793597d452551bbe8825bf1bdfebe0851af3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`e4542c0d`](https://github.com/matthewmackes/map2-audio/commit/e4542c0d20dc0f4251880a46d8b83e27e42dec48) | T2363-subI hard-cut legacy event APIs | Map2 Audio | 2026-04-19 |
 | [`0a83ab7b`](https://github.com/matthewmackes/map2-audio/commit/0a83ab7b91b27ffb319c110cbd5944e875a693b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`e5ffd9ed`](https://github.com/matthewmackes/map2-audio/commit/e5ffd9ed3330433403b0b2f18b46095ab016018c) | T2363-subH hard-cut distributed cluster events | Map2 Audio | 2026-04-19 |
-| [`b2cc64ef`](https://github.com/matthewmackes/map2-audio/commit/b2cc64ef429d214c996db007c1e07077ae4dbc6f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`b2e54e7c`](https://github.com/matthewmackes/map2-audio/commit/b2e54e7c90943d1cb8bbeafe1532f2551c33121c) | Keep .gemini instructions local-only | Map2 Audio | 2026-04-19 |
-| [`34aba966`](https://github.com/matthewmackes/map2-audio/commit/34aba96694b2dc271d872ebe22f07b366fd46a9a) | T2363-subG hard-cut LCD runtime onto PlatformEvents | Map2 Audio | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
