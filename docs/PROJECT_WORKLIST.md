@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-19 - Followed up T2360 with minimized news-kyron rails, queued cable-news takeovers, theme-aware stage shell fixes, snapshot-name canonicalization, and a full validation pass.
+Last updated: 2026-04-19 - Added T2365 full-system "code-beauty" cleanup epic (22 subtasks) covering deprecated service facades, legacy v1/v2 parallel implementations, god-file splits, duplicated legacy-resolver/config-fallback patterns, circular-import band-aids, dead C++ files, frontend legacy variants, config-schema deprecations, and stub removals.
 
 ---
 
@@ -28577,10 +28577,18 @@ Description:
 - `pushNotification()` in [web/src/app/components/Toasts.tsx](web/src/app/components/Toasts.tsx) must remain callable as a local-only imperative API; its payloads are NOT round-tripped through the bus.
 - Tier A locked settings are not touched by this epic.
 Assigned to: Codex
-Last updated: 2026-04-19 09:40 EDT - Codex
+Last updated: 2026-04-19 12:08 EDT - Codex
 - Progress notes:
   - Completed the `T2363-subA` foundation slice: added the canonical Python envelope, severity mapping, kind taxonomy, presentation policy, TypeScript mirror, and exhaustive foundation tests.
   - Left the epic in progress for the next revertable slice (`T2363-subB` PlatformEventBus + replay + SQLite migration).
+  - 2026-04-19 12:08 EDT - Codex: The original bridge/dual-write rollout for `T2363-subE` through `T2363-subL` was superseded on April 19, 2026 by a hard-cutover directive. From this point forward the authoritative plan is destructive cutover only: no shims, no runtime compatibility layer, and no public legacy event APIs.
+- Locked defaults (2026-04-19 hard cutover):
+  - Hard cutover only: no bridges, no dual-write, no runtime compatibility layer.
+  - Full public API break is allowed: legacy LCD/cluster event routes are deleted, not preserved.
+  - Deliver as one architecture in several revertable commits, not one giant commit.
+  - `platform-events.db` is the canonical persistence file after the cutover; installer/runtime artifacts must be updated in the same work.
+  - `event_publisher` survives only for non-PlatformEvent realtime UI traffic and must not become a new compatibility bus.
+  - The `T2363-subE` through `T2363-subL` definitions below override any older bridge, dual-write, or legacy-preservation language that still appears in the parent epic for shipped historical context.
 
 ID: T2363-subA
 Status: [✓] Done
@@ -28684,166 +28692,121 @@ Validation:
 
 ID: T2363-subE
 Status: [ ] Todo
-Title: One-way legacy→new bridges — observability with zero behavior change
+Title: Extract PlatformEventStore and sever PlatformEventBus from DistributedEventBus
 Description:
-- Goal / acceptance criteria: Implement bridges under [app/services/platform_event/bridges/](app/services/platform_event/bridges/) that subscribe to each legacy bus and re-emit every legacy event as a `PlatformEvent` on `platform:events` WITHOUT changing any legacy behavior:
-  - `event_bus_bridge.py` — wraps [app/services/event_bus.py](app/services/event_bus.py).
-  - `lcd_bus_bridge.py` — wraps [app/services/lcd_event_bus.py](app/services/lcd_event_bus.py) / [app/services/lcd_event_router.py](app/services/lcd_event_router.py).
-  - `distributed_bus_bridge.py` — wraps [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py).
-  Each bridge uses the `severity.py` mapper + `kind.py` taxonomy to translate legacy payloads into `PlatformEvent` envelopes via factories. Factories for every legacy event value land in [app/services/platform_event/factories.py](app/services/platform_event/factories.py) in this subtask. Add [app/services/event_publisher.py](app/services/event_publisher.py) helper `publish_platform_event(event)` that is a thin wrapper delegating to `PlatformEventBus.emit()`. Phase 1 acceptance gate: with `PLATFORM_EVENT_BUS_ENABLED=True` and all `PLATFORM_EVENT_DIRECT_*=False`, every legacy bus emission is observable on `platform:events` and NO producer has changed its emission path. Dual-write counter metric `dual_emitters_remaining` exposed via existing health endpoint.
-- Why it matters: This is the safety cutover. Turning the bus on this way provides full observability of the current event surface without touching a single producer, and lets us validate the envelope + router + presenters against production traffic before migrating producers.
-- Dependencies: T2363-subA, T2363-subB, T2363-subC, T2363-subD
+- Goal / acceptance criteria: Add a dedicated `PlatformEventStore` that owns SQLite schema, persistence, replay queries, ack state, and retention for canonical events. `PlatformEventBus` must no longer import, construct, or depend on `DistributedEventBus` for DB path, schema bootstrap, or query helpers. Storage file becomes `platform-events.db`; on first startup, if `cluster-events.db` exists and `platform-events.db` does not, migrate canonical event rows forward once and continue on the new file only.
+- Why it matters: The new control plane is not truly modern while its persistence and startup path still hang off the legacy cluster bus.
+- Dependencies: T2363-subD
 - Estimated effort: High
-- Required outputs: 3 bridge modules, completed factories, `publish_platform_event()` helper, `dual_emitters_remaining` counter.
-- Notes: Bridges MUST NOT disable or skip legacy emission — they are purely observational in Phase 1. Dual-write logic (direct emission + legacy emission) arrives in Phase 2 subtasks.
+- Required outputs: dedicated store module, `PlatformEventBus` refactor, one-time DB migration logic, updated installer/runtime artifacts for the new DB path, and focused tests.
+- Notes: Preserve the existing `platform:events` websocket topic, replay behavior, and ack semantics. Do not leave `DistributedEventBus` imported anywhere under `app/services/platform_event/`.
 Validation:
-- `pytest tests/test_platform_event_bridges.py -q` -> must PASS
-- `pytest tests/ -q` -> full test suite must PASS (no regressions in legacy bus tests)
-- `PLATFORM_EVENT_BUS_ENABLED=True pytest tests/integration/test_legacy_observability.py -q` -> must PASS (all legacy events observable on `platform:events`)
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_platform_event_bus.py tests/test_platform_event_store.py -q` -> must PASS
+- `rg -n "DistributedEventBus" app/services/platform_event` -> no matches
+- `rg -n "cluster-events.db|platform-events.db" installer app docs` -> only intended references remain
 
 ID: T2363-subF
 Status: [ ] Todo
-Title: Wave 1 migration — health_monitor + system_producer + network_producer + audio_producer
+Title: Hard-cut all app/services/event_bus.py producers and subscribers onto PlatformEventBus
 Description:
-- Goal / acceptance criteria: Migrate Wave 1 producers to direct `PlatformEventBus` emission via factories, with dual-write shadow enabled:
-  - [app/services/health_monitor.py](app/services/health_monitor.py) — single emission point for `system.cpu.*`, `system.memory.*`, `system.disk.*`, `system.temp.*` using dedupe key `system:<resource>:<node_id>` (severity upgrades supersede).
-  - [app/services/event_producers/system_producer.py](app/services/event_producers/system_producer.py) — migrated; CPU/memory duplicate emissions eliminated (this producer previously triple-emitted with health_monitor + MK1 long_op_feedback).
-  - [app/services/event_producers/network_producer.py](app/services/event_producers/network_producer.py) — single emission for `node.{online,offline,degraded}`, `device.midihub.peer.{online,offline}` with shared dedupe key `midihub:peer:{peer_id}`.
-  - [app/services/event_producers/audio_producer.py](app/services/event_producers/audio_producer.py) — `audio.xrun` with dedupe `audio:xrun:{node_id}` (5s window), `audio.engine.status`, `audio.path.changed`.
-  Dual-write: each producer emits on both the new bus and its legacy path, gated by `PLATFORM_EVENT_DIRECT_WAVE1` (default `False`). MK1 `long_op_feedback` CPU path is disconnected from direct emission and subscribes to the bus instead (becomes a consumer via `MK1EventPresenter`). The `dual_emitters_remaining` counter reflects Wave 1 completion when flipped.
-- Why it matters: CPU/memory triple-emit is the most visible duplication in the codebase; collapsing it to one emitter + dedupe key is the quickest proof that the unification works. The same severity going up on CPU now produces exactly one supersede chain instead of three parallel alert streams.
+- Goal / acceptance criteria: Replace every runtime use of `app/services/event_bus.py` with direct `PlatformEventBus.emit()` factory calls or `PlatformEventBus.subscribe_callback()` filtered subscriptions. This includes heartbeat/failover/state-replication paths and any services currently subscribing to `NODE_ONLINE`, `NODE_OFFLINE`, or `NODE_FAILOVER`. After the replacements are green, delete `app/services/event_bus.py` entirely.
+- Why it matters: The in-process event bus is still a second control plane with its own event types and subscriber semantics.
 - Dependencies: T2363-subE
 - Estimated effort: High
-- Required outputs: migrated producers, disconnected MK1 `long_op_feedback` emission (it now consumes), `PLATFORM_EVENT_DIRECT_WAVE1` flag, test updates.
-- Notes: Do not remove legacy emission in this subtask — it stays until Phase 4. Only add direct emission + dedupe.
+- Required outputs: migrated services, deleted legacy in-process bus, rewritten tests, and canonical `PlatformEvent` kinds for every former event-bus emission.
+- Notes: Use canonical kinds only (`node.online`, `node.offline`, `node.failover`, `audio.path.changed`, `config.updated`). Do not recreate a local compatibility enum.
 Validation:
-- `pytest tests/test_health_monitor.py tests/test_event_producers/ tests/test_platform_event_bus.py -q` -> must PASS
-- `pytest tests/integration/test_cpu_critical_e2e.py -q` -> must PASS (Section H.1 of design: inject cpu=95%, assert exactly one `PlatformEvent` with `kind=system.cpu.critical`, dedupe key `system:cpu:<node_id>`, no duplicates from the three former emitters)
-- `PLATFORM_EVENT_DIRECT_WAVE1=True pytest tests/ -q` -> must PASS (direct-emission mode)
-- `PLATFORM_EVENT_DIRECT_WAVE1=False pytest tests/ -q` -> must PASS (bridge-only mode)
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_backend_audit_shared_state.py tests/test_backend_audit_network_lifecycle.py tests/test_timestamp_foundations.py tests/test_platform_event_cluster_runtime.py -q` -> must PASS
+- `rg -n "app\\.services\\.event_bus|get_event_bus\\(" app/services app/routes` -> no matches
 
 ID: T2363-subG
 Status: [ ] Todo
-Title: Wave 2 migration — snapshot + download managers + workflow progress
+Title: Hard-cut the LCD event subsystem onto PlatformEvent consumers and delete LCDEventBus
 Description:
-- Goal / acceptance criteria: Migrate Wave 2 producers to direct `PlatformEventBus` emission:
-  - [app/services/snapshot_runtime_state_service.py](app/services/snapshot_runtime_state_service.py) — emits `snapshot.activation.{started,ok,failed}`, `snapshot.live.pinned`, `snapshot.runtime.progress` with dedupe key `snapshot:{snapshot_id}:activation`.
-  - [app/services/snapshot_controller_display_push_service.py](app/services/snapshot_controller_display_push_service.py) — consumes from the bus for controller display.
-  - [app/services/ir_library/download_manager.py](app/services/ir_library/download_manager.py) — emits `ir.download.progress` with dedupe key `download:{download_id}` (latest-wins).
-  - [app/services/soundfont_library/download_manager.py](app/services/soundfont_library/download_manager.py) — emits `soundfont.download.progress` with same pattern.
-  - Workflow events (`workflow.{started,progress,completed,cancelled}`) emitted with dedupe key `workflow:{workflow_id}` latest-wins, including the optional `workflow` envelope field (`{stage, progress, can_cancel, cancel_path}`). MK1EventPresenter consumes workflow + download.progress for long-op feedback.
-  Dual-write gated by `PLATFORM_EVENT_DIRECT_WAVE2` (default `False`). [web/src/app/hooks/useSnapshotRuntimeState.ts](web/src/app/hooks/useSnapshotRuntimeState.ts) keeps its live-state model but now reads progress through `usePlatformEvents`. Page-reload replay verified per Section H.3 of the design (long workflow emitting `workflow.progress` @1Hz, hard refresh mid-flight, `usePlatformEvents` replays from SQLite to last cursor, stage Kyron resumes without gap).
-- Why it matters: Workflow + download progress is the user-visible high-frequency path. Making sure replay works here is what makes the FOH stage Kyron surface trustworthy across page reloads.
-- Dependencies: T2363-subF
+- Goal / acceptance criteria: Remove `LCDEventBus`, `LCDEventRouter`, and `RemoteEventAggregator` as runtime event infrastructure. `LCDManager` must consume canonical `PlatformEvent` history/live subscriptions directly, and LCD-producing services must emit `PlatformEvent`s instead of constructing `LCDEvent`s. After the migration is green, delete the LCD event bus stack and stop maintaining a second event history model for LCD.
+- Why it matters: The LCD subsystem is currently its own distributed event system, which directly conflicts with the single-bus architecture the hard cutover is supposed to deliver.
+- Dependencies: T2363-subE
 - Estimated effort: High
-- Required outputs: migrated services, updated `useSnapshotRuntimeState.ts`, workflow envelope support, `PLATFORM_EVENT_DIRECT_WAVE2` flag.
-- Notes: [tests/test_snapshot_runtime_state_progress.py](tests/test_snapshot_runtime_state_progress.py) must stay green via adapter — do not rewrite its contract.
+- Required outputs: LCD runtime subscription refactor, migrated LCD producers, deletion of the LCD bus/router/aggregator stack, and updated LCD/runtime tests.
+- Notes: Keep LCD display queue/render timing if needed, but the source of truth must be `PlatformEventStore` + live `PlatformEventBus` subscriptions only.
 Validation:
-- `pytest tests/test_snapshot_runtime_state_service.py tests/test_snapshot_controller_display_push_service.py tests/test_snapshot_runtime_state_progress.py tests/test_ir_library.py tests/test_soundfont_library.py -q` -> must PASS
-- `pytest tests/integration/test_page_reload_replay.py -q` -> must PASS (Section H.3)
-- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useSnapshotRuntimeState.test.tsx src/app/components/Toasts.test.tsx` -> must PASS
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_platform_event_lcd_runtime.py tests/test_snapshot_footswitch_label_service.py tests/test_lcd_system.py -q` -> must PASS
+- `rg -n "LCDEventBus|LCDEventRouter|RemoteEventAggregator" app/services app/routes` -> no matches
 
 ID: T2363-subH
 Status: [ ] Todo
-Title: Frontend consumer adaptation — legacy hooks become thin adapters over usePlatformEvents
+Title: Hard-cut DistributedEventBus callers and move federation to platform:events
 Description:
-- Goal / acceptance criteria: Rewrite each of the following hooks as thin adapters over `usePlatformEvents` with appropriate filters, preserving their existing public signatures and returned shapes:
-  - [web/src/app/hooks/useHealthMonitoring.ts](web/src/app/hooks/useHealthMonitoring.ts) — metrics history stays; alert generation REMOVED (now server-emitted and consumed via bus).
-  - [web/src/app/hooks/useAlertNotifications.tsx](web/src/app/hooks/useAlertNotifications.tsx) — becomes `BrowserNotificationsPresenter` + `AudioBeepsPresenter` under the hood; imperative `triggerAlert()` preserved as a local-only API (same policy as `pushNotification()`).
-  - [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts) — adapter filtering on LCD-relevant kinds.
-  - [web/src/app/hooks/useMidiClusterEvents.ts](web/src/app/hooks/useMidiClusterEvents.ts) — adapter filtering on `device.midihub.*` + `cluster.*`.
-  - [web/src/app/hooks/usePushConfirmation.ts](web/src/app/hooks/usePushConfirmation.ts) — adapter filtering on Push-specific confirmations.
-  [web/src/app/stores/platformStore.ts](web/src/app/stores/platformStore.ts) `alerts` field becomes a derived selector sourced from `platformEventStore`. Do NOT delete [web/src/app/stores/nodeAlertStore.ts](web/src/app/stores/nodeAlertStore.ts) in this subtask — its deletion is Phase 4. Instead, make it a write-through store fed by the `node_alert` router decision so the node-pill (per CLAUDE.md directive) continues to surface node alerts correctly. Existing tests (including [web/src/app/components/Toasts.test.tsx](web/src/app/components/Toasts.test.tsx)) stay green.
-- Why it matters: This is where the frontend fragmentation actually gets removed. Today the same underlying cluster/health/LCD state passes through 5+ independent subscriptions with 5+ payload shapes; after this subtask they all share one source.
-- Dependencies: T2363-subC, T2363-subF, T2363-subG
-- Estimated effort: High
-- Required outputs: 5 adapter hooks (public signatures unchanged), derived-selector `platformStore.alerts`, write-through `nodeAlertStore` feed, jest tests for each adapter.
-- Notes: Unified node-pill directive (CLAUDE.md) is preserved — `NodeNavChip` continues to render node identity; `nodeAlertStore` is the only feed into its pulse/alert-row behavior.
+- Goal / acceptance criteria: Migrate every remaining `DistributedEventBus` caller and subscriber onto canonical `PlatformEvent` factories, including cluster lifecycle, MIDI hub cluster services, config hot-reload sync, cluster admin flows, and any routes or services still creating `ClusterEvent`s. `ws_federation` becomes the only cross-node replication path by subscribing to `platform:events` with echo suppression. After the last caller is migrated, delete `app/services/cluster/distributed_event_bus.py`.
+- Why it matters: The cluster bus is still both a producer API and a parallel event taxonomy; the hard cutover is incomplete until federation and cluster state changes ride the canonical envelope.
+- Dependencies: T2363-subE, T2363-subF
+- Estimated effort: Very High
+- Required outputs: migrated cluster/MIDI/config services, platform-event federation, deleted distributed event bus runtime API, and rewritten cluster/MIDI tests.
+- Notes: Cluster event history queries must come from `PlatformEventStore`, not a second event table or second route model.
 Validation:
-- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useHealthMonitoring.test.tsx src/app/hooks/useAlertNotifications.test.tsx src/app/hooks/useLCDEvents.test.tsx src/app/hooks/useMidiClusterEvents.test.tsx src/app/hooks/usePushConfirmation.test.tsx src/app/components/Toasts.test.tsx src/app/stores/platformStore.test.ts src/app/stores/nodeAlertStore.test.ts` -> must PASS
-- `npm --prefix web run typecheck` -> must PASS
-- `npm --prefix web run build` -> must PASS
-- `npm --prefix web run preview` + playwright smoke against preview per CLAUDE.md -> must PASS
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> must PASS
+- `rg -n "DistributedEventBus|get_event_bus\\(|ClusterEvent|EventSeverity|EventType" app/services app/routes` -> no legacy cluster-bus matches
 
 ID: T2363-subI
 Status: [ ] Todo
-Title: Cluster federation — ws_federation subscribes to platform:events with echo suppression
+Title: Delete legacy public event APIs and replace them with canonical PlatformEvent HTTP routes
 Description:
-- Goal / acceptance criteria: Wire [app/services/ws_federation.py](app/services/ws_federation.py) `WebSocketFederator` to subscribe to `platform:events` on each peer on startup. Echo suppression via `(event_id, source_node)` LRU cache of 10k entries. Federated events re-emitted locally with a federation flag (`context["federated"]=True`, `context["origin_peer"]=<peer_id>`) preventing re-echo. Verify per Section H.2: two-node harness; simulate NODE B failure → NODE A emits `node.failover` exactly once (not 3×); NODE C federation sees `source_node=A`, no echo. [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) `publish_event` callers keep working via the Phase 1 bridge; direct callers in cluster/*/* paths migrate to factory emission in subJ.
-- Why it matters: Cluster-wide dedupe is impossible without federation on the same envelope. Today `DistributedEventBus` does cluster replication but uses a different payload shape than `event_bus`/`lcd_event_bus`, so cross-node dedupe doesn't work. Federation on `PlatformEvent` fixes this at the root.
-- Dependencies: T2363-subB, T2363-subE
+- Goal / acceptance criteria: Remove legacy operator/API surfaces that expose `LCDEvent` or `ClusterEvent` shapes, including the LCD event route surface. Add canonical HTTP routes:
+  - `GET /api/platform-events` with repeatable `kind`, `severity`, `node`, and `surface` filters plus `min_priority`, `cursor`, `limit`, and `session_id`.
+  - `POST /api/platform-events/ack` with body `{ "session_id": "...", "event_id": "..." }`, returning `204`.
+  `GET /api/platform-events` returns `{ "events": [PlatformEvent JSON...], "count": <int> }` using canonical field names only.
+- Why it matters: Full public API break was explicitly chosen; leaving legacy event endpoints behind would keep the old models alive.
+- Dependencies: T2363-subG, T2363-subH
 - Estimated effort: High
-- Required outputs: ws_federation subscription + echo suppression + integration test.
-- Notes: Federation subscribes to the topic; it does NOT become a second producer. Echo cache must be bounded (LRU 10k, ~ hours of events).
+- Required outputs: canonical query/ack routes, deleted legacy event routes, updated route tests, and updated frontend/backend callers that still hit removed endpoints.
+- Notes: Do not add compatibility endpoints or alias routes. Removed public APIs stay removed.
 Validation:
-- `pytest tests/test_ws_federation.py tests/integration/test_cluster_federation_echo.py tests/integration/test_cluster_failover_dedupe.py -q` -> must PASS (Section H.2)
-- `pytest tests/test_cluster_distributed_event_bus.py -q` -> must PASS (no regression on the existing bus)
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> must PASS
+- `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> only canonical route tests may remain
 
 ID: T2363-subJ
 Status: [ ] Todo
-Title: Wave 3 migration — cluster + midi_hub + tesira + avb_event_sync + realtime_parameter_bridge
+Title: Purge legacy event models/imports and modernize health/readiness around the hard cut
 Description:
-- Goal / acceptance criteria: Migrate Wave 3 producers to direct `PlatformEventBus` emission via factories with dual-write gated by `PLATFORM_EVENT_DIRECT_WAVE3`:
-  - [app/services/cluster/](app/services/cluster/) — `node.{online,offline,degraded,failover,recovered}`, `cluster.federation.state`, `cluster.update.{started,completed}`.
-  - [app/services/midi_hub/](app/services/midi_hub/) — `midi.port.{discovered,lost}`, `midi.connection.{established,lost}`, `midi.clock.drift`.
-  - [app/services/tesira/](app/services/tesira/) — `device.tesira.fleet.delta`.
-  - [app/services/avb_event_sync.py](app/services/avb_event_sync.py) — `device.avb.stream.delta`.
-  - [app/services/realtime_parameter_bridge.py](app/services/realtime_parameter_bridge.py) — `config.{changed,sync.completed}`, `api.observatory.anomaly`, `plugin.{added,removed}`, `plugin.preset.loaded`, `plugin.output.clipping`, `plugin.scan.progress`.
-  `DistributedEventBus.publish_event` callers migrated; `DistributedEventBus` downgraded to audit-log consumer (still persists, no longer a primary producer).
-- Why it matters: Wave 3 is the bulk of the cluster / device surface. Once these are on the new plane, the bridges from Phase 1 can be inspected for zero-traffic (bridge events drop to only the stragglers), which is the signal that Phase 4 removal is safe.
+- Goal / acceptance criteria: Delete all remaining legacy event model files, legacy mapping helpers, and dead imports after the runtime/public cutover is complete. `/api/health` and `/api/ready` must expose the new steady-state explicitly: `legacy_buses_removed: true`, `dual_emitters_remaining: 0`, `platform_event_store` status, and `platform_event_federation` status. Update installer/environment artifacts for the new DB path and any service/runtime assumptions introduced by the cutover.
+- Why it matters: A clean modern design requires removing the old names, old models, and old operational signals, not just ceasing to call them.
 - Dependencies: T2363-subI
-- Estimated effort: Very High
-- Required outputs: migrated producers for the five families, `PLATFORM_EVENT_DIRECT_WAVE3` flag, updated tests.
-- Notes: Dual-write stays on for one release per the design's Section E.3.
+- Estimated effort: Medium
+- Required outputs: deleted legacy files/imports, health/readiness payload updates, installer/env updates, and no stale references in backend/frontend code.
+- Notes: `event_publisher` may remain only for non-PlatformEvent realtime UI messages; do not use it as a cross-system event abstraction.
 Validation:
-- `pytest tests/test_cluster/ tests/test_midi_hub/ tests/test_tesira/ tests/test_avb_event_sync.py tests/test_realtime_parameter_bridge.py -q` -> must PASS
-- `PLATFORM_EVENT_DIRECT_WAVE3=True pytest tests/ -q` -> must PASS
-- `PLATFORM_EVENT_DIRECT_WAVE3=False pytest tests/ -q` -> must PASS
-- `git push origin master && git push gitlab master`
+- `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py -q` -> must PASS
+- `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web` -> no matches
+- `rg -n "legacy_buses_removed|dual_emitters_remaining|platform_event_store|platform_event_federation" app/routes app/services tests` -> intended matches only
 
 ID: T2363-subK
 Status: [ ] Todo
-Title: E2E verification — CPU-critical, cluster failover, page-reload replay, dual-emitters=0, preview smoke
+Title: Run full hard-cut validation and prove there are no remaining legacy runtime paths
 Description:
-- Goal / acceptance criteria: Run the full Section H verification matrix as integration tests and ship it green:
-  - **H.1 CPU critical** ([tests/integration/test_cpu_critical_e2e.py](tests/integration/test_cpu_critical_e2e.py)) — inject `psutil.cpu_percent=95%`; within 12 s assert exactly one `PlatformEvent` with `kind="system.cpu.critical"`, dedupe_key `system:cpu:<node_id>` (no duplicates); web shows one Kyron + one node-alert + one `platformStore.alerts` entry; MK1 shows red pulse overlay + LCD `⚠ CPU 95%`; TUI status-line shows `CRIT CPU 95%`; LCD cluster feed receives the translated event; continued emission every 10s produces NO new events (supersedes chain in SQLite); recovery to 60% yields a single `system.cpu.recovered` INFO clearing the overlay on all surfaces.
-  - **H.2 Cluster failover** — two-node harness; NODE B failure; NODE A emits `node.failover` once; NODE C federation sees `source_node=A`, no echo.
-  - **H.3 Page-reload replay** — long workflow emitting `workflow.progress` @1Hz; hard refresh mid-flight; `usePlatformEvents` replays from SQLite to last cursor; stage Kyron resumes without gap.
-  - **H.4 Build/preview** — `npm --prefix web run build` + `npm --prefix web run preview`; playwright smoke against preview exercising toasts, stage Kyron, node-alert pulse, and disconnected overlay (per CLAUDE.md constraint: no dev server).
-  - **H.5 Dual-emitters counter** — with all `PLATFORM_EVENT_DIRECT_WAVE*=True`, `dual_emitters_remaining` is reported as 0 over a 5-minute production-traffic simulation.
-  - **H.6 Existing suites** — [tests/test_snapshot_runtime_state_progress.py](tests/test_snapshot_runtime_state_progress.py), [Toasts.test.tsx](web/src/app/components/Toasts.test.tsx), health / event-bus / lcd-event-bus / distributed-event-bus suites all still green.
-  All integration tests land under [tests/integration/](tests/integration/) or [tests/presenters/](tests/presenters/); fixtures under [tests/fixtures/platform_events/](tests/fixtures/platform_events/) (one JSON per kind).
-- Why it matters: Without this verification we ship a plausible design — not a proven one. The H.1 test is the canonical proof of the CPU-triple-emit fix that motivated the whole epic.
-- Dependencies: T2363-subA through T2363-subJ
+- Goal / acceptance criteria: Run the full validation sweep for the hard cutover after all deletions are complete. Acceptance requires all targeted backend suites, frontend PlatformEvent suites, and production build checks to pass, plus a repo scan proving no remaining runtime imports of removed legacy event modules.
+- Why it matters: This is a destructive architectural cut. The absence of the old buses must be proven, not assumed.
+- Dependencies: T2363-subJ
 - Estimated effort: High
-- Required outputs: 5 integration test modules, fixture set (one per kind), preview-mode playwright smoke, completion notes with pass/fail telemetry for each acceptance bullet.
-- Notes: RT-safety stress (10k simulated XRuns in 1s, engine-side) is DEFERRED to the Phase 4 follow-up epic because it depends on C++ engine emission. Call that out explicitly in completion notes.
+- Required outputs: completion notes with concrete command results, any necessary final test repairs, and a clean post-cutover repo state.
+- Notes: If a removed route or model breaks tests, rewrite the tests to validate the new canonical behavior instead of restoring the old contract.
 Validation:
-- `pytest tests/integration/ tests/presenters/ -q` -> must PASS
-- `pytest tests/ -q` -> full suite must PASS
+- `pytest tests/ -q` -> must PASS
 - `CI=1 npm --prefix web test -- --runInBand` -> must PASS
 - `npm --prefix web run typecheck` -> must PASS
 - `npm --prefix web run build` -> must PASS
-- `npm --prefix web run preview` + playwright smoke -> must PASS
-- `git push origin master && git push gitlab master`
+- `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> only intentionally rewritten historical notes/tests, if any
 
 ID: T2363-subL
 Status: [ ] Todo
-Title: Documentation + operator runbook + phase 4 handoff
+Title: Reconcile docs and hand off the post-cutover epic
 Description:
-- Goal / acceptance criteria: Create [docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md](docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md) documenting: envelope schema, kind taxonomy, severity mapping, dedupe-key conventions, supersede semantics, presenter pattern, feature-flag rollout plan, cluster-federation model, and replay/ack protocol. Create [docs/platform/PLATFORM_EVENT_OPERATIONS.md](docs/platform/PLATFORM_EVENT_OPERATIONS.md) for operator runbook: how to read the `platform:events` topic, how to interpret the `dual_emitters_remaining` counter, how to flip `PLATFORM_EVENT_DIRECT_WAVE*` flags for incident rollback, and how to inspect the SQLite store during federation debugging. Write a Phase 4 handoff section enumerating the follow-up epic's scope (engine `PlatformEventRaw` fifo, removal of legacy `event_bus.EventBus`, deletion of `nodeAlertStore.ts`, deletion of `LCDEventBus.publish()`, store consolidation) with file paths and expected risk. Update [docs/CLAUDE.md](docs/CLAUDE.md) Style & Architecture Rules to add a new rule: "All new cross-system events flow through `PlatformEventBus.emit()` — do not add a new bus."
-- Why it matters: Without docs + runbook, ops cannot safely flip the feature flags during an incident, and future AIs will rebuild the same wheel in another corner of the codebase. Updating CLAUDE.md writes the rule into the living knowledge base so this sprawl doesn't recur.
+- Goal / acceptance criteria: Rewrite the remaining PlatformEvent docs and worklist text to reflect the hard cutover that actually shipped. Remove bridge/dual-write language from `docs/PROJECT_WORKLIST.md` and platform docs, document `PlatformEventBus` as the only cross-system event entrypoint, and add the next epic stub for post-cutover work: engine-native emission, remaining surface cleanup, and store ergonomics.
+- Why it matters: If the docs still describe the deleted bridge plan, the next AI will reintroduce the legacy architecture by mistake.
 - Dependencies: T2363-subK
 - Estimated effort: Medium
-- Required outputs: 2 new docs under `docs/platform/`, CLAUDE.md update, Phase 4 follow-up epic drafted at the bottom of [docs/PROJECT_WORKLIST.md](docs/PROJECT_WORKLIST.md) as T2364 stub (Title: "PlatformEvent Phase 4 — engine emission + legacy removal + store consolidation") with a one-paragraph goal and dependency T2363.
-- Notes: Keep both docs concise and operator-focused — the design file `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md` is the long-form design record; the new docs are runtime references.
+- Required outputs: updated docs, final T2363 completion notes, and new epic stub `T2364` for post-cutover work only.
+- Notes: `T2364` should be strictly post-cutover work, not deferred legacy compatibility.
 Validation:
-- `ls -1 docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md docs/platform/PLATFORM_EVENT_OPERATIONS.md` -> files exist
-- `grep -n 'PlatformEventBus.emit' docs/CLAUDE.md` -> new rule present
-- `grep -n '^ID: T2364' docs/PROJECT_WORKLIST.md` -> Phase 4 stub present
-- `git push origin master && git push gitlab master`
+- `grep -n "dual-write\\|bridge-only\\|legacy observability" docs/PROJECT_WORKLIST.md docs/platform/*` -> no stale plan references
+- `grep -n "^ID: T2364" docs/PROJECT_WORKLIST.md` -> new stub present
+- `grep -n "PlatformEventBus.emit" docs/CLAUDE.md docs/platform/*` -> canonical event-entrypoint rule present
