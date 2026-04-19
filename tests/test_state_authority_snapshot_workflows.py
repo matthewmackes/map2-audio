@@ -339,6 +339,62 @@ def test_list_snapshots_uses_state_authority_document_when_projection_tables_are
     asyncio.run(_run())
 
 
+def test_snapshot_service_add_plugin_accepts_http_lv2_uri_in_state_authority_document(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+
+    async def _passthrough(snapshot_data):
+        return snapshot_data
+
+    monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="HttpLv2UriSnapshot",
+                detail_payload={
+                    "channels": [],
+                    "chains": [],
+                    "routing": {
+                        "mode": "parallel_blend",
+                        "active_channel_key": None,
+                        "blend_positions": {},
+                        "series_order": [],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            with_chain = await service.create_chain(created["id"], "Primary Chain")
+            chain_id = with_chain["chains"][0]["id"]
+            plugin_uri = "http://distrho.sf.net/plugins/MVerb"
+
+            with_plugin = await service.add_plugin(
+                created["id"],
+                chain_id,
+                plugin_uri,
+                plugin_name="MVerb",
+            )
+
+            assert with_plugin is not None
+            assert any(
+                plugin.get("uri") == plugin_uri
+                for chain in with_plugin["chains"]
+                for plugin in chain.get("plugins", [])
+            )
+
+            snapshot_row = await session.get(database_module.Snapshot, created["id"])
+            assert snapshot_row is not None
+            assert any(
+                node.get("uri") == plugin_uri
+                for node in snapshot_row.document["graph"]["nodes"]
+            )
+
+    asyncio.run(_run())
+
+
 def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

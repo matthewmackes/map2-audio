@@ -6,7 +6,29 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-19 - Completed T2366 by fixing snapshot-editor runtime-chain mutation routing so add/remove/rename effect operations resolve snapshot chain ids explicitly before hitting snapshot APIs.
+Last updated: 2026-04-19 - Completed T2367 by allowing absolute third-party plugin URIs in State Authority snapshot graph documents so snapshot-editor LV2 adds no longer fail schema validation.
+
+---
+
+ID: T2367
+Status: [✓] Done
+Title: Allow third-party plugin URIs in State Authority snapshot graph documents
+Description:
+- Goal / acceptance criteria: Eliminate the snapshot-editor `500 Internal Server Error` that occurs when adding LV2 plugins whose real plugin URIs use `http://` or `https://` identifiers by widening the State Authority graph document URI contract to accept MAP2 canonical URIs plus valid absolute third-party plugin URIs already emitted by MAP2 plugin discovery. Acceptance requires a reproduced failing snapshot add request to succeed after the fix and focused regression coverage proving document normalization/validation accepts those URIs without regressing MAP2 canonicalization.
+- Why it matters: Snapshot editing currently reaches the backend add-plugin route, but document persistence rejects real LV2 identifiers during State Authority sync, so the operator cannot add third-party LV2 processors into snapshot chains even though the plugin browser lists them as available.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: State Authority schema/validation fix, focused regression tests, live repro evidence, reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-19 19:40 EDT - Codex
+- Completion notes:
+  - Widened the locked `graph.nodes[*].uri` schema and validation guidance so State Authority documents still normalize canonical `map2:*` identifiers while accepting valid absolute third-party plugin URIs such as LV2 `http://...` and `https://...` identifiers.
+  - Added focused graph-layer coverage proving absolute third-party plugin URIs validate cleanly and preserved the invalid-URI regression around malformed identifiers.
+  - Added a snapshot-service workflow regression that creates a snapshot chain, adds an LV2-style `http://...` plugin URI, and verifies the persisted State Authority document keeps that URI without failing persistence.
+- Validation:
+  - `pytest tests/test_state_authority_graph.py tests/test_state_authority_snapshot_workflows.py -q` -> PASS
+  - Reproduced the old failure on the already-running backend at `http://127.0.0.1:8080` before reload: `POST /api/snapshots/9/chains/16/plugins` with `http://distrho.sf.net/plugins/MVerb` returned `500` with the old locked-schema error string.
+  - Verified the fix on a temporary patched uvicorn instance at `http://127.0.0.1:18080`: the same `POST /api/snapshots/9/chains/16/plugins` returned `200 OK` and projected `http://distrho.sf.net/plugins/MVerb` into snapshot chain `16`; the verification plugin was removed immediately afterward to restore snapshot `9`.
 
 ---
 

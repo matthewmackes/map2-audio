@@ -34,6 +34,29 @@ def test_canonicalize_plugin_uri_maps_legacy_map2_and_urn_variants():
     assert canonicalize_plugin_uri("urn:test:plugin") == "urn:test:plugin"
 
 
+def test_normalize_and_validate_graph_document_accepts_absolute_third_party_plugin_uri():
+    document = {
+        "version": SNAPSHOT_GRAPH_VERSION,
+        "meta": {"name": "LV2 Snapshot", "type": "snapshot"},
+        "graph": {
+            "nodes": [
+                {
+                    "id": "node-1",
+                    "uri": "http://distrho.sf.net/plugins/MVerb",
+                    "name": "MVerb",
+                    "parameters": {},
+                    "state": {},
+                }
+            ],
+            "edges": [],
+        },
+    }
+
+    normalized = normalize_and_validate_graph_document(document)
+
+    assert normalized["graph"]["nodes"][0]["uri"] == "http://distrho.sf.net/plugins/MVerb"
+
+
 def test_register_asset_file_builds_content_addressed_entry(tmp_path):
     asset_path = tmp_path / "Mesa_Boogie_DC5.nam"
     asset_path.write_text("amp-model", encoding="utf-8")
@@ -144,7 +167,7 @@ def test_normalize_and_validate_graph_document_rejects_invalid_uri_with_guidance
     except GraphDocumentValidationError as exc:
         assert exc.path == "$.graph.nodes[0].uri"
         assert "locked schema pattern" in str(exc)
-        assert "canonical map2:{type}:{name}" in exc.guidance
+        assert "valid absolute third-party plugin URI" in exc.guidance
     else:
         raise AssertionError("Invalid graph document should fail validation")
 

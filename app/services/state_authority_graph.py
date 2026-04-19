@@ -290,7 +290,7 @@ def validate_graph_document(document: Mapping[str, Any]) -> None:
             _raise_validation_error(
                 f"{path}.uri",
                 f"uri {uri!r} does not match the locked schema pattern",
-                "Use canonical map2:{type}:{name} URIs or a URN the schema explicitly allows.",
+                "Use canonical map2:{type}:{name} URIs or a valid absolute third-party plugin URI.",
             )
         _require_non_empty_string(node_map.get("name"), f"{path}.name", "Persist the node display name as a non-empty string.")
         if "bypass" in node_map and not isinstance(node_map.get("bypass"), bool):

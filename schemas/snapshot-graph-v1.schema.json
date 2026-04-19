@@ -43,7 +43,7 @@
               "id": { "type": "string", "minLength": 1 },
               "uri": {
                 "type": "string",
-                "pattern": "^(map2:(fx|io|sys|ctrl):[a-z0-9-]+|urn:[A-Za-z0-9:_-]+)$"
+                "pattern": "^(map2:(fx|io|sys|ctrl):[a-z0-9-]+|urn:[A-Za-z0-9][A-Za-z0-9._:-]*|(?!map2:)[A-Za-z][A-Za-z0-9+.-]*:[^\\s]+)$"
               },
               "name": { "type": "string", "minLength": 1 },
               "bypass": { "type": "boolean" },
