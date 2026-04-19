@@ -11,19 +11,15 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import (
-    ClusterEvent,
-    EventSeverity,
-    EventType,
-    DistributedEventBus,
-    get_event_bus as get_distributed_event_bus,
-)
 from app.services.midi_hub.device_registry import MidiDeviceRegistry, get_midi_device_registry
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.midi_discovery import MidiDiscoveryService, get_midi_discovery_service
 from app.services.midi_hub.network import MidiNetworkBridge, get_midi_network_bridge
 from app.services.midi_hub.ports import MidiMessage
 from app.services.midi_hub.rtp_transport import MidiRtpTransport, get_rtp_transport
+from app.services.platform_event.bus import PlatformEventBus, get_platform_event_bus
+from app.services.platform_event.factories import make_midi_cluster_event, midi_connection_dedupe_key
+from app.services.platform_event.severity import Severity
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +80,7 @@ class MidiClusterRouter:
         discovery: Optional[MidiDiscoveryService] = None,
         transport: Optional[MidiRtpTransport] = None,
         hub: Optional[MidiHub] = None,
-        event_bus: Optional[DistributedEventBus] = None,
+        event_bus: Optional[PlatformEventBus] = None,
         network_bridge: Optional[MidiNetworkBridge] = None,
         device_registry: Optional[MidiDeviceRegistry] = None,
         *,
@@ -93,7 +89,7 @@ class MidiClusterRouter:
         self._discovery = discovery or get_midi_discovery_service()
         self._transport = transport or get_rtp_transport()
         self._hub = hub or get_midi_hub()
-        self._event_bus = event_bus or get_distributed_event_bus()
+        self._event_bus = event_bus or get_platform_event_bus()
         self._network_bridge = network_bridge or get_midi_network_bridge()
         self._device_registry = device_registry or get_midi_device_registry()
         self._local_node_id = str(local_node_id or _resolve_local_node_id())
@@ -230,7 +226,7 @@ class MidiClusterRouter:
         )
         self._connections[connection_id] = connection
         await self._publish_connection_event(
-            EventType.MIDI_CONNECTION_REQUESTED,
+            "midi.connection.requested",
             connection,
             latency_ms=None,
         )
@@ -241,11 +237,11 @@ class MidiClusterRouter:
             connection.state = "error"
             connection.error_message = str(exc)
             await self._publish_connection_event(
-                EventType.MIDI_CONNECTION_FAILED,
+                "midi.connection.failed",
                 connection,
                 latency_ms=connection.latency_ms,
                 extra_details={"reason": str(exc)},
-                severity=EventSeverity.WARNING,
+                severity=Severity.WARNING,
             )
             return connection
 
@@ -253,7 +249,7 @@ class MidiClusterRouter:
         connection.established_at = _utcnow()
         connection.error_message = None
         await self._publish_connection_event(
-            EventType.MIDI_CONNECTION_ESTABLISHED,
+            "midi.connection.established",
             connection,
             latency_ms=connection.latency_ms,
         )
@@ -274,7 +270,7 @@ class MidiClusterRouter:
         connection.session_id = None
         connection.state = "disconnected"
         await self._publish_connection_event(
-            EventType.MIDI_CONNECTION_LOST,
+            "midi.connection.lost",
             connection,
             latency_ms=connection.latency_ms,
         )
@@ -312,7 +308,7 @@ class MidiClusterRouter:
                 continue
 
             await self._publish_connection_event(
-                EventType.MIDI_FAILOVER_TRIGGERED,
+                "midi.failover.triggered",
                 connection,
                 latency_ms=connection.latency_ms,
             )
@@ -325,7 +321,7 @@ class MidiClusterRouter:
                 if replacement_connection.connection_id != connection.connection_id:
                     await self.disconnect(connection.connection_id)
                 await self._publish_connection_event(
-                    EventType.MIDI_FAILOVER_COMPLETED,
+                    "midi.failover.completed",
                     replacement_connection,
                     latency_ms=replacement_connection.latency_ms,
                 )
@@ -524,13 +520,13 @@ class MidiClusterRouter:
         for node_id in discovered:
             if node_id == self._local_node_id:
                 continue
-            await self._publish_node_event(EventType.MIDI_NODE_DISCOVERED, node_id)
+            await self._publish_node_event("midi.node.discovered", node_id)
             await self._handle_node_discovered(node_id)
 
         for node_id in lost:
             if node_id == self._local_node_id:
                 continue
-            await self._publish_node_event(EventType.MIDI_NODE_LOST, node_id, severity=EventSeverity.WARNING)
+            await self._publish_node_event("midi.node.lost", node_id, severity=Severity.WARNING)
             await self._handle_node_lost(node_id)
 
     async def _handle_node_lost(self, node_id: str) -> None:
@@ -550,10 +546,10 @@ class MidiClusterRouter:
             connection.state = "disconnected"
             connection.error_message = "node_lost"
             await self._publish_connection_event(
-                EventType.MIDI_CONNECTION_LOST,
+                "midi.connection.lost",
                 connection,
                 latency_ms=connection.latency_ms,
-                severity=EventSeverity.WARNING,
+                severity=Severity.WARNING,
             )
             if self._is_failover_enabled():
                 await self._attempt_failover(connection)
@@ -618,14 +614,14 @@ class MidiClusterRouter:
             return
 
         await self._publish_connection_event(
-            EventType.MIDI_FAILOVER_TRIGGERED,
+            "midi.failover.triggered",
             connection,
             latency_ms=connection.latency_ms,
         )
         replacement_connection = await self.connect(connection.source.endpoint_id(), replacement.endpoint_id())
         if replacement_connection.state == "connected":
             await self._publish_connection_event(
-                EventType.MIDI_FAILOVER_COMPLETED,
+                "midi.failover.completed",
                 replacement_connection,
                 latency_ms=replacement_connection.latency_ms,
             )
@@ -720,10 +716,10 @@ class MidiClusterRouter:
                 connection.transport = "http-mesh"
                 connection.error_message = "rtp_timeout_fallback_http"
                 await self._publish_connection_event(
-                    EventType.MIDI_CONNECTION_FAILED,
+                    "midi.connection.failed",
                     connection,
                     latency_ms=None,
-                    severity=EventSeverity.WARNING,
+                    severity=Severity.WARNING,
                     extra_details={"reason": "rtp_timeout_fallback_http"},
                 )
                 transport_mode = "http-mesh"
@@ -832,10 +828,10 @@ class MidiClusterRouter:
         connection.state = "error"
         connection.error_message = str(result.get("reason") or result.get("error") or "forward_failed")
         await self._publish_connection_event(
-            EventType.MIDI_CONNECTION_FAILED,
+            "midi.connection.failed",
             connection,
             latency_ms=connection.latency_ms,
-            severity=EventSeverity.WARNING,
+            severity=Severity.WARNING,
             extra_details={"reason": connection.error_message},
         )
 
@@ -921,35 +917,33 @@ class MidiClusterRouter:
 
     async def _publish_node_event(
         self,
-        event_type: EventType,
+        kind: str,
         node_id: str,
         *,
-        severity: EventSeverity = EventSeverity.INFO,
+        severity: Severity = Severity.INFO,
     ) -> None:
-        await self._event_bus.publish_event(
-            ClusterEvent(
-                event_type=event_type,
+        await self._event_bus.emit(
+            make_midi_cluster_event(
+                kind=kind,
                 severity=severity,
-                source_node_id=self._local_node_id,
-                affected_nodes=[str(node_id)],
+                source_node=self._local_node_id,
+                source_service="midi_cluster_router",
+                title="MIDI cluster node event",
                 message=f"MIDI node {node_id}",
-                details={
-                    "node_id": str(node_id),
-                    "port_name": None,
-                    "remote_node_id": str(node_id),
-                    "transport": self._transport_mode(),
-                    "latency_ms": None,
-                },
+                node_id=str(node_id),
+                remote_node_id=str(node_id),
+                transport=self._transport_mode(),
+                affected_nodes=[str(node_id)],
             )
         )
 
     async def _publish_connection_event(
         self,
-        event_type: EventType,
+        kind: str,
         connection: MidiClusterConnection,
         *,
         latency_ms: Optional[float],
-        severity: EventSeverity = EventSeverity.INFO,
+        severity: Severity = Severity.INFO,
         extra_details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = {
@@ -963,14 +957,24 @@ class MidiClusterRouter:
         }
         if extra_details:
             details.update(extra_details)
-        await self._event_bus.publish_event(
-            ClusterEvent(
-                event_type=event_type,
+        await self._event_bus.emit(
+            make_midi_cluster_event(
+                kind=kind,
                 severity=severity,
-                source_node_id=self._local_node_id,
-                affected_nodes=[connection.source.node_id, connection.destination.node_id],
+                source_node=self._local_node_id,
+                source_service="midi_cluster_router",
+                title="MIDI cluster connection",
                 message=f"Cluster MIDI connection {connection.connection_id}",
-                details=details,
+                node_id=connection.source.node_id,
+                remote_node_id=connection.destination.node_id,
+                port_name=connection.source.port_name,
+                destination_port=connection.destination.port_name,
+                transport=connection.transport,
+                latency_ms=latency_ms,
+                connection_id=connection.connection_id,
+                affected_nodes=[connection.source.node_id, connection.destination.node_id],
+                context=details,
+                dedupe_key=midi_connection_dedupe_key(connection.connection_id),
             )
         )
 

@@ -339,20 +339,6 @@ try:
 except ImportError as e:
     logger.warning(f"Failed to import Failover Monitor: {e}")
 
-# Import distributed event bus with explicit aliases to avoid ambiguous bus names.
-try:
-    from app.services.cluster.distributed_event_bus import (
-        DistributedEventBus,
-        get_event_bus as get_distributed_event_bus,
-        EventType as DistributedEventType,
-        EventSeverity,
-        ClusterEvent,
-    )
-    # Backward-compatible export expected by existing tests/importers.
-    EventType = DistributedEventType
-except ImportError as e:
-    logger.warning(f"Failed to import Distributed Event Bus: {e}")
-
 # Import node lifecycle manager
 try:
     from app.services.cluster.node_lifecycle import (
@@ -386,12 +372,6 @@ __all__.extend([
     "ConfigSync",
     "get_state_replicator",
     "StateReplicator",
-    "get_distributed_event_bus",
-    "DistributedEventBus",
-    "EventType",
-    "DistributedEventType",
-    "EventSeverity",
-    "ClusterEvent",
     "get_lifecycle_manager",
     "NodeLifecycleManager",
     "NodeState",

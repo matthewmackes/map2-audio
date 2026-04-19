@@ -15,6 +15,14 @@ from sqlalchemy import select
 from app.database import MIDIDeviceConfig, get_session
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import discover_alsa_port_descriptors
+from app.services.platform_event.bus import PlatformEventFilter, get_platform_event_bus
+from app.services.platform_event.factories import (
+    make_cluster_platform_event,
+    make_midi_cluster_event,
+    midi_profile_dedupe_key,
+)
+from app.services.platform_event.severity import Severity
+from app.services.ws_federation import get_ws_federator
 
 
 ASSIGNMENT_PREFIX = "assignment::"
@@ -319,6 +327,8 @@ class MidiDeviceRegistry:
         self._shadow_state: Dict[str, Dict[str, Any]] = {}
         self._drift_log: List[Dict[str, Any]] = []
         self._local_node_id: Optional[str] = None
+        self._platform_event_bus = get_platform_event_bus()
+        self._profile_subscription = None
         self._subscribe_cluster_profile_events()
 
     def _all_profiles(self) -> List[MidiDeviceProfile]:
@@ -474,18 +484,11 @@ class MidiDeviceRegistry:
             loop.create_task(coro)
 
     def _publish_cluster_event(self, event_name: str, state: MidiDeviceState) -> None:
-        try:
-            from app.services.cluster.distributed_event_bus import (
-                ClusterEvent,
-                EventSeverity,
-                EventType,
-                get_event_bus as get_distributed_event_bus,
-            )
-        except Exception:
-            return
-
-        event_type = getattr(EventType, event_name, None)
-        if event_type is None:
+        kind = {
+            "MIDI_PORT_DISCOVERED": "midi.port.discovered",
+            "MIDI_PORT_LOST": "midi.port.lost",
+        }.get(str(event_name))
+        if kind is None:
             return
 
         details = {
@@ -497,32 +500,42 @@ class MidiDeviceRegistry:
             "device_id": state.device_id,
             "profile_id": state.profile_id,
         }
-        event = ClusterEvent(
-            event_type=event_type,
-            severity=EventSeverity.INFO,
-            source_node_id=self._local_node(),
-            affected_nodes=[state.node_id],
-            message=f"MIDI device {state.device_id} on {state.node_id}",
-            details=details,
+        self._schedule_coroutine(
+            self._platform_event_bus.emit(
+                make_midi_cluster_event(
+                    kind=kind,
+                    severity=Severity.INFO,
+                    source_node=self._local_node(),
+                    source_service="midi_device_registry",
+                    title="MIDI device event",
+                    message=f"MIDI device {state.device_id} on {state.node_id}",
+                    node_id=state.node_id,
+                    remote_node_id=state.node_id if state.remote else None,
+                    port_name=details["port_name"],
+                    latency_ms=state.latency_ms,
+                    affected_nodes=[state.node_id],
+                    context=details,
+                )
+            )
         )
-        self._schedule_coroutine(get_distributed_event_bus().publish_event(event))
 
     def _subscribe_cluster_profile_events(self) -> None:
-        try:
-            from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
-        except Exception:
-            return
+        self._schedule_coroutine(self._subscribe_cluster_profile_events_async())
 
-        try:
-            get_distributed_event_bus().subscribe(EventType.MIDI_PROFILE_SHARED, self._handle_shared_profile_event)
-        except Exception:
+    async def _subscribe_cluster_profile_events_async(self) -> None:
+        if self._profile_subscription is not None:
             return
+        self._profile_subscription = await self._platform_event_bus.subscribe_callback(
+            self._handle_shared_profile_event,
+            PlatformEventFilter(kinds=frozenset({"midi.profile.shared"})),
+        )
+        await get_ws_federator().start_platform_event_mesh()
 
     def _handle_shared_profile_event(self, event: Any) -> None:
         try:
-            if getattr(event, "source_node_id", "") == self._local_node():
+            if getattr(event, "source_node", "") == self._local_node():
                 return
-            payload = dict(getattr(event, "details", {}).get("profile") or {})
+            payload = dict(getattr(event, "context", {}).get("profile") or {})
             profile_id = str(payload.get("profile_id") or "").strip()
             if not profile_id:
                 return
@@ -540,36 +553,31 @@ class MidiDeviceRegistry:
             return
 
     def _share_custom_profile(self, profile: MidiDeviceProfile) -> None:
-        try:
-            from app.services.cluster.distributed_event_bus import (
-                ClusterEvent,
-                EventSeverity,
-                EventType,
-                get_event_bus as get_distributed_event_bus,
+        self._schedule_coroutine(
+            self._platform_event_bus.emit(
+                make_cluster_platform_event(
+                    kind="midi.profile.shared",
+                    severity=Severity.INFO,
+                    source_node=self._local_node(),
+                    source_service="midi_device_registry",
+                    title="MIDI profile shared",
+                    message=f"Shared MIDI profile {profile.profile_id}",
+                    dedupe_key=midi_profile_dedupe_key(profile.profile_id),
+                    context={
+                        "profile": {
+                            "profile_id": profile.profile_id,
+                            "name": profile.name,
+                            "match_patterns": list(profile.match_patterns),
+                            "default_channel": profile.default_channel,
+                            "supports_sysex": profile.supports_sysex,
+                            "channels": list(profile.channels),
+                            "usb_vid_pid": list(profile.usb_vid_pid),
+                            "metadata": dict(profile.metadata),
+                        }
+                    },
+                )
             )
-        except Exception:
-            return
-
-        event = ClusterEvent(
-            event_type=EventType.MIDI_PROFILE_SHARED,
-            severity=EventSeverity.INFO,
-            source_node_id=self._local_node(),
-            affected_nodes=[],
-            message=f"Shared MIDI profile {profile.profile_id}",
-            details={
-                "profile": {
-                    "profile_id": profile.profile_id,
-                    "name": profile.name,
-                    "match_patterns": list(profile.match_patterns),
-                    "default_channel": profile.default_channel,
-                    "supports_sysex": profile.supports_sysex,
-                    "channels": list(profile.channels),
-                    "usb_vid_pid": list(profile.usb_vid_pid),
-                    "metadata": dict(profile.metadata),
-                }
-            },
         )
-        self._schedule_coroutine(get_distributed_event_bus().publish_event(event))
 
     def merge_remote_devices(self, node_id: str, devices: List[Dict[str, Any]]) -> None:
         node_key = str(node_id)

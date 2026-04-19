@@ -13,12 +13,12 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.cluster.mdns_discovery_enhanced import (
     EnhancedMDNSDiscovery,
     get_enhanced_mdns_discovery,
 )
+from app.services.platform_event.bus import PlatformEventFilter, get_platform_event_bus
 from app.services.cluster.registry import ClusterRegistry, get_cluster_registry
 from app.utils.singleton import Singleton
 
@@ -69,23 +69,31 @@ class ClusterHardwareInventory(Singleton):
         self._lock = asyncio.Lock()
         self._cache: Dict[str, NodeHardware] = {}
         self._cached_at = 0.0
-        self._event_bus = event_bus or get_distributed_event_bus()
+        self._event_bus = event_bus or get_platform_event_bus()
+        self._subscription = None
         self._subscribe_to_events()
 
     def _subscribe_to_events(self) -> None:
-        for event_type in (
-            EventType.NODE_JOINED,
-            EventType.NODE_UPDATED,
-            EventType.NODE_LEFT,
-            EventType.NODE_FAILED,
-            EventType.NODE_RECOVERED,
-        ):
-            self._event_bus.subscribe(event_type, self._handle_cluster_event)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        loop.create_task(self._subscribe_to_events_async())
+
+    async def _subscribe_to_events_async(self) -> None:
+        if self._subscription is not None:
+            return
+        self._subscription = await self._event_bus.subscribe_callback(
+            self._handle_cluster_event,
+            PlatformEventFilter(
+                kinds=frozenset({"node.online", "node.offline", "node.recovered", "config.updated"})
+            ),
+        )
 
     def _handle_cluster_event(self, event: Any) -> None:
         self._cached_at = 0.0
-        if getattr(event, "event_type", None) in {EventType.NODE_LEFT, EventType.NODE_FAILED}:
-            impacted = [getattr(event, "source_node_id", "")] + list(getattr(event, "affected_nodes", []) or [])
+        if getattr(event, "kind", None) == "node.offline":
+            impacted = [getattr(event, "source_node", "")] + list(getattr(event, "context", {}).get("affected_nodes", []) or [])
             for node_id in [node for node in impacted if node]:
                 existing = self._cache.get(node_id)
                 if existing is None:

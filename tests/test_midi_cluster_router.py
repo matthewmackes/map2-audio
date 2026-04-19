@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import app.services.midi_hub.cluster_router as cluster_router_module
-from app.services.cluster.distributed_event_bus import EventType
 from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiClusterRouter
 from app.services.midi_hub.hub import MidiHub
 from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
@@ -64,9 +63,9 @@ class _FakeEventBus:
     def __init__(self):
         self.events = []
 
-    async def publish_event(self, event):
+    async def emit(self, event):
         self.events.append(event)
-        return True
+        return event.event_id
 
 
 class _FakeRegistry:
@@ -245,9 +244,9 @@ def test_connect_establishes_rtp_session_and_publishes_events(monkeypatch):
     assert connection["state"] == "connected"
     assert connection["session_id"] == "rtp-session-1"
     assert transport.invites[0]["source_port"] == "Keys Out"
-    event_types = [event.event_type for event in event_bus.events]
-    assert EventType.MIDI_CONNECTION_REQUESTED in event_types
-    assert EventType.MIDI_CONNECTION_ESTABLISHED in event_types
+    event_types = [event.kind for event in event_bus.events]
+    assert "midi.connection.requested" in event_types
+    assert "midi.connection.established" in event_types
 
 
 def test_connect_falls_back_to_http_mesh_after_rtp_timeout(monkeypatch):
@@ -282,9 +281,9 @@ def test_connect_falls_back_to_http_mesh_after_rtp_timeout(monkeypatch):
     assert connection["state"] == "connected"
     assert connection["transport"] == "http-mesh"
     assert network_bridge.mesh_peers[0]["peer_id"] == "node-b"
-    failure_events = [event for event in event_bus.events if event.event_type == EventType.MIDI_CONNECTION_FAILED]
+    failure_events = [event for event in event_bus.events if event.kind == "midi.connection.failed"]
     assert failure_events
-    assert failure_events[0].details["reason"] == "rtp_timeout_fallback_http"
+    assert failure_events[0].context["reason"] == "rtp_timeout_fallback_http"
 
 
 def test_forward_message_uses_network_bridge_transport(monkeypatch):
@@ -468,6 +467,6 @@ def test_failover_port_switches_to_equivalent_input(monkeypatch):
     assert snapshot["replacement_id"] == "node-a:Keys Out→node-c:Backup Rack In"
     assert "node-a:Keys Out→node-c:Backup Rack In" in snapshot["connection_ids"]
     assert "node-a:Keys Out→node-b:Remote Rack In" in snapshot["connection_ids"]
-    failover_events = [event.event_type for event in event_bus.events]
-    assert EventType.MIDI_FAILOVER_TRIGGERED in failover_events
-    assert EventType.MIDI_FAILOVER_COMPLETED in failover_events
+    failover_events = [event.kind for event in event_bus.events]
+    assert "midi.failover.triggered" in failover_events
+    assert "midi.failover.completed" in failover_events

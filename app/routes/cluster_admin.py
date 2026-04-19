@@ -21,13 +21,20 @@ from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.cluster.update_orchestrator import get_update_scheduler
 from app.services.cluster.config_pusher import get_config_sync
 from app.services.cluster.state_replicator import get_state_replicator
-from app.services.cluster.distributed_event_bus import get_event_bus as get_distributed_event_bus, EventType
 from app.services.cluster.node_lifecycle import get_lifecycle_manager
 from app.services.cluster.disaster_recovery import get_disaster_recovery
 from app.services.cluster.network_topology import get_topology_monitor
 from app.services.cluster.config_manager import get_config_manager
 from app.services.cluster.deployment_manager import get_deployment_manager
 from app.services.cluster.node_visibility import get_visible_cluster_summary
+from app.services.platform_event.cluster_projection import (
+    UPDATE_EVENT_KINDS,
+    cluster_event_statistics,
+    platform_event_to_cluster_dict,
+    query_cluster_events,
+)
+from app.services.platform_event.severity import Severity
+from app.services.platform_event.store import get_platform_event_store
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -685,27 +692,13 @@ async def get_update_history(limit: int = 50) -> Dict:
         safe_limit = max(1, min(limit, 500))
         updates: List[Dict[str, Any]] = []
 
-        # Primary source: distributed event log (persisted).
-        event_bus = get_distributed_event_bus()
-        update_event_types = [
-            EventType.UPDATE_STARTED,
-            EventType.UPDATE_COMPLETED,
-            EventType.UPDATE_FAILED,
-            EventType.UPDATE_ROLLED_BACK,
-        ]
-        for event_type in update_event_types:
-            for event in event_bus.get_events(event_type=event_type, hours=24 * 30, limit=safe_limit):
-                updates.append(
-                    {
-                        "event_type": event.event_type.value,
-                        "timestamp": event.timestamp.isoformat(),
-                        "severity": event.severity.value,
-                        "source_node_id": event.source_node_id,
-                        "message": event.message,
-                        "details": event.details,
-                        "correlation_id": event.correlation_id,
-                    }
-                )
+        store = get_platform_event_store()
+        for event in store.query_events(
+            limit=max(safe_limit * 4, 250),
+            hours=24 * 30,
+            kinds=list(UPDATE_EVENT_KINDS),
+        ):
+            updates.append(platform_event_to_cluster_dict(event))
 
         # Fallback/additional source: current scheduler report job history.
         scheduler = get_update_scheduler()
@@ -890,34 +883,24 @@ async def get_events(
         - total: Number of events returned
     """
     try:
-        event_bus = get_distributed_event_bus()
-        
-        # Convert string filters to enums if provided
-        event_type_enum = None
-        severity_enum = None
-        
-        if event_type:
-            try:
-                event_type_enum = EventType(event_type)
-            except ValueError:
-                logger.debug("Ignoring unsupported event_type filter: %s", event_type)
-        
+        severity_values = None
         if severity:
-            try:
-                from app.services.cluster.distributed_event_bus import EventSeverity
-                severity_enum = EventSeverity(severity)
-            except ValueError:
+            normalized = str(severity).strip().lower()
+            if normalized in {item.value for item in Severity}:
+                severity_values = [normalized]
+            else:
                 logger.debug("Ignoring unsupported severity filter: %s", severity)
-        
-        events = event_bus.get_events(
-            event_type=event_type_enum,
-            severity=severity_enum,
+
+        events = query_cluster_events(
+            get_platform_event_store(),
             hours=hours,
             limit=limit,
+            severities=severity_values,
+            kinds=[str(event_type).strip()] if event_type else None,
         )
         
         return {
-            "events": [e.to_dict() for e in events],
+            "events": [platform_event_to_cluster_dict(event) for event in events],
             "total": len(events),
             "filters": {
                 "event_type": event_type,
@@ -938,12 +921,16 @@ async def get_node_events(
 ) -> Dict:
     """Get all events related to a specific node."""
     try:
-        event_bus = get_distributed_event_bus()
-        events = event_bus.get_events_by_node(node_id, hours=hours, limit=limit)
+        events = query_cluster_events(
+            get_platform_event_store(),
+            source_node=node_id,
+            hours=hours,
+            limit=limit,
+        )
         
         return {
             "node_id": node_id,
-            "events": [e.to_dict() for e in events],
+            "events": [platform_event_to_cluster_dict(event) for event in events],
             "total": len(events),
         }
     except Exception as e:
@@ -966,8 +953,12 @@ async def get_event_statistics(hours: int = 24) -> Dict:
         - top_nodes: Most active nodes
     """
     try:
-        event_bus = get_distributed_event_bus()
-        stats = event_bus.get_statistics(hours=hours)
+        events = query_cluster_events(
+            get_platform_event_store(),
+            hours=hours,
+            limit=None,
+        )
+        stats = cluster_event_statistics(events)
         
         return {
             "time_window_hours": hours,

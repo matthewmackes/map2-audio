@@ -6,9 +6,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import midi_cluster as midi_cluster_routes
-from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType
 from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiEndpoint
 from app.services.midi_hub.midi_discovery import MidiCapabilities, MidiNode
+from app.services.platform_event.factories import make_cluster_platform_event, make_midi_cluster_event
+from app.services.platform_event.severity import Severity
 
 
 def _utcnow() -> datetime:
@@ -266,49 +267,63 @@ class _FakeDeviceRegistry:
         }
 
 
-class _FakeEventBus:
+class _FakeStore:
     def __init__(self) -> None:
         self.events = [
-            ClusterEvent(
-                event_type=EventType.MIDI_CONNECTION_ESTABLISHED,
-                severity=EventSeverity.INFO,
-                source_node_id="node-a",
-                affected_nodes=["node-a", "node-b"],
+            make_midi_cluster_event(
+                kind="midi.connection.established",
+                severity=Severity.INFO,
+                source_node="node-a",
+                source_service="test",
+                title="Connection established",
                 message="Connection established",
-                details={"connection_id": "node-a:Keys Out→node-b:Remote Rack In"},
+                node_id="node-a",
+                remote_node_id="node-b",
+                connection_id="node-a:Keys Out→node-b:Remote Rack In",
+                affected_nodes=["node-a", "node-b"],
             ),
-            ClusterEvent(
-                event_type=EventType.MIDI_CLOCK_DRIFT_DETECTED,
-                severity=EventSeverity.WARNING,
-                source_node_id="node-b",
-                affected_nodes=["node-b"],
+            make_midi_cluster_event(
+                kind="midi.clock.drift",
+                severity=Severity.WARNING,
+                source_node="node-b",
+                source_service="test",
+                title="Clock drift warning",
                 message="Clock drift warning",
-                details={"drift_ms": 0.4},
+                node_id="node-b",
+                affected_nodes=["node-b"],
+                context={"drift_ms": 0.4},
             ),
-            ClusterEvent(
-                event_type=EventType.NODE_JOINED,
-                severity=EventSeverity.INFO,
-                source_node_id="node-z",
-                affected_nodes=["node-z"],
+            make_cluster_platform_event(
+                kind="node.online",
+                severity=Severity.INFO,
+                source_node="node-z",
+                source_service="test",
+                title="Not MIDI",
                 message="Not MIDI",
-                details={},
+                affected_nodes=["node-z"],
             ),
         ]
 
-    def get_events(self, event_type=None, severity=None, hours=24, limit=100):
+    def query_events(
+        self,
+        *,
+        limit=100,
+        hours=24,
+        source_node=None,
+        severities=None,
+        kinds=None,
+        kind_prefixes=None,
+        **_kwargs,
+    ):
         rows = list(self.events)
-        if event_type is not None:
-            rows = [event for event in rows if event.event_type == event_type]
-        if severity is not None:
-            rows = [event for event in rows if event.severity == severity]
-        return rows[:limit]
-
-    def get_events_by_node(self, node_id: str, hours=24, limit=100):
-        rows = [
-            event
-            for event in self.events
-            if event.source_node_id == node_id or node_id in event.affected_nodes
-        ]
+        if kinds:
+            rows = [event for event in rows if event.kind in set(kinds)]
+        if kind_prefixes:
+            rows = [event for event in rows if any(event.kind.startswith(prefix) for prefix in kind_prefixes)]
+        if severities:
+            rows = [event for event in rows if event.severity.value in set(severities)]
+        if source_node is not None:
+            rows = [event for event in rows if event.source_node == source_node]
         return rows[:limit]
 
 
@@ -317,14 +332,14 @@ def _build_client(monkeypatch):
     clock = _FakeClock()
     router = _FakeRouter()
     registry = _FakeDeviceRegistry()
-    event_bus = _FakeEventBus()
+    store = _FakeStore()
 
     monkeypatch.setattr(midi_cluster_routes, "config_get", lambda key, default=None: {"midi.cluster.enabled": True}.get(key, default))
     monkeypatch.setattr(midi_cluster_routes, "get_midi_discovery_service", lambda: discovery)
     monkeypatch.setattr(midi_cluster_routes, "get_midi_cluster_clock", lambda: clock)
     monkeypatch.setattr(midi_cluster_routes, "get_midi_cluster_router", lambda: router)
     monkeypatch.setattr(midi_cluster_routes, "get_midi_device_registry", lambda: registry)
-    monkeypatch.setattr(midi_cluster_routes, "get_event_bus", lambda: event_bus)
+    monkeypatch.setattr(midi_cluster_routes, "get_platform_event_store", lambda: store)
 
     app = FastAPI()
     app.include_router(midi_cluster_routes.router)
@@ -399,4 +414,4 @@ def test_cluster_api_clock_health_and_events(monkeypatch):
     assert health.json()["clock_status"] == "master"
     assert events.status_code == 200
     assert events.json()["total"] == 1
-    assert events.json()["events"][0]["event_type"] == EventType.MIDI_CLOCK_DRIFT_DETECTED.value
+    assert events.json()["events"][0]["event_type"] == "midi.clock.drift"

@@ -391,7 +391,7 @@ async def lifespan(app):
         logger.info(f"Deployment mode: {deployment_config.mode.value}")
 
         # Initialize runtime config watching so local file edits can fan out
-        # through the distributed event bus without requiring an API call first.
+        # through canonical PlatformEvents without requiring an API call first.
         try:
             from app.services.config_hot_reload import get_or_init_config_reloader
 
@@ -431,6 +431,16 @@ async def lifespan(app):
         # mDNS discovery
         mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
         platform_event_bus = get_platform_event_bus()
+        try:
+            from app.services.ws_federation import get_ws_federator
+
+            await safe_start_service(
+                logger,
+                "Platform event federation",
+                lambda: get_ws_federator().start_platform_event_mesh(),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to initialize platform event federation: {e}")
 
         # LCD manager
         lcd_manager = LCDManager(

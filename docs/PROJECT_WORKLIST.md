@@ -28760,7 +28760,7 @@ Validation:
 - `rg -n "LCDEventBus|LCDEventRouter|RemoteEventAggregator" app/services app/routes` -> no matches
 
 ID: T2363-subH
-Status: [>] In Progress
+Status: [✓] Done
 Title: Hard-cut DistributedEventBus callers and move federation to platform:events
 Description:
 - Goal / acceptance criteria: Migrate every remaining `DistributedEventBus` caller and subscriber onto canonical `PlatformEvent` factories, including cluster lifecycle, MIDI hub cluster services, config hot-reload sync, cluster admin flows, and any routes or services still creating `ClusterEvent`s. `ws_federation` becomes the only cross-node replication path by subscribing to `platform:events` with echo suppression. After the last caller is migrated, delete `app/services/cluster/distributed_event_bus.py`.
@@ -28769,15 +28769,20 @@ Description:
 - Estimated effort: Very High
 - Required outputs: migrated cluster/MIDI/config services, platform-event federation, deleted distributed event bus runtime API, and rewritten cluster/MIDI tests.
 - Notes: Cluster event history queries must come from `PlatformEventStore`, not a second event table or second route model.
-- Last updated: 2026-04-19 13:24 EDT - Codex
-- Progress notes:
-  - 2026-04-19 13:24 EDT - Codex: Began the distributed-event-bus hard cut immediately after shipping `T2363-subG`; next audit is [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [app/services/ws_federation.py](app/services/ws_federation.py), [app/services/config_hot_reload.py](app/services/config_hot_reload.py), [app/services/midi_hub/cluster_clock.py](app/services/midi_hub/cluster_clock.py), [app/services/midi_hub/cluster_router.py](app/services/midi_hub/cluster_router.py), [app/services/midi_hub/device_registry.py](app/services/midi_hub/device_registry.py), and the cluster-facing route tests before replacing `ClusterEvent` publication with canonical `PlatformEvent` factories and real platform-event federation.
+- Last updated: 2026-04-19 15:17 EDT - Codex
+- Completion notes:
+  - 2026-04-19 15:17 EDT - Codex: Replaced every remaining runtime import of the legacy distributed bus across [app/services/config_hot_reload.py](app/services/config_hot_reload.py), [app/services/midi_hub/cluster_clock.py](app/services/midi_hub/cluster_clock.py), [app/services/midi_hub/cluster_router.py](app/services/midi_hub/cluster_router.py), [app/services/midi_hub/device_registry.py](app/services/midi_hub/device_registry.py), [app/services/midi_broadcast.py](app/services/midi_broadcast.py), [app/services/cluster/node_lifecycle.py](app/services/cluster/node_lifecycle.py), [app/services/cluster/network_topology.py](app/services/cluster/network_topology.py), [app/services/cluster/disaster_recovery.py](app/services/cluster/disaster_recovery.py), [app/services/cluster/management_orchestrator.py](app/services/cluster/management_orchestrator.py), [app/services/cluster/hardware_inventory.py](app/services/cluster/hardware_inventory.py), and [app/services/cluster/state_replicator.py](app/services/cluster/state_replicator.py) with direct `PlatformEventBus` emission/subscription using canonical factories and kinds.
+  - 2026-04-19 15:17 EDT - Codex: Added [app/services/platform_event/cluster_projection.py](app/services/platform_event/cluster_projection.py), expanded [app/services/platform_event/store.py](app/services/platform_event/store.py) query support, and rewired [app/routes/midi_cluster.py](app/routes/midi_cluster.py), [app/routes/cluster_admin.py](app/routes/cluster_admin.py), and [app/routes/config_api.py](app/routes/config_api.py) to read persisted cluster/MIDI history from `PlatformEventStore` instead of a second event table or legacy `ClusterEvent` model.
+  - 2026-04-19 15:17 EDT - Codex: Turned [app/services/ws_federation.py](app/services/ws_federation.py) into real canonical event federation by ingesting remote `platform:events` into the local `PlatformEventBus`, tagging remote-origin events for echo suppression, starting a platform-event mesh at startup from [app/main.py](app/main.py), and deleting [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) entirely.
+  - 2026-04-19 15:17 EDT - Codex: Rewrote the focused regression surface for the hard cut in [tests/test_ws_federation.py](tests/test_ws_federation.py), [tests/test_midi_cluster_clock.py](tests/test_midi_cluster_clock.py), [tests/test_midi_cluster_router.py](tests/test_midi_cluster_router.py), [tests/test_config_hot_reload_cluster_sync.py](tests/test_config_hot_reload_cluster_sync.py), and [tests/test_midi_cluster_api_routes.py](tests/test_midi_cluster_api_routes.py) so the suites now assert canonical `PlatformEvent` kinds, context payloads, and store-backed route responses instead of importing the deleted bus.
 Validation:
-- `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> must PASS
-- `rg -n "DistributedEventBus|get_event_bus\\(|ClusterEvent|EventSeverity|EventType" app/services app/routes` -> no legacy cluster-bus matches
+- `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> PASS (`26 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/ws_federation.py app/services/config_hot_reload.py app/services/midi_hub/cluster_clock.py app/services/midi_hub/cluster_router.py app/services/midi_hub/device_registry.py app/services/midi_broadcast.py app/services/cluster/hardware_inventory.py app/services/cluster/management_orchestrator.py app/services/cluster/disaster_recovery.py app/services/cluster/network_topology.py app/services/cluster/node_lifecycle.py app/routes/midi_cluster.py app/routes/config_api.py app/routes/cluster_admin.py app/main.py app/services/platform_event/bus.py app/services/platform_event/store.py app/services/platform_event/factories.py app/services/platform_event/cluster_projection.py app/services/platform_event/severity.py` -> PASS
+- `rg -n "distributed_event_bus|get_distributed_event_bus" app/services app/routes` -> no matches
+- `rg -n "ClusterEvent|EventSeverity|EventType" app/services app/routes` still reports unrelated non-cluster enums (`event_publisher`, LCD compatibility projections, and other non-subH symbols), so the precise distributed-bus path scan above is the authoritative subH validation.
 
 ID: T2363-subI
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Delete legacy public event APIs and replace them with canonical PlatformEvent HTTP routes
 Description:
 - Goal / acceptance criteria: Remove legacy operator/API surfaces that expose `LCDEvent` or `ClusterEvent` shapes, including the LCD event route surface. Add canonical HTTP routes:
@@ -28789,6 +28794,9 @@ Description:
 - Estimated effort: High
 - Required outputs: canonical query/ack routes, deleted legacy event routes, updated route tests, and updated frontend/backend callers that still hit removed endpoints.
 - Notes: Do not add compatibility endpoints or alias routes. Removed public APIs stay removed.
+- Last updated: 2026-04-19 15:17 EDT - Codex
+- Progress notes:
+  - 2026-04-19 15:17 EDT - Codex: Began the public-API hard cut immediately after shipping `T2363-subH`; next work is deleting the remaining legacy event route surfaces in [app/routes/lcd_events.py](app/routes/lcd_events.py) and cluster/MIDI compatibility routes, then landing canonical `/api/platform-events` query/ack handlers and updating any frontend/backend callers that still depend on legacy event shapes.
 Validation:
 - `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> must PASS
 - `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> only canonical route tests may remain

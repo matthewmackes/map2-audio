@@ -25,12 +25,9 @@ from pathlib import Path
 import subprocess
 
 from app.services.cluster.registry import get_cluster_registry
-from app.services.cluster.distributed_event_bus import (
-    get_event_bus as get_distributed_event_bus,
-    EventType,
-    EventSeverity,
-    ClusterEvent,
-)
+from app.services.platform_event.bus import get_platform_event_bus
+from app.services.platform_event.factories import make_cluster_platform_event
+from app.services.platform_event.severity import Severity
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -91,7 +88,7 @@ class DisasterRecoveryManager(Singleton):
         self.backup_dir = Path(backup_dir)
         self.retention_days = retention_days
         self.logger = logging.getLogger(__name__)
-        self.event_bus = get_distributed_event_bus()
+        self.event_bus = get_platform_event_bus()
         self.registry = get_cluster_registry()
         self._init_backup_dir()
     
@@ -174,14 +171,17 @@ class DisasterRecoveryManager(Singleton):
             shutil.rmtree(staging_dir, ignore_errors=True)
             
             # 9. Publish event
-            event = ClusterEvent(
-                event_type=EventType.MAINTENANCE_COMPLETED,
-                severity=EventSeverity.INFO,
-                source_node_id="management-node",
-                message=f"Full backup created: {backup_id}",
-                details=manifest.to_dict(),
+            await self.event_bus.emit(
+                make_cluster_platform_event(
+                    kind="maintenance.completed",
+                    severity=Severity.INFO,
+                    source_node="management-node",
+                    source_service="disaster_recovery",
+                    title="Full backup created",
+                    message=f"Full backup created: {backup_id}",
+                    context=manifest.to_dict(),
+                )
             )
-            await self.event_bus.publish_event(event)
             
             self.logger.info(
                 f"Full backup complete: {backup_id} ({manifest.size_bytes} bytes)"
@@ -193,13 +193,16 @@ class DisasterRecoveryManager(Singleton):
             self.logger.error(f"Full backup failed: {e}", exc_info=True)
             
             # Publish failure event
-            event = ClusterEvent(
-                event_type=EventType.SYSTEM_ALERT,
-                severity=EventSeverity.ERROR,
-                source_node_id="management-node",
-                message=f"Backup failed: {str(e)}",
+            await self.event_bus.emit(
+                make_cluster_platform_event(
+                    kind="system.status",
+                    severity=Severity.ERROR,
+                    source_node="management-node",
+                    source_service="disaster_recovery",
+                    title="Backup failed",
+                    message=f"Backup failed: {str(e)}",
+                )
             )
-            await self.event_bus.publish_event(event)
             
             return None
     
@@ -393,14 +396,17 @@ class DisasterRecoveryManager(Singleton):
             shutil.rmtree(temp_dir, ignore_errors=True)
             
             # Publish event
-            event = ClusterEvent(
-                event_type=EventType.MAINTENANCE_COMPLETED,
-                severity=EventSeverity.INFO,
-                source_node_id="management-node",
-                message=f"Restore completed from backup: {backup_id}",
-                details={"backup_id": backup_id, "restore_type": restore_type},
+            await self.event_bus.emit(
+                make_cluster_platform_event(
+                    kind="maintenance.completed",
+                    severity=Severity.INFO,
+                    source_node="management-node",
+                    source_service="disaster_recovery",
+                    title="Restore completed",
+                    message=f"Restore completed from backup: {backup_id}",
+                    context={"backup_id": backup_id, "restore_type": restore_type},
+                )
             )
-            await self.event_bus.publish_event(event)
             
             self.logger.info(f"Restore completed: {backup_id}")
             return True

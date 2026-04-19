@@ -323,26 +323,6 @@ class StateReplicator(Singleton):
         except Exception as e:
             self.logger.debug(f"Failed to publish platform failover event: {e}")
 
-        try:
-            from app.services.cluster.distributed_event_bus import (
-                ClusterEvent,
-                EventType as DistributedEventType,
-                EventSeverity,
-                get_event_bus as get_distributed_event_bus,
-            )
-
-            await get_distributed_event_bus().publish_event(
-                ClusterEvent(
-                    event_type=DistributedEventType.FAILOVER_COMPLETED,
-                    severity=EventSeverity.WARNING,
-                    source_node_id="state-replicator",
-                    message="Standby node assumed primary role",
-                    details=payload,
-                )
-            )
-        except Exception as e:
-            self.logger.debug(f"Failed to publish distributed failover event: {e}")
-
     def _sha256(self, path: Path) -> Optional[str]:
         """Compute SHA256 hash for integrity checks."""
         try:

@@ -9,16 +9,14 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import (
-    ClusterEvent,
-    EventSeverity,
-    EventType,
-    get_event_bus as get_distributed_event_bus,
-)
 from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
 from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiEndpoint, get_midi_cluster_router
 from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.midi_hub.midi_discovery import MidiNode, get_midi_discovery_service
+from app.services.platform_event.cluster_projection import platform_event_to_cluster_dict, query_midi_events
+from app.services.platform_event.envelope import PlatformEvent
+from app.services.platform_event.severity import Severity
+from app.services.platform_event.store import get_platform_event_store
 
 
 router = APIRouter(prefix="/api/midi/cluster", tags=["MIDI Cluster"])
@@ -277,16 +275,17 @@ def _auto_connect_response() -> AutoConnectStatusResponse:
     return AutoConnectStatusResponse(**get_midi_cluster_router().get_auto_connect_status())
 
 
-def _event_response(event: ClusterEvent) -> MidiClusterEventResponse:
+def _event_response(event: PlatformEvent) -> MidiClusterEventResponse:
+    payload = platform_event_to_cluster_dict(event)
     return MidiClusterEventResponse(
-        event_type=event.event_type.value,
-        timestamp=_isoformat(event.timestamp) or _utcnow().isoformat().replace("+00:00", "Z"),
-        severity=event.severity.value,
-        source_node_id=event.source_node_id,
-        affected_nodes=list(event.affected_nodes),
-        message=event.message,
-        details=dict(event.details or {}),
-        correlation_id=event.correlation_id,
+        event_type=str(payload["event_type"]),
+        timestamp=str(payload["timestamp"] or _utcnow().isoformat().replace("+00:00", "Z")),
+        severity=str(payload["severity"]),
+        source_node_id=str(payload["source_node_id"]),
+        affected_nodes=list(payload["affected_nodes"]),
+        message=str(payload["message"]),
+        details=dict(payload["details"]),
+        correlation_id=str(payload["correlation_id"]),
     )
 
 
@@ -369,42 +368,33 @@ def _midi_events(
     node_id: Optional[str],
     hours: int,
     limit: int,
-) -> List[ClusterEvent]:
-    event_bus = get_distributed_event_bus()
+) -> List[PlatformEvent]:
+    store = get_platform_event_store()
     safe_limit = max(1, min(int(limit), 1000))
     safe_hours = max(1, min(int(hours), 24 * 30))
 
-    severity_enum: Optional[EventSeverity] = None
+    severity_values: Optional[list[str]] = None
     if severity:
-        try:
-            severity_enum = EventSeverity(str(severity))
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=f"Unknown severity: {severity}") from exc
+        normalized_severity = str(severity).strip().lower()
+        if normalized_severity not in {item.value for item in Severity}:
+            raise HTTPException(status_code=400, detail=f"Unknown severity: {severity}")
+        severity_values = [normalized_severity]
 
-    event_type_enum: Optional[EventType] = None
+    requested_kinds: Optional[list[str]] = None
     if event_type:
-        try:
-            event_type_enum = EventType(str(event_type))
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=f"Unknown event type: {event_type}") from exc
+        normalized_kind = str(event_type).strip()
+        if not normalized_kind.startswith("midi."):
+            raise HTTPException(status_code=400, detail=f"Unknown event type: {event_type}")
+        requested_kinds = [normalized_kind]
 
-    if node_id:
-        events = event_bus.get_events_by_node(str(node_id), hours=safe_hours, limit=max(safe_limit, 250))
-    else:
-        events = event_bus.get_events(event_type=event_type_enum, severity=severity_enum, hours=safe_hours, limit=max(safe_limit, 250))
-
-    filtered: List[ClusterEvent] = []
-    for event in events:
-        if not event.event_type.value.startswith("midi."):
-            continue
-        if event_type_enum is not None and event.event_type != event_type_enum:
-            continue
-        if severity_enum is not None and event.severity != severity_enum:
-            continue
-        filtered.append(event)
-        if len(filtered) >= safe_limit:
-            break
-    return filtered
+    return query_midi_events(
+        store,
+        limit=safe_limit,
+        hours=safe_hours,
+        source_node=str(node_id) if node_id else None,
+        severities=severity_values,
+        kinds=requested_kinds,
+    )
 
 
 @router.get("/nodes", response_model=List[MidiClusterNodeResponse])
