@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1164** Python | **1129** TypeScript | **136** C++/H | **144** Docs | **2321** total commits | **3** stars | **0** forks | **0** open issues
+**1164** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2323** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f089c9d7`](https://github.com/matthewmackes/map2-audio/commit/f089c9d71fc7aa1b9aedccc68ffc1174812840ba) | Add PlatformEvent frontend transport and provider | Map2 Audio | 2026-04-19 |
+| [`70d3602e`](https://github.com/matthewmackes/map2-audio/commit/70d3602ee64666465437e0d5290327479470e327) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`df1c9263`](https://github.com/matthewmackes/map2-audio/commit/df1c9263283780f39097064c5e5b5a259cb851d0) | Add PlatformEvent bus persistence and replay | Map2 Audio | 2026-04-19 |
 | [`6e77547f`](https://github.com/matthewmackes/map2-audio/commit/6e77547fb009784523045ef7ebcee1e71afb4127) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`497d3357`](https://github.com/matthewmackes/map2-audio/commit/497d335794c67933506f68ae08ce43795ab9e86f) | Add PlatformEvent foundation types and mappings | Map2 Audio | 2026-04-19 |
 | [`7a5a1f90`](https://github.com/matthewmackes/map2-audio/commit/7a5a1f90fb59bd107f88828f9dad417e2076762d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`a51bba43`](https://github.com/matthewmackes/map2-audio/commit/a51bba434981e741ba73712cfbdc268a4c908905) | Polish stage notifications and snapshot runtime sync | Map2 Audio | 2026-04-19 |
 | [`5aa13100`](https://github.com/matthewmackes/map2-audio/commit/5aa131007cc4f4a369e9f815372a3d79cf6b0cf5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`0c056bfa`](https://github.com/matthewmackes/map2-audio/commit/0c056bfa15cf8eff8b47e95657b8fc8bf32d8612) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`eeac852c`](https://github.com/matthewmackes/map2-audio/commit/eeac852cccbffd78471dd135d81c53ddbf0a00bb) | Document dependabot alert reconciliation | Map2 Audio | 2026-04-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
