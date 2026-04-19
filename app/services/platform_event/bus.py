@@ -1,29 +1,25 @@
-"""PlatformEvent bus with additive SQLite persistence and replay."""
+"""PlatformEvent bus backed by a dedicated PlatformEventStore."""
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
-import json
 import logging
 import os
-import sqlite3
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from threading import RLock
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 from app.config import config_get
 from app.services.alert_services import AlertGrouper, AlertPrioritizer
-from app.services.cluster.distributed_event_bus import DistributedEventBus
 from app.services.websocket_manager import WebSocketManager, ws_manager
 from app.utils.singleton import Singleton
 
 from .envelope import PlatformEvent
 from .factories import make_event
 from .replay import PlatformEventReplayBuffer
+from .store import PlatformEventStore
 
 logger = logging.getLogger(__name__)
 
@@ -85,14 +81,13 @@ class PlatformEventBus(Singleton):
     def __init__(
         self,
         *,
-        distributed_event_bus: DistributedEventBus | None = None,
+        store: PlatformEventStore | None = None,
         websocket_manager: WebSocketManager | None = None,
         replay_buffer: PlatformEventReplayBuffer | None = None,
         enabled: bool | None = None,
     ) -> None:
         super().__init__()
-        self._distributed_event_bus = distributed_event_bus or DistributedEventBus.get_instance()
-        self._db_path = Path(self._distributed_event_bus.db_path)
+        self._store = store or PlatformEventStore.get_instance()
         self._websocket_manager = websocket_manager or ws_manager
         self._prioritizer = AlertPrioritizer()
         self._grouper = AlertGrouper()
@@ -104,14 +99,16 @@ class PlatformEventBus(Singleton):
         self._subscriptions: dict[int, tuple[PlatformEventFilter, asyncio.Queue[PlatformEvent | None]]] = {}
         self._callbacks: dict[int, Subscription] = {}
         self._dedupe_latest: dict[str, tuple[str, int]] = {}
-        self._acked_events: dict[str, set[str]] = defaultdict(set)
         self._subscription_counter = 0
-        self._ensure_schema()
         self._configure_websocket_history()
 
     @property
     def enabled(self) -> bool:
         return self._enabled
+
+    @property
+    def store(self) -> PlatformEventStore:
+        return self._store
 
     def _configure_websocket_history(self) -> None:
         limit = int(config_get("platform_event.websocket_topic_history_limit", 200) or 200)
@@ -123,15 +120,12 @@ class PlatformEventBus(Singleton):
         limit = int(config_get("platform_event.websocket_topic_history_limit", 200) or 200)
         self._websocket_manager.topic_history_limits.setdefault(topic, limit)
 
-    def _ensure_schema(self) -> None:
-        self._distributed_event_bus._init_db()
-
     async def emit(self, event: PlatformEvent | dict[str, Any]) -> str:
         platform_event = event if isinstance(event, PlatformEvent) else PlatformEvent.model_validate(event)
         if not self._enabled:
             return platform_event.event_id
         enriched_event = self._prepare_event(platform_event)
-        self._persist_event(enriched_event)
+        self._store.persist_event(enriched_event)
         await self._fanout(enriched_event)
         return enriched_event.event_id
 
@@ -189,7 +183,7 @@ class PlatformEventBus(Singleton):
         session_id: str | None = None,
         limit: int = 100,
     ) -> list[PlatformEvent]:
-        matches = self._load_replay_events(cursor=cursor, limit=limit, event_filter=event_filter)
+        matches = self._store.load_replay_events(cursor=cursor, limit=limit)
         if session_id:
             recent = self._replay.get_since(session_id, cursor)
             for event in recent:
@@ -212,8 +206,7 @@ class PlatformEventBus(Singleton):
         normalized_event_id = str(event_id or "").strip()
         if not normalized_session or not normalized_event_id:
             return
-        with self._lock:
-            self._acked_events[normalized_session].add(normalized_event_id)
+        self._store.ack(normalized_session, normalized_event_id)
 
     def _next_subscription_id(self) -> int:
         self._subscription_counter += 1
@@ -252,71 +245,6 @@ class PlatformEventBus(Singleton):
 
     def _severity_rank(self, value: str) -> int:
         return {"info": 1, "warning": 2, "error": 3, "critical": 4}.get(str(value), 0)
-
-    def _persist_event(self, event: PlatformEvent) -> None:
-        target_surfaces = json.dumps(event.target_surfaces)
-        conn = sqlite3.connect(self._db_path)
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO cluster_events (
-                    event_type,
-                    timestamp,
-                    severity,
-                    source_node_id,
-                    affected_nodes,
-                    message,
-                    details,
-                    correlation_id,
-                    event_id,
-                    kind,
-                    dedupe_key,
-                    priority,
-                    title,
-                    ttl_seconds,
-                    expires_at,
-                    supersedes,
-                    target_surfaces
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    event.kind,
-                    event.occurred_at.isoformat(),
-                    event.severity.value,
-                    event.source_node,
-                    json.dumps(event.target_nodes),
-                    event.message,
-                    json.dumps(
-                        {
-                            "context": event.context,
-                            "resource": event.resource,
-                            "workflow": event.workflow,
-                            "icon": event.icon,
-                            "color": event.color,
-                            "sound": event.sound,
-                            "sticky": event.sticky,
-                            "broadcast": event.broadcast,
-                            "source_service": event.source_service,
-                            "monotonic_ns": event.monotonic_ns,
-                            "ack_required": event.ack_required,
-                        }
-                    ),
-                    event.correlation_id or "",
-                    event.event_id,
-                    event.kind,
-                    event.dedupe_key,
-                    event.priority,
-                    event.title,
-                    event.ttl_seconds,
-                    event.expires_at.isoformat() if event.expires_at else None,
-                    event.supersedes,
-                    target_surfaces,
-                ),
-            )
-            conn.commit()
-        finally:
-            conn.close()
 
     async def _fanout(self, event: PlatformEvent) -> None:
         await self._fanout_subscribers(event)
@@ -359,69 +287,6 @@ class PlatformEventBus(Singleton):
             prefix = ".".join(pieces[:index])
             topics.append(f"platform:events:kind:{prefix}")
         return topics
-
-    def _load_replay_events(
-        self,
-        *,
-        cursor: str | None,
-        limit: int,
-        event_filter: PlatformEventFilter | None,
-    ) -> list[PlatformEvent]:
-        query = """
-            SELECT event_id, kind, severity, source_node_id, message, details, correlation_id,
-                   dedupe_key, priority, title, ttl_seconds, expires_at, supersedes, target_surfaces, timestamp
-            FROM cluster_events
-            WHERE event_id IS NOT NULL
-        """
-        params: list[Any] = []
-        if cursor:
-            query += " AND id > COALESCE((SELECT id FROM cluster_events WHERE event_id = ? LIMIT 1), 0)"
-            params.append(cursor)
-        query += " ORDER BY id ASC LIMIT ?"
-        params.append(limit)
-        conn = sqlite3.connect(self._db_path)
-        try:
-            cursor_handle = conn.cursor()
-            cursor_handle.execute(query, params)
-            rows = cursor_handle.fetchall()
-        finally:
-            conn.close()
-
-        replay: list[PlatformEvent] = []
-        for row in rows:
-            details = json.loads(row[5] or "{}")
-            event = PlatformEvent(
-                event_id=row[0],
-                kind=row[1],
-                severity=row[2],
-                source_node=row[3],
-                source_service=str(details.get("source_service") or "platform_event_bus"),
-                occurred_at=datetime.fromisoformat(row[14]),
-                title=row[9] or row[1],
-                message=row[4] or "",
-                context=dict(details.get("context") or {}),
-                correlation_id=row[6] or None,
-                dedupe_key=row[7] or None,
-                priority=float(row[8] or 0.0),
-                ttl_seconds=int(row[10] or 0),
-                expires_at=datetime.fromisoformat(row[11]) if row[11] else None,
-                supersedes=row[12] or None,
-                target_surfaces=json.loads(row[13]) if row[13] else [],
-                workflow=details.get("workflow"),
-                icon=details.get("icon"),
-                color=details.get("color"),
-                sound=details.get("sound"),
-                sticky=bool(details.get("sticky", False)),
-                broadcast=bool(details.get("broadcast", True)),
-                target_nodes=[],
-                monotonic_ns=details.get("monotonic_ns"),
-                ack_required=bool(details.get("ack_required", False)),
-                resource=details.get("resource"),
-            )
-            if event_filter is None or event_filter.matches(event):
-                replay.append(event)
-        return replay
-
 
 def get_platform_event_bus() -> PlatformEventBus:
     return PlatformEventBus.get_instance()

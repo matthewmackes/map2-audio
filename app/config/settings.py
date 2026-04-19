@@ -249,6 +249,9 @@ class Configuration:
                 'direct_wave1': False,
                 'direct_wave2': False,
                 'direct_wave3': False,
+                'db_path': '/var/lib/map2/platform-events.db',
+                'legacy_db_path': '/var/lib/map2/cluster-events.db',
+                'retention_days': 7,
                 'session_replay_limit': 1000,
                 'websocket_topic_history_limit': 200,
             }

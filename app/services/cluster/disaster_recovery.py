@@ -215,6 +215,7 @@ class DisasterRecoveryManager(Singleton):
             db_paths = [
                 "/var/lib/map2/cluster.db",
                 "/var/lib/map2/cluster-events.db",
+                "/var/lib/map2/platform-events.db",
                 "/var/lib/map2/health-history.db",
             ]
             

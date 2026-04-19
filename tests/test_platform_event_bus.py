@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from app.services.cluster.distributed_event_bus import DistributedEventBus
 from app.services.platform_event.bus import PlatformEventBus, PlatformEventFilter
 from app.services.platform_event.envelope import PlatformEvent
 from app.services.platform_event.replay import PlatformEventReplayBuffer
 from app.services.platform_event.severity import Severity
+from app.services.platform_event.store import PlatformEventStore
 from app.services.websocket_manager import WebSocketManager
 
 
@@ -26,22 +26,25 @@ def _make_event(*, kind: str = "system.cpu.critical", severity: Severity = Sever
     )
 
 
-def _make_bus(tmp_path: Path) -> tuple[PlatformEventBus, WebSocketManager]:
-    DistributedEventBus.reset_instance()
-    distributed = DistributedEventBus(db_path=str(tmp_path / "cluster-events.db"))
+def _make_bus(tmp_path: Path) -> tuple[PlatformEventBus, WebSocketManager, PlatformEventStore]:
+    PlatformEventStore.reset_instance()
+    store = PlatformEventStore(
+        db_path=tmp_path / "platform-events.db",
+        legacy_db_path=tmp_path / "cluster-events.db",
+    )
     websocket = WebSocketManager(enable_compression=False)
     replay = PlatformEventReplayBuffer(session_limit=5)
     return PlatformEventBus(
-        distributed_event_bus=distributed,
+        store=store,
         websocket_manager=websocket,
         replay_buffer=replay,
         enabled=True,
-    ), websocket
+    ), websocket, store
 
 
 @pytest.mark.asyncio
 async def test_emit_persists_and_broadcasts(tmp_path: Path) -> None:
-    bus, websocket = _make_bus(tmp_path)
+    bus, websocket, store = _make_bus(tmp_path)
     event = _make_event(dedupe_key="system:cpu:AUDIO-NODE-0001")
 
     event_id = await bus.emit(event)
@@ -50,10 +53,10 @@ async def test_emit_persists_and_broadcasts(tmp_path: Path) -> None:
     history = websocket.get_event_history("platform:events")
     assert history["events"][0]["data"]["event_id"] == event.event_id
 
-    conn = sqlite3.connect(tmp_path / "cluster-events.db")
+    conn = sqlite3.connect(store.db_path)
     try:
         row = conn.execute(
-            "SELECT event_id, kind, dedupe_key, title FROM cluster_events WHERE event_id = ?",
+            "SELECT event_id, kind, dedupe_key, title FROM platform_events WHERE event_id = ?",
             (event.event_id,),
         ).fetchone()
     finally:
@@ -63,7 +66,7 @@ async def test_emit_persists_and_broadcasts(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_subscribe_filters_by_kind_and_priority(tmp_path: Path) -> None:
-    bus, _ = _make_bus(tmp_path)
+    bus, _, _ = _make_bus(tmp_path)
     matching = _make_event(dedupe_key="system:cpu:AUDIO-NODE-0001")
     ignored = _make_event(kind="workflow.progress", severity=Severity.INFO)
     collected: list[PlatformEvent] = []
@@ -84,7 +87,7 @@ async def test_subscribe_filters_by_kind_and_priority(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_supersedes_previous_dedupe_key(tmp_path: Path) -> None:
-    bus, _ = _make_bus(tmp_path)
+    bus, _, _ = _make_bus(tmp_path)
     first = _make_event(severity=Severity.WARNING, kind="system.cpu.high", dedupe_key="system:cpu:AUDIO-NODE-0001")
     second = _make_event(severity=Severity.CRITICAL, dedupe_key="system:cpu:AUDIO-NODE-0001")
 
@@ -99,7 +102,7 @@ async def test_supersedes_previous_dedupe_key(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_replay_filters_and_ack(tmp_path: Path) -> None:
-    bus, _ = _make_bus(tmp_path)
+    bus, _, store = _make_bus(tmp_path)
     event = _make_event(dedupe_key="system:cpu:AUDIO-NODE-0001")
     await bus.emit(event)
 
@@ -111,11 +114,11 @@ async def test_replay_filters_and_ack(tmp_path: Path) -> None:
     assert [item.event_id for item in replayed] == [event.event_id]
 
     await bus.ack("session-a", event.event_id)
-    assert event.event_id in bus._acked_events["session-a"]
+    assert store.is_acknowledged("session-a", event.event_id)
 
 
 def test_emit_threadsafe_without_running_loop(tmp_path: Path) -> None:
-    bus, _ = _make_bus(tmp_path)
+    bus, _, _ = _make_bus(tmp_path)
     event = _make_event(dedupe_key="system:cpu:AUDIO-NODE-0001")
 
     bus.emit_threadsafe(event)

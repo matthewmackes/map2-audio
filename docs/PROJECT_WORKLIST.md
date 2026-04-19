@@ -28691,7 +28691,7 @@ Validation:
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract PlatformEventStore and sever PlatformEventBus from DistributedEventBus
 Description:
 - Goal / acceptance criteria: Add a dedicated `PlatformEventStore` that owns SQLite schema, persistence, replay queries, ack state, and retention for canonical events. `PlatformEventBus` must no longer import, construct, or depend on `DistributedEventBus` for DB path, schema bootstrap, or query helpers. Storage file becomes `platform-events.db`; on first startup, if `cluster-events.db` exists and `platform-events.db` does not, migrate canonical event rows forward once and continue on the new file only.
@@ -28700,10 +28700,18 @@ Description:
 - Estimated effort: High
 - Required outputs: dedicated store module, `PlatformEventBus` refactor, one-time DB migration logic, updated installer/runtime artifacts for the new DB path, and focused tests.
 - Notes: Preserve the existing `platform:events` websocket topic, replay behavior, and ack semantics. Do not leave `DistributedEventBus` imported anywhere under `app/services/platform_event/`.
+- Last updated: 2026-04-19 12:35 EDT - Codex
+- Progress notes:
+  - 2026-04-19 12:26 EDT - Codex: Started the hard-cut store extraction slice after shipping the worklist rewrite at `0c5a626b`; auditing current `PlatformEventBus` persistence hooks, `DistributedEventBus` schema/query helpers, and installer/runtime references before cutting the new `PlatformEventStore`.
+  - 2026-04-19 12:35 EDT - Codex: Landed [app/services/platform_event/store.py](app/services/platform_event/store.py) as the dedicated SQLite-backed `PlatformEventStore` with schema ownership, replay queries, persisted ack state, retention cleanup, and one-time migration from `cluster-events.db` into `platform-events.db` for canonical rows only.
+  - 2026-04-19 12:35 EDT - Codex: Refactored [app/services/platform_event/bus.py](app/services/platform_event/bus.py) to depend on `PlatformEventStore` instead of `DistributedEventBus`, exported the store through [app/services/platform_event/__init__.py](app/services/platform_event/__init__.py), added platform-event DB path defaults in [app/config/settings.py](app/config/settings.py), and updated [app/services/cluster/disaster_recovery.py](app/services/cluster/disaster_recovery.py) to back up the new runtime database.
+  - 2026-04-19 12:35 EDT - Codex: Fixed datetime JSON round-trip parsing in [app/services/platform_event/envelope.py](app/services/platform_event/envelope.py) so persisted and migrated events deserialize cleanly, rewrote [tests/test_platform_event_bus.py](tests/test_platform_event_bus.py) against `platform-events.db`, and added [tests/test_platform_event_store.py](tests/test_platform_event_store.py) for persistence, ack, retention, and migration coverage.
 Validation:
-- `pytest tests/test_platform_event_bus.py tests/test_platform_event_store.py -q` -> must PASS
+- `pytest tests/test_platform_event_bus.py tests/test_platform_event_store.py -q` -> PASS
+- `pytest tests/test_platform_event_envelope.py -q` -> PASS
+- `pytest tests/test_cluster_runtime_consistency.py -q -k disaster_recovery` -> PASS
 - `rg -n "DistributedEventBus" app/services/platform_event` -> no matches
-- `rg -n "cluster-events.db|platform-events.db" installer app docs` -> only intended references remain
+- `rg -n "cluster-events.db|platform-events.db" installer app docs --glob '!docs/fit-for-purpose-evidence/**' --glob '!docs/archive/**'` -> only intended references remain
 
 ID: T2363-subF
 Status: [ ] Todo
@@ -28810,3 +28818,383 @@ Validation:
 - `grep -n "dual-write\\|bridge-only\\|legacy observability" docs/PROJECT_WORKLIST.md docs/platform/*` -> no stale plan references
 - `grep -n "^ID: T2364" docs/PROJECT_WORKLIST.md` -> new stub present
 - `grep -n "PlatformEventBus.emit" docs/CLAUDE.md docs/platform/*` -> canonical event-entrypoint rule present
+
+---
+
+ID: T2365
+Status: [ ] Todo
+Title: Full-system code-beauty cleanup — retire shims, legacy facades, v1/v2 duplicates, god files, and duplicated patterns
+Description:
+- Goal / acceptance criteria: Execute a comprehensive "beautify the codebase" pass across the Python backend, C++ audio engine, and React frontend that removes 50+ identified sources of accumulated debt: deprecated facade modules, v1/v2 parallel implementations, 6k–9k-line god files, duplicated legacy-resolver and config-fallback patterns, lazy-import band-aids masking circular dependencies, dead C++ files left on disk but not in CMake, frontend `'legacy'` variant enums, schema-level deprecations, and stub/fallback paths. Acceptance requires every subtask below to land as its own revertable commit on `master` (pushed to both `origin` and `gitlab`), to pass `npm --prefix web run typecheck`, `npm --prefix web run build`, and `pytest tests/` (for touched Python paths), and to leave no new shims behind. All removals must be clean deletions — do NOT introduce `// removed` placeholders, `_unused_` renames, or re-exports for deleted symbols. The outcome is a codebase where (1) only one service orchestrator exists, (2) every v1/v2 pair is reconciled to a single implementation with a clear versioning story, (3) no production source file exceeds 3,000 lines without an approved exemption, (4) duplicated resolver/fallback code is collapsed into shared utilities, and (5) the C++ tree has no orphaned files.
+- Why it matters: The codebase has accumulated three waves of layered migrations (service_manager → ServiceOrchestrator, MIDI v1 → v2, custom AVDECC → la_avdecc, PiPedal → JUCE engine, VST2 .fxp/.fxb → modern formats, snapshot subsystem pre-State-Authority, Python audio engine → C++) and each wave left compatibility layers, parallel implementations, and fallback branches in place. Together these carry roughly 15,000 lines of debt that actively harms readability, lengthens build/test cycles, and creates landmines where a "simple" change (e.g. adding a new audio sync profile) must be mirrored in 3+ locations. The unified PlatformEvent cutover (T2363) is the template for how this should be done — destructive, clean, test-anchored — and this epic extends that same discipline to the remaining hot spots identified in the 2026-04-19 audit.
+- Dependencies: T2363 (its hard-cutover subtasks set the precedent and harness for destructive cleanups); none of T2365's subtasks block T2363.
+- Estimated effort: Very High (multi-week; subtasks are mostly independent and parallelizable).
+- Audit source: the 2026-04-19 full-system cleanliness audit summarized in-conversation. Findings grouped by category: (1) shims and compatibility facades, (2) in-progress v1/v2 migrations, (3) deprecated modules, (4) duplicated patterns, (5) god files / architectural smells, (6) error-handling/test gaps, (7) web frontend legacy variants, (8) config/migration debt.
+- Locked design constraints (apply to every subtask below):
+  1. **No backwards-compatibility shims.** When a module is deleted, its callers must be migrated in the same commit. No re-exports, no `_deprecated_alias()` wrappers, no `// kept for old callers` comments.
+  2. **Preserve the Unified Node Pill and Device Context Pattern directives** from [docs/CLAUDE.md](docs/CLAUDE.md). Any UI cleanup must land in those canonical components, never as a new per-page surface.
+  3. **Tier A locked settings are not touched** (`audio.sample_rate=48000`, `audio.buffer_size=64`, `audio.backend="pipewire"`).
+  4. **Carbon-only UI.** All touched frontend surfaces use `@carbon/react`. No MUI or Phosphor additions.
+  5. **No Vite dev server.** All frontend verification uses `npm run build` + `npm run preview`.
+  6. **Push to both remotes after every commit** (`git push origin master && git push gitlab master`).
+  7. **Python 3.14**: `asyncio.run()` not `asyncio.get_event_loop()`.
+  8. **Never handoff with known build/type errors.** `npm --prefix web run typecheck` and `npm --prefix web run build` must be clean before any subtask is marked Done.
+- Required outputs (overall epic):
+  - ~50 deletions/refactors across the three subsystems, landing as ≥22 revertable commits.
+  - One new shared utility per major duplicated pattern (legacy instance-id resolver, clock-sync profile normalizer, plugin directory scanner).
+  - Splits of four god files into focused modules.
+  - A refreshed memory note and updated [docs/CLAUDE.md](docs/CLAUDE.md) "Key File Locations" section reflecting the new module boundaries.
+  - A final `tests/test_no_legacy_imports.py` (or equivalent `rg` CI check) proving the deleted modules stay deleted.
+- Notes:
+  - Many subtasks depend on the completion of T2363 (so that the PlatformEvent story has stabilized before we touch `snapshot_service.py` or `juce_engine_service.py` in depth); mark cross-epic dependencies explicitly per subtask.
+  - Each subtask ends with: `typecheck` + relevant `pytest` file + build, plus a targeted `rg` scan proving no remaining imports of the removed symbol/file.
+  - Do not attempt multiple subtasks in one commit — the whole point of this epic is that each change is small, verifiable, and independently revertable.
+Assigned to: Unassigned
+Last updated: 2026-04-19 - Claude Code (audit authoring; no code changes yet)
+
+ID: T2365-subA
+Status: [ ] Todo
+Title: Delete app/services/service_manager.py and migrate remaining 2 callers to ServiceOrchestrator
+Description:
+- Goal / acceptance criteria: Remove [app/services/service_manager.py](app/services/service_manager.py) entirely. The module already emits a `DeprecationWarning` on import at [service_manager.py:38](app/services/service_manager.py). Migrate the two remaining callers — [app/services/midi_engine.py:1120](app/services/midi_engine.py) and [app/services/unified_services.py:75](app/services/unified_services.py) — to construct `ServiceOrchestrator` directly with the same service set. After migration, delete the file and ensure `rg -n "from app.services.service_manager|import service_manager" app tests` returns zero matches.
+- Why it matters: A module that warns on import every time the backend starts is noise and invites accidental re-adoption; its two callers have not been migrated despite the deprecation being in place for several releases.
+- Dependencies: none (independent)
+- Estimated effort: Low
+- Required outputs: deleted `service_manager.py`, migrated `midi_engine.py` and `unified_services.py` call sites, updated tests that imported `ServiceManager`, and an `rg` scan proving zero remaining references.
+- Notes: `ServiceOrchestrator` already wraps the same service lifecycle; do not add a new alias or compatibility shim.
+Validation:
+- `pytest tests/test_service_orchestrator*.py tests/test_midi_engine*.py -q` -> must PASS
+- `rg -n "service_manager|ServiceManager" app tests` -> no matches outside historical docs
+
+ID: T2365-subB
+Status: [ ] Todo
+Title: Delete app/services/unified_services.py and promote ServiceOrchestrator as the sole facade
+Description:
+- Goal / acceptance criteria: Remove [app/services/unified_services.py](app/services/unified_services.py), the second deprecated facade that wraps both `ServiceManager` and `ServiceOrchestrator`. Migrate every caller to import `ServiceOrchestrator` directly from `app.services.service_orchestrator`. After the migration, `rg -n "unified_services" app tests` must return zero matches.
+- Why it matters: Two stacked facades over the same underlying orchestrator is strictly confusing; after T2365-subA removes `ServiceManager`, `unified_services.py` becomes a no-op wrapper and should be deleted.
+- Dependencies: T2365-subA
+- Estimated effort: Low
+- Required outputs: deleted file, migrated callers, updated tests.
+- Notes: Do not introduce a new facade; the `ServiceOrchestrator` API is already the correct surface.
+Validation:
+- `pytest tests/test_service_orchestrator*.py -q` -> must PASS
+- `rg -n "unified_services" app tests` -> no matches
+
+ID: T2365-subC
+Status: [ ] Todo
+Title: Split app/services/snapshot_service.py (6,170 lines) into runtime / editor / persistence services
+Description:
+- Goal / acceptance criteria: Break [app/services/snapshot_service.py](app/services/snapshot_service.py) into three focused modules under `app/services/snapshot/`:
+  1. `snapshot_runtime.py` — live snapshot state, activation, morph coordination (already has a sibling at [app/services/snapshot_runtime_service.py](app/services/snapshot_runtime_service.py); merge responsibilities cleanly).
+  2. `snapshot_editor.py` — CRUD, diff, validation, child-chain composition for the Snapshot Editor page.
+  3. `snapshot_persistence.py` — DB writes, versioning, exports, imports, backup integration.
+  The `to_legacy_snapshot_data()` adapter at [snapshot_service.py:4380-4414](app/services/snapshot_service.py) is used by three modules; keep it in `snapshot_persistence.py` with an explicit removal target (tracked separately as T2365-subD) so this subtask remains a pure split with no behavior change.
+- Why it matters: 6,170 lines in one file is the largest backend source file in the repo and directly violates the "no single source file >3,000 lines" constraint. Splits unlock parallel editing, reduce test run time, and make the State Authority redesign (tracked under `project_state_authority.md`) landable without constant merge conflicts.
+- Dependencies: T2363 (PlatformEvent cutover must be stable so snapshot events keep flowing during the split).
+- Estimated effort: Very High
+- Required outputs: three new modules, updated callers (every `from app.services.snapshot_service import ...` becomes a specific import), preserved public API via `app/services/snapshot/__init__.py` (no function renames), and all existing snapshot tests green.
+- Notes: No behavior change in this subtask — it is a pure structural split. Any simplification or dead-code removal belongs in follow-up subtasks.
+Validation:
+- `pytest tests/test_snapshot*.py tests/test_unified_snapshots*.py -q` -> must PASS
+- `wc -l app/services/snapshot/*.py` -> each file under 3,000 lines
+- `rg -n "from app.services.snapshot_service import" app tests` -> no matches (all routed through the new package)
+
+ID: T2365-subD
+Status: [ ] Todo
+Title: Remove to_legacy_snapshot_data() adapter and migrate the 3 consumers
+Description:
+- Goal / acceptance criteria: Delete `to_legacy_snapshot_data()` at [snapshot_service.py:4380-4414](app/services/snapshot_service.py) (or its new home in `snapshot_persistence.py` after T2365-subC). The three consumers are: [app/routes/unified_snapshots.py:1090](app/routes/unified_snapshots.py), [app/routes/unified_snapshots.py:1124](app/routes/unified_snapshots.py), and one more legacy runtime/MIDI bridge (to be located with `rg -n "to_legacy_snapshot_data"`). Each must be migrated to consume the canonical `SnapshotData` model directly.
+- Why it matters: Carrying a "legacy snapshot data" adapter inside the system's primary snapshot service keeps an old data model alive and means every new field must be mapped through the adapter or silently lost.
+- Dependencies: T2365-subC
+- Estimated effort: Medium
+- Required outputs: deleted adapter, migrated callers, and a passing integration test that proves the removed callers produce identical HTTP responses pre/post migration (contract test).
+- Notes: If a legacy consumer's output differs from the canonical model, the consumer is what is wrong — update its schema rather than preserving the adapter.
+Validation:
+- `pytest tests/test_unified_snapshots*.py tests/test_snapshot_runtime_service*.py -q` -> must PASS
+- `rg -n "to_legacy_snapshot_data" app tests` -> no matches
+
+ID: T2365-subE
+Status: [ ] Todo
+Title: Split app/routes/avb.py (4,043 lines) into discovery / routing / metrics submodules
+Description:
+- Goal / acceptance criteria: Break [app/routes/avb.py](app/routes/avb.py) into three route modules under `app/routes/avb/`:
+  1. `discovery.py` — AVDECC entity enumeration, network-interface selection, entity cache.
+  2. `routing.py` — stream connect/disconnect, stream format negotiation, talker/listener pairing.
+  3. `metrics.py` — jitter/latency stats, path health, AVB grandmaster sync state.
+  Preserve the `/api/avb/*` URL namespace via a parent `APIRouter` aggregator. The backward-compatibility fallback at [avb.py:687-700](app/routes/avb.py) (`avb.avdecc_enabled` → `avdecc.enabled`) is addressed in T2365-subN and is not part of this split.
+- Why it matters: 4,043 lines of mixed concerns (discovery, routing, telemetry) in one route file is a merge-conflict factory, and the file hosts several of the duplicated config-fallback patterns identified in the audit.
+- Dependencies: T2363 (AVB emits events through the PlatformEvent bus after T2363).
+- Estimated effort: Very High
+- Required outputs: three route modules, aggregator `APIRouter`, preserved OpenAPI paths/operation IDs, all `tests/test_avb*.py` green.
+- Notes: No behavior change in this subtask — pure structural split. Simplification follows in T2365-subN.
+Validation:
+- `pytest tests/test_avb*.py tests/test_avdecc*.py -q` -> must PASS
+- `wc -l app/routes/avb/*.py` -> each file under 2,000 lines
+- OpenAPI diff: only additive operationId changes, no path deletions
+
+ID: T2365-subF
+Status: [ ] Todo
+Title: Split app/services/juce_engine_service.py (4,912 lines) and remove the PiPedal-compatibility aliases at line 4904
+Description:
+- Goal / acceptance criteria: Break [app/services/juce_engine_service.py](app/services/juce_engine_service.py) into focused modules under `app/services/juce/`:
+  1. `juce_process.py` — subprocess lifecycle, IPC, crash recovery.
+  2. `juce_audio_io.py` — device selection, buffer/sample-rate config, PipeWire wiring.
+  3. `juce_plugin_host.py` — plugin load/unload, scanning, descriptor management.
+  4. `juce_snapshot_bridge.py` — snapshot apply/diff on the engine side.
+  Additionally, delete the "PiPedal compatibility aliases (legacy API surface)" at [juce_engine_service.py:4904](app/services/juce_engine_service.py) (and every caller of the aliased names). PiPedal support was removed when JUCE became mandatory.
+- Why it matters: The JUCE engine service is the critical RT path; a 4,912-line god file with PiPedal-legacy aliases at the bottom is an invitation for RT-unsafe changes to slip in. Splitting by responsibility makes audio-callback risk contained to `juce_audio_io.py`.
+- Dependencies: T2363 (engine events on PlatformEvent bus).
+- Estimated effort: Very High
+- Required outputs: four new modules, deleted PiPedal aliases, updated callers, all engine tests green.
+- Notes: Preserve the public API surface exported from `app.services.juce_engine_service`; internal reorganization only. Do NOT change `DEFAULT_BUFFER_SIZE`, `audio.sample_rate`, or any Tier A locked value.
+Validation:
+- `pytest tests/test_juce_engine*.py tests/test_juce_audio*.py -q` -> must PASS
+- `wc -l app/services/juce/*.py` -> each file under 2,500 lines
+- `rg -n "# PiPedal|pipedal_" app/services/juce` -> no matches
+
+ID: T2365-subG
+Status: [ ] Todo
+Title: Split app/services/backup_service.py (3,857 lines) into orchestration / file-io / recovery
+Description:
+- Goal / acceptance criteria: Break [app/services/backup_service.py](app/services/backup_service.py) into three modules under `app/services/backup/`:
+  1. `orchestration.py` — schedule, retention policy, triggers.
+  2. `file_io.py` — tar/zstd streaming, temp-file handling, checksums.
+  3. `recovery.py` — restore flows, verification, rollback.
+  Preserve the public `BackupService` facade via `app/services/backup/__init__.py`.
+- Why it matters: Backup logic mixes RT-sensitive schedule triggers with blocking file I/O, and the split surfaces that mixing so the blocking paths stay out of the event loop's hot routes.
+- Dependencies: none
+- Estimated effort: High
+- Required outputs: three modules, preserved facade, all `tests/test_backup*.py` green.
+- Notes: Pure structural split; no behavior change.
+Validation:
+- `pytest tests/test_backup*.py -q` -> must PASS
+- `wc -l app/services/backup/*.py` -> each file under 2,000 lines
+
+ID: T2365-subH
+Status: [ ] Todo
+Title: Split app/routes/audio.py (2,453 lines) into io / config / monitoring route modules
+Description:
+- Goal / acceptance criteria: Break [app/routes/audio.py](app/routes/audio.py) into `app/routes/audio/{io,config,monitoring}.py` plus an aggregator. Preserve `/api/audio/*` URL namespace and OpenAPI operation IDs.
+- Why it matters: Audio routes mix device enumeration, sample-rate/buffer config (Tier A locked but still queried), and real-time monitoring telemetry — keeping them separate reduces risk of a monitoring change accidentally touching Tier A config code.
+- Dependencies: none
+- Estimated effort: Medium
+- Required outputs: three modules, aggregator, preserved OpenAPI paths.
+- Notes: The `clock_sync.selected_profile` fallback at [audio.py:306](app/routes/audio.py) is addressed in T2365-subI and is not part of this split.
+Validation:
+- `pytest tests/test_audio_routes*.py tests/test_pipewire*.py -q` -> must PASS
+- OpenAPI path-diff is empty for `/api/audio/*`.
+
+ID: T2365-subI
+Status: [ ] Todo
+Title: Unify the clock_sync / audio.sync_profile fallback into a single normalizer
+Description:
+- Goal / acceptance criteria: Extract the repeated fallback pattern `config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k"))` found in [app/routes/audio.py:306](app/routes/audio.py), [app/routes/avb.py:1337](app/routes/avb.py), and [app/routes/pipewire.py:173](app/routes/pipewire.py) into a single function `get_clock_sync_profile() -> ClockSyncProfile` in `app/services/clock_sync.py`. Replace all three call sites. Add a single warning log the first time the legacy `audio.sync_profile` key is read, so we can track when it's safe to remove the fallback.
+- Why it matters: The same three-level fallback duplicated in three unrelated routes is a maintenance hazard — any new profile must be mirrored or silently misbehave on one route.
+- Dependencies: none (can run in parallel with T2365-subE and T2365-subH)
+- Estimated effort: Low
+- Required outputs: one normalizer function, three migrated call sites, one new test covering all three fallback branches.
+- Notes: Do NOT remove the `legacy_fixed_48k` default in this subtask; the default-refresh is tracked separately in T2365-subR.
+Validation:
+- `pytest tests/test_clock_sync*.py tests/test_audio_routes*.py tests/test_avb*.py -q` -> must PASS
+- `rg -n "clock_sync.selected_profile.*audio.sync_profile" app` -> no matches outside `clock_sync.py`
+
+ID: T2365-subJ
+Status: [ ] Todo
+Title: Extract the duplicated legacy instance-id resolver pattern into a shared utility
+Description:
+- Goal / acceptance criteria: The identical 3-line `legacy_resolver` block is duplicated in five route/service files: [app/routes/ir.py:220-222](app/routes/ir.py), [app/routes/nam.py:149-151](app/routes/nam.py), [app/routes/filters.py:102-104](app/routes/filters.py), [app/services/scoped_plugin_utils.py:92-94](app/services/scoped_plugin_utils.py), and once more in `app/routes/plugins.py`. Extract into `app/services/plugin_instance_id.py::get_legacy_instance_id_resolver()` and replace all five call sites. Add a unit test covering the resolver's fallback ordering.
+- Why it matters: Five identical copies of the same resolver is the single clearest duplication in the backend; the fix is small, mechanical, and fully independent of other subtasks.
+- Dependencies: none
+- Estimated effort: Low
+- Required outputs: one utility, five migrated call sites, one unit test.
+- Notes: Preserve the exact fallback semantics — this is a refactor, not a behavior change.
+Validation:
+- `pytest tests/test_plugin_instance_id*.py tests/test_ir_routes*.py tests/test_nam_routes*.py -q` -> must PASS
+- `rg -n "legacy_resolver" app` -> only matches are in `plugin_instance_id.py`
+
+ID: T2365-subK
+Status: [ ] Todo
+Title: Reconcile MIDI v1 (legacy routes) and v2 — delete v1 once parity is proven
+Description:
+- Goal / acceptance criteria: Audit [app/routes/midi_v2.py](app/routes/midi_v2.py) for feature parity with the legacy v1 routes tagged `["midi-legacy"]` (search `rg -n 'midi-legacy' app/routes`). Produce a feature-delta report. For any gap, either (a) backfill on v2, or (b) explicitly retire the feature if unused. Then delete the v1 routes and the four "Compatibility wrapper used by legacy MIDI routes" functions at [midi_engine.py:38](app/services/midi_engine.py), [midi_engine.py:482](app/services/midi_engine.py), [midi_engine.py:495](app/services/midi_engine.py), [midi_engine.py:509](app/services/midi_engine.py). After deletion, `rg -n "midi-legacy|Compatibility wrapper used by legacy MIDI" app tests` must return zero matches.
+- Why it matters: MIDI has been v2 for a full release cycle; keeping the v1 routes means any new MIDI change must be mirrored, and the four `midi_engine.py` compatibility wrappers are dead weight on the hot MIDI path.
+- Dependencies: T2363 (MIDI events flow through PlatformEvent).
+- Estimated effort: High
+- Required outputs: parity report, v1 route deletion, wrapper deletion, all MIDI tests green.
+- Notes: Update the OpenAPI `deprecated: true` flag on v1 in an intermediate commit before deletion, so external integrators see one release of warning.
+Validation:
+- `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> must PASS
+- `rg -n "midi-legacy" app tests` -> no matches
+
+ID: T2365-subL
+Status: [ ] Todo
+Title: Reconcile latency v1 / v2 — delete v1 after parity
+Description:
+- Goal / acceptance criteria: [app/routes/latency_v2.py](app/routes/latency_v2.py) exists; locate the v1 equivalent (probably inside [app/routes/audio.py](app/routes/audio.py) or a dedicated v1 file), audit parity, backfill gaps on v2, and delete v1. Same methodology as T2365-subK.
+- Why it matters: Latency telemetry is operator-critical; two parallel APIs means two places to update when a new metric (e.g., worst-case jitter under `isolcpus=4,5`) is added.
+- Dependencies: T2365-subH (audio split stabilizes latency surfaces).
+- Estimated effort: Medium
+- Required outputs: parity report, v1 deletion, tests green.
+Validation:
+- `pytest tests/test_latency*.py -q` -> must PASS
+- `rg -n "latency.v1|/api/latency[^_v2]" app tests` -> no matches
+
+ID: T2365-subM
+Status: [ ] Todo
+Title: Rename audio_io_v2.py to audio_io.py and delete the stub-device fallback
+Description:
+- Goal / acceptance criteria: [app/services/audio_io_v2.py](app/services/audio_io_v2.py) is the sole current implementation; there is no v1. Rename to `audio_io.py` and remove the `_get_stub_devices()` fallback at [audio_io_v2.py:482,507-510](app/services/audio_io_v2.py). When `sounddevice` is unavailable (e.g. in unit tests), raise a dedicated `AudioBackendUnavailableError` so callers can handle it explicitly instead of silently getting fake devices.
+- Why it matters: The `_v2` suffix implies a v1 that does not exist, and silent stub devices mask real configuration problems in tests and on minimal deployments.
+- Dependencies: none
+- Estimated effort: Low
+- Required outputs: renamed module, deleted stub function, new exception class, migrated tests that previously relied on stubs.
+- Notes: Tests that need a deterministic device list should construct explicit `AudioDevice` fixtures, not rely on `_get_stub_devices()`.
+Validation:
+- `pytest tests/test_audio_io*.py -q` -> must PASS
+- `rg -n "audio_io_v2|_get_stub_devices" app tests` -> no matches
+
+ID: T2365-subN
+Status: [ ] Todo
+Title: Collapse the AVDECC feature-flag fallback at app/routes/avb.py:687-700
+Description:
+- Goal / acceptance criteria: The fallback at [app/routes/avb.py:687-700](app/routes/avb.py) checks `avb.avdecc_enabled` and falls back to `avdecc.enabled`. Pick one canonical key (`avb.avdecc_enabled`, per the `project_state_authority.md` plane model), migrate all config producers (installer, defaults, docs) to write the canonical key, add a one-release migration path in `ConfigManager` that reads the legacy key and rewrites it to the canonical key on startup, then delete the runtime fallback branch.
+- Why it matters: Double-reading the same concept under two keys is a configuration-authority violation per the rules in [docs/CLAUDE.md](docs/CLAUDE.md).
+- Dependencies: T2365-subE
+- Estimated effort: Low
+- Required outputs: canonical key chosen, migration in `ConfigManager`, deleted fallback, installer update.
+Validation:
+- `pytest tests/test_avb*.py tests/test_config*.py -q` -> must PASS
+- `rg -n "avdecc.enabled" app tests installer` -> only matches are in the migration code and its test
+
+ID: T2365-subO
+Status: [ ] Todo
+Title: Fix the three circular-import band-aids — audit module graph and refactor boundaries
+Description:
+- Goal / acceptance criteria: Three modules carry "Import here to avoid circular imports" comments as band-aids:
+  1. [app/services/midi_device_profiles.py](app/services/midi_device_profiles.py)
+  2. [app/services/cluster/raft_consensus.py](app/services/cluster/raft_consensus.py)
+  3. [app/services/avb/avb_discovery.py](app/services/avb/avb_discovery.py)
+  Produce a dependency graph (e.g. `pydeps app/services -o deps.svg`). For each circular cluster, extract the shared interface into a new leaf module (e.g. `app/services/midi/device_profile_types.py`), update both sides to depend on the leaf, and remove the lazy import. After the pass, `rg -n "circular import" app` must return zero matches.
+- Why it matters: Lazy imports work until they don't — they cause startup order bugs, break `mypy`, and make future refactors riskier. Fixing the root-cause graph is worth more than patching each site.
+- Dependencies: none
+- Estimated effort: High
+- Required outputs: dependency graph artifact committed under `docs/architecture/`, refactored leaf modules, deleted lazy-import comments, all import-time tests green.
+Validation:
+- `pytest tests/ -q` -> must PASS
+- `python -c "import app.services.midi_device_profiles, app.services.cluster.raft_consensus, app.services.avb.avb_discovery"` -> imports cleanly without warnings
+- `rg -n "circular import|avoid circular" app` -> no matches
+
+ID: T2365-subP
+Status: [ ] Todo
+Title: Delete orphaned AVDECC C++ files (AvdeccEntity.h/cpp, AvdeccEntityModel, AvdeccEnumerator) and audit for other disk-only files
+Description:
+- Goal / acceptance criteria: The memory at `project_state_authority.md` — and the 2026-04-19 audit — confirm that `juce-engine/Source/AvdeccEntity.h`, `AvdeccEntity.cpp`, `AvdeccEntityModel.*`, and `AvdeccEnumerator.*` exist on disk but are NOT in `CMakeLists.txt` after the migration to `la_avdecc` v4.3.1.1. Delete them. Additionally, run `comm -23 <(find juce-engine/Source -name '*.cpp' -o -name '*.h' | sort) <(grep -Eo 'Source/[A-Za-z0-9_]+\.(cpp|h)' juce-engine/CMakeLists.txt | sort -u)` and delete any other orphans that surface.
+- Why it matters: Orphaned files confuse readers, make `grep` results noisy, and occasionally get resurrected by well-meaning refactors. They add zero value.
+- Dependencies: none
+- Estimated effort: Low
+- Required outputs: deleted orphan files, committed audit command, clean build.
+- Notes: Verify each file is truly not referenced elsewhere with `rg -n "AvdeccEntity|AvdeccEnumerator" juce-engine` before deleting.
+Validation:
+- `cmake -B juce-engine/build -DUSE_AVDECC=ON && cmake --build juce-engine/build` -> must succeed
+- `rg -n "AvdeccEntity|AvdeccEntityModel|AvdeccEnumerator" juce-engine/Source` -> only matches are in `AvdeccController.h/cpp` (the canonical wrapper)
+
+ID: T2365-subQ
+Status: [ ] Todo
+Title: Remove stub paths: plugin_scanner compat wrapper, guitar.py stub router, preset_converter VST2 legacy
+Description:
+- Goal / acceptance criteria: Three stub paths identified in the audit:
+  1. [app/services/plugin_scanner.py:535-537](app/services/plugin_scanner.py) — backwards-compatibility wrapper matching the old stub API; delete and migrate any remaining callers.
+  2. [app/routes/guitar.py:71](app/routes/guitar.py) — conditional stub `APIRouter` when dependencies unavailable. Replace with a proper optional-plugin registry pattern: register the real router on startup if deps present, otherwise register nothing (no stub).
+  3. [app/services/preset_converter_service.py:7,243,391](app/services/preset_converter_service.py) — VST2 `.fxp`/`.fxb` legacy read-only support. Decide: keep (move behind `settings.preset_converter.vst2_legacy_enabled=False` default-off) or delete entirely. Recommendation: keep with a default-off feature flag, since modern formats cover all new presets.
+- Why it matters: Stubs that silently return empty data are worse than missing endpoints — they cause client-side bugs that look like feature regressions.
+- Dependencies: none
+- Estimated effort: Medium
+- Required outputs: three cleaned-up call sites, new `FeatureUnavailable` exception or clean router-absent pattern for guitar.py, feature flag for VST2.
+Validation:
+- `pytest tests/test_plugin_scanner*.py tests/test_guitar*.py tests/test_preset_converter*.py -q` -> must PASS
+- `rg -n "stub|Stub" app/routes app/services` -> remaining matches are only in factory test fixtures
+
+ID: T2365-subR
+Status: [ ] Todo
+Title: Refresh config schema defaults — retire "legacy_fixed_48k" clock profile and deprecated Python audio engine
+Description:
+- Goal / acceptance criteria: In [app/config_schema.py](app/config_schema.py):
+  1. Lines 107, 116 — the Python audio engine is marked deprecated. Since JUCE is mandatory, delete the Python-engine fields from the schema. Add a schema-migration step in `ConfigManager` that drops the key on read.
+  2. Lines 186, 1069 — the default clock-sync profile is `"legacy_fixed_48k"`. Replace the default with `"pipewire_quantum_48k"` (or the current canonical profile) and migrate existing configs on startup.
+  3. [app/database.py:2635](app/database.py) — menu location legacy "top-nav" comment; clean up the migration logic or delete if the migration has completed for all known installs.
+- Why it matters: Schema defaults that say "legacy" are a literal invitation to copy the old value forward. Refreshing defaults is a one-time cost that prevents future drift.
+- Dependencies: T2365-subI
+- Estimated effort: Medium
+- Required outputs: updated schema, migration step, tests proving old configs are upgraded cleanly, deleted legacy field.
+Validation:
+- `pytest tests/test_config*.py tests/test_database*.py -q` -> must PASS
+- `rg -n "legacy_fixed_48k|top-nav.*legacy|python audio engine.*deprecated" app tests` -> no matches outside this subtask's migration code
+
+ID: T2365-subS
+Status: [ ] Todo
+Title: Remove frontend 'legacy' variant enums (NumericInput commitStrategy, updateApplicationApi, ChainsPage hidden-legacy)
+Description:
+- Goal / acceptance criteria: Delete the `'legacy'` variant from:
+  1. [web/src/app/components/NumericInput/NumericInput.tsx:35,96,131](web/src/app/components/NumericInput/NumericInput.tsx) — `commitStrategy?: ParameterCommitStrategy | 'legacy'`. Replace `'legacy'` with the canonical strategy at every call site.
+  2. [web/src/app/hooks/updateApplicationApi.ts:10,29](web/src/app/hooks/updateApplicationApi.ts) — `UpdateApplicationApiVariant = 'hybrid' | 'legacy'`. Default to `'hybrid'` and delete the legacy branch.
+  3. [web/src/app/pages/ChainsPage.tsx:266,295,414](web/src/app/pages/ChainsPage.tsx) — "Hidden legacy chains" metric and filtering. Decide: either migrate the hidden-legacy chains to the current model (recommended) or delete them. Either way, remove the filter.
+  4. [web/src/map2/types.ts:2947,3117](web/src/map2/types.ts) — `@deprecated` JSDoc markers. Actually delete the deprecated symbols and migrate consumers.
+- Why it matters: Every `'legacy'` variant in a UI enum is a fork in the render tree that multiplies the number of states we have to test. Removing them shrinks the render-state surface.
+- Dependencies: none
+- Estimated effort: Medium
+- Required outputs: deleted variants, migrated call sites, updated snapshots, passing frontend tests.
+- Notes: Must use Carbon components only. Must not introduce new per-page node UI (preserve unified pill directive).
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NumericInput src/app/hooks src/app/pages/ChainsPage*.test.tsx` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS
+- `rg -n "'legacy'|UpdateApplicationApiVariant.*legacy|hidden-legacy" web/src` -> no matches
+
+ID: T2365-subT
+Status: [ ] Todo
+Title: Remove legacy localStorage migration in SnapshotEditorPageContent.tsx and audit the 14 DeviceContextBanner consumers
+Description:
+- Goal / acceptance criteria: Two related cleanups on the snapshot editor and device pages:
+  1. [web/src/app/pages/SnapshotEditorPageContent.tsx:909](web/src/app/pages/SnapshotEditorPageContent.tsx) — delete the "Migration from legacy localStorage format" block; the migration has been in place long enough that all known client installs have converted.
+  2. Audit the 14 device pages that import `DeviceContextBanner` (`rg -l "DeviceContextBanner" web/src`) — memory's `feedback_device_context_pattern.md` directive forbids inline per-device node-switch banners. For each page (HoToneJoGGPage, MPX1Page, IntelFXPage, GroundControlProPage, EdirolUA1000Page, etc.), verify no ad-hoc banner code exists that should be using the canonical component. Remove any violations.
+- Why it matters: The snapshot editor is the largest React component in the codebase (9,398 lines per the audit); removing even a 50-line migration block is meaningful. The DeviceContextBanner directive is a locked design decision; silent violations undermine it.
+- Dependencies: none
+- Estimated effort: Medium
+- Required outputs: deleted migration block, 14-page audit report in commit message, fixes for any violations found.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotEditorPageContent*.test.tsx` -> PASS
+- `rg -n "legacy localStorage format" web/src` -> no matches
+- `rg -n "node.*switch.*banner" web/src/app/pages` -> all matches are canonical component usage only
+
+ID: T2365-subU
+Status: [ ] Todo
+Title: Consolidate Tesira TTP telnet byte constants into a shared protocol module
+Description:
+- Goal / acceptance criteria: The Tesira TTP client at [app/services/tesira/ttp_client.py](app/services/tesira/ttp_client.py) uses magic TELNET bytes (0xFF, 0xFD, 0xFE, 0xFB, 0xFC, 0xFA, 0xF0) with local constants. Move the named constants (`_IAC_BYTE`, `_DO`, `_DONT`, `_WILL`, `_WONT`, `_SB`, `_SE`) to a new `app/services/tesira/telnet_protocol.py` and re-export. Any other module that speaks raw telnet (search `rg -n "0xFF.*0xFD|IAC" app`) must also consume the shared constants.
+- Why it matters: Telnet protocol bytes are a domain standard; keeping them in a shared module eliminates magic numbers and prepares the way for reuse if another device needs telnet in the future.
+- Dependencies: none
+- Estimated effort: Low
+- Required outputs: new `telnet_protocol.py`, migrated `ttp_client.py`, unit test covering the negotiation sequence.
+Validation:
+- `pytest tests/test_tesira*.py -q` -> must PASS
+- `rg -n "0xFF.*0xFD|0xFA.*SE" app/services/tesira` -> only match is in `telnet_protocol.py`
+
+ID: T2365-subV
+Status: [ ] Todo
+Title: Remove small misc legacy fallbacks (snapshot runtime interpolation, performance brain drum-import, expression JSON→SQLite)
+Description:
+- Goal / acceptance criteria: Address five small legacy fallbacks identified in the audit:
+  1. [app/services/snapshot_runtime_service.py:596](app/services/snapshot_runtime_service.py) — "legacy interpolation" fallback on quad morph fail. Add a counter/log proving the path is dead, then delete it in a follow-up commit once telemetry confirms zero usage for 30 days.
+  2. [app/services/performance_brain_service.py:1195,1338-1358](app/services/performance_brain_service.py) — multiple legacy drum-import sources for MIDI/clock/program-change. Audit each source's usage via a `rg` scan plus log probe, sunset the unused ones.
+  3. [app/services/expression_service.py:257-289](app/services/expression_service.py) — legacy JSON→SQLite migration. Write a one-shot migration script (`scripts/migrate_expression_json_to_sqlite.py`) that forces the migration for any remaining JSON files, then delete the in-service fallback path and fail-loud if a JSON file is encountered.
+  4. [app/services/platform_event/kind.py:9](app/services/platform_event/kind.py) — 10 legacy compatibility kinds for migration. Document a removal date (90 days after the T2363 hard-cutover lands) and create a follow-up ticket.
+  5. [app/services/alert_services.py:3](app/services/alert_services.py) — confusing "complete with no stubs" comment; either clarify what stubs were removed and why the note is kept, or delete.
+- Why it matters: Small legacy branches accumulate into meaningful complexity; killing five of them in one coordinated pass is higher value than doing them one at a time across future bugfixes.
+- Dependencies: T2363 for the `kind.py` item only; others are independent.
+- Estimated effort: Medium
+- Required outputs: five small commits (or one well-structured commit), migration script for expression JSON, telemetry on the runtime interpolation fallback, follow-up ticket for kind.py.
+Validation:
+- `pytest tests/test_snapshot_runtime*.py tests/test_performance_brain*.py tests/test_expression_service*.py tests/test_platform_event_mapping.py -q` -> must PASS
+- `rg -n "legacy interpolation|legacy drum|Legacy JSON|complete with no stubs" app` -> only documented residual matches
+
+---

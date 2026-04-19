@@ -60,9 +60,14 @@ class PlatformEvent(BaseModel):
 
     @field_validator("occurred_at", "expires_at", mode="before")
     @classmethod
-    def _normalize_datetime(cls, value: datetime | None) -> datetime | None:
+    def _normalize_datetime(cls, value: datetime | str | None) -> datetime | None:
         if value is None:
             return None
+        if isinstance(value, str):
+            normalized = value.strip()
+            if normalized.endswith("Z"):
+                normalized = normalized[:-1] + "+00:00"
+            value = datetime.fromisoformat(normalized)
         return _coerce_utc(value)
 
     @model_validator(mode="after")
