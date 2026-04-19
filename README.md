@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1132** Python | **1122** TypeScript | **136** C++/H | **144** Docs | **2308** total commits | **3** stars | **0** forks | **0** open issues
+**1151** Python | **1128** TypeScript | **136** C++/H | **144** Docs | **2310** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fdadfbf8`](https://github.com/matthewmackes/map2-audio/commit/fdadfbf8338609a8bb303a810d2b9aa359aaba6a) | Ship MK1 headless surface, audio controls, and FOH stage ... | Map2 Audio | 2026-04-18 |
+| [`e07c386b`](https://github.com/matthewmackes/map2-audio/commit/e07c386bc72bc368ea4a01e630d59af9ff3ab289) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`010a5863`](https://github.com/matthewmackes/map2-audio/commit/010a5863093729e04e58044df32af282d0622423) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-18 |
 | [`267e4b0f`](https://github.com/matthewmackes/map2-audio/commit/267e4b0f6ce6aa541a2c9c7b838c9c3a9facd762) | Ship Maschine phase 2 catalog and phase 3 LED foundation | Map2 Audio | 2026-04-18 |
 | [`7e857d69`](https://github.com/matthewmackes/map2-audio/commit/7e857d6928211698674abb7924ec00f4973fb3a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`e42e7e8d`](https://github.com/matthewmackes/map2-audio/commit/e42e7e8dba6431ded6da21ca2a915d10c8900149) | Implement stage notification runtime and refresh web assets | Map2 Audio | 2026-04-18 |
 | [`0d9ae3c7`](https://github.com/matthewmackes/map2-audio/commit/0d9ae3c7b9967be4342a4084bc4fdbbd4e4a3213) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`6f4d5af0`](https://github.com/matthewmackes/map2-audio/commit/6f4d5af07fa58d3220078d57dfa3e0112dd1e2df) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
-| [`f0d03ffc`](https://github.com/matthewmackes/map2-audio/commit/f0d03ffcd310d64b412db45f6a2ecf50b70cdd6b) | Reduce graph chrome overhead and retire alert MUI island | Map2 Audio | 2026-04-17 |
-| [`775b2892`](https://github.com/matthewmackes/map2-audio/commit/775b2892450be14ab933254842c173f1bdedab42) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
