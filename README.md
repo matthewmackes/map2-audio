@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1151** Python | **1128** TypeScript | **136** C++/H | **144** Docs | **2317** total commits | **3** stars | **0** forks | **0** open issues
+**1158** Python | **1129** TypeScript | **136** C++/H | **144** Docs | **2319** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`497d3357`](https://github.com/matthewmackes/map2-audio/commit/497d335794c67933506f68ae08ce43795ab9e86f) | Add PlatformEvent foundation types and mappings | Map2 Audio | 2026-04-19 |
+| [`7a5a1f90`](https://github.com/matthewmackes/map2-audio/commit/7a5a1f90fb59bd107f88828f9dad417e2076762d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`a51bba43`](https://github.com/matthewmackes/map2-audio/commit/a51bba434981e741ba73712cfbdc268a4c908905) | Polish stage notifications and snapshot runtime sync | Map2 Audio | 2026-04-19 |
 | [`5aa13100`](https://github.com/matthewmackes/map2-audio/commit/5aa131007cc4f4a369e9f815372a3d79cf6b0cf5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`0c056bfa`](https://github.com/matthewmackes/map2-audio/commit/0c056bfa15cf8eff8b47e95657b8fc8bf32d8612) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`eeac852c`](https://github.com/matthewmackes/map2-audio/commit/eeac852cccbffd78471dd135d81c53ddbf0a00bb) | Document dependabot alert reconciliation | Map2 Audio | 2026-04-18 |
 | [`0d30f651`](https://github.com/matthewmackes/map2-audio/commit/0d30f65175c2f40fd164005ef78899cdbfcd3da7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`2968d7ce`](https://github.com/matthewmackes/map2-audio/commit/2968d7ce0f1fdc4a23f7adfb40b802282121c0ef) | Remediate npm audit findings across web and tui | Map2 Audio | 2026-04-18 |
-| [`fa005aac`](https://github.com/matthewmackes/map2-audio/commit/fa005aace20d62b2d5249f9a5c572c970f2f0674) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`fdadfbf8`](https://github.com/matthewmackes/map2-audio/commit/fdadfbf8338609a8bb303a810d2b9aa359aaba6a) | Ship MK1 headless surface, audio controls, and FOH stage ... | Map2 Audio | 2026-04-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
