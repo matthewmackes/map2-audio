@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1181** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2331** total commits | **3** stars | **0** forks | **0** open issues
+**1177** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2334** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b2e54e7c`](https://github.com/matthewmackes/map2-audio/commit/b2e54e7c90943d1cb8bbeafe1532f2551c33121c) | Keep .gemini instructions local-only | Map2 Audio | 2026-04-19 |
+| [`34aba966`](https://github.com/matthewmackes/map2-audio/commit/34aba96694b2dc271d872ebe22f07b366fd46a9a) | T2363-subG hard-cut LCD runtime onto PlatformEvents | Map2 Audio | 2026-04-19 |
+| [`a75eb4aa`](https://github.com/matthewmackes/map2-audio/commit/a75eb4aa75de5eeb8552a83394bbe2bf02f07070) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`bb490cab`](https://github.com/matthewmackes/map2-audio/commit/bb490cab832e90fe6db3001237e6df4d55d26079) | Migrate legacy event bus to PlatformEventBus | Map2 Audio | 2026-04-19 |
 | [`726a11c0`](https://github.com/matthewmackes/map2-audio/commit/726a11c0aac51b41a016da70a077b3fea743c5ac) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`731fa054`](https://github.com/matthewmackes/map2-audio/commit/731fa05469caed93c80e805b565bf71cc9bda6d5) | Extract PlatformEventStore from legacy bus | Map2 Audio | 2026-04-19 |
 | [`b2d0448e`](https://github.com/matthewmackes/map2-audio/commit/b2d0448eb18b2f194827b055539c6f8d0da7c481) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`0c5a626b`](https://github.com/matthewmackes/map2-audio/commit/0c5a626b76b3d2c29e5c6c54c9a24deddc9f230c) | Rewrite T2363 worklist for hard cutover | Map2 Audio | 2026-04-19 |
-| [`d078a3b4`](https://github.com/matthewmackes/map2-audio/commit/d078a3b4f622a88402bc6963af5809c938ca289b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`20eed5a3`](https://github.com/matthewmackes/map2-audio/commit/20eed5a3d6a3f87abf384849fb08e532c6b71fe1) | Add platform event presenter runtime | Map2 Audio | 2026-04-19 |
-| [`6ec53449`](https://github.com/matthewmackes/map2-audio/commit/6ec53449a89258a42cfa047fc371cbe6c4d5af06) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
