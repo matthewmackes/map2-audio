@@ -95,6 +95,14 @@ async function fetchPeerDiscoverySnapshot(): Promise<PeerDiscoverySnapshot> {
   return response.json() as Promise<PeerDiscoverySnapshot>;
 }
 
+async function fetchPeerDiscoverySnapshotSafe(): Promise<PeerDiscoverySnapshot> {
+  try {
+    return await fetchPeerDiscoverySnapshot();
+  } catch {
+    return {};
+  }
+}
+
 function isLocalFeedEntry(event: LCDFeedEntry, localNodeId: string): boolean {
   return localNodeId.length > 0 && normalizeNodeId(event.source_node) === localNodeId;
 }
@@ -191,7 +199,7 @@ export function useLcdFeedHistory(
       try {
         setLoading(true);
         const [peerSnapshot, response] = await Promise.all([
-          fetchPeerDiscoverySnapshot().catch(() => ({})),
+          fetchPeerDiscoverySnapshotSafe(),
           fetch(`/api/platform-events?${new URLSearchParams({
             limit: String(limit),
             surface: 'lcd',
@@ -252,7 +260,7 @@ export function useLcdFeedStats() {
       try {
         setLoading(true);
         const [peerSnapshot, response] = await Promise.all([
-          fetchPeerDiscoverySnapshot().catch(() => ({})),
+          fetchPeerDiscoverySnapshotSafe(),
           fetch('/api/platform-events?surface=lcd&limit=500'),
         ]);
         if (!response.ok) {
