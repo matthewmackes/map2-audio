@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1151** Python | **1128** TypeScript | **136** C++/H | **144** Docs | **2314** total commits | **3** stars | **0** forks | **0** open issues
+**1151** Python | **1128** TypeScript | **136** C++/H | **144** Docs | **2315** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0c056bfa`](https://github.com/matthewmackes/map2-audio/commit/0c056bfa15cf8eff8b47e95657b8fc8bf32d8612) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`eeac852c`](https://github.com/matthewmackes/map2-audio/commit/eeac852cccbffd78471dd135d81c53ddbf0a00bb) | Document dependabot alert reconciliation | Map2 Audio | 2026-04-18 |
 | [`0d30f651`](https://github.com/matthewmackes/map2-audio/commit/0d30f65175c2f40fd164005ef78899cdbfcd3da7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`2968d7ce`](https://github.com/matthewmackes/map2-audio/commit/2968d7ce0f1fdc4a23f7adfb40b802282121c0ef) | Remediate npm audit findings across web and tui | Map2 Audio | 2026-04-18 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`fdadfbf8`](https://github.com/matthewmackes/map2-audio/commit/fdadfbf8338609a8bb303a810d2b9aa359aaba6a) | Ship MK1 headless surface, audio controls, and FOH stage ... | Map2 Audio | 2026-04-18 |
 | [`e07c386b`](https://github.com/matthewmackes/map2-audio/commit/e07c386bc72bc368ea4a01e630d59af9ff3ab289) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-18 |
 | [`010a5863`](https://github.com/matthewmackes/map2-audio/commit/010a5863093729e04e58044df32af282d0622423) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-18 |
-| [`267e4b0f`](https://github.com/matthewmackes/map2-audio/commit/267e4b0f6ce6aa541a2c9c7b838c9c3a9facd762) | Ship Maschine phase 2 catalog and phase 3 LED foundation | Map2 Audio | 2026-04-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
