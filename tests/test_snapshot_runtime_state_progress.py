@@ -76,6 +76,35 @@ def test_runtime_state_service_tracks_activation_phase_progress(tmp_path, monkey
     assert any(topic == "snapshot_activation_events" for topic, _payload in fake_ws.messages)
 
 
+def test_runtime_live_state_prefers_current_snapshot_name_over_stale_payload_name(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        async with database_module.get_session() as session:
+            session.add(Snapshot(id=21, name="Rig20260417"))
+            await session.flush()
+        service = SnapshotRuntimeStateService()
+        intent = await service.create_activation_intent(
+            snapshot_id=21,
+            snapshot_name="OldName",
+            snapshot_revision="rev-21",
+            normalized_snapshot_payload={"chains": []},
+            triggered_by="ui",
+        )
+        live_state = await service.confirm_live_intent(
+            intent=intent,
+            live_snapshot_payload={"id": 21, "name": "Matt11", "live_state": {"paths": []}},
+            runtime_metrics={},
+        )
+        return live_state, await service.get_live_state()
+
+    confirm_payload, fetched_payload = asyncio.run(_run())
+
+    assert confirm_payload["snapshot_name"] == "Rig20260417"
+    assert fetched_payload["snapshot_name"] == "Rig20260417"
+    assert fetched_payload["live_snapshot_payload"]["name"] == "Matt11"
+
+
 def test_runtime_state_service_marks_current_phase_failed(tmp_path):
     _init_temp_db(tmp_path)
 

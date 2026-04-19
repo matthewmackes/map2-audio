@@ -22,8 +22,10 @@ from uuid import uuid4
 import httpx
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import (
+    Snapshot,
     SnapshotActivationEvent,
     SnapshotNodeLiveState,
     get_session,
@@ -169,7 +171,9 @@ class SnapshotRuntimeStateService:
 
     async def _get_or_create_local_state_row(self, session: AsyncSession) -> SnapshotNodeLiveState:
         result = await session.execute(
-            select(SnapshotNodeLiveState).where(SnapshotNodeLiveState.node_id == self.local_node_id)
+            select(SnapshotNodeLiveState)
+            .options(selectinload(SnapshotNodeLiveState.snapshot))
+            .where(SnapshotNodeLiveState.node_id == self.local_node_id)
         )
         row = result.scalar_one_or_none()
         if row is None:
@@ -188,7 +192,9 @@ class SnapshotRuntimeStateService:
 
     async def _get_local_state_row(self, session: AsyncSession) -> Optional[SnapshotNodeLiveState]:
         result = await session.execute(
-            select(SnapshotNodeLiveState).where(SnapshotNodeLiveState.node_id == self.local_node_id)
+            select(SnapshotNodeLiveState)
+            .options(selectinload(SnapshotNodeLiveState.snapshot))
+            .where(SnapshotNodeLiveState.node_id == self.local_node_id)
         )
         return result.scalar_one_or_none()
 
@@ -252,9 +258,11 @@ class SnapshotRuntimeStateService:
             display_state = "stopped"
             display_label = "Stopped"
 
-        snapshot_name = None
-        if isinstance(live_snapshot_payload, dict):
-            snapshot_name = live_snapshot_payload.get("name")
+        snapshot_name = str(row.snapshot.name).strip() if row.snapshot is not None and getattr(row.snapshot, "name", None) else None
+        if not snapshot_name and isinstance(live_snapshot_payload, dict):
+            payload_name = live_snapshot_payload.get("name")
+            if isinstance(payload_name, str) and payload_name.strip():
+                snapshot_name = payload_name.strip()
 
         return {
             "node_id": row.node_id,
@@ -1144,6 +1152,7 @@ class SnapshotRuntimeStateService:
             row.seq = int(row.seq or 0) + 1
             row.state = "live"
             row.snapshot_id = int(intent["snapshot_id"])
+            row.snapshot = await session.get(Snapshot, row.snapshot_id)
             row.snapshot_revision = str(intent["snapshot_revision"])
             row.triggered_by = str(intent.get("triggered_by") or "ui")
             row.last_successful_request_id = str(intent["request_id"])

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-18 - Closed T2362 after confirming the GitHub dependabot alert set is already empty and the post-push vulnerability banner was stale.
+Last updated: 2026-04-19 - Followed up T2360 with minimized news-kyron rails, queued cable-news takeovers, theme-aware stage shell fixes, snapshot-name canonicalization, and a full validation pass.
 
 ---
 
@@ -28283,7 +28283,7 @@ Description:
 - Estimated effort: High
 - Required outputs: rewritten `StageNotificationViewport` with the 4-card row layout, `StereoMeter` and `Sparkline` child components, idle heartbeat rail, disconnected overlay, cluster-summary substitution for multi-node live, silence-detection and clip-latch logic, CPU/xrun/channel/block vitals wired from existing live-state + metering sources (investigating `juce_engine_service`, `snapshot_runtime_service`, and any existing metering endpoint first; backend payload extensions only if genuinely absent), Carbon support-token severity palette, accent-color LIVE pulse, `prefers-reduced-motion` handling that freezes sparklines + pulse but keeps meters, `Esc` collapse keybinding, extended `Toasts.test.tsx` covering card rendering, idle state, silence, clipping, reduced-motion, route-hide, and disconnected overlay, build + typecheck validation, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 21:50 EDT - Codex
+Last updated: 2026-04-19 08:21 EDT - Codex
 - Notes:
   - Plan file of record: `/home/mm/.claude/plans/help-me-make-the-nested-duckling.md` (final worklist captured from a 50-question FOH discovery pass; approved by the operator on 2026-04-18).
   - Scope boundaries are explicit. Edit: `web/src/app/components/Toasts.tsx`, `web/src/app/components/Toasts.css`, `web/src/app/components/Toasts.test.tsx`, `web/src/app/utils/snapshotActivationToast.ts`, and new child components under `web/src/app/components/StageNotification/` if needed. Do NOT touch: `web/src/app/hooks/useAlertNotifications.tsx`, `web/src/app/hooks/useAlertNotifications.css`, `web/src/app/components/NodeAlerts/NodeAlertToast.tsx`, the `BackendConnectionMonitor` wiring in `web/src/app/App.tsx`, or the React-Toastify transient toasts.
@@ -28294,9 +28294,36 @@ Last updated: 2026-04-18 21:50 EDT - Codex
   - Finished the FOH warnings closeout in `web/src/app/components/Toasts.tsx` by specializing activation-progress, activation-failure, audio-driver-loss, and AVB-sync warning states, adding the 60-second severity history strip plus clip badge, and keeping cluster-summary/disconnected handling inside the same stage surface runtime without touching the protected alert producers.
   - Added testable reduced-motion plumbing and subtle sparkline motion in `web/src/app/components/Toasts.tsx` / `web/src/app/components/Toasts.css`, while preserving live meter motion and the already-landed `Esc` collapse/dismiss behavior.
   - Extended `web/src/app/components/Toasts.test.tsx` so the stage surface now has focused coverage for activation failure, driver loss, AVB sync warnings, reduced motion, clip-badge duplication, and the existing route-hide / disconnected / collapse flows.
+  - Followed up the shipped shell with a readability fix in `web/src/app/components/Toasts.css`: the steady-state success/info banner now uses light neutral panel/card surfaces with dark copy and chip fills, while the warning and critical takeover palettes remain distinct and high-contrast against the bright platform shell.
+  - Narrowed the expanded shell-tone logic in `web/src/app/components/Toasts.tsx` so clip latches and other card-local findings no longer escalate the entire live banner into the critical palette; only disconnects and explicit stage-alert records now repaint the shell, while clipping remains surfaced inside the Audio and Warnings cards.
+  - Corrected the snapshot identity path behind the notification bar: `app/services/snapshot_runtime_state_service.py` now serializes the canonical `Snapshot.name` during live confirmation instead of trusting stale payload names, `web/src/app/hooks/useSnapshotRuntimeState.ts` now patches the cluster live-state cache from `snapshot_runtime_live_state` websocket events, and `web/src/app/pages/SnapshotEditorPageContent.tsx` invalidates both local and cluster runtime-live-state queries after activation and rename so the banner updates to names like `Rig20260417` immediately.
+  - Added focused regressions in `tests/test_snapshot_runtime_state_progress.py` and `web/src/app/hooks/useSnapshotRuntimeState.test.tsx` to lock the canonical-name serializer behavior and the cluster cache websocket patch path that keeps the notification card aligned with the Snapshot Editor.
+  - Added a queued kyron takeover layer in `web/src/app/components/Toasts.tsx` / `web/src/app/components/Toasts.css`: stage notifications now replay one-by-one as full-width lower-thirds that slide in from the left edge, hold for a fixed 3 seconds, slide out to the right, and then restore the underlying live-snapshot/alert surface without changing the existing notification producer APIs.
+  - Styled the kyron takeover to the requested cable-news pattern with Carbon severity tokens, dedicated `WARNING` / `ERROR` / `UPDATE` / `INFO` labels, edge-to-edge lower-third treatment, and paired slide-out/slide-in transitions for the normal panel and the temporary takeover surface.
+  - Fixed the steady-state stage shell so dark themes inherit the active Carbon workspace tokens instead of forcing the previously hard-coded bright palette, and added file-level CSS regressions in `web/src/app/components/Toasts.test.tsx` to lock both the theme-driven steady-state shell and the dedicated kyron animation classes.
+  - Followed up the collapsed right-rail state in `web/src/app/components/Toasts.tsx` / `web/src/app/components/Toasts.css` with a dedicated mini-kyron treatment: the minimized panel now presents as a one-third-width broadcast card with a pulsing `LIVE` bug, explicit route/expand actions, rotating live-status ticker frames, severity-coded alert variants, and horizontal marquee handling for long copy.
+  - Extended `web/src/app/components/Toasts.test.tsx` to verify the minimized kyron restore path, timed ticker rotation in the collapsed live state, and the CSS contract for one-third-width sizing plus pulse/marquee affordances.
   - Manual hallway verification of readability from ~6 ft was not possible from this headless terminal session; automated validation passed, and the remaining risk is limited to operator-distance visual tuning rather than logic correctness.
+  - Licensing review: touched frontend/test/worklist artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 - Validation:
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check -- web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check -- web/src/app/components/Toasts.tsx web/src/app/components/Toasts.test.tsx web/src/app/components/Toasts.css docs/PROJECT_WORKLIST.md` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m pytest tests/test_snapshot_runtime_state_progress.py -q` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useSnapshotRuntimeState.test.tsx src/app/components/Toasts.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check -- app/services/snapshot_runtime_state_service.py tests/test_snapshot_runtime_state_progress.py web/src/app/hooks/useSnapshotRuntimeState.ts web/src/app/hooks/useSnapshotRuntimeState.test.tsx web/src/app/pages/SnapshotEditorPageContent.tsx web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useSnapshotRuntimeState.test.tsx` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check -- web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
   - `git diff --check -- web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx docs/PROJECT_WORKLIST.md` -> PASS

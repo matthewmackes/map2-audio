@@ -2586,6 +2586,7 @@ export function SnapshotEditorPage() {
       setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
       void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
       invalidateControlPlaneSnapshotCaches({ includeDesired: true })
       hydrateEditorFromSnapshot(response.snapshot_data, {
         toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
@@ -2693,6 +2694,7 @@ export function SnapshotEditorPage() {
       setControlPlaneSnapshotCaches(response.snapshot_data)
       queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
       void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
       void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local'] })
       invalidateControlPlaneSnapshotCaches({ includeDesired: true })
       setEditorSnapshotOverride(null)
@@ -2757,6 +2759,8 @@ export function SnapshotEditorPage() {
     onSuccess: (response) => {
       syncSnapshotDetailCaches(response.snapshot)
       queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
       setEditingSnapshotName(false)
       setRenameSnapshotName('')
       pushToast(`Snapshot renamed to "${response.snapshot.name}"`, 'success')

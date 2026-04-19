@@ -1,6 +1,8 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import fs from 'node:fs'
+import path from 'node:path'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -34,28 +36,73 @@ function Harness() {
   const { pushToast } = useToasts()
 
   return (
-    <button
-      type="button"
-      onClick={() => {
-        pushToast('Backend unreachable - click to retry.', 'error', {
-          id: 'backend-unreachable',
-          title: 'Backend unreachable',
-          persistent: true,
-          stage: {
-            kind: 'critical_alert',
-            severity: 'critical',
-            resource: {
-              kind: 'backend',
-              id: 'primary',
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          pushToast('Backend unreachable - click to retry.', 'error', {
+            id: 'backend-unreachable',
+            title: 'Backend unreachable',
+            persistent: true,
+            stage: {
+              kind: 'critical_alert',
+              severity: 'critical',
+              resource: {
+                kind: 'backend',
+                id: 'primary',
+              },
+              compactLabel: 'Backend',
+              replaceLiveBanner: true,
             },
-            compactLabel: 'Backend',
-            replaceLiveBanner: true,
-          },
-        })
-      }}
-    >
-      Trigger backend alert
-    </button>
+          })
+        }}
+      >
+        Trigger backend alert
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          pushToast('AVB clock drift exceeded threshold.', 'warn', {
+            id: 'clock-drift-warning',
+            title: 'Clock drift',
+            persistent: true,
+            stage: {
+              kind: 'warning_alert',
+              severity: 'warning',
+              resource: {
+                kind: 'node',
+                id: 'node-local',
+              },
+              compactLabel: 'AVB',
+              replaceLiveBanner: true,
+            },
+          })
+        }}
+      >
+        Trigger warning alert
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          pushToast('Snapshot publish completed.', 'success', {
+            id: 'publish-complete',
+            title: 'Publish completed',
+            stage: {
+              kind: 'workflow',
+              severity: 'success',
+              resource: {
+                kind: 'workflow',
+                id: 'snapshot-publish',
+              },
+              compactLabel: 'Publish',
+              replaceLiveBanner: true,
+            },
+          })
+        }}
+      >
+        Trigger success alert
+      </button>
+    </>
   )
 }
 
@@ -213,26 +260,62 @@ describe('ToastProvider stage notification surface', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide live snapshot banner' }))
 
-    expect(screen.getByLabelText('Notification rail')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Arena Intro/i }))
+    const rail = screen.getByLabelText('Notification rail')
+    expect(rail).toBeInTheDocument()
+    expect(within(rail).getByText('Workspace Live')).toBeInTheDocument()
+    expect(within(rail).getByText('LIVE')).toBeInTheDocument()
+    expect(within(rail).getByText('Arena Intro')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Restore live snapshot panel for Arena Intro' }))
 
     expect(screen.getByText('Arena Intro')).toBeInTheDocument()
     expect(screen.queryByLabelText('Notification rail')).not.toBeInTheDocument()
   })
 
-  it('replaces the live snapshot banner with a critical alert and restores it after dismissal', () => {
+  it('rotates the minimized live kyron ticker frames while collapsed', () => {
+    jest.useFakeTimers()
+    renderProvider()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide live snapshot banner' }))
+
+    const rail = screen.getByLabelText('Notification rail')
+    expect(within(rail).getByText('Live confirmed')).toBeInTheDocument()
+
+    act(() => {
+      jest.advanceTimersByTime(2500)
+    })
+
+    expect(within(rail).getByText('2 channels active')).toBeInTheDocument()
+
+    act(() => {
+      jest.advanceTimersByTime(2500)
+    })
+
+    expect(within(rail).getByText('Program 12')).toBeInTheDocument()
+    jest.useRealTimers()
+  })
+
+  it('plays the critical kyron takeover before restoring the normal alert surface', () => {
+    jest.useFakeTimers()
     renderProvider()
 
     fireEvent.click(screen.getByRole('button', { name: 'Trigger backend alert' }))
 
+    const kyron = screen.getByLabelText('Stage notification kyron')
+    expect(kyron).toBeInTheDocument()
+    expect(within(kyron).getByText('Error')).toBeInTheDocument()
+    expect(within(kyron).getByText('Backend unreachable - click to retry.')).toBeInTheDocument()
+
+    act(() => {
+      jest.advanceTimersByTime(4000)
+    })
+
     expect(screen.getByText('Critical event active')).toBeInTheDocument()
-    expect(screen.getByText('Backend unreachable - click to retry.')).toBeInTheDocument()
-    expect(screen.getByText('Arena Intro')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss Backend unreachable' }))
 
     expect(screen.getByText('Arena Intro')).toBeInTheDocument()
     expect(screen.queryByText('Backend unreachable')).not.toBeInTheDocument()
+    jest.useRealTimers()
   })
 
   it('reveals full identity metadata and copies it from the snapshot card', () => {
@@ -378,9 +461,13 @@ describe('ToastProvider stage notification surface', () => {
 
     renderProvider()
 
+    const surface = screen.getByLabelText('Stage notification overview').closest('.stage-notification-surface')
+
     expect(screen.getByText('Clip latch x1')).toBeInTheDocument()
     expect(screen.getByText('Master output has clipped during the current live run.')).toBeInTheDocument()
     expect(screen.getAllByText('Clip x1')).toHaveLength(2)
+    expect(surface).toHaveClass('stage-notification-surface--success')
+    expect(surface).not.toHaveClass('stage-notification-surface--critical')
   })
 
   it('escalates audio driver loss into a critical warning card', async () => {
@@ -589,5 +676,68 @@ describe('ToastProvider stage notification surface', () => {
     expect(screen.getByLabelText('XRun history')).toHaveAttribute('data-reduced-motion', 'true')
     expect(screen.getByLabelText('Live snapshot pulse')).toHaveAttribute('data-reduced-motion', 'true')
     expect(screen.getByLabelText('Stereo output meters')).toBeInTheDocument()
+  })
+
+  it('queues kyrons one by one in arrival order', () => {
+    jest.useFakeTimers()
+    renderProvider()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger warning alert' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger success alert' }))
+
+    const firstKyron = screen.getByLabelText('Stage notification kyron')
+    expect(firstKyron).toBeInTheDocument()
+    expect(within(firstKyron).getByText('Warning')).toBeInTheDocument()
+    expect(within(firstKyron).getByText('AVB clock drift exceeded threshold.')).toBeInTheDocument()
+    expect(within(firstKyron).queryByText('Snapshot publish completed.')).not.toBeInTheDocument()
+
+    act(() => {
+      jest.advanceTimersByTime(4000)
+    })
+
+    const secondKyron = screen.getByLabelText('Stage notification kyron')
+    expect(secondKyron).toBeInTheDocument()
+    expect(within(secondKyron).getByText('Update')).toBeInTheDocument()
+    expect(within(secondKyron).getByText('Snapshot publish completed.')).toBeInTheDocument()
+    jest.useRealTimers()
+  })
+
+  it('keeps the steady-state notification shell palette theme-driven', () => {
+    const cssSource = fs.readFileSync(path.resolve(__dirname, 'Toasts.css'), 'utf8')
+    const steadyStateBlock = cssSource.match(
+      /\.stage-notification-surface--success,\s*\.stage-notification-surface--info\s*\{[\s\S]*?\n\}/
+    )?.[0]
+
+    expect(steadyStateBlock).toBeDefined()
+    expect(steadyStateBlock).toContain('var(--surface')
+    expect(steadyStateBlock).toContain('var(--surface-2')
+    expect(steadyStateBlock).toContain('var(--bg')
+    expect(steadyStateBlock).toContain('var(--text-primary')
+    expect(steadyStateBlock).toContain('var(--text-secondary')
+    expect(steadyStateBlock).not.toContain('#ffffff 92%')
+    expect(steadyStateBlock).not.toContain('#eef4ff')
+  })
+
+  it('keeps the kyron lower-third edge aligned and animation driven by dedicated classes', () => {
+    const cssSource = fs.readFileSync(path.resolve(__dirname, 'Toasts.css'), 'utf8')
+
+    expect(cssSource).toContain('.stage-notification-kyron')
+    expect(cssSource).toContain('left: 0;')
+    expect(cssSource).toContain('right: 0;')
+    expect(cssSource).toContain('.stage-notification-kyron--enter')
+    expect(cssSource).toContain('.stage-notification-kyron--exit')
+    expect(cssSource).toContain('@keyframes stage-notification-slide-in-left')
+    expect(cssSource).toContain('@keyframes stage-notification-slide-out-right')
+  })
+
+  it('styles the minimized rail as a one-third-width broadcast kyron with marquee affordances', () => {
+    const cssSource = fs.readFileSync(path.resolve(__dirname, 'Toasts.css'), 'utf8')
+
+    expect(cssSource).toContain('.stage-notification-mini-kyron')
+    expect(cssSource).toContain('inline-size: clamp(21rem, 33vw, 34rem);')
+    expect(cssSource).toContain('.stage-notification-mini-kyron__bug')
+    expect(cssSource).toContain('@keyframes stage-notification-mini-kyron-pulse')
+    expect(cssSource).toContain('@keyframes stage-notification-mini-kyron-marquee')
+    expect(cssSource).toContain('.stage-notification-mini-kyron__ticker-text[data-scroll=\'true\']')
   })
 })

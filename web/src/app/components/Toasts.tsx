@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, ChevronDown, Close } from '@carbon/icons-react'
+import { ArrowRight, ChevronDown, ChevronUp, Close } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ToastContainer, toast, type ToastOptions } from 'react-toastify'
@@ -79,13 +79,15 @@ interface NotificationContextValue {
   notifications: NotificationRecord[]
 }
 
-const TAKEOVER_DURATION_MS = 4200
 const DEFAULT_STAGE_DURATION_MS = 6500
 const ROOT_STAGE_NOTIFICATION_HEIGHT_VAR = '--stage-notification-reserved-height'
 const STAGE_METER_FLOOR_DB = -60
 const STAGE_METER_HISTORY_LIMIT = 240
 const STAGE_CPU_HISTORY_LIMIT = 120
 const STAGE_WARNING_HISTORY_LIMIT = 60
+const KYRON_TRANSITION_DURATION_MS = 420
+const KYRON_DWELL_DURATION_MS = 3000
+const MINI_KYRON_ROTATION_MS = 2400
 
 interface MeterHistorySample {
   left: number
@@ -103,6 +105,17 @@ interface StageWarningEntry {
 interface StageWarningHistorySample {
   severity: NotificationSeverity | null
   count: number
+}
+
+interface StageKyronEntry {
+  key: string
+  record: NotificationRecord
+}
+
+interface StageMiniKyronFrame {
+  key: string
+  label: string
+  text: string
 }
 
 function makeNotificationId() {
@@ -212,17 +225,6 @@ function stagePriority(record: NotificationRecord): number {
   return 100
 }
 
-function isTakeoverCandidate(record: NotificationRecord | null): boolean {
-  if (!record?.stage) {
-    return false
-  }
-
-  return (
-    (record.stage.kind === 'critical_alert' || record.stage.kind === 'warning_alert' || record.stage.severity === 'critical')
-    && Date.now() - record.timestamp < TAKEOVER_DURATION_MS
-  )
-}
-
 function chooseLiveSnapshot(states: SnapshotRuntimeLiveState[]): SnapshotRuntimeLiveState | null {
   const liveStates = states.filter((state) => !state.is_offline && state.state === 'live' && state.snapshot_id != null)
   if (liveStates.length === 0) {
@@ -275,6 +277,27 @@ function toneLabelForRecord(record: NotificationRecord): string {
   if (severity === 'warning') return 'Warning'
   if (severity === 'success') return 'Stable'
   return 'Info'
+}
+
+function kyronLabelForSeverity(severity: NotificationSeverity): string {
+  if (severity === 'critical') return 'Error'
+  if (severity === 'warning') return 'Warning'
+  if (severity === 'success') return 'Update'
+  return 'Info'
+}
+
+function buildKyronEntry(record: NotificationRecord): StageKyronEntry {
+  return {
+    key: `${record.id}:${record.updatedAt}`,
+    record: {
+      ...record,
+      stage: record.stage ? {
+        ...record.stage,
+        resource: { ...record.stage.resource },
+        meta: [...record.stage.meta],
+      } : null,
+    },
+  }
 }
 
 function formatStageTimestamp(timestamp: number): string {
@@ -952,6 +975,199 @@ function StageWarningsCard({
   )
 }
 
+function StageKyron({
+  entry,
+  phase,
+}: {
+  entry: StageKyronEntry
+  phase: 'enter' | 'dwell' | 'exit'
+}) {
+  const severity = entry.record.stage?.severity ?? severityFromTone(entry.record.tone)
+  const sourceLabel = entry.record.stage?.compactLabel || entry.record.title
+  const headline = entry.record.message || entry.record.title
+  const meta = [sourceLabel, formatStageTimestamp(entry.record.updatedAt)].filter(Boolean).join(' • ')
+
+  return (
+    <section
+      className={`stage-notification-kyron stage-notification-kyron--${severity} stage-notification-kyron--${phase}`}
+      role={severity === 'critical' ? 'alert' : 'status'}
+      aria-live={severity === 'critical' ? 'assertive' : 'polite'}
+      aria-label="Stage notification kyron"
+    >
+      <div className="stage-notification-kyron__strap">Live Alert</div>
+      <div className="stage-notification-kyron__body">
+        <span className="stage-notification-kyron__label">{kyronLabelForSeverity(severity)}</span>
+        <div className="stage-notification-kyron__copy">
+          <strong className="stage-notification-kyron__headline">{headline}</strong>
+          <span className="stage-notification-kyron__meta">{meta}</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function StageMiniKyron({
+  records,
+  liveSnapshotState,
+  channelCount,
+  blockCount,
+  prefersReducedMotion,
+  onExpand,
+  onRoute,
+}: {
+  records: NotificationRecord[]
+  liveSnapshotState: SnapshotRuntimeLiveState | null
+  channelCount: number
+  blockCount: number
+  prefersReducedMotion: boolean
+  onExpand: () => void
+  onRoute?: () => void
+}) {
+  const primaryRecord = records[0] ?? null
+  const [frameIndex, setFrameIndex] = useState(0)
+
+  const isLiveLayout = primaryRecord?.stage?.kind === 'live_snapshot'
+  const severity = primaryRecord?.stage?.severity ?? (primaryRecord ? severityFromTone(primaryRecord.tone) : 'info')
+  const headline = primaryRecord?.title ?? 'Live snapshot'
+  const headlineShouldScroll = !prefersReducedMotion && headline.length > 26
+  const routeLabel = primaryRecord?.stage?.routeLabel || 'Open related workspace'
+  const layoutTone = isLiveLayout ? 'live' : severity
+  const layoutMode = isLiveLayout ? 'live' : 'alert'
+  const programNumber = liveSnapshotState?.live_snapshot_payload?.program_number
+  const restoreLabel = isLiveLayout
+    ? `Restore live snapshot panel for ${headline}`
+    : `Restore notification panel for ${headline}`
+
+  const frames = useMemo<StageMiniKyronFrame[]>(() => {
+    if (!primaryRecord) {
+      return []
+    }
+
+    if (isLiveLayout) {
+      return [
+        {
+          key: `${primaryRecord.id}:status`,
+          label: 'Status',
+          text: primaryRecord.message || 'Live',
+        },
+        channelCount > 0
+          ? {
+              key: `${primaryRecord.id}:channels`,
+              label: 'Channels',
+              text: `${channelCount} channel${channelCount === 1 ? '' : 's'} active`,
+            }
+          : null,
+        programNumber != null || blockCount > 0
+          ? {
+              key: `${primaryRecord.id}:routing`,
+              label: 'Routing',
+              text: [
+                programNumber != null ? `Program ${programNumber}` : '',
+                blockCount > 0 ? `${blockCount} block${blockCount === 1 ? '' : 's'} active` : '',
+              ].filter(Boolean).join(' • '),
+            }
+          : null,
+        primaryRecord.stage?.meta?.find((entry) => entry.startsWith('Revision '))
+          ? {
+              key: `${primaryRecord.id}:revision`,
+              label: 'Revision',
+              text: primaryRecord.stage.meta.find((entry) => entry.startsWith('Revision ')) ?? '',
+            }
+          : null,
+      ].filter((frame): frame is StageMiniKyronFrame => Boolean(frame?.text))
+    }
+
+    return records.map((record, index) => ({
+      key: `${record.id}:${record.updatedAt}:${index}`,
+      label: kyronLabelForSeverity(record.stage?.severity ?? severityFromTone(record.tone)),
+      text: record.message || record.title,
+    }))
+  }, [blockCount, channelCount, isLiveLayout, primaryRecord, programNumber, records])
+
+  const framesKey = frames.map((frame) => frame.key).join('|')
+
+  useEffect(() => {
+    setFrameIndex(0)
+  }, [framesKey])
+
+  useEffect(() => {
+    if (prefersReducedMotion || frames.length <= 1) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setFrameIndex((current) => (current + 1) % frames.length)
+    }, MINI_KYRON_ROTATION_MS)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [frames.length, framesKey, prefersReducedMotion])
+
+  if (!primaryRecord) {
+    return null
+  }
+
+  const currentFrame = frames[frameIndex] ?? frames[0] ?? { key: 'fallback', label: 'Live', text: primaryRecord.message || primaryRecord.title }
+  const tickerShouldScroll = !prefersReducedMotion && currentFrame.text.length > 38
+  const liveBugLabel = isLiveLayout ? 'LIVE' : kyronLabelForSeverity(severity).toUpperCase()
+
+  return (
+    <aside
+      className={`stage-notification-mini-kyron stage-notification-mini-kyron--${layoutTone} stage-notification-mini-kyron--${layoutMode}`}
+      role={severity === 'critical' ? 'alert' : 'status'}
+      aria-live={severity === 'critical' ? 'assertive' : 'polite'}
+    >
+      <button
+        type="button"
+        className="stage-notification-mini-kyron__body"
+        aria-label={restoreLabel}
+        onClick={onExpand}
+      >
+        <div className="stage-notification-mini-kyron__broadcast">
+          <span className="stage-notification-mini-kyron__eyebrow">{isLiveLayout ? 'Workspace Live' : 'Stage Alert'}</span>
+          <span className="stage-notification-mini-kyron__bug">{liveBugLabel}</span>
+        </div>
+        <strong className="stage-notification-mini-kyron__headline" data-scroll={headlineShouldScroll ? 'true' : 'false'}>
+          <span className="stage-notification-mini-kyron__headline-track">
+            <span>{headline}</span>
+            {headlineShouldScroll ? <span aria-hidden="true">{headline}</span> : null}
+          </span>
+        </strong>
+        <div className="stage-notification-mini-kyron__ticker">
+          <span className="stage-notification-mini-kyron__ticker-label">{currentFrame.label}</span>
+          <span className="stage-notification-mini-kyron__ticker-track">
+            <span className="stage-notification-mini-kyron__ticker-text" data-scroll={tickerShouldScroll ? 'true' : 'false'}>
+              <span>{currentFrame.text}</span>
+              {tickerShouldScroll ? <span aria-hidden="true">{currentFrame.text}</span> : null}
+            </span>
+          </span>
+        </div>
+      </button>
+      <div className="stage-notification-mini-kyron__actions" aria-label="Notification rail actions">
+        {onRoute ? (
+          <button
+            type="button"
+            className="stage-notification-mini-kyron__action"
+            aria-label={routeLabel}
+            onClick={onRoute}
+          >
+            <ArrowRight size={16} />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="stage-notification-mini-kyron__action"
+          aria-label="Expand live snapshot panel"
+          onClick={onExpand}
+        >
+          <ChevronUp size={16} />
+        </button>
+      </div>
+    </aside>
+  )
+}
+
 function NotificationActionButton({ action }: { action: NotificationAction }) {
   return (
     <Button kind="ghost" size="sm" onClick={action.onClick}>
@@ -1087,6 +1303,10 @@ function StageNotificationViewport() {
   const bannerRef = useRef<HTMLDivElement | null>(null)
   const [liveSnapshotCollapsed, setLiveSnapshotCollapsed] = useState(false)
   const [warningHistory, setWarningHistory] = useState<StageWarningHistorySample[]>([])
+  const [kyronQueue, setKyronQueue] = useState<StageKyronEntry[]>([])
+  const [activeKyron, setActiveKyron] = useState<StageKyronEntry | null>(null)
+  const [kyronPhase, setKyronPhase] = useState<'enter' | 'dwell' | 'exit'>('enter')
+  const processedKyronKeysRef = useRef<Set<string>>(new Set())
   const { prefersReducedMotion } = useReducedEffectsPreference()
   const clusterLiveStateQuery = useClusterSnapshotRuntimeLiveState({
     enabled: !location.pathname.startsWith('/snapshot-editor'),
@@ -1139,18 +1359,71 @@ function StageNotificationViewport() {
       ? [liveSnapshotRecord]
       : []
   const hasClusterSummary = liveNodes.length > 1
-  const mode = primaryStageRecord
-    ? (isTakeoverCandidate(primaryStageRecord) ? 'takeover' : 'expanded')
-    : (liveSnapshotCollapsed && liveSnapshotRecord ? 'rail' : 'expanded')
+  const mode = !primaryStageRecord && liveSnapshotCollapsed && liveSnapshotRecord ? 'rail' : 'expanded'
   const showDismiss = Boolean(primaryStageRecord && !(primaryRecord?.stage?.liveSnapshotPinned ?? false))
   const showCollapse = !primaryStageRecord && Boolean(liveSnapshotRecord)
+
+  useEffect(() => {
+    const pendingEntries = emittedStageNotifications
+      .slice()
+      .sort((left, right) => left.updatedAt - right.updatedAt)
+      .map(buildKyronEntry)
+
+    setKyronQueue((current) => {
+      const next = [...current]
+      const queuedKeys = new Set(next.map((entry) => entry.key))
+      pendingEntries.forEach((entry) => {
+        if (processedKyronKeysRef.current.has(entry.key) || queuedKeys.has(entry.key) || activeKyron?.key === entry.key) {
+          return
+        }
+        next.push(entry)
+        queuedKeys.add(entry.key)
+        processedKyronKeysRef.current.add(entry.key)
+      })
+      return next
+    })
+  }, [activeKyron?.key, emittedStageNotifications])
+
+  useEffect(() => {
+    if (activeKyron || kyronQueue.length === 0) {
+      return
+    }
+    setActiveKyron(kyronQueue[0] ?? null)
+    setKyronQueue((current) => current.slice(1))
+  }, [activeKyron, kyronQueue])
+
+  useEffect(() => {
+    if (!activeKyron) {
+      return
+    }
+
+    setKyronPhase('enter')
+    const settleTimer = window.setTimeout(() => setKyronPhase('dwell'), KYRON_TRANSITION_DURATION_MS)
+    const exitTimer = window.setTimeout(
+      () => setKyronPhase('exit'),
+      KYRON_TRANSITION_DURATION_MS + KYRON_DWELL_DURATION_MS,
+    )
+    const clearTimer = window.setTimeout(
+      () => {
+        setActiveKyron(null)
+        setKyronPhase('enter')
+      },
+      (KYRON_TRANSITION_DURATION_MS * 2) + KYRON_DWELL_DURATION_MS,
+    )
+
+    return () => {
+      window.clearTimeout(settleTimer)
+      window.clearTimeout(exitTimer)
+      window.clearTimeout(clearTimer)
+    }
+  }, [activeKyron])
 
   useEffect(() => {
     if (typeof document === 'undefined') {
       return
     }
 
-    if (!primaryRecord || mode === 'rail' || !bannerRef.current) {
+    if ((!primaryRecord && !activeKyron) || (mode === 'rail' && !activeKyron) || !bannerRef.current) {
       document.documentElement.style.setProperty(ROOT_STAGE_NOTIFICATION_HEIGHT_VAR, '0px')
       return
     }
@@ -1170,7 +1443,7 @@ function StageNotificationViewport() {
       resizeObserver.disconnect()
       document.documentElement.style.setProperty(ROOT_STAGE_NOTIFICATION_HEIGHT_VAR, '0px')
     }
-  }, [mode, primaryRecord])
+  }, [activeKyron, mode, primaryRecord])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !primaryRecord || mode === 'rail') {
@@ -1327,23 +1600,18 @@ function StageNotificationViewport() {
     return null
   }
 
-  if (!primaryRecord) {
-    return (
-      <aside className="stage-notification-idle-rail" aria-label="Node idle rail">
-        <span className="stage-notification-idle-rail__dot" aria-hidden="true" />
-        <span className="stage-notification-idle-rail__label">Node idle</span>
-      </aside>
-    )
-  }
-
   const disconnected = clusterLiveStateQuery.isError || audioStatusQuery.isError
-  const surfaceTone = disconnected ? 'critical' : stageWarnings[0]?.severity ?? toneClass
-  const routeAction = (liveSnapshotRecord ?? primaryRecord).stage?.route ? (
+  const surfaceTone = disconnected
+    ? 'critical'
+    : primaryStageRecord?.stage?.severity
+      ?? (primaryStageRecord ? severityFromTone(primaryStageRecord.tone) : toneClass)
+  const routeTargetRecord = liveSnapshotRecord ?? primaryRecord
+  const routeAction = routeTargetRecord?.stage?.route ? (
     <button
       type="button"
       className="stage-notification-surface__icon-button"
-      aria-label={(liveSnapshotRecord ?? primaryRecord).stage!.routeLabel}
-      onClick={() => navigate((liveSnapshotRecord ?? primaryRecord).stage!.route)}
+      aria-label={routeTargetRecord.stage!.routeLabel}
+      onClick={() => navigate(routeTargetRecord.stage!.route)}
     >
       <ArrowRight size={16} />
     </button>
@@ -1369,84 +1637,136 @@ function StageNotificationViewport() {
     </button>
   ) : null
 
-  if (mode === 'rail') {
+  const normalTransitionClass = activeKyron
+    ? kyronPhase === 'exit'
+      ? ' stage-notification-transition--return'
+      : kyronPhase === 'enter'
+        ? ' stage-notification-transition--depart'
+        : ' stage-notification-transition--hidden'
+    : ''
+  const showSceneDuringKyron = !activeKyron || kyronPhase !== 'dwell'
+
+  if (!primaryRecord && activeKyron) {
     return (
-      <aside className="stage-notification-rail" aria-label="Notification rail">
-        {railRecords.map((record) => (
-          <button
-            key={record.id}
-            type="button"
-            className={`stage-notification-rail__item stage-notification-rail__item--${record.stage?.severity ?? severityFromTone(record.tone)}`}
-            onClick={() => setLiveSnapshotCollapsed(false)}
-          >
-            <span className="stage-notification-rail__label">{record.stage?.compactLabel ?? record.title}</span>
-            <span className="stage-notification-rail__message">{record.message}</span>
-          </button>
-        ))}
+      <>
+        {showSceneDuringKyron ? (
+          <aside className={`stage-notification-idle-rail${normalTransitionClass}`} aria-label="Node idle rail">
+            <span className="stage-notification-idle-rail__dot" aria-hidden="true" />
+            <span className="stage-notification-idle-rail__label">Node idle</span>
+          </aside>
+        ) : null}
+        <div ref={bannerRef}>
+          <StageKyron entry={activeKyron} phase={kyronPhase} />
+        </div>
+      </>
+    )
+  }
+
+  if (!primaryRecord) {
+    return (
+      <aside className="stage-notification-idle-rail" aria-label="Node idle rail">
+        <span className="stage-notification-idle-rail__dot" aria-hidden="true" />
+        <span className="stage-notification-idle-rail__label">Node idle</span>
       </aside>
     )
   }
 
+  if (mode === 'rail') {
+    const railPrimaryRecord = railRecords[0] ?? null
+    const railRoute = railPrimaryRecord?.stage?.route
+    return (
+      <>
+        {showSceneDuringKyron ? (
+          <aside className={`stage-notification-rail${normalTransitionClass}`} aria-label="Notification rail">
+            <StageMiniKyron
+              records={railRecords}
+              liveSnapshotState={liveSnapshotState}
+              channelCount={channelCount}
+              blockCount={blockCount}
+              prefersReducedMotion={prefersReducedMotion}
+              onExpand={() => setLiveSnapshotCollapsed(false)}
+              onRoute={railRoute ? () => navigate(railRoute) : undefined}
+            />
+          </aside>
+        ) : null}
+        {activeKyron ? (
+          <div ref={bannerRef}>
+            <StageKyron entry={activeKyron} phase={kyronPhase} />
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
   return (
-    <div
-      ref={bannerRef}
-      className={`stage-notification-surface stage-notification-surface--${mode} stage-notification-surface--${surfaceTone}`}
-      role={surfaceTone === 'critical' || surfaceTone === 'warning' ? 'alert' : 'status'}
-      aria-live={surfaceTone === 'critical' ? 'assertive' : 'polite'}
-      data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
-    >
-      {disconnected ? <div className="stage-notification-surface__disconnect">DISCONNECTED</div> : null}
-      <div className="stage-notification-surface__toolbar">
-        {primaryRecord.action ? <NotificationActionButton action={primaryRecord.action} /> : null}
-        {collapseAction}
-        {dismissAction}
-      </div>
-      <div className="stage-notification-surface__grid" aria-label="Stage notification overview">
-        {hasClusterSummary
-          ? <StageClusterSummaryCard liveNodes={liveNodes} routeAction={routeAction} />
-          : (
-            <StageSnapshotCard
-              state={liveSnapshotState}
-              fallbackRecord={primaryRecord}
-              routeAction={routeAction}
+    <>
+      {showSceneDuringKyron ? (
+        <div
+          ref={activeKyron ? null : bannerRef}
+          className={`stage-notification-surface stage-notification-surface--${mode} stage-notification-surface--${surfaceTone}${normalTransitionClass}`}
+          role={surfaceTone === 'critical' || surfaceTone === 'warning' ? 'alert' : 'status'}
+          aria-live={surfaceTone === 'critical' ? 'assertive' : 'polite'}
+          data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
+        >
+          {disconnected ? <div className="stage-notification-surface__disconnect">DISCONNECTED</div> : null}
+          <div className="stage-notification-surface__toolbar">
+            {primaryRecord.action ? <NotificationActionButton action={primaryRecord.action} /> : null}
+            {collapseAction}
+            {dismissAction}
+          </div>
+          <div className="stage-notification-surface__grid" aria-label="Stage notification overview">
+            {hasClusterSummary
+              ? <StageClusterSummaryCard liveNodes={liveNodes} routeAction={routeAction} />
+              : (
+                <StageSnapshotCard
+                  state={liveSnapshotState}
+                  fallbackRecord={primaryRecord}
+                  routeAction={routeAction}
+                  reducedMotion={prefersReducedMotion}
+                />
+              )}
+            <StereoMeterCard
+              nodeLabel={primaryRecord.stage?.sourceLabel || 'active node'}
+              levels={{
+                outputLeft: meterTelemetry.levels.outputLeft,
+                outputRight: meterTelemetry.levels.outputRight,
+              }}
+              peakHold={{
+                outputLeft: meterTelemetry.peakHold.outputLeft,
+                outputRight: meterTelemetry.peakHold.outputRight,
+              }}
+              history={meterTelemetry.history}
+              clipCount={meterTelemetry.clipCount}
+              clipLatched={meterTelemetry.clipLatched}
+              silenceActive={meterTelemetry.silenceActive}
+              isRunning={meterTelemetry.isRunning}
+            />
+            <StageVitalsCard
+              cpuPercent={cpuTelemetry.metrics.totalCpuPercent}
+              cpuHistory={cpuTelemetry.cpuHistory}
+              xrunCount={cpuTelemetry.metrics.xrunCount}
+              xrunHistory={cpuTelemetry.xrunHistory}
+              sampleRate={audioStatusQuery.data?.sample_rate}
+              bufferSize={audioStatusQuery.data?.buffer_size}
+              channelCount={channelCount}
+              blockCount={blockCount}
               reducedMotion={prefersReducedMotion}
             />
-          )}
-        <StereoMeterCard
-          nodeLabel={primaryRecord.stage?.sourceLabel || 'active node'}
-          levels={{
-            outputLeft: meterTelemetry.levels.outputLeft,
-            outputRight: meterTelemetry.levels.outputRight,
-          }}
-          peakHold={{
-            outputLeft: meterTelemetry.peakHold.outputLeft,
-            outputRight: meterTelemetry.peakHold.outputRight,
-          }}
-          history={meterTelemetry.history}
-          clipCount={meterTelemetry.clipCount}
-          clipLatched={meterTelemetry.clipLatched}
-          silenceActive={meterTelemetry.silenceActive}
-          isRunning={meterTelemetry.isRunning}
-        />
-        <StageVitalsCard
-          cpuPercent={cpuTelemetry.metrics.totalCpuPercent}
-          cpuHistory={cpuTelemetry.cpuHistory}
-          xrunCount={cpuTelemetry.metrics.xrunCount}
-          xrunHistory={cpuTelemetry.xrunHistory}
-          sampleRate={audioStatusQuery.data?.sample_rate}
-          bufferSize={audioStatusQuery.data?.buffer_size}
-          channelCount={channelCount}
-          blockCount={blockCount}
-          reducedMotion={prefersReducedMotion}
-        />
-        <StageWarningsCard
-          entries={stageWarnings}
-          updatedLabel={updatedLabel}
-          history={warningHistory}
-          clipCount={meterTelemetry.clipCount}
-        />
-      </div>
-    </div>
+            <StageWarningsCard
+              entries={stageWarnings}
+              updatedLabel={updatedLabel}
+              history={warningHistory}
+              clipCount={meterTelemetry.clipCount}
+            />
+          </div>
+        </div>
+      ) : null}
+      {activeKyron ? (
+        <div ref={bannerRef}>
+          <StageKyron entry={activeKyron} phase={kyronPhase} />
+        </div>
+      ) : null}
+    </>
   )
 }
 

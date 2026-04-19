@@ -17,6 +17,10 @@ function runtimeActivationEventsKey(nodeId?: string | null, limit = 100) {
   return ['snapshots', 'runtime', 'activation-events', nodeId ?? 'local', limit] as const
 }
 
+function clusterRuntimeLiveStateKey() {
+  return ['snapshots', 'runtime', 'cluster-live-state'] as const
+}
+
 function invalidateAuthorityStateCaches(queryClient: ReturnType<typeof useQueryClient>, options?: { includeDesired?: boolean }) {
   void queryClient.invalidateQueries({ queryKey: ['audio-state', 'committed'] })
   void queryClient.invalidateQueries({ queryKey: ['audio-state', 'observed'] })
@@ -98,8 +102,33 @@ export function useClusterSnapshotRuntimeLiveState(
   options: { enabled?: boolean; refetchInterval?: number | false } = {},
 ) {
   const { enabled = true, refetchInterval = 10_000 } = options
+  const queryClient = useQueryClient()
+  const queryKey = clusterRuntimeLiveStateKey()
+
+  useWebSocketTopic<SnapshotRuntimeLiveState>('snapshot_runtime_live_state', (data, message) => {
+    if (message.type !== 'snapshot_runtime_live_state' || !data || !enabled) {
+      return
+    }
+
+    queryClient.setQueryData<SnapshotRuntimeClusterLiveStateResponse | undefined>(queryKey, (current) => {
+      const currentNodes = current?.nodes ?? []
+      const existingIndex = currentNodes.findIndex((node) => node.node_id === data.node_id)
+      const nextNodes = existingIndex >= 0
+        ? currentNodes.map((node, index) => (index === existingIndex ? data : node))
+        : [...currentNodes, data]
+
+      return {
+        local_node_id: current?.local_node_id ?? data.node_id,
+        generated_at: new Date().toISOString(),
+        count: nextNodes.length,
+        nodes: nextNodes,
+      }
+    })
+    invalidateAuthorityStateCaches(queryClient)
+  })
+
   return useQuery<SnapshotRuntimeClusterLiveStateResponse>({
-    queryKey: ['snapshots', 'runtime', 'cluster-live-state'],
+    queryKey,
     queryFn: () => snapshotsApi.getClusterRuntimeLiveState(),
     enabled,
     staleTime: 2_000,

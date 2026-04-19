@@ -238,4 +238,40 @@ describe('useSnapshotRuntimeState hooks', () => {
     await waitFor(() => expect(result.current.data).toEqual(clusterState))
     expect(snapshotsApi.getClusterRuntimeLiveState).toHaveBeenCalledTimes(1)
   })
+
+  it('patches the cluster runtime state cache when live-state websocket events arrive', async () => {
+    const clusterState: SnapshotRuntimeClusterLiveStateResponse = {
+      local_node_id: 'node-a',
+      generated_at: '2026-03-30T21:00:10Z',
+      count: 2,
+      nodes: [localRuntimeState, remoteRuntimeState],
+    }
+    snapshotsApi.getClusterRuntimeLiveState.mockResolvedValue(clusterState)
+    const queryClient = makeQueryClient()
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(
+      () => useClusterSnapshotRuntimeLiveState({ refetchInterval: false }),
+      { wrapper: makeWrapper(queryClient) },
+    )
+
+    await waitFor(() => expect(result.current.data?.nodes).toHaveLength(2))
+    invalidateSpy.mockClear()
+
+    act(() => {
+      mockTopicHandlers.get('snapshot_runtime_live_state')?.(
+        { ...localRuntimeState, seq: 9, snapshot_name: 'Rig20260417', snapshot_revision: 'rev-renamed' },
+        { type: 'snapshot_runtime_live_state' },
+      )
+    })
+
+    await waitFor(() => {
+      expect(result.current.data?.nodes.find((node) => node.node_id === 'node-a')?.snapshot_name).toBe('Rig20260417')
+    })
+    expect(result.current.data?.nodes.find((node) => node.node_id === 'node-a')?.seq).toBe(9)
+    expect(result.current.data?.count).toBe(2)
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'committed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['audio-state', 'observed'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['snapshots', 'detail', 'authority-active'] })
+  })
 })
