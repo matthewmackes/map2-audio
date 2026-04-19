@@ -20,6 +20,7 @@ from typing import Dict, Any, Optional, Callable
 from queue import Queue, Empty, Full
 import threading
 
+from app.services.platform_event.bus import PlatformEventFilter, get_platform_event_bus
 from app.services.websocket_manager import ws_manager
 from app.services.juce_engine_service import get_audio_engine
 
@@ -33,15 +34,6 @@ except Exception:  # pragma: no cover - optional integration
     MidiMessage = None  # type: ignore[assignment]
     VirtualMidiPort = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
-
-try:
-    from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
-    MIDI_CLUSTER_EVENTS_AVAILABLE = True
-except Exception:  # pragma: no cover - optional integration
-    EventType = None  # type: ignore[assignment]
-    get_distributed_event_bus = None  # type: ignore[assignment]
-    MIDI_CLUSTER_EVENTS_AVAILABLE = False
-
 
 class MidiBroadcastService:
     """
@@ -66,6 +58,7 @@ class MidiBroadcastService:
         self._engine_input_port_id = "consumer:juce_engine_in"
         self._engine_output_port_id = "consumer:juce_engine_out"
         self._cluster_event_bridge_registered = False
+        self._cluster_subscription = None
 
         # Topic names
         self.TOPIC_MIDI = "midi"
@@ -100,6 +93,12 @@ class MidiBroadcastService:
                 self._hub.unsubscribe(self._hub_subscriber_id)
             except Exception:
                 pass
+        if self._cluster_subscription is not None:
+            try:
+                self._cluster_subscription.close()
+            except Exception:
+                pass
+            self._cluster_subscription = None
 
         if self._task:
             self._task.cancel()
@@ -232,13 +231,36 @@ class MidiBroadcastService:
             )
 
     def _register_cluster_event_bridge(self) -> None:
-        if self._cluster_event_bridge_registered or not MIDI_CLUSTER_EVENTS_AVAILABLE:
+        if self._cluster_event_bridge_registered:
+            return
+        asyncio.create_task(self._register_cluster_event_bridge_async())
+
+    async def _register_cluster_event_bridge_async(self) -> None:
+        if self._cluster_event_bridge_registered:
             return
         try:
-            event_bus = get_distributed_event_bus()
-            for event_type in EventType:
-                if event_type.name.startswith("MIDI_"):
-                    event_bus.subscribe(event_type, self._on_cluster_event)
+            self._cluster_subscription = await get_platform_event_bus().subscribe_callback(
+                self._on_cluster_event,
+                PlatformEventFilter(
+                    kinds=frozenset(
+                        {
+                            "midi.node.discovered",
+                            "midi.node.lost",
+                            "midi.port.discovered",
+                            "midi.port.lost",
+                            "midi.connection.requested",
+                            "midi.connection.established",
+                            "midi.connection.failed",
+                            "midi.connection.lost",
+                            "midi.clock.master.elected",
+                            "midi.clock.drift",
+                            "midi.failover.triggered",
+                            "midi.failover.completed",
+                            "midi.profile.shared",
+                        }
+                    )
+                ),
+            )
             self._cluster_event_bridge_registered = True
         except Exception as exc:
             logger.debug("MidiBroadcastService cluster event bridge unavailable: %s", exc)
@@ -258,7 +280,7 @@ class MidiBroadcastService:
         )
 
     def _cluster_topic_payload(self, event: Any) -> Optional[Dict[str, Any]]:
-        event_type = getattr(getattr(event, "event_type", None), "value", None)
+        event_type = getattr(event, "kind", None)
         if not event_type:
             return None
 
@@ -280,8 +302,8 @@ class MidiBroadcastService:
         }:
             topics.append(self.TOPIC_MIDI_CLUSTER_CONNECTIONS)
         elif event_type in {
-            "midi.clock.master_elected",
-            "midi.clock.drift_detected",
+            "midi.clock.master.elected",
+            "midi.clock.drift",
         }:
             topics.append(self.TOPIC_MIDI_CLUSTER_CLOCK)
 
@@ -294,8 +316,8 @@ class MidiBroadcastService:
             "midi.connection.established": "midi_cluster_connection_established",
             "midi.connection.failed": "midi_cluster_connection_failed",
             "midi.connection.lost": "midi_cluster_connection_lost",
-            "midi.clock.master_elected": "midi_cluster_clock_sync",
-            "midi.clock.drift_detected": "midi_cluster_clock_drift",
+            "midi.clock.master.elected": "midi_cluster_clock_sync",
+            "midi.clock.drift": "midi_cluster_clock_drift",
             "midi.failover.triggered": "midi_cluster_failover",
             "midi.failover.completed": "midi_cluster_failover",
             "midi.profile.shared": "midi_cluster_profile_shared",
@@ -305,10 +327,10 @@ class MidiBroadcastService:
         payload = {
             "event_type": event_type,
             "severity": getattr(getattr(event, "severity", None), "value", "info"),
-            "source_node_id": getattr(event, "source_node_id", ""),
-            "affected_nodes": list(getattr(event, "affected_nodes", []) or []),
+            "source_node_id": getattr(event, "source_node", ""),
+            "affected_nodes": list(getattr(event, "context", {}).get("affected_nodes", []) or []),
             "message": getattr(event, "message", ""),
-            "details": dict(getattr(event, "details", {}) or {}),
+            "details": dict(getattr(event, "context", {}) or {}),
             "correlation_id": getattr(event, "correlation_id", ""),
         }
         return {

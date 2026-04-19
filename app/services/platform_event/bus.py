@@ -126,9 +126,20 @@ class PlatformEventBus(Singleton):
         if not self._enabled:
             return platform_event.event_id
         enriched_event = self._prepare_event(platform_event)
-        self._store.persist_event(enriched_event)
+        inserted = self._store.persist_event(enriched_event)
+        if not inserted:
+            return enriched_event.event_id
         await self._fanout(enriched_event)
         return enriched_event.event_id
+
+    async def ingest_remote(self, event: PlatformEvent | dict[str, Any], *, via_node: str) -> str:
+        platform_event = event if isinstance(event, PlatformEvent) else PlatformEvent.model_validate(event)
+        context = dict(platform_event.context or {})
+        if context.get("federated_from"):
+            return platform_event.event_id
+        context["federated_from"] = str(via_node)
+        remote_event = platform_event.model_copy(update={"context": context})
+        return await self.emit(remote_event)
 
     def emit_threadsafe(self, event: PlatformEvent | dict[str, Any]) -> None:
         try:

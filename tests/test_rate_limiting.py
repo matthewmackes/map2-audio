@@ -1,5 +1,5 @@
 """
-Test Rate Limiting for LCD Event Endpoints
+Test Rate Limiting for PlatformEvent Endpoints
 
 Validates:
 - Rate limits are enforced
@@ -61,23 +61,21 @@ def test_token_bucket_refill():
 
 def test_rate_limit_configuration():
     """Test rate limit configuration"""
-    # Check LCD-specific limits are configured
-    assert "/api/lcd/events" in ENDPOINT_RATE_LIMITS
-    assert "/api/lcd/history" in ENDPOINT_RATE_LIMITS
-    assert "/api/lcd/health" in ENDPOINT_RATE_LIMITS
-    assert "POST:/api/lcd/events" in ENDPOINT_RATE_LIMITS
+    # Check PlatformEvent-specific limits are configured
+    assert "/api/platform-events" in ENDPOINT_RATE_LIMITS
+    assert "POST:/api/platform-events/ack" in ENDPOINT_RATE_LIMITS
     
     # Verify limits
-    limit, window = ENDPOINT_RATE_LIMITS["/api/lcd/events"]
+    limit, window = ENDPOINT_RATE_LIMITS["/api/platform-events"]
     assert limit == 100
     assert window == 60
     
-    # POST should have stricter limit
-    limit, window = ENDPOINT_RATE_LIMITS["POST:/api/lcd/events"]
-    assert limit == 50  # Stricter than GET
+    # ACK should stay permissive for operator dismissals
+    limit, window = ENDPOINT_RATE_LIMITS["POST:/api/platform-events/ack"]
+    assert limit == 100
     assert window == 60
     
-    print("✓ LCD rate limits configured correctly")
+    print("✓ PlatformEvent rate limits configured correctly")
 
 
 def test_method_specific_limits():
@@ -90,12 +88,12 @@ def test_method_specific_limits():
     )
     
     # GET should use general limit
-    limit, window = middleware._get_limits("/api/lcd/events", "GET")
+    limit, window = middleware._get_limits("/api/platform-events", "GET")
     assert limit == 100
     
-    # POST should use stricter limit
-    limit, window = middleware._get_limits("/api/lcd/events", "POST")
-    assert limit == 50
+    # POST ack should use its method-specific limit
+    limit, window = middleware._get_limits("/api/platform-events/ack", "POST")
+    assert limit == 100
     
     print("✓ Method-specific limits work")
 

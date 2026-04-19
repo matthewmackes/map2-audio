@@ -70,24 +70,30 @@ def _get_runtime_reloader():
 
 async def _publish_config_sync_event(event_type: str, message: str, details: Optional[Dict[str, Any]] = None) -> None:
     try:
-        from app.services.cluster.distributed_event_bus import (
-            ClusterEvent,
-            EventSeverity,
-            EventType,
-            get_event_bus as get_distributed_event_bus,
-        )
         from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+        from app.services.platform_event.bus import get_platform_event_bus
+        from app.services.platform_event.factories import make_cluster_platform_event
+        from app.services.platform_event.severity import Severity
 
-        mapped = getattr(EventType, event_type)
-        event_bus = get_distributed_event_bus()
+        mapped = {
+            "CONFIG_SYNC_REQUESTED": "config.sync.requested",
+            "CONFIG_SYNC_COMPLETED": "config.sync.completed",
+            "CONFIG_PUSHED": "config.pushed",
+            "CONFIG_ROLLED_BACK": "config.rolled_back",
+            "CONFIG_SYNCED": "config.synced",
+        }.get(str(event_type))
+        if mapped is None:
+            return
         identity = get_enhanced_node_identity()
-        await event_bus.publish_event(
-            ClusterEvent(
-                event_type=mapped,
-                severity=EventSeverity.INFO,
-                source_node_id=identity.get_node_id(),
+        await get_platform_event_bus().emit(
+            make_cluster_platform_event(
+                kind=mapped,
+                severity=Severity.INFO,
+                source_node=identity.get_node_id(),
+                source_service="config_api",
+                title="Configuration sync event",
                 message=message,
-                details=details or {},
+                context=details or {},
             )
         )
     except Exception:

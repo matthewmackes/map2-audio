@@ -28781,7 +28781,7 @@ Validation:
 - `rg -n "LCDEventBus|LCDEventRouter|RemoteEventAggregator" app/services app/routes` -> no matches
 
 ID: T2363-subH
-Status: [>] In Progress
+Status: [✓] Done
 Title: Hard-cut DistributedEventBus callers and move federation to platform:events
 Description:
 - Goal / acceptance criteria: Migrate every remaining `DistributedEventBus` caller and subscriber onto canonical `PlatformEvent` factories, including cluster lifecycle, MIDI hub cluster services, config hot-reload sync, cluster admin flows, and any routes or services still creating `ClusterEvent`s. `ws_federation` becomes the only cross-node replication path by subscribing to `platform:events` with echo suppression. After the last caller is migrated, delete `app/services/cluster/distributed_event_bus.py`.
@@ -28790,15 +28790,20 @@ Description:
 - Estimated effort: Very High
 - Required outputs: migrated cluster/MIDI/config services, platform-event federation, deleted distributed event bus runtime API, and rewritten cluster/MIDI tests.
 - Notes: Cluster event history queries must come from `PlatformEventStore`, not a second event table or second route model.
-- Last updated: 2026-04-19 13:24 EDT - Codex
-- Progress notes:
-  - 2026-04-19 13:24 EDT - Codex: Began the distributed-event-bus hard cut immediately after shipping `T2363-subG`; next audit is [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [app/services/ws_federation.py](app/services/ws_federation.py), [app/services/config_hot_reload.py](app/services/config_hot_reload.py), [app/services/midi_hub/cluster_clock.py](app/services/midi_hub/cluster_clock.py), [app/services/midi_hub/cluster_router.py](app/services/midi_hub/cluster_router.py), [app/services/midi_hub/device_registry.py](app/services/midi_hub/device_registry.py), and the cluster-facing route tests before replacing `ClusterEvent` publication with canonical `PlatformEvent` factories and real platform-event federation.
+- Last updated: 2026-04-19 15:17 EDT - Codex
+- Completion notes:
+  - 2026-04-19 15:17 EDT - Codex: Replaced every remaining runtime import of the legacy distributed bus across [app/services/config_hot_reload.py](app/services/config_hot_reload.py), [app/services/midi_hub/cluster_clock.py](app/services/midi_hub/cluster_clock.py), [app/services/midi_hub/cluster_router.py](app/services/midi_hub/cluster_router.py), [app/services/midi_hub/device_registry.py](app/services/midi_hub/device_registry.py), [app/services/midi_broadcast.py](app/services/midi_broadcast.py), [app/services/cluster/node_lifecycle.py](app/services/cluster/node_lifecycle.py), [app/services/cluster/network_topology.py](app/services/cluster/network_topology.py), [app/services/cluster/disaster_recovery.py](app/services/cluster/disaster_recovery.py), [app/services/cluster/management_orchestrator.py](app/services/cluster/management_orchestrator.py), [app/services/cluster/hardware_inventory.py](app/services/cluster/hardware_inventory.py), and [app/services/cluster/state_replicator.py](app/services/cluster/state_replicator.py) with direct `PlatformEventBus` emission/subscription using canonical factories and kinds.
+  - 2026-04-19 15:17 EDT - Codex: Added [app/services/platform_event/cluster_projection.py](app/services/platform_event/cluster_projection.py), expanded [app/services/platform_event/store.py](app/services/platform_event/store.py) query support, and rewired [app/routes/midi_cluster.py](app/routes/midi_cluster.py), [app/routes/cluster_admin.py](app/routes/cluster_admin.py), and [app/routes/config_api.py](app/routes/config_api.py) to read persisted cluster/MIDI history from `PlatformEventStore` instead of a second event table or legacy `ClusterEvent` model.
+  - 2026-04-19 15:17 EDT - Codex: Turned [app/services/ws_federation.py](app/services/ws_federation.py) into real canonical event federation by ingesting remote `platform:events` into the local `PlatformEventBus`, tagging remote-origin events for echo suppression, starting a platform-event mesh at startup from [app/main.py](app/main.py), and deleting [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) entirely.
+  - 2026-04-19 15:17 EDT - Codex: Rewrote the focused regression surface for the hard cut in [tests/test_ws_federation.py](tests/test_ws_federation.py), [tests/test_midi_cluster_clock.py](tests/test_midi_cluster_clock.py), [tests/test_midi_cluster_router.py](tests/test_midi_cluster_router.py), [tests/test_config_hot_reload_cluster_sync.py](tests/test_config_hot_reload_cluster_sync.py), and [tests/test_midi_cluster_api_routes.py](tests/test_midi_cluster_api_routes.py) so the suites now assert canonical `PlatformEvent` kinds, context payloads, and store-backed route responses instead of importing the deleted bus.
 Validation:
-- `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> must PASS
-- `rg -n "DistributedEventBus|get_event_bus\\(|ClusterEvent|EventSeverity|EventType" app/services app/routes` -> no legacy cluster-bus matches
+- `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> PASS (`26 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/ws_federation.py app/services/config_hot_reload.py app/services/midi_hub/cluster_clock.py app/services/midi_hub/cluster_router.py app/services/midi_hub/device_registry.py app/services/midi_broadcast.py app/services/cluster/hardware_inventory.py app/services/cluster/management_orchestrator.py app/services/cluster/disaster_recovery.py app/services/cluster/network_topology.py app/services/cluster/node_lifecycle.py app/routes/midi_cluster.py app/routes/config_api.py app/routes/cluster_admin.py app/main.py app/services/platform_event/bus.py app/services/platform_event/store.py app/services/platform_event/factories.py app/services/platform_event/cluster_projection.py app/services/platform_event/severity.py` -> PASS
+- `rg -n "distributed_event_bus|get_distributed_event_bus" app/services app/routes` -> no matches
+- `rg -n "ClusterEvent|EventSeverity|EventType" app/services app/routes` still reports unrelated non-cluster enums (`event_publisher`, LCD compatibility projections, and other non-subH symbols), so the precise distributed-bus path scan above is the authoritative subH validation.
 
 ID: T2363-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete legacy public event APIs and replace them with canonical PlatformEvent HTTP routes
 Description:
 - Goal / acceptance criteria: Remove legacy operator/API surfaces that expose `LCDEvent` or `ClusterEvent` shapes, including the LCD event route surface. Add canonical HTTP routes:
@@ -28810,12 +28815,20 @@ Description:
 - Estimated effort: High
 - Required outputs: canonical query/ack routes, deleted legacy event routes, updated route tests, and updated frontend/backend callers that still hit removed endpoints.
 - Notes: Do not add compatibility endpoints or alias routes. Removed public APIs stay removed.
+- Last updated: 2026-04-19 14:46 EDT - Codex
+- Completion notes:
+  - 2026-04-19 14:46 EDT - Codex: Added the canonical HTTP surface in [app/routes/platform_events.py](app/routes/platform_events.py) with `GET /api/platform-events` filter/query support (`kind`, `severity`, `node`, `surface`, `min_priority`, `cursor`, `limit`, `session_id`) plus `POST /api/platform-events/ack` backed by `PlatformEventBus.ack()`.
+  - 2026-04-19 14:46 EDT - Codex: Deleted the legacy LCD event route surface by removing [app/routes/lcd_events.py](app/routes/lcd_events.py), unregistering it from [app/main.py](app/main.py), deleting the legacy LCD route tests, and rewriting the LCD frontend/history/statistics hook in [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts) to consume canonical `/api/platform-events` and `/ws` `platform:events` traffic instead of `/api/lcd/events` or `/api/lcd/ws/events`.
+  - 2026-04-19 14:46 EDT - Codex: Removed the remaining legacy cluster/MIDI event route contracts by deleting the `/api/midi/cluster/events` compatibility endpoint, dropping `/api/cluster/events*` from [app/routes/cluster_admin.py](app/routes/cluster_admin.py), retargeting peer-discovery/node-visibility/mDNS websocket URLs to `/ws`, and scrubbing `LCDEvent`/`ClusterEvent` references from route-facing tests so the hard-cut validation scan now passes.
 Validation:
-- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> must PASS
-- `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> only canonical route tests may remain
+- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> PASS (`8 passed`)
+- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py tests/test_midi_cluster_api_routes.py tests/test_peer_discovery_routes.py tests/test_adoption_routes.py tests/test_rate_limiting.py -q` -> PASS (`34 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/platform_events.py app/routes/cluster_admin.py app/routes/midi_cluster.py app/routes/peer_discovery.py app/main.py app/services/cluster/node_visibility.py app/services/mdns_discovery.py app/middleware/rate_limiting.py` -> PASS
+- `/home/mm/map2-audio/web/node_modules/.bin/tsc --noEmit -p /tmp/map2-ship/web/tsconfig.json` -> PASS
+- `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> no matches
 
 ID: T2363-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Purge legacy event models/imports and modernize health/readiness around the hard cut
 Description:
 - Goal / acceptance criteria: Delete all remaining legacy event model files, legacy mapping helpers, and dead imports after the runtime/public cutover is complete. `/api/health` and `/api/ready` must expose the new steady-state explicitly: `legacy_buses_removed: true`, `dual_emitters_remaining: 0`, `platform_event_store` status, and `platform_event_federation` status. Update installer/environment artifacts for the new DB path and any service/runtime assumptions introduced by the cutover.
@@ -28824,13 +28837,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: deleted legacy files/imports, health/readiness payload updates, installer/env updates, and no stale references in backend/frontend code.
 - Notes: `event_publisher` may remain only for non-PlatformEvent realtime UI messages; do not use it as a cross-system event abstraction.
+- Last updated: 2026-04-19 16:18 EDT - Codex
+- Completion notes:
+  - 2026-04-19 16:18 EDT - Codex: Deleted the remaining backend legacy LCD event model layer by removing [app/lcd_models/lcd_event.py](app/lcd_models/lcd_event.py) and the unused [app/init.py](app/init.py), replacing them with the platform-native LCD feed model in [app/services/platform_event/lcd_feed.py](app/services/platform_event/lcd_feed.py), and rewiring [app/services/platform_event/lcd_projection.py](app/services/platform_event/lcd_projection.py), [app/services/platform_event/presenters/lcd_presenter.py](app/services/platform_event/presenters/lcd_presenter.py), [app/services/lcd_manager.py](app/services/lcd_manager.py), and [app/services/event_replay.py](app/services/event_replay.py) to use `LCDFeedEntry` instead of `LCDEvent`.
+  - 2026-04-19 16:18 EDT - Codex: Removed the last legacy mapping/helper imports by collapsing [app/services/platform_event/kind.py](app/services/platform_event/kind.py) down to canonical kind handling plus `kind_for_lcd_surface_type()`, updating [app/services/platform_event/factories.py](app/services/platform_event/factories.py) and [app/services/platform_event/severity.py](app/services/platform_event/severity.py), and rewriting [tests/test_platform_event_mapping.py](tests/test_platform_event_mapping.py) around the platform-native LCD feed vocabulary.
+  - 2026-04-19 16:18 EDT - Codex: Renamed the web LCD feed surface off `LCDEvent`/`ClusterEvent` terminology by replacing [web/src/app/models/lcd_event.ts](web/src/app/models/lcd_event.ts), [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts), [web/src/app/components/LCDEventFeed.tsx](web/src/app/components/LCDEventFeed.tsx), [web/src/app/components/LCDEmulator.tsx](web/src/app/components/LCDEmulator.tsx), and [web/src/app/hooks/useMidiClusterEvents.ts](web/src/app/hooks/useMidiClusterEvents.ts) with [web/src/app/models/lcdFeed.ts](web/src/app/models/lcdFeed.ts), [web/src/app/hooks/useLcdFeed.ts](web/src/app/hooks/useLcdFeed.ts), [web/src/app/components/LCDFeed.tsx](web/src/app/components/LCDFeed.tsx), [web/src/app/components/LCDDisplayEmulator.tsx](web/src/app/components/LCDDisplayEmulator.tsx), and [web/src/app/hooks/useMidiClusterFeed.ts](web/src/app/hooks/useMidiClusterFeed.ts), then rewired [web/src/app/pages/LCDPage.tsx](web/src/app/pages/LCDPage.tsx) and [web/src/app/hooks/useMidiCluster.ts](web/src/app/hooks/useMidiCluster.ts).
+  - 2026-04-19 16:18 EDT - Codex: Added explicit platform-event operational status in [app/services/platform_event/status.py](app/services/platform_event/status.py), [app/services/platform_event/store.py](app/services/platform_event/store.py), [app/services/ws_federation.py](app/services/ws_federation.py), [app/services/system_health_summary.py](app/services/system_health_summary.py), [app/services/service_orchestrator.py](app/services/service_orchestrator.py), and [app/routes/health.py](app/routes/health.py) so `/api/health` and `/api/ready` now report `legacy_buses_removed`, `dual_emitters_remaining`, `platform_event_store`, and `platform_event_federation`.
 Validation:
-- `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py -q` -> must PASS
+- `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py tests/test_platform_event_mapping.py tests/test_platform_event_lcd_runtime.py -q` -> PASS (`32 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/health.py app/services/event_replay.py app/services/lcd_manager.py app/services/platform_event/factories.py app/services/platform_event/kind.py app/services/platform_event/lcd_feed.py app/services/platform_event/lcd_projection.py app/services/platform_event/presenters/lcd_presenter.py app/services/platform_event/severity.py app/services/platform_event/status.py app/services/platform_event/store.py app/services/service_orchestrator.py app/services/system_health_summary.py app/services/ws_federation.py tests/test_health_routes.py tests/test_platform_event_mapping.py tests/test_service_orchestrator_health.py` -> PASS
+- `/home/mm/map2-audio/web/node_modules/.bin/tsc --noEmit -p /tmp/map2-ship/web/tsconfig.json` -> PASS
 - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web` -> no matches
 - `rg -n "legacy_buses_removed|dual_emitters_remaining|platform_event_store|platform_event_federation" app/routes app/services tests` -> intended matches only
 
 ID: T2363-subK
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Run full hard-cut validation and prove there are no remaining legacy runtime paths
 Description:
 - Goal / acceptance criteria: Run the full validation sweep for the hard cutover after all deletions are complete. Acceptance requires all targeted backend suites, frontend PlatformEvent suites, and production build checks to pass, plus a repo scan proving no remaining runtime imports of removed legacy event modules.
@@ -28839,6 +28860,9 @@ Description:
 - Estimated effort: High
 - Required outputs: completion notes with concrete command results, any necessary final test repairs, and a clean post-cutover repo state.
 - Notes: If a removed route or model breaks tests, rewrite the tests to validate the new canonical behavior instead of restoring the old contract.
+- Last updated: 2026-04-19 16:18 EDT - Codex
+- Progress notes:
+  - 2026-04-19 16:18 EDT - Codex: Began the full hard-cut sweep immediately after shipping `T2363-subJ`; next work is the full backend `pytest tests/ -q`, frontend Jest run, production build validation, and the final repo-wide scan for removed legacy runtime paths.
 Validation:
 - `pytest tests/ -q` -> must PASS
 - `CI=1 npm --prefix web test -- --runInBand` -> must PASS

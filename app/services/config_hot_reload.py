@@ -135,7 +135,8 @@ class ConfigurationHotReloader:
         self._suspend_cluster_broadcast = True
         self.local_node_id = ""
         self.local_node_role = ""
-        self._event_bus = None
+        self._platform_event_bus = None
+        self._platform_subscription = None
         
         # Setup default validation rules
         self._setup_default_validators()
@@ -149,28 +150,50 @@ class ConfigurationHotReloader:
         """Bind an asyncio loop so callbacks from watcher threads can publish events."""
         if loop is not None:
             self._async_loop = loop
-            return
-        try:
-            self._async_loop = asyncio.get_running_loop()
-        except RuntimeError:
-            pass
+        else:
+            try:
+                self._async_loop = asyncio.get_running_loop()
+            except RuntimeError:
+                pass
+        self._schedule_platform_subscription()
 
     def _init_cluster_sync(self) -> None:
-        """Attach to the distributed event bus for cluster config propagation."""
+        """Attach to the PlatformEvent bus for cluster config propagation."""
         try:
-            from app.services.cluster.distributed_event_bus import (
-                EventType,
-                get_event_bus as get_distributed_event_bus,
-            )
             from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+            from app.services.platform_event.bus import get_platform_event_bus
 
             identity = get_enhanced_node_identity()
             self.local_node_id = identity.get_node_id()
             self.local_node_role = identity.get_role()
-            self._event_bus = get_distributed_event_bus()
-            self._event_bus.subscribe(EventType.CONFIG_CHANGED, self._on_cluster_config_changed)
+            self._platform_event_bus = get_platform_event_bus()
         except Exception as exc:
             logger.debug(f"Cluster config sync unavailable: {exc}")
+
+    def _schedule_platform_subscription(self) -> None:
+        if self._platform_event_bus is None or self._platform_subscription is not None:
+            return
+        if self._async_loop is not None and self._async_loop.is_running():
+            asyncio.run_coroutine_threadsafe(self._ensure_platform_subscription(), self._async_loop)
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        loop.create_task(self._ensure_platform_subscription())
+
+    async def _ensure_platform_subscription(self) -> None:
+        if self._platform_event_bus is None or self._platform_subscription is not None:
+            return
+
+        from app.services.platform_event.bus import PlatformEventFilter
+        from app.services.ws_federation import get_ws_federator
+
+        self._platform_subscription = await self._platform_event_bus.subscribe_callback(
+            self._on_cluster_config_changed,
+            PlatformEventFilter(kinds=frozenset({"config.changed"})),
+        )
+        await get_ws_federator().start_platform_event_mesh()
 
     def _schedule_async(self, coro: Any) -> None:
         """Schedule a coroutine from either the main loop or a watcher thread."""
@@ -213,24 +236,19 @@ class ConfigurationHotReloader:
         return False
 
     async def _publish_config_changed(self, key_path: str, value: Any, scope: str, action: str = "modified") -> None:
-        if self._event_bus is None:
+        if self._platform_event_bus is None:
             return
 
-        from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType
+        from app.services.platform_event.factories import make_config_changed_event
 
-        await self._event_bus.publish_event(
-            ClusterEvent(
-                event_type=EventType.CONFIG_CHANGED,
-                severity=EventSeverity.INFO,
-                source_node_id=self.local_node_id,
-                message=f"Configuration changed: {key_path}",
-                details={
-                    "key": key_path,
-                    "value": value,
-                    "scope": scope,
-                    "action": action,
-                    "source_node_id": self.local_node_id,
-                },
+        await self._platform_event_bus.emit(
+            make_config_changed_event(
+                source_node=self.local_node_id,
+                source_service="config_hot_reload",
+                key_path=key_path,
+                value=value,
+                scope=scope,
+                action=action,
             )
         )
 
@@ -248,8 +266,8 @@ class ConfigurationHotReloader:
             self._schedule_async(self._publish_config_changed(key_path, value, scope, action))
 
     async def _on_cluster_config_changed(self, event: Any) -> None:
-        details = dict(getattr(event, "details", {}) or {})
-        source_node_id = str(getattr(event, "source_node_id", "") or details.get("source_node_id", "")).strip()
+        details = dict(getattr(event, "context", {}) or {})
+        source_node_id = str(getattr(event, "source_node", "") or details.get("source_node_id", "")).strip()
         if not details or not source_node_id or source_node_id == self.local_node_id:
             return
 

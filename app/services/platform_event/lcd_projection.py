@@ -1,64 +1,63 @@
-"""Projection helpers from canonical PlatformEvents to the legacy LCD view model."""
+"""Projection helpers from canonical PlatformEvents to the LCD feed model."""
 
 from __future__ import annotations
 
-from app.lcd_models.lcd_event import EventSeverity, EventType, LCDEvent
-
 from .envelope import PlatformEvent
+from .lcd_feed import LCDFeedCategory, LCDFeedEntry, LCDFeedSeverity
 from .policy import hints_for
 
-_EVENT_TYPE_VALUES = {event_type.value for event_type in EventType}
-_KIND_PREFIX_EVENT_TYPES: tuple[tuple[str, EventType], ...] = (
-    ("audio.", EventType.AUDIO),
-    ("plugin.", EventType.AUDIO),
-    ("chain.", EventType.AUDIO),
-    ("node.", EventType.NETWORK),
-    ("cluster.", EventType.NETWORK),
-    ("midi.", EventType.NETWORK),
-    ("config.", EventType.SYSTEM),
-    ("workflow.", EventType.SERVICE),
-    ("snapshot.", EventType.USER),
+_CATEGORY_VALUES = {category.value for category in LCDFeedCategory}
+_KIND_PREFIX_CATEGORIES: tuple[tuple[str, LCDFeedCategory], ...] = (
+    ("audio.", LCDFeedCategory.AUDIO),
+    ("plugin.", LCDFeedCategory.AUDIO),
+    ("chain.", LCDFeedCategory.AUDIO),
+    ("node.", LCDFeedCategory.NETWORK),
+    ("cluster.", LCDFeedCategory.NETWORK),
+    ("midi.", LCDFeedCategory.NETWORK),
+    ("config.", LCDFeedCategory.SYSTEM),
+    ("workflow.", LCDFeedCategory.SERVICE),
+    ("snapshot.", LCDFeedCategory.USER),
 )
 
 
-def lcd_event_type_for_platform_event(event: PlatformEvent) -> EventType:
+def lcd_feed_category_for_platform_event(event: PlatformEvent) -> LCDFeedCategory:
     explicit = str(event.context.get("lcd_event_type") or "").strip().lower()
-    if explicit in _EVENT_TYPE_VALUES:
-        return EventType(explicit)
+    if explicit in _CATEGORY_VALUES:
+        return LCDFeedCategory(explicit)
 
     if event.kind.startswith("lcd."):
         suffix = event.kind.split(".", 1)[1].strip().lower()
-        if suffix in _EVENT_TYPE_VALUES:
-            return EventType(suffix)
+        if suffix in _CATEGORY_VALUES:
+            return LCDFeedCategory(suffix)
 
-    for prefix, event_type in _KIND_PREFIX_EVENT_TYPES:
+    for prefix, category in _KIND_PREFIX_CATEGORIES:
         if event.kind.startswith(prefix):
-            return event_type
+            return category
 
-    return EventType.ALERT if hints_for(event).urgent else EventType.SYSTEM
+    return LCDFeedCategory.ALERT if hints_for(event).urgent else LCDFeedCategory.SYSTEM
 
 
-def lcd_event_from_platform_event(event: PlatformEvent) -> LCDEvent:
+def lcd_feed_entry_from_platform_event(event: PlatformEvent) -> LCDFeedEntry:
     hints = hints_for(event)
     dismiss_auto = event.context.get("lcd_dismiss_auto")
     if dismiss_auto is None:
         dismiss_auto = not event.sticky
 
     severity = (
-        EventSeverity.CRITICAL
+        LCDFeedSeverity.CRITICAL
         if event.severity.value == "critical"
-        else EventSeverity.ERROR
+        else LCDFeedSeverity.ERROR
         if event.severity.value == "error"
-        else EventSeverity.WARNING
+        else LCDFeedSeverity.WARNING
         if event.severity.value == "warning"
-        else EventSeverity.INFO
+        else LCDFeedSeverity.INFO
     )
 
-    return LCDEvent(
+    return LCDFeedEntry(
         event_id=event.event_id,
         timestamp=event.occurred_at,
         source_node=event.source_node,
-        event_type=lcd_event_type_for_platform_event(event),
+        category=lcd_feed_category_for_platform_event(event),
         severity=severity,
         title=event.title,
         message=event.message,

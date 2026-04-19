@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import app.services.midi_hub.cluster_clock as cluster_clock_module
-from app.services.cluster.distributed_event_bus import EventType
 from app.services.midi_hub.cluster_clock import ClockMasterStrategy, MidiClusterClock
 from app.services.midi_hub.ports import MidiMessage
 
@@ -51,9 +50,9 @@ class _FakeEventBus:
     def __init__(self):
         self.events = []
 
-    async def publish_event(self, event):
+    async def emit(self, event):
         self.events.append(event)
-        return True
+        return event.event_id
 
 
 class _FakeClockEngine:
@@ -195,7 +194,7 @@ def test_manual_strategy_elects_configured_master(monkeypatch):
     assert state.master_node_id == "node-b"
     assert state.is_master is False
     assert clock_engine.configure_calls[-1]["source_mode"] == "external"
-    assert any(event.event_type == EventType.MIDI_CLOCK_MASTER_ELECTED for event in event_bus.events)
+    assert any(event.kind == "midi.clock.master.elected" for event in event_bus.events)
 
 
 def test_leader_strategy_uses_raft_leader(monkeypatch):
@@ -378,7 +377,7 @@ def test_drift_detection_publishes_alert(monkeypatch):
         await clock.stop()
 
     asyncio.run(_run())
-    assert any(event.event_type == EventType.MIDI_CLOCK_DRIFT_DETECTED for event in event_bus.events)
+    assert any(event.kind == "midi.clock.drift" for event in event_bus.events)
 
 
 def test_master_timeout_triggers_failover(monkeypatch):
@@ -407,7 +406,7 @@ def test_master_timeout_triggers_failover(monkeypatch):
     assert state.master_node_id == "node-a"
     assert state.is_master is True
     assert any(
-        event.event_type == EventType.MIDI_CLOCK_MASTER_ELECTED and event.details.get("reason") == "master_lost"
+        event.kind == "midi.clock.master.elected" and event.context.get("reason") == "master_lost"
         for event in event_bus.events
     )
 

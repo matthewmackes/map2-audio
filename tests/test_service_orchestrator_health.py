@@ -99,12 +99,20 @@ def test_emit_event_uses_publish_abstraction_for_service_status_topic():
     assert datetime.fromisoformat(message["timestamp"]).tzinfo == timezone.utc
 
 
-def test_orchestrator_status_payloads_use_aware_utc_timestamps():
+def test_orchestrator_status_payloads_use_aware_utc_timestamps(monkeypatch):
     orchestrator = ServiceOrchestrator()
     orchestrator._running = True
     orchestrator._startup_time = datetime.now(timezone.utc)
     orchestrator._services["database"].started_at = datetime.now(timezone.utc)
     orchestrator._services["database"].health.last_check = datetime.now(timezone.utc)
+    monkeypatch.setitem(sys.modules, "app.services.platform_event.status", SimpleNamespace(
+        get_platform_event_status_snapshot=lambda: {
+            "legacy_buses_removed": True,
+            "dual_emitters_remaining": 0,
+            "platform_event_store": {"available": True},
+            "platform_event_federation": {"available": True},
+        }
+    ))
 
     all_status = orchestrator.get_all_status()
     ready_status = orchestrator.get_ready_status()
@@ -113,6 +121,9 @@ def test_orchestrator_status_payloads_use_aware_utc_timestamps():
     assert datetime.fromisoformat(ready_status["startup_time"]).tzinfo == timezone.utc
     assert datetime.fromisoformat(all_status["services"]["database"]["started_at"]).tzinfo == timezone.utc
     assert datetime.fromisoformat(all_status["services"]["database"]["health"]["last_check"]).tzinfo == timezone.utc
+    assert ready_status["legacy_buses_removed"] is True
+    assert ready_status["dual_emitters_remaining"] == 0
+    assert ready_status["platform_event_store"]["available"] is True
 
 
 def test_stop_juce_engine_calls_stop_audio_then_shutdown(monkeypatch):

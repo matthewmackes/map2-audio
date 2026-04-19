@@ -1,7 +1,7 @@
 """
 CHECKPOINT 0.1 Validation Test: Cluster Infrastructure Exists
 
-Tests that mDNS discovery, event bus, and node registry are operational.
+Tests that mDNS discovery, PlatformEvent transport, and node registry are operational.
 """
 
 import asyncio
@@ -38,22 +38,19 @@ class TestClusterInfrastructure:
         except ImportError as e:
             pytest.fail(f"❌ Failed to import EnhancedMDNSDiscovery: {e}")
     
-    def test_event_bus_exists(self):
-        """Test: Distributed event bus exists"""
+    def test_platform_event_transport_exists(self):
+        """Test: PlatformEvent transport exists"""
         try:
-            from app.services.cluster import (
-                DistributedEventBus,
-                EventType,
-                EventSeverity,
-                ClusterEvent,
-            )
-            logger.info("✅ DistributedEventBus imported successfully")
-            assert DistributedEventBus is not None
-            assert EventType is not None
-            assert EventSeverity is not None
-            assert ClusterEvent is not None
+            from app.services.platform_event.bus import PlatformEventBus
+            from app.services.platform_event.envelope import PlatformEvent
+            from app.services.platform_event.severity import Severity
+
+            logger.info("✅ PlatformEvent transport imported successfully")
+            assert PlatformEventBus is not None
+            assert PlatformEvent is not None
+            assert Severity is not None
         except ImportError as e:
-            pytest.fail(f"❌ Failed to import DistributedEventBus: {e}")
+            pytest.fail(f"❌ Failed to import PlatformEvent transport: {e}")
     
     def test_cluster_registry_exists(self):
         """Test: Cluster registry exists"""
@@ -64,36 +61,23 @@ class TestClusterInfrastructure:
         except ImportError as e:
             pytest.fail(f"❌ Failed to import ClusterRegistry: {e}")
     
-    def test_event_bus_publish_subscribe(self):
-        """Test: Event bus can publish and subscribe to events"""
+    def test_platform_event_transport_supports_emit_and_subscription(self):
+        """Test: PlatformEvent transport exposes emit and subscribe methods"""
         try:
-            from app.services.cluster import (
-                DistributedEventBus,
-                EventType,
-                EventSeverity,
-                ClusterEvent,
+            from app.services.platform_event.bus import PlatformEventBus
+            from app.services.platform_event.store import PlatformEventStore
+
+            store = PlatformEventStore(
+                db_path=Path("/tmp/test_platform_event_bus.db"),
+                legacy_db_path=Path("/tmp/test_platform_event_bus_legacy.db"),
             )
-            
-            # Create event bus instance
-            bus = DistributedEventBus(db_path=Path("/tmp/test_event_bus.db"))
-            logger.info("✅ DistributedEventBus instance created")
-            
-            # Test subscribe
-            events_received = []
-            
-            def on_event(event):
-                events_received.append(event)
-                logger.info(f"✅ Event received: {event.event_type.value}")
-            
-            bus.subscribe(EventType.NODE_JOINED, on_event)
-            logger.info("✅ Successfully subscribed to NODE_JOINED event")
-            
-            # Verify subscribe method exists
-            assert hasattr(bus, 'subscribe'), "Event bus missing subscribe method"
-            assert hasattr(bus, 'publish_event'), "Event bus missing publish_event method"
-            
+            bus = PlatformEventBus(store=store, enabled=True)
+            logger.info("✅ PlatformEventBus instance created")
+
+            assert hasattr(bus, "subscribe_callback"), "PlatformEvent transport missing subscribe method"
+            assert hasattr(bus, "emit"), "PlatformEvent transport missing emit method"
         except Exception as e:
-            pytest.fail(f"❌ Event bus publish/subscribe test failed: {e}")
+            pytest.fail(f"❌ PlatformEvent transport verification failed: {e}")
     
     @pytest.mark.asyncio
     async def test_mdns_discovery_initialization(self):
@@ -167,7 +151,7 @@ def verify_cluster_imports():
     checks = {
         "ClusterManager": False,
         "mDNS Discovery": False,
-        "Event Bus": False,
+        "PlatformEvent Transport": False,
         "Cluster Registry": False,
         "Node Lifecycle": False,
         "Health Aggregator": False,
@@ -189,18 +173,17 @@ def verify_cluster_imports():
     except ImportError as e:
         print(f"❌ mDNS Discovery import failed: {e}")
     
-    # Check Event Bus
+    # Check PlatformEvent transport
     try:
-        from app.services.cluster import (
-            DistributedEventBus,
-            EventType,
-            EventSeverity,
-            ClusterEvent,
-        )
-        checks["Event Bus"] = True
-        print("✅ DistributedEventBus - OK")
+        from app.services.platform_event.bus import PlatformEventBus
+        from app.services.platform_event.envelope import PlatformEvent
+        from app.services.platform_event.severity import Severity
+
+        assert PlatformEventBus and PlatformEvent and Severity
+        checks["PlatformEvent Transport"] = True
+        print("✅ PlatformEvent transport - OK")
     except ImportError as e:
-        print(f"❌ Event Bus import failed: {e}")
+        print(f"❌ PlatformEvent transport import failed: {e}")
     
     # Check Registry
     try:

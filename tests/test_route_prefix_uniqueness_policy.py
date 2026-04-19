@@ -21,7 +21,6 @@ _ALLOWED_SHARED_PREFIXES = {
     "/api": frozenset({"effects_loops", "health"}),
     "/api/cluster": frozenset({"cluster_admin", "cluster_health"}),
     "/api/deployment": frozenset({"deployment", "deployment_health"}),
-    "/api/lcd": frozenset({"lcd", "lcd_events"}),
 }
 
 

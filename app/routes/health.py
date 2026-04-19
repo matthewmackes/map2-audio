@@ -62,6 +62,10 @@ try:
                         "uptime_seconds": status["uptime_seconds"],
                         "critical_services": status["summary"],
                         "traffic_gate_services": status["traffic_gate_services"],
+                        "legacy_buses_removed": status["legacy_buses_removed"],
+                        "dual_emitters_remaining": status["dual_emitters_remaining"],
+                        "platform_event_store": status["platform_event_store"],
+                        "platform_event_federation": status["platform_event_federation"],
                     }
                 )
             else:
@@ -74,6 +78,10 @@ try:
                         "critical_services": status["critical_services"],
                         "traffic_gate_services": status["traffic_gate_services"],
                         "dependency_levels": status["dependency_levels"],
+                        "legacy_buses_removed": status["legacy_buses_removed"],
+                        "dual_emitters_remaining": status["dual_emitters_remaining"],
+                        "platform_event_store": status["platform_event_store"],
+                        "platform_event_federation": status["platform_event_federation"],
                     }
                 )
         except Exception as e:

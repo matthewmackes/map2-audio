@@ -10,6 +10,8 @@ from typing import Any, Dict
 
 import psutil
 
+from app.services.platform_event.status import get_platform_event_status_snapshot
+
 
 async def build_system_health_snapshot(started_at: float) -> Dict[str, Any]:
     """Build the structured health payload returned by ``GET /api/health``."""
@@ -143,6 +145,31 @@ async def build_system_health_snapshot(started_at: float) -> Dict[str, Any]:
     except Exception as exc:
         dependency_errors.append(f"midi_cluster: {exc}")
 
+    platform_event_status = {
+        "legacy_buses_removed": False,
+        "dual_emitters_remaining": None,
+        "platform_event_store": {
+            "available": False,
+            "db_path": None,
+            "exists": False,
+            "retention_days": None,
+            "size_bytes": 0,
+            "legacy_source_path": None,
+        },
+        "platform_event_federation": {
+            "available": False,
+            "mesh_running": False,
+            "mesh_interval_seconds": None,
+            "connection_count": 0,
+            "connected_nodes": [],
+            "topics": [],
+        },
+    }
+    try:
+        platform_event_status = get_platform_event_status_snapshot()
+    except Exception as exc:
+        dependency_errors.append(f"platform_event: {exc}")
+
     issues = []
     overall_status = "healthy"
 
@@ -155,6 +182,9 @@ async def build_system_health_snapshot(started_at: float) -> Dict[str, Any]:
 
     if not audio_running:
         issues.append("Audio engine service not running")
+
+    if not bool(platform_event_status["platform_event_store"].get("available")):
+        issues.append("PlatformEvent store unavailable")
 
     if cpu_percent >= 95:
         issues.append(f"CPU usage critical ({cpu_percent:.1f}%)")
@@ -261,6 +291,12 @@ async def build_system_health_snapshot(started_at: float) -> Dict[str, Any]:
         "cluster": {
             "midi_cluster": midi_cluster,
         },
+        "platform_events": {
+            "legacy_buses_removed": platform_event_status["legacy_buses_removed"],
+            "dual_emitters_remaining": platform_event_status["dual_emitters_remaining"],
+            "store": platform_event_status["platform_event_store"],
+            "federation": platform_event_status["platform_event_federation"],
+        },
     }
 
     return {
@@ -286,6 +322,10 @@ async def build_system_health_snapshot(started_at: float) -> Dict[str, Any]:
         "ir_rt_safe": ir_available,
         "chain_morphing": True,
         "midi_cluster": midi_cluster,
+        "legacy_buses_removed": platform_event_status["legacy_buses_removed"],
+        "dual_emitters_remaining": platform_event_status["dual_emitters_remaining"],
+        "platform_event_store": platform_event_status["platform_event_store"],
+        "platform_event_federation": platform_event_status["platform_event_federation"],
         "issues": issues,
         "dependency_errors": dependency_errors,
         "subsystems": subsystems,

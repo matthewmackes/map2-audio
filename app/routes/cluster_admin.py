@@ -21,13 +21,14 @@ from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.cluster.update_orchestrator import get_update_scheduler
 from app.services.cluster.config_pusher import get_config_sync
 from app.services.cluster.state_replicator import get_state_replicator
-from app.services.cluster.distributed_event_bus import get_event_bus as get_distributed_event_bus, EventType
 from app.services.cluster.node_lifecycle import get_lifecycle_manager
 from app.services.cluster.disaster_recovery import get_disaster_recovery
 from app.services.cluster.network_topology import get_topology_monitor
 from app.services.cluster.config_manager import get_config_manager
 from app.services.cluster.deployment_manager import get_deployment_manager
 from app.services.cluster.node_visibility import get_visible_cluster_summary
+from app.services.platform_event.cluster_projection import UPDATE_EVENT_KINDS, platform_event_to_cluster_dict
+from app.services.platform_event.store import get_platform_event_store
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -685,27 +686,13 @@ async def get_update_history(limit: int = 50) -> Dict:
         safe_limit = max(1, min(limit, 500))
         updates: List[Dict[str, Any]] = []
 
-        # Primary source: distributed event log (persisted).
-        event_bus = get_distributed_event_bus()
-        update_event_types = [
-            EventType.UPDATE_STARTED,
-            EventType.UPDATE_COMPLETED,
-            EventType.UPDATE_FAILED,
-            EventType.UPDATE_ROLLED_BACK,
-        ]
-        for event_type in update_event_types:
-            for event in event_bus.get_events(event_type=event_type, hours=24 * 30, limit=safe_limit):
-                updates.append(
-                    {
-                        "event_type": event.event_type.value,
-                        "timestamp": event.timestamp.isoformat(),
-                        "severity": event.severity.value,
-                        "source_node_id": event.source_node_id,
-                        "message": event.message,
-                        "details": event.details,
-                        "correlation_id": event.correlation_id,
-                    }
-                )
+        store = get_platform_event_store()
+        for event in store.query_events(
+            limit=max(safe_limit * 4, 250),
+            hours=24 * 30,
+            kinds=list(UPDATE_EVENT_KINDS),
+        ):
+            updates.append(platform_event_to_cluster_dict(event))
 
         # Fallback/additional source: current scheduler report job history.
         scheduler = get_update_scheduler()
@@ -862,120 +849,6 @@ async def cluster_ping() -> Dict:
         "service": "cluster-manager",
         "timestamp": utc_now().isoformat(),
     }
-
-
-# ============================================================================
-# Event Bus Endpoints
-# ============================================================================
-
-
-@router.get("/events")
-async def get_events(
-    event_type: Optional[str] = None,
-    severity: Optional[str] = None,
-    hours: int = 24,
-    limit: int = 100,
-) -> Dict:
-    """
-    Get cluster events from log.
-    
-    Args:
-        event_type: Filter by event type (optional)
-        severity: Filter by severity (optional)
-        hours: How far back to search
-        limit: Maximum events to return
-        
-    Returns:
-        - events: List of events
-        - total: Number of events returned
-    """
-    try:
-        event_bus = get_distributed_event_bus()
-        
-        # Convert string filters to enums if provided
-        event_type_enum = None
-        severity_enum = None
-        
-        if event_type:
-            try:
-                event_type_enum = EventType(event_type)
-            except ValueError:
-                logger.debug("Ignoring unsupported event_type filter: %s", event_type)
-        
-        if severity:
-            try:
-                from app.services.cluster.distributed_event_bus import EventSeverity
-                severity_enum = EventSeverity(severity)
-            except ValueError:
-                logger.debug("Ignoring unsupported severity filter: %s", severity)
-        
-        events = event_bus.get_events(
-            event_type=event_type_enum,
-            severity=severity_enum,
-            hours=hours,
-            limit=limit,
-        )
-        
-        return {
-            "events": [e.to_dict() for e in events],
-            "total": len(events),
-            "filters": {
-                "event_type": event_type,
-                "severity": severity,
-                "hours": hours,
-            },
-        }
-    except Exception as e:
-        logger.error(f"Failed to get events: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/events/node/{node_id}")
-async def get_node_events(
-    node_id: str,
-    hours: int = 24,
-    limit: int = 100,
-) -> Dict:
-    """Get all events related to a specific node."""
-    try:
-        event_bus = get_distributed_event_bus()
-        events = event_bus.get_events_by_node(node_id, hours=hours, limit=limit)
-        
-        return {
-            "node_id": node_id,
-            "events": [e.to_dict() for e in events],
-            "total": len(events),
-        }
-    except Exception as e:
-        logger.error(f"Failed to get node events: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/events/statistics")
-async def get_event_statistics(hours: int = 24) -> Dict:
-    """
-    Get statistics about cluster events.
-    
-    Args:
-        hours: Time window to analyze
-        
-    Returns:
-        - total_events: Total events in window
-        - events_by_type: Breakdown by event type
-        - events_by_severity: Breakdown by severity
-        - top_nodes: Most active nodes
-    """
-    try:
-        event_bus = get_distributed_event_bus()
-        stats = event_bus.get_statistics(hours=hours)
-        
-        return {
-            "time_window_hours": hours,
-            **stats,
-        }
-    except Exception as e:
-        logger.error(f"Failed to get statistics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================

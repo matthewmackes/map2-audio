@@ -100,25 +100,23 @@ class ManagementOrchestrator:
         await aggregator.aggregate_metrics()
 
     async def _run_metrics_aggregation(self):
-        from app.services.cluster.distributed_event_bus import (
-            ClusterEvent,
-            EventType,
-            EventSeverity,
-            get_event_bus as get_distributed_event_bus,
-        )
+        from app.services.platform_event.bus import get_platform_event_bus
+        from app.services.platform_event.factories import make_cluster_platform_event
+        from app.services.platform_event.severity import Severity
         from app.services.cluster.registry import get_cluster_registry
 
         registry = get_cluster_registry()
         summary = registry.get_cluster_summary()
 
-        event_bus = get_distributed_event_bus()
-        await event_bus.publish_event(
-            ClusterEvent(
-                event_type=EventType.METRICS_COLLECTED,
-                severity=EventSeverity.INFO,
-                source_node_id="management-orchestrator",
+        await get_platform_event_bus().emit(
+            make_cluster_platform_event(
+                kind="metrics.collected",
+                severity=Severity.INFO,
+                source_node="management-orchestrator",
+                source_service="management_orchestrator",
+                title="Cluster metrics collected",
                 message="Cluster metrics summary refreshed",
-                details=summary,
+                context=summary,
             )
         )
 
@@ -164,10 +162,9 @@ class ManagementOrchestrator:
         self._failover_started = True
 
     async def _run_event_log_rotation(self):
-        from app.services.cluster.distributed_event_bus import get_event_bus as get_distributed_event_bus
+        from app.services.platform_event.bus import get_platform_event_bus
 
-        event_bus = get_distributed_event_bus()
-        deleted = await event_bus.cleanup_old_events(days=7)
+        deleted = get_platform_event_bus().store.cleanup_old_events(days=7)
         if deleted:
             self.logger.info("Rotated cluster event log entries: %s", deleted)
 

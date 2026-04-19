@@ -23,12 +23,9 @@ import sqlite3
 from pathlib import Path
 
 from app.services.cluster.registry import get_cluster_registry
-from app.services.cluster.distributed_event_bus import (
-    get_event_bus as get_distributed_event_bus,
-    EventType,
-    EventSeverity,
-    ClusterEvent,
-)
+from app.services.platform_event.bus import get_platform_event_bus
+from app.services.platform_event.factories import make_cluster_platform_event
+from app.services.platform_event.severity import Severity
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -94,7 +91,7 @@ class NetworkTopologyMonitor(Singleton):
         self.packet_loss_threshold = packet_loss_threshold
         
         self.logger = logging.getLogger(__name__)
-        self.event_bus = get_distributed_event_bus()
+        self.event_bus = get_platform_event_bus()
         self.registry = get_cluster_registry()
         
         self._init_database()
@@ -334,26 +331,32 @@ class NetworkTopologyMonitor(Singleton):
         try:
             for link in links:
                 if link.status == "failed":
-                    # Critical alert
-                    event = ClusterEvent(
-                        event_type=EventType.SYSTEM_ALERT,
-                        severity=EventSeverity.CRITICAL,
-                        source_node_id=link.source_node,
-                        message=f"Network link failed to {link.target_node}",
-                        details=link.to_dict(),
+                    await self.event_bus.emit(
+                        make_cluster_platform_event(
+                            kind="system.status",
+                            severity=Severity.CRITICAL,
+                            source_node=link.source_node,
+                            source_service="network_topology",
+                            title="Network link failed",
+                            message=f"Network link failed to {link.target_node}",
+                            context=link.to_dict(),
+                            affected_nodes=[link.source_node, link.target_node],
+                        )
                     )
-                    await self.event_bus.publish_event(event)
                     
                 elif link.status == "degraded":
-                    # Warning alert
-                    event = ClusterEvent(
-                        event_type=EventType.SYSTEM_ALERT,
-                        severity=EventSeverity.WARNING,
-                        source_node_id=link.source_node,
-                        message=f"Network link degraded to {link.target_node}",
-                        details=link.to_dict(),
+                    await self.event_bus.emit(
+                        make_cluster_platform_event(
+                            kind="system.status",
+                            severity=Severity.WARNING,
+                            source_node=link.source_node,
+                            source_service="network_topology",
+                            title="Network link degraded",
+                            message=f"Network link degraded to {link.target_node}",
+                            context=link.to_dict(),
+                            affected_nodes=[link.source_node, link.target_node],
+                        )
                     )
-                    await self.event_bus.publish_event(event)
             
         except Exception as e:
             self.logger.error(f"Health check failed: {e}")

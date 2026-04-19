@@ -2063,6 +2063,14 @@ Q5: [Rephrased to reflect coverage — e.g. "We've established scope, approach, 
    B) No — proceed with my answers
 ```
 
+**116. Hard-Cut Platform Event APIs Must Move Discovery And LCD Clients Onto `/ws` + `platform:events` (HIGH - Apr 19, 2026)**
+- **Files**: `app/routes/platform_events.py`, `app/routes/peer_discovery.py`, `app/services/cluster/node_visibility.py`, `app/services/mdns_discovery.py`, `web/src/app/hooks/useLCDEvents.ts`, `docs/PROJECT_WORKLIST.md`
+- **Problem**: Deleting `/api/lcd/events`, `/api/lcd/ws/events`, and the cluster/MIDI compatibility event routes is not enough by itself; peer discovery metadata, LCD web hooks, and route tests can quietly keep pointing at dead legacy endpoints even after the backend cutover ships.
+- **Root Cause**: The old LCD event surface leaked into multiple layers as a URL convention (`/api/lcd/ws/events`) and as a public shape assumption (`LCDEvent`/`ClusterEvent`), so removing the route without cleaning those callers leaves the platform inconsistent.
+- **Fix**: Ship the canonical `GET /api/platform-events` and `POST /api/platform-events/ack` API, move websocket metadata to `/ws`, subscribe LCD clients to `platform:events`, and run `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` as a hard-cut regression scan.
+- **Verification**: `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q`; `pytest tests/test_platform_event_routes.py tests/test_health_routes.py tests/test_midi_cluster_api_routes.py tests/test_peer_discovery_routes.py tests/test_adoption_routes.py tests/test_rate_limiting.py -q`; `/home/mm/map2-audio/web/node_modules/.bin/tsc --noEmit -p /tmp/map2-ship/web/tsconfig.json`
+- **Lesson**: When a legacy public API is deleted, treat every published URL, discovery payload, frontend hook, and validation scan as part of the same cutover; otherwise the old contract survives in metadata even after the route file is gone.
+
 ---
 
 ## Plan-First Meta Rule
@@ -2283,6 +2291,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-19] - PlatformEvent HTTP API Hard Cutover
+- **Section**: Gotchas & Learned Fixes (#116), Update Log
+- **Change**: Documented the canonical `/api/platform-events` query/ack API, the removal of `/api/lcd/events` and `/api/lcd/ws/events`, and the requirement that discovery metadata and LCD clients use `/ws` with `platform:events`.
+- **Reason**: `T2363-subI` deleted the remaining legacy public event routes, so keeping old websocket URLs or legacy event-shape tests around would silently reintroduce the removed contract.
+- **Impact**: Future operator-surface or cluster discovery work should extend the canonical PlatformEvent API and shared websocket topic instead of adding new LCD/cluster-specific event endpoints.
+- **Files**: `.github/copilot-instructions.md`, `app/routes/platform_events.py`, `app/routes/peer_discovery.py`, `app/services/cluster/node_visibility.py`, `app/services/mdns_discovery.py`, `web/src/app/hooks/useLCDEvents.ts`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-19] - LCD PlatformEvent Hard Cutover
 - **Section**: Style & Architecture Rules, Update Log

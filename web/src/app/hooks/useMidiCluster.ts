@@ -6,7 +6,7 @@ import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { PLATFORM_WORKSPACE_BASE_PATH } from '../platform/routes'
 import { useRealtimeCadence } from './useRealtimeCadence'
 import { useRouteActive } from './useRouteActive'
-import useMidiClusterEvents from './useMidiClusterEvents'
+import useMidiClusterFeed from './useMidiClusterFeed'
 
 const QUERY_BASE = ['midi-cluster'] as const
 
@@ -32,14 +32,14 @@ function useMidiClusterCadence(visibleMs: number, hiddenMs: number, inactiveMs: 
 
 export function useMidiClusterNodes() {
   const queryClient = useQueryClient()
-  const events = useMidiClusterEvents('midi_cluster_nodes')
+  const feed = useMidiClusterFeed('midi_cluster_nodes')
   const refetchInterval = useMidiClusterCadence(10_000, 30_000)
 
   useEffect(() => {
-    if (events.latestEvent) {
+    if (feed.latestSignal) {
       void queryClient.invalidateQueries({ queryKey: QUERY_BASE })
     }
-  }, [events.latestEvent, queryClient])
+  }, [feed.latestSignal, queryClient])
 
   return useQuery<MidiClusterNode[]>({
     queryKey: [...QUERY_BASE, 'nodes'],
@@ -50,14 +50,14 @@ export function useMidiClusterNodes() {
 
 export function useMidiClusterConnections() {
   const queryClient = useQueryClient()
-  const events = useMidiClusterEvents('midi_cluster_connections')
+  const feed = useMidiClusterFeed('midi_cluster_connections')
   const refetchInterval = useMidiClusterCadence(8_000, 20_000)
 
   useEffect(() => {
-    if (events.latestEvent) {
+    if (feed.latestSignal) {
       void queryClient.invalidateQueries({ queryKey: [...QUERY_BASE, 'connections'] })
     }
-  }, [events.latestEvent, queryClient])
+  }, [feed.latestSignal, queryClient])
 
   return useQuery<MidiClusterConnection[]>({
     queryKey: [...QUERY_BASE, 'connections'],
@@ -77,14 +77,14 @@ export function useMidiClusterEndpoints() {
 
 export function useMidiClusterClock() {
   const queryClient = useQueryClient()
-  const events = useMidiClusterEvents('midi_cluster_clock')
+  const feed = useMidiClusterFeed('midi_cluster_clock')
   const refetchInterval = useMidiClusterCadence(8_000, 20_000)
 
   useEffect(() => {
-    if (events.latestEvent) {
+    if (feed.latestSignal) {
       void queryClient.invalidateQueries({ queryKey: [...QUERY_BASE, 'clock'] })
     }
-  }, [events.latestEvent, queryClient])
+  }, [feed.latestSignal, queryClient])
 
   return useQuery<MidiClusterClock>({
     queryKey: [...QUERY_BASE, 'clock'],

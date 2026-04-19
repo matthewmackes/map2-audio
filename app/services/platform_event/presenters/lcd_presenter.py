@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from app.lcd_models.lcd_event import EventSeverity, EventType
 from app.services.platform_event.policy import hints_for
 
 from ..envelope import PlatformEvent
+from ..lcd_feed import LCDFeedCategory, LCDFeedSeverity
 from ..presenter import Presenter, SurfaceAction
 
 
@@ -17,13 +17,13 @@ class LCDPresenter(Presenter):
         if not self.wants(event):
             return None
         hints = hints_for(event)
-        event_type = EventType.ALERT if hints.urgent else EventType.SYSTEM
+        category = LCDFeedCategory.ALERT if hints.urgent else LCDFeedCategory.SYSTEM
         severity = (
-            EventSeverity.CRITICAL
+            LCDFeedSeverity.CRITICAL
             if event.severity.value == "critical"
-            else EventSeverity.WARNING
+            else LCDFeedSeverity.WARNING
             if event.severity.value in {"warning", "error"}
-            else EventSeverity.INFO
+            else LCDFeedSeverity.INFO
         )
         return SurfaceAction(
             surface=self.surface,
@@ -31,7 +31,7 @@ class LCDPresenter(Presenter):
             event_id=event.event_id,
             payload={
                 "event_id": event.event_id,
-                "event_type": event_type.value,
+                "category": category.value,
                 "severity": severity.value,
                 "title": f"{hints.lcd_icon} {event.title}"[:40],
                 "message": event.message[:200],
@@ -39,4 +39,3 @@ class LCDPresenter(Presenter):
                 "broadcast": event.broadcast,
             },
         )
-

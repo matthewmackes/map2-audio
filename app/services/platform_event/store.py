@@ -159,17 +159,18 @@ class PlatformEventStore(Singleton):
         finally:
             conn.close()
 
-    def persist_event(self, event: PlatformEvent) -> None:
+    def persist_event(self, event: PlatformEvent) -> bool:
         with self._lock:
             conn = self._connect()
             try:
                 cursor = conn.cursor()
-                self._insert_event(cursor, event)
+                inserted = self._insert_event(cursor, event)
                 conn.commit()
+                return inserted
             finally:
                 conn.close()
 
-    def _insert_event(self, cursor: sqlite3.Cursor, event: PlatformEvent) -> None:
+    def _insert_event(self, cursor: sqlite3.Cursor, event: PlatformEvent) -> bool:
         cursor.execute(
             """
             INSERT OR IGNORE INTO platform_events (
@@ -208,6 +209,7 @@ class PlatformEventStore(Singleton):
                 json.dumps(event.model_dump(mode="json"), sort_keys=True),
             ),
         )
+        return bool(cursor.rowcount)
 
     def load_replay_events(
         self,
@@ -251,26 +253,41 @@ class PlatformEventStore(Singleton):
     def query_events(
         self,
         *,
-        limit: int = 100,
-        hours: int = 24,
+        limit: int | None = 100,
+        hours: int | None = 24,
         source_node: str | None = None,
+        source_nodes: list[str] | tuple[str, ...] | None = None,
         exclude_source_node: str | None = None,
         severities: list[str] | tuple[str, ...] | None = None,
+        kinds: list[str] | tuple[str, ...] | None = None,
+        kind_prefixes: list[str] | tuple[str, ...] | None = None,
     ) -> list[PlatformEvent]:
-        normalized_limit = max(1, int(limit))
-        normalized_hours = max(1, int(hours))
-        cutoff = (_utc_now() - timedelta(hours=normalized_hours)).isoformat()
-
         query = """
             SELECT payload
             FROM platform_events
-            WHERE occurred_at >= ?
+            WHERE 1 = 1
         """
-        params: list[object] = [cutoff]
+        params: list[object] = []
+
+        if hours is not None:
+            normalized_hours = max(1, int(hours))
+            cutoff = (_utc_now() - timedelta(hours=normalized_hours)).isoformat()
+            query += " AND occurred_at >= ?"
+            params.append(cutoff)
 
         if source_node:
             query += " AND source_node = ?"
             params.append(str(source_node))
+
+        normalized_source_nodes = [
+            str(value).strip()
+            for value in (source_nodes or [])
+            if str(value).strip()
+        ]
+        if normalized_source_nodes:
+            placeholders = ", ".join("?" for _ in normalized_source_nodes)
+            query += f" AND source_node IN ({placeholders})"
+            params.extend(normalized_source_nodes)
 
         if exclude_source_node:
             query += " AND source_node != ?"
@@ -286,8 +303,31 @@ class PlatformEventStore(Singleton):
             query += f" AND severity IN ({placeholders})"
             params.extend(normalized_severities)
 
-        query += " ORDER BY occurred_at DESC, id DESC LIMIT ?"
-        params.append(normalized_limit)
+        normalized_kinds = [
+            str(value).strip()
+            for value in (kinds or [])
+            if str(value).strip()
+        ]
+        if normalized_kinds:
+            placeholders = ", ".join("?" for _ in normalized_kinds)
+            query += f" AND kind IN ({placeholders})"
+            params.extend(normalized_kinds)
+
+        normalized_prefixes = [
+            str(value).strip()
+            for value in (kind_prefixes or [])
+            if str(value).strip()
+        ]
+        if normalized_prefixes:
+            like_clauses = " OR ".join("kind LIKE ?" for _ in normalized_prefixes)
+            query += f" AND ({like_clauses})"
+            params.extend(f"{prefix}%" for prefix in normalized_prefixes)
+
+        query += " ORDER BY occurred_at DESC, id DESC"
+        if limit is not None:
+            normalized_limit = max(1, int(limit))
+            query += " LIMIT ?"
+            params.append(normalized_limit)
 
         with self._lock:
             conn = self._connect()
@@ -371,6 +411,17 @@ class PlatformEventStore(Singleton):
         normalized_days = max(1, int(days if days is not None else self.retention_days))
         with self._lock:
             return self._cleanup_old_events_locked(normalized_days)
+
+    def status_snapshot(self) -> dict[str, object]:
+        size_bytes = self.db_path.stat().st_size if self.db_path.exists() else 0
+        return {
+            "available": True,
+            "db_path": str(self.db_path),
+            "exists": self.db_path.exists(),
+            "retention_days": self.retention_days,
+            "size_bytes": size_bytes,
+            "legacy_source_path": str(self.legacy_db_path),
+        }
 
     def _cleanup_old_events_locked(self, days: int) -> int:
         cutoff = (_utc_now() - timedelta(days=days)).isoformat()

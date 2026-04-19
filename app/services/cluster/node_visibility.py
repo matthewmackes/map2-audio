@@ -206,7 +206,7 @@ class VisibleRemoteNode:
         if self.host and not self.api_url:
             self.api_url = f"http://{self.host}:{self.port or 8000}"
         if self.host and not self.ws_url:
-            self.ws_url = f"ws://{self.host}:{self.port or 8000}/api/lcd/ws/events"
+            self.ws_url = f"ws://{self.host}:{self.port or 8000}/ws"
 
         self.discovered_via_peer_mdns = self.basic_mdns_online
         self.discovered_via_cluster_mdns = self.enhanced_mdns_online
@@ -441,7 +441,7 @@ def get_visible_remote_nodes() -> tuple[str, Dict[str, VisibleRemoteNode]]:
             )
             node.ws_url = (
                 _normalize_text(peer_data.get("url") or peer_data.get("ws_url"))
-                or (f"ws://{host}:{port}/api/lcd/ws/events" if host else None)
+                or (f"ws://{host}:{port}/ws" if host else None)
                 or node.ws_url
             )
             node.sources.add("mdns")
@@ -482,7 +482,7 @@ def get_visible_remote_nodes() -> tuple[str, Dict[str, VisibleRemoteNode]]:
                 node.port = port
             if host and not node.basic_mdns_online:
                 node.api_url = f"http://{host}:{node.port}"
-                node.ws_url = f"ws://{host}:{node.port}/api/lcd/ws/events"
+                node.ws_url = f"ws://{host}:{node.port}/ws"
             node.node_mode = _normalize_text(getattr(discovered_node, "role", None)) or node.node_mode
             node.health_score = _coerce_float(getattr(discovered_node, "health_score", None)) or node.health_score
             node.last_seen = getattr(discovered_node, "last_seen", None) or node.last_seen

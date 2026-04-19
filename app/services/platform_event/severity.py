@@ -5,9 +5,9 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Final, Literal
 
-from app.lcd_models.lcd_event import EventSeverity as LCDSeverity
-from app.services.cluster.distributed_event_bus import EventSeverity as ClusterSeverity
 from app.services.health_monitor import HealthStatus
+
+from .lcd_feed import LCDFeedSeverity
 
 
 class Severity(StrEnum):
@@ -29,18 +29,11 @@ WEB_TONES: Final[tuple[str, ...]] = (
     "critical",
 )
 
-_LCD_SEVERITY_MAP: Final[dict[LCDSeverity, Severity]] = {
-    LCDSeverity.INFO: Severity.INFO,
-    LCDSeverity.WARNING: Severity.WARNING,
-    LCDSeverity.ERROR: Severity.ERROR,
-    LCDSeverity.CRITICAL: Severity.CRITICAL,
-}
-
-_CLUSTER_SEVERITY_MAP: Final[dict[ClusterSeverity, Severity]] = {
-    ClusterSeverity.INFO: Severity.INFO,
-    ClusterSeverity.WARNING: Severity.WARNING,
-    ClusterSeverity.ERROR: Severity.ERROR,
-    ClusterSeverity.CRITICAL: Severity.CRITICAL,
+_LCD_FEED_SEVERITY_MAP: Final[dict[LCDFeedSeverity, Severity]] = {
+    LCDFeedSeverity.INFO: Severity.INFO,
+    LCDFeedSeverity.WARNING: Severity.WARNING,
+    LCDFeedSeverity.ERROR: Severity.ERROR,
+    LCDFeedSeverity.CRITICAL: Severity.CRITICAL,
 }
 
 _HEALTH_STATUS_MAP: Final[dict[HealthStatus, SeverityOrFiltered]] = {
@@ -60,12 +53,16 @@ _WEB_TONE_MAP: Final[dict[str, Severity]] = {
 }
 
 
-def severity_from_lcd(value: LCDSeverity) -> Severity:
-    return _LCD_SEVERITY_MAP[value]
+def severity_from_lcd_feed(value: LCDFeedSeverity) -> Severity:
+    return _LCD_FEED_SEVERITY_MAP[value]
 
 
-def severity_from_cluster(value: ClusterSeverity) -> Severity:
-    return _CLUSTER_SEVERITY_MAP[value]
+def severity_from_cluster(value: object) -> Severity:
+    normalized = str(getattr(value, "value", value) or "").strip().lower()
+    try:
+        return Severity(normalized)
+    except ValueError as exc:
+        raise ValueError(f"Unknown cluster severity: {value}") from exc
 
 
 def severity_from_health_status(value: HealthStatus) -> SeverityOrFiltered:

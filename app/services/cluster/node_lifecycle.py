@@ -23,12 +23,9 @@ from pathlib import Path
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.certificate_authority import get_cluster_ca
-from app.services.cluster.distributed_event_bus import (
-    get_event_bus as get_distributed_event_bus,
-    EventType,
-    EventSeverity,
-    ClusterEvent,
-)
+from app.services.platform_event.bus import get_platform_event_bus
+from app.services.platform_event.factories import make_cluster_platform_event, node_dedupe_key
+from app.services.platform_event.severity import Severity
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -114,10 +111,33 @@ class NodeLifecycleManager:
         self.logger = logging.getLogger(__name__)
         self.registry = get_cluster_registry()
         self.ca = get_cluster_ca()
-        self.event_bus = get_distributed_event_bus()
+        self.event_bus = get_platform_event_bus()
         self.current_state = NodeState.DISCOVERED
         self.transition_history: List[LifecycleTransition] = []
         self._callbacks: Dict[NodeState, List[Callable]] = {}
+
+    async def _emit_platform_event(
+        self,
+        *,
+        kind: str,
+        severity: Severity,
+        message: str,
+        details: Optional[Dict] = None,
+    ) -> None:
+        await self.event_bus.emit(
+            make_cluster_platform_event(
+                kind=kind,
+                severity=severity,
+                source_node=self.node_id,
+                source_service="node_lifecycle",
+                title="Node lifecycle event",
+                message=message,
+                context=dict(details or {}),
+                affected_nodes=[self.node_id],
+                resource={"type": "node", "id": self.node_id},
+                dedupe_key=node_dedupe_key(self.node_id, kind),
+            )
+        )
 
     async def transition(
         self,
@@ -324,13 +344,11 @@ class NodeLifecycleManager:
             self.logger.debug(f"Registered {self.node_id} in registry")
 
             # 3. Publish join event
-            event = ClusterEvent(
-                event_type=EventType.NODE_JOINED,
-                severity=EventSeverity.INFO,
-                source_node_id=self.node_id,
+            await self._emit_platform_event(
+                kind="node.online",
+                severity=Severity.INFO,
                 message=f"Node {self.node_id} joined cluster",
             )
-            await self.event_bus.publish_event(event)
 
         except Exception as e:
             self.logger.error(f"Join failed: {e}")
@@ -346,18 +364,16 @@ class NodeLifecycleManager:
             diagnostics = await asyncio.to_thread(self._collect_diagnostics)
             self.registry.update_node_status(self.node_id, "degraded")
             details = {"diagnostics": diagnostics}
-            severity = EventSeverity.WARNING
+            severity = Severity.WARNING
             if diagnostics.get("service_active") != "active":
-                severity = EventSeverity.ERROR
+                severity = Severity.ERROR
 
-            event = ClusterEvent(
-                event_type=EventType.HEALTH_DEGRADED,
+            await self._emit_platform_event(
+                kind="node.degraded",
                 severity=severity,
-                source_node_id=self.node_id,
                 message=f"Node {self.node_id} health degraded",
                 details=details,
             )
-            await self.event_bus.publish_event(event)
 
         except Exception as e:
             self.logger.error(f"Degradation handling failed: {e}")
@@ -387,19 +403,18 @@ class NodeLifecycleManager:
 
             if is_healthy:
                 self.registry.update_node_status(self.node_id, "online")
-                event_type = EventType.NODE_RECOVERED
-                severity = EventSeverity.INFO
+                kind = "node.recovered"
+                severity = Severity.INFO
                 msg = f"Node {self.node_id} recovery successful"
             else:
                 self.registry.update_node_status(self.node_id, "failed")
-                event_type = EventType.NODE_FAILED
-                severity = EventSeverity.CRITICAL
+                kind = "node.offline"
+                severity = Severity.CRITICAL
                 msg = f"Node {self.node_id} recovery failed"
 
-            event = ClusterEvent(
-                event_type=event_type,
+            await self._emit_platform_event(
+                kind=kind,
                 severity=severity,
-                source_node_id=self.node_id,
                 message=msg,
                 details={
                     "steps": recovery_steps,
@@ -407,7 +422,6 @@ class NodeLifecycleManager:
                     "service_check_error": active.stderr.strip(),
                 },
             )
-            await self.event_bus.publish_event(event)
 
         except Exception as e:
             self.logger.error(f"Recovery failed: {e}")
@@ -434,18 +448,15 @@ class NodeLifecycleManager:
             )
             self.registry.update_node_status(self.node_id, "offline")
 
-            await self.event_bus.publish_event(
-                ClusterEvent(
-                    event_type=EventType.NODE_LEFT,
-                    severity=EventSeverity.INFO,
-                    source_node_id=self.node_id,
-                    message=f"Node {self.node_id} gracefully shut down",
-                    details={
-                        "persist_file": str(persist_file),
-                        "service_stop_rc": stop_result.returncode,
-                        "service_stop_stderr": stop_result.stderr.strip(),
-                    },
-                )
+            await self._emit_platform_event(
+                kind="node.offline",
+                severity=Severity.INFO,
+                message=f"Node {self.node_id} gracefully shut down",
+                details={
+                    "persist_file": str(persist_file),
+                    "service_stop_rc": stop_result.returncode,
+                    "service_stop_stderr": stop_result.stderr.strip(),
+                },
             )
 
         except Exception as e:
@@ -522,14 +533,11 @@ class NodeLifecycleManager:
                 metadata={"lifecycle": "promoted"},
             )
 
-            await self.event_bus.publish_event(
-                ClusterEvent(
-                    event_type=EventType.NODE_UPDATED,
-                    severity=EventSeverity.INFO,
-                    source_node_id=self.node_id,
-                    message=f"Node {self.node_id} promoted to management role",
-                    details={"steps": steps},
-                )
+            await self._emit_platform_event(
+                kind="config.updated",
+                severity=Severity.INFO,
+                message=f"Node {self.node_id} promoted to management role",
+                details={"steps": steps},
             )
 
         except Exception as e:
@@ -572,14 +580,11 @@ class NodeLifecycleManager:
                 metadata={"lifecycle": "demoted"},
             )
 
-            await self.event_bus.publish_event(
-                ClusterEvent(
-                    event_type=EventType.NODE_UPDATED,
-                    severity=EventSeverity.INFO,
-                    source_node_id=self.node_id,
-                    message=f"Node {self.node_id} demoted to audio role",
-                    details={"steps": steps},
-                )
+            await self._emit_platform_event(
+                kind="config.updated",
+                severity=Severity.INFO,
+                message=f"Node {self.node_id} demoted to audio role",
+                details={"steps": steps},
             )
 
         except Exception as e:
@@ -610,21 +615,19 @@ class NodeLifecycleManager:
         try:
             # Map lifecycle events to event bus event types
             event_type_map = {
-                NodeLifecycleEvent.DISCOVERED: EventType.NODE_JOINED,
-                NodeLifecycleEvent.LEAVE_COMPLETE: EventType.NODE_LEFT,
-                NodeLifecycleEvent.FAILURE_DETECTED: EventType.NODE_FAILED,
-                NodeLifecycleEvent.RECOVERY_SUCCESSFUL: EventType.NODE_RECOVERED,
+                NodeLifecycleEvent.DISCOVERED: "node.online",
+                NodeLifecycleEvent.LEAVE_COMPLETE: "node.offline",
+                NodeLifecycleEvent.FAILURE_DETECTED: "node.offline",
+                NodeLifecycleEvent.RECOVERY_SUCCESSFUL: "node.recovered",
             }
 
             if transition.event in event_type_map:
-                event = ClusterEvent(
-                    event_type=event_type_map[transition.event],
-                    severity=EventSeverity.INFO,
-                    source_node_id=self.node_id,
+                await self._emit_platform_event(
+                    kind=event_type_map[transition.event],
+                    severity=Severity.INFO,
                     message=transition.message,
                     details=transition.details,
                 )
-                await self.event_bus.publish_event(event)
 
         except Exception as e:
             self.logger.error(f"Failed to publish lifecycle event: {e}")

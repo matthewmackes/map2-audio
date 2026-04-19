@@ -9,13 +9,13 @@ export type MidiClusterTopic =
   | 'midi_cluster_connections'
   | 'midi_cluster_clock'
 
-export type MidiClusterEvent = WebSocketMessage & {
+export type MidiClusterSignal = WebSocketMessage & {
   topic?: MidiClusterTopic
 }
 
-type MidiClusterState = Record<string, MidiClusterEvent>
+type MidiClusterState = Record<string, MidiClusterSignal>
 
-function eventKey(message: MidiClusterEvent): string {
+function eventKey(message: MidiClusterSignal): string {
   const data = message.data as Record<string, unknown> | undefined
   if (typeof data?.connection_id === 'string' && data.connection_id) {
     return data.connection_id
@@ -27,39 +27,39 @@ function eventKey(message: MidiClusterEvent): string {
   return `${message.type}:${message.timestamp ?? 'latest'}`
 }
 
-export function useMidiClusterEvents(topic: MidiClusterTopic) {
+export function useMidiClusterFeed(topic: MidiClusterTopic) {
   const { isConnected } = useWebSocketConnection()
-  const [latestEvent, setLatestEvent] = useState<MidiClusterEvent | null>(null)
-  const [events, setEvents] = useState<MidiClusterEvent[]>([])
+  const [latestSignal, setLatestSignal] = useState<MidiClusterSignal | null>(null)
+  const [signals, setSignals] = useState<MidiClusterSignal[]>([])
   const [accumulatedState, setAccumulatedState] = useState<MidiClusterState>({})
 
   useEffect(() => {
-    setLatestEvent(null)
-    setEvents([])
+    setLatestSignal(null)
+    setSignals([])
     setAccumulatedState({})
   }, [topic])
 
   useWebSocketTopic(topic as WebSocketTopic, (data, message) => {
-    const nextEvent: MidiClusterEvent = {
+    const nextSignal: MidiClusterSignal = {
       ...message,
       data,
       topic,
     }
 
-    setLatestEvent(nextEvent)
-    setEvents((current) => [...current.slice(-49), nextEvent])
+    setLatestSignal(nextSignal)
+    setSignals((current) => [...current.slice(-49), nextSignal])
     setAccumulatedState((current) => ({
       ...current,
-      [eventKey(nextEvent)]: nextEvent,
+      [eventKey(nextSignal)]: nextSignal,
     }))
   })
 
   return {
     isConnected,
-    latestEvent,
-    events,
+    latestSignal,
+    signals,
     accumulatedState,
   }
 }
 
-export default useMidiClusterEvents
+export default useMidiClusterFeed

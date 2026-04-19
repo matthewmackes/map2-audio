@@ -11,19 +11,15 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import (
-    ClusterEvent,
-    DistributedEventBus,
-    EventSeverity,
-    EventType,
-    get_event_bus as get_distributed_event_bus,
-)
 from app.services.midi_hub.clock_engine import MidiClockEngine, PPQN, get_midi_clock_engine
 from app.services.midi_hub.cluster_router import MidiClusterRouter, get_midi_cluster_router
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.midi_discovery import MidiDiscoveryService, MidiNode, get_midi_discovery_service
 from app.services.midi_hub.ports import MidiMessage
 from app.services.midi_hub.rtp_transport import MidiRtpTransport, get_rtp_transport
+from app.services.platform_event.bus import PlatformEventBus, get_platform_event_bus
+from app.services.platform_event.factories import make_midi_cluster_event
+from app.services.platform_event.severity import Severity
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +71,7 @@ class MidiClusterClock:
         self,
         discovery: Optional[MidiDiscoveryService] = None,
         cluster_router: Optional[MidiClusterRouter] = None,
-        event_bus: Optional[DistributedEventBus] = None,
+        event_bus: Optional[PlatformEventBus] = None,
         clock_engine: Optional[MidiClockEngine] = None,
         *,
         transport: Optional[MidiRtpTransport] = None,
@@ -84,7 +80,7 @@ class MidiClusterClock:
     ) -> None:
         self._discovery = discovery or get_midi_discovery_service()
         self._cluster_router = cluster_router or get_midi_cluster_router()
-        self._event_bus = event_bus or get_distributed_event_bus()
+        self._event_bus = event_bus or get_platform_event_bus()
         self._clock_engine = clock_engine or get_midi_clock_engine()
         self._transport = transport or get_rtp_transport()
         self._hub = hub or get_midi_hub()
@@ -285,14 +281,17 @@ class MidiClusterClock:
                 continue
 
             self._last_drift_alert_monotonic = now
-            await self._event_bus.publish_event(
-                ClusterEvent(
-                    event_type=EventType.MIDI_CLOCK_DRIFT_DETECTED,
-                    severity=EventSeverity.WARNING,
-                    source_node_id=self._local_node_id,
-                    affected_nodes=self._affected_nodes(),
+            await self._event_bus.emit(
+                make_midi_cluster_event(
+                    kind="midi.clock.drift",
+                    severity=Severity.WARNING,
+                    source_node=self._local_node_id,
+                    source_service="midi_cluster_clock",
+                    title="MIDI clock drift",
                     message=f"MIDI clock drift exceeded {threshold_ms:.2f}ms",
-                    details=self._event_details(),
+                    node_id=self._local_node_id,
+                    affected_nodes=self._affected_nodes(),
+                    context=self._event_details(),
                 )
             )
 
@@ -326,14 +325,17 @@ class MidiClusterClock:
 
         changed = previous_master != next_master
         if changed or reason in {"startup", "master_lost", "strategy_changed", "manual_master_changed"}:
-            await self._event_bus.publish_event(
-                ClusterEvent(
-                    event_type=EventType.MIDI_CLOCK_MASTER_ELECTED,
-                    severity=EventSeverity.INFO,
-                    source_node_id=self._local_node_id,
-                    affected_nodes=self._affected_nodes(),
+            await self._event_bus.emit(
+                make_midi_cluster_event(
+                    kind="midi.clock.master.elected",
+                    severity=Severity.INFO,
+                    source_node=self._local_node_id,
+                    source_service="midi_cluster_clock",
+                    title="MIDI clock master elected",
                     message=f"MIDI clock master set to {next_master or 'external'}",
-                    details={**self._event_details(), "reason": reason},
+                    node_id=next_master or self._local_node_id,
+                    affected_nodes=self._affected_nodes(),
+                    context={**self._event_details(), "reason": reason},
                 )
             )
 

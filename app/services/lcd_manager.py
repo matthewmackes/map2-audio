@@ -13,7 +13,6 @@ import logging
 from typing import Awaitable, Callable, Optional
 
 from app.drivers.lcd_display import LCDDisplay, MockLCDDisplay
-from app.lcd_models.lcd_event import LCDEvent
 from app.services.platform_event.bus import (
     PlatformEventBus,
     PlatformEventFilter,
@@ -21,7 +20,8 @@ from app.services.platform_event.bus import (
     get_platform_event_bus,
 )
 from app.services.platform_event.envelope import PlatformEvent
-from app.services.platform_event.lcd_projection import lcd_event_from_platform_event
+from app.services.platform_event.lcd_feed import LCDFeedEntry
+from app.services.platform_event.lcd_projection import lcd_feed_entry_from_platform_event
 from app.services.platform_event.presenters.lcd_presenter import LCDPresenter
 from app.services.platform_event.store import PlatformEventStore, get_platform_event_store
 from app.services.ws_federation import get_ws_federator
@@ -71,8 +71,8 @@ class LCDManager:
         else:
             self.lcd = LCDDisplay(port=lcd_port)
 
-        self.display_queue: asyncio.Queue[LCDEvent] = asyncio.Queue()
-        self.current_event: Optional[LCDEvent] = None
+        self.display_queue: asyncio.Queue[LCDFeedEntry] = asyncio.Queue()
+        self.current_event: Optional[LCDFeedEntry] = None
         self._display_task: asyncio.Task[None] | None = None
         self._cleanup_task: asyncio.Task[None] | None = None
 
@@ -148,10 +148,10 @@ class LCDManager:
     async def _queue_platform_event(self, event: PlatformEvent) -> None:
         if not self._presenter.wants(event):
             return
-        lcd_event = lcd_event_from_platform_event(event)
-        if not lcd_event.should_display_on_node(self.node_id):
+        feed_entry = lcd_feed_entry_from_platform_event(event)
+        if not feed_entry.should_display_on_node(self.node_id):
             return
-        await self.display_queue.put(lcd_event)
+        await self.display_queue.put(feed_entry)
         logger.debug("Queued LCD PlatformEvent %s for display", event.event_id)
 
     async def _update_display_loop(self) -> None:
@@ -168,7 +168,7 @@ class LCDManager:
             except Exception as e:
                 logger.error("Display update error: %s", e)
 
-    async def _display_event(self, event: LCDEvent) -> None:
+    async def _display_event(self, event: LCDFeedEntry) -> None:
         source = "[LOCAL]" if event.source_node in {self.node_id, self.node_label} else "[REMOTE]"
         header = f"MAP2 - {self.node_label[:16]}"
         line1 = f"{source} {event.icon} {event.title}"[:20]
@@ -213,12 +213,12 @@ class LCDManager:
 
     async def subscribe_live(
         self,
-        callback: Callable[[LCDEvent], Awaitable[None] | None],
+        callback: Callable[[LCDFeedEntry], Awaitable[None] | None],
     ) -> Subscription:
         async def _handle(event: PlatformEvent) -> None:
             if not self._presenter.wants(event):
                 return
-            result = callback(lcd_event_from_platform_event(event))
+            result = callback(lcd_feed_entry_from_platform_event(event))
             if inspect.isawaitable(result):
                 await result
 
@@ -234,7 +234,7 @@ class LCDManager:
         hours: int = 24,
         event_type: str | None = None,
         severity: str | None = None,
-    ) -> list[LCDEvent]:
+    ) -> list[LCDFeedEntry]:
         return self._query_recent_events(
             limit=limit,
             hours=hours,
@@ -250,7 +250,7 @@ class LCDManager:
         hours: int = 24,
         event_type: str | None = None,
         severity: str | None = None,
-    ) -> list[LCDEvent]:
+    ) -> list[LCDFeedEntry]:
         return self._query_recent_events(
             limit=limit,
             hours=hours,
@@ -266,7 +266,7 @@ class LCDManager:
         hours: int = 24,
         event_type: str | None = None,
         severity: str | None = None,
-    ) -> list[LCDEvent]:
+    ) -> list[LCDFeedEntry]:
         return self._query_recent_events(
             limit=limit,
             hours=hours,
@@ -274,7 +274,7 @@ class LCDManager:
             severity=severity,
         )
 
-    def get_events_by_node(self, node_id: str, *, limit: int = 100, hours: int = 24) -> list[LCDEvent]:
+    def get_events_by_node(self, node_id: str, *, limit: int = 100, hours: int = 24) -> list[LCDFeedEntry]:
         return self._query_recent_events(limit=limit, hours=hours, source_node=node_id)
 
     def get_active_nodes(self, *, hours: int = 24) -> list[str]:
@@ -311,7 +311,7 @@ class LCDManager:
         exclude_source_node: str | None = None,
         event_type: str | None = None,
         severity: str | None = None,
-    ) -> list[LCDEvent]:
+    ) -> list[LCDFeedEntry]:
         fetch_limit = max(int(limit) * 6, 100)
         events = self.platform_event_store.query_events(
             limit=fetch_limit,
@@ -321,15 +321,15 @@ class LCDManager:
             severities=[severity] if severity else None,
         )
 
-        projected: list[LCDEvent] = []
+        projected: list[LCDFeedEntry] = []
         normalized_event_type = str(event_type or "").strip().lower()
         for event in events:
             if not self._presenter.wants(event):
                 continue
-            lcd_event = lcd_event_from_platform_event(event)
-            if normalized_event_type and lcd_event.event_type.value != normalized_event_type:
+            feed_entry = lcd_feed_entry_from_platform_event(event)
+            if normalized_event_type and feed_entry.category.value != normalized_event_type:
                 continue
-            projected.append(lcd_event)
+            projected.append(feed_entry)
             if len(projected) >= int(limit):
                 break
         return projected

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from dataclasses import dataclass, field
@@ -12,6 +13,8 @@ import websockets
 
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery, MDNSNode
+from app.services.platform_event.envelope import PlatformEvent
+from app.services.platform_event.bus import get_platform_event_bus
 from app.services.websocket_manager import ws_manager
 from app.utils.singleton import Singleton
 
@@ -35,8 +38,11 @@ class WebSocketFederator(Singleton):
     def __init__(self) -> None:
         self.discovery = get_enhanced_mdns_discovery()
         self.local_node_id = get_enhanced_node_identity().get_node_id()
+        self.platform_event_bus = get_platform_event_bus()
         self.connections: Dict[Tuple[str, str], FederatedConnection] = {}
         self.lock = asyncio.Lock()
+        self._mesh_interval_seconds = 5.0
+        self._platform_mesh_task: Optional[asyncio.Task] = None
 
     async def subscribe_remote(self, node_id: str, topic: str) -> None:
         if node_id == self.local_node_id:
@@ -65,6 +71,81 @@ class WebSocketFederator(Singleton):
             if conn.task:
                 conn.task.cancel()
 
+    async def start_platform_event_mesh(self, *, interval_seconds: float = 5.0) -> None:
+        self._mesh_interval_seconds = max(1.0, float(interval_seconds))
+        if self._platform_mesh_task is not None and not self._platform_mesh_task.done():
+            return
+        self._platform_mesh_task = asyncio.create_task(self._platform_event_mesh_loop())
+
+    async def stop(self) -> None:
+        if self._platform_mesh_task is not None:
+            self._platform_mesh_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._platform_mesh_task
+            self._platform_mesh_task = None
+
+        async with self.lock:
+            connections = list(self.connections.values())
+            self.connections.clear()
+
+        for conn in connections:
+            conn.stop_event.set()
+            if conn.task is not None:
+                conn.task.cancel()
+
+    def status_snapshot(self) -> dict[str, object]:
+        active_connections = [
+            {"node_id": node_id, "topic": topic}
+            for (node_id, topic), connection in self.connections.items()
+            if connection.task is not None and not connection.task.done()
+        ]
+        return {
+            "available": True,
+            "mesh_running": self._platform_mesh_task is not None and not self._platform_mesh_task.done(),
+            "mesh_interval_seconds": self._mesh_interval_seconds,
+            "connection_count": len(active_connections),
+            "connected_nodes": sorted({item["node_id"] for item in active_connections}),
+            "topics": sorted({item["topic"] for item in active_connections}),
+        }
+
+    async def _platform_event_mesh_loop(self) -> None:
+        while True:
+            await self.subscribe_all("platform:events")
+            await asyncio.sleep(self._mesh_interval_seconds)
+
+    async def _handle_platform_event_message(self, origin_node_id: str, message: str) -> None:
+        try:
+            payload = json.loads(message)
+            if payload.get("type") != "platform_event":
+                await ws_manager.broadcast(message, topic=f"node:{origin_node_id}/platform:events")
+                return
+
+            event = PlatformEvent.model_validate(payload.get("data") or {})
+            context = dict(event.context or {})
+            if context.get("federated_from"):
+                return
+            if event.source_node != origin_node_id:
+                logger.debug(
+                    "Ignoring relayed PlatformEvent %s from %s via %s",
+                    event.event_id,
+                    event.source_node,
+                    origin_node_id,
+                )
+                return
+
+            target_nodes = [str(node).strip() for node in event.target_nodes if str(node).strip()]
+            if target_nodes and self.local_node_id not in target_nodes:
+                return
+
+            await self.platform_event_bus.ingest_remote(event, via_node=origin_node_id)
+            await ws_manager.broadcast(message, topic=f"node:{origin_node_id}/platform:events")
+        except Exception as exc:
+            logger.warning(
+                "Failed to ingest remote PlatformEvent from %s: %s",
+                origin_node_id,
+                exc,
+            )
+
     async def _run_connection(self, conn: FederatedConnection) -> None:
         backoff = 1.0
         while not conn.stop_event.is_set():
@@ -79,10 +160,13 @@ class WebSocketFederator(Singleton):
                     await ws.send(json.dumps({"action": "subscribe", "topic": conn.topic}))
                     backoff = 1.0
                     async for message in ws:
-                        await ws_manager.broadcast(
-                            message,
-                            topic=f"node:{conn.node_id}/{conn.topic}",
-                        )
+                        if conn.topic == "platform:events":
+                            await self._handle_platform_event_message(conn.node_id, message)
+                        else:
+                            await ws_manager.broadcast(
+                                message,
+                                topic=f"node:{conn.node_id}/{conn.topic}",
+                            )
                         if conn.stop_event.is_set():
                             break
             except Exception as exc:

@@ -5,8 +5,8 @@ import inspect
 import json
 from datetime import datetime, timezone
 
-from app.services.cluster.distributed_event_bus import ClusterEvent, EventType
 from app.services.config_hot_reload import ConfigurationHotReloader
+from app.services.platform_event.factories import make_config_changed_event
 
 
 class _FakeConfigManager:
@@ -55,18 +55,22 @@ class _FakeEventBus:
         self.subscribers = {}
         self.published = []
 
-    def subscribe(self, event_type, callback):
-        self.subscribers.setdefault(event_type, []).append(callback)
-        return True
+    async def subscribe_callback(self, callback, event_filter=None):
+        kinds = frozenset(getattr(event_filter, "kinds", None) or ())
+        self.subscribers.setdefault(kinds, []).append(callback)
+        return type("Subscription", (), {"close": lambda self: None})()
 
-    async def publish_event(self, event):
+    async def emit(self, event):
         self.published.append(event)
-        for callback in self.subscribers.get(event.event_type, []):
-            if inspect.iscoroutinefunction(callback):
-                await callback(event)
-            else:
-                callback(event)
-        return True
+        for kinds, callbacks in self.subscribers.items():
+            if kinds and event.kind not in kinds:
+                continue
+            for callback in callbacks:
+                if inspect.iscoroutinefunction(callback):
+                    await callback(event)
+                else:
+                    callback(event)
+        return event.event_id
 
 
 def test_config_hot_reloader_broadcasts_and_applies_remote_events(monkeypatch, tmp_path):
@@ -82,33 +86,34 @@ def test_config_hot_reloader_broadcasts_and_applies_remote_events(monkeypatch, t
         lambda: _FakeIdentity(),
     )
     monkeypatch.setattr(
-        "app.services.cluster.distributed_event_bus.get_event_bus",
+        "app.services.platform_event.bus.get_platform_event_bus",
         lambda: event_bus,
+    )
+    monkeypatch.setattr(
+        "app.services.ws_federation.get_ws_federator",
+        lambda: type("Federator", (), {"start_platform_event_mesh": staticmethod(lambda *args, **kwargs: asyncio.sleep(0))})(),
     )
 
     reloader = ConfigurationHotReloader(str(config_path))
+    reloader.bind_event_loop()
 
     asyncio.run(reloader.apply_runtime_change("midi.enabled", False, scope="cluster", broadcast=True))
 
     assert manager.get("midi.enabled") is False
     assert len(event_bus.published) == 1
     broadcast = event_bus.published[0]
-    assert broadcast.event_type is EventType.CONFIG_CHANGED
-    assert broadcast.details["key"] == "midi.enabled"
-    assert broadcast.details["value"] is False
-    assert broadcast.details["scope"] == "cluster"
+    assert broadcast.kind == "config.changed"
+    assert broadcast.context["key"] == "midi.enabled"
+    assert broadcast.context["value"] is False
+    assert broadcast.context["scope"] == "cluster"
 
-    remote_event = ClusterEvent(
-        event_type=EventType.CONFIG_CHANGED,
-        timestamp=datetime.now(timezone.utc),
-        source_node_id="peer-node",
-        message="peer updated midi.enabled",
-        details={
-            "key": "midi.enabled",
-            "value": True,
-            "scope": "role:AUDIO-NODE",
-            "source_node_id": "peer-node",
-        },
+    remote_event = make_config_changed_event(
+        source_node="peer-node",
+        source_service="test_peer",
+        key_path="midi.enabled",
+        value=True,
+        scope="role:AUDIO-NODE",
+        occurred_at=datetime.now(timezone.utc),
     )
 
     asyncio.run(reloader._on_cluster_config_changed(remote_event))
