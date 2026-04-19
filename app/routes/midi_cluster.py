@@ -142,7 +142,7 @@ class MidiClusterNodeDevicesResponse(BaseModel):
     devices: List[Dict[str, Any]] = Field(default_factory=list)
 
 
-class MidiClusterEventResponse(BaseModel):
+class MidiEventSummaryResponse(BaseModel):
     event_type: str
     timestamp: str
     severity: str
@@ -151,12 +151,6 @@ class MidiClusterEventResponse(BaseModel):
     message: str = ""
     details: Dict[str, Any] = Field(default_factory=dict)
     correlation_id: str = ""
-
-
-class MidiClusterEventsResponse(BaseModel):
-    events: List[MidiClusterEventResponse] = Field(default_factory=list)
-    total: int = 0
-    filters: Dict[str, Any] = Field(default_factory=dict)
 
 
 class MidiClusterHealthNodeResponse(BaseModel):
@@ -179,7 +173,7 @@ class MidiClusterHealthResponse(BaseModel):
     clock_status: str = "disabled"
     clock_drift_ms: float = 0.0
     per_node: List[MidiClusterHealthNodeResponse] = Field(default_factory=list)
-    recent_events: List[MidiClusterEventResponse] = Field(default_factory=list)
+    recent_events: List[MidiEventSummaryResponse] = Field(default_factory=list)
 
 
 class MidiClusterConnectRequest(BaseModel):
@@ -275,9 +269,9 @@ def _auto_connect_response() -> AutoConnectStatusResponse:
     return AutoConnectStatusResponse(**get_midi_cluster_router().get_auto_connect_status())
 
 
-def _event_response(event: PlatformEvent) -> MidiClusterEventResponse:
+def _event_response(event: PlatformEvent) -> MidiEventSummaryResponse:
     payload = platform_event_to_cluster_dict(event)
-    return MidiClusterEventResponse(
+    return MidiEventSummaryResponse(
         event_type=str(payload["event_type"]),
         timestamp=str(payload["timestamp"] or _utcnow().isoformat().replace("+00:00", "Z")),
         severity=str(payload["severity"]),
@@ -594,32 +588,4 @@ async def get_cluster_health() -> MidiClusterHealthResponse:
         clock_drift_ms=float(clock_state.drift_ms),
         per_node=per_node,
         recent_events=[_event_response(event) for event in recent_events],
-    )
-
-
-@router.get("/events", response_model=MidiClusterEventsResponse)
-async def get_cluster_events(
-    event_type: Optional[str] = Query(default=None),
-    severity: Optional[str] = Query(default=None),
-    node_id: Optional[str] = Query(default=None),
-    hours: int = Query(default=24, ge=1, le=24 * 30),
-    limit: int = Query(default=100, ge=1, le=1000),
-) -> MidiClusterEventsResponse:
-    events = _midi_events(
-        event_type=event_type,
-        severity=severity,
-        node_id=node_id,
-        hours=hours,
-        limit=limit,
-    )
-    return MidiClusterEventsResponse(
-        events=[_event_response(event) for event in events],
-        total=len(events),
-        filters={
-            "event_type": event_type,
-            "severity": severity,
-            "node_id": node_id,
-            "hours": hours,
-            "limit": limit,
-        },
     )

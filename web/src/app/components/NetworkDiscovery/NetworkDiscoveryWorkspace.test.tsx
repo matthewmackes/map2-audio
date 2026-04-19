@@ -90,7 +90,7 @@ jest.mock('../../hooks/usePeerDiscovery', () => ({
           host: '10.0.0.20',
           port: 8080,
           api_url: 'http://10.0.0.20:8080',
-          ws_url: 'ws://10.0.0.20:8080/api/lcd/ws/events',
+          ws_url: 'ws://10.0.0.20:8080/ws',
           ssh_url: 'ssh://mm@10.0.0.20',
           discovered_at: '2026-04-03T21:55:00Z',
           last_seen: '2026-04-03T22:00:00Z',

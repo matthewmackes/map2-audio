@@ -391,7 +391,7 @@ def test_cluster_api_connection_and_failover_routes(monkeypatch):
     assert deleted.json()["ok"] is True
 
 
-def test_cluster_api_clock_health_and_events(monkeypatch):
+def test_cluster_api_clock_health_surface(monkeypatch):
     client, clock = _build_client(monkeypatch)
 
     strategy = client.put(
@@ -401,7 +401,6 @@ def test_cluster_api_clock_health_and_events(monkeypatch):
     sync = client.post("/api/midi/cluster/clock/sync")
     drift = client.get("/api/midi/cluster/clock/drift")
     health = client.get("/api/midi/cluster/health")
-    events = client.get("/api/midi/cluster/events", params={"severity": "warning", "node_id": "node-b"})
 
     assert strategy.status_code == 200
     assert clock.manual_master == "node-b"
@@ -412,6 +411,4 @@ def test_cluster_api_clock_health_and_events(monkeypatch):
     assert drift.json()["measurements"][0]["node_id"] == "node-b"
     assert health.status_code == 200
     assert health.json()["clock_status"] == "master"
-    assert events.status_code == 200
-    assert events.json()["total"] == 1
-    assert events.json()["events"][0]["event_type"] == "midi.clock.drift"
+    assert any(event["event_type"] == "midi.clock.drift" for event in health.json()["recent_events"])

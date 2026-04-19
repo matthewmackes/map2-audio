@@ -368,7 +368,6 @@ async def lifespan(app):
         from app.services.platform_event.bus import get_platform_event_bus
         from app.services.mdns_discovery import MDNSPeerDiscovery
         from app.services.node_identity import NodeIdentity
-        from app.routes.lcd_events import init_lcd_routes
         avb_router = None
         cluster_midi_services = None
         config_reloader = None
@@ -452,7 +451,6 @@ async def lifespan(app):
         )
         await safe_start_service(logger, "LCD Manager", lcd_manager.start)
         set_global_lcd_manager(lcd_manager)
-        init_lcd_routes(lcd_manager)
         
         # Initialize event producers
         audio_producer = AudioEventProducer(platform_event_bus, node_label=node_label)
@@ -745,7 +743,6 @@ async def lifespan(app):
         await safe_stop_service(logger, "Audio Event Producer", audio_producer.stop)
         await safe_stop_service(logger, "LCD Manager", lcd_manager.stop)
         set_global_lcd_manager(None)
-        init_lcd_routes(None)
         
         await safe_stop_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.shutdown)
         await safe_stop_service(logger, "Parameter routing", disconnect_parameter_routing)
@@ -823,7 +820,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'midi_commander_surface', 'transport', 'brain', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'enriched_midi_physical_surfaces', 'nodes']
+        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'midi_commander_surface', 'transport', 'brain', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'enriched_midi_physical_surfaces', 'nodes']
         route_load_failures = []
 
         for route_name in route_modules:
@@ -858,17 +855,6 @@ def create_app():
         except ImportError:
             logger.debug("LCD routes not available")
         
-        # Register LCD event routes
-        try:
-            from app.routes import lcd_events
-            if lcd_events.router:
-                app.include_router(lcd_events.router)
-                logger.info("LCD event routes registered")
-                # Note: init_lcd_routes would need to be called from lifespan context
-                # where lcd_manager is available. Skipping here to avoid NameError.
-        except Exception as e:
-            logger.warning(f"Failed to load LCD event routes: {e}")
-
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
         from fastapi.staticfiles import StaticFiles

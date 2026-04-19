@@ -262,7 +262,7 @@ async def get_peer_discovery_status():
             host=host,
             port=port,
             api_url=str(getattr(peer_data, "api_url", None) or f"http://{host}:{port}"),
-            ws_url=str(getattr(peer_data, "ws_url", None) or f"ws://{host}:{port}/api/lcd/ws/events"),
+            ws_url=str(getattr(peer_data, "ws_url", None) or f"ws://{host}:{port}/ws"),
             ssh_url=f"ssh://mm@{host}",
             discovered_at=_to_isoformat(getattr(peer_data, "discovered_at", None) or getattr(peer_data, "last_seen", None)),
             last_seen=_to_isoformat(getattr(peer_data, "last_seen", None)),
@@ -412,7 +412,7 @@ async def link_peer(peer_id: str, request: LinkPeerRequest):
                 if hasattr(global_lcd_manager, "connect_to_peer"):
                     await global_lcd_manager.connect_to_peer(
                         peer_id,
-                        f"ws://{request.peer_host}:8000/api/lcd/ws/events",
+                        f"ws://{request.peer_host}:8000/ws",
                     )
                     lcd_success = True
                     logger.info(f"LCD routing configured for {peer_id}")

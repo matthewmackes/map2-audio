@@ -12,7 +12,8 @@ from app.services.midi_hub.router import MidiRouter
 from app.services.midi_engine import MIDIEngineService
 from app.services.midi_learn import MIDILearnManager
 from app.services.midi_service import TesiraMidiDispatcher
-from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType
+from app.services.platform_event.envelope import PlatformEvent
+from app.services.platform_event.severity import Severity
 
 
 @pytest.mark.asyncio
@@ -208,20 +209,26 @@ def test_midi_broadcast_queue_is_bounded_and_drops_oldest():
 
 
 @pytest.mark.asyncio
-async def test_midi_broadcast_bridges_cluster_event_topics(monkeypatch):
+async def test_midi_broadcast_bridges_platform_event_topics(monkeypatch):
     hub = MidiHub(auto_discover_alsa=False)
     monkeypatch.setattr("app.services.midi_broadcast.get_midi_hub", lambda: hub)
 
-    class _FakeClusterEventBus:
-        def __init__(self):
-            self.subscribers = {}
+    class _FakeSubscription:
+        active = True
 
-        def subscribe(self, event_type, callback):
-            self.subscribers.setdefault(event_type, []).append(callback)
-            return True
+        def close(self):
+            self.active = False
 
-    event_bus = _FakeClusterEventBus()
-    monkeypatch.setattr("app.services.midi_broadcast.get_distributed_event_bus", lambda: event_bus)
+    subscriptions = []
+
+    async def _subscribe_callback(callback, _event_filter):
+        subscriptions.append(callback)
+        return _FakeSubscription()
+
+    monkeypatch.setattr(
+        "app.services.midi_broadcast.get_platform_event_bus",
+        lambda: type("FakePlatformEventBus", (), {"subscribe_callback": staticmethod(_subscribe_callback)})(),
+    )
 
     published: List[Dict[str, Any]] = []
 
@@ -234,25 +241,27 @@ async def test_midi_broadcast_bridges_cluster_event_topics(monkeypatch):
     service = MidiBroadcastService()
     await service.start()
 
-    node_event = ClusterEvent(
-        event_type=EventType.MIDI_NODE_DISCOVERED,
-        severity=EventSeverity.INFO,
-        source_node_id="node-a",
-        affected_nodes=["node-b"],
+    node_event = PlatformEvent(
+        kind="midi.node.discovered",
+        severity=Severity.INFO,
+        source_node="node-a",
+        source_service="test",
+        title="Node discovered",
         message="Node discovered",
-        details={"node_id": "node-b"},
+        context={"node_id": "node-b", "affected_nodes": ["node-b"]},
     )
-    clock_event = ClusterEvent(
-        event_type=EventType.MIDI_CLOCK_DRIFT_DETECTED,
-        severity=EventSeverity.WARNING,
-        source_node_id="node-b",
-        affected_nodes=["node-b"],
+    clock_event = PlatformEvent(
+        kind="midi.clock.drift",
+        severity=Severity.WARNING,
+        source_node="node-b",
+        source_service="test",
+        title="Clock drift",
         message="Clock drift",
-        details={"drift_ms": 1.25},
+        context={"drift_ms": 1.25, "affected_nodes": ["node-b"]},
     )
 
-    event_bus.subscribers[EventType.MIDI_NODE_DISCOVERED][0](node_event)
-    event_bus.subscribers[EventType.MIDI_CLOCK_DRIFT_DETECTED][0](clock_event)
+    subscriptions[0](node_event)
+    subscriptions[0](clock_event)
 
     await asyncio.sleep(0.08)
     await service.stop()

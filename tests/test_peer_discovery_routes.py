@@ -103,7 +103,7 @@ def test_get_peer_discovery_status_http_route_returns_structured_payload(monkeyp
     assert payload["local_node_id"] == "local-node"
     assert payload["peers_discovered"] == 1
     assert payload["peers"][0]["node_id"] == "peer-a"
-    assert payload["peers"][0]["ws_url"] == "ws://10.0.0.2:8080/api/lcd/ws/events"
+    assert payload["peers"][0]["ws_url"] == "ws://10.0.0.2:8080/ws"
 
 
 def test_ping_peer_uses_registered_lcd_manager(monkeypatch):
@@ -151,7 +151,7 @@ def test_link_peer_uses_lcd_manager_connect_to_peer():
     assert response.peer_id == "peer-c"
     assert response.lcd_routing is True
     assert manager.connect_calls == [
-        ("peer-c", "ws://10.0.0.9:8000/api/lcd/ws/events")
+        ("peer-c", "ws://10.0.0.9:8000/ws")
     ]
 
 

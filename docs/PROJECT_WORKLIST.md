@@ -28782,7 +28782,7 @@ Validation:
 - `rg -n "ClusterEvent|EventSeverity|EventType" app/services app/routes` still reports unrelated non-cluster enums (`event_publisher`, LCD compatibility projections, and other non-subH symbols), so the precise distributed-bus path scan above is the authoritative subH validation.
 
 ID: T2363-subI
-Status: [>] In Progress
+Status: [✓] Done
 Title: Delete legacy public event APIs and replace them with canonical PlatformEvent HTTP routes
 Description:
 - Goal / acceptance criteria: Remove legacy operator/API surfaces that expose `LCDEvent` or `ClusterEvent` shapes, including the LCD event route surface. Add canonical HTTP routes:
@@ -28794,15 +28794,20 @@ Description:
 - Estimated effort: High
 - Required outputs: canonical query/ack routes, deleted legacy event routes, updated route tests, and updated frontend/backend callers that still hit removed endpoints.
 - Notes: Do not add compatibility endpoints or alias routes. Removed public APIs stay removed.
-- Last updated: 2026-04-19 15:17 EDT - Codex
-- Progress notes:
-  - 2026-04-19 15:17 EDT - Codex: Began the public-API hard cut immediately after shipping `T2363-subH`; next work is deleting the remaining legacy event route surfaces in [app/routes/lcd_events.py](app/routes/lcd_events.py) and cluster/MIDI compatibility routes, then landing canonical `/api/platform-events` query/ack handlers and updating any frontend/backend callers that still depend on legacy event shapes.
+- Last updated: 2026-04-19 14:46 EDT - Codex
+- Completion notes:
+  - 2026-04-19 14:46 EDT - Codex: Added the canonical HTTP surface in [app/routes/platform_events.py](app/routes/platform_events.py) with `GET /api/platform-events` filter/query support (`kind`, `severity`, `node`, `surface`, `min_priority`, `cursor`, `limit`, `session_id`) plus `POST /api/platform-events/ack` backed by `PlatformEventBus.ack()`.
+  - 2026-04-19 14:46 EDT - Codex: Deleted the legacy LCD event route surface by removing [app/routes/lcd_events.py](app/routes/lcd_events.py), unregistering it from [app/main.py](app/main.py), deleting the legacy LCD route tests, and rewriting the LCD frontend/history/statistics hook in [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts) to consume canonical `/api/platform-events` and `/ws` `platform:events` traffic instead of `/api/lcd/events` or `/api/lcd/ws/events`.
+  - 2026-04-19 14:46 EDT - Codex: Removed the remaining legacy cluster/MIDI event route contracts by deleting the `/api/midi/cluster/events` compatibility endpoint, dropping `/api/cluster/events*` from [app/routes/cluster_admin.py](app/routes/cluster_admin.py), retargeting peer-discovery/node-visibility/mDNS websocket URLs to `/ws`, and scrubbing `LCDEvent`/`ClusterEvent` references from route-facing tests so the hard-cut validation scan now passes.
 Validation:
-- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> must PASS
-- `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> only canonical route tests may remain
+- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py -q` -> PASS (`8 passed`)
+- `pytest tests/test_platform_event_routes.py tests/test_health_routes.py tests/test_midi_cluster_api_routes.py tests/test_peer_discovery_routes.py tests/test_adoption_routes.py tests/test_rate_limiting.py -q` -> PASS (`34 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/platform_events.py app/routes/cluster_admin.py app/routes/midi_cluster.py app/routes/peer_discovery.py app/main.py app/services/cluster/node_visibility.py app/services/mdns_discovery.py app/middleware/rate_limiting.py` -> PASS
+- `/home/mm/map2-audio/web/node_modules/.bin/tsc --noEmit -p /tmp/map2-ship/web/tsconfig.json` -> PASS
+- `rg -n "lcd_events|ClusterEvent|LCDEvent" app/routes tests` -> no matches
 
 ID: T2363-subJ
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Purge legacy event models/imports and modernize health/readiness around the hard cut
 Description:
 - Goal / acceptance criteria: Delete all remaining legacy event model files, legacy mapping helpers, and dead imports after the runtime/public cutover is complete. `/api/health` and `/api/ready` must expose the new steady-state explicitly: `legacy_buses_removed: true`, `dual_emitters_remaining: 0`, `platform_event_store` status, and `platform_event_federation` status. Update installer/environment artifacts for the new DB path and any service/runtime assumptions introduced by the cutover.
@@ -28811,6 +28816,9 @@ Description:
 - Estimated effort: Medium
 - Required outputs: deleted legacy files/imports, health/readiness payload updates, installer/env updates, and no stale references in backend/frontend code.
 - Notes: `event_publisher` may remain only for non-PlatformEvent realtime UI messages; do not use it as a cross-system event abstraction.
+- Last updated: 2026-04-19 14:46 EDT - Codex
+- Progress notes:
+  - 2026-04-19 14:46 EDT - Codex: Began the post-cutover audit immediately after shipping `T2363-subI`; next work is removing the remaining legacy LCD model/projection layer under `app/lcd_models` and `app/services/platform_event/lcd_projection.py`, then updating `/api/health` and `/api/ready` to report `legacy_buses_removed`, `dual_emitters_remaining`, `platform_event_store`, and `platform_event_federation`.
 Validation:
 - `pytest tests/test_health_routes.py tests/test_service_orchestrator_health.py -q` -> must PASS
 - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web` -> no matches

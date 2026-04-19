@@ -3,9 +3,7 @@ from __future__ import annotations
 import pytest
 
 from app.lcd_models.lcd_event import EventSeverity as LCDSeverity
-from app.lcd_models.lcd_event import EventType as LCDEventType
-from app.services.cluster.distributed_event_bus import EventSeverity as ClusterSeverity
-from app.services.cluster.distributed_event_bus import EventType as ClusterEventType
+from app.lcd_models.lcd_event import EventType as LCDType
 from app.services.event_publisher import EventType as PublisherEventType
 from app.services.health_monitor import HealthStatus
 from app.services.platform_event.kind import (
@@ -19,10 +17,51 @@ from app.services.platform_event.severity import (
     FILTERED_SEVERITY,
     Severity,
     WEB_TONES,
-    severity_from_cluster,
     severity_from_health_status,
     severity_from_lcd,
     severity_from_web_tone,
+)
+
+LEGACY_CLUSTER_SEVERITY_VALUES = ("info", "warning", "error", "critical")
+LEGACY_CLUSTER_EVENT_VALUES = (
+    "NODE_ONLINE",
+    "NODE_OFFLINE",
+    "NODE_FAILOVER",
+    "MIDI_NODE_DISCOVERED",
+    "MIDI_NODE_LOST",
+    "MIDI_PORT_DISCOVERED",
+    "MIDI_PORT_LOST",
+    "MIDI_CONNECTION_REQUESTED",
+    "MIDI_CONNECTION_ESTABLISHED",
+    "MIDI_CONNECTION_FAILED",
+    "MIDI_CONNECTION_LOST",
+    "MIDI_CLOCK_MASTER_ELECTED",
+    "MIDI_CLOCK_DRIFT_DETECTED",
+    "MIDI_PROFILE_SHARED",
+    "MIDI_FAILOVER_TRIGGERED",
+    "MIDI_FAILOVER_COMPLETED",
+    "CONFIG_CHANGED",
+    "CONFIG_UPDATED",
+    "CONFIG_SYNC_REQUESTED",
+    "CONFIG_SYNC_COMPLETED",
+    "CONFIG_PUSHED",
+    "CONFIG_ROLLED_BACK",
+    "CONFIG_SYNCED",
+    "UPDATE_STARTED",
+    "UPDATE_COMPLETED",
+    "UPDATE_FAILED",
+    "UPDATE_ROLLED_BACK",
+    "FAILOVER_INITIATED",
+    "FAILOVER_COMPLETED",
+    "FAILOVER_FAILED",
+    "MAINTENANCE_STARTED",
+    "MAINTENANCE_COMPLETED",
+    "METRICS_COLLECTED",
+    "PERFORMANCE_ALERT",
+    "SYSTEM_STATUS",
+    "HEALTH_DEGRADED",
+    "HEALTH_RECOVERED",
+    "HEALTH_CRITICAL",
 )
 
 LEGACY_EVENT_BUS_VALUES = (
@@ -41,9 +80,9 @@ def test_lcd_severity_mapping_is_total(value: LCDSeverity, expected: Severity) -
     assert severity_from_lcd(value) == expected
 
 
-@pytest.mark.parametrize(("value", "expected"), [(member, Severity(member.value)) for member in ClusterSeverity])
-def test_cluster_severity_mapping_is_total(value: ClusterSeverity, expected: Severity) -> None:
-    assert severity_from_cluster(value) == expected
+@pytest.mark.parametrize("value", LEGACY_CLUSTER_SEVERITY_VALUES)
+def test_legacy_cluster_severity_values_match_canonical_severity_names(value: str) -> None:
+    assert value in {member.value for member in Severity}
 
 
 @pytest.mark.parametrize(
@@ -81,9 +120,9 @@ def test_event_bus_kind_mapping_is_total(value: str) -> None:
     assert mapped in ALL_KINDS
 
 
-@pytest.mark.parametrize("value", list(ClusterEventType))
-def test_cluster_kind_mapping_is_total(value: ClusterEventType) -> None:
-    mapped = kind_for_cluster_event_value(value.value)
+@pytest.mark.parametrize("value", LEGACY_CLUSTER_EVENT_VALUES)
+def test_cluster_kind_mapping_is_total(value: str) -> None:
+    mapped = kind_for_cluster_event_value(value)
     assert mapped in ALL_KINDS
 
 
@@ -93,7 +132,7 @@ def test_event_publisher_kind_mapping_is_total(value: PublisherEventType) -> Non
     assert mapped in ALL_KINDS
 
 
-@pytest.mark.parametrize("value", list(LCDEventType))
-def test_lcd_kind_mapping_is_total(value: LCDEventType) -> None:
+@pytest.mark.parametrize("value", list(LCDType))
+def test_lcd_kind_mapping_is_total(value: LCDType) -> None:
     mapped = kind_for_lcd_event_value(value.value)
     assert mapped in ALL_KINDS

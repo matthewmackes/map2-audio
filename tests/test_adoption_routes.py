@@ -43,7 +43,7 @@ def _make_visible_node(
     node.last_seen = datetime.now(timezone.utc)
     node.discovered_at = datetime.now(timezone.utc)
     node.api_url = f"http://{host}:{port}"
-    node.ws_url = f"ws://{host}:{port}/api/lcd/ws/events"
+    node.ws_url = f"ws://{host}:{port}/ws"
     node.sources.add("mdns")
     node.basic_mdns_online = True
     node.avb_enabled = bool(node.metadata.get("avb_enabled", True))

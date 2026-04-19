@@ -223,20 +223,11 @@ def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware
         fake_platform_event_bus_module = types.SimpleNamespace(
             get_platform_event_bus=lambda: _FakeBus(),
         )
-        fake_distributed_module = types.SimpleNamespace(
-            ClusterEvent=lambda **kwargs: kwargs,
-            EventType=types.SimpleNamespace(FAILOVER_COMPLETED="FAILOVER_COMPLETED"),
-            EventSeverity=types.SimpleNamespace(WARNING="warning"),
-            get_event_bus=lambda: types.SimpleNamespace(publish_event=lambda _event: asyncio.sleep(0)),
-        )
-
         sys.modules["app.services.platform_event.bus"] = fake_platform_event_bus_module
-        sys.modules["app.services.cluster.distributed_event_bus"] = fake_distributed_module
         try:
             asyncio.run(first._publish_failover_event())
         finally:
             sys.modules.pop("app.services.platform_event.bus", None)
-            sys.modules.pop("app.services.cluster.distributed_event_bus", None)
 
         assert published_payloads
         assert datetime.fromisoformat(published_payloads[0]["timestamp"]).tzinfo == timezone.utc

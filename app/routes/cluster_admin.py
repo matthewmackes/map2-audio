@@ -27,13 +27,7 @@ from app.services.cluster.network_topology import get_topology_monitor
 from app.services.cluster.config_manager import get_config_manager
 from app.services.cluster.deployment_manager import get_deployment_manager
 from app.services.cluster.node_visibility import get_visible_cluster_summary
-from app.services.platform_event.cluster_projection import (
-    UPDATE_EVENT_KINDS,
-    cluster_event_statistics,
-    platform_event_to_cluster_dict,
-    query_cluster_events,
-)
-from app.services.platform_event.severity import Severity
+from app.services.platform_event.cluster_projection import UPDATE_EVENT_KINDS, platform_event_to_cluster_dict
 from app.services.platform_event.store import get_platform_event_store
 from app.utils.time import utc_now
 
@@ -855,118 +849,6 @@ async def cluster_ping() -> Dict:
         "service": "cluster-manager",
         "timestamp": utc_now().isoformat(),
     }
-
-
-# ============================================================================
-# Event Bus Endpoints
-# ============================================================================
-
-
-@router.get("/events")
-async def get_events(
-    event_type: Optional[str] = None,
-    severity: Optional[str] = None,
-    hours: int = 24,
-    limit: int = 100,
-) -> Dict:
-    """
-    Get cluster events from log.
-    
-    Args:
-        event_type: Filter by event type (optional)
-        severity: Filter by severity (optional)
-        hours: How far back to search
-        limit: Maximum events to return
-        
-    Returns:
-        - events: List of events
-        - total: Number of events returned
-    """
-    try:
-        severity_values = None
-        if severity:
-            normalized = str(severity).strip().lower()
-            if normalized in {item.value for item in Severity}:
-                severity_values = [normalized]
-            else:
-                logger.debug("Ignoring unsupported severity filter: %s", severity)
-
-        events = query_cluster_events(
-            get_platform_event_store(),
-            hours=hours,
-            limit=limit,
-            severities=severity_values,
-            kinds=[str(event_type).strip()] if event_type else None,
-        )
-        
-        return {
-            "events": [platform_event_to_cluster_dict(event) for event in events],
-            "total": len(events),
-            "filters": {
-                "event_type": event_type,
-                "severity": severity,
-                "hours": hours,
-            },
-        }
-    except Exception as e:
-        logger.error(f"Failed to get events: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/events/node/{node_id}")
-async def get_node_events(
-    node_id: str,
-    hours: int = 24,
-    limit: int = 100,
-) -> Dict:
-    """Get all events related to a specific node."""
-    try:
-        events = query_cluster_events(
-            get_platform_event_store(),
-            source_node=node_id,
-            hours=hours,
-            limit=limit,
-        )
-        
-        return {
-            "node_id": node_id,
-            "events": [platform_event_to_cluster_dict(event) for event in events],
-            "total": len(events),
-        }
-    except Exception as e:
-        logger.error(f"Failed to get node events: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/events/statistics")
-async def get_event_statistics(hours: int = 24) -> Dict:
-    """
-    Get statistics about cluster events.
-    
-    Args:
-        hours: Time window to analyze
-        
-    Returns:
-        - total_events: Total events in window
-        - events_by_type: Breakdown by event type
-        - events_by_severity: Breakdown by severity
-        - top_nodes: Most active nodes
-    """
-    try:
-        events = query_cluster_events(
-            get_platform_event_store(),
-            hours=hours,
-            limit=None,
-        )
-        stats = cluster_event_statistics(events)
-        
-        return {
-            "time_window_hours": hours,
-            **stats,
-        }
-    except Exception as e:
-        logger.error(f"Failed to get statistics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================

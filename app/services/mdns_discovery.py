@@ -178,7 +178,7 @@ class MDNSPeerDiscovery:
                         'host': host,
                         'port': port,
                         'mode': node_mode,
-                        'url': f"ws://{host}:{port}/api/lcd/ws/events"
+                        'url': f"ws://{host}:{port}/ws"
                     }
                     
                     # Notify listeners

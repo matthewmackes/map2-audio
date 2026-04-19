@@ -121,7 +121,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
     
     def _get_limits(self, path: str, method: str = "GET") -> Tuple[int, int]:
         """Get rate limits for endpoint with method awareness."""
-        # Check method-specific match (e.g., "POST:/api/lcd/events")
+        # Check method-specific match (e.g., "POST:/api/platform-events/ack")
         method_specific_key = f"{method}:{path}"
         if method_specific_key in self.endpoint_limits:
             return self.endpoint_limits[method_specific_key]
@@ -250,14 +250,7 @@ ENDPOINT_RATE_LIMITS = {
     "/api/system/": (30, 60),           # 30 system calls per minute
     "/api/backup/create": (1, 10),      # conservative but within global policy floor
     
-    # LCD Event System rate limits
-    "/api/lcd/events": (100, 60),       # 100 event queries per minute
-    "/api/lcd/history": (30, 60),       # 30 history queries per minute
-    "/api/lcd/stats": (60, 60),         # 60 stats queries per minute
-    "/api/lcd/status": (120, 60),       # 120 status queries per minute (monitoring)
-    "/api/lcd/health": (300, 60),       # 300 health checks per minute (load balancers)
-    "/api/lcd/metrics": (120, 60),      # 120 Prometheus scrapes per minute
-    
-    # LCD Event Creation (stricter to prevent storms)
-    "POST:/api/lcd/events": (50, 60),   # 50 event creations per minute per client
+    # Canonical platform event API rate limits
+    "/api/platform-events": (100, 60),          # 100 history queries per minute
+    "POST:/api/platform-events/ack": (100, 60), # explicit operator acknowledgements
 }
