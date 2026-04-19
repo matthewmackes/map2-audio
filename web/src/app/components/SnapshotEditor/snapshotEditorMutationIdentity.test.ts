@@ -137,7 +137,29 @@ function buildSnapshotDetail(): SnapshotDetail {
 
 describe('snapshotEditorMutationIdentity', () => {
   it('maps a runtime chain id back to the snapshot chain id', () => {
-    expect(resolveSnapshotChainId(buildSnapshotDetail(), 301)).toBe(201)
+    expect(resolveSnapshotChainId({
+      detail: buildSnapshotDetail(),
+      chainId: 301,
+    })).toBe(201)
+  })
+
+  it('prefers the effective chain snapshot metadata when present', () => {
+    expect(resolveSnapshotChainId({
+      detail: buildSnapshotDetail(),
+      effectiveChain: {
+        id: 301,
+        name: 'Chain B',
+        is_active: true,
+        created_at: '2026-04-17T10:00:00Z',
+        updated_at: '2026-04-17T10:00:00Z',
+        plugins: [],
+        loop_insertions: [],
+        effects_loops: [],
+        runtime_sync: null,
+        snapshot_chain_id: 201,
+      },
+      chainId: 301,
+    })).toBe(201)
   })
 
   it('falls back to snapshot detail plugin ids when the effective runtime chain lacks snapshot_plugin_id', () => {

@@ -171,8 +171,26 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
       '302': expect.objectContaining({ name: 'Snapshot Path B' }),
     }))
     expect(hydration.chainsResponse.chains).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 301, name: 'Snapshot Path A (A)' }),
-      expect.objectContaining({ id: 302, name: 'Snapshot Path B (B)' }),
+      expect.objectContaining({
+        id: 301,
+        name: 'Snapshot Path A (A)',
+        snapshot_id: 17,
+        snapshot_chain_id: 201,
+        snapshot_name: 'Snapshot 1',
+        path_id: 'ch_a',
+        management_scope: 'snapshot',
+        can_mutate_from_chains: true,
+      }),
+      expect.objectContaining({
+        id: 302,
+        name: 'Snapshot Path B (B)',
+        snapshot_id: 17,
+        snapshot_chain_id: 202,
+        snapshot_name: 'Snapshot 1',
+        path_id: 'ch_b',
+        management_scope: 'snapshot',
+        can_mutate_from_chains: true,
+      }),
     ]))
   })
 

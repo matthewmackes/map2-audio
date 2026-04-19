@@ -79,6 +79,12 @@ function buildSyntheticRuntimeChains(detail: SnapshotDetail): Chain[] {
       loop_insertions: [...(path.loop_insertions ?? [])],
       effects_loops: [...(path.effects_loops ?? [])],
       runtime_sync: null,
+      snapshot_id: detail.id,
+      snapshot_chain_id: path.snapshot_chain_id ?? null,
+      snapshot_name: detail.name,
+      path_id: path.id,
+      management_scope: 'snapshot',
+      can_mutate_from_chains: true,
     }]
   })
 }
@@ -108,6 +114,11 @@ function buildSyntheticSnapshotChains(detail: SnapshotDetail): Chain[] {
       loop_insertions: [...(chain.loop_insertions ?? [])],
       effects_loops: [...(chain.effects_loops ?? [])],
       runtime_sync: null,
+      snapshot_id: detail.id,
+      snapshot_chain_id: chain.id,
+      snapshot_name: detail.name,
+      management_scope: 'snapshot',
+      can_mutate_from_chains: true,
     }]
   })
 }

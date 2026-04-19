@@ -275,6 +275,39 @@ export function getEffectIcon(category: string | undefined): EffectIconComponent
   return resolveEffectIcon(category).component
 }
 
+// ── PedalKind → effect icon ────────────────────────────────────────────
+// Mirrors the PedalKind union from StagePedalChain without importing it
+// (avoids a circular dependency through the SVG asset chain).
+const PEDAL_KIND_CATEGORY: Record<string, string> = {
+  tuner:      'tuner',
+  comp:       'compressor',
+  overdrive:  'overdrive',
+  distortion: 'distortion',
+  fuzz:       'fuzz',
+  eq:         'eq',
+  wah:        'wah',
+  chorus:     'chorus',
+  phaser:     'phaser',
+  flanger:    'flanger',
+  tremolo:    'tremolo',
+  pitch:      'pitch',
+  delay:      'delay',
+  reverb:     'reverb',
+  looper:     'modulator',
+}
+
+/**
+ * Canonical icon for a PedalKind value.
+ * Use wherever a signal-chain stage needs an icon — chyron, snapshot editor, etc.
+ */
+export function getPedalKindIcon(kind: string): EffectIconComponent {
+  return getEffectIcon(PEDAL_KIND_CATEGORY[kind] ?? kind)
+}
+
+export function getPedalKindIconSpec(kind: string): EffectIconSpec {
+  return getEffectIconSpec(PEDAL_KIND_CATEGORY[kind] ?? kind)
+}
+
 export function getEffectIconSpec(category: string | undefined): EffectIconSpec {
   const { component, matched } = resolveEffectIcon(category)
 

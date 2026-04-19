@@ -271,7 +271,10 @@ import {
   buildSnapshotEditorLiveSnapshotHydration,
   type SnapshotEditorLiveSnapshotHydration,
 } from '../components/SnapshotEditor/snapshotEditorLiveSnapshotHydration'
-import { resolveSnapshotPluginIdentity } from '../components/SnapshotEditor/snapshotEditorMutationIdentity'
+import {
+  resolveSnapshotChainId,
+  resolveSnapshotPluginIdentity,
+} from '../components/SnapshotEditor/snapshotEditorMutationIdentity'
 import { isSystemNoiseGatePlugin } from '../utils/snapshotSystemBlocks'
 import {
   clearLiveWorkingSnapshotDraft,
@@ -3076,6 +3079,20 @@ export function SnapshotEditorPage() {
     )
   }, [queryClient, syncSnapshotDetailCaches])
 
+  const requireSnapshotChainId = useCallback((
+    chainId: number,
+  ): number => {
+    const snapshotChainId = resolveSnapshotChainId({
+      detail: activeSnapshot,
+      effectiveChain: effectiveChainById.get(chainId),
+      chainId,
+    })
+    if (snapshotChainId != null) {
+      return snapshotChainId
+    }
+    throw new Error(`Snapshot chain id missing for chain ${chainId}`)
+  }, [activeSnapshot, effectiveChainById])
+
   const requireSnapshotPluginId = useCallback((
     chainId: number,
     pluginUri: string,
@@ -4596,8 +4613,9 @@ export function SnapshotEditorPage() {
       undoRedoDescription?: string
     }): Promise<SnapshotDetail | { status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number }> => {
       if (activeSnapshot?.id != null) {
+        const snapshotChainId = requireSnapshotChainId(chainId)
         const meta = pluginMeta[pluginUri]
-        return snapshotsApi.addPlugin(activeSnapshot.id, chainId, {
+        return snapshotsApi.addPlugin(activeSnapshot.id, snapshotChainId, {
           plugin_uri: pluginUri,
           plugin_name: meta?.name,
           loader_state: {},
@@ -4788,7 +4806,7 @@ export function SnapshotEditorPage() {
   const renameMutation = useMutation({
     mutationFn: ({ chainId, name }: { chainId: number; name: string }): Promise<SnapshotDetail | { status: string; chain_id: number; name: string }> =>
       activeSnapshot?.id != null
-        ? snapshotsApi.renameChain(activeSnapshot.id, chainId, name)
+        ? snapshotsApi.renameChain(activeSnapshot.id, requireSnapshotChainId(chainId), name)
         : chainsApi.rename(chainId, name),
     onSuccess: (data) => {
       if (activeSnapshot?.id != null) {

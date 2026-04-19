@@ -14,6 +14,8 @@ import { audioApi } from '../../map2/clients/audio'
 import type { SnapshotRuntimeLiveState } from '../../map2/types'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { buildSnapshotActivationFailureStageToast } from '../utils/snapshotActivationToast'
+import { StageChyronCard, type ChyronLiveState } from './StageChyronCard'
+import { StageDateline, StageChyronStrap, StageEventTicker, type TickerEvent } from './StageMissionChrome'
 import './Toasts.css'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -924,11 +926,13 @@ function StageWarningsCard({
   updatedLabel,
   history,
   clipCount,
+  controls,
 }: {
   entries: StageWarningEntry[]
   updatedLabel: string
   history: StageWarningHistorySample[]
   clipCount: number
+  controls?: ReactNode
 }) {
   const top = entries[0] ?? null
   const tone = top ? top.severity : 'success'
@@ -939,14 +943,17 @@ function StageWarningsCard({
       <div className="stage-notification-card__header">
         <div className="stage-notification-card__eyebrow">Warnings</div>
         <div className="stage-notification-card__actions">
-          <span className="stage-notification-warnings__count">
-            {top ? `${entries.length} active` : 'All clear'}
-          </span>
-          {clipCount > 0 ? (
-            <span className="stage-notification-warnings__count stage-notification-warnings__count--badge">
-              {`Clip x${clipCount}`}
+          <div className="stage-notification-warnings__summary">
+            <span className="stage-notification-warnings__count">
+              {top ? `${entries.length} active` : 'All clear'}
             </span>
-          ) : null}
+            {clipCount > 0 ? (
+              <span className="stage-notification-warnings__count stage-notification-warnings__count--badge">
+                {`Clip x${clipCount}`}
+              </span>
+            ) : null}
+          </div>
+          {controls ? <div className="stage-notification-warnings__controls">{controls}</div> : null}
         </div>
       </div>
       <div className="stage-notification-card__title">{top?.title ?? 'All clear'}</div>
@@ -1637,6 +1644,52 @@ function StageNotificationViewport() {
     </button>
   ) : null
 
+  const chyronLiveState: ChyronLiveState = (() => {
+    if (!liveSnapshotState || liveSnapshotState.is_offline) return 'offline'
+    if (liveSnapshotState.state === 'live') return 'live'
+    return 'standby'
+  })()
+
+  const formatSampleRate = (rate?: number | null): string => {
+    if (!rate || rate <= 0) return '—'
+    return `${(rate / 1000).toFixed(0)}k`
+  }
+
+  const cpuNow = cpuTelemetry.metrics.totalCpuPercent
+  const datelineItems = [
+    { label: 'REV', value: String(liveSnapshotState?.live_snapshot_payload?.snapshot_revision ?? liveSnapshotState?.snapshot_revision ?? '—').slice(0, 7) || '—' },
+    { label: 'RATE', value: `${formatSampleRate(audioStatusQuery.data?.sample_rate)}/${audioStatusQuery.data?.buffer_size ?? '—'}` },
+    { label: 'NODE', value: (liveSnapshotState?.node_id ?? primaryRecord?.stage?.sourceLabel ?? '—').toString().slice(0, 10) },
+  ]
+
+  const strapItems = [
+    { label: 'CPU', value: `${cpuNow.toFixed(1)}%` },
+    { label: 'XRUN', value: String(cpuTelemetry.metrics.xrunCount) },
+    { label: 'PATHS', value: String(channelCount) },
+    { label: 'BLOCKS', value: String(blockCount) },
+    { label: 'RATE', value: `${formatSampleRate(audioStatusQuery.data?.sample_rate)}/${audioStatusQuery.data?.buffer_size ?? '—'}` },
+    { label: 'NODE', value: (liveSnapshotState?.node_id ?? 'local').toString().slice(0, 10) },
+    { label: 'CLIP', value: String(meterTelemetry.clipCount) },
+  ]
+
+  const tickerEvents: TickerEvent[] = (() => {
+    const out: TickerEvent[] = []
+    const timeNow = new Date()
+    const mono = `${String(timeNow.getHours()).padStart(2, '0')}:${String(timeNow.getMinutes()).padStart(2, '0')}:${String(timeNow.getSeconds()).padStart(2, '0')}`
+    stageWarnings.slice(0, 5).forEach((w) => {
+      out.push({
+        time: mono,
+        severity: w.severity === 'critical' ? 'crit' : w.severity === 'warning' ? 'warn' : w.severity === 'info' ? 'info' : 'ok',
+        text: w.title,
+      })
+    })
+    if (out.length === 0 && chyronLiveState === 'live') {
+      out.push({ time: mono, severity: 'ok', text: `Live snapshot ${liveSnapshotState?.snapshot_name ?? ''} active`.trim() })
+    }
+    return out
+  })()
+
+  const rigLabel = liveSnapshotState?.snapshot_name ?? primaryRecord?.title ?? 'Stage'
   const normalTransitionClass = activeKyron
     ? kyronPhase === 'exit'
       ? ' stage-notification-transition--return'
@@ -1709,22 +1762,7 @@ function StageNotificationViewport() {
           data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
         >
           {disconnected ? <div className="stage-notification-surface__disconnect">DISCONNECTED</div> : null}
-          <div className="stage-notification-surface__toolbar">
-            {primaryRecord.action ? <NotificationActionButton action={primaryRecord.action} /> : null}
-            {collapseAction}
-            {dismissAction}
-          </div>
-          <div className="stage-notification-surface__grid" aria-label="Stage notification overview">
-            {hasClusterSummary
-              ? <StageClusterSummaryCard liveNodes={liveNodes} routeAction={routeAction} />
-              : (
-                <StageSnapshotCard
-                  state={liveSnapshotState}
-                  fallbackRecord={primaryRecord}
-                  routeAction={routeAction}
-                  reducedMotion={prefersReducedMotion}
-                />
-              )}
+          <div className="stage-notification-surface__grid stage-notification-surface__grid--mission" aria-label="Stage notification overview">
             <StereoMeterCard
               nodeLabel={primaryRecord.stage?.sourceLabel || 'active node'}
               levels={{
@@ -1741,24 +1779,35 @@ function StageNotificationViewport() {
               silenceActive={meterTelemetry.silenceActive}
               isRunning={meterTelemetry.isRunning}
             />
-            <StageVitalsCard
-              cpuPercent={cpuTelemetry.metrics.totalCpuPercent}
-              cpuHistory={cpuTelemetry.cpuHistory}
-              xrunCount={cpuTelemetry.metrics.xrunCount}
-              xrunHistory={cpuTelemetry.xrunHistory}
-              sampleRate={audioStatusQuery.data?.sample_rate}
-              bufferSize={audioStatusQuery.data?.buffer_size}
-              channelCount={channelCount}
-              blockCount={blockCount}
-              reducedMotion={prefersReducedMotion}
-            />
+            <div className="stage-notification-surface__chyron-wrap">
+              {hasClusterSummary ? (
+                <StageClusterSummaryCard liveNodes={liveNodes} routeAction={routeAction} />
+              ) : (
+                <StageChyronCard
+                  state={liveSnapshotState}
+                  fallback={{ title: primaryRecord.title, sourceLabel: primaryRecord.stage?.sourceLabel }}
+                  liveState={chyronLiveState}
+                  reducedMotion={prefersReducedMotion}
+                  routeAction={routeAction}
+                />
+              )}
+              <StageChyronStrap items={strapItems} reducedMotion={prefersReducedMotion} />
+            </div>
             <StageWarningsCard
               entries={stageWarnings}
               updatedLabel={updatedLabel}
               history={warningHistory}
               clipCount={meterTelemetry.clipCount}
+              controls={
+                <>
+                  {primaryRecord.action ? <NotificationActionButton action={primaryRecord.action} /> : null}
+                  {collapseAction}
+                  {dismissAction}
+                </>
+              }
             />
           </div>
+          <StageEventTicker events={tickerEvents} reducedMotion={prefersReducedMotion} />
         </div>
       ) : null}
       {activeKyron ? (

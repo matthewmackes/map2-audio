@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-19 - Added T2365 full-system "code-beauty" cleanup epic (22 subtasks) covering deprecated service facades, legacy v1/v2 parallel implementations, god-file splits, duplicated legacy-resolver/config-fallback patterns, circular-import band-aids, dead C++ files, frontend legacy variants, config-schema deprecations, and stub removals.
+Last updated: 2026-04-19 - Completed T2366 by fixing snapshot-editor runtime-chain mutation routing so add/remove/rename effect operations resolve snapshot chain ids explicitly before hitting snapshot APIs.
+
+---
+
+ID: T2366
+Status: [✓] Done
+Title: Fix snapshot-editor chain mutation routing for add/remove effect operations
+Description:
+- Goal / acceptance criteria: Eliminate the snapshot-editor `404 Not Found` failures when adding or removing effects from chains by ensuring snapshot-mode chain mutations translate live runtime chain ids back to the owning snapshot chain ids before calling `/api/snapshots/*` routes. Acceptance requires add/remove/rename chain mutations in `SnapshotEditorPageContent.tsx` to use the correct snapshot chain id mapping and focused regression coverage to prove runtime chain ids resolve correctly.
+- Why it matters: The snapshot editor currently merges runtime and snapshot chain projections for live editing, but the snapshot mutation API only accepts snapshot chain ids. When the UI sends a runtime chain id, effect edits fail at the route edge even though the target chain exists.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: snapshot-editor mutation fix, focused frontend regression tests, validation evidence, reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-19 18:55 EDT - Codex
+- Completion notes:
+  - Updated snapshot-editor live-chain hydration so effective runtime chain projections now carry `snapshot_chain_id`, `snapshot_id`, `snapshot_name`, `path_id`, and snapshot management metadata needed by mutation callers.
+  - Centralized runtime-to-snapshot chain resolution in `snapshotEditorMutationIdentity.ts` and used it for snapshot-mode add-plugin and rename-chain mutations in `SnapshotEditorPageContent.tsx`, keeping plugin-level mutations on the same identity layer.
+  - Added focused regression coverage proving runtime chain ids resolve back to snapshot chain ids and that hydrated runtime chains retain the snapshot ownership metadata expected by the editor.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/snapshotEditorMutationIdentity.test.ts src/app/components/SnapshotEditor/snapshotEditorLiveSnapshotHydration.test.ts` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
 
 ---
 

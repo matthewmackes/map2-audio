@@ -4,9 +4,21 @@ function findSnapshotPath(detail: SnapshotDetail, chainId: number) {
   return detail.paths.find((path) => path.runtime_chain_id === chainId || path.snapshot_chain_id === chainId)
 }
 
-export function resolveSnapshotChainId(detail: SnapshotDetail | null | undefined, chainId: number): number | null {
+export function resolveSnapshotChainId(params: {
+  detail: SnapshotDetail | null | undefined
+  effectiveChain?: Chain | null | undefined
+  chainId: number
+}): number | null {
+  const { detail, effectiveChain, chainId } = params
   if (!detail) {
     return null
+  }
+
+  if (
+    typeof effectiveChain?.snapshot_chain_id === 'number'
+    && Number.isFinite(effectiveChain.snapshot_chain_id)
+  ) {
+    return effectiveChain.snapshot_chain_id
   }
 
   if (detail.chains.some((chain) => chain.id === chainId)) {
@@ -27,14 +39,18 @@ export function resolveSnapshotPluginIdentity(params: {
   chainId: number
   pluginUri: string
   pluginPosition?: number
-}): { snapshotChainId: number; snapshotPluginId: number } | null {
+  }): { snapshotChainId: number; snapshotPluginId: number } | null {
   const { detail, effectiveChain, chainId, pluginUri, pluginPosition } = params
   const effectivePlugin = effectiveChain?.plugins.find((candidate) => (
     candidate.uri === pluginUri
     && (typeof pluginPosition !== 'number' || candidate.position === pluginPosition)
   ))
 
-  const snapshotChainId = resolveSnapshotChainId(detail, chainId)
+  const snapshotChainId = resolveSnapshotChainId({
+    detail,
+    effectiveChain,
+    chainId,
+  })
   if (snapshotChainId == null) {
     return null
   }

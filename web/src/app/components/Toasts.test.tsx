@@ -258,7 +258,10 @@ describe('ToastProvider stage notification surface', () => {
       expect(screen.getByText('48k / 64')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide live snapshot banner' }))
+    const warningsCard = screen.getByText('Warnings').closest('.stage-notification-card')
+
+    expect(warningsCard).not.toBeNull()
+    fireEvent.click(within(warningsCard as HTMLElement).getByRole('button', { name: 'Hide live snapshot banner' }))
 
     const rail = screen.getByLabelText('Notification rail')
     expect(rail).toBeInTheDocument()
@@ -716,6 +719,13 @@ describe('ToastProvider stage notification surface', () => {
     expect(steadyStateBlock).toContain('var(--text-secondary')
     expect(steadyStateBlock).not.toContain('#ffffff 92%')
     expect(steadyStateBlock).not.toContain('#eef4ff')
+  })
+
+  it('keeps the stage surface flush to the top edge without a dedicated toolbar strip', () => {
+    const cssSource = fs.readFileSync(path.resolve(__dirname, 'Toasts.css'), 'utf8')
+
+    expect(cssSource).not.toContain('padding-top: 2.9rem;')
+    expect(cssSource).not.toContain('.stage-notification-surface__toolbar')
   })
 
   it('keeps the kyron lower-third edge aligned and animation driven by dedicated classes', () => {

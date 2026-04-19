@@ -76,17 +76,6 @@
   gap: 0.75rem;
   min-height: clamp(5.5rem, 11vh, 6.8rem);
   padding: 0.75rem;
-  padding-top: 2.9rem;
-}
-
-.stage-notification-surface__toolbar {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  z-index: 1;
 }
 
 .stage-notification-surface__disconnect {
@@ -172,6 +161,8 @@
 .stage-notification-card__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.45rem;
 }
 
@@ -290,6 +281,21 @@
   font-size: 0.72rem;
   font-weight: 700;
   text-decoration: underline;
+}
+
+.stage-notification-warnings__summary,
+.stage-notification-warnings__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.stage-notification-warnings__summary {
+  flex-wrap: wrap;
+}
+
+.stage-notification-warnings__controls {
+  margin-left: auto;
 }
 
 .stage-notification-audio__status,
@@ -512,8 +518,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 2rem;
-  block-size: 2rem;
+  inline-size: 1.85rem;
+  block-size: 1.85rem;
   padding: 0;
   border: 1px solid currentColor;
   background: transparent;
@@ -1026,11 +1032,6 @@
     min-height: auto;
   }
 
-  .stage-notification-surface__toolbar {
-    top: 0.55rem;
-    right: 0.55rem;
-  }
-
   .stage-notification-rail {
     right: 0.75rem;
     left: 0.75rem;
@@ -1086,7 +1087,6 @@
 @media (max-width: 540px) {
   .stage-notification-surface__grid {
     grid-template-columns: minmax(0, 1fr);
-    padding-top: 3.1rem;
   }
 
   .stage-notification-mini-kyron__broadcast {
@@ -1134,4 +1134,467 @@
   .stage-notification-mini-kyron__ticker-text[data-scroll='true'] {
     animation: none;
   }
+}
+
+/* =========================================================================
+ * Mission Control variation — Carbon g100 news-chyron + pedal chain
+ * Derived from Claude Design handoff (1-3-notification-panel V3).
+ * ========================================================================= */
+
+.stage-notification-surface__grid--mission {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.2fr);
+  gap: 1px;
+  background: var(--border-strong, #393939);
+  padding: 1px;
+  min-height: clamp(9.5rem, 18vh, 12rem);
+}
+
+.stage-notification-surface__chyron-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface, #262626);
+}
+
+/* Dateline (top strip) */
+.stage-mission-dateline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.35rem 0.9rem;
+  background: color-mix(in srgb, var(--surface-2, #393939) 88%, var(--bg, #161616));
+  border-bottom: 1px solid var(--border-strong, #393939);
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  color: var(--text-secondary, #c6c6c6);
+  letter-spacing: 0.04em;
+  flex-wrap: wrap;
+}
+.stage-mission-dateline__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--support-success, #42be65);
+  box-shadow: 0 0 8px var(--support-success, #42be65);
+  flex-shrink: 0;
+}
+.stage-mission-dateline__brand {
+  color: var(--text-primary, #f4f4f4);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stage-mission-dateline__rig {
+  color: var(--text-primary, #f4f4f4);
+  font-weight: 500;
+}
+.stage-mission-dateline__sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border-strong, #393939);
+}
+.stage-mission-dateline__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stage-mission-dateline__k {
+  color: var(--text-helper, #a8a8a8);
+  text-transform: uppercase;
+}
+.stage-mission-dateline__v {
+  color: var(--text-primary, #f4f4f4);
+  font-variant-numeric: tabular-nums;
+}
+.stage-mission-dateline__spacer { flex: 1; }
+.stage-mission-dateline__clock {
+  color: var(--text-primary, #f4f4f4);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+/* Chyron card */
+.stage-chyron {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 140px;
+  background: var(--bg, #161616);
+  color: var(--text-primary, #f4f4f4);
+  overflow: hidden;
+  transition: background 120ms ease;
+  cursor: default;
+}
+.stage-chyron:hover { background: color-mix(in srgb, var(--bg, #161616) 88%, var(--surface, #262626)); }
+
+.stage-chyron__top {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  border-bottom: 1px solid var(--border-strong, #393939);
+  background: var(--surface, #262626);
+}
+.stage-chyron__brand {
+  background: #f4f4f4;
+  color: #161616;
+  padding: 0 0.8rem;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  border-right: 1px solid var(--border-strong, #393939);
+}
+.stage-chyron__label {
+  padding: 0 0.7rem;
+  display: flex; align-items: center; gap: 0.35rem;
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-helper, #a8a8a8);
+  border-right: 1px solid var(--border-strong, #393939);
+}
+.stage-chyron__dateline {
+  flex: 1;
+  padding: 0 0.8rem;
+  display: flex; align-items: center; gap: 0.85rem;
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-helper, #a8a8a8);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.stage-chyron__dl-item {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+}
+.stage-chyron__dl-value { color: var(--text-secondary, #c6c6c6); }
+.stage-chyron__dl-pipe {
+  width: 1px; height: 10px; background: var(--border-strong, #393939);
+  display: inline-block;
+}
+.stage-chyron__actions {
+  display: flex; align-items: center;
+  border-left: 1px solid var(--border-strong, #393939);
+  padding: 0 0.25rem;
+}
+
+.stage-chyron__body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.stage-chyron__bug {
+  background: var(--support-error, #da1e28);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0.6rem 1rem 0.6rem 0.9rem;
+  min-width: 120px;
+  position: relative;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+.stage-chyron__bug::after {
+  content: '';
+  position: absolute;
+  right: -10px; top: 0; bottom: 0;
+  width: 10px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: 1;
+}
+.stage-chyron__bug--standby { background: var(--support-warning, #f1c21b); color: #161616; }
+.stage-chyron__bug--offline { background: var(--surface-2, #393939); color: var(--text-secondary, #c6c6c6); }
+
+.stage-chyron__state {
+  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 0.5rem;
+  text-transform: uppercase;
+}
+.stage-chyron__state-sub {
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  opacity: 0.85;
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+}
+.stage-chyron__bug-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
+}
+.stage-chyron__bug--live .stage-chyron__bug-dot {
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+.stage-chyron__bug-dot--pulse {
+  animation: stage-chyron-pulse 1.4s ease-in-out infinite;
+}
+@keyframes stage-chyron-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.stage-chyron__headline {
+  padding: 0.65rem 1rem 0.4rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.stage-chyron__kicker {
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-helper, #a8a8a8);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.stage-chyron__kicker-divider {
+  flex: 1; height: 1px; background: var(--border-strong, #393939); max-width: 80px;
+}
+.stage-chyron__program {
+  color: var(--interactive, #4589ff);
+  font-weight: 600;
+}
+.stage-chyron__rig {
+  font-family: 'Barlow Condensed', 'Roboto Condensed', 'Oswald', 'Arial Narrow', 'Helvetica Neue Condensed', 'Impact', sans-serif;
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, #f4f4f4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-stretch: condensed;
+  margin: 0.1rem 0 0.2rem;
+}
+.stage-chyron__subrig {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  color: var(--text-helper, #a8a8a8);
+  letter-spacing: 0.04em;
+}
+.stage-chyron__status-icons {
+  display: flex; gap: 0.25rem;
+}
+.stage-chyron__status-ico {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  background: var(--surface, #262626);
+  color: var(--text-placeholder, #6f6f6f);
+  border: 1px solid var(--border-strong, #393939);
+  transition: all 160ms ease;
+}
+.stage-chyron__status-ico--on {
+  background: var(--interactive, #0f62fe);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--interactive, #0f62fe) 60%, #fff);
+  box-shadow: 0 0 8px rgba(69, 137, 255, 0.4);
+}
+.stage-chyron__copy {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--border-strong, #393939);
+  color: var(--interactive, #4589ff);
+  padding: 0.25rem 0.55rem;
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.stage-chyron__copy:hover {
+  background: color-mix(in srgb, var(--interactive, #0f62fe) 12%, transparent);
+}
+
+/* Pedal chain */
+.stage-pedal-chain {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0 1rem 0;
+  min-height: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.stage-pedal {
+  position: relative;
+  flex-shrink: 0;
+  transition: filter 180ms ease;
+}
+.stage-pedal--off {
+  filter: grayscale(0.35) brightness(0.62);
+}
+.stage-pedal__label {
+  position: absolute;
+  bottom: -16px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary, #c6c6c6);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stage-pedal--off .stage-pedal__label {
+  color: var(--text-placeholder, #6f6f6f);
+}
+
+/* Chyron strap (LIVE scrolling KPI bar) */
+.stage-chyron__strap {
+  display: flex;
+  align-items: stretch;
+  height: 26px;
+  border-top: 1px solid var(--border-strong, #393939);
+  background: var(--bg, #161616);
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--text-secondary, #c6c6c6);
+}
+.stage-chyron__strap-label {
+  background: var(--interactive, #0f62fe);
+  color: #fff;
+  padding: 0 0.7rem;
+  display: flex; align-items: center;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  position: relative;
+  flex-shrink: 0;
+}
+.stage-chyron__strap-label::after {
+  content: '';
+  position: absolute;
+  right: -8px; top: 0; bottom: 0;
+  width: 8px;
+  background: var(--interactive, #0f62fe);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: 1;
+}
+.stage-chyron__strap-content {
+  flex: 1;
+  display: flex; align-items: center;
+  overflow: hidden;
+  padding-left: 0.9rem;
+}
+.stage-chyron__strap-scroll {
+  display: inline-flex;
+  gap: 1.4rem;
+  white-space: nowrap;
+  animation: stage-mission-scroll 38s linear infinite;
+  flex-shrink: 0;
+  padding-right: 1.4rem;
+}
+.stage-chyron__strap-scroll--static {
+  animation: none;
+}
+.stage-chyron__strap-item { display: inline-flex; align-items: center; gap: 0.45rem; }
+.stage-chyron__strap-k { color: var(--text-helper, #a8a8a8); }
+.stage-chyron__strap-v { color: var(--text-primary, #f4f4f4); font-variant-numeric: tabular-nums; }
+.stage-chyron__strap-clock {
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--border-strong, #393939);
+  display: flex; align-items: center;
+  color: var(--text-primary, #f4f4f4);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* Event log ticker (bottom) */
+.stage-mission-ticker {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.35rem 0.9rem;
+  background: var(--surface, #262626);
+  border-top: 1px solid var(--border-strong, #393939);
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--text-helper, #a8a8a8);
+  overflow: hidden;
+}
+.stage-mission-ticker__leading {
+  flex-shrink: 0;
+  color: var(--text-primary, #f4f4f4);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+}
+.stage-mission-ticker__viewport {
+  flex: 1;
+  overflow: hidden;
+}
+.stage-mission-ticker__track {
+  display: inline-flex;
+  gap: 1.5rem;
+  white-space: nowrap;
+  animation: stage-mission-scroll 30s linear infinite;
+  flex-shrink: 0;
+}
+.stage-mission-ticker__track--static {
+  animation: none;
+}
+.stage-mission-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stage-mission-ticker__time {
+  color: var(--text-helper, #a8a8a8);
+  font-variant-numeric: tabular-nums;
+}
+.stage-mission-ticker__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-helper, #a8a8a8);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+  flex-shrink: 0;
+}
+.stage-mission-ticker__dot--info { background: var(--interactive, #4589ff); box-shadow: 0 0 6px var(--interactive, #4589ff); }
+.stage-mission-ticker__dot--warn { background: var(--support-warning, #f1c21b); box-shadow: 0 0 6px var(--support-warning, #f1c21b); }
+.stage-mission-ticker__dot--crit { background: var(--support-error, #fa4d56); box-shadow: 0 0 6px var(--support-error, #fa4d56); }
+.stage-mission-ticker__dot--ok { background: var(--support-success, #42be65); box-shadow: 0 0 6px var(--support-success, #42be65); }
+.stage-mission-ticker__text { color: var(--text-secondary, #c6c6c6); }
+
+@keyframes stage-mission-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-chyron__strap-scroll,
+  .stage-mission-ticker__track,
+  .stage-chyron__bug-dot--pulse {
+    animation: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .stage-notification-surface__grid--mission {
+    grid-template-columns: 1fr;
+  }
+  .stage-chyron__rig { font-size: 2.1rem; }
+  .stage-chyron__brand { display: none; }
 }
