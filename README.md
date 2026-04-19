@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1176** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2338** total commits | **3** stars | **0** forks | **0** open issues
+**1176** Python | **1144** TypeScript | **136** C++/H | **144** Docs | **2340** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`268a009b`](https://github.com/matthewmackes/map2-audio/commit/268a009b563fba8bfe38fc2e47626ca27e0a58ce) | T2363-subJ purge legacy LCD models and health signals | Map2 Audio | 2026-04-19 |
+| [`d04b7935`](https://github.com/matthewmackes/map2-audio/commit/d04b793597d452551bbe8825bf1bdfebe0851af3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`e4542c0d`](https://github.com/matthewmackes/map2-audio/commit/e4542c0d20dc0f4251880a46d8b83e27e42dec48) | T2363-subI hard-cut legacy event APIs | Map2 Audio | 2026-04-19 |
 | [`0a83ab7b`](https://github.com/matthewmackes/map2-audio/commit/0a83ab7b91b27ffb319c110cbd5944e875a693b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`e5ffd9ed`](https://github.com/matthewmackes/map2-audio/commit/e5ffd9ed3330433403b0b2f18b46095ab016018c) | T2363-subH hard-cut distributed cluster events | Map2 Audio | 2026-04-19 |
 | [`b2cc64ef`](https://github.com/matthewmackes/map2-audio/commit/b2cc64ef429d214c996db007c1e07077ae4dbc6f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`b2e54e7c`](https://github.com/matthewmackes/map2-audio/commit/b2e54e7c90943d1cb8bbeafe1532f2551c33121c) | Keep .gemini instructions local-only | Map2 Audio | 2026-04-19 |
 | [`34aba966`](https://github.com/matthewmackes/map2-audio/commit/34aba96694b2dc271d872ebe22f07b366fd46a9a) | T2363-subG hard-cut LCD runtime onto PlatformEvents | Map2 Audio | 2026-04-19 |
-| [`a75eb4aa`](https://github.com/matthewmackes/map2-audio/commit/a75eb4aa75de5eeb8552a83394bbe2bf02f07070) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`bb490cab`](https://github.com/matthewmackes/map2-audio/commit/bb490cab832e90fe6db3001237e6df4d55d26079) | Migrate legacy event bus to PlatformEventBus | Map2 Audio | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
