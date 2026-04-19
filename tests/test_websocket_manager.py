@@ -86,6 +86,16 @@ def test_broadcast_json_history_uses_bounded_queue():
     assert [event["idx"] for event in history["events"]] == [2, 3, 4]
 
 
+def test_broadcast_json_respects_topic_specific_history_limit():
+    manager = WebSocketManager(topic_history_limits={"platform:events": 2})
+
+    for idx in range(4):
+        asyncio.run(manager.broadcast_json({"idx": idx}, topic="platform:events"))
+
+    history = manager.get_event_history("platform:events")
+    assert [event["idx"] for event in history["events"]] == [2, 3]
+
+
 def test_broadcast_json_uses_binary_gzip_for_large_payloads():
     manager = WebSocketManager(enable_compression=True)
     websocket = _FakeWebSocket()

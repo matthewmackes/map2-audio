@@ -239,6 +239,18 @@ class Configuration:
                 'enable_audit_logging': True,
                 'cleanup_interval': 3600,
                 'gc_collection_interval': 300
+            },
+
+            # ================================================================
+            # PLATFORM EVENT CONTROL-PLANE
+            # ================================================================
+            'platform_event': {
+                'enabled': False,
+                'direct_wave1': False,
+                'direct_wave2': False,
+                'direct_wave3': False,
+                'session_replay_limit': 1000,
+                'websocket_topic_history_limit': 200,
             }
         }
     
@@ -287,3 +299,16 @@ class Configuration:
 
 # Global configuration instance
 config = Configuration()
+
+
+def _flag(name: str, *, env_var: str) -> bool:
+    raw = os.getenv(env_var)
+    if raw is not None:
+        return raw.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(config.get(name, False))
+
+
+PLATFORM_EVENT_BUS_ENABLED = _flag("platform_event.enabled", env_var="PLATFORM_EVENT_BUS_ENABLED")
+PLATFORM_EVENT_DIRECT_WAVE1 = _flag("platform_event.direct_wave1", env_var="PLATFORM_EVENT_DIRECT_WAVE1")
+PLATFORM_EVENT_DIRECT_WAVE2 = _flag("platform_event.direct_wave2", env_var="PLATFORM_EVENT_DIRECT_WAVE2")
+PLATFORM_EVENT_DIRECT_WAVE3 = _flag("platform_event.direct_wave3", env_var="PLATFORM_EVENT_DIRECT_WAVE3")

@@ -184,6 +184,8 @@ class DistributedEventBus(Singleton):
                 """
             )
 
+            self._ensure_platform_event_columns(cursor)
+
             # Create index on timestamp for fast queries
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_timestamp ON cluster_events(timestamp DESC)"
@@ -206,6 +208,29 @@ class DistributedEventBus(Singleton):
 
         except Exception as e:
             self.logger.error(f"Failed to initialize event database: {e}")
+
+    def _ensure_platform_event_columns(self, cursor: sqlite3.Cursor) -> None:
+        """Add PlatformEvent columns without disrupting legacy readers/writers."""
+        cursor.execute("PRAGMA table_info(cluster_events)")
+        existing = {str(row[1]) for row in cursor.fetchall()}
+        additions = {
+            "event_id": "TEXT",
+            "kind": "TEXT",
+            "dedupe_key": "TEXT",
+            "priority": "REAL DEFAULT 0.0",
+            "title": "TEXT",
+            "ttl_seconds": "INTEGER",
+            "expires_at": "DATETIME",
+            "supersedes": "TEXT",
+            "target_surfaces": "TEXT",
+        }
+        for column, definition in additions.items():
+            if column not in existing:
+                cursor.execute(f"ALTER TABLE cluster_events ADD COLUMN {column} {definition}")
+
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_cluster_event_id ON cluster_events(event_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_cluster_kind ON cluster_events(kind)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_cluster_dedupe_key ON cluster_events(dedupe_key)")
 
     async def publish_event(self, event: ClusterEvent) -> bool:
         """
@@ -363,18 +388,16 @@ class DistributedEventBus(Singleton):
 
     def _row_to_event(self, row: tuple) -> ClusterEvent:
         """Convert database row to event"""
-        (
-            id_,
-            event_type,
-            timestamp,
-            severity,
-            source_node_id,
-            affected_nodes,
-            message,
-            details,
-            correlation_id,
-            created_at,
-        ) = row
+        id_ = row[0]
+        event_type = row[1]
+        timestamp = row[2]
+        severity = row[3]
+        source_node_id = row[4]
+        affected_nodes = row[5]
+        message = row[6]
+        details = row[7]
+        correlation_id = row[8]
+        created_at = row[9]
 
         return ClusterEvent(
             event_type=EventType(event_type),

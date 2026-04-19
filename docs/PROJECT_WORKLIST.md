@@ -28606,7 +28606,7 @@ Validation:
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: PlatformEventBus + SQLite schema migration + session replay
 Description:
 - Goal / acceptance criteria: Implement [app/services/platform_event/bus.py](app/services/platform_event/bus.py) with the API from Section B of `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md`: `await bus.emit(event) -> event_id`, `bus.emit_threadsafe(event)`, `await bus.subscribe(kinds, severities, nodes, surfaces, min_priority) -> AsyncIterator`, `await bus.subscribe_callback(cb, filter) -> Subscription`, `await bus.replay(cursor, filter, session_id, limit) -> list[PlatformEvent]`, `await bus.ack(session_id, event_id)`. Internal pipeline: validate+stamp → dedupe/supersede via existing `AlertPrioritizer` from [app/services/alert_services.py](app/services/alert_services.py) (INTEGRATE, do not reimplement) → priority calc (Section A.4 formula) → persist (SQLite) → fanout to in-proc subscribers + `websocket_manager.broadcast_json(topic="platform:events")` + per-severity / per-kind-prefix sub-topics. Implement an additive SQLite schema migration on the existing [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) store: new columns `event_id, kind, dedupe_key, priority, title, ttl_seconds, expires_at, supersedes, target_surfaces` with indexes on (`event_id`), (`dedupe_key`), (`kind`), (`occurred_at`); preserve the 7-day retention policy. Extend [app/services/websocket_manager.py](app/services/websocket_manager.py) `topic_history_limits` via constructor kwarg to 200 for all `platform:events*` topics. Implement [app/services/platform_event/replay.py](app/services/platform_event/replay.py) with a per-session in-memory ring buffer (cap 1000) keyed by `session_id`; on reconnect `{action:"replay", cursor:<last_event_id>}` returns missed events from SQLite `WHERE event_id > cursor AND not expired`, then resumes live. Implement dedupe-key conventions from Section A.5 (node:`node:{node_id}:{kind}`, system:`system:cpu:{node_id}`, audio.xrun:`audio:xrun:{node_id}` with 5s window, snapshot:`snapshot:{snapshot_id}:activation`, midihub-peer:`midihub:peer:{peer_id}`, downloads:`download:{download_id}` latest-wins, workflow:`workflow:{workflow_id}` latest-wins, midi-conn:`midi:conn:{connection_id}`). Supersede semantics: same `dedupe_key` with higher severity replaces prior; ring buffer stores both; replay surfaces latest only; `supersedes = prior.event_id`. Tests in [tests/test_platform_event_bus.py](tests/test_platform_event_bus.py) must cover emit, subscribe, dedupe, supersede, replay, and filter correctness. Gate the whole service behind `PLATFORM_EVENT_BUS_ENABLED` in [app/config/settings.py](app/config/settings.py) (default `False`).
@@ -28615,11 +28615,18 @@ Description:
 - Estimated effort: Very High
 - Required outputs: `bus.py`, `replay.py`, additive SQLite migration, `websocket_manager.topic_history_limits` constructor kwarg, settings flag, `test_platform_event_bus.py`, factories shell at [app/services/platform_event/factories.py](app/services/platform_event/factories.py) with `make_*` helpers (implementations can land incrementally with producer migrations).
 - Notes: The bus MUST use `AlertPrioritizer` for priority + suppression and `AlertGrouper` for correlation — do not reimplement. No direct `asyncio.get_event_loop()`; use `asyncio.run()` / `asyncio.get_running_loop()` per Python 3.14.
+Assigned to: Codex
+Last updated: 2026-04-19 10:02 EDT - Codex
+- Completion notes:
+  - Added `app/services/platform_event/bus.py`, `replay.py`, and `factories.py`, delivering the first async `PlatformEventBus` pass with emit, threadsafe emit, filtered subscription, callback subscription, replay, ack tracking, websocket fanout, and additive persistence into the existing `cluster_events` SQLite store.
+  - Extended [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) with additive `cluster_events` columns and indexes for `event_id`, `kind`, `dedupe_key`, `priority`, `title`, `ttl_seconds`, `expires_at`, `supersedes`, and `target_surfaces`, while keeping legacy row readers working against the widened schema.
+  - Extended [app/services/websocket_manager.py](app/services/websocket_manager.py) with per-topic history limits so `platform:events*` topics can retain 200 entries without inflating unrelated websocket topics.
+  - Added focused validation coverage in `tests/test_platform_event_bus.py`, `tests/test_cluster_distributed_event_bus.py`, and `tests/test_alert_services.py`, plus a websocket regression for topic-specific history limits in `tests/test_websocket_manager.py`.
+  - Kept installer and environment artifacts aligned by avoiding any new external dependencies, services, or build requirements; the slice reuses the existing Python stdlib, current pydantic install, existing cluster-events SQLite database, and the shipped websocket infrastructure.
 Validation:
-- `pytest tests/test_platform_event_bus.py -q` -> must PASS
-- `pytest tests/test_websocket_manager.py tests/test_cluster_distributed_event_bus.py tests/test_alert_services.py -q` -> must PASS (no regressions)
-- `npm --prefix web run typecheck` -> must PASS
-- `npm --prefix web run build` -> must PASS
+- `pytest tests/test_platform_event_bus.py tests/test_cluster_distributed_event_bus.py tests/test_alert_services.py tests/test_websocket_manager.py -q` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subC

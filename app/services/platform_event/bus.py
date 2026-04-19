@@ -1,0 +1,430 @@
+"""PlatformEvent bus with additive SQLite persistence and replay."""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import json
+import logging
+import os
+import sqlite3
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from threading import RLock
+from typing import Any, AsyncIterator, Awaitable, Callable
+
+from app.config import config_get
+from app.services.alert_services import AlertGrouper, AlertPrioritizer
+from app.services.cluster.distributed_event_bus import DistributedEventBus
+from app.services.websocket_manager import WebSocketManager, ws_manager
+from app.utils.singleton import Singleton
+
+from .envelope import PlatformEvent
+from .factories import make_event
+from .replay import PlatformEventReplayBuffer
+
+logger = logging.getLogger(__name__)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _coerce_utc(value: datetime) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+
+
+def _flag(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+@dataclass(frozen=True)
+class PlatformEventFilter:
+    kinds: frozenset[str] | None = None
+    severities: frozenset[str] | None = None
+    nodes: frozenset[str] | None = None
+    surfaces: frozenset[str] | None = None
+    min_priority: float | None = None
+
+    def matches(self, event: PlatformEvent) -> bool:
+        if self.kinds is not None and event.kind not in self.kinds:
+            return False
+        if self.severities is not None and event.severity.value not in self.severities:
+            return False
+        if self.nodes is not None and event.source_node not in self.nodes:
+            return False
+        if self.surfaces is not None:
+            targets = set(event.target_surfaces or [])
+            if targets and targets.isdisjoint(self.surfaces):
+                return False
+        if self.min_priority is not None and event.priority < self.min_priority:
+            return False
+        if event.expires_at is not None and _coerce_utc(event.expires_at) <= _utc_now():
+            return False
+        return True
+
+
+@dataclass
+class Subscription:
+    callback: Callable[[PlatformEvent], Awaitable[None] | None]
+    event_filter: PlatformEventFilter
+    active: bool = True
+
+    def close(self) -> None:
+        self.active = False
+
+
+class PlatformEventBus(Singleton):
+    """Async-first bus for the canonical PlatformEvent control-plane."""
+
+    def __init__(
+        self,
+        *,
+        distributed_event_bus: DistributedEventBus | None = None,
+        websocket_manager: WebSocketManager | None = None,
+        replay_buffer: PlatformEventReplayBuffer | None = None,
+        enabled: bool | None = None,
+    ) -> None:
+        super().__init__()
+        self._distributed_event_bus = distributed_event_bus or DistributedEventBus.get_instance()
+        self._db_path = Path(self._distributed_event_bus.db_path)
+        self._websocket_manager = websocket_manager or ws_manager
+        self._prioritizer = AlertPrioritizer()
+        self._grouper = AlertGrouper()
+        self._replay = replay_buffer or PlatformEventReplayBuffer(
+            session_limit=int(config_get("platform_event.session_replay_limit", 1000) or 1000)
+        )
+        self._enabled = _flag("PLATFORM_EVENT_BUS_ENABLED", False) if enabled is None else bool(enabled)
+        self._lock = RLock()
+        self._subscriptions: dict[int, tuple[PlatformEventFilter, asyncio.Queue[PlatformEvent | None]]] = {}
+        self._callbacks: dict[int, Subscription] = {}
+        self._dedupe_latest: dict[str, tuple[str, int]] = {}
+        self._acked_events: dict[str, set[str]] = defaultdict(set)
+        self._subscription_counter = 0
+        self._ensure_schema()
+        self._configure_websocket_history()
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    def _configure_websocket_history(self) -> None:
+        limit = int(config_get("platform_event.websocket_topic_history_limit", 200) or 200)
+        self._websocket_manager.topic_history_limits.setdefault("platform:events", limit)
+
+    def _set_websocket_history_limit(self, topic: str) -> None:
+        if not topic.startswith("platform:events"):
+            return
+        limit = int(config_get("platform_event.websocket_topic_history_limit", 200) or 200)
+        self._websocket_manager.topic_history_limits.setdefault(topic, limit)
+
+    def _ensure_schema(self) -> None:
+        self._distributed_event_bus._init_db()
+
+    async def emit(self, event: PlatformEvent | dict[str, Any]) -> str:
+        platform_event = event if isinstance(event, PlatformEvent) else PlatformEvent.model_validate(event)
+        if not self._enabled:
+            return platform_event.event_id
+        enriched_event = self._prepare_event(platform_event)
+        self._persist_event(enriched_event)
+        await self._fanout(enriched_event)
+        return enriched_event.event_id
+
+    def emit_threadsafe(self, event: PlatformEvent | dict[str, Any]) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(self.emit(event))
+            return
+        loop.create_task(self.emit(event))
+
+    async def subscribe(
+        self,
+        kinds: list[str] | None = None,
+        severities: list[str] | None = None,
+        nodes: list[str] | None = None,
+        surfaces: list[str] | None = None,
+        min_priority: float | None = None,
+    ) -> AsyncIterator[PlatformEvent]:
+        event_filter = PlatformEventFilter(
+            kinds=frozenset(kinds) if kinds else None,
+            severities=frozenset(severities) if severities else None,
+            nodes=frozenset(nodes) if nodes else None,
+            surfaces=frozenset(surfaces) if surfaces else None,
+            min_priority=min_priority,
+        )
+        queue: asyncio.Queue[PlatformEvent | None] = asyncio.Queue()
+        with self._lock:
+            subscription_id = self._next_subscription_id()
+            self._subscriptions[subscription_id] = (event_filter, queue)
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                yield event
+        finally:
+            with self._lock:
+                self._subscriptions.pop(subscription_id, None)
+
+    async def subscribe_callback(
+        self,
+        cb: Callable[[PlatformEvent], Awaitable[None] | None],
+        event_filter: PlatformEventFilter | None = None,
+    ) -> Subscription:
+        subscription = Subscription(callback=cb, event_filter=event_filter or PlatformEventFilter())
+        with self._lock:
+            self._callbacks[self._next_subscription_id()] = subscription
+        return subscription
+
+    async def replay(
+        self,
+        cursor: str | None = None,
+        event_filter: PlatformEventFilter | None = None,
+        session_id: str | None = None,
+        limit: int = 100,
+    ) -> list[PlatformEvent]:
+        matches = self._load_replay_events(cursor=cursor, limit=limit, event_filter=event_filter)
+        if session_id:
+            recent = self._replay.get_since(session_id, cursor)
+            for event in recent:
+                if event_filter is None or event_filter.matches(event):
+                    matches.append(event)
+        latest_by_dedupe: dict[str, PlatformEvent] = {}
+        ordered: list[PlatformEvent] = []
+        for event in matches:
+            dedupe_key = event.dedupe_key or event.event_id
+            latest_by_dedupe[dedupe_key] = event
+        seen_ids = {event.event_id for event in latest_by_dedupe.values()}
+        for event in matches:
+            if event.event_id in seen_ids:
+                ordered.append(event)
+                seen_ids.remove(event.event_id)
+        return ordered
+
+    async def ack(self, session_id: str, event_id: str) -> None:
+        normalized_session = str(session_id or "").strip()
+        normalized_event_id = str(event_id or "").strip()
+        if not normalized_session or not normalized_event_id:
+            return
+        with self._lock:
+            self._acked_events[normalized_session].add(normalized_event_id)
+
+    def _next_subscription_id(self) -> int:
+        self._subscription_counter += 1
+        return self._subscription_counter
+
+    def _prepare_event(self, event: PlatformEvent) -> PlatformEvent:
+        payload = event.model_dump()
+        payload["occurred_at"] = _coerce_utc(event.occurred_at)
+        payload["expires_at"] = _coerce_utc(event.expires_at) if event.expires_at else None
+        priority = self._prioritizer.calculate_priority(
+            {
+                "event_id": event.event_id,
+                "severity": event.severity.value.upper(),
+                "source_node": event.source_node,
+                "event_type": event.kind,
+                "timestamp": event.occurred_at,
+            }
+        )
+        payload["priority"] = priority.final_score
+        self._grouper.add_event(
+            {
+                "event_id": event.event_id,
+                "event_type": event.kind,
+                "severity": event.severity.value.upper(),
+                "source_node": event.source_node,
+            }
+        )
+        dedupe_key = event.dedupe_key
+        if dedupe_key:
+            current_rank = self._severity_rank(event.severity.value)
+            previous = self._dedupe_latest.get(dedupe_key)
+            if previous and current_rank >= previous[1] and previous[0] != event.event_id:
+                payload["supersedes"] = previous[0]
+            self._dedupe_latest[dedupe_key] = (event.event_id, current_rank)
+        return PlatformEvent.model_validate(payload)
+
+    def _severity_rank(self, value: str) -> int:
+        return {"info": 1, "warning": 2, "error": 3, "critical": 4}.get(str(value), 0)
+
+    def _persist_event(self, event: PlatformEvent) -> None:
+        target_surfaces = json.dumps(event.target_surfaces)
+        conn = sqlite3.connect(self._db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO cluster_events (
+                    event_type,
+                    timestamp,
+                    severity,
+                    source_node_id,
+                    affected_nodes,
+                    message,
+                    details,
+                    correlation_id,
+                    event_id,
+                    kind,
+                    dedupe_key,
+                    priority,
+                    title,
+                    ttl_seconds,
+                    expires_at,
+                    supersedes,
+                    target_surfaces
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.kind,
+                    event.occurred_at.isoformat(),
+                    event.severity.value,
+                    event.source_node,
+                    json.dumps(event.target_nodes),
+                    event.message,
+                    json.dumps(
+                        {
+                            "context": event.context,
+                            "resource": event.resource,
+                            "workflow": event.workflow,
+                            "icon": event.icon,
+                            "color": event.color,
+                            "sound": event.sound,
+                            "sticky": event.sticky,
+                            "broadcast": event.broadcast,
+                            "source_service": event.source_service,
+                            "monotonic_ns": event.monotonic_ns,
+                            "ack_required": event.ack_required,
+                        }
+                    ),
+                    event.correlation_id or "",
+                    event.event_id,
+                    event.kind,
+                    event.dedupe_key,
+                    event.priority,
+                    event.title,
+                    event.ttl_seconds,
+                    event.expires_at.isoformat() if event.expires_at else None,
+                    event.supersedes,
+                    target_surfaces,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    async def _fanout(self, event: PlatformEvent) -> None:
+        await self._fanout_subscribers(event)
+        await self._fanout_callbacks(event)
+        await self._fanout_websocket(event)
+
+    async def _fanout_subscribers(self, event: PlatformEvent) -> None:
+        with self._lock:
+            subscriptions = list(self._subscriptions.values())
+        for event_filter, queue in subscriptions:
+            if event_filter.matches(event):
+                await queue.put(event)
+
+    async def _fanout_callbacks(self, event: PlatformEvent) -> None:
+        with self._lock:
+            callbacks = list(self._callbacks.items())
+        for subscription_id, subscription in callbacks:
+            if not subscription.active:
+                with self._lock:
+                    self._callbacks.pop(subscription_id, None)
+                continue
+            if not subscription.event_filter.matches(event):
+                continue
+            result = subscription.callback(event)
+            if asyncio.iscoroutine(result):
+                await result
+
+    async def _fanout_websocket(self, event: PlatformEvent) -> None:
+        payload = {"type": "platform_event", "data": event.model_dump(mode="json")}
+        topics = ["platform:events", f"platform:events:{event.severity.value}"]
+        topics.extend(self._kind_topics(event.kind))
+        for topic in topics:
+            self._set_websocket_history_limit(topic)
+            await self._websocket_manager.broadcast_json(payload, topic=topic)
+
+    def _kind_topics(self, kind: str) -> list[str]:
+        pieces = kind.split(".")
+        topics: list[str] = []
+        for index in range(1, len(pieces) + 1):
+            prefix = ".".join(pieces[:index])
+            topics.append(f"platform:events:kind:{prefix}")
+        return topics
+
+    def _load_replay_events(
+        self,
+        *,
+        cursor: str | None,
+        limit: int,
+        event_filter: PlatformEventFilter | None,
+    ) -> list[PlatformEvent]:
+        query = """
+            SELECT event_id, kind, severity, source_node_id, message, details, correlation_id,
+                   dedupe_key, priority, title, ttl_seconds, expires_at, supersedes, target_surfaces, timestamp
+            FROM cluster_events
+            WHERE event_id IS NOT NULL
+        """
+        params: list[Any] = []
+        if cursor:
+            query += " AND id > COALESCE((SELECT id FROM cluster_events WHERE event_id = ? LIMIT 1), 0)"
+            params.append(cursor)
+        query += " ORDER BY id ASC LIMIT ?"
+        params.append(limit)
+        conn = sqlite3.connect(self._db_path)
+        try:
+            cursor_handle = conn.cursor()
+            cursor_handle.execute(query, params)
+            rows = cursor_handle.fetchall()
+        finally:
+            conn.close()
+
+        replay: list[PlatformEvent] = []
+        for row in rows:
+            details = json.loads(row[5] or "{}")
+            event = PlatformEvent(
+                event_id=row[0],
+                kind=row[1],
+                severity=row[2],
+                source_node=row[3],
+                source_service=str(details.get("source_service") or "platform_event_bus"),
+                occurred_at=datetime.fromisoformat(row[14]),
+                title=row[9] or row[1],
+                message=row[4] or "",
+                context=dict(details.get("context") or {}),
+                correlation_id=row[6] or None,
+                dedupe_key=row[7] or None,
+                priority=float(row[8] or 0.0),
+                ttl_seconds=int(row[10] or 0),
+                expires_at=datetime.fromisoformat(row[11]) if row[11] else None,
+                supersedes=row[12] or None,
+                target_surfaces=json.loads(row[13]) if row[13] else [],
+                workflow=details.get("workflow"),
+                icon=details.get("icon"),
+                color=details.get("color"),
+                sound=details.get("sound"),
+                sticky=bool(details.get("sticky", False)),
+                broadcast=bool(details.get("broadcast", True)),
+                target_nodes=[],
+                monotonic_ns=details.get("monotonic_ns"),
+                ack_required=bool(details.get("ack_required", False)),
+                resource=details.get("resource"),
+            )
+            if event_filter is None or event_filter.matches(event):
+                replay.append(event)
+        return replay
+
+
+def get_platform_event_bus() -> PlatformEventBus:
+    return PlatformEventBus.get_instance()
+
+
+__all__ = ["PlatformEventBus", "PlatformEventFilter", "Subscription", "get_platform_event_bus", "make_event"]

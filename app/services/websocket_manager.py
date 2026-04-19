@@ -35,12 +35,17 @@ class WebSocketManager:
         self,
         enable_compression: bool = True,
         send_timeout_seconds: float = DEFAULT_SEND_TIMEOUT_SECONDS,
+        topic_history_limits: Optional[Dict[str, int]] = None,
     ):
         self.active_connections: Dict[str, WebSocket] = {}
         self.subscriptions: Dict[str, Set[str]] = {}
         self.connection_info: Dict[str, Dict[str, Any]] = {}
         self.event_history: Dict[str, Deque[Dict[str, Any]]] = {}
         self.history_limit = 10
+        self.topic_history_limits = {
+            str(topic): max(1, int(limit))
+            for topic, limit in (topic_history_limits or {}).items()
+        }
 
         # Keep all lifecycle mutations on one async lock.
         self._lock = asyncio.Lock()
@@ -303,8 +308,12 @@ class WebSocketManager:
         if topic:
             async with self._lock:
                 history = self.event_history.get(topic)
+                limit = self.topic_history_limits.get(topic, self.history_limit)
                 if history is None:
-                    history = deque(maxlen=self.history_limit)
+                    history = deque(maxlen=limit)
+                    self.event_history[topic] = history
+                elif history.maxlen != limit:
+                    history = deque(history, maxlen=limit)
                     self.event_history[topic] = history
                 history.append(data)
 
