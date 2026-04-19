@@ -18,6 +18,11 @@ export type WebSocketMessage = {
 export type WebSocketHandler = (message: WebSocketMessage) => void;
 
 export type WebSocketTopic =
+  | 'platform:events'
+  | 'platform:events:critical'
+  | 'platform:events:error'
+  | 'platform:events:warning'
+  | 'platform:events:info'
   | 'meters'
   | 'chain_updates'
   | 'plugin_params'
@@ -275,6 +280,13 @@ export class Map2WebSocket {
    */
   async getHistory(topic?: WebSocketTopic): Promise<any> {
     return this.query('history', { topic });
+  }
+
+  /**
+   * Send an arbitrary action payload to the backend over the active socket.
+   */
+  sendAction(data: Record<string, unknown>): void {
+    this.send(data)
   }
 
   /**

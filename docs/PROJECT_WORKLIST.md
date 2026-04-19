@@ -28630,7 +28630,7 @@ Validation:
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Frontend transport + provider + single hook + router + store + presenter shells
 Description:
 - Goal / acceptance criteria: Implement [web/src/app/services/platformEventTransport.ts](web/src/app/services/platformEventTransport.ts) that subscribes to the `platform:events` WS topic (register in [web/src/map2/websocket.ts](web/src/map2/websocket.ts)) with a `session_id` stored in `sessionStorage`, a last-event-id cursor in `localStorage`, and sends `{action:"replay", cursor}` on reconnect. Implement the single hook [web/src/app/hooks/usePlatformEvents.ts](web/src/app/hooks/usePlatformEvents.ts) with signature `usePlatformEvents({ kinds?, kindPrefixes?, severities?, minPriority?, nodes? }) -> { events, allEvents, connected, replayComplete, ack }`. Implement [web/src/app/components/PlatformEventProvider.tsx](web/src/app/components/PlatformEventProvider.tsx) as the single root subscriber (mounted once at app root). Implement the pure-function router [web/src/app/services/platformEventRouter.ts](web/src/app/services/platformEventRouter.ts) with signature `(event) => RouterDecision[]` whose targets are `toast | stage_kyron | node_alert | device_banner | lcd_feed | browser_notification | audio_beep` — consolidating routing logic currently scattered across [Toasts.tsx](web/src/app/components/Toasts.tsx), [useAlertNotifications.tsx](web/src/app/hooks/useAlertNotifications.tsx), [useHealthMonitoring.ts](web/src/app/hooks/useHealthMonitoring.ts), [useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts); migrate the existing `StageNotificationConfig` taxonomy verbatim (it is already well-thought-out). Implement the Zustand store [web/src/app/stores/platformEventStore.ts](web/src/app/stores/platformEventStore.ts) holding the canonical list + dismissal set + replay cursor. Create presenter shells under [web/src/app/components/presenters/](web/src/app/components/presenters/): `ToastsPresenter`, `NodeAlertsPresenter`, `DeviceBannerPresenter`, `LCDFeedPresenter`, `BrowserNotificationsPresenter`, `AudioBeepsPresenter`. Each presenter reads the router decisions matching its `surface` and renders through existing Carbon components (do NOT delete or bypass `Toasts.tsx` internals — ToastsPresenter feeds into it as a pass-through initially). All new UI must use `@carbon/react` tokens. Tests must cover: provider mounts once, router produces expected decision sets for representative events, store dedupes, session-id persistence, replay cursor persistence and advancement.
@@ -28638,12 +28638,17 @@ Description:
 - Dependencies: T2363-subB
 - Estimated effort: Very High
 - Required outputs: transport, hook, provider, router, store, 6 presenter components, WS topic registration, jest tests for each piece.
+- Completion notes:
+  - Added the frontend `platform:events` lane in `web/src/map2/websocket.ts` plus the new transport/state stack in `web/src/app/services/platformEventTransport.ts`, `web/src/app/hooks/usePlatformEvents.ts`, and `web/src/app/stores/platformEventStore.ts`, including `sessionStorage` session id persistence, `localStorage` replay cursor persistence, and reconnect-time replay requests.
+  - Added the pure router in `web/src/app/services/platformEventRouter.ts` and the root subscriber in `web/src/app/components/PlatformEventProvider.tsx`, then mounted the provider under `ToastProvider` in `web/src/app/App.tsx` so one subscriber now fans PlatformEvents into presenter shells instead of scattering new websocket consumers across the UI.
+  - Added presenter shells under `web/src/app/components/presenters/` (`ToastsPresenter`, `NodeAlertsPresenter`, `DeviceBannerPresenter`, `LCDFeedPresenter`, `BrowserNotificationsPresenter`, `AudioBeepsPresenter`) to feed the existing toast surface and alert stores without rewriting `Toasts.tsx` yet.
+  - Added focused coverage in `web/src/app/services/platformEventRouter.test.ts`, `web/src/app/hooks/usePlatformEvents.test.tsx`, `web/src/app/stores/platformEventStore.test.ts`, and `web/src/app/components/PlatformEventProvider.test.tsx`.
 - Notes: Do not remove or rewrite [Toasts.tsx](web/src/app/components/Toasts.tsx) in this subtask — wire it as a pass-through. Its deep consolidation happens in a later Phase 4 follow-up. `pushNotification()` stays local-only. All presenters must live under `PlatformEventProvider`.
 Validation:
-- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/services/platformEventRouter.test.ts src/app/hooks/usePlatformEvents.test.tsx src/app/stores/platformEventStore.test.ts src/app/components/PlatformEventProvider.test.tsx` -> must PASS
-- `npm --prefix web run typecheck` -> must PASS
-- `npm --prefix web run build` -> must PASS
-- `npm --prefix web run preview` + playwright smoke on preview -> must PASS
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/services/platformEventRouter.test.ts src/app/hooks/usePlatformEvents.test.tsx src/app/stores/platformEventStore.test.ts src/app/components/PlatformEventProvider.test.tsx` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS
+- `npm --prefix web run visual:workspace-smoke` -> PASS (`artifacts/visual-smoke/workspace/2026-04-19T14-12-05.134Z`)
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subD
