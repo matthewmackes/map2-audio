@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-18 - Closed T2361 after clearing the root/web/tui npm audit findings and validating the updated package trees.
+Last updated: 2026-04-18 - Closed T2362 after confirming the GitHub dependabot alert set is already empty and the post-push vulnerability banner was stale.
 
 ---
 
@@ -28462,3 +28462,32 @@ Last updated: 2026-04-18 21:58 EDT - Codex
   - `npm --prefix web run build` -> PASS
   - `npm --prefix tui run build` -> PASS
   - `git diff --check` -> PASS
+
+---
+
+ID: T2362
+Status: [✓] Done
+Title: Reconcile GitHub vulnerability alerts with local clean npm audits and Python requirement sets
+Description:
+- Goal / acceptance criteria: Determine why GitHub still reports 23 vulnerabilities on `master` after T2361 cleared the local npm audits, then land the next concrete remediation or document the exact remaining alert source. Acceptance requires identifying whether the remaining alert set lives in Python requirement files, another manifest, or GitHub advisory lag; capturing the evidence in the canonical worklist; and implementing the next safe fix slice if it is locally actionable.
+- Why it matters: The latest push to `master` still emitted the same GitHub vulnerability banner even after the local npm graphs were remediated to zero findings, which means the security picture is still inconsistent and the project cannot honestly claim the alert surface is understood yet.
+- Dependencies: T2361
+- Estimated effort: Medium
+- Required outputs: alert-source evidence, Python/advisory audit results, any safe follow-up remediation, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-18 22:06 EDT - Codex
+- Notes:
+  - Trigger source: GitHub post-push warning still reported 23 vulnerabilities immediately after shipping commit `2968d7ce`.
+  - `pip_audit` is not installed in the system interpreter, so the audit pass used an isolated temporary tool environment rather than mutating the host Python setup.
+- Completion notes:
+  - Verified that the remaining discrepancy was not in the repo manifests: root npm audit, `web` npm audit, `tui` npm audit, and the Python requirement audits all returned zero known vulnerabilities after T2361.
+  - Audited the backend/runtime requirement files plus the extra docs-side Python requirements bundle from an isolated temp venv (`/tmp/map2-pip-audit`) to avoid introducing tool dependencies into the project environment.
+  - Queried the live GitHub dependabot alert surface directly with `gh api` and confirmed there are `0` open dependabot alerts for `matthewmackes/map2-audio`; the post-push vulnerability banner was therefore stale/index-lag, not an unresolved local security issue.
+  - No code or package changes were required in this reconciliation slice because the actionable vulnerability remediation had already landed in T2361.
+- Validation:
+  - `npm audit --json` -> PASS (`0` vulnerabilities)
+  - `npm --prefix tui audit --json` -> PASS (`0` vulnerabilities)
+  - `npm --prefix web audit --json` -> PASS (`0` vulnerabilities)
+  - `/tmp/map2-pip-audit/bin/pip-audit -r requirements-backend-runtime.txt -r requirements-installer.txt -r requirements-search.txt` -> PASS (`No known vulnerabilities found`)
+  - `/tmp/map2-pip-audit/bin/pip-audit -r juce-engine/Modules/NeuralAmpModelerCore/docs/requirements.txt` -> PASS (`No known vulnerabilities found`)
+  - `gh api --jq 'length' repos/matthewmackes/map2-audio/dependabot/alerts?state=open\&per_page=100` -> PASS (`0`)
