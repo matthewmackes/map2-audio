@@ -4,19 +4,18 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.lcd_models.lcd_event import LCDEvent, EventSeverity, EventType
 from app.services.config_validator import ConfigValidator
 from app.services.event_producers.network_producer import NetworkEventProducer
 from app.services.event_producers.plugin_producer import PluginEventProducer
+from app.services.platform_event.envelope import PlatformEvent
 from app.services.resilience_logging import ResilienceLogger
 
 
 class _CaptureBus:
     def __init__(self) -> None:
-        self.node_label = "NODE-UTC"
-        self.events: list[LCDEvent] = []
+        self.events: list[PlatformEvent] = []
 
-    async def publish(self, event: LCDEvent) -> None:
+    async def emit(self, event: PlatformEvent) -> None:
         self.events.append(event)
 
 
@@ -41,22 +40,22 @@ def test_resilience_logger_uses_utc_timestamp(monkeypatch: pytest.MonkeyPatch) -
 @pytest.mark.asyncio
 async def test_network_event_producer_uses_utc_event_timestamps() -> None:
     bus = _CaptureBus()
-    producer = NetworkEventProducer(bus)
+    producer = NetworkEventProducer(bus, node_label="NODE-UTC")
     await producer.register_peer("node-b", "http://node-b")
     await producer.on_peer_connected("node-b")
     await producer.on_peer_disconnected("node-b")
 
     assert len(bus.events) == 2
-    assert all(event.timestamp.tzinfo == timezone.utc for event in bus.events)
+    assert all(event.occurred_at.tzinfo == timezone.utc for event in bus.events)
 
 
 @pytest.mark.asyncio
 async def test_plugin_event_producer_tracks_loaded_at_in_utc() -> None:
     bus = _CaptureBus()
-    producer = PluginEventProducer(bus)
+    producer = PluginEventProducer(bus, node_label="NODE-UTC")
     await producer.on_plugin_loaded("Limiter", "lv2", "plugin-1", latency_change_ms=0.5)
 
     loaded_at = datetime.fromisoformat(producer.loaded_plugins["plugin-1"]["loaded_at"])
     assert loaded_at.tzinfo == timezone.utc
     assert bus.events
-    assert bus.events[0].timestamp.tzinfo == timezone.utc
+    assert bus.events[0].occurred_at.tzinfo == timezone.utc

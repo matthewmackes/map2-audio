@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .envelope import PlatformEvent
+from .kind import kind_for_lcd_event_value
 from .severity import Severity
 
 
@@ -76,6 +77,67 @@ def make_event(
         workflow=dict(workflow) if workflow else None,
         target_surfaces=list(target_surfaces or []),
         resource=dict(resource) if resource else None,
+    )
+
+
+def make_lcd_surface_event(
+    *,
+    event_type: str,
+    severity: Severity,
+    source_node: str,
+    source_service: str,
+    title: str,
+    message: str,
+    icon: str | None = None,
+    color: str | None = None,
+    sound: bool | None = None,
+    dismiss_auto: bool | None = None,
+    broadcast: bool = True,
+    target_nodes: list[str] | None = None,
+    target_surfaces: list[str] | None = None,
+    context: dict[str, Any] | None = None,
+    workflow: dict[str, Any] | None = None,
+    resource: dict[str, Any] | None = None,
+    dedupe_key: str | None = None,
+    occurred_at: datetime | str | None = None,
+    ttl_seconds: int = 300,
+) -> PlatformEvent:
+    normalized_event_type = str(event_type or "").strip().lower()
+    kind = (
+        normalized_event_type
+        if normalized_event_type.startswith("lcd.")
+        else kind_for_lcd_event_value(normalized_event_type)
+    )
+    lcd_target_surfaces = list(target_surfaces or [])
+    if "lcd" not in lcd_target_surfaces:
+        lcd_target_surfaces.append("lcd")
+
+    payload_context = dict(context or {})
+    if normalized_event_type and not normalized_event_type.startswith("lcd."):
+        payload_context.setdefault("lcd_event_type", normalized_event_type)
+    if dismiss_auto is not None:
+        payload_context.setdefault("lcd_dismiss_auto", bool(dismiss_auto))
+
+    return PlatformEvent(
+        kind=kind,
+        severity=severity,
+        source_node=source_node,
+        source_service=source_service,
+        occurred_at=_normalize_occurred_at(occurred_at) or datetime.now(timezone.utc),
+        title=title,
+        message=message,
+        dedupe_key=dedupe_key,
+        context=payload_context,
+        workflow=dict(workflow) if workflow else None,
+        target_surfaces=lcd_target_surfaces,
+        resource=dict(resource) if resource else None,
+        ttl_seconds=max(0, int(ttl_seconds)),
+        icon=icon,
+        color=color,
+        sound=sound,
+        sticky=False if dismiss_auto is None else not bool(dismiss_auto),
+        broadcast=bool(broadcast),
+        target_nodes=list(target_nodes or []),
     )
 
 

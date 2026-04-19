@@ -1,56 +1,40 @@
 """
 Audio Event Producer
 
-Monitors JUCE audio engine and generates LCD events for:
-- Audio engine start/stop
-- XRUNs (audio dropouts)
-- CPU usage spikes
-- Latency changes
-- Plugin loading
-- Preset changes
+Monitors JUCE audio engine and emits canonical PlatformEvents targeted at the
+LCD surface.
 """
+
+from __future__ import annotations
 
 import asyncio
 import logging
 from typing import Any, Dict
 
-from app.services.lcd_event_bus import LCDEventBus, create_audio_event, create_alert_event
-from app.lcd_models.lcd_event import EventSeverity
+from app.services.platform_event.bus import PlatformEventBus
+from app.services.platform_event.factories import make_lcd_surface_event
+from app.services.platform_event.severity import Severity
 
 logger = logging.getLogger(__name__)
 
 
 class AudioEventProducer:
-    """
-    Produces LCD events based on audio engine state.
-    
-    Monitors:
-    - Audio engine status (running/stopped)
-    - XRUN count (audio dropouts)
-    - CPU usage by audio process
-    - Latency measurements
-    - Plugin operations
-    """
-    
-    def __init__(self, event_bus: LCDEventBus):
+    """Produces audio-related LCD PlatformEvents."""
+
+    def __init__(self, event_bus: PlatformEventBus, *, node_label: str):
         self.event_bus = event_bus
-        
-        # Previous state for change detection
+        self.node_label = node_label
         self.audio_running = False
         self.last_xrun_count = 0
         self.last_cpu_percent = 0.0
         self.last_latency_ms = 0.0
-        
-        # Monitoring task
         self._monitor_task = None
-        
+
     async def start(self):
-        """Start monitoring audio engine"""
         logger.info("Starting Audio Event Producer")
         self._monitor_task = asyncio.create_task(self._monitor_loop())
-    
+
     async def stop(self):
-        """Stop monitoring"""
         logger.info("Stopping Audio Event Producer")
         if self._monitor_task:
             self._monitor_task.cancel()
@@ -58,21 +42,46 @@ class AudioEventProducer:
                 await self._monitor_task
             except asyncio.CancelledError:
                 pass
-    
+
     async def _monitor_loop(self):
-        """Background monitoring loop"""
         while True:
             try:
                 await self._check_audio_status()
-                await asyncio.sleep(2)  # Check every 2 seconds
+                await asyncio.sleep(2)
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Audio monitoring error: {e}")
+                logger.error("Audio monitoring error: %s", e)
                 await asyncio.sleep(5)
-    
+
+    async def _emit(
+        self,
+        *,
+        event_type: str,
+        severity: Severity,
+        title: str,
+        message: str,
+        color: str | None = None,
+        sound: bool | None = None,
+        dismiss_auto: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        await self.event_bus.emit(
+            make_lcd_surface_event(
+                event_type=event_type,
+                severity=severity,
+                source_node=self.node_label,
+                source_service="audio_event_producer",
+                title=title,
+                message=message,
+                color=color,
+                sound=sound,
+                dismiss_auto=dismiss_auto,
+                context=context,
+            )
+        )
+
     async def _check_audio_status(self):
-        """Check current audio engine status"""
         status = await self._get_audio_status()
         running = bool(status.get("running"))
         sample_rate = int(status.get("sample_rate") or 0)
@@ -81,7 +90,6 @@ class AudioEventProducer:
         cpu_percent = float(status.get("cpu_load") or 0.0)
         xrun_count = int((status.get("underruns") or 0) + (status.get("overruns") or 0))
 
-        # Engine start/stop transitions
         if running and not self.audio_running:
             await self.on_audio_started(
                 device_name="JUCE Engine",
@@ -92,7 +100,6 @@ class AudioEventProducer:
         elif not running and self.audio_running:
             await self.on_audio_stopped()
 
-        # XRUN, CPU, and latency drift monitoring while running
         if running:
             await self.on_xrun_detected(xrun_count)
             await self.on_cpu_spike(cpu_percent)
@@ -144,113 +151,99 @@ class AudioEventProducer:
                 "underruns": 0,
                 "overruns": 0,
             }
-    
+
     async def on_audio_started(self, device_name: str, sample_rate: int, buffer_size: int, latency_ms: float):
-        """Called when audio engine starts"""
         self.audio_running = True
         self.last_latency_ms = latency_ms
-        
-        await create_audio_event(
-            self.event_bus,
+        await self._emit(
+            event_type="audio",
+            severity=Severity.INFO,
             title="Audio Engine Started",
             message=f"{device_name} @ {sample_rate}Hz, {latency_ms:.1f}ms latency",
-            severity=EventSeverity.INFO,
             color="green",
             context={
                 "device": device_name,
                 "sample_rate": sample_rate,
                 "buffer_size": buffer_size,
-                "latency_ms": latency_ms
-            }
+                "latency_ms": latency_ms,
+            },
         )
-        
-        logger.info(f"Audio started: {device_name} @ {sample_rate}Hz")
-    
+        logger.info("Audio started: %s @ %sHz", device_name, sample_rate)
+
     async def on_audio_stopped(self):
-        """Called when audio engine stops"""
         self.audio_running = False
-        
-        await create_audio_event(
-            self.event_bus,
+        await self._emit(
+            event_type="audio",
+            severity=Severity.WARNING,
             title="Audio Engine Stopped",
             message="Audio processing stopped",
-            severity=EventSeverity.WARNING,
-            color="yellow"
+            color="yellow",
         )
-        
         logger.info("Audio stopped")
-    
+
     async def on_xrun_detected(self, xrun_count: int):
-        """Called when XRUN (audio dropout) is detected"""
-        if xrun_count > self.last_xrun_count:
-            new_xruns = xrun_count - self.last_xrun_count
-            
-            # Critical if multiple XRUNs
-            severity = EventSeverity.CRITICAL if new_xruns >= 3 else EventSeverity.ERROR
-            
-            await create_alert_event(
-                self.event_bus,
-                title="XRUN ALERT" if new_xruns >= 3 else "Audio Dropout",
-                message=f"{new_xruns} dropout{'s' if new_xruns > 1 else ''} detected (total: {xrun_count})",
-                severity=severity,
-                context={"xrun_count": xrun_count, "new_xruns": new_xruns}
-            )
-            
-            self.last_xrun_count = xrun_count
-            logger.warning(f"XRUN detected: {new_xruns} new dropouts")
-    
+        if xrun_count <= self.last_xrun_count:
+            return
+
+        new_xruns = xrun_count - self.last_xrun_count
+        severity = Severity.CRITICAL if new_xruns >= 3 else Severity.ERROR
+        await self._emit(
+            event_type="alert",
+            severity=severity,
+            title="XRUN ALERT" if new_xruns >= 3 else "Audio Dropout",
+            message=f"{new_xruns} dropout{'s' if new_xruns > 1 else ''} detected (total: {xrun_count})",
+            color="red" if severity == Severity.CRITICAL else "yellow",
+            sound=True,
+            dismiss_auto=False,
+            context={"xrun_count": xrun_count, "new_xruns": new_xruns},
+        )
+        self.last_xrun_count = xrun_count
+        logger.warning("XRUN detected: %s new dropouts", new_xruns)
+
     async def on_cpu_spike(self, cpu_percent: float):
-        """Called when audio CPU usage spikes"""
         if cpu_percent > 75 and self.last_cpu_percent <= 75:
-            severity = EventSeverity.CRITICAL if cpu_percent > 90 else EventSeverity.WARNING
-            
-            await create_audio_event(
-                self.event_bus,
+            severity = Severity.CRITICAL if cpu_percent > 90 else Severity.WARNING
+            await self._emit(
+                event_type="audio",
+                severity=severity,
                 title="High Audio CPU",
                 message=f"Audio CPU: {cpu_percent:.1f}%",
-                severity=severity,
                 color="red" if cpu_percent > 90 else "yellow",
-                context={"cpu_percent": cpu_percent}
+                context={"cpu_percent": cpu_percent},
             )
-            
-            logger.warning(f"Audio CPU spike: {cpu_percent:.1f}%")
-        
+            logger.warning("Audio CPU spike: %.1f%%", cpu_percent)
+
         self.last_cpu_percent = cpu_percent
-    
+
     async def on_latency_change(self, latency_ms: float):
-        """Called when latency changes significantly"""
-        if abs(latency_ms - self.last_latency_ms) > 2.0:
-            await create_audio_event(
-                self.event_bus,
-                title="Latency Changed",
-                message=f"New latency: {latency_ms:.1f}ms (was {self.last_latency_ms:.1f}ms)",
-                severity=EventSeverity.INFO,
-                context={"latency_ms": latency_ms, "previous": self.last_latency_ms}
-            )
-            
-            self.last_latency_ms = latency_ms
-            logger.info(f"Latency changed: {latency_ms:.1f}ms")
-    
+        if abs(latency_ms - self.last_latency_ms) <= 2.0:
+            return
+        await self._emit(
+            event_type="audio",
+            severity=Severity.INFO,
+            title="Latency Changed",
+            message=f"New latency: {latency_ms:.1f}ms (was {self.last_latency_ms:.1f}ms)",
+            context={"latency_ms": latency_ms, "previous": self.last_latency_ms},
+        )
+        self.last_latency_ms = latency_ms
+        logger.info("Latency changed: %.1fms", latency_ms)
+
     async def on_plugin_loaded(self, plugin_name: str, plugin_type: str):
-        """Called when plugin is loaded"""
-        await create_audio_event(
-            self.event_bus,
+        await self._emit(
+            event_type="audio",
+            severity=Severity.INFO,
             title="Plugin Loaded",
             message=f"{plugin_type}: {plugin_name}",
-            severity=EventSeverity.INFO,
-            context={"plugin_name": plugin_name, "plugin_type": plugin_type}
+            context={"plugin_name": plugin_name, "plugin_type": plugin_type},
         )
-        
-        logger.info(f"Plugin loaded: {plugin_name}")
-    
+        logger.info("Plugin loaded: %s", plugin_name)
+
     async def on_preset_loaded(self, preset_name: str, plugin_count: int):
-        """Called when preset is loaded"""
-        await create_audio_event(
-            self.event_bus,
+        await self._emit(
+            event_type="audio",
+            severity=Severity.INFO,
             title=f"Preset: {preset_name}",
             message=f"{plugin_count} plugin{'s' if plugin_count != 1 else ''} loaded",
-            severity=EventSeverity.INFO,
-            context={"preset_name": preset_name, "plugin_count": plugin_count}
+            context={"preset_name": preset_name, "plugin_count": plugin_count},
         )
-        
-        logger.info(f"Preset loaded: {preset_name}")
+        logger.info("Preset loaded: %s", preset_name)

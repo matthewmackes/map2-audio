@@ -221,8 +221,7 @@ async def get_peer_discovery_status():
 
     _, visible_nodes = get_visible_remote_nodes()
 
-    event_router = getattr(global_lcd_manager, "event_router", None)
-    connected = set(event_router.get_connected_peers()) if event_router and hasattr(event_router, "get_connected_peers") else set()
+    connected = set(global_lcd_manager.get_connected_peers()) if hasattr(global_lcd_manager, "get_connected_peers") else set()
     
     # Read SSH trust status
     from pathlib import Path
@@ -410,20 +409,10 @@ async def link_peer(peer_id: str, request: LinkPeerRequest):
         if request.setup_lcd_routing:
             try:
                 global_lcd_manager = _require_lcd_manager()
-                event_router = getattr(global_lcd_manager, "event_router", None)
-
-                if event_router and hasattr(event_router, "connect_to_peer"):
-                    await event_router.connect_to_peer(
+                if hasattr(global_lcd_manager, "connect_to_peer"):
+                    await global_lcd_manager.connect_to_peer(
                         peer_id,
                         f"ws://{request.peer_host}:8000/api/lcd/ws/events",
-                    )
-                    lcd_success = True
-                    logger.info(f"LCD routing configured for {peer_id}")
-                elif event_router and hasattr(event_router, "add_remote_peer"):
-                    await event_router.add_remote_peer(
-                        peer_id=peer_id,
-                        host=request.peer_host,
-                        port=8000,
                     )
                     lcd_success = True
                     logger.info(f"LCD routing configured for {peer_id}")

@@ -18,8 +18,11 @@ class _FakeMDNSDiscovery:
         return dict(self._peers)
 
 
-class _FakeEventRouter:
-    def __init__(self, connected=None):
+class _FakeLCDManager:
+    def __init__(self, *, peers=None, connected=None):
+        self.node_id = "local-node"
+        self.node_label = "local-node"
+        self.mdns_discovery = _FakeMDNSDiscovery(peers or {})
         self._connected = list(connected or [])
         self.connect_calls = []
 
@@ -28,14 +31,6 @@ class _FakeEventRouter:
 
     async def connect_to_peer(self, node_id: str, node_url: str):
         self.connect_calls.append((node_id, node_url))
-
-
-class _FakeLCDManager:
-    def __init__(self, *, peers=None, connected=None):
-        self.node_id = "local-node"
-        self.node_label = "local-node"
-        self.mdns_discovery = _FakeMDNSDiscovery(peers or {})
-        self.event_router = _FakeEventRouter(connected=connected or [])
 
 
 @pytest.fixture(autouse=True)
@@ -137,7 +132,7 @@ def test_ping_peer_uses_registered_lcd_manager(monkeypatch):
     assert "peer-b" in peer_discovery.LATENCY_HISTORY
 
 
-def test_link_peer_uses_event_router_connect_to_peer():
+def test_link_peer_uses_lcd_manager_connect_to_peer():
     manager = _FakeLCDManager()
     set_lcd_manager(manager)
 
@@ -155,7 +150,7 @@ def test_link_peer_uses_event_router_connect_to_peer():
 
     assert response.peer_id == "peer-c"
     assert response.lcd_routing is True
-    assert manager.event_router.connect_calls == [
+    assert manager.connect_calls == [
         ("peer-c", "ws://10.0.0.9:8000/api/lcd/ws/events")
     ]
 

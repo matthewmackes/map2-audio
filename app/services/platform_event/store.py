@@ -248,6 +248,62 @@ class PlatformEventStore(Singleton):
             replay.append(event)
         return replay
 
+    def query_events(
+        self,
+        *,
+        limit: int = 100,
+        hours: int = 24,
+        source_node: str | None = None,
+        exclude_source_node: str | None = None,
+        severities: list[str] | tuple[str, ...] | None = None,
+    ) -> list[PlatformEvent]:
+        normalized_limit = max(1, int(limit))
+        normalized_hours = max(1, int(hours))
+        cutoff = (_utc_now() - timedelta(hours=normalized_hours)).isoformat()
+
+        query = """
+            SELECT payload
+            FROM platform_events
+            WHERE occurred_at >= ?
+        """
+        params: list[object] = [cutoff]
+
+        if source_node:
+            query += " AND source_node = ?"
+            params.append(str(source_node))
+
+        if exclude_source_node:
+            query += " AND source_node != ?"
+            params.append(str(exclude_source_node))
+
+        normalized_severities = [
+            str(value).strip().lower()
+            for value in (severities or [])
+            if str(value).strip()
+        ]
+        if normalized_severities:
+            placeholders = ", ".join("?" for _ in normalized_severities)
+            query += f" AND severity IN ({placeholders})"
+            params.extend(normalized_severities)
+
+        query += " ORDER BY occurred_at DESC, id DESC LIMIT ?"
+        params.append(normalized_limit)
+
+        with self._lock:
+            conn = self._connect()
+            try:
+                rows = conn.execute(query, params).fetchall()
+            finally:
+                conn.close()
+
+        events: list[PlatformEvent] = []
+        for row in rows:
+            event = PlatformEvent.model_validate_json(row[0])
+            if event.expires_at is not None and _coerce_utc(event.expires_at) <= _utc_now():
+                continue
+            events.append(event)
+        return events
+
     def ack(self, session_id: str, event_id: str) -> None:
         normalized_session = str(session_id or "").strip()
         normalized_event_id = str(event_id or "").strip()

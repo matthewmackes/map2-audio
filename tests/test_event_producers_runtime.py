@@ -10,17 +10,14 @@ from app.services.event_producers.system_producer import SystemHealthProducer
 
 
 class _CaptureBus:
-    def __init__(self) -> None:
-        self.node_label = "NODE-RUNTIME"
-
-    async def publish(self, event) -> None:
+    async def emit(self, event) -> None:
         return None
 
 
 @pytest.mark.asyncio
 async def test_audio_event_producer_uses_juce_status_without_service_manager(monkeypatch: pytest.MonkeyPatch) -> None:
     bus = _CaptureBus()
-    producer = AudioEventProducer(bus)
+    producer = AudioEventProducer(bus, node_label="NODE-RUNTIME")
 
     async def _get_xrun_count() -> int:
         return 3
@@ -56,7 +53,7 @@ async def test_audio_event_producer_uses_juce_status_without_service_manager(mon
 @pytest.mark.asyncio
 async def test_system_health_producer_collects_snapshot_via_to_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     bus = _CaptureBus()
-    producer = SystemHealthProducer(bus)
+    producer = SystemHealthProducer(bus, node_label="NODE-RUNTIME")
     calls: list[str] = []
 
     def fake_collect():

@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import re
-import uuid
-from datetime import datetime, timezone
 from typing import Any, Optional
 
-from app.lcd_models.lcd_event import EventSeverity, EventType, LCDEvent
-from app.services.lcd_manager import get_lcd_manager
 from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.midi_hub.hub import get_midi_hub
+from app.services.platform_event.bus import get_platform_event_bus
+from app.services.platform_event.factories import make_lcd_surface_event
+from app.services.platform_event.severity import Severity
 
 
 logger = logging.getLogger(__name__)
@@ -187,7 +186,7 @@ def _build_device_packets(
     return packets
 
 
-def _build_lcd_event(snapshot_name: str, label_map: dict[str, str]) -> LCDEvent:
+def _build_platform_event(snapshot_name: str, label_map: dict[str, str]):
     preview = " | ".join(
         f"S{switch_id} {label}"
         for switch_id, label in sorted(
@@ -195,12 +194,11 @@ def _build_lcd_event(snapshot_name: str, label_map: dict[str, str]) -> LCDEvent:
             key=lambda item: int(item[0]),
         )[:4]
     )
-    return LCDEvent(
-        event_id=str(uuid.uuid4()),
-        timestamp=datetime.now(timezone.utc),
+    return make_lcd_surface_event(
+        event_type="system",
+        severity=Severity.INFO,
         source_node="MAP2",
-        event_type=EventType.SYSTEM,
-        severity=EventSeverity.INFO,
+        source_service="snapshot_footswitch_label_service",
         title=f"{snapshot_name or 'Snapshot'} labels",
         message=preview or "No footswitch labels configured",
         icon="FS",
@@ -285,13 +283,11 @@ async def push_snapshot_footswitch_labels(
             labels_pushed += sent_count
 
     lcd_updated = False
-    lcd_manager = get_lcd_manager()
-    if lcd_manager is not None:
-        try:
-            await lcd_manager.publish_event(_build_lcd_event(snapshot_name, label_map))
-            lcd_updated = True
-        except Exception as exc:
-            logger.debug("Footswitch label LCD push failed for snapshot %s: %s", snapshot_id, exc)
+    try:
+        await get_platform_event_bus().emit(_build_platform_event(snapshot_name, label_map))
+        lcd_updated = True
+    except Exception as exc:
+        logger.debug("Footswitch label LCD push failed for snapshot %s: %s", snapshot_id, exc)
 
     return {
         "snapshot_id": snapshot_id,

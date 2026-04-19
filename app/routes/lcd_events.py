@@ -1,26 +1,25 @@
 """
 LCD Events API Routes
 
-REST API and WebSocket endpoints for LCD event system:
-- GET /api/lcd/events - Get recent events
-- POST /api/lcd/events - Publish new event
-- GET /api/lcd/history - Get event history
-- WS /ws/lcd-events - Real-time event stream
+Legacy `/api/lcd/*` routes now project the canonical PlatformEvent stream onto
+the LCD API shape until the public LCD event surface is removed.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import logging
-import json
+from __future__ import annotations
 
-from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
-from app.services.lcd_event_persistence import get_lcd_persistence
+import logging
+import os
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
+from pydantic import BaseModel
+
+from app.lcd_models.lcd_event import EventSeverity, EventType
+from app.services.platform_event.factories import make_lcd_surface_event
+from app.services.platform_event.severity import Severity
 from app.utils.health_metrics import get_health_metrics
 from app.utils.platform_version import get_platform_version
-from app.utils.time import utc_now
-from fastapi.responses import Response
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,8 @@ active_connections: List[WebSocket] = []
 
 
 class EventCreateRequest(BaseModel):
-    """Request to create new LCD event"""
+    """Request to create a projected LCD event."""
+
     title: str
     message: str
     event_type: EventType = EventType.USER
@@ -46,7 +46,8 @@ class EventCreateRequest(BaseModel):
 
 
 class EventResponse(BaseModel):
-    """LCD event response"""
+    """LCD event response."""
+
     event_id: str
     timestamp: str
     source_node: str
@@ -57,236 +58,158 @@ class EventResponse(BaseModel):
     icon: str
 
 
+def _require_lcd_manager():
+    if not lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+    return lcd_manager
+
+
+def _severity_from_lcd(value: EventSeverity) -> Severity:
+    return (
+        Severity.CRITICAL
+        if value == EventSeverity.CRITICAL
+        else Severity.ERROR
+        if value == EventSeverity.ERROR
+        else Severity.WARNING
+        if value == EventSeverity.WARNING
+        else Severity.INFO
+    )
+
+
 @router.get("/events")
 async def get_recent_events(
     limit: int = 50,
     event_type: Optional[str] = None,
     severity: Optional[str] = None,
-    source: Optional[str] = None
+    source: Optional[str] = None,
 ):
     """
-    Get recent LCD events.
-    
+    Get recent LCD-projected events.
+
     Query params:
     - limit: Max events to return (default 50)
-    - event_type: Filter by type (audio, system, etc)
+    - event_type: Filter by LCD event type (audio, system, etc)
     - severity: Filter by severity (info, warning, etc)
-    - source: 'local', 'remote', or specific node ID
+    - source: 'local', 'remote', or omitted for all
     """
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    persistence = get_lcd_persistence()
-    if persistence:
-        # Pull from database for full history
-        filters = {}
-        if event_type:
-            filters["event_type"] = event_type
-        if severity:
-            filters["severity"] = severity
+    manager = _require_lcd_manager()
 
-        if source == "local":
-            filters["source_node"] = lcd_manager.node_label
-            events = await persistence.get_recent_events(limit=limit, **filters)
-        elif source == "remote":
-            events = await persistence.get_recent_events(limit=limit, **filters)
-            events = [e for e in events if e.get("source_node") != lcd_manager.node_label]
-        else:
-            events = await persistence.get_recent_events(limit=limit, **filters)
-        
-        return {
-            "events": events,
-            "total": len(events),
-            "node_id": lcd_manager.node_id,
-            "node_label": lcd_manager.node_label
-        }
-    
-    # Fallback to in-memory events
     if source == "local":
-        events = lcd_manager.get_recent_local_events(limit)
+        events = manager.get_recent_local_events(limit, event_type=event_type, severity=severity)
     elif source == "remote":
-        events = lcd_manager.get_recent_remote_events(limit)
+        events = manager.get_recent_remote_events(limit, event_type=event_type, severity=severity)
     else:
-        events = lcd_manager.get_all_recent_events(limit)
-    
-    # Apply filters
-    if event_type:
-        events = [e for e in events if e.event_type.value == event_type]
-    
-    if severity:
-        events = [e for e in events if e.severity.value == severity]
-    
-    # Convert to response format
+        events = manager.get_all_recent_events(limit, event_type=event_type, severity=severity)
+
     return {
         "events": [event.to_dict() for event in events],
         "total": len(events),
-        "node_id": lcd_manager.node_id,
-        "node_label": lcd_manager.node_label
+        "node_id": manager.node_id,
+        "node_label": manager.node_label,
     }
 
 
 @router.post("/events")
 async def create_event(request: EventCreateRequest):
     """
-    Create and publish new LCD event.
-    
-    The event will be:
-    1. Displayed on local LCD
-    2. Broadcast to remote nodes (if broadcast=True)
-    3. Stored in event history
+    Create and publish a canonical PlatformEvent targeted at the LCD surface.
     """
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    # Create event
-    event = LCDEvent(
-        event_id="",  # Will be auto-generated
-        timestamp=utc_now(),
-        source_node=lcd_manager.node_label,
-        event_type=request.event_type,
-        severity=request.severity,
+    manager = _require_lcd_manager()
+    event = make_lcd_surface_event(
+        event_type=request.event_type.value,
+        severity=_severity_from_lcd(request.severity),
+        source_node=manager.node_label,
+        source_service="lcd_api",
         title=request.title,
         message=request.message,
         icon=request.icon,
-        broadcast=request.broadcast,
         color=request.color,
-        sound=request.sound
+        sound=request.sound,
+        broadcast=request.broadcast,
+        dismiss_auto=request.severity not in {EventSeverity.ERROR, EventSeverity.CRITICAL},
     )
-    
-    # Publish
-    await lcd_manager.publish_event(event)
-    
+
+    await manager.publish_event(event)
     return {
         "success": True,
         "event_id": event.event_id,
-        "message": "Event published"
+        "message": "Event published",
     }
 
 
 @router.get("/history")
 async def get_event_history(
     node_id: Optional[str] = None,
-    hours: int = 24
+    hours: int = 24,
 ):
-    """
-    Get event history for a specific node or all nodes.
-    
-    Query params:
-    - node_id: Specific node to get events from
-    - hours: How many hours back to retrieve (default 24)
-    """
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    persistence = get_lcd_persistence()
-    if persistence:
-        if node_id:
-            events = await persistence.get_events_by_node(node_id, limit=100)
-        else:
-            events = await persistence.get_recent_events(limit=100, hours=hours)
-        return {
-            "events": events,
-            "total": len(events),
-            "hours": hours
-        }
-    
-    # Fallback to in-memory history
+    """Get LCD-projected event history for a node or for the full local store."""
+    manager = _require_lcd_manager()
     if node_id:
-        events = lcd_manager.remote_aggregator.get_events_by_node(node_id, limit=100)
+        events = manager.get_events_by_node(node_id, limit=100, hours=hours)
     else:
-        events = lcd_manager.get_all_recent_events(limit=100)
-    
+        events = manager.get_all_recent_events(limit=100, hours=hours)
+
     return {
         "events": [event.to_dict() for event in events],
         "total": len(events),
-        "hours": hours
+        "hours": hours,
     }
 
 
 @router.get("/stats")
 async def get_event_stats():
-    """Get event statistics"""
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    persistence = get_lcd_persistence()
-    if persistence:
-        stats = await persistence.get_statistics(hours=24)
-        local_count = stats.get("by_node", {}).get(lcd_manager.node_label, 0)
-        total_count = stats.get("total_events", 0)
-        stats.update({
-            "local_events": local_count,
-            "remote_events": max(total_count - local_count, 0),
-            "active_nodes": lcd_manager.remote_aggregator.get_active_nodes(),
-            "connected_peers": lcd_manager.event_router.get_connected_peers()
-        })
-        return stats
-    
-    local_events = lcd_manager.get_recent_local_events(100)
-    remote_events = lcd_manager.get_recent_remote_events(100)
-    
-    # Count by type
-    type_counts = {}
-    for event in local_events + remote_events:
+    """Get projected LCD event statistics from the canonical store."""
+    manager = _require_lcd_manager()
+    events = manager.get_all_recent_events(limit=500, hours=24)
+    local_events = [event for event in events if event.source_node == manager.node_label]
+    remote_events = [event for event in events if event.source_node != manager.node_label]
+
+    type_counts: dict[str, int] = {}
+    severity_counts: dict[str, int] = {}
+    for event in events:
         type_counts[event.event_type.value] = type_counts.get(event.event_type.value, 0) + 1
-    
-    # Count by severity
-    severity_counts = {}
-    for event in local_events + remote_events:
         severity_counts[event.severity.value] = severity_counts.get(event.severity.value, 0) + 1
-    
+
     return {
         "local_events": len(local_events),
         "remote_events": len(remote_events),
-        "total_events": len(local_events + remote_events),
+        "total_events": len(events),
         "by_type": type_counts,
         "by_severity": severity_counts,
-        "active_nodes": lcd_manager.remote_aggregator.get_active_nodes(),
-        "connected_peers": lcd_manager.event_router.get_connected_peers()
+        "active_nodes": manager.get_active_nodes(hours=24),
+        "connected_peers": manager.get_connected_peers(),
     }
 
 
 @router.websocket("/ws/events")
 async def websocket_events(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time LCD event stream.
-    
-    Sends all local and remote events as they arrive.
+    WebSocket endpoint for the live LCD-projected event stream.
     """
     await websocket.accept()
     active_connections.append(websocket)
-    
-    logger.info(f"WebSocket client connected (total: {len(active_connections)})")
-    
+    logger.info("LCD WebSocket client connected (total: %s)", len(active_connections))
+
+    manager = _require_lcd_manager()
+    subscription = None
+
     try:
-        # Subscribe to both local and remote events
-        async def send_event(event: LCDEvent):
+        async def send_event(event) -> None:
             if websocket in active_connections:
-                try:
-                    await websocket.send_json(event.to_dict())
-                except Exception as e:
-                    logger.error(f"Error sending event to WebSocket: {e}")
-        
-        # Subscribe
-        if lcd_manager:
-            lcd_manager.event_bus.subscribe(send_event)
-            lcd_manager.remote_aggregator.subscribe(send_event)
-        
-        # Keep connection alive
+                await websocket.send_json(event.to_dict())
+
+        subscription = await manager.subscribe_live(send_event)
+
         while True:
-            # Receive messages (just to detect disconnects)
-            data = await websocket.receive_text()
-            
+            await websocket.receive_text()
+
     except WebSocketDisconnect:
-        logger.info("WebSocket client disconnected")
+        logger.info("LCD WebSocket client disconnected")
     finally:
         if websocket in active_connections:
             active_connections.remove(websocket)
-        
-        # Unsubscribe
-        if lcd_manager:
-            lcd_manager.event_bus.unsubscribe(send_event)
-            lcd_manager.remote_aggregator.unsubscribe(send_event)
+        if subscription is not None:
+            subscription.close()
 
 
 @router.get("/health")
@@ -294,129 +217,120 @@ async def health_check():
     """Health check endpoint for monitoring."""
     metrics = get_health_metrics()
     health = metrics.get_health_status()
-    status_code = 200 if health['status'] == 'healthy' else 503
+    status_code = 200 if health["status"] == "healthy" else 503
     return health, status_code
 
 
 @router.get("/system-status")
 async def system_status():
     """Detailed system status and metrics."""
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
+    manager = _require_lcd_manager()
     metrics = get_health_metrics()
     health = metrics.get_health_status()
-    peer_count = len(lcd_manager.event_router.get_connected_peers())
-    
+    connection_stats = manager.get_connection_stats()
+
     return {
         "system": {
             "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE"),
-            "node_id": lcd_manager.node_id,
-            "node_label": lcd_manager.node_label,
+            "node_id": manager.node_id,
+            "node_label": manager.node_label,
             "version": get_platform_version(),
         },
         "uptime": {
-            "seconds": int(health['uptime_seconds']),
-            "human_readable": format_uptime(health['uptime_seconds'])
+            "seconds": int(health["uptime_seconds"]),
+            "human_readable": format_uptime(health["uptime_seconds"]),
         },
-        "components": health['components'],
+        "components": health["components"],
         "performance": {
-            "events_processed": health['events_processed'],
-            "events_per_sec": health['events_per_sec'],
-            "latency_ms": health['latency'],
-            "queue_depth": lcd_manager.display_queue.qsize(),
+            "events_processed": health["events_processed"],
+            "events_per_sec": health["events_per_sec"],
+            "latency_ms": health["latency"],
+            "queue_depth": manager.display_queue.qsize(),
         },
         "resources": {
-            "memory": health['memory'],
-            "cpu": health['cpu'],
-            "disk": health['disk'],
+            "memory": health["memory"],
+            "cpu": health["cpu"],
+            "disk": health["disk"],
         },
         "cluster": {
-            "connected_peers": peer_count,
-            "discovered_peers": len(lcd_manager.mdns_discovery.discovered_peers) 
-                                if lcd_manager.mdns_discovery else 0,
-            "connection_stats": lcd_manager.event_router.get_connection_stats(),
+            "connected_peers": len(manager.get_connected_peers()),
+            "discovered_peers": len(manager.mdns_discovery.discovered_peers) if manager.mdns_discovery else 0,
+            "connection_stats": connection_stats,
         },
-        "timestamp": health['timestamp'],
+        "timestamp": health["timestamp"],
     }
 
 
 @router.get("/peers")
 async def peer_status() -> Dict[str, Any]:
     """Return discovered peers and connection stats for cluster UI."""
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-
-    discovery_enabled = lcd_manager.mdns_discovery is not None
-    discovered = lcd_manager.mdns_discovery.get_discovered_peers() if discovery_enabled else {}
-    discovered_list = [
-        {"node_id": node_id, **info} for node_id, info in discovered.items()
-    ]
+    manager = _require_lcd_manager()
+    discovery_enabled = manager.mdns_discovery is not None
+    discovered = manager.mdns_discovery.get_discovered_peers() if discovery_enabled else {}
+    discovered_list = [{"node_id": node_id, **info} for node_id, info in discovered.items()]
 
     return {
         "system": {
             "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE"),
-            "node_id": lcd_manager.node_id,
-            "node_label": lcd_manager.node_label,
+            "node_id": manager.node_id,
+            "node_label": manager.node_label,
         },
         "discovery": {
             "enabled": discovery_enabled,
             "discovered_peers": discovered_list,
         },
-        "connections": lcd_manager.event_router.get_connection_stats(),
+        "connections": manager.get_connection_stats(),
     }
 
 
 @router.get("/metrics")
 async def prometheus_metrics():
     """Prometheus metrics endpoint for Grafana."""
-    if not lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
+    manager = _require_lcd_manager()
     metrics = get_health_metrics()
     health = metrics.get_health_status()
-    
+
     lines = [
         "# HELP lcd_events_total Total LCD events processed",
         "# TYPE lcd_events_total counter",
-        f"lcd_events_total{{node_id=\"{lcd_manager.node_id}\"}} {health['events_processed']}",
+        f'lcd_events_total{{node_id="{manager.node_id}"}} {health["events_processed"]}',
         "",
         "# HELP lcd_events_per_second Current event rate",
         "# TYPE lcd_events_per_second gauge",
-        f"lcd_events_per_second{{node_id=\"{lcd_manager.node_id}\"}} {health['events_per_sec']}",
+        f'lcd_events_per_second{{node_id="{manager.node_id}"}} {health["events_per_sec"]}',
         "",
         "# HELP lcd_latency_ms Event processing latency",
         "# TYPE lcd_latency_ms histogram",
-        f"lcd_latency_min_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['min_ms']}",
-        f"lcd_latency_mean_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['mean_ms']}",
-        f"lcd_latency_max_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['max_ms']}",
-        f"lcd_latency_p95_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency'].get('p95_ms', 0)}",
+        f'lcd_latency_min_ms{{node_id="{manager.node_id}"}} {health["latency"]["min_ms"]}',
+        f'lcd_latency_mean_ms{{node_id="{manager.node_id}"}} {health["latency"]["mean_ms"]}',
+        f'lcd_latency_max_ms{{node_id="{manager.node_id}"}} {health["latency"]["max_ms"]}',
+        f'lcd_latency_p95_ms{{node_id="{manager.node_id}"}} {health["latency"].get("p95_ms", 0)}',
         "",
         "# HELP lcd_uptime_seconds System uptime",
         "# TYPE lcd_uptime_seconds counter",
-        f"lcd_uptime_seconds{{node_id=\"{lcd_manager.node_id}\"}} {int(health['uptime_seconds'])}",
+        f'lcd_uptime_seconds{{node_id="{manager.node_id}"}} {int(health["uptime_seconds"])}',
         "",
         "# HELP lcd_queue_depth Display queue depth",
         "# TYPE lcd_queue_depth gauge",
-        f"lcd_queue_depth{{node_id=\"{lcd_manager.node_id}\"}} {lcd_manager.display_queue.qsize()}",
+        f'lcd_queue_depth{{node_id="{manager.node_id}"}} {manager.display_queue.qsize()}',
         "",
         "# HELP lcd_memory_rss_bytes Process RSS memory",
         "# TYPE lcd_memory_rss_bytes gauge",
-        f"lcd_memory_rss_bytes{{node_id=\"{lcd_manager.node_id}\"}} {int(health['memory']['process_rss_mb'] * 1024 * 1024)}",
+        f'lcd_memory_rss_bytes{{node_id="{manager.node_id}"}} {int(health["memory"]["process_rss_mb"] * 1024 * 1024)}',
         "",
         "# HELP lcd_cpu_percent CPU usage percentage",
         "# TYPE lcd_cpu_percent gauge",
-        f"lcd_cpu_percent{{node_id=\"{lcd_manager.node_id}\"}} {health['cpu']['process_percent']}",
+        f'lcd_cpu_percent{{node_id="{manager.node_id}"}} {health["cpu"]["process_percent"]}',
         "",
         "# HELP lcd_connected_peers Number of connected peer nodes",
         "# TYPE lcd_connected_peers gauge",
-        f"lcd_connected_peers{{node_id=\"{lcd_manager.node_id}\"}} {len(lcd_manager.event_router.get_connected_peers())}",
+        f'lcd_connected_peers{{node_id="{manager.node_id}"}} {len(manager.get_connected_peers())}',
         "",
         "# HELP lcd_rate_limit_violations_total Total rate limit violations",
         "# TYPE lcd_rate_limit_violations_total counter",
-        f"lcd_rate_limit_violations_total{{node_id=\"{lcd_manager.node_id}\"}} {health['rate_limits']['total_violations']}",
+        f'lcd_rate_limit_violations_total{{node_id="{manager.node_id}"}} {health["rate_limits"]["total_violations"]}',
     ]
-    
+
     metrics_text = "\n".join(lines)
     return Response(content=metrics_text, media_type="text/plain; charset=utf-8")
 
@@ -427,17 +341,16 @@ def format_uptime(seconds: float) -> str:
     h = int((seconds % 86400) // 3600)
     m = int((seconds % 3600) // 60)
     s = int(seconds % 60)
-    
+
     if d > 0:
         return f"{d}d {h}h {m}m"
-    elif h > 0:
+    if h > 0:
         return f"{h}h {m}m {s}s"
-    else:
-        return f"{m}m {s}s"
+    return f"{m}m {s}s"
 
 
 def init_lcd_routes(manager):
-    """Initialize routes with LCD manager instance"""
+    """Initialize routes with LCD manager instance."""
     global lcd_manager
     lcd_manager = manager
     logger.info("LCD routes initialized")
