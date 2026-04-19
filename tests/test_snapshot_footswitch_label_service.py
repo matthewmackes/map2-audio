@@ -89,7 +89,7 @@ class _FakeLCDManager:
     def __init__(self):
         self.events = []
 
-    async def publish_event(self, event):
+    async def emit(self, event):
         self.events.append(event)
 
 
@@ -129,11 +129,11 @@ def test_push_snapshot_footswitch_labels_sends_to_morningstar_and_lcd(monkeypatc
     async def _run():
         fake_hub = _FakeHub()
         fake_registry = _FakeRegistry()
-        fake_lcd = _FakeLCDManager()
+        fake_bus = _FakeLCDManager()
 
         monkeypatch.setattr(service, "get_midi_hub", lambda: fake_hub)
         monkeypatch.setattr(service, "get_midi_device_registry", lambda: fake_registry)
-        monkeypatch.setattr(service, "get_lcd_manager", lambda: fake_lcd)
+        monkeypatch.setattr(service, "get_platform_event_bus", lambda: fake_bus)
 
         result = await service.push_snapshot_footswitch_labels(
             snapshot_id=42,
@@ -155,7 +155,7 @@ def test_push_snapshot_footswitch_labels_sends_to_morningstar_and_lcd(monkeypatc
         }
         assert [payload["destination_port"] for payload in fake_hub.sent] == ["mc6-out", "mc6-out"]
         assert fake_hub.sent[0]["metadata"]["profile_id"] == "morningstar_mc6"
-        assert fake_lcd.events[0].title == "LeadScene labels"
+        assert fake_bus.events[0].title == "LeadScene labels"
 
     asyncio.run(_run())
 
@@ -163,11 +163,11 @@ def test_push_snapshot_footswitch_labels_sends_to_morningstar_and_lcd(monkeypatc
 def test_push_snapshot_footswitch_labels_skips_profiles_without_per_switch_text_support(monkeypatch):
     async def _run():
         fake_hub = _FakeHub()
-        fake_lcd = _FakeLCDManager()
+        fake_bus = _FakeLCDManager()
 
         monkeypatch.setattr(service, "get_midi_hub", lambda: fake_hub)
         monkeypatch.setattr(service, "get_midi_device_registry", lambda: _UnsupportedDisplayRegistry())
-        monkeypatch.setattr(service, "get_lcd_manager", lambda: fake_lcd)
+        monkeypatch.setattr(service, "get_platform_event_bus", lambda: fake_bus)
 
         result = await service.push_snapshot_footswitch_labels(
             snapshot_id=99,
@@ -188,6 +188,6 @@ def test_push_snapshot_footswitch_labels_skips_profiles_without_per_switch_text_
             "lcd_updated": True,
         }
         assert fake_hub.sent == []
-        assert fake_lcd.events[0].title == "AmbientScene labels"
+        assert fake_bus.events[0].title == "AmbientScene labels"
 
     asyncio.run(_run())

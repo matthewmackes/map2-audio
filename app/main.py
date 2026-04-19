@@ -365,10 +365,9 @@ async def lifespan(app):
             PluginEventProducer,
             DatabaseEventProducer,
         )
-        from app.services.lcd_event_persistence import LCDEventPersistence, set_lcd_persistence
+        from app.services.platform_event.bus import get_platform_event_bus
         from app.services.mdns_discovery import MDNSPeerDiscovery
         from app.services.node_identity import NodeIdentity
-        from app.database_session import get_session
         from app.routes.lcd_events import init_lcd_routes
         avb_router = None
         cluster_midi_services = None
@@ -429,32 +428,28 @@ async def lifespan(app):
         node_id = identity.node_id
         node_label = identity.node_id
 
-        # Persistence layer
-        lcd_persistence = LCDEventPersistence(get_session)
-        set_lcd_persistence(lcd_persistence)
-        await safe_start_service(logger, "LCD Event Persistence", lcd_persistence.start)
-
         # mDNS discovery
         mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
+        platform_event_bus = get_platform_event_bus()
 
         # LCD manager
         lcd_manager = LCDManager(
             node_id,
             node_label,
             use_mock_lcd=use_mock_lcd,
-            persistence=lcd_persistence,
             mdns_discovery=mdns_discovery,
+            platform_event_bus=platform_event_bus,
         )
         await safe_start_service(logger, "LCD Manager", lcd_manager.start)
         set_global_lcd_manager(lcd_manager)
         init_lcd_routes(lcd_manager)
         
         # Initialize event producers
-        audio_producer = AudioEventProducer(lcd_manager.event_bus)
-        system_producer = SystemHealthProducer(lcd_manager.event_bus)
-        network_producer = NetworkEventProducer(lcd_manager.event_bus)
-        plugin_producer = PluginEventProducer(lcd_manager.event_bus)
-        database_producer = DatabaseEventProducer(lcd_manager.event_bus)
+        audio_producer = AudioEventProducer(platform_event_bus, node_label=node_label)
+        system_producer = SystemHealthProducer(platform_event_bus, node_label=node_label)
+        network_producer = NetworkEventProducer(platform_event_bus, node_label=node_label)
+        plugin_producer = PluginEventProducer(platform_event_bus, node_label=node_label)
+        database_producer = DatabaseEventProducer(platform_event_bus, node_label=node_label)
 
         # Wire mDNS discoveries into network monitoring
         import asyncio
@@ -741,7 +736,6 @@ async def lifespan(app):
         await safe_stop_service(logger, "LCD Manager", lcd_manager.stop)
         set_global_lcd_manager(None)
         init_lcd_routes(None)
-        await safe_stop_service(logger, "LCD Event Persistence", lcd_persistence.stop)
         
         await safe_stop_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.shutdown)
         await safe_stop_service(logger, "Parameter routing", disconnect_parameter_routing)

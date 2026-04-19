@@ -16,17 +16,14 @@ class _FakeMDNSDiscovery:
         return dict(self._peers)
 
 
-class _FakeEventRouter:
-    def get_connected_peers(self):
-        return []
-
-
 class _FakeLCDManager:
     def __init__(self, *, peers=None):
         self.node_id = "local-node"
         self.node_label = "local-node"
         self.mdns_discovery = _FakeMDNSDiscovery(peers or {})
-        self.event_router = _FakeEventRouter()
+
+    def get_connected_peers(self):
+        return []
 
 
 class _FakeRegistry:

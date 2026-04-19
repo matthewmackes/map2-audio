@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 18, 2026 (stage notification runtime landed)
+> **Last Updated**: April 19, 2026 (LCD PlatformEvent hard cutover landed)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -608,6 +608,12 @@ staleTime: 0, // Always fresh for metering
 - **Hooks**: camelCase with `use` prefix (`usePipeWire.ts`, `useModulation.ts`)
 - **Utilities**: camelCase (`formatters.ts`, `api.ts`)
 - **Constants**: UPPER_SNAKE_CASE in component files (`SLOT_COLORS`, `WIRE_ACTIVE`)
+
+### Backend Event Plane
+
+- LCD/runtime surfaces must consume canonical `PlatformEventBus` + `PlatformEventStore` directly.
+- Do not reintroduce `LCDEventBus`, `LCDEventRouter`, `RemoteEventAggregator`, or LCD-only persistence tables.
+- Temporary legacy HTTP projections are acceptable only at the route edge; the runtime source of truth stays on `PlatformEvent`.
 
 ### React Patterns
 
@@ -2277,6 +2283,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-04-19] - LCD PlatformEvent Hard Cutover
+- **Section**: Style & Architecture Rules, Update Log
+- **Change**: Documented the rule that LCD/runtime surfaces must consume `PlatformEventBus` and `PlatformEventStore` directly and that the legacy LCD bus/router/aggregator/persistence stack must not be reintroduced.
+- **Reason**: `T2363-subG` removed the parallel LCD event system and made the `/api/lcd/*` surface a projection of canonical PlatformEvents instead of a second runtime control plane.
+- **Impact**: Future LCD, peer-discovery, or operator-surface work should extend the canonical PlatformEvent pipeline and avoid adding LCD-local buses, routers, or event-history stores.
+- **Files**: `.github/copilot-instructions.md`, `.gemini/instructions.md`, `app/services/lcd_manager.py`, `app/routes/lcd_events.py`, `app/services/platform_event/lcd_projection.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-04-16] - Operator Feedback Matrix
 - **Section**: Gotchas & Learned Fixes (#115), Update Log

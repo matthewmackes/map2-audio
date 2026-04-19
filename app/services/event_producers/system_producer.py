@@ -1,13 +1,11 @@
 """
 System Health Event Producer
 
-Monitors system health metrics and generates LCD events for:
-- CPU usage (overall system)
-- Memory usage
-- Disk space
-- Temperature
-- Network connectivity
+Monitors host health and emits canonical PlatformEvents targeted at the LCD
+surface.
 """
+
+from __future__ import annotations
 
 import asyncio
 import logging
@@ -15,49 +13,35 @@ import shutil
 from typing import Any, Dict
 
 import psutil
-from app.services.lcd_event_bus import LCDEventBus, create_system_event, create_alert_event
-from app.lcd_models.lcd_event import EventSeverity
+
+from app.services.platform_event.bus import PlatformEventBus
+from app.services.platform_event.factories import make_lcd_surface_event
+from app.services.platform_event.severity import Severity
 
 logger = logging.getLogger(__name__)
 
 
 class SystemHealthProducer:
-    """
-    Produces LCD events based on system health metrics.
-    
-    Monitors:
-    - CPU usage (system-wide)
-    - Memory usage
-    - Disk space
-    - System temperature
-    - Network status
-    """
-    
-    def __init__(self, event_bus: LCDEventBus):
+    """Produces system health LCD PlatformEvents."""
+
+    def __init__(self, event_bus: PlatformEventBus, *, node_label: str):
         self.event_bus = event_bus
-        
-        # Thresholds
+        self.node_label = node_label
         self.cpu_warning_threshold = 75.0
         self.cpu_critical_threshold = 90.0
         self.memory_warning_threshold = 80.0
         self.disk_warning_threshold = 90.0
         self.temp_warning_threshold = 70.0
-        
-        # Previous states
         self.last_cpu_alert_level = None
         self.last_memory_alert_level = None
         self.last_disk_alert_level = None
-        
-        # Monitoring task
         self._monitor_task = None
-        
+
     async def start(self):
-        """Start system health monitoring"""
         logger.info("Starting System Health Producer")
         self._monitor_task = asyncio.create_task(self._monitor_loop())
-    
+
     async def stop(self):
-        """Stop monitoring"""
         logger.info("Stopping System Health Producer")
         if self._monitor_task:
             self._monitor_task.cancel()
@@ -65,40 +49,56 @@ class SystemHealthProducer:
                 await self._monitor_task
             except asyncio.CancelledError:
                 pass
-    
+
     async def _monitor_loop(self):
-        """Background monitoring loop"""
         while True:
             try:
                 await self._check_system_health()
-                await asyncio.sleep(10)  # Check every 10 seconds
+                await asyncio.sleep(10)
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"System health monitoring error: {e}")
+                logger.error("System health monitoring error: %s", e)
                 await asyncio.sleep(30)
-    
+
+    async def _emit(
+        self,
+        *,
+        event_type: str,
+        severity: Severity,
+        title: str,
+        message: str,
+        color: str | None = None,
+        sound: bool | None = None,
+        dismiss_auto: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        await self.event_bus.emit(
+            make_lcd_surface_event(
+                event_type=event_type,
+                severity=severity,
+                source_node=self.node_label,
+                source_service="system_health_producer",
+                title=title,
+                message=message,
+                color=color,
+                sound=sound,
+                dismiss_auto=dismiss_auto,
+                context=context,
+            )
+        )
+
     async def _check_system_health(self):
-        """Check all system health metrics"""
         snapshot = await asyncio.to_thread(self._collect_system_snapshot)
-
-        # CPU
-        cpu_percent = float(snapshot["cpu_percent"])
-        await self._check_cpu(cpu_percent)
-
-        # Memory
+        await self._check_cpu(float(snapshot["cpu_percent"]))
         await self._check_memory(float(snapshot["memory_percent"]), int(snapshot["memory_available"]))
-
-        # Disk
         await self._check_disk(float(snapshot["disk_percent"]), int(snapshot["disk_free"]))
 
-        # Temperature (if available)
         temps = snapshot.get("temperatures")
         if temps:
             await self._check_temperature(temps)
 
     def _collect_system_snapshot(self) -> Dict[str, Any]:
-        """Collect health metrics off the event loop thread."""
         memory = psutil.virtual_memory()
         disk = shutil.disk_usage("/")
         disk_percent = (disk.used / disk.total) * 100 if disk.total else 0.0
@@ -117,147 +117,132 @@ class SystemHealthProducer:
             "disk_free": disk.free,
             "temperatures": temperatures,
         }
-    
+
     async def _check_cpu(self, cpu_percent: float):
-        """Check CPU usage and alert if needed"""
         current_level = None
-        
         if cpu_percent >= self.cpu_critical_threshold:
             current_level = "critical"
         elif cpu_percent >= self.cpu_warning_threshold:
             current_level = "warning"
-        
-        # Only alert on level changes
+
         if current_level != self.last_cpu_alert_level:
             if current_level == "critical":
-                await create_alert_event(
-                    self.event_bus,
+                await self._emit(
+                    event_type="alert",
+                    severity=Severity.CRITICAL,
                     title="Critical CPU Usage",
                     message=f"System CPU: {cpu_percent:.1f}%",
-                    severity=EventSeverity.CRITICAL,
-                    context={"cpu_percent": cpu_percent}
+                    color="red",
+                    sound=True,
+                    dismiss_auto=False,
+                    context={"cpu_percent": cpu_percent},
                 )
             elif current_level == "warning":
-                await create_system_event(
-                    self.event_bus,
+                await self._emit(
+                    event_type="system",
+                    severity=Severity.WARNING,
                     title="High CPU Usage",
                     message=f"System CPU: {cpu_percent:.1f}%",
-                    severity=EventSeverity.WARNING,
                     color="yellow",
-                    context={"cpu_percent": cpu_percent}
+                    context={"cpu_percent": cpu_percent},
                 )
-            elif self.last_cpu_alert_level:  # Returning to normal
-                await create_system_event(
-                    self.event_bus,
+            elif self.last_cpu_alert_level:
+                await self._emit(
+                    event_type="system",
+                    severity=Severity.INFO,
                     title="CPU Normal",
                     message=f"System CPU: {cpu_percent:.1f}%",
-                    severity=EventSeverity.INFO,
                     color="green",
-                    context={"cpu_percent": cpu_percent}
+                    context={"cpu_percent": cpu_percent},
                 )
-            
+
             self.last_cpu_alert_level = current_level
-    
+
     async def _check_memory(self, memory_percent: float, available_mb: int):
-        """Check memory usage"""
-        current_level = None
-        
-        if memory_percent >= self.memory_warning_threshold:
-            current_level = "warning"
-        
+        current_level = "warning" if memory_percent >= self.memory_warning_threshold else None
         if current_level != self.last_memory_alert_level:
             if current_level == "warning":
-                await create_system_event(
-                    self.event_bus,
+                await self._emit(
+                    event_type="system",
+                    severity=Severity.WARNING,
                     title="High Memory Usage",
                     message=f"Memory: {memory_percent:.1f}% ({available_mb}MB free)",
-                    severity=EventSeverity.WARNING,
                     color="yellow",
-                    context={"memory_percent": memory_percent, "available_mb": available_mb}
+                    context={"memory_percent": memory_percent, "available_mb": available_mb},
                 )
             elif self.last_memory_alert_level:
-                await create_system_event(
-                    self.event_bus,
+                await self._emit(
+                    event_type="system",
+                    severity=Severity.INFO,
                     title="Memory Normal",
                     message=f"Memory: {memory_percent:.1f}%",
-                    severity=EventSeverity.INFO,
                     color="green",
-                    context={"memory_percent": memory_percent}
+                    context={"memory_percent": memory_percent},
                 )
-            
+
             self.last_memory_alert_level = current_level
-    
+
     async def _check_disk(self, disk_percent: float, free_gb: int):
-        """Check disk space"""
-        current_level = None
-        
-        if disk_percent >= self.disk_warning_threshold:
-            current_level = "warning"
-        
+        current_level = "warning" if disk_percent >= self.disk_warning_threshold else None
         if current_level != self.last_disk_alert_level:
             if current_level == "warning":
-                await create_system_event(
-                    self.event_bus,
+                await self._emit(
+                    event_type="system",
+                    severity=Severity.WARNING,
                     title="Low Disk Space",
                     message=f"Disk: {disk_percent:.1f}% full ({free_gb}GB free)",
-                    severity=EventSeverity.WARNING,
                     color="yellow",
-                    context={"disk_percent": disk_percent, "free_gb": free_gb}
+                    context={"disk_percent": disk_percent, "free_gb": free_gb},
                 )
-            
+
             self.last_disk_alert_level = current_level
-    
+
     async def _check_temperature(self, temps: dict):
-        """Check system temperature"""
-        # Find highest temperature
-        max_temp = 0
+        max_temp = 0.0
         sensor_name = None
-        
         for name, entries in temps.items():
             for entry in entries:
                 if entry.current > max_temp:
                     max_temp = entry.current
                     sensor_name = name
-        
+
         if max_temp >= self.temp_warning_threshold:
-            await create_system_event(
-                self.event_bus,
+            await self._emit(
+                event_type="system",
+                severity=Severity.WARNING,
                 title="High Temperature",
                 message=f"{sensor_name}: {max_temp:.1f}°C",
-                severity=EventSeverity.WARNING,
                 color="yellow",
-                context={"temperature": max_temp, "sensor": sensor_name}
+                context={"temperature": max_temp, "sensor": sensor_name},
             )
-    
+
     async def on_startup_complete(self, boot_time_seconds: float):
-        """Called when system startup completes"""
-        await create_system_event(
-            self.event_bus,
+        await self._emit(
+            event_type="system",
+            severity=Severity.INFO,
             title="System Ready",
             message=f"Boot completed in {boot_time_seconds:.1f}s",
-            severity=EventSeverity.INFO,
             color="green",
-            context={"boot_time": boot_time_seconds}
+            context={"boot_time": boot_time_seconds},
         )
-        
-        logger.info(f"System ready in {boot_time_seconds:.1f}s")
-    
+        logger.info("System ready in %.1fs", boot_time_seconds)
+
     async def on_service_started(self, service_name: str):
-        """Called when a service starts"""
-        await create_system_event(
-            self.event_bus,
+        await self._emit(
+            event_type="service",
+            severity=Severity.INFO,
             title=f"Service: {service_name}",
             message="Started successfully",
-            severity=EventSeverity.INFO,
-            context={"service": service_name}
+            context={"service": service_name},
         )
-    
+
     async def on_service_failed(self, service_name: str, error: str):
-        """Called when a service fails"""
-        await create_alert_event(
-            self.event_bus,
+        await self._emit(
+            event_type="alert",
+            severity=Severity.ERROR,
             title=f"Service Failed: {service_name}",
             message=error[:50],
-            severity=EventSeverity.ERROR,
-            context={"service": service_name, "error": error}
+            color="red",
+            dismiss_auto=False,
+            context={"service": service_name, "error": error},
         )

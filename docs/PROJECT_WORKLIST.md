@@ -28737,7 +28737,7 @@ Validation:
 - `rg -n "app\\.services\\.event_bus|get_event_bus\\(" app/services app/routes` -> no matches
 
 ID: T2363-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Hard-cut the LCD event subsystem onto PlatformEvent consumers and delete LCDEventBus
 Description:
 - Goal / acceptance criteria: Remove `LCDEventBus`, `LCDEventRouter`, and `RemoteEventAggregator` as runtime event infrastructure. `LCDManager` must consume canonical `PlatformEvent` history/live subscriptions directly, and LCD-producing services must emit `PlatformEvent`s instead of constructing `LCDEvent`s. After the migration is green, delete the LCD event bus stack and stop maintaining a second event history model for LCD.
@@ -28746,12 +28746,21 @@ Description:
 - Estimated effort: High
 - Required outputs: LCD runtime subscription refactor, migrated LCD producers, deletion of the LCD bus/router/aggregator stack, and updated LCD/runtime tests.
 - Notes: Keep LCD display queue/render timing if needed, but the source of truth must be `PlatformEventStore` + live `PlatformEventBus` subscriptions only.
+- Last updated: 2026-04-19 12:49 EDT - Codex
+- Progress notes:
+  - 2026-04-19 12:49 EDT - Codex: Started the LCD hard-cut slice immediately after shipping `T2363-subF` at `bb490cab`; auditing `LCDEventBus`, `LCDEventRouter`, `RemoteEventAggregator`, `LCDManager`, route handlers, and focused LCD/runtime tests before replacing the subsystem with direct `PlatformEvent` consumption.
+- Completion notes:
+  - 2026-04-19 13:24 EDT - Codex: Replaced [app/services/lcd_manager.py](app/services/lcd_manager.py) with a `PlatformEventBus`/`PlatformEventStore` consumer that projects canonical events onto the LCD display queue, queries recent LCD-visible history from the canonical store, and exposes live subscriptions without any LCD-local event bus, router, or aggregator.
+  - 2026-04-19 13:24 EDT - Codex: Reworked [app/routes/lcd_events.py](app/routes/lcd_events.py) and [app/routes/peer_discovery.py](app/routes/peer_discovery.py) so the legacy `/api/lcd/*` surface is now only a projection of canonical PlatformEvents, while peer linking uses the LCD manager’s platform-event peer hook instead of LCD-router state.
+  - 2026-04-19 13:24 EDT - Codex: Migrated the LCD-oriented producers in [app/services/event_producers](app/services/event_producers) plus [app/services/snapshot_footswitch_label_service.py](app/services/snapshot_footswitch_label_service.py) to emit canonical `PlatformEvent`s directly, then deleted [app/services/lcd_event_bus.py](app/services/lcd_event_bus.py), [app/services/lcd_event_router.py](app/services/lcd_event_router.py), [app/services/remote_event_aggregator.py](app/services/remote_event_aggregator.py), [app/services/lcd_event_persistence.py](app/services/lcd_event_persistence.py), and [app/lcd_models/lcd_event_db.py](app/lcd_models/lcd_event_db.py) so there is no second LCD event history path left at runtime.
+  - 2026-04-19 13:24 EDT - Codex: Replaced the focused legacy LCD tests with platform-event runtime coverage in [tests/test_platform_event_lcd_runtime.py](tests/test_platform_event_lcd_runtime.py), rewrote [tests/test_lcd_system.py](tests/test_lcd_system.py), updated [tests/test_lcd_events_routes.py](tests/test_lcd_events_routes.py), [tests/test_peer_discovery_routes.py](tests/test_peer_discovery_routes.py), [tests/test_cluster_visibility_routes.py](tests/test_cluster_visibility_routes.py), [tests/test_event_producers_runtime.py](tests/test_event_producers_runtime.py), [tests/test_runtime_timestamp_surfaces.py](tests/test_runtime_timestamp_surfaces.py), and [tests/test_snapshot_footswitch_label_service.py](tests/test_snapshot_footswitch_label_service.py), and removed the router-only [tests/test_websocket_reconnection.py](tests/test_websocket_reconnection.py) because `ws_federation` now carries that retry coverage.
 Validation:
-- `pytest tests/test_platform_event_lcd_runtime.py tests/test_snapshot_footswitch_label_service.py tests/test_lcd_system.py -q` -> must PASS
+- `pytest tests/test_platform_event_lcd_runtime.py tests/test_snapshot_footswitch_label_service.py tests/test_lcd_system.py tests/test_lcd_events_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_event_producers_runtime.py tests/test_runtime_timestamp_surfaces.py -q` -> PASS (`31 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/lcd_manager.py app/routes/lcd_events.py app/routes/peer_discovery.py app/services/platform_event/factories.py app/services/platform_event/lcd_projection.py app/services/platform_event/store.py app/services/event_producers/audio_producer.py app/services/event_producers/system_producer.py app/services/event_producers/network_producer.py app/services/event_producers/plugin_producer.py app/services/event_producers/database_producer.py app/services/snapshot_footswitch_label_service.py tests/test_platform_event_lcd_runtime.py tests/test_lcd_system.py tests/test_lcd_events_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_event_producers_runtime.py tests/test_runtime_timestamp_surfaces.py tests/test_snapshot_footswitch_label_service.py` -> PASS
 - `rg -n "LCDEventBus|LCDEventRouter|RemoteEventAggregator" app/services app/routes` -> no matches
 
 ID: T2363-subH
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Hard-cut DistributedEventBus callers and move federation to platform:events
 Description:
 - Goal / acceptance criteria: Migrate every remaining `DistributedEventBus` caller and subscriber onto canonical `PlatformEvent` factories, including cluster lifecycle, MIDI hub cluster services, config hot-reload sync, cluster admin flows, and any routes or services still creating `ClusterEvent`s. `ws_federation` becomes the only cross-node replication path by subscribing to `platform:events` with echo suppression. After the last caller is migrated, delete `app/services/cluster/distributed_event_bus.py`.
@@ -28760,6 +28769,9 @@ Description:
 - Estimated effort: Very High
 - Required outputs: migrated cluster/MIDI/config services, platform-event federation, deleted distributed event bus runtime API, and rewritten cluster/MIDI tests.
 - Notes: Cluster event history queries must come from `PlatformEventStore`, not a second event table or second route model.
+- Last updated: 2026-04-19 13:24 EDT - Codex
+- Progress notes:
+  - 2026-04-19 13:24 EDT - Codex: Began the distributed-event-bus hard cut immediately after shipping `T2363-subG`; next audit is [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [app/services/ws_federation.py](app/services/ws_federation.py), [app/services/config_hot_reload.py](app/services/config_hot_reload.py), [app/services/midi_hub/cluster_clock.py](app/services/midi_hub/cluster_clock.py), [app/services/midi_hub/cluster_router.py](app/services/midi_hub/cluster_router.py), [app/services/midi_hub/device_registry.py](app/services/midi_hub/device_registry.py), and the cluster-facing route tests before replacing `ClusterEvent` publication with canonical `PlatformEvent` factories and real platform-event federation.
 Validation:
 - `pytest tests/test_ws_federation.py tests/test_midi_cluster_clock.py tests/test_midi_cluster_router.py tests/test_config_hot_reload_cluster_sync.py tests/test_midi_cluster_api_routes.py -q` -> must PASS
 - `rg -n "DistributedEventBus|get_event_bus\\(|ClusterEvent|EventSeverity|EventType" app/services app/routes` -> no legacy cluster-bus matches

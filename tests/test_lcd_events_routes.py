@@ -5,7 +5,8 @@ from datetime import timezone
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.lcd_models.lcd_event import EventSeverity, EventType, LCDEvent
+from app.lcd_models.lcd_event import EventSeverity, EventType
+from app.services.platform_event.envelope import PlatformEvent
 from app.routes import lcd_events as lcd_events_routes
 
 
@@ -14,10 +15,9 @@ class _FakeLcdManager:
     node_label = "NODE-1"
 
     def __init__(self) -> None:
-        self.published: list[LCDEvent] = []
+        self.published: list[PlatformEvent] = []
 
-    async def publish_event(self, event: LCDEvent) -> None:
-        event.event_id = event.event_id or "generated-event"
+    async def publish_event(self, event: PlatformEvent) -> None:
         self.published.append(event)
 
     def get_recent_local_events(self, _limit: int):
@@ -35,8 +35,6 @@ def test_create_event_route_uses_utc_timestamp(monkeypatch) -> None:
     app.include_router(lcd_events_routes.router)
     manager = _FakeLcdManager()
     monkeypatch.setattr(lcd_events_routes, "lcd_manager", manager)
-    monkeypatch.setattr(lcd_events_routes, "get_lcd_persistence", lambda: None)
-
     client = TestClient(app)
     response = client.post(
         "/api/lcd/events",
@@ -51,8 +49,8 @@ def test_create_event_route_uses_utc_timestamp(monkeypatch) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "success": True,
-        "event_id": "generated-event",
+        "event_id": manager.published[0].event_id,
         "message": "Event published",
     }
     assert len(manager.published) == 1
-    assert manager.published[0].timestamp.tzinfo == timezone.utc
+    assert manager.published[0].occurred_at.tzinfo == timezone.utc
