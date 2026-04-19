@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-18 - Rehomed the full Toastify notification implementation backlog into this canonical project worklist as T2351.
+Last updated: 2026-04-18 - Closed T2360 after finishing the warnings-card edge cases, reduced-motion/a11y pass, and final frontend validation for the FOH-grade stage notification surface.
 
 ---
 
@@ -212,7 +212,7 @@ Last updated: 2026-04-18 13:05 EDT - Codex
 ---
 
 ID: T2352
-Status: [>] In Progress
+Status: [✓] Done
 Title: Maschine MK1 Headless Primary Interface — full 75-decision epic
 Description:
 - Goal / acceptance criteria: Transform the NI Maschine MK1 from a studio-only controller into the platform's primary headless operator console. Deliver a retained-mode render pipeline for both 255x64 KS0713 LCDs, a 25-profile LCD catalog, a full LED animation system, snapshot/tempo/automation integration aligned with the State Authority directive, a system-admin console accessible from the device, and a complete operator manual. Acceptance requires every locked decision (Q1-Q75) from the 2026-04-17/18 brainstorming rounds to be implemented or explicitly deferred with worklist follow-up, the daemon to remain a pure observer of platform source-of-truth services, and the device to survive plug/unplug/reboot/shutdown cycles without state loss.
@@ -223,10 +223,11 @@ Description:
 Locked decisions reference: `~/.claude/projects/-home-mm-map2-audio/memory/project_t700_mk1_headless.md` (75 decisions Q1-Q75 with State Authority audit refinements)
 Subtasks: T2352-ph1, T2352-ph2, T2352-ph3, T2352-ph4, T2352-ph5
 Assigned to: Codex
-Last updated: 2026-04-18 14:00 EDT - Codex
+Last updated: 2026-04-18 19:33 EDT - Codex
 - Progress notes:
-  - Phase 1 is now complete and shipped, including live-backend and connected-MK1 verification.
-  - Phase 2 is now the next unblocked slice and inherits the retained-mode render/runtime foundation landed in Phase 1.
+  - Phases 1 through 5 are complete and reconciled in the canonical worklist.
+  - The real-hardware final pass completed with `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink` returning `RESULT: OK (0 warning(s))` on the connected MK1.
+  - The daemon remains observer-only with respect to snapshot, morph, automation, and Brain authority, and the operator manual is now the final shipped contract for the surface.
 - Scope highlights:
   - Single operator identity (matthewmackes), no multi-user or per-performer layering
   - MK1 is an observer of platform source-of-truth; never computes snapshot/morph/automation/tempo state locally
@@ -481,7 +482,7 @@ Last updated: 2026-04-18 16:38 EDT - Codex
 ---
 
 ID: T2352-ph3
-Status: [>] In Progress
+Status: [✓] Done
 Title: T2352 Phase 3 — LED animation system, pressure gestures, Brain-aware animations
 Description:
 - Goal / acceptance criteria: Implement the 25-animation-per-LED catalog (Q17), the 5-tier brightness semantics (Q48: off/dim/mid/bright/full), profile signature animations (Q57: 1s on profile entry), dedicated heartbeat LEDs (backend + MK1-daemon), the full pressure routing stack (Q42: ALSA poly aftertouch + AutomationEngine ModulationSource + Brain per-pad curves + snapshot-scoped automation recording), audio-reactive LED behavior (Q64: beat flash + clip indication + spectrum-reactive pads + Brain-aware sequencer choreography scoped to Brain profiles), the inspection overlay mode (Q48: SHIFT+VIEW cycles assigned/muted/automated), and chain-color metadata forward-compat. Acceptance requires 62-slot LED array to render all animation types without frame drops, pad pressure to drive all four destinations simultaneously without timing jitter, and Brain-aware animations to activate only in Brain profiles with clean handoff to Q17 catalog elsewhere.
@@ -501,11 +502,14 @@ Description:
   - Physical hardware verification of all animation and pressure features
   - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with LED + pressure sections
 Assigned to: Claude
-Last updated: 2026-04-18 16:38 EDT - Codex
+Last updated: 2026-04-18 17:41 EDT - Codex
 - Progress notes:
   - Phase 3 is now split into restartable bundles so the LED/pressure stack can ship incrementally without blocking on the later Brain-reactive and hardware-verification slices.
   - Bundle A is complete: the new LED animation core, 5-tier brightness semantics, profile-signature overlays, and initial heartbeat/selector feedback are wired into the MK1 daemon.
-  - Bundle B is now the active next slice for category-aware/menu-aware overlays and inspection-mode LED state.
+  - Bundle B is complete: category/group LED ownership, inspection-mode overlays, and automation-aware overlay precedence now ship in the daemon, with `SHIFT+NAVIGATE` as the reachable MK1 inspection trigger because the hardware surface has no dedicated `VIEW` button.
+  - Bundle C is complete: pad pressure now fans out to ALSA poly-aftertouch, the automation engine's MIDI-source registry, and the Brain pressure observer hook without adding a second authority path.
+  - Bundle D is complete: audio-reactive beat/clip/spectrum choreography and Brain-profile slot/lane choreography now ride the shared LED layer through a dedicated daemon-side choreography module.
+  - Bundle E is complete: the final Phase-3 regression/hardware pass is recorded, the operator guide now covers the shipped LED rules, and Phase 4 is unblocked.
 Subtasks:
 
 ID: T2352-ph3-subA
@@ -528,19 +532,28 @@ Last updated: 2026-04-18 16:38 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/led_animations.py app/services/maschine/maschine_mk1_daemon.py app/services/maschine_service.py tests/test_maschine_led_animations.py` -> PASS
 
 ID: T2352-ph3-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Ship category-aware profile overlays and inspection-mode LED state
 Description:
-- Goal / acceptance criteria: Extend the LED system so menu/category state, direct profile changes, and the later `SHIFT+VIEW` inspection overlay can reuse the same animation primitives without conflicting with pad-selection feedback. Acceptance requires menu/profile/category-aware LED ownership rules, a restartable inspection-mode state model, and regression coverage for overlay precedence.
+- Goal / acceptance criteria: Extend the LED system so menu/category state, direct profile changes, and the later `SHIFT+VIEW` inspection overlay can reuse the same animation primitives without conflicting with pad-selection feedback. Acceptance requires menu/profile/category-aware LED ownership rules, a restartable inspection-mode state model, and regression coverage for overlay precedence. On the actual MK1 hardware surface, this ships as `SHIFT+NAVIGATE` because the controller does not expose a dedicated `VIEW` button in the discovered protocol map.
 - Why it matters: The LED system needs deterministic ownership semantics before pressure/audio-reactive behavior joins the same 62-slot surface.
 - Dependencies: T2352-ph3-subA
 - Estimated effort: High
 - Required outputs: overlay ownership rules, inspection-mode state machine scaffolding, daemon integration, tests, and worklist notes.
 Assigned to: Codex
-Last updated: 2026-04-18 16:38 EDT - Codex
+Last updated: 2026-04-18 16:49 EDT - Codex
+- Completion notes:
+  - Updated `app/services/maschine/maschine_mk1_daemon.py` with category/group button LED ownership rules, a restartable inspection-mode cycle (`off -> assigned -> muted -> automated -> off`), automation-lane polling, and overlay precedence that keeps menu/category, inspection, and profile-signature states from clobbering one another.
+  - Shipped `SHIFT+NAVIGATE` as the reachable inspection trigger on the MK1 because the discovered protocol surface exposes no dedicated `VIEW` button; the worklist/manual now state that explicitly so the platform contract matches the hardware.
+  - Added focused regression coverage for inspection-mode cycling and overlay application in `tests/test_maschine_mk1_daemon.py` and `tests/test_maschine_led_animations.py`.
+- Validation:
+  - `pytest -q tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `pytest -q tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py` -> PASS
 
 ID: T2352-ph3-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Ship pad-pressure routing into ALSA, automation, and Brain observers
 Description:
 - Goal / acceptance criteria: Route MK1 pad pressure into ALSA poly-aftertouch, AutomationEngine modulation sources, and Brain per-pad observer hooks without creating a second state-authority path. Acceptance requires simultaneous fanout, deterministic value scaling, and focused coverage around press/aftertouch/release behavior.
@@ -549,10 +562,18 @@ Description:
 - Estimated effort: High
 - Required outputs: daemon/input decoder updates, observer-only routing hooks, tests, and worklist notes.
 Assigned to: Codex
-Last updated: 2026-04-18 16:38 EDT - Codex
+Last updated: 2026-04-18 16:57 EDT - Codex
+- Completion notes:
+  - Extended `app/services/automation_engine.py` with a real MIDI-source modulation path so lanes can consume external source ids such as `maschine.pad.N` without abusing the timeline/LFO/envelope code paths.
+  - Added transient per-pad pressure observer storage to `app/services/performance_brain_service.py` and fanned the daemon's pad events into both the automation engine and Brain observer via `app/services/maschine/maschine_mk1_daemon.py`.
+  - Added focused coverage in `tests/test_maschine_pressure_routing.py` proving a real daemon pad event updates both the automation-engine source registry and the Brain pressure observer snapshot.
+- Validation:
+  - `pytest -q tests/test_automation_engine_fixes.py tests/test_maschine_pressure_routing.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/automation_engine.py app/services/performance_brain_service.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_pressure_routing.py` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py` -> PASS
 
 ID: T2352-ph3-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Ship audio-reactive and Brain-aware choreography
 Description:
 - Goal / acceptance criteria: Drive LEDs from transport/tempo/audio metering and Brain context so beat flash, clip indication, and Brain-profile choreography reuse the shared animation foundation. Acceptance requires profile-scoped activation rules, no frame-drop regressions, and focused validation against live engine/Brain state.
@@ -561,10 +582,17 @@ Description:
 - Estimated effort: High
 - Required outputs: choreography module, daemon integration, tests, and worklist notes.
 Assigned to: Codex
-Last updated: 2026-04-18 16:38 EDT - Codex
+Last updated: 2026-04-18 17:41 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/led_choreography.py` so beat flash, clip indication, spectrum-reactive pads, and Brain-profile slot/lane choreography live in a deterministic pure helper instead of daemon-local ad hoc branches.
+  - Extended `app/services/maschine/maschine_mk1_daemon.py` to poll live drum transport, audio levels, spectrum, true-peak, and Brain runtime state, then apply choreography before the existing inspection/profile-signature overlay layer so ownership remains explicit.
+  - Added focused coverage in `tests/test_maschine_led_choreography.py` and expanded `tests/test_maschine_led_animations.py` to prove both generic audio-reactive and Brain-profile choreography paths.
+- Validation:
+  - `pytest -q tests/test_maschine_led_choreography.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/led_choreography.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_led_choreography.py tests/test_maschine_led_animations.py` -> PASS
 
 ID: T2352-ph3-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Finish Phase 3 hardware verification and operator-guide LED coverage
 Description:
 - Goal / acceptance criteria: Verify the final Phase-3 LED and pressure behaviors on the connected MK1, capture any remaining edge cases as follow-up tasks, and update the operator guide with the shipped LED/pressure rules. Acceptance requires physical validation of animation ownership, pressure fanout, and Brain-aware choreography plus the corresponding worklist/docs evidence.
@@ -573,12 +601,21 @@ Description:
 - Estimated effort: High
 - Required outputs: hardware verification evidence, guide updates, and completion notes.
 Assigned to: Codex
-Last updated: 2026-04-18 16:38 EDT - Codex
+Last updated: 2026-04-18 17:41 EDT - Codex
+- Completion notes:
+  - Re-ran the focused and broad Phase-3 regression suites after the choreography merge, including the daemon, pressure-routing, LCD, route, and automation fixtures, and fixed the remaining inspection-indicator visibility edge by keeping the active inspection LED on a nonzero pulse shape.
+  - Re-ran `scripts/maschine_phase1_verify.py --include-hidden` plus the hardware write path on the connected MK1 (`--include-hidden --hardware --dwell-ms 250`), confirming the full 25-profile catalog still renders and writes cleanly after the Phase-3 LED changes.
+  - Updated `docs/MASCHINE_MK1_OPERATION_GUIDE.md` so the shipped Phase-3 LED ownership, choreography, and verification hooks are documented as the current operator contract.
+- Validation:
+  - `pytest -q tests/test_automation_engine_fixes.py tests/test_maschine_pressure_routing.py tests/test_maschine_led_choreography.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py --include-hidden` -> PASS
+  - `python3 scripts/maschine_phase1_verify.py --include-hidden --hardware --dwell-ms 250` -> PASS
+  - `git diff --check` -> PASS
 
 ---
 
 ID: T2352-ph4
-Status: [ ] Todo
+Status: [✓] Done
 Title: T2352 Phase 4 — Boot/shutdown ceremony, onboarding, incident log, admin console
 Description:
 - Goal / acceptance criteria: Implement the full boot sequence (Q60: wordmark pixel-wipe -> system status scroll -> 62-slot LED chase -> LCD pixel test -> profile load, 2-4s, skippable via any button), the full shutdown ceremony (Q61: saving-state + per-item receipts + session summary + LED farewell wave + goodbye, ~3s), the first-connection guided LCD tour (Q50: 10 steps, ~2min, skippable via ERASE, writes initial config on completion), the incident log writer with severity tiers (Q46: info/warn/error/critical), the idle screensaver + ambient mode (Q62: 10min idle, per-LCD content, presence wake via pressure 50-200), long-operation feedback (Q63: LCD progress + transport LED bar + op-specific signatures + cancel affordance), and the full admin console (Q51/52: MAP2 services + systemctl + power controls + OS updates + hardware health, gated by session unlock + per-action tier-3 confirmation, sudoers NOPASSWD whitelist). Acceptance requires clean state persistence across reboot/shutdown cycles, the first-boot tour to produce a valid initial config, all admin actions to complete through sudoers without prompts, and incident log entries to survive process crashes.
@@ -598,12 +635,158 @@ Description:
   - Physical hardware verification of boot, shutdown, first-connection, long-op, admin flows
   - Incremental update to `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with boot/shutdown/admin/recovery sections
 Assigned to: Claude
-Last updated: 2026-04-18 - scaffolded; pending ph3.
+Last updated: 2026-04-18 19:00 EDT - Codex
+- Progress notes:
+  - Phase 4 is now unblocked by the completed Phase 3 LED/pressure work.
+  - Bundle A is complete: the retained incident-log service now owns file append/read behavior and records backend/device lifecycle breadcrumbs for the Maschine path.
+  - Bundle B is complete: the daemon now enters an ambient idle mode after 10 minutes, exposes a dedicated per-LCD screensaver presentation, and wakes cleanly on the first qualifying interaction.
+  - Bundle C is complete: the daemon now owns a skippable startup ceremony and a direct shutdown farewell sequence backed by retained lifecycle receipts.
+  - Bundle E is complete: long operations now own the LCD/transport LED overlay and expose a bounded cancel affordance on `SHIFT+ERASE`.
+  - Bundle F is complete: the backend-owned admin console now owns session unlock, tier-3 confirmations, bounded power/service/update actions, and the scripted sudoers/install contract required for headless execution.
+- Completion notes:
+  - Added `app/services/maschine/admin_console.py` as the single backend authority for the Maschine admin session, with explicit unlock/lock/confirm state, bounded action registry, background execution, and retained last-result snapshots consumed by both the API and LCD render path.
+  - Extended `app/routes/maschine.py`, `app/services/maschine_lcd_service.py`, and `app/services/maschine/maschine_mk1_daemon.py` so `T18 Admin Console` is now a working hidden profile: `SHIFT+CONTROL` enters it, `NOTE REPEAT` unlocks and advances the tier-3 confirmation ladder, the nav encoder selects actions, `ERASE` clears confirmation or re-locks, and unlocked sessions expose `T18` inside the normal category menu.
+  - Added the bounded sudoers drop-in at `config/sudoers/map2-maschine-admin` plus `scripts/install-node.sh` installation wiring so the repo now carries the required environment artifact for non-interactive `systemctl` restart/reboot actions instead of relying on ambient shell privilege.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_admin_console.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `timeout 25s python3 -m pytest -q tests/test_maschine_lcd_service.py` -> ASSERTIONS PASS (`8 passed in 8.98s`), but the pytest process lingered under the current harness and exited via `timeout`; no failing assertions were observed.
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/admin_console.py app/routes/maschine.py app/services/maschine_lcd_service.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_admin_console.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `bash -n scripts/install-node.sh` -> PASS
+  - `git diff --check` -> PASS
+Subtasks:
+
+ID: T2352-ph4-subA
+Status: [✓] Done
+Title: Ship the durable incident-log service and lifecycle breadcrumbs
+Description:
+- Goal / acceptance criteria: Replace the ad hoc incident-log file access with a dedicated Maschine incident-log service, wire the LCD incident/log-viewer profiles onto that service, and record lifecycle breadcrumbs for daemon/backend-visible events with severity tiers that survive restarts. Acceptance requires structured append/read helpers, crash-tolerant file creation, focused tests, and no new runtime dependency assumptions.
+- Why it matters: Boot/shutdown/admin flows need a reliable retained event sink before they can produce operator-facing receipts or recovery breadcrumbs.
+- Dependencies: T2352-ph3
+- Estimated effort: Medium
+- Required outputs: `app/services/maschine/incident_log.py`, integrations in the LCD/runtime path plus daemon lifecycle breadcrumbs, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 17:41 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/incident_log.py` as the dedicated retained incident-log service, with structured append/read helpers, crash-tolerant parent creation, and best-effort fsync on writes.
+  - Rewired `app/services/maschine_lcd_service.py` so the incident-log and log-viewer profiles consume the shared service instead of ad hoc file parsing, keeping the read contract aligned with future boot/admin flows.
+  - Added daemon/backend lifecycle breadcrumbs in `app/services/maschine_service.py` and `app/services/maschine/maschine_mk1_daemon.py` for daemon connect/disconnect, websocket connect/disconnect, backend websocket churn, and device connect/disconnect, with focused coverage in `tests/test_maschine_incident_log.py`.
+- Validation:
+  - `pytest -q tests/test_maschine_incident_log.py tests/test_maschine_lcd_service.py tests/test_maschine_mk1.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/incident_log.py app/services/maschine_lcd_service.py app/services/maschine_service.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_incident_log.py tests/test_maschine_lcd_service.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T2352-ph4-subB
+Status: [✓] Done
+Title: Ship the idle screensaver and presence wake path
+Description:
+- Goal / acceptance criteria: Implement the 10-minute idle screensaver with ambient per-LCD content plus pressure-based wake detection. Acceptance requires deterministic idle timers, wake thresholds in the documented 50-200 pressure range, and focused runtime coverage.
+- Why it matters: The controller should settle gracefully when idle and wake instantly when touched.
+- Dependencies: T2352-ph4-subA
+- Estimated effort: Medium
+- Required outputs: `app/services/maschine/screensaver.py`, daemon integration, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 17:41 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/screensaver.py` with a dedicated idle-state machine, deterministic 10-minute activation timeout, and explicit pad-pressure wake thresholding (`96` raw pressure by default, within the documented `50-200` range).
+  - Integrated the screensaver into `app/services/maschine/maschine_mk1_daemon.py` so ambient mode owns both LCD panels and LED output while active, and the first qualifying pad/button/encoder interaction wakes the controller without also triggering a live action.
+  - Added focused coverage in `tests/test_maschine_screensaver.py` and widened the existing Maschine regression suite to prove ambient rendering, LED overrides, and wake/swallow behavior.
+- Validation:
+  - `pytest -q tests/test_maschine_screensaver.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `pytest -q tests/test_maschine_screensaver.py tests/test_maschine_incident_log.py tests/test_maschine_lcd_service.py tests/test_maschine_mk1.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/screensaver.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_screensaver.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T2352-ph4-subC
+Status: [✓] Done
+Title: Ship the boot and shutdown ceremony pipeline
+Description:
+- Goal / acceptance criteria: Implement the skippable boot and shutdown animation/state pipeline backed by the retained incident-log service. Acceptance requires deterministic 2-4s startup, ~3s shutdown, skip handling, and restart-safe state receipts.
+- Why it matters: The ceremony path depends on both the Phase 3 LED layer and a durable receipt/log sink.
+- Dependencies: T2352-ph4-subA
+- Estimated effort: High
+- Required outputs: `app/services/maschine/boot_sequence.py`, `app/services/maschine/shutdown_sequence.py`, daemon/backend integration, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 18:07 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/boot_sequence.py` and `app/services/maschine/shutdown_sequence.py` to formalize the startup and shutdown ceremony stages instead of keeping that flow implicit in daemon reconnect behavior.
+  - Integrated both into `app/services/maschine/maschine_mk1_daemon.py`: boot now owns the surface at daemon start and skips on the first input, while shutdown now plays a direct farewell sequence after worker threads stop so the sequence does not race normal rendering.
+  - Added focused lifecycle coverage in `tests/test_maschine_boot_shutdown.py` and widened the existing daemon/route/LCD suites to confirm the new ceremony path does not regress the normal control surface behavior.
+- Validation:
+  - `pytest -q tests/test_maschine_boot_shutdown.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_screensaver.py` -> PASS
+  - `pytest -q tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py tests/test_maschine_incident_log.py tests/test_maschine_lcd_service.py tests/test_maschine_mk1.py tests/test_maschine_led_animations.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/boot_sequence.py app/services/maschine/shutdown_sequence.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T2352-ph4-subD
+Status: [✓] Done
+Title: Ship the first-connection onboarding tour
+Description:
+- Goal / acceptance criteria: Implement the 10-step skippable onboarding tour and persist the completion marker/config writes. Acceptance requires resumable state, explicit completion/skip recording, and focused coverage around first-run and repeat-run behavior.
+- Why it matters: The controller needs a discoverable first-run path once boot/admin flows become controller-native.
+- Dependencies: T2352-ph4-subA, T2352-ph4-subC
+- Estimated effort: High
+- Required outputs: `app/services/maschine/onboarding.py`, persistence hooks, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:34 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/onboarding.py` as a retained 10-step onboarding state machine backed by the shared runtime config, with resumable step persistence, explicit skip/completion markers, and initial Maschine transport-policy config writes on completion.
+  - Integrated the onboarding flow into `app/services/maschine/maschine_mk1_daemon.py` so the tour auto-activates after boot on first connection, owns the LCD/LED surface while active, advances on `NOTE REPEAT`, moves backward on `NAVIGATE`, and skips on `ERASE` without leaking live transport/menu actions.
+  - Added focused onboarding coverage in `tests/test_maschine_onboarding.py` and kept the indicator LEDs continuously legible so the onboarding affordances do not disappear at animation troughs during regression runs or on hardware.
+- Validation:
+  - `pytest -q tests/test_maschine_onboarding.py tests/test_maschine_long_op_feedback.py tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `pytest -q tests/test_maschine_onboarding.py tests/test_maschine_long_op_feedback.py tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py tests/test_cluster_update_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/onboarding.py app/services/maschine/long_op_feedback.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_onboarding.py` -> PASS
+  - `git diff --check` -> PASS
+  - No installer or environment artifacts changed because this slice introduced no new packages, services, or runtime assumptions beyond the existing Maschine daemon/config surfaces.
+
+ID: T2352-ph4-subE
+Status: [✓] Done
+Title: Ship long-operation feedback and cancel affordances
+Description:
+- Goal / acceptance criteria: Implement controller-visible progress/receipt flows for long operations with transport-LED bars and cancel affordances where safe. Acceptance requires reusable progress-state helpers and focused coverage for start/update/cancel/complete states.
+- Why it matters: Boot, admin, and update flows need a shared operator-feedback layer instead of bespoke LCD text.
+- Dependencies: T2352-ph4-subA
+- Estimated effort: Medium
+- Required outputs: `app/services/maschine/long_op_feedback.py`, daemon integration, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:05 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/long_op_feedback.py` as the reusable source/receipt state helper for startup progress, cluster update progress, plugin scanning, and future manual/admin operations, including transient cancel-request posture and receipt hold timing.
+  - Integrated the helper into `app/services/maschine/maschine_mk1_daemon.py` so the MK1 now polls startup/update/plugin-scan progress, temporarily owns the LCD with a progress/receipt overlay, drives a transport-button progress bar, and sends `SHIFT+ERASE` to the bounded cluster-update abort path when the active operation is cancellable.
+  - Reconciled the backend cancel contract by making `/api/cluster/update/abort` call the real scheduler cancellation path, and fixed the screensaver's active-play LED so ambient transport indication never drops fully dark at pulse troughs.
+- Validation:
+  - `pytest -q tests/test_maschine_long_op_feedback.py tests/test_cluster_update_routes.py` -> PASS
+  - `pytest -q tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `pytest -q tests/test_maschine_long_op_feedback.py tests/test_maschine_boot_shutdown.py tests/test_maschine_screensaver.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py tests/test_cluster_update_routes.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/screensaver.py app/services/maschine/long_op_feedback.py app/services/maschine/maschine_mk1_daemon.py app/routes/cluster_update.py tests/test_maschine_long_op_feedback.py tests/test_cluster_update_routes.py` -> PASS
+  - `git diff --check` -> PASS
+
+ID: T2352-ph4-subF
+Status: [✓] Done
+Title: Ship the controller-native admin console actions and install contract
+Description:
+- Goal / acceptance criteria: Implement the admin console service actions, confirmation tiers, and the corresponding installer/runtime artifacts required for the privileged operations. Acceptance requires a bounded action whitelist, no prompt hangs, installer/env updates for any new sudoers/runtime assumptions, tests, and hardware verification notes.
+- Why it matters: This is the headless-operability end state, and it is the Phase 4 slice most likely to require platform-layer reconciliation.
+- Dependencies: T2352-ph4-subA, T2352-ph4-subE
+- Estimated effort: High
+- Required outputs: `app/services/maschine/admin_console.py`, required installer/runtime artifacts, tests, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:00 EDT - Codex
+- Completion notes:
+  - Added `app/services/maschine/admin_console.py` as the backend-owned admin authority with hidden `T18` session state, nav selection, tier-3 confirmations, bounded service/power/update actions, and retained execution receipts.
+  - Rewired `app/routes/maschine.py`, `app/services/maschine_lcd_service.py`, and `app/services/maschine/maschine_mk1_daemon.py` so the device can enter `T18` with `SHIFT+CONTROL`, unlock via `NOTE REPEAT`, drive the selected action from the nav encoder, and clear/lock via `ERASE` while the LCD surface reflects the live admin snapshot.
+  - Added the repo-owned sudoers drop-in `config/sudoers/map2-maschine-admin` plus the `scripts/install-node.sh` install hook so the new non-interactive restart/reboot contract is shipped alongside the feature instead of existing only on the current host.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_admin_console.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `timeout 25s python3 -m pytest -q tests/test_maschine_lcd_service.py` -> ASSERTIONS PASS (`8 passed in 8.98s`), process lingered under the current harness
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/admin_console.py app/routes/maschine.py app/services/maschine_lcd_service.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_admin_console.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `bash -n scripts/install-node.sh` -> PASS
+  - `git diff --check` -> PASS
 
 ---
 
 ID: T2352-ph5
-Status: [ ] Todo
+Status: [✓] Done
 Title: T2352 Phase 5 — Polish, final verification, operator manual
 Description:
 - Goal / acceptance criteria: Complete the custom MAP2 display face (all A-Z, 0-9, punctuation, MAP2 logo, musical symbols), complete `docs/MASCHINE_MK1_OPERATION_GUIDE.md` as the final epic deliverable (detailed end-user manual per Q43 addendum), run the full physical E2E verification against the real MK1 including all 25 profiles + all LED animations + all admin actions + boot/shutdown/onboarding, reconcile any deferred decisions or discovered edge cases into follow-up tasks, and verify the State Authority audit remains clean (no Python-side snapshot/morph computation introduced during phases 1-4). Acceptance requires the operator manual to be complete and accurate against shipped behavior, zero known regressions on real hardware, all phase-1-4 sub-features to work end-to-end, and the final git commit to land on master and push to both GitHub and GitLab.
@@ -619,7 +802,74 @@ Description:
   - Any deferred decisions filed as follow-up T-numbered tasks
   - Final `git push origin master && git push gitlab master` after epic sign-off
 Assigned to: Claude
-Last updated: 2026-04-18 - scaffolded; pending ph4.
+Last updated: 2026-04-18 19:00 EDT - Codex
+- Progress notes:
+  - Phase 5 is now unblocked because all Phase 4 slices are closed.
+  - Bundle A is complete: the `MAP2 Display 32` face now includes explicit MAP2 logo tokens plus musical symbols for manual-grade reference screens and examples.
+  - Bundle B is complete: `docs/MASCHINE_MK1_OPERATION_GUIDE.md` is now a full operator-facing manual that describes the shipped controller contract instead of a phased delivery log.
+  - Bundle C is complete: the final daemon-aware hardware verification matrix passed cleanly on the real MK1, the service restart path now deactivates successfully under systemd, and the State Authority observer-only audit remains clean.
+  - Phase 5 is closed. No additional follow-up T-numbers were required from the final verification pass.
+Subtasks:
+
+ID: T2352-ph5-subA
+Status: [✓] Done
+Title: Complete the Phase 5 display-face extras for manual-grade rendering
+Description:
+- Goal / acceptance criteria: Extend the custom `MAP2 Display 32` face beyond the Phase 1 ASCII pass so the final manual and reference screens can render explicit MAP2 logo tokens and musical symbols without fallback blanks. Acceptance requires the atlas to expose the new glyphs deterministically plus focused regression coverage.
+- Why it matters: The final operator manual and cheat-sheet screens need a complete branded glyph vocabulary, not just generic ASCII.
+- Dependencies: T2352-ph4
+- Estimated effort: Low
+- Required outputs: updated `app/services/maschine/fonts/atlas.py`, focused font regressions, and guide/worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:00 EDT - Codex
+- Completion notes:
+  - Extended `app/services/maschine/fonts/atlas.py` with explicit musical symbols (`♪`, `♫`, `♩`, `♬`, `♭`, `♯`) plus `MAP2_LOGO` and `MAP2_MONOGRAM` tokens for the `map2_display_32` face.
+  - Added single-character aliases (`¤` and `§`) so the branded tokens can also be rendered through normal per-character text paths when a manual/profile screen needs a compact placeholder.
+  - Added focused regression coverage in `tests/test_maschine_fonts.py`.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_fonts.py tests/test_maschine_admin_console.py tests/test_maschine_routes.py tests/test_maschine_mk1_daemon.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/fonts/atlas.py tests/test_maschine_fonts.py` -> PASS
+
+ID: T2352-ph5-subB
+Status: [✓] Done
+Title: Finish the detailed operator manual against the shipped MK1 contract
+Description:
+- Goal / acceptance criteria: Expand `docs/MASCHINE_MK1_OPERATION_GUIDE.md` into the final detailed operator manual, covering the shipped profile catalog, admin-console gestures, boot/shutdown/onboarding flows, LED behaviors, and recovery procedures with no stale “later” language left behind. Acceptance requires the document to match the actual shipped backend/daemon behavior.
+- Why it matters: The user explicitly asked for a complete instruction guide, and the current guide still contains phased notes and placeholder limitations.
+- Dependencies: T2352-ph5-subA
+- Estimated effort: High
+- Required outputs: updated manual sections, reconciled screenshots/example-render placeholders, and worklist notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:08 EDT - Codex
+- Completion notes:
+  - Replaced the earlier phase-ledger style `docs/MASCHINE_MK1_OPERATION_GUIDE.md` with a full operator-facing manual covering the shipped hardware model, boot/shutdown, onboarding, all profile groups, LED system, long operations, incident log, admin console, troubleshooting, verification commands, and the State Authority observer-only contract.
+  - Removed stale “later” and “next slice” language from the guide so the document now reads as the current shipped controller contract rather than an implementation progress note.
+  - Reconciled the guide with the current `T18` behavior, including `SHIFT+CONTROL`, tier-3 confirmation, the bounded action set, and the repo-shipped sudoers/install contract.
+- Validation:
+  - `python3 - <<'PY' ...` manual sanity assertions for `T18 Admin Console`, `SHIFT+CONTROL`, `State Authority Sign-Off`, `MAP2_LOGO`, and `RUN FULL UPDATE` -> PASS
+  - `git diff --check docs/MASCHINE_MK1_OPERATION_GUIDE.md` -> PASS
+
+ID: T2352-ph5-subC
+Status: [✓] Done
+Title: Run final hardware verification and State Authority sign-off
+Description:
+- Goal / acceptance criteria: Execute the full real-hardware verification matrix for all profiles, LED/admin flows, boot/shutdown/onboarding, and confirm the Maschine path still honors the State Authority observer-only contract. Acceptance requires a clean verification checklist, any new follow-ups filed immediately, and explicit sign-off notes.
+- Why it matters: Phase 5 is only complete when the shipped contract is proven on the real MK1 and the authority model remains clean.
+- Dependencies: T2352-ph5-subB
+- Estimated effort: High
+- Required outputs: verification evidence, State Authority sign-off note, any follow-up T-numbers, and final push/sign-off notes.
+Assigned to: Codex
+Last updated: 2026-04-18 19:33 EDT - Codex
+- Completion notes:
+  - Updated `app/services/maschine/maschine_mk1_daemon.py`, `app/services/maschine/mk1_usb_transport.py`, and `app/services/maschine/onboarding.py` so the daemon shuts down within systemd's stop budget, the visual shutdown path uses bounded hardware-write timeouts, and onboarding no longer re-saves runtime config on every render poll.
+  - Extended `scripts/maschine_e2e_verify.sh` to stop and restore `map2-maschine.service` around direct USB checks, then ran the full real-hardware pass with `--hardware-catalog --dwell-ms 250 --blink` against the connected MK1.
+  - Confirmed the State Authority observer-only contract remains intact: the daemon still owns hardware I/O and transient UI overlays only, while snapshot, morph, automation, and Brain state remain backend-owned observations.
+- Validation:
+  - `python3 -m pytest -q tests/test_maschine_onboarding.py tests/test_maschine_boot_shutdown.py tests/test_maschine_mk1_daemon.py tests/test_maschine_routes.py tests/test_maschine_lcd_service.py` -> PASS (`43 passed`)
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/maschine/onboarding.py app/services/maschine/mk1_usb_transport.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_onboarding.py tests/test_maschine_boot_shutdown.py` -> PASS
+  - `git diff --check app/services/maschine/onboarding.py app/services/maschine/mk1_usb_transport.py app/services/maschine/maschine_mk1_daemon.py tests/test_maschine_onboarding.py tests/test_maschine_boot_shutdown.py` -> PASS
+  - `sudo -n systemctl restart map2-maschine.service && systemctl is-active map2-maschine.service` -> PASS (`active`)
+  - `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink` -> PASS (`RESULT: OK (0 warning(s))`)
 
 ---
 
@@ -27857,7 +28107,7 @@ Last updated: 2026-04-14 13:30 EDT - Codex
 ---
 
 ID: T2353
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add a guitar-player onboarding entry point to the HomePage landing shell
 Description:
 - Goal / acceptance criteria: Give a first-time operator a discoverable "Play guitar live" entry point on `web/src/app/pages/HomePage.tsx` that walks them from device detection through chain activation in order, so they do not have to already know which sidebar destinations to visit. The entry must link to `/hotone-jogg` (or the active USB interface page), `/snapshot-editor`, and `/metering` as the canonical destinations, and must respect the existing Carbon landing shell pattern (no coaching banners or wizard overlays).
@@ -27866,40 +28116,66 @@ Description:
 - Estimated effort: Medium
 - Required outputs: landing-shell entry card or strip on `HomePage`, route links that respect the current `homeShellNavigation` model, focused `HomePage.test.tsx` coverage, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 19:37 EDT - Codex
+- Completion notes:
+  - Added a new `Play guitar live` entry strip to `web/src/app/pages/HomePage.tsx` so first-time operators now see a three-step path from interface confirmation to snapshot activation to metering without leaving the Carbon landing shell pattern.
+  - The first step resolves to the detected guitar-interface route when possible (`/hotone-jogg` if HoTone is present, otherwise `/edirol-ua1000` when the Edirol is the visible device), while the remaining steps link directly to `/snapshot-editor` and `/metering`.
+  - Layered the new entry strip into `web/src/app/pages/HomePage.landing.css` without reverting the pre-existing brand-image sizing adjustments already present in that file, and extended `web/src/app/pages/HomePage.test.tsx` to cover both rendering and navigation.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/HomePage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check web/src/app/pages/HomePage.tsx web/src/app/pages/HomePage.landing.css web/src/app/pages/HomePage.test.tsx` -> PASS
 
 ---
 
 ID: T2354
-Status: [ ] Todo
+Status: [✓] Done
 Title: Expose a manual audio-interface selector on `/hotone-jogg` and `/edirol-ua1000`
 Description:
 - Goal / acceptance criteria: Add a Carbon `Dropdown` (or equivalent) to `web/src/map2/components/AudioInterfaceControl.tsx` that lists every detected USB audio device from `/api/usb/devices` and lets the operator pick which one the engine should initialize. Persist the selection through the engine init contract so the chosen device wins over "primary" auto-detection. Fall back to the current auto-detected primary when no explicit selection exists.
 - Why it matters: Per review Step 2, the HoTone page today auto-picks the "primary" USB device with no UI override. Operators with both an Edirol UA-1000 and a Hotone Jogg attached cannot deterministically choose which drives the engine from the GUI.
-- Dependencies: T2355
+- Dependencies: None
 - Estimated effort: Medium
 - Required outputs: updated `AudioInterfaceControl` selector UI, engine init wiring that accepts a device identifier, backend route update if `/api/engine/initialize` needs a `device` parameter surface, focused regression coverage, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 21:21 EDT - Codex
+- Completion notes:
+  - Expanded `app/services/usb_audio_manager.py` and `/api/usb/devices` so the interface inventory now includes non-Hotone USB audio interfaces like the Edirol alongside the Hotone path, while preserving the Hotone-specific primary-device contract.
+  - Extended `/api/audio/config` and the shared frontend audio client so `audio_device` is now a first-class persisted config input; when the engine is stopped, setting the device updates the JUCE service config and the next init/start uses that selected device instead of falling back to auto-detection.
+  - Added the manual audio-device selector to `web/src/map2/components/AudioInterfaceControl.tsx`, listing every detected USB audio device from the backend inventory with stable ALSA-backed values.
+- Validation:
+  - `python3 -m pytest -q tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/components/AudioInterfaceControl.test.tsx src/app/pages/HoToneJoGGPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check app/routes/audio.py app/services/usb_audio_manager.py web/src/map2/types.ts web/src/map2/clients/audio.ts web/src/map2/components/AudioInterfaceControl.tsx web/src/map2/components/AudioInterfaceControl.test.tsx tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py docs/PROJECT_WORKLIST.md` -> PASS
 
 ---
 
 ID: T2355
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add a "Start Audio" / "Stop Audio" control to `HoToneJoGGPage` matching the Edirol page pattern
 Description:
 - Goal / acceptance criteria: Add a visible Start/Stop audio control to `web/src/app/pages/HoToneJoGGPage.tsx` (or to `AudioInterfaceControl` when rendered in that page context) that is wired to `POST /api/audio/start` and `POST /api/audio/stop`. Match the existing Edirol reference at `web/src/app/pages/EdirolUA1000Page.tsx:281`, including the toast error handling pattern. Engine state must be reflected correctly (disable Start while running, disable Stop while stopped).
 - Why it matters: Per review Step 4, the HoTone page has no Start button today — operators can reach the page, see the device, and still have no way to begin audio processing from the GUI. This is the highest-friction blocker for the first-time guitar workflow.
-- Dependencies: T2354
+- Dependencies: None
 - Estimated effort: Low
 - Required outputs: Start/Stop button(s) in the HoTone page, mutation plumbing, Toasts integration, focused regression coverage in `HoToneJoGGPage.test.tsx` or `AudioInterfaceControl.test.tsx`, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 21:21 EDT - Codex
+- Completion notes:
+  - Added visible `Start Audio` / `Stop Audio` controls directly inside `web/src/map2/components/AudioInterfaceControl.tsx`, which is the surface rendered by `HoToneJoGGPage`, so HoTone operators now have the same immediate engine control path from the device page that the Edirol page exposes.
+  - Wired those controls through the existing `audioApi.start()` / `audioApi.stop()` routes with the same toast-style success and error feedback pattern used on `EdirolUA1000Page`, including disabled-state handling while start/stop is already in progress.
+  - Start now respects pending device/config changes first, so selecting a different interface and then pressing `Start Audio` initializes the engine against the chosen device instead of stale config.
+- Validation:
+  - `python3 -m pytest -q tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/components/AudioInterfaceControl.test.tsx src/app/pages/HoToneJoGGPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check app/routes/audio.py app/services/usb_audio_manager.py web/src/map2/types.ts web/src/map2/clients/audio.ts web/src/map2/components/AudioInterfaceControl.tsx web/src/map2/components/AudioInterfaceControl.test.tsx tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py docs/PROJECT_WORKLIST.md` -> PASS
 
 ---
 
 ID: T2356
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add an input-channel selector (Mono L / Mono R / Stereo) to `AudioInterfaceControl` and the engine init contract
 Description:
 - Goal / acceptance criteria: Introduce an explicit input-channel-mode control (Mono Left, Mono Right, Stereo) in `web/src/map2/components/AudioInterfaceControl.tsx`, persisted through engine initialization so the JUCE engine knows whether to treat a single input channel as mono source material (duplicated into both graph channels) or to pass the stereo pair through untouched. Update `app/services/juce_engine_service.py` and the audio-engine routing layer so the selection is a real contract, not a UI affordance only.
@@ -27908,12 +28184,24 @@ Description:
 - Estimated effort: High
 - Required outputs: Carbon selector in `AudioInterfaceControl`, engine init and C++ routing changes (JUCE `JuceAudioIO` or the `audioCallback` input copy stage), API contract updates with matching Pydantic validation, regression coverage on both sides, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 20:10 EDT - Codex
+- Completion notes:
+  - Added `input_channel_mode` as a first-class engine/config contract in `app/services/juce_engine_service.py`, `app/routes/audio.py`, and `app/routes/engine.py`, with explicit `mono_left` / `mono_right` / `stereo` validation and persistence through engine initialization.
+  - Extended the native JUCE surface in `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, and `juce-engine/Source/PythonBindings.cpp` so the audio callback now duplicates the selected mono source into the graph input pair or preserves stereo unchanged, and reports the active mode back through the Python binding.
+  - Updated `web/src/map2/components/AudioInterfaceControl.tsx`, `web/src/map2/clients/audio.ts`, and `web/src/map2/types.ts` with the new Carbon selector and API wiring so operators can choose Mono Left, Mono Right, or Stereo from the device page.
+  - Added focused regression coverage in `web/src/map2/components/AudioInterfaceControl.test.tsx`, `tests/test_audio_interface_controls_routes.py`, and `tests/test_juce_engine.py`. Fixed a stale React callback dependency in `AudioInterfaceControl.tsx` during validation so applied settings always send the currently selected input-channel mode.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/components/AudioInterfaceControl.test.tsx src/app/pages/HoToneJoGGPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `python3 -m pytest -q tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py tests/test_juce_engine.py -k "input_channel_mode or audio_config_route_applies_audio_device or includes_non_hotone_usb_audio_devices"` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio.py app/routes/engine.py app/services/juce_engine_service.py tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py tests/test_juce_engine.py` -> PASS
+  - `git diff --check web/src/map2/components/AudioInterfaceControl.tsx web/src/map2/components/AudioInterfaceControl.test.tsx web/src/map2/clients/audio.ts web/src/map2/types.ts app/routes/audio.py app/routes/engine.py app/services/juce_engine_service.py juce-engine/Source/Map2AudioEngine.h juce-engine/Source/Map2AudioEngine.cpp juce-engine/Source/PythonBindings.cpp tests/test_audio_interface_controls_routes.py tests/test_usb_audio_manager.py tests/test_juce_engine.py docs/PROJECT_WORKLIST.md` -> PASS
 
 ---
 
 ID: T2357
-Status: [ ] Todo
+Status: [✓] Done
 Title: Clarify the Snapshot "Publish" step so first-time operators understand it activates the live chain
 Description:
 - Goal / acceptance criteria: Update the user-facing language and supporting copy on `web/src/app/pages/SnapshotPublishPage.tsx` (and the Publish entry points in `SnapshotEditorPageContent.tsx` / `SnapshotDeployModal.tsx` / `SnapshotModalContent.tsx`) so an operator can tell at a glance that "publishing" is what makes the chain go live for audio. The language must stay consistent with the existing snapshot vocabulary rather than fork a new term, and must not introduce coaching/wizard banners — a Carbon `Tag` or short `shortLabel` style hint is the target.
@@ -27922,12 +28210,20 @@ Description:
 - Estimated effort: Low
 - Required outputs: copy updates on the Publish page and associated snapshot dialogs, optional short-label tag additions, focused regression coverage to prove the label/tag renders, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 21:04 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/SnapshotPublishPage.tsx` so the hero, Workflow 5, and wizard Step 4 now state directly that publish is the step that makes the snapshot live, using short Carbon tag hints instead of a separate wizard banner.
+  - Reconciled the publish entry points in `web/src/app/pages/SnapshotEditorPageContent.tsx`, `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`, `web/src/app/components/snapshots/SnapshotModalContent.tsx`, and `web/src/app/components/snapshots/SnapshotDeployModal.tsx` so operators now see consistent "publish makes it live" / "deploy copies it" guidance across editor, library, and deploy surfaces.
+  - Extended the focused Jest coverage in `SnapshotPublishPage.test.tsx`, `SnapshotChainManagementCard.test.tsx`, `SnapshotModalContent.test.tsx`, and `SnapshotDeployModal.test.tsx` to prove the new hints render on the real UI paths.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotPublishPage.test.tsx src/app/components/snapshots/SnapshotModalContent.test.tsx src/app/components/snapshots/SnapshotDeployModal.test.tsx src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check web/src/app/pages/SnapshotPublishPage.tsx web/src/app/pages/SnapshotEditorPageContent.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx web/src/app/components/snapshots/SnapshotModalContent.tsx web/src/app/components/snapshots/SnapshotDeployModal.tsx web/src/app/pages/SnapshotPublishPage.test.tsx web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.test.tsx web/src/app/components/snapshots/SnapshotModalContent.test.tsx web/src/app/components/snapshots/SnapshotDeployModal.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
 
 ---
 
 ID: T2358
-Status: [ ] Todo
+Status: [✓] Done
 Title: Inline a compact VU strip on `/hotone-jogg` (and other device pages) so signal presence is visible without leaving the page
 Description:
 - Goal / acceptance criteria: Embed a compact input/output VU strip directly inside `AudioInterfaceControl` (or as a sibling panel on `HoToneJoGGPage` / `EdirolUA1000Page`) that reuses the existing metering data path already broadcast to `/metering`. The strip must be read-only, Carbon-styled, and respect the 30 fps meter broadcast floor from CLAUDE.md's Service Polling Floors section.
@@ -27936,12 +28232,22 @@ Description:
 - Estimated effort: Medium
 - Required outputs: shared small-footprint VU component (or reuse of an existing one under `web/src/app/components/Metering/`), integration point on the device page, focused regression coverage, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 20:20 EDT - Codex
+- Completion notes:
+  - Added the shared compact live-meter surface in `web/src/map2/components/CompactVuStrip.tsx` and `web/src/map2/components/CompactVuStrip.css`, reusing the existing `useVuMeters` hook and `AudioMeter` primitive so the device page stays on the same live metering transport and 30 fps polling floor as `/metering`.
+  - Integrated the strip directly into `web/src/map2/components/AudioInterfaceControl.tsx` so `/hotone-jogg` and other device pages that reuse the control now expose read-only input/output signal confirmation inline instead of forcing the operator to leave the page.
+  - Reconciled the regressed `AudioInterfaceControl.tsx` back onto the already-landed audio-device, input-channel-mode, and start/stop contract while landing the strip, so the device page once again matches the backend/API surface documented in `T2355` and `T2356`.
+  - Extended `web/src/map2/components/AudioInterfaceControl.test.tsx` to prove the inline live-signal strip renders on the real control surface alongside the configuration flow.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/components/AudioInterfaceControl.test.tsx src/app/pages/HoToneJoGGPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check web/src/map2/components/AudioInterfaceControl.tsx web/src/map2/components/CompactVuStrip.tsx web/src/map2/components/CompactVuStrip.css web/src/map2/components/AudioInterfaceControl.css web/src/map2/components/AudioInterfaceControl.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
 
 ---
 
 ID: T2359
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add software input-gain and output-gain controls to the engine API and device page
 Description:
 - Goal / acceptance criteria: Expose explicit input-gain and output-gain controls as a first-class part of the audio engine API (`app/routes/engine.py` or `app/routes/audio.py`) and surface them in `AudioInterfaceControl`. These must be separate from plugin-internal trim (NAM input, limiter threshold, etc.) so the operator can set I/O levels independently of the chain. Values must persist through engine restart via the existing config authority model (see CLAUDE.md Configuration Authority Model).
@@ -27950,4 +28256,179 @@ Description:
 - Estimated effort: High
 - Required outputs: backend API routes and Pydantic models, JUCE engine gain-stage hooks at the input copy and output copy stages, `AudioInterfaceControl` controls, config-authority persistence, regression coverage on both stacks, and completion notes with validation.
 Assigned to: Codex
-Last updated: 2026-04-18 EDT - Codex
+Last updated: 2026-04-18 20:27 EDT - Codex
+- Completion notes:
+  - Added explicit callback-path gain staging in `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, and `juce-engine/Source/PythonBindings.cpp` with bounded `input_gain_db` / `output_gain_db` controls, applied respectively at the input-copy stage and the final output stage, and exposed through system-info/binding getters and setters.
+  - Extended the persisted engine config contract in `app/services/juce_engine_service.py`, `app/routes/audio.py`, and `app/routes/engine.py` so input/output gains survive initialization, can be changed live through `/api/audio/config`, and appear in the device-page status payload.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/clients/audio.ts`, and `web/src/map2/components/AudioInterfaceControl.tsx` so the device page now exposes read-only-safe software input/output gain sliders alongside the existing audio-device and input-channel controls.
+  - Added focused regression coverage in `tests/test_audio_interface_controls_routes.py`, `tests/test_juce_engine.py`, and `web/src/map2/components/AudioInterfaceControl.test.tsx` for the new gain contract and UI wiring.
+- Validation:
+  - `cmake --build juce-engine/build --target map2_audio_engine -j4` -> PASS
+  - `python3 -m pytest -q tests/test_audio_interface_controls_routes.py tests/test_juce_engine.py -k "input_gain_db or output_gain_db or audio_config_route_applies_audio_device or input_channel_mode"` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce_engine_service.py app/routes/audio.py app/routes/engine.py tests/test_audio_interface_controls_routes.py tests/test_juce_engine.py` -> PASS
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/map2/components/AudioInterfaceControl.test.tsx src/app/pages/HoToneJoGGPage.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check juce-engine/Source/Map2AudioEngine.h juce-engine/Source/Map2AudioEngine.cpp juce-engine/Source/PythonBindings.cpp app/services/juce_engine_service.py app/routes/audio.py app/routes/engine.py web/src/map2/types.ts web/src/map2/clients/audio.ts web/src/map2/components/AudioInterfaceControl.tsx web/src/map2/components/AudioInterfaceControl.css web/src/map2/components/AudioInterfaceControl.test.tsx tests/test_audio_interface_controls_routes.py tests/test_juce_engine.py docs/PROJECT_WORKLIST.md` -> PASS
+
+---
+
+ID: T2360
+Status: [✓] Done
+Title: Overhaul the Stage Notification Panel into a FOH-grade realtime Live Audio + Snapshot overview
+Description:
+- Goal / acceptance criteria: Transform the existing Stage Notification Panel in `web/src/app/components/Toasts.tsx` and `web/src/app/components/Toasts.css` from a visually inert banner into an operator-grade realtime overview for Live Audio + Snapshots on the active node. The redesigned panel must be glanceable within one second for a FOH live engineer, legible from ~6 ft, and use a 4-card row layout (Snapshot | Audio Meters | Vitals | Warnings) at ~5-7 rem height. It replaces the current expanded banner wholesale but preserves `NotificationProvider` / `NotificationContext` / `useNotifications()` / `useToasts()` public contracts, the severity priority ladder, route-hide on `/snapshot-editor`, and the React-Toastify transient toast path. Panel must only render when a live snapshot or alert exists; when idle, a tiny "Node idle" bottom-right heartbeat rail remains. The node alert bridge (`NodeAlertToast.tsx`), system Alert hook (`useAlertNotifications.tsx` / `.css`), and `BackendConnectionMonitor` must not be modified. Single PR, no feature flag, no per-user customization, direct replacement. Ship-ready means `npm --prefix web run typecheck`, `npm --prefix web run build`, and the extended Toasts test suite all pass.
+- Why it matters: The shipped stage notification surface from T2351 proves the banner contract but does not yet convey any realtime audio health; operators cannot confirm audio flow, xrun count, CPU headroom, clipping, silence, or sync loss without leaving the current page. For an FOH operator the panel should function like a broadcast truck's master strip: always-truthful audio heartbeat + snapshot identity + anomaly surface, in one glance.
+- Dependencies: T2351 (stage notification runtime must already be in place)
+- Estimated effort: High
+- Required outputs: rewritten `StageNotificationViewport` with the 4-card row layout, `StereoMeter` and `Sparkline` child components, idle heartbeat rail, disconnected overlay, cluster-summary substitution for multi-node live, silence-detection and clip-latch logic, CPU/xrun/channel/block vitals wired from existing live-state + metering sources (investigating `juce_engine_service`, `snapshot_runtime_service`, and any existing metering endpoint first; backend payload extensions only if genuinely absent), Carbon support-token severity palette, accent-color LIVE pulse, `prefers-reduced-motion` handling that freezes sparklines + pulse but keeps meters, `Esc` collapse keybinding, extended `Toasts.test.tsx` covering card rendering, idle state, silence, clipping, reduced-motion, route-hide, and disconnected overlay, build + typecheck validation, and completion notes with validation.
+Assigned to: Codex
+Last updated: 2026-04-18 21:50 EDT - Codex
+- Notes:
+  - Plan file of record: `/home/mm/.claude/plans/help-me-make-the-nested-duckling.md` (final worklist captured from a 50-question FOH discovery pass; approved by the operator on 2026-04-18).
+  - Scope boundaries are explicit. Edit: `web/src/app/components/Toasts.tsx`, `web/src/app/components/Toasts.css`, `web/src/app/components/Toasts.test.tsx`, `web/src/app/utils/snapshotActivationToast.ts`, and new child components under `web/src/app/components/StageNotification/` if needed. Do NOT touch: `web/src/app/hooks/useAlertNotifications.tsx`, `web/src/app/hooks/useAlertNotifications.css`, `web/src/app/components/NodeAlerts/NodeAlertToast.tsx`, the `BackendConnectionMonitor` wiring in `web/src/app/App.tsx`, or the React-Toastify transient toasts.
+  - Design language: flat dark with sharp accent colors, Carbon support-* tokens for severity, inherited app font with `font-variant-numeric: tabular-nums` + weight 600 for numerics, dashboard-card aesthetic inspired by operator-reference dribbble/medium images.
+  - Data cadence: keep existing 5 s `SnapshotRuntimeLiveState` polling; meters run at 20-30 Hz from the existing metering endpoint (fall back to 10 Hz if the endpoint cannot sustain higher rate); in-memory 60 s ring buffer at ~1 Hz powers the sparklines without backend changes.
+  - Snapshot card shows program number (large) + snapshot name + a text-glyph block-chain thumbnail rendered below, with short revision hash + short node id by default and a click-to-copy control for the full values.
+- Completion notes:
+  - Finished the FOH warnings closeout in `web/src/app/components/Toasts.tsx` by specializing activation-progress, activation-failure, audio-driver-loss, and AVB-sync warning states, adding the 60-second severity history strip plus clip badge, and keeping cluster-summary/disconnected handling inside the same stage surface runtime without touching the protected alert producers.
+  - Added testable reduced-motion plumbing and subtle sparkline motion in `web/src/app/components/Toasts.tsx` / `web/src/app/components/Toasts.css`, while preserving live meter motion and the already-landed `Esc` collapse/dismiss behavior.
+  - Extended `web/src/app/components/Toasts.test.tsx` so the stage surface now has focused coverage for activation failure, driver loss, AVB sync warnings, reduced motion, clip-badge duplication, and the existing route-hide / disconnected / collapse flows.
+  - Manual hallway verification of readability from ~6 ft was not possible from this headless terminal session; automated validation passed, and the remaining risk is limited to operator-distance visual tuning rather than logic correctness.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check -- web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
+
+ID: T2360-subA
+Status: [✓] Done
+Title: Shell rewrite - restructure StageNotificationViewport into a 4-card row + idle heartbeat rail
+Description:
+- Goal / acceptance criteria: Replace the current primary/secondary expanded banner layout with a 4-card grid (`grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.9fr)`) constrained to ~5-7 rem total height. Preserve severity sort + takeover fade-in + route-hide on `/snapshot-editor`. Add a new "Node idle" heartbeat pill that renders bottom-right when no live snapshot and no warnings exist. Preserve `NotificationProvider`, `NotificationContext`, `useNotifications`, `useToasts`, and the existing `NotificationRecord` shape so downstream producers keep working unchanged.
+- Why it matters: Every subsequent card phase depends on a known container that reserves the right vertical budget and maintains the public API contract for the notification runtime.
+- Dependencies: T2360
+- Estimated effort: Medium
+- Required outputs: updated `web/src/app/components/Toasts.tsx` layout, updated `web/src/app/components/Toasts.css` grid + rail styles, adjustments in `web/src/app/layout/AppShell.css` CSS-variable reservation to match the shorter height budget, and the first batch of extensions in `web/src/app/components/Toasts.test.tsx` covering rendering the 4-card row and the idle rail.
+Assigned to: Codex
+Last updated: 2026-04-18 20:39 EDT - Codex
+- Completion notes:
+  - Replaced the old primary/secondary banner shell in `web/src/app/components/Toasts.tsx` with a compact 4-card viewport that preserves the existing notification runtime contracts, takeover priority behavior, live-snapshot collapse rail, and route hide on `/snapshot-editor`.
+  - Reworked `web/src/app/components/Toasts.css` to the lower-height dashboard shell and added the new bottom-right idle heartbeat rail used when no live snapshot and no stage alert exist.
+  - Updated `web/src/app/layout/AppShell.css` so the stage-notification reserve height animates with the shorter shell budget instead of snapping.
+  - Extended `web/src/app/components/Toasts.test.tsx` with coverage for the 4-card row render path and the new idle rail state, while keeping the existing restore-on-dismiss behavior intact.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx web/src/app/layout/AppShell.css docs/PROJECT_WORKLIST.md` -> PASS
+
+ID: T2360-subB
+Status: [✓] Done
+Title: Snapshot card - program number + name + text-glyph block-chain thumbnail + copy controls
+Description:
+- Goal / acceptance criteria: Build the leftmost card as the snapshot identity tile. Display the program number and snapshot name with tabular-nums weight 600 typography, a text-nerd-glyph block-chain row beneath (derived from `SnapshotRuntimeLiveState.paths` / chain data), short-form revision hash (7 chars) and short node id by default, with an accessible copy-button control that reveals / copies the full values. Keep the existing "Open in editor" arrow only (no rollback / A-B / save-as shortcuts in v1). Add a LIVE pulse dot that uses the theme accent color and freezes under `prefers-reduced-motion`.
+- Why it matters: The snapshot card is the operator's first glance check for which rig is live. Replacing the long-hash meta chips with a glyph-driven signal-flow thumbnail gives them signal-chain context without opening the editor.
+- Dependencies: T2360-subA
+- Estimated effort: Medium
+- Required outputs: snapshot card implementation in `Toasts.tsx` (or a new child under `web/src/app/components/StageNotification/`), matching CSS, optional small helper for glyph-ifying chain blocks, and focused test coverage for the identity renderer (program number, name, glyph row, short/full hash reveal, live-dot pulse state).
+Assigned to: Codex
+Last updated: 2026-04-18 21:06 EDT - Codex
+- Completion notes:
+  - Replaced the placeholder snapshot tile in `web/src/app/components/Toasts.tsx` with the real program/name identity card, including the LIVE pulse indicator, the text-glyph path thumbnail, and the short-form revision/node metadata row.
+  - Added the click-to-copy identity affordance that expands the full revision and node id after copy while preserving the existing notification provider contracts and the stage-surface route action.
+  - Reworked `web/src/app/components/Toasts.css` so the snapshot card now has its own visual treatment, toolbar clearance, pulse animation, and identity/glyph/copy layouts inside the lower-height 4-card shell.
+  - Extended `web/src/app/components/Toasts.test.tsx` to cover the program number, glyph row, live pulse, and full-identity reveal/copy flow, while keeping the takeover/dismiss and idle-rail assertions intact.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx web/src/app/layout/AppShell.css docs/PROJECT_WORKLIST.md` -> PASS
+
+ID: T2360-subC
+Status: [✓] Done
+Title: Audio Meters card - combined thermometer bar, peak-hold, silence detection, clip latch
+Description:
+- Goal / acceptance criteria: Build a horizontal combined stereo "thermometer" meter as the second card, with L and R bars, a peak dot riding on top, a peak-hold marker that decays over ~1.5 s, scale marks at -20 / -6 / 0 dBFS, and a soft rolling audio-level history strip behind the bar covering the last ~10 s. Implement silence detection (flash amber if level < -60 dBFS for >3 s while live) and a latched red clip dot when level >= 0 dBFS. The clip latch must also increment a clip counter consumed by the Warnings card. Investigate the existing metering source (likely in `juce_engine_service.py` or an existing `/api/audio/meter`-style endpoint) before wiring; target 20-30 Hz poll with a 10 Hz fallback. Meter motion must remain under `prefers-reduced-motion` because it carries audio truth.
+- Why it matters: The meter is the primary real-time heartbeat - the one signal that proves audio is flowing. Silence detection and clip latch turn it into a proactive alert surface, not just a passive gauge.
+- Dependencies: T2360-subA
+- Estimated effort: High
+- Required outputs: new `StereoMeter` child component, metering client call (reusing or extending existing frontend hook), silence / clip detection logic with a small local context or store so the Warnings card can read the clip count, CSS for the bar + history strip, and regression coverage for meter rendering, silence trigger, clip latch, and reduced-motion behavior.
+Assigned to: Codex
+Last updated: 2026-04-18 21:06 EDT - Codex
+- Completion notes:
+  - Replaced the placeholder Audio card in `web/src/app/components/Toasts.tsx` with a live stereo master-output meter fed by the existing `useVuMeters` websocket/polling hook, including dual L/R thermometer lanes, peak markers, peak-hold markers, and a rolling history strip behind the bar.
+  - Added live clip-latch accounting and a real silence detector (>3 s below `-60 dBFS`) in the stage viewport runtime so the audio card and warnings card both read from the same truth source instead of duplicating meter logic.
+  - Extended `web/src/app/components/Toasts.css` with the dedicated audio-lane shell, scale marks, history bars, hold markers, and status chips that fit inside the compact 4-card operator shell.
+  - Added focused regression coverage in `web/src/app/components/Toasts.test.tsx` for the meter render path, silence detection, and clip-latch warning path.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx web/src/app/hooks/useAlertNotifications.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
+
+ID: T2360-subD
+Status: [✓] Done
+Title: Vitals card - big-number CPU, xrun counter, sample rate / buffer, channels / blocks with sparklines
+Description:
+- Goal / acceptance criteria: Build the third card with the CPU% of the audio engine displayed as a big tabular-num value above a 60 s sparkline; tint the card amber at >=70 % and red at >=90 %. Add an xrun counter (since snapshot activation) with sparkline tick marks over time - investigate existing xrun sources first (likely in `juce_engine_service.py` or `snapshot_runtime_service.py`); only extend the live-state payload if the data is genuinely missing. Also render compact sample-rate + buffer-size (`48k / 64`) and active-channel / block counts from `SnapshotRuntimeLiveState.paths` / `chains`. Implement a ~1 Hz in-memory ring buffer to feed the sparklines without new backend polling.
+- Why it matters: CPU headroom, xrun count, and channel/block counts are the vitals that tell a FOH engineer the node is safe to push. Sparklines show trend instead of just the current number, which prevents false calm on a climbing-but-still-green metric.
+- Dependencies: T2360-subA
+- Estimated effort: High
+- Required outputs: new `Sparkline` child component (inline SVG, accepts `number[]`), vitals card implementation, ring-buffer hook, backend payload extension only if required (with matching Python-side test coverage), CSS for threshold tinting, and tests covering the sparkline data path, threshold tinting, and missing-data fallback.
+Assigned to: Codex
+Last updated: 2026-04-18 21:06 EDT - Codex
+- Completion notes:
+  - Replaced the placeholder Vitals card in `web/src/app/components/Toasts.tsx` with live CPU/xrun telemetry driven by the existing `useCPUMetrics` hook, including the big-number CPU readout, CPU sparkline, xrun trend sparkline, and threshold tinting at 70%/90%.
+  - Wired the card to `audioApi.getStatus()` for sample-rate and buffer-size detail, and derived the live path/block counts from the existing snapshot payload so the panel now exposes the active rig footprint without additional backend changes.
+  - Added the shared inline SVG sparkline renderer and the vitals-card CSS treatment in `web/src/app/components/Toasts.css`, keeping the card readable within the FOH shell height budget.
+  - Updated `web/src/app/hooks/useAlertNotifications.test.tsx` and `web/src/app/components/Toasts.test.tsx` so the new react-query-backed telemetry path is covered under the shared notification provider.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `git diff --check web/src/app/components/Toasts.tsx web/src/app/components/Toasts.css web/src/app/components/Toasts.test.tsx web/src/app/hooks/useAlertNotifications.test.tsx docs/PROJECT_WORKLIST.md` -> PASS
+
+ID: T2360-subE
+Status: [✓] Done
+Title: Warnings card + edge cases - "All clear" state, severity collapse, activation / driver / AVB / disconnected handling
+Description:
+- Goal / acceptance criteria: Build the fourth card. When there are no warnings, render a `support-success`-tinted "All clear" state. When warnings exist, show the top severity headline, an "N more" count, and severity-colored sparkline tick marks over the last 60 s, plus the clip counter badge fed from the Meters card. Handle four key edge cases: snapshot activation in-progress (loading bar + current -> target names), snapshot activation failure (reuse `buildSnapshotActivationFailureStageToast()`), audio driver lost / device unplugged (full-panel red takeover), and AVB clock drift / sync loss (amber card state). When backend connectivity is lost, freeze the last-known panel state and overlay a red "DISCONNECTED" diagonal banner. When multiple nodes are live across the cluster, replace the snapshot card with a cluster-level summary ("N nodes live" + list).
+- Why it matters: Warnings + edge cases are where the panel earns its keep during a show - silent failure modes (xrun storms, driver drops, sync loss) must be impossible to miss, and the cluster-summary substitution preserves situational awareness when more than one node is live.
+- Dependencies: T2360-subB, T2360-subC, T2360-subD
+- Estimated effort: High
+- Required outputs: warnings card implementation, edge-case state machine wired to existing `NotificationRecord` classification, cluster-summary substitution logic gated on multi-node live state, disconnected overlay styling, and regression coverage for each state.
+Assigned to: Codex
+Last updated: 2026-04-18 21:50 EDT - Codex
+- Notes:
+  - Started as part of the `subC`/`subD` runtime pass. The current implementation in `web/src/app/components/Toasts.tsx` already ships the `All clear` baseline, clip/silence/xrun aggregation, runtime-metric warning headlines, multi-node cluster-summary substitution, and the red disconnected takeover banner with focused coverage in `web/src/app/components/Toasts.test.tsx`.
+- Completion notes:
+  - Finished the warnings card specialization in `web/src/app/components/Toasts.tsx` by reusing `buildSnapshotActivationFailureStageToast()` for failed activations, adding explicit operator summaries for activation-in-progress, audio-driver loss, and AVB sync warnings, and promoting driver-loss cases into the same full-panel critical surface tone.
+  - Added the 60-second severity history strip and persistent clip badge in `web/src/app/components/Toasts.css` / `web/src/app/components/Toasts.tsx`, so the fourth card now exposes both current headline severity and recent warning density instead of a flat text block.
+  - Extended `web/src/app/components/Toasts.test.tsx` with focused regressions for activation failure, driver-loss, and AVB-sync classification while preserving the existing disconnected overlay and cluster-summary coverage.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+
+ID: T2360-subF
+Status: [✓] Done
+Title: Motion, a11y, keybindings, and final validation pass
+Description:
+- Goal / acceptance criteria: Implement the subtle ambient motion model (LIVE dot pulse, slow sparkline scroll) with a `prefers-reduced-motion` guard that freezes sparklines + pulse but keeps the audio meters animating. Add an `Esc` keybinding to collapse or dismiss the panel as the only keyboard shortcut for v1. Confirm that no audible alerts are emitted (FOH uses the PA). Finish extending `web/src/app/components/Toasts.test.tsx` with: card rendering at each severity, idle rail empty state, meter silence detection triggers warning, clip latch increments the warnings count, reduced-motion freezes sparklines + pulse but not meters, route-hide on `/snapshot-editor`, and disconnected overlay on backend-unreachable. Run `npm --prefix web run typecheck`, `npm --prefix web run build`, and the focused test suite; perform the manual hallway-test verification (snapshot name, LIVE dot, level meter readable from ~6 ft) described in the plan file.
+- Why it matters: Motion + a11y + final validation are the pieces that turn a working layout into an "amazing", ship-ready surface - and the test matrix is what protects against regression once the larger worklist keeps moving.
+- Dependencies: T2360-subE
+- Estimated effort: Medium
+- Required outputs: motion + reduced-motion CSS / effect plumbing, `Esc` keybinding in the provider, full Toasts test coverage additions, clean typecheck + build output, and completion notes listing the commands run and their results.
+Assigned to: Codex
+Last updated: 2026-04-18 21:50 EDT - Codex
+- Notes:
+  - Started during the `subE` runtime pass. `Esc` collapse/dismiss handling is now live in `web/src/app/components/Toasts.tsx`, and the focused test suite covers that keyboard path in `web/src/app/components/Toasts.test.tsx`.
+- Completion notes:
+  - Added reduced-motion-aware stage-surface plumbing so the LIVE pulse dot and sparkline motion can freeze under `prefers-reduced-motion` while the audio meters remain active, and kept the existing `Esc` collapse/dismiss path intact in `web/src/app/components/Toasts.tsx` / `web/src/app/components/Toasts.css`.
+  - Extended `web/src/app/components/Toasts.test.tsx` with explicit reduced-motion assertions alongside the final regression sweep for clip counting, idle rail, route-hide, disconnected overlay, and collapse behavior.
+  - The automated ship gate passed; the manual hallway readability check from ~6 ft could not be performed from this terminal-only session and remains the only unexecuted validation note.
+- Validation:
+  - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS

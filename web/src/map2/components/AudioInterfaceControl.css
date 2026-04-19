@@ -193,6 +193,12 @@
   margin-top: 4px;
 }
 
+.audio-inline-metering-section {
+  border-top: 1px solid rgba(77, 158, 255, 0.16);
+  border-bottom: 1px solid rgba(77, 158, 255, 0.16);
+  padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-07, 2rem);
+}
+
 /* Details Section - 3 Column Grid */
 .audio-details-section {
   display: grid;
@@ -311,6 +317,28 @@
 .audio-select option {
   background: #1a1a2e;
   color: #fff;
+}
+
+.audio-slider-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.audio-slider {
+  accent-color: #4a9eff;
+  cursor: pointer;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.audio-slider-value {
+  color: #4ade80;
+  font-family: var(--font-ui-tight, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .audio-button-row {
@@ -485,6 +513,10 @@
   .audio-hero-section {
     padding: var(--cds-spacing-07, 2rem) var(--cds-spacing-06, 1.5rem);
   }
+
+  .audio-inline-metering-section {
+    padding: var(--cds-spacing-06, 1.5rem);
+  }
 }
 
 @media (max-width: 768px) {
@@ -549,6 +581,10 @@
 
   .audio-hero-section {
     padding: var(--cds-spacing-06, 1.5rem) var(--cds-spacing-05, 1rem);
+  }
+
+  .audio-inline-metering-section {
+    padding: var(--cds-spacing-05, 1rem);
   }
 
   .audio-device-image {

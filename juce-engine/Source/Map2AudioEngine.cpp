@@ -1065,6 +1065,8 @@ Map2AudioEngine::SystemInfo Map2AudioEngine::getSystemInfo() const {
     info.sampleRate = sampleRate_;
     info.bufferSize = bufferSize_;
     info.audioDevice = audioIO_.getCurrentDeviceName();
+    info.inputGainDb = inputGainDb_.load(std::memory_order_acquire);
+    info.outputGainDb = outputGainDb_.load(std::memory_order_acquire);
     info.lv2Path = lv2Path_;
     info.running = initialized_;
     info.audioRunning = audioRunning_;
@@ -2151,17 +2153,39 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
                                     processSamples);
     juce::MidiBuffer midiBuffer;
 
-    // Copy input to buffer (overwrites all channels — no need to clear first)
-    for (int ch = 0; ch < copyInputChannels; ++ch) {
-        if (inputs[ch] != nullptr) {
-            buffer.copyFrom(ch, 0, inputs[ch], processSamples);
-        } else {
-            buffer.clear(ch, 0, processSamples);  // Only clear if input is null
+    if (inputChannelMode_ == InputChannelMode::Stereo) {
+        // Copy input to buffer (overwrites all channels — no need to clear first)
+        for (int ch = 0; ch < copyInputChannels; ++ch) {
+            if (inputs[ch] != nullptr) {
+                buffer.copyFrom(ch, 0, inputs[ch], processSamples);
+            } else {
+                buffer.clear(ch, 0, processSamples);  // Only clear if input is null
+            }
+        }
+        // Clear any extra channels beyond input count
+        for (int ch = copyInputChannels; ch < processChannels; ++ch) {
+            buffer.clear(ch, 0, processSamples);
+        }
+    } else {
+        const int sourceChannel = inputChannelMode_ == InputChannelMode::MonoRight ? 1 : 0;
+        const int monoCopyChannels = std::min(processChannels, 2);
+        const bool sourceAvailable = sourceChannel < safeInputChannels && inputs[sourceChannel] != nullptr;
+
+        for (int ch = 0; ch < monoCopyChannels; ++ch) {
+            if (sourceAvailable) {
+                buffer.copyFrom(ch, 0, inputs[sourceChannel], processSamples);
+            } else {
+                buffer.clear(ch, 0, processSamples);
+            }
+        }
+        for (int ch = monoCopyChannels; ch < processChannels; ++ch) {
+            buffer.clear(ch, 0, processSamples);
         }
     }
-    // Clear any extra channels beyond input count
-    for (int ch = copyInputChannels; ch < processChannels; ++ch) {
-        buffer.clear(ch, 0, processSamples);
+
+    const float inputGainLinear = inputGainLinear_.load(std::memory_order_acquire);
+    if (std::abs(inputGainLinear - 1.0f) > 0.0001f) {
+        buffer.applyGain(inputGainLinear);
     }
 
     if (graphCrossfadeInputBuffer_.getNumChannels() >= processChannels
@@ -2281,6 +2305,11 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 
     applyTopologyTransitionFade(buffer, processSamples);
 
+    const float outputGainLinear = outputGainLinear_.load(std::memory_order_acquire);
+    if (std::abs(outputGainLinear - 1.0f) > 0.0001f) {
+        buffer.applyGain(outputGainLinear);
+    }
+
     // Keep the house mix on outputs 1/2 and mirror an isolated solo source
     // to the configured monitoring pair when one branch is soloed.
     int monitoringOutputStart = monitoringOutputIndex_.load(std::memory_order_acquire);
@@ -2319,6 +2348,9 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
             processChannels,
             processSamples);
         if (buildSoloMonitorMix(monitorBuffer, processSamples)) {
+            if (std::abs(outputGainLinear - 1.0f) > 0.0001f) {
+                monitorBuffer.applyGain(outputGainLinear);
+            }
             const int availableMonitoringChannels = std::max(0, safeOutputChannels - monitoringOutputStart);
             const int monitorCopyChannels = std::min(processChannels, availableMonitoringChannels);
             for (int ch = 0; ch < monitorCopyChannels; ++ch) {
@@ -2728,6 +2760,34 @@ void Map2AudioEngine::setNumInputChannels(int channels) {
 
 void Map2AudioEngine::setNumOutputChannels(int channels) {
     numOutputChannels_ = std::max(1, std::min(channels, 32));  // Clamp to 1-32
+}
+
+void Map2AudioEngine::setInputChannelMode(int mode) {
+    switch (mode) {
+        case 0:
+            inputChannelMode_ = InputChannelMode::MonoLeft;
+            break;
+        case 1:
+            inputChannelMode_ = InputChannelMode::MonoRight;
+            break;
+        default:
+            inputChannelMode_ = InputChannelMode::Stereo;
+            break;
+    }
+}
+
+bool Map2AudioEngine::setInputGainDb(float db) {
+    const float normalizedDb = std::clamp(db, -24.0f, 24.0f);
+    inputGainDb_.store(normalizedDb, std::memory_order_release);
+    inputGainLinear_.store(juce::Decibels::decibelsToGain(normalizedDb), std::memory_order_release);
+    return true;
+}
+
+bool Map2AudioEngine::setOutputGainDb(float db) {
+    const float normalizedDb = std::clamp(db, -24.0f, 24.0f);
+    outputGainDb_.store(normalizedDb, std::memory_order_release);
+    outputGainLinear_.store(juce::Decibels::decibelsToGain(normalizedDb), std::memory_order_release);
+    return true;
 }
 
 bool Map2AudioEngine::setMonitoringOutputIndex(int index) {

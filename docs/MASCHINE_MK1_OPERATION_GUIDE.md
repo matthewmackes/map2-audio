@@ -1,226 +1,629 @@
 # Maschine MK1 Operation Guide
 
-## Status
+## Overview
 
-This guide now covers the shipped Phase 1 foundation plus the full Phase 2 profile catalog:
+The Native Instruments Maschine MK1 is the primary headless control surface for the MAP2 Audio Platform. In MAP2 it is not treated as a local authority. The daemon renders controller state by observing backend-owned services, and all snapshot, transport, automation, Brain, and admin decisions remain rooted in platform services.
 
-- Retained-mode dual-LCD renderer with damage tracking and double-buffered frame ownership
-- Font roster: Spleen, Cozette, Tamsyn, Terminus, Unscii, Nerd Font Mono, plus the initial MAP2 Display 32 face
-- All Phase 1 and Phase 2 LCD profiles (`T1` through `T25`, with `T18` intentionally hidden from normal cycling)
-- `/maschine` as the canonical web surface with the embedded hardware-layout and MIDI-map editor
+This guide describes the shipped MK1 contract as of `2026-04-18`:
 
-Phase 3 remains pending. Phase 2 now ships the category-aware cycler, profile-switch OSD, and catalog-wide verification path.
+- retained-mode dual LCD rendering at `255x64` per panel
+- all `T1` through `T25` LCD profiles, including hidden `T18 Admin Console`
+- LED brightness tiers, animation rules, profile signatures, inspection overlays, and choreography
+- first-run onboarding, boot/shutdown ceremony, screensaver, incident logging, and long-operation feedback
+- controller-native admin actions with bounded sudo-backed system control
+- the merged `/maschine` web surface with embedded hardware layout and MIDI-map editing
 
-The first Phase 3 bundle is also now in place:
+## Operating Model
 
-- 5-tier LED brightness semantics: `off`, `dim`, `mid`, `bright`, `full`
-- 25-entry LED animation catalog and per-profile signature mapping
-- Profile-entry pad overlays plus initial backend/device heartbeat LEDs in the daemon
+- The MK1 is an observer and command surface. It does not compute snapshot state, morph state, Brain state, or automation truth locally.
+- The backend is authoritative for profile render data, transport state, service status, update status, and admin action outcomes.
+- The daemon owns only hardware I/O, profile selection state, temporary overlays, and gesture dispatch.
+- If backend and controller disagree, trust backend APIs and retained incident-log breadcrumbs first.
 
-## Phase 1 Profiles
+## Hardware Surface
 
-### T1 CTRL
+### Displays
 
-- Purpose: main control view for snapshot identity, block selection, and primary parameter feedback.
-- Left LCD: live snapshot name and the current chain/block roster.
-- Right LCD: selected block, selected parameter, and the current progress/meter band.
+- Left LCD: list, roster, or overview panel.
+- Right LCD: focused detail, status, or confirmation panel.
+- Both LCDs always reserve a top bar and bottom bar.
+- The renderer emits both XBM preview payloads and MK1-ready framebuffers.
 
-### T9 Effect Chain Editor
+### Pads
 
-- Purpose: focused chain editing surface backed by the Python-tier profile runtime.
-- Left LCD: selected effect list with current focus.
-- Right LCD: selected block detail and parameter lanes intended for encoder work.
+- `16` pads mirror block selection, overlay signatures, choreography, onboarding progress, or screensaver state depending on the active surface owner.
+- Normal profile behavior:
+  - tap pad: select the mapped block
+  - hold/alternate workflow: used for bypass or pressure-aware interactions where the active profile exposes them
+- Pressure is sent as poly-aftertouch to MIDI and also fanned out to observer paths in automation and Brain telemetry.
 
-### T16 Monitor
+### Encoders
 
-- Purpose: operational health and metric follow view.
-- Left LCD: metric roster.
-- Right LCD: focused metric value and monitor emphasis band.
+- `NAV` encoder:
+  - move through menu items when the menu is open
+  - change focused metric in `T16 Monitor`
+  - select blocks in the active chain when no special surface owns the encoder
+  - select admin actions inside `T18 Admin Console`
+- `Encoders 1-8`: primary parameter-control path for the selected block
+- `Master encoders`: fixed utility controls for volume, tempo, and swing according to the shipped encoder map
 
-## Phase 2 Bundle A Profiles
+### Buttons
 
-### T13 Incident Log
+- `CONTROL`: jump to `T1 CTRL`
+- `STEP`: jump to `T9 Effect Chain Editor`
+- `AUTO WRITE`: jump to `T16 Monitor`
+- `NAVIGATE`: open the current category menu
+- `NOTE REPEAT`: confirm menu selection or open the menu when it is closed
+- `ERASE`: context cancel/clear where supported
+- `SHIFT+NOTE REPEAT`: cycle profile category
+- `SHIFT+NAVIGATE`: cycle LED inspection overlay
+- `SHIFT+CONTROL`: open hidden `T18 Admin Console`
+- `SHIFT+ERASE`: cancel the active cancellable long operation when one is visible
 
-- Purpose: show the newest retained Maschine incident entries from `~/.map2/maschine_incident_log.jsonl`.
-- Left LCD: most recent log rows, newest first.
-- Right LCD: focused severity, timestamp, message, and compact detail text.
+## Boot, Shutdown, And Idle Behavior
 
-### T17 System Health
+### Boot Ceremony
 
-- Purpose: summarize backend health without leaving the controller.
-- Left LCD: status, CPU, memory, audio, and issue-count rows derived from `/api/health`.
-- Right LCD: overall status emphasis bar plus the current issue summary.
+Boot starts automatically when the daemon starts.
 
-### T21 Diagnostics
+Sequence:
 
-- Purpose: verify the full daemon -> backend -> audio -> MIDI chain quickly.
-- Left LCD: daemon, USB, audio, MIDI-route, block-count, and health checks.
-- Right LCD: current daemon/device/transport state labels.
+1. MAP2 wordmark reveal
+2. system-status pass
+3. LED chase
+4. LCD test
+5. profile handoff
 
-### T22 Log Viewer
+Rules:
 
-- Purpose: inspect the retained incident file with source/tail emphasis.
-- Left LCD: recent retained log rows.
-- Right LCD: source, time, message, and current JSONL path hint.
+- Any first pad, button, or encoder interaction skips the remainder of the ceremony.
+- Boot lifecycle entries are retained in the Maschine incident log.
 
-### T23 Preferences
+### Shutdown Ceremony
 
-- Purpose: expose the current MK1 runtime transport preferences.
-- Left LCD: transport link mode, kernel-detach posture, virtual port, and observer-only reminder.
-- Right LCD: active link mode, detach state, port label, and when changes take effect.
+Shutdown runs when the daemon exits cleanly.
 
-### T24 Help Manual
+Sequence:
 
-- Purpose: quick-start operator help directly on the device.
-- Left LCD: essential first-use gestures.
-- Right LCD: modifier-first reminder and the current help focus text.
+1. saving state
+2. per-item receipts
+3. session summary
+4. farewell wave
+5. goodbye frame
 
-### T25 Reference Card
+Rules:
 
-- Purpose: fast live-performance cheat sheet.
-- Left LCD: most-used gesture reminders.
-- Right LCD: condensed live-gesture summary for rapid recall between songs.
+- The farewell path takes direct hardware ownership after the worker threads stop.
+- Shutdown lifecycle entries are retained in the incident log.
 
-## Phase 2 Bundle B Profiles
+### Screensaver
 
-### T2 Step
+The screensaver activates after `10` minutes of controller inactivity.
 
-- Purpose: observer summary for the live drum-sequencer pattern state.
-- Left LCD: pattern, variation, swing, and the first track activity summaries.
-- Right LCD: focused pattern/variation/swing labels for quick confirmation.
+While active:
 
-### T5 Snap
+- LCDs switch to ambient status and wake guidance
+- the LED layer swaps to a dim ambient posture
+- the first wake gesture is swallowed so it does not also trigger a live action
 
-- Purpose: current live snapshot identity plus a short recent-snapshot roster.
-- Left LCD: active live snapshot name and the recent snapshot list.
-- Right LCD: active snapshot id, active tempo, and tempo-source label.
+Wake sources:
 
-### T6 Auto
+- first pad pressure above the wake threshold (`96` raw by default)
+- first button press
+- first encoder move
 
-- Purpose: automation playback/record posture and lane-count confirmation.
-- Left LCD: automation state, playback, lane count, and loop posture.
-- Right LCD: focused automation state, lane count, and current automation time.
+## First-Connection Onboarding
 
-### T12 Metronome
+The onboarding tour starts automatically after boot completes and the backend is connected, unless the tour has already been completed or skipped.
 
-- Purpose: snapshot tempo and MIDI-clock ownership monitor.
-- Left LCD: BPM, tempo source, clock mode, and transport owner summary.
-- Right LCD: focused BPM, clock mode, and transport owner label.
+Progression:
 
-## Phase 2 Bundle C Profiles
+- `NOTE REPEAT`: next step
+- `NAVIGATE`: previous step
+- `ERASE`: skip the rest of the tour
 
-### T3 BRWS
+Tour content:
 
-- Purpose: observer-backed browser over the live Brain library collections.
-- Left LCD: library collection roster with asset counts.
-- Right LCD: focused collection, featured asset, and source label.
+1. welcome / MAP2 + MK1
+2. `CONTROL` profile
+3. `STEP` profile
+4. `AUTO WRITE` profile
+5. menu navigation
+6. profile selection and category cycling
+7. inspection overlay
+8. pad block selection
+9. screensaver wake model
+10. ready state
 
-### T4 SMPL
+Persistence:
 
-- Purpose: observer-backed sample-editor summary for the current Brain slot.
-- Left LCD: slot, waveform, and trim-range facts.
-- Right LCD: focused slot, duration, asset path, and waveform/sample-count summary.
-
-### T14 Kit Browser
-
-- Purpose: observer-backed browser over the current drum-kit inventory and active kit.
-- Left LCD: current kit roster with source labels.
-- Right LCD: active kit name, category, and first-instrument focus detail.
-
-## Phase 2 Bundle D Profiles
-
-### T7 B-L
-
-- Purpose: observer-backed Brain left-bank slot roster.
-- Left LCD: left-bank slot roster with active-slot emphasis.
-- Right LCD: focused slot name, mode, and bank label.
-
-### T8 B-R
-
-- Purpose: observer-backed Brain right-bank slot roster.
-- Left LCD: right-bank slot roster with active-slot emphasis.
-- Right LCD: focused slot name, mode, and bank label.
-
-### T10 Brain Seq
-
-- Purpose: observer-backed Brain sequencer summary.
-- Left LCD: current pattern roster with lane and length counts.
-- Right LCD: current pattern label, fill mode, and song-entry count.
-
-### T15 Quad Morph
-
-- Purpose: observer-backed quad-morph view over live snapshot routing and JUCE morph state.
-- Left LCD: position, source, target, and engine rows.
-- Right LCD: focused position, engine label, source, and target labels.
-
-## Phase 2 Bundle E Profiles
-
-### T11 Tuner
-
-- Purpose: explicit unsupported-state tuner profile until a dedicated backend tuner runtime exists.
-- Left LCD: unsupported-state and fallback guidance.
-- Right LCD: focused status plus the current selected-block context.
-
-### T18 Admin Console
-
-- Purpose: locked admin posture surface that stays hidden from cycle navigation until the later unlock flow ships.
-- Left LCD: lock, mode, health, and daemon posture.
-- Right LCD: lock state, deployment mode, and unlock guidance.
-
-### T19 MIDI Learn
-
-- Purpose: observer-backed MIDI learn status across engine, hub, and drum learn surfaces.
-- Left LCD: per-surface active/idle rows and target parameter summary.
-- Right LCD: focused state, target, and scope labels.
-
-### T20 Macro Recorder
-
-- Purpose: observer-backed macro and MIDI recorder session status.
-- Left LCD: macro count, session count, record posture, and focus item.
-- Right LCD: focused status, active macro/session, and compact detail summary.
+- current step index is retained in runtime config
+- completion writes the initial Maschine transport-policy config
+- skip/completion prevents automatic replay on subsequent boots unless state is manually cleared
 
 ## Profile Navigation
 
-- `CONTROL`: jump directly to `T1 CTRL`.
-- `STEP`: jump directly to `T9 Effect Chain Editor`.
-- `AUTO WRITE`: jump directly to `T16 Monitor`.
-- `NAVIGATE`: open the profile menu for the current category.
-- `NAV` encoder while menu is open: move within the active category roster.
-- `NOTE REPEAT`: open the menu when it is closed, or activate the highlighted profile when the menu is open.
-- `SHIFT+NOTE REPEAT`: cycle to the next profile category (`Control -> Chain -> Brain -> Sampler -> Monitor -> Admin -> Help`) and switch to that category's first visible profile.
-- Profile switch OSD: every direct selector, menu activation, or category jump shows a 1.5-second confirmation overlay with the target profile name, description, and category.
-- `T18 Admin Console`: intentionally hidden from normal category cycling until the later unlock flow ships.
+### Category Order
 
-## Phase 3 Bundle A LED Foundation
+The category cycler uses this order:
 
-- Pad states now carry explicit brightness-tier and animation metadata so the daemon no longer relies on the earlier hard-coded `off/dim/bright/pulsing` translation.
-- Profile changes trigger a profile-signature overlay on the pad LEDs while the LCD profile-switch OSD is active.
-- `NAVIGATE` now doubles as backend heartbeat feedback, and the direct profile selectors (`CONTROL`, `STEP`, `AUTO WRITE`) gain active-profile emphasis in the LED layer.
-- The full Brain-aware choreography, inspection overlay, and pressure fanout work are still tracked under later Phase 3 bundles.
+`Control -> Chain -> Brain -> Sampler -> Monitor -> Admin -> Help`
 
-## Render Runtime
+### Menu Rules
 
-- Resolution: `255x64` per LCD, serialized to both XBM simulator payloads and MK1 5-bit hardware framebuffers.
-- Bars: each panel reserves a 12px top bar and 12px bottom bar at all times.
-- Damage tracking: retained front/back buffers emit changed 8x8 regions so higher layers can confirm partial updates.
-- Dithering: Bayer, blue-noise, Atkinson, and Floyd-Steinberg algorithms ship in the Phase 1 render core.
+- `NAVIGATE`: open the top-level menu for the current category
+- `NAV` encoder: move within the category roster
+- `NOTE REPEAT`: activate the highlighted profile
+- `CONTROL`: back out of the open menu
+- `SHIFT+NOTE REPEAT`: move to the next category and focus its first visible profile
+
+### Inspection Overlay
+
+`SHIFT+NAVIGATE` cycles:
+
+`assigned -> muted -> automated -> off`
+
+Meanings:
+
+- `assigned`: blocks with active encoder assignments
+- `muted`: blocks currently bypassed
+- `automated`: blocks with automation lanes
+
+## LCD Profile Catalog
+
+### Control
+
+#### T1 CTRL
+
+- Purpose: primary live operating view
+- Left LCD: live snapshot name and block roster
+- Right LCD: selected block, focused parameter, and progress band
+- Use it when you want the default performance surface
+
+#### T2 Step
+
+- Purpose: drum sequencer summary
+- Left LCD: pattern, variation, swing, and first track activity
+- Right LCD: focused pattern/variation/swing values
+
+#### T5 Snap
+
+- Purpose: active live snapshot identity
+- Left LCD: live snapshot name plus recent snapshot roster
+- Right LCD: snapshot id, tempo, and tempo source
+
+#### T6 Auto
+
+- Purpose: automation posture
+- Left LCD: automation state, loop posture, and lane count
+- Right LCD: focused state, count, and current automation time
+
+#### T19 MIDI Learn
+
+- Purpose: observer view over engine, hub, and drum MIDI learn state
+- Left LCD: active/idle rows by surface
+- Right LCD: target parameter and scope summary
+
+#### T20 Macro Recorder
+
+- Purpose: macro and recorder status
+- Left LCD: macro count, session count, record posture, and focus item
+- Right LCD: focused status and compact detail summary
+
+### Chain
+
+#### T9 Effect Chain Editor
+
+- Purpose: focused chain-detail view
+- Left LCD: selected effect list
+- Right LCD: focused block detail and parameter lanes
+
+### Sampler
+
+#### T3 BRWS
+
+- Purpose: Brain library collection browser
+- Left LCD: collection roster and asset counts
+- Right LCD: focused collection, featured asset, and source label
+
+#### T4 SMPL
+
+- Purpose: sample-editor summary
+- Left LCD: slot, waveform, and trim-range facts
+- Right LCD: slot, duration, asset path, and waveform summary
+
+#### T14 Kit Browser
+
+- Purpose: drum-kit inventory browser
+- Left LCD: current kit roster with source labels
+- Right LCD: active kit, category, and first instrument focus
+
+### Brain
+
+#### T7 B-L
+
+- Purpose: Brain left-bank slot roster
+- Left LCD: left-bank slot list with active emphasis
+- Right LCD: focused slot name, mode, and bank label
+
+#### T8 B-R
+
+- Purpose: Brain right-bank slot roster
+- Left LCD: right-bank slot list with active emphasis
+- Right LCD: focused slot name, mode, and bank label
+
+#### T10 Brain Seq
+
+- Purpose: Brain sequencer summary
+- Left LCD: pattern roster with lane and length counts
+- Right LCD: current pattern, fill mode, and song-entry count
+
+#### T15 Quad Morph
+
+- Purpose: observer-backed morph summary
+- Left LCD: position, source, target, and engine rows
+- Right LCD: focused position, engine label, source, and target
+
+### Monitor
+
+#### T11 Tuner
+
+- Purpose: explicit unsupported-state tuner profile
+- Left LCD: unsupported-state guidance
+- Right LCD: focused fallback status
+
+Note:
+
+- This profile intentionally reports that a dedicated tuner runtime is not present yet. It is a truthful unsupported-state surface, not a broken screen.
+
+#### T12 Metronome
+
+- Purpose: tempo and MIDI-clock monitor
+- Left LCD: BPM, tempo source, clock mode, and transport owner
+- Right LCD: focused BPM, clock mode, and owner label
+
+#### T16 Monitor
+
+- Purpose: live health and metric follow view
+- Left LCD: metric roster
+- Right LCD: focused metric value and emphasis band
+- `NAV` encoder changes the focused metric while this profile is active
+
+#### T17 System Health
+
+- Purpose: backend health summary
+- Left LCD: status, CPU, memory, audio, and issue-count rows
+- Right LCD: overall health emphasis and issue summary
+
+#### T21 Diagnostics
+
+- Purpose: quick backend/device/audio/MIDI chain check
+- Left LCD: daemon, USB, audio, MIDI-route, block-count, and health checks
+- Right LCD: daemon/device/transport labels
+
+### Admin
+
+#### T13 Incident Log
+
+- Purpose: newest retained incident entries
+- Left LCD: latest log rows
+- Right LCD: focused severity, timestamp, message, and detail
+
+#### T18 Admin Console
+
+- Purpose: hidden controller-native admin surface
+- Entry: `SHIFT+CONTROL`
+- Unlock: first `NOTE REPEAT`
+- Selection: turn `NAV`
+- Confirm: press `NOTE REPEAT` three times on the selected action
+- Cancel or relock: `ERASE`
+
+Available actions:
+
+- `RESTART BACKEND`
+- `RESTART WEB`
+- `RESTART MASCHINE`
+- `START ALL`
+- `STOP ALL`
+- `RUN FULL UPDATE`
+- `REBOOT HOST`
+
+Execution model:
+
+- service restarts and reboot use bounded `sudo -n systemctl ...`
+- orchestrator actions call backend orchestrator services
+- full update uses the backend hybrid update manager
+- action receipts are retained and rendered back on the LCD surface
+
+#### T22 Log Viewer
+
+- Purpose: retained incident-log viewer with source and path emphasis
+- Left LCD: recent retained log rows
+- Right LCD: source, time, message, and JSONL path hint
+
+#### T23 Preferences
+
+- Purpose: Maschine transport-policy view
+- Left LCD:
+  - transport preference
+  - kernel-detach posture
+  - virtual port
+  - observer reminder
+- Right LCD:
+  - active link mode
+  - detach state
+  - port label
+  - when changes apply
+
+Transport settings:
+
+- `transport_preference`: `auto`, `hidapi`, or `pyusb-bulk`
+- `allow_kernel_detach`: whether the daemon may detach the kernel driver on connect
+
+### Help
+
+#### T24 Help Manual
+
+- Purpose: compact first-use help on the controller itself
+- Left LCD: essential gesture reminders
+- Right LCD: modifier-first guidance and help focus text
+
+#### T25 Reference Card
+
+- Purpose: condensed live cheat sheet
+- Left LCD: high-frequency gesture reminders
+- Right LCD: rapid recall summary for performance use
+
+## LED System
+
+### Brightness Tiers
+
+- `off`
+- `dim`
+- `mid`
+- `bright`
+- `full`
+
+### Layer Precedence
+
+From highest to lowest priority:
+
+1. boot/shutdown ceremony
+2. onboarding
+3. long-operation overlay
+4. screensaver
+5. profile-signature overlay
+6. inspection overlay
+7. choreography / reactive layer
+8. profile baseline and category LEDs
+
+### Core LED Roles
+
+- direct profile selectors:
+  - `CONTROL`: active `T1`
+  - `STEP`: active `T9`
+  - `AUTO WRITE`: active `T16`
+- `NAVIGATE`: backend heartbeat and menu-state guidance
+- `NOTE REPEAT`: menu/confirm guidance
+- `GROUP A-H`: category ownership, and Brain lane flash during Brain profiles
+
+### Choreography
+
+Outside menus and higher-priority overlays:
+
+- `GRID`: transport beat flash
+- `SAMPLING`: clip or energy indicator
+- non-Brain profiles: spectrum-reactive pad overlay
+- Brain profiles: slot/lane-aware choreography driven by Brain state and transport clock
+- `SCENE`: Brain fill/posture indicator where applicable
+
+### Long-Operation LED Ownership
+
+When a long operation is active:
+
+- `TRANSPORT LEFT`, `PLAY`, `REC`, `RESTART`, and `TRANSPORT RIGHT` become a five-step progress bar
+- `ERASE` lights only when cancellation is available
+
+## Long Operations And Receipts
+
+Current long-operation sources:
+
+- startup progress from `/api/services/startup-order`
+- cluster update progress from `/api/cluster/update/status`
+- plugin scan progress from `/api/plugins/scan-status`
+- admin actions through `T18`
+
+While active:
+
+- LCDs show operation title, detail, percent, and status
+- the underlying profile is temporarily hidden
+
+Receipt states:
+
+- completed
+- failed
+- cancelled
+
+After the short receipt dwell, the controller returns to the underlying profile automatically.
+
+## Incident Log
+
+The retained incident log lives at:
+
+`~/.map2/maschine_incident_log.jsonl`
+
+Sources already logged include:
+
+- daemon connect/disconnect
+- backend websocket connect/disconnect
+- device connect/disconnect
+- onboarding events
+- long-operation cancel and receipt events
+- admin unlock/action events
+- boot/shutdown lifecycle breadcrumbs
+
+Use `T13` or `T22` to inspect retained entries from the controller.
+
+## Admin Console Runtime Contract
+
+The admin console is backend-owned. The daemon never invents service or update state locally.
+
+Bounded sudo contract:
+
+- restart backend
+- restart production web service
+- restart Maschine daemon
+- reboot host
+
+Installer/runtime artifact:
+
+- `config/sudoers/map2-maschine-admin`
+- installed by `scripts/install-node.sh` into `/etc/sudoers.d/map2-maschine-admin`
+
+Security posture:
+
+- only `mm` and `map2` receive the bounded command alias
+- there is no blanket `NOPASSWD:ALL` requirement for this surface
 
 ## Web Surface
 
-- Canonical route: `/maschine`
-- Legacy redirect: `/maschine/midi-map` -> `/maschine#hardware-layout`
-- Embedded section: the hardware-faithful MIDI-map editor now lives inside the main Maschine page.
+The web UI remains the secondary visual companion surface.
 
-## Verification Hooks
+- canonical route: `/maschine`
+- legacy redirect: `/maschine/midi-map -> /maschine#hardware-layout`
+- embedded tools: hardware-faithful layout view and MIDI-map editor
 
-- Render benchmark: `python3 scripts/maschine_render_bench.py`
-- Backend/API verification: `python3 scripts/maschine_phase1_verify.py`
-- Full catalog including hidden profiles: `python3 scripts/maschine_phase1_verify.py --include-hidden`
-- Hardware write verification: `python3 scripts/maschine_phase1_verify.py --hardware`
+Use the web surface when you need a larger visual editor or want to inspect the merged controller configuration alongside the live hardware contract.
 
-## Current Limits
+## Render And Font Runtime
 
-- `T18` remains intentionally locked/hidden until the later unlock flow ships.
-- Phase 3 LED animations, pressure routing, and Brain-aware choreography are still pending.
-- The MAP2 Display 32 face is the initial glyph pass; Phase 5 expands it into the final full-face manual-grade roster.
-- Hardware proof still requires a real connected Maschine MK1 for `--hardware` verification.
+Renderer:
+
+- retained-mode scene graph
+- double-buffered LCD ownership
+- damage tracking for changed regions
+- multiple dither strategies in the render core
+
+Font roster:
+
+- `Spleen`
+- `Cozette`
+- `Tamsyn`
+- `Terminus`
+- `Unscii`
+- `Nerd Font Mono`
+- `MAP2 Display 32`
+
+`MAP2 Display 32` extras:
+
+- MAP2 logo tokens: `MAP2_LOGO`, `MAP2_MONOGRAM`
+- compact aliases: `¤`, `§`
+- musical symbols: `♪`, `♫`, `♩`, `♬`, `♭`, `♯`
+
+## Recovery And Troubleshooting
+
+### Controller Looks Frozen
+
+1. Check whether a boot, onboarding, long-operation, or admin overlay owns the surface.
+2. Press `CONTROL` to return to the main profile if the controller is otherwise idle.
+3. Inspect `T13 Incident Log` or `T22 Log Viewer`.
+4. Confirm backend health at `/api/health`.
+
+### First Input Did Nothing
+
+Common causes:
+
+- the screensaver was active and the first wake gesture was swallowed
+- boot ceremony skip consumed the first interaction
+- onboarding owned the surface and swallowed normal live actions
+
+Try the gesture again after the wake/skip transition.
+
+### Admin Action Did Not Run
+
+Check:
+
+- the admin session is unlocked
+- all three confirmation presses were sent
+- the bounded sudoers drop-in is installed on the host
+- retained admin receipts in `T18`, `T13`, or `T22`
+
+### Device Not Found
+
+Check:
+
+- USB device `17cc:0808`
+- pyusb access
+- udev rule presence
+- `map2-maschine.service`
+- backend health
+
+### Tuner Does Not Tune
+
+That is expected. `T11` is an explicit unsupported-state profile until a dedicated tuner runtime exists.
+
+## Verification Commands
+
+Catalog and render verification:
+
+- `python3 scripts/maschine_render_bench.py`
+- `python3 scripts/maschine_phase1_verify.py`
+- `python3 scripts/maschine_phase1_verify.py --include-hidden`
+
+Hardware verification:
+
+- `python3 scripts/maschine_phase1_verify.py --include-hidden --hardware --dwell-ms 250`
+- `./scripts/maschine_e2e_verify.sh`
+- `./scripts/maschine_e2e_verify.sh --blink`
+- `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink`
+
+## State Authority Sign-Off
+
+The Maschine path remains aligned with the MAP2 State Authority contract:
+
+- snapshot state is rendered from backend-owned services
+- morph state is observed from engine/Brain endpoints
+- automation state is observed from backend runtime services
+- the daemon does not compute or persist alternate snapshot/morph authority
+- admin actions call backend services or bounded host commands rather than local shadow state machines
+
+This means the MK1 remains an observer-plus-command surface, not a competing source of truth.
+
+Final verification on April 18, 2026:
+
+- `sudo -n systemctl restart map2-maschine.service` completed cleanly and the service returned `active`
+- `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink` passed with zero warnings on the connected MK1
+- the daemon-aware E2E pass validated route health, all-profile catalog traversal, hardware blink, admin action surface, and the observer-only audit in one run
+
+## Quick Reference
+
+Primary gestures:
+
+- `CONTROL`: home
+- `STEP`: chain detail
+- `AUTO WRITE`: monitor
+- `NAVIGATE`: open menu
+- `NOTE REPEAT`: confirm / enter
+- `SHIFT+NOTE REPEAT`: next category
+- `SHIFT+NAVIGATE`: inspection overlay
+- `SHIFT+CONTROL`: admin console
+- `SHIFT+ERASE`: cancel active long op
+
+Wake rules:
+
+- first wake gesture only wakes
+- second gesture performs the intended action
+
+Onboarding:
+
+- `NOTE REPEAT` next
+- `NAVIGATE` back
+- `ERASE` skip
+
+Admin:
+
+- enter with `SHIFT+CONTROL`
+- unlock with `NOTE REPEAT`
+- turn `NAV` to choose action
+- press `NOTE REPEAT` three times to fire
+- `ERASE` clears confirm or re-locks

@@ -286,6 +286,15 @@ describe('SnapshotModalContent', () => {
     expect(screen.getAllByRole('button', { name: 'Create New' }).length).toBeGreaterThan(0)
   })
 
+  it('explains that deploy copies snapshots while publish makes them live', async () => {
+    renderContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Load Existing' }))
+
+    expect(await screen.findByText('Publish makes it live')).toBeTruthy()
+    expect(screen.getByText('Deploy copies it, publish makes it live')).toBeTruthy()
+  })
+
   it('filters library snapshots by derived tag and shows tag chips on rows', async () => {
     mockSnapshotsList.mockImplementation((options?: { tags?: string[] }) => {
       const snapshots = [

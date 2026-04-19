@@ -1,7 +1,7 @@
 {
   "id": "t18_admin_console",
   "name": "T18 ADMIN CONSOLE",
-  "description": "Locked admin posture view; entry stays hidden until the later unlock flow ships.",
+  "description": "Hidden admin posture with session unlock, tier-3 confirm, and bounded host actions.",
   "bars": {
     "left": {
       "top_left": "T18 ADMIN",

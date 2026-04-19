@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import copy
-import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Literal
 
 from app.config import get_config as get_runtime_config_manager
@@ -17,7 +15,9 @@ from app.services.drum_machine_service import get_drum_machine_service
 from app.services.drum_sample_editor import get_drum_sample_editor_service
 from app.services.drum_sequencer_service import get_drum_sequencer_service
 from app.services.drum_kit_service import get_drum_kit_service
+from app.services.maschine.admin_console import get_maschine_admin_console_service
 from app.services.maschine.fonts import build_default_font_roster
+from app.services.maschine.incident_log import get_maschine_incident_log_service
 from app.services.maschine.profiles import MaschineProfileRuntime, PROFILE_ALIASES
 from app.services.maschine.render import GrayFramebuffer
 from app.services.maschine.render.framebuffer import DamageRect
@@ -35,7 +35,6 @@ from app.utils.singleton import Singleton
 
 LCD_WIDTH = 255
 LCD_HEIGHT = 64
-_INCIDENT_LOG_PATH = Path.home() / ".map2" / "maschine_incident_log.jsonl"
 _HELP_ROWS = [
     {"display": "SHIFT+NAV OPEN MENU", "is_selected": True},
     {"display": "NOTE REPEAT = ENTER", "is_selected": False},
@@ -394,6 +393,10 @@ class MaschineLCDRenderService(Singleton):
             deployment_mode = get_deployment_config().mode.value
         except Exception:
             deployment_mode = "UNKNOWN"
+        try:
+            admin_console = get_maschine_admin_console_service().snapshot()
+        except Exception:
+            admin_console = {}
         return {
             "tuner_available": False,
             "engine_midi_learn": dict(engine_midi_learn or {}),
@@ -401,7 +404,8 @@ class MaschineLCDRenderService(Singleton):
             "macros": [dict(item) for item in macros if isinstance(item, dict)],
             "sessions": [dict(item) for item in sessions if isinstance(item, dict)],
             "deployment_mode": str(deployment_mode or "UNKNOWN"),
-            "session_unlocked": False,
+            "session_unlocked": bool(admin_console.get("session_unlocked")),
+            "admin_console": dict(admin_console or {}),
             "daemon_status": dict(status or {}),
             "health": dict((stats.get("sources") or {}).get("health") or {}),
         }
@@ -571,7 +575,7 @@ class MaschineLCDRenderService(Singleton):
                 selected_incident.get("detail") or selected_incident.get("event") or "Awaiting the first retained incident entry.",
                 limit=28,
             ),
-            "incident_log_path": _safe_label(_INCIDENT_LOG_PATH.as_posix(), limit=18),
+            "incident_log_path": _safe_label(get_maschine_incident_log_service().get_path().as_posix(), limit=18),
             "preference_rows": preference_rows,
             "preference_summary": _safe_label(f"{transport_config.get('transport_preference', 'auto')} LINK", limit=18),
             "transport_preference": _safe_label(transport_config.get("transport_preference") or "auto", limit=18),
@@ -676,27 +680,7 @@ class MaschineLCDRenderService(Singleton):
         }
 
     def _load_incident_entries(self, *, limit: int) -> list[dict[str, Any]]:
-        if not _INCIDENT_LOG_PATH.exists():
-            return []
-        entries: list[dict[str, Any]] = []
-        try:
-            lines = _INCIDENT_LOG_PATH.read_text(encoding="utf-8").splitlines()
-        except Exception:
-            return []
-        for raw_line in reversed(lines):
-            raw_line = raw_line.strip()
-            if not raw_line:
-                continue
-            try:
-                payload = json.loads(raw_line)
-            except Exception:
-                continue
-            if not isinstance(payload, dict):
-                continue
-            entries.append(payload)
-            if len(entries) >= limit:
-                break
-        return entries
+        return get_maschine_incident_log_service().list_entries(limit=limit)
 
     def _build_health_rows(self, health_payload: dict[str, Any]) -> list[dict[str, Any]]:
         issues = list(health_payload.get("issues") or [])
@@ -1101,17 +1085,51 @@ class MaschineLCDRenderService(Singleton):
     def _build_admin_rows(self, tool_state: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         health = dict(tool_state.get("health") or {})
         daemon_status = dict(tool_state.get("daemon_status") or {})
-        locked = not bool(tool_state.get("session_unlocked"))
-        rows = [
-            {"display": f" LOCK {_safe_label('ENGAGED' if locked else 'OPEN', limit=8)}", "is_selected": True},
-            {"display": f" MODE {_safe_label(tool_state.get('deployment_mode') or 'UNKNOWN', limit=9)}", "is_selected": False},
-            {"display": f" HEALTH {_safe_label(health.get('overall_status') or health.get('status') or 'unknown', limit=8)}", "is_selected": False},
-            {"display": f" DAEMON {_safe_label(daemon_status.get('status') or 'offline', limit=8)}", "is_selected": False},
-        ]
+        admin_console = dict(tool_state.get("admin_console") or {})
+        locked = not bool(admin_console.get("session_unlocked"))
+        actions = [dict(item) for item in list(admin_console.get("actions") or []) if isinstance(item, dict)]
+        selected_index = max(0, int(admin_console.get("selected_action_index") or 0))
+        confirmation_progress = max(0, int(admin_console.get("confirmation_progress") or 0))
+        busy = bool(admin_console.get("busy"))
+        rows: list[dict[str, Any]]
+        if actions:
+            window_start = max(0, min(selected_index - 1, max(0, len(actions) - 4)))
+            rows = []
+            for action in actions[window_start: window_start + 4]:
+                prefix = "!"
+                if not bool(action.get("is_active")):
+                    prefix = ">" if bool(action.get("is_selected")) else " "
+                rows.append(
+                    {
+                        "display": f"{prefix} {_safe_label(action.get('label') or 'ACTION', limit=16)}",
+                        "is_selected": bool(action.get("is_selected")),
+                    }
+                )
+        else:
+            rows = [
+                {"display": f" LOCK {_safe_label('ENGAGED' if locked else 'OPEN', limit=8)}", "is_selected": True},
+                {"display": f" MODE {_safe_label(tool_state.get('deployment_mode') or 'UNKNOWN', limit=9)}", "is_selected": False},
+                {"display": f" HEALTH {_safe_label(health.get('overall_status') or health.get('status') or 'unknown', limit=8)}", "is_selected": False},
+                {"display": f" DAEMON {_safe_label(daemon_status.get('status') or 'offline', limit=8)}", "is_selected": False},
+            ]
+
+        last_result = dict(admin_console.get("last_result") or {})
+        detail = "SHIFT+CTRL / NR"
+        if busy:
+            detail = _safe_label(f"RUN {last_result.get('label') or admin_console.get('selected_action_label') or 'ACTION'}", limit=18)
+        elif confirmation_progress > 0:
+            detail = _safe_label(f"CONFIRM {confirmation_progress}/3", limit=18)
+        elif locked:
+            detail = "SHIFT+CTRL / NR"
+        elif last_result:
+            prefix = "OK" if str(last_result.get("status") or "").strip().lower() == "completed" else "FAIL"
+            detail = _safe_label(f"{prefix} {last_result.get('label') or 'ACTION'}", limit=18)
+        else:
+            detail = "TURN NAV / NR FIRE"
         return rows, {
             "lock": _safe_label("LOCKED" if locked else "UNLOCKED", limit=10),
             "mode": _safe_label(tool_state.get("deployment_mode") or "UNKNOWN", limit=18),
-            "detail": _safe_label("SHIFT+T REQUIRED LATER" if locked else "ADMIN READY", limit=18),
+            "detail": detail,
         }
 
     def _render_audio_grid(self, *, audio_grid: dict[str, Any]) -> dict[str, Any]:

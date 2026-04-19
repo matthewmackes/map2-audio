@@ -60,6 +60,7 @@ type PublishSection = 'overview' | 'devices' | 'routing' | 'runtime' | 'cleanup'
 type WizardStepId = 'save' | 'host' | 'sound' | 'review'
 const LIVE_CHANGES_LEAVE_MESSAGE = 'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
 const WIZARD_STEP_ORDER: WizardStepId[] = ['save', 'host', 'sound', 'review']
+const PUBLISH_LIVE_HINT = 'Publish makes the audio chain live'
 
 type SummaryCard = {
   id: string
@@ -1313,11 +1314,12 @@ export function SnapshotPublishPage() {
                 <p className="snapshot-publish-page__eyebrow">Publish snapshot</p>
                 <h1>{snapshot.name}</h1>
                 <p>
-                  Know what is saved, what has been requested, what is confirmed live, and the next action to take.
+                  Know what is saved, what has been requested, what is confirmed live, and when publish makes this snapshot the live audio chain.
                 </p>
               </div>
               <div className="snapshot-publish-page__hero-actions">
                 <Tag type={statusTagType(readiness.status)}>{readiness.status.replace(/_/g, ' ')}</Tag>
+                <Tag type="purple">{PUBLISH_LIVE_HINT}</Tag>
                 <Button
                   kind="secondary"
                   size="sm"
@@ -1621,10 +1623,13 @@ export function SnapshotPublishPage() {
                     <p className="snapshot-publish-page__panel-kicker">Workflow 5</p>
                     <h2>Publish stage-ready asset</h2>
                     <p className="snapshot-publish-page__plain-copy">
-                      Publishing saves the current working state as the requested stage-ready snapshot and waits for confirmation.
+                      Publishing is the step that makes this snapshot the active live audio chain on the selected host, then waits for confirmation.
                     </p>
                   </div>
-                  <Tag type={publishDisabled ? 'warm-gray' : 'green'}>{publishDisabled ? 'Not ready' : 'Ready to publish'}</Tag>
+                  <div className="snapshot-publish-page__hero-actions">
+                    <Tag type={publishDisabled ? 'warm-gray' : 'green'}>{publishDisabled ? 'Not ready' : 'Ready to publish'}</Tag>
+                    <Tag type="purple">{PUBLISH_LIVE_HINT}</Tag>
+                  </div>
                 </div>
                 {liveChangesPending ? (
                   <InlineNotification
@@ -1970,12 +1975,15 @@ export function SnapshotPublishPage() {
                         <p className="snapshot-publish-page__panel-kicker">Step 4</p>
                         <h2>Publish to live</h2>
                         <p className="snapshot-publish-page__plain-copy">
-                          Review the last blocking issue, then publish. MAP2 will save first if the only thing missing is a draft revision.
+                          Review the last blocking issue, then publish. This is the step that makes the snapshot the live audio chain, and MAP2 will save first if the only thing missing is a draft revision.
                         </p>
                       </div>
-                      <Tag type={publishDisabled ? 'warm-gray' : 'green'}>
-                        {publishDisabled ? 'Needs attention' : 'Ready'}
-                      </Tag>
+                      <div className="snapshot-publish-page__hero-actions">
+                        <Tag type={publishDisabled ? 'warm-gray' : 'green'}>
+                          {publishDisabled ? 'Needs attention' : 'Ready'}
+                        </Tag>
+                        <Tag type="purple">{PUBLISH_LIVE_HINT}</Tag>
+                      </div>
                     </div>
                     <div className="snapshot-publish-page__wizard-card-grid">
                       <Tile className="snapshot-publish-page__wizard-card">

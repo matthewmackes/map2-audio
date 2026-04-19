@@ -2380,6 +2380,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["sample_rate"] = info.sampleRate;
             d["buffer_size"] = info.bufferSize;
             d["audio_device"] = info.audioDevice;
+            d["input_gain_db"] = info.inputGainDb;
+            d["output_gain_db"] = info.outputGainDb;
             d["lv2_path"] = info.lv2Path;
             d["running"] = info.running;
             d["audio_running"] = info.audioRunning;
@@ -2389,6 +2391,17 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["total_latency_ms"] = info.totalLatencyMs;
             d["input_channels"] = self.getNumInputChannels();
             d["output_channels"] = self.getNumOutputChannels();
+            switch (self.getInputChannelMode()) {
+                case 0:
+                    d["input_channel_mode"] = "mono_left";
+                    break;
+                case 1:
+                    d["input_channel_mode"] = "mono_right";
+                    break;
+                default:
+                    d["input_channel_mode"] = "stereo";
+                    break;
+            }
             d["available"] = true;
             d["initialized"] = info.running;
             return d;
@@ -2445,6 +2458,21 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Set number of output channels (1-32)")
         .def("get_num_output_channels", &Map2AudioEngine::getNumOutputChannels,
              "Get number of output channels")
+        .def("set_input_channel_mode", &Map2AudioEngine::setInputChannelMode,
+             py::arg("mode"),
+             "Set input channel mode (0=Mono Left, 1=Mono Right, 2=Stereo)")
+        .def("get_input_channel_mode", &Map2AudioEngine::getInputChannelMode,
+             "Get input channel mode (0=Mono Left, 1=Mono Right, 2=Stereo)")
+        .def("set_input_gain_db", &Map2AudioEngine::setInputGainDb,
+             py::arg("db"),
+             "Set input gain in dB (-24 to 24)")
+        .def("get_input_gain_db", &Map2AudioEngine::getInputGainDb,
+             "Get input gain in dB")
+        .def("set_output_gain_db", &Map2AudioEngine::setOutputGainDb,
+             py::arg("db"),
+             "Set output gain in dB (-24 to 24)")
+        .def("get_output_gain_db", &Map2AudioEngine::getOutputGainDb,
+             "Get output gain in dB")
 
         // ========================================
         // AVB Stream Lifecycle (Phase 0 Contract)

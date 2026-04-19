@@ -2,12 +2,14 @@ import {
   Accessibility,
   Application,
   BareMetalServer,
+  Book,
   ChartLine,
   Chip,
   Code,
   CodeReference,
   Cube,
   DataBase,
+  Education,
   Flow,
   Globe,
   Headphones,
@@ -22,8 +24,11 @@ import {
   Security,
   Terminal,
   UserFavorite,
+  WarningAlt,
 } from '@carbon/icons-react'
 import {
+  Accordion,
+  AccordionItem,
   DataTable,
   Layer,
   Table,
@@ -33,8 +38,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableToolbar,
-  TableToolbarContent,
   Tag,
 } from '@carbon/react'
 import { useEffect, useState } from 'react'
@@ -55,34 +58,21 @@ interface VersionInfo {
   commit?: string
 }
 
-interface WelcomeBannerStatus {
-  installed: boolean
-  path?: string
-}
-
-interface BootSplashStatus {
-  installed: boolean
-  theme_exists?: boolean
-  plymouth_installed?: boolean
-  current_theme?: string
-  is_active?: boolean
-}
-
-interface ProjectCredit {
+interface HeroProject {
   name: string
+  tagline: string
   description: string
   website: string
-  color: string
   icon: React.ReactNode
   role: string
   license: string
+  category: 'Core' | 'Backend' | 'Frontend' | 'Audio DSP' | 'Utilities'
 }
 
 interface LicenseInfo {
   id: string
   name: string
   shortName: string
-  color: string
   url: string
   description: string
   permissions: string[]
@@ -90,398 +80,157 @@ interface LicenseInfo {
   limitations: string[]
 }
 
-// Core technologies that power MAP2
-const CORE_PROJECTS: ProjectCredit[] = [
+// ── Hero Projects: The major open-source projects that make MAP2 possible ──
+
+const HERO_PROJECTS: HeroProject[] = [
   {
     name: 'JUCE',
-    description: 'Cross-platform C++ audio application framework with support for VST, VST3, AU, AUv3, LV2, and AAX plugins',
+    tagline: 'The C++ audio framework',
+    description: 'Cross-platform C++ audio application framework with support for VST, VST3, AU, AUv3, LV2, and AAX plugins. MAP2 uses JUCE 8.0.0 as its real-time audio engine foundation, providing the audio callback, plugin hosting, and device management.',
     website: 'https://juce.com/',
-    color: '#1e40af',
-    icon: <MapSignalFlowIcon size={20} />,
-    role: 'Audio Engine',
+    icon: <MapSignalFlowIcon size={32} />,
+    role: 'Audio Engine Foundation',
     license: 'GPLv3 / Commercial',
+    category: 'Core',
   },
   {
     name: 'Neural Amp Modeler',
-    description: 'Deep learning technology for modeling guitar amplifiers, pedals, and signal chains using WaveNet architecture',
+    tagline: 'Deep learning amp modeling',
+    description: 'WaveNet-based deep learning technology that captures the sonic fingerprint of guitar amplifiers, pedals, and signal chains. MAP2 integrates NAM as a first-class processor alongside impulse response convolution.',
     website: 'https://www.neuralampmodeler.com/',
-    color: '#60a5fa',
-    icon: <MapAmplifierIcon size={20} />,
-    role: 'AI Amp Modeling',
+    icon: <MapAmplifierIcon size={32} />,
+    role: 'Neural Amp Simulation',
     license: 'MIT',
+    category: 'Audio DSP',
   },
   {
     name: 'LV2',
-    description: 'Extensible open standard audio plugin format specification for cross-DAW plugin compatibility',
+    tagline: 'Open plugin standard',
+    description: 'Extensible open-standard audio plugin format with RDF-based metadata. MAP2 uses the lilv library to discover and host LV2 plugins across the signal chain, supporting cabinet IRs, EQ, dynamics, and effects.',
     website: 'https://lv2plug.in/',
-    color: '#059669',
-    icon: <Chip size={20} />,
-    role: 'Plugin Format',
+    icon: <Chip size={32} />,
+    role: 'Plugin Interop',
     license: 'ISC',
+    category: 'Core',
   },
   {
-    name: 'Fedora PREEMPT_RT',
-    description: 'Fedora Linux distribution with real-time kernel support for deterministic low-latency performance',
+    name: 'Fedora Linux',
+    tagline: 'Real-time operating system',
+    description: 'Fedora with the PREEMPT_RT low-latency kernel is the reference operating environment. The combination of PipeWire, threadirqs, and isolated CPU cores delivers sub-2ms round-trip latency for professional audio work.',
     website: 'https://fedoraproject.org/',
-    color: '#0b57a4',
-    icon: <BareMetalServer size={20} />,
-    role: 'Real-time OS',
-    license: 'Various (GPL)',
+    icon: <BareMetalServer size={32} />,
+    role: 'Real-Time OS',
+    license: 'Various (GPL family)',
+    category: 'Core',
   },
-]
-
-// Backend & API technologies
-const BACKEND_PROJECTS: ProjectCredit[] = [
   {
     name: 'FastAPI',
-    description: 'Modern, high-performance Python web framework for building APIs with automatic OpenAPI documentation',
+    tagline: 'Modern Python web framework',
+    description: 'High-performance Python web framework with automatic OpenAPI documentation. MAP2 uses FastAPI + Uvicorn to serve its REST API, WebSocket streams, and service orchestration layer on port 8080.',
     website: 'https://fastapi.tiangolo.com/',
-    color: '#0ea5e9',
-    icon: <Application size={20} />,
+    icon: <Application size={32} />,
     role: 'Backend API',
     license: 'MIT',
+    category: 'Backend',
   },
-  {
-    name: 'Uvicorn',
-    description: 'Lightning-fast ASGI server implementation using uvloop and httptools',
-    website: 'https://www.uvicorn.org/',
-    color: '#2dd4bf',
-    icon: <Application size={20} />,
-    role: 'ASGI Server',
-    license: 'BSD-3-Clause',
-  },
-  {
-    name: 'SQLAlchemy',
-    description: 'Python SQL toolkit and Object-Relational Mapping library for database interactions',
-    website: 'https://www.sqlalchemy.org/',
-    color: '#dc2626',
-    icon: <DataBase size={20} />,
-    role: 'Database ORM',
-    license: 'MIT',
-  },
-  {
-    name: 'Pydantic',
-    description: 'Data validation and settings management using Python type annotations',
-    website: 'https://docs.pydantic.dev/',
-    color: '#e91e63',
-    icon: <Security size={20} />,
-    role: 'Data Validation',
-    license: 'MIT',
-  },
-]
-
-// Frontend technologies
-const FRONTEND_PROJECTS: ProjectCredit[] = [
   {
     name: 'React',
-    description: 'Open-source JavaScript library for building user interfaces with component-based architecture',
+    tagline: 'Component-based UI',
+    description: 'Declarative JavaScript library for building user interfaces. MAP2 uses React 18 with TypeScript, Vite for build tooling, and IBM Carbon Design System components for a cohesive, accessible operator experience.',
     website: 'https://react.dev/',
-    color: '#60a5fa',
-    icon: <Code size={20} />,
-    role: 'UI Framework',
+    icon: <Code size={32} />,
+    role: 'User Interface',
     license: 'MIT',
-  },
-  {
-    name: 'Vite',
-    description: 'Next-generation frontend tooling with instant server start and lightning-fast HMR',
-    website: 'https://vitejs.dev/',
-    color: '#646cff',
-    icon: <Lightning size={20} />,
-    role: 'Build Tool',
-    license: 'MIT',
-  },
-  {
-    name: 'TypeScript',
-    description: 'Strongly typed programming language that builds on JavaScript with type safety',
-    website: 'https://www.typescriptlang.org/',
-    color: '#3178c6',
-    icon: <CodeReference size={20} />,
-    role: 'Type System',
-    license: 'Apache-2.0',
+    category: 'Frontend',
   },
   {
     name: 'Carbon Design System',
-    description: 'IBM\'s open-source design system for products and digital experiences, with React component library',
+    tagline: 'IBM design language',
+    description: "IBM's open-source design system for products and digital experiences. MAP2's UI rigorously follows Carbon v11 tokens, typography, spacing, and component patterns — bringing enterprise-grade consistency to audio tooling.",
     website: 'https://carbondesignsystem.com/',
-    color: '#0f62fe',
-    icon: <PaintBrush size={20} />,
-    role: 'UI Components',
+    icon: <PaintBrush size={32} />,
+    role: 'Design System',
     license: 'Apache-2.0',
-  },
-  {
-    name: 'React Flow',
-    description: 'Highly customizable library for building node-based editors and interactive diagrams',
-    website: 'https://reactflow.dev/',
-    color: '#60a5fa',
-    icon: <Flow size={20} />,
-    role: 'Flow Editor',
-    license: 'MIT',
-  },
-]
-
-// Audio & DSP libraries
-const AUDIO_PROJECTS: ProjectCredit[] = [
-  {
-    name: 'Eigen',
-    description: 'C++ template library for linear algebra: matrices, vectors, numerical solvers',
-    website: 'https://eigen.tuxfamily.org/',
-    color: '#1f77b4',
-    icon: <Cube size={20} />,
-    role: 'Linear Algebra',
-    license: 'MPL-2.0',
-  },
-  {
-    name: 'lilv',
-    description: 'C library to discover, load, and run LV2 plugins with RDF-based metadata',
-    website: 'https://drobilla.net/software/lilv.html',
-    color: '#22c55e',
-    icon: <Package size={20} />,
-    role: 'Plugin Discovery',
-    license: 'ISC',
+    category: 'Frontend',
   },
   {
     name: 'PyTorch',
-    description: 'Open source machine learning framework for neural network training and inference',
+    tagline: 'Machine learning framework',
+    description: 'Open-source machine learning framework used by MAP2 for neural network inference, tensor operations on audio signals, and experimental DSP research workflows.',
     website: 'https://pytorch.org/',
-    color: '#ee4c2c',
-    icon: <Lightning size={20} />,
-    role: 'ML Framework',
+    icon: <Lightning size={32} />,
+    role: 'ML Inference',
     license: 'BSD-3-Clause',
+    category: 'Audio DSP',
   },
   {
-    name: 'NumPy',
-    description: 'Fundamental package for scientific computing with Python arrays and matrices',
-    website: 'https://numpy.org/',
-    color: '#013243',
-    icon: <Terminal size={20} />,
-    role: 'Numerical Computing',
-    license: 'BSD-3-Clause',
-  },
-  {
-    name: 'SciPy',
-    description: 'Python library for scientific and technical computing with signal processing',
-    website: 'https://scipy.org/',
-    color: '#8caae6',
-    icon: <ChartLine size={20} />,
-    role: 'Signal Processing',
-    license: 'BSD-3-Clause',
-  },
-  {
-    name: 'python-rtmidi',
-    description: 'Python bindings for RtMidi providing cross-platform real-time MIDI I/O',
-    website: 'https://github.com/SpotlightKid/python-rtmidi',
-    color: '#60a5fa',
-    icon: <Music size={20} />,
-    role: 'MIDI Interface',
+    name: 'PipeWire',
+    tagline: 'Low-latency audio server',
+    description: 'Modern multimedia server that unifies PulseAudio, JACK, and ALSA clients. MAP2 configures PipeWire with a 64-sample quantum at 48 kHz for 1.33 ms audio periods under PREEMPT_RT.',
+    website: 'https://pipewire.org/',
+    icon: <Flow size={32} />,
+    role: 'Audio Transport',
     license: 'MIT',
+    category: 'Core',
   },
 ]
 
-// Additional utilities
-const UTILITY_PROJECTS: ProjectCredit[] = [
-  {
-    name: 'nlohmann/json',
-    description: 'Modern C++ JSON library with intuitive syntax and excellent performance',
-    website: 'https://github.com/nlohmann/json',
-    color: '#f5a623',
-    icon: <CodeReference size={20} />,
-    role: 'JSON Parser (C++)',
-    license: 'MIT',
-  },
-  {
-    name: 'pybind11',
-    description: 'Seamless operability between C++11 and Python for creating bindings',
-    website: 'https://pybind11.readthedocs.io/',
-    color: '#306998',
-    icon: <Code size={20} />,
-    role: 'Python Bindings',
-    license: 'BSD-3-Clause',
-  },
-  {
-    name: 'TanStack Query',
-    description: 'Powerful asynchronous state management for data fetching and caching',
-    website: 'https://tanstack.com/query',
-    color: '#60a5fa',
-    icon: <DataBase size={20} />,
-    role: 'Data Fetching',
-    license: 'MIT',
-  },
-  {
-    name: 'React Router',
-    description: 'Declarative routing library for React applications with nested routes',
-    website: 'https://reactrouter.com/',
-    color: '#ca4245',
-    icon: <Globe size={20} />,
-    role: 'Routing',
-    license: 'MIT',
-  },
-  {
-    name: 'Recharts',
-    description: 'Composable charting library built on React components for data visualization',
-    website: 'https://recharts.org/',
-    color: '#60a5fa',
-    icon: <ChartLine size={20} />,
-    role: 'Charts',
-    license: 'MIT',
-  },
-  {
-    name: 'Ariakit',
-    description: 'Accessible React component library with unstyled, primitive components',
-    website: 'https://ariakit.org/',
-    color: '#007acc',
-    icon: <Accessibility size={20} />,
-    role: 'Accessibility',
-    license: 'MIT',
-  },
+// Supporting technologies
+const SUPPORTING_PROJECTS: Array<{ name: string; role: string; license: string; website: string }> = [
+  { name: 'Uvicorn', role: 'ASGI Server', license: 'BSD-3-Clause', website: 'https://www.uvicorn.org/' },
+  { name: 'SQLAlchemy', role: 'Database ORM', license: 'MIT', website: 'https://www.sqlalchemy.org/' },
+  { name: 'Pydantic', role: 'Data Validation', license: 'MIT', website: 'https://docs.pydantic.dev/' },
+  { name: 'Vite', role: 'Build Tool', license: 'MIT', website: 'https://vitejs.dev/' },
+  { name: 'TypeScript', role: 'Type System', license: 'Apache-2.0', website: 'https://www.typescriptlang.org/' },
+  { name: 'React Flow', role: 'Node Editor', license: 'MIT', website: 'https://reactflow.dev/' },
+  { name: 'Eigen', role: 'Linear Algebra', license: 'MPL-2.0', website: 'https://eigen.tuxfamily.org/' },
+  { name: 'lilv', role: 'LV2 Discovery', license: 'ISC', website: 'https://drobilla.net/software/lilv.html' },
+  { name: 'NumPy', role: 'Numerical Computing', license: 'BSD-3-Clause', website: 'https://numpy.org/' },
+  { name: 'SciPy', role: 'Signal Processing', license: 'BSD-3-Clause', website: 'https://scipy.org/' },
+  { name: 'python-rtmidi', role: 'MIDI I/O', license: 'MIT', website: 'https://github.com/SpotlightKid/python-rtmidi' },
+  { name: 'nlohmann/json', role: 'JSON Parser (C++)', license: 'MIT', website: 'https://github.com/nlohmann/json' },
+  { name: 'pybind11', role: 'Python Bindings', license: 'BSD-3-Clause', website: 'https://pybind11.readthedocs.io/' },
+  { name: 'TanStack Query', role: 'Data Fetching', license: 'MIT', website: 'https://tanstack.com/query' },
+  { name: 'React Router', role: 'Routing', license: 'MIT', website: 'https://reactrouter.com/' },
+  { name: 'Recharts', role: 'Charts', license: 'MIT', website: 'https://recharts.org/' },
+  { name: 'Ariakit', role: 'A11y Primitives', license: 'MIT', website: 'https://ariakit.org/' },
 ]
 
-// License information
 const LICENSES: LicenseInfo[] = [
-  {
-    id: 'mit',
-    name: 'MIT License',
-    shortName: 'MIT',
-    color: '#22c55e',
-    url: 'https://opensource.org/licenses/MIT',
-    description: 'A short and simple permissive license with conditions only requiring preservation of copyright and license notices.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
-    conditions: ['License and copyright notice'],
-    limitations: ['Liability', 'Warranty'],
-  },
-  {
-    id: 'apache2',
-    name: 'Apache License 2.0',
-    shortName: 'Apache-2.0',
-    color: '#ef4444',
-    url: 'https://opensource.org/licenses/Apache-2.0',
-    description: 'A permissive license that also provides an express grant of patent rights from contributors.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
-    conditions: ['License and copyright notice', 'State changes'],
-    limitations: ['Liability', 'Warranty', 'Trademark use'],
-  },
-  {
-    id: 'bsd3',
-    name: 'BSD 3-Clause License',
-    shortName: 'BSD-3-Clause',
-    color: '#f59e0b',
-    url: 'https://opensource.org/licenses/BSD-3-Clause',
-    description: 'A permissive license similar to MIT but with a clause restricting use of contributor names.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
-    conditions: ['License and copyright notice'],
-    limitations: ['Liability', 'Warranty'],
-  },
-  {
-    id: 'gpl3',
-    name: 'GNU General Public License v3.0',
-    shortName: 'GPLv3',
-    color: '#3b82f6',
-    url: 'https://www.gnu.org/licenses/gpl-3.0.html',
-    description: 'Strong copyleft license requiring source code disclosure and licensing derivatives under the same terms.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
-    conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license'],
-    limitations: ['Liability', 'Warranty'],
-  },
-  {
-    id: 'isc',
-    name: 'ISC License',
-    shortName: 'ISC',
-    color: '#60a5fa',
-    url: 'https://opensource.org/licenses/ISC',
-    description: 'A permissive license functionally equivalent to MIT but with simplified language.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
-    conditions: ['License and copyright notice'],
-    limitations: ['Liability', 'Warranty'],
-  },
-  {
-    id: 'mpl2',
-    name: 'Mozilla Public License 2.0',
-    shortName: 'MPL-2.0',
-    color: '#60a5fa',
-    url: 'https://opensource.org/licenses/MPL-2.0',
-    description: 'A weak copyleft license that allows larger works to use different licenses but requires modified files to remain open.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
-    conditions: ['Disclose source (modified files)', 'License and copyright notice', 'Same license (modified files)'],
-    limitations: ['Liability', 'Warranty', 'Trademark use'],
-  },
-  {
-    id: 'agpl3',
-    name: 'GNU Affero General Public License v3.0',
-    shortName: 'AGPL-3.0',
-    color: '#a78bfa',
-    url: 'https://www.gnu.org/licenses/agpl-3.0.html',
-    description: 'Strong copyleft license that extends GPL to cover networked use, requiring source disclosure for all users who interact with the software over a network.',
-    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
-    conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license', 'Network use disclosure'],
-    limitations: ['Liability', 'Warranty'],
-  },
+  { id: 'mit', name: 'MIT License', shortName: 'MIT', url: 'https://opensource.org/licenses/MIT', description: 'Permissive license requiring only preservation of copyright and license notices.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'], conditions: ['License and copyright notice'], limitations: ['Liability', 'Warranty'] },
+  { id: 'apache2', name: 'Apache License 2.0', shortName: 'Apache-2.0', url: 'https://opensource.org/licenses/Apache-2.0', description: 'Permissive with express patent grant from contributors.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'], conditions: ['License and copyright notice', 'State changes'], limitations: ['Liability', 'Warranty', 'Trademark use'] },
+  { id: 'bsd3', name: 'BSD 3-Clause License', shortName: 'BSD-3-Clause', url: 'https://opensource.org/licenses/BSD-3-Clause', description: 'Permissive similar to MIT with non-endorsement clause.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'], conditions: ['License and copyright notice'], limitations: ['Liability', 'Warranty'] },
+  { id: 'gpl3', name: 'GNU GPL v3.0', shortName: 'GPLv3', url: 'https://www.gnu.org/licenses/gpl-3.0.html', description: 'Strong copyleft requiring source disclosure and same-license derivatives.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'], conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license'], limitations: ['Liability', 'Warranty'] },
+  { id: 'isc', name: 'ISC License', shortName: 'ISC', url: 'https://opensource.org/licenses/ISC', description: 'Permissive license functionally equivalent to MIT.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'], conditions: ['License and copyright notice'], limitations: ['Liability', 'Warranty'] },
+  { id: 'mpl2', name: 'Mozilla Public License 2.0', shortName: 'MPL-2.0', url: 'https://opensource.org/licenses/MPL-2.0', description: 'Weak copyleft; modified files remain open.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'], conditions: ['Disclose source (modified files)', 'License and copyright notice', 'Same license (modified files)'], limitations: ['Liability', 'Warranty', 'Trademark use'] },
+  { id: 'agpl3', name: 'GNU AGPL v3.0', shortName: 'AGPL-3.0', url: 'https://www.gnu.org/licenses/agpl-3.0.html', description: 'Strong network copyleft; source disclosure for network use.', permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'], conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license', 'Network use disclosure'], limitations: ['Liability', 'Warranty'] },
 ]
 
-const LINKS = [
-  { label: 'GitHub', url: 'https://github.com/matthewmackes/map2-audio', icon: LogoGithub },
-  { label: 'JUCE', url: 'https://juce.com', icon: Launch },
-  { label: 'NAM', url: 'https://www.neuralampmodeler.com', icon: Launch },
-  { label: 'LV2', url: 'https://lv2plug.in', icon: Launch },
-  { label: 'FastAPI', url: 'https://fastapi.tiangolo.com', icon: Launch },
-  { label: 'React', url: 'https://react.dev', icon: Launch },
-]
-
-// ── Table definitions ──────────────────────────────────────────────────────────
-
-const VERSION_HEADERS = [
-  { key: 'field', header: 'Field' },
-  { key: 'value', header: 'Value' },
-]
-
-const TECH_HEADERS = [
-  { key: 'name',        header: 'Name' },
-  { key: 'category',    header: 'Category' },
-  { key: 'role',        header: 'Role' },
-  { key: 'license',     header: 'License' },
-  { key: 'description', header: 'Description' },
-]
+const LICENSE_URL_MAP: Record<string, string> = Object.fromEntries(LICENSES.map((l) => [l.id, l.url]))
 
 const LICENSE_HEADERS = [
-  { key: 'shortName',   header: 'License' },
+  { key: 'shortName', header: 'License' },
   { key: 'description', header: 'Summary' },
   { key: 'permissions', header: 'Permissions' },
-  { key: 'conditions',  header: 'Conditions' },
+  { key: 'conditions', header: 'Conditions' },
 ]
 
-const LINKS_HEADERS = [
-  { key: 'label', header: 'Resource' },
-  { key: 'url',   header: 'URL' },
+const SUPPORTING_HEADERS = [
+  { key: 'name', header: 'Project' },
+  { key: 'role', header: 'Role' },
+  { key: 'license', header: 'License' },
+  { key: 'link', header: '' },
 ]
 
-const CREDITS_HEADERS = [
-  { key: 'role',    header: 'Role' },
-  { key: 'person',  header: 'Person' },
-  { key: 'contact', header: 'Contact' },
-  { key: 'note',    header: 'Note' },
-]
-
-const LICENSE_URL_MAP: Record<string, string> = Object.fromEntries(
-  LICENSES.map((l) => [l.id, l.url]),
-)
-
-const TECH_WEBSITE_MAP: Record<string, string> = Object.fromEntries(
-  [...CORE_PROJECTS, ...BACKEND_PROJECTS, ...FRONTEND_PROJECTS, ...AUDIO_PROJECTS, ...UTILITY_PROJECTS].map(
-    (p) => [p.name, p.website],
-  ),
-)
-
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────
 
 export function AboutPage() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
-  const [welcomeBanner, setWelcomeBanner] = useState<WelcomeBannerStatus | null>(null)
-  const [bannerLoading, setBannerLoading] = useState(false)
-  const [bootSplash, setBootSplash] = useState<BootSplashStatus | null>(null)
-  const [splashLoading, setSplashLoading] = useState(false)
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
 
   useEffect(() => {
     fetch('/api/version')
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(setVersionInfo)
       .catch(() =>
         setVersionInfo({
@@ -489,560 +238,458 @@ export function AboutPage() {
           build_date: `${MAP2_PLATFORM_BUILD_DATE}${MAP2_PLATFORM_BUILD_TIME ? ` ${MAP2_PLATFORM_BUILD_TIME}` : ''}`.trim(),
         }),
       )
-
-    fetch('/api/system/welcome-banner')
-      .then(r => r.json())
-      .then(setWelcomeBanner)
-      .catch(() => setWelcomeBanner({ installed: false }))
-
-    fetch('/api/system/boot-splash')
-      .then(r => r.json())
-      .then(setBootSplash)
-      .catch(() => setBootSplash({ installed: false }))
   }, [])
 
-  const toggleWelcomeBanner = async () => {
-    if (!welcomeBanner || bannerLoading) return
-    setBannerLoading(true)
-    try {
-      const response = await fetch(`/api/system/welcome-banner?install=${!welcomeBanner.installed}`, { method: 'POST' })
-      const result = await response.json()
-      if (result.success) setWelcomeBanner({ installed: result.installed })
-    } catch {
-      // silent
-    } finally {
-      setBannerLoading(false)
-    }
-  }
-
-  const toggleBootSplash = async () => {
-    if (!bootSplash || splashLoading) return
-    setSplashLoading(true)
-    try {
-      const response = await fetch(`/api/system/boot-splash?install=${!bootSplash.installed}`, { method: 'POST' })
-      const result = await response.json()
-      if (result.success) setBootSplash({ ...bootSplash, installed: result.installed })
-    } catch {
-      // silent
-    } finally {
-      setSplashLoading(false)
-    }
-  }
-
-
-  // ── Table row data (computed) ────────────────────────────────────────────────
-
-  const versionRows = [
-    { id: 'version',    field: 'Version',    value: versionInfo?.version    ?? MAP2_PLATFORM_VERSION },
-    { id: 'build_date', field: 'Build Date', value: versionInfo?.build_date ?? MAP2_PLATFORM_BUILD_DATE },
-    { id: 'commit',     field: 'Commit',     value: versionInfo?.commit     ? versionInfo.commit.slice(0, 7) : '—' },
-    { id: 'license',    field: 'License',    value: 'AGPL-3.0-only (MAP2-owned code)' },
-  ]
-
-  const techRows = [
-    ...CORE_PROJECTS.map((p, i)     => ({ id: `core-${i}`,     category: 'Core',       name: p.name, role: p.role, license: p.license, description: p.description })),
-    ...BACKEND_PROJECTS.map((p, i)  => ({ id: `backend-${i}`,  category: 'Backend',    name: p.name, role: p.role, license: p.license, description: p.description })),
-    ...FRONTEND_PROJECTS.map((p, i) => ({ id: `frontend-${i}`, category: 'Frontend',   name: p.name, role: p.role, license: p.license, description: p.description })),
-    ...AUDIO_PROJECTS.map((p, i)    => ({ id: `audio-${i}`,    category: 'Audio DSP',  name: p.name, role: p.role, license: p.license, description: p.description })),
-    ...UTILITY_PROJECTS.map((p, i)  => ({ id: `util-${i}`,     category: 'Utilities',  name: p.name, role: p.role, license: p.license, description: p.description })),
-  ]
-
   const licenseRows = LICENSES.map((lic) => ({
-    id:          lic.id,
-    shortName:   lic.shortName,
+    id: lic.id,
+    shortName: lic.shortName,
     description: lic.description,
     permissions: lic.permissions.join(' · '),
-    conditions:  lic.conditions.join(' · '),
+    conditions: lic.conditions.join(' · '),
   }))
 
-  const linkRows = LINKS.map((l, i) => ({
-    id:    `link-${i}`,
-    label: l.label,
-    url:   l.url,
+  const supportingRows = SUPPORTING_PROJECTS.map((p, i) => ({
+    id: `sup-${i}`,
+    name: p.name,
+    role: p.role,
+    license: p.license,
+    link: p.website,
   }))
-
-  const creditRows = [
-    {
-      id:      'lead',
-      role:    'Platform Leadership',
-      person:  'Matthew Mackes',
-      contact: 'matthewmackes@outlook.com',
-      note:    'Vibe Scrum Master & AI Taskmaster · Buffalo, NY',
-    },
-  ]
-
-  const tablePanelClassName = 'about-page__table about-page__panel'
-
-  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <section className="about-page">
       <Layer className="about-page__surface">
-        {/* ── Legal Disclaimer ────────────────────────────────────────────── */}
-        <section aria-label="Legal disclaimer" className="about-page__panel about-page__disclaimer">
-          <div className="about-page__section-header about-page__section-header--compact">
-            <Scales size={16} className="about-page__section-icon" />
-            <h2 className="about-page__section-heading">
-              Legal Disclaimer — Important Notice
-            </h2>
-          </div>
 
-          <p className="about-page__lead">
-            MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
-          </p>
-
-          <div className="about-page__agpl-panel">
-            <h3 className="about-page__agpl-title">
-              GNU Affero General Public License v3.0 (AGPL-3.0-only)
-            </h3>
-            <p className="about-page__copy">
-              MAP2-owned code in this repository is licensed under the <strong>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
-            </p>
-            <p className="about-page__copy about-page__copy--last">
-              Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
-            </p>
-          </div>
-
-          <p className="about-page__copy">
-            Third-party components remain under their original licenses and are not relicensed by MAP2.
-          </p>
-
-          <h3 className="about-page__subheading">No Affiliation or Endorsement</h3>
-          <p className="about-page__copy">
-            This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are{' '}
-            <strong>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
-          </p>
-
-          <h3 className="about-page__subheading">Trademarks and Product Names</h3>
-          <p className="about-page__copy">
-            All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the{' '}
-            <strong>property of their respective owners</strong>. References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only. No trademark rights are granted by this repository license, documentation, or code.
-          </p>
-
-          <h3 className="about-page__subheading">No Warranty</h3>
-          <p className="about-page__copy">
-            This project and all associated materials are provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
-          </p>
-
-          <h3 className="about-page__subheading">Your Responsibility</h3>
-          <p className="about-page__copy about-page__copy--tight">
-            By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
-          </p>
-          <ol className="about-page__list">
-            <li className="about-page__list-item">Comply with AGPLv3 requirements for MAP2-owned code.</li>
-            <li className="about-page__list-item">Comply with all applicable third-party licenses for included dependencies.</li>
-            <li className="about-page__list-item">Avoid representing this project as officially affiliated with third-party brands or products.</li>
-            <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
-          </ol>
-
-          <p className="about-page__note">
-            This project continues to prioritize education, transparency, and respectful attribution.
-          </p>
-          <p className="about-page__timestamp">
-            Last updated: 2026-02-22
-          </p>
-        </section>
-
-        {/* Page header */}
-        <header className="about-page__panel about-page__hero">
-          <div className="about-page__hero-title-row">
-            <Information size={28} className="about-page__hero-icon" />
-            <h1 className="about-page__hero-heading">
-              MAP2 Platform Guide
+        {/* ── HERO: Editorial Banner ────────────────────────────────────── */}
+        <header className="about-page__hero" aria-labelledby="about-hero-title">
+          <div className="about-page__hero-grid">
+            <div className="about-page__hero-eyebrow">
+              <span className="about-page__hero-mark" aria-hidden="true" />
+              <span>MAP2 · Platform Guide</span>
+            </div>
+            <h1 id="about-hero-title" className="about-page__hero-title">
+              An open, educational<br />
+              platform for<br />
+              <em>real-time audio.</em>
             </h1>
+            <p className="about-page__hero-lede">
+              MAP2 is a research-focused environment for learning, teaching, and experimenting with professional audio
+              systems — built on free and open-source software, documented in the open, and licensed under AGPLv3.
+            </p>
+            <div className="about-page__hero-meta">
+              <div className="about-page__hero-meta-item">
+                <span className="about-page__hero-meta-label">Version</span>
+                <span className="about-page__hero-meta-value">{versionInfo?.version ?? MAP2_PLATFORM_VERSION}</span>
+              </div>
+              <div className="about-page__hero-meta-item">
+                <span className="about-page__hero-meta-label">Build</span>
+                <span className="about-page__hero-meta-value">{versionInfo?.build_date ?? MAP2_PLATFORM_BUILD_DATE}</span>
+              </div>
+              <div className="about-page__hero-meta-item">
+                <span className="about-page__hero-meta-label">License</span>
+                <span className="about-page__hero-meta-value">AGPL-3.0-only</span>
+              </div>
+              <div className="about-page__hero-meta-item">
+                <span className="about-page__hero-meta-label">Commit</span>
+                <span className="about-page__hero-meta-value about-page__hero-meta-value--mono">
+                  {versionInfo?.commit ? versionInfo.commit.slice(0, 7) : '—'}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="about-page__hero-copy">
-            Orientation, documentation, build identity, and support context in one canonical information surface
-          </p>
         </header>
 
-        {/* Guide section — documentation library */}
-        <section className="about-page__panel about-page__guide">
+        {/* ── LEGAL BAR: Always Visible, Impossible to Miss ─────────────── */}
+        <section className="about-page__legal-bar" aria-labelledby="legal-title">
+          <div className="about-page__legal-bar-grid">
+            <div className="about-page__legal-bar-icon">
+              <WarningAlt size={24} />
+            </div>
+            <div className="about-page__legal-bar-body">
+              <h2 id="legal-title" className="about-page__legal-bar-title">Legal Notice · AGPL-3.0-only · Not Affiliated</h2>
+              <p className="about-page__legal-bar-copy">
+                MAP2-owned code is licensed under the <strong>GNU Affero General Public License v3.0</strong>. MAP2 is{' '}
+                <strong>not affiliated with, endorsed by, or officially connected to</strong> any commercial manufacturer,
+                brand owner, hardware developer, plugin creator, or rights holder. All trademarks, product names, and
+                logos remain the property of their respective owners. References are used for educational, historical,
+                descriptive, and interoperability purposes only. This project is provided <strong>"AS IS"</strong> without
+                warranty of any kind.
+              </p>
+              <div className="about-page__legal-bar-actions">
+                <a className="about-page__legal-bar-link" href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">
+                  Read AGPLv3 <Launch size={12} />
+                </a>
+                <a className="about-page__legal-bar-link" href="https://github.com/matthewmackes/map2-audio" target="_blank" rel="noreferrer">
+                  View Source <LogoGithub size={12} />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── MISSION: Research & Education ─────────────────────────────── */}
+        <section className="about-page__mission" aria-labelledby="mission-title">
+          <div className="about-page__mission-grid">
+            <div className="about-page__mission-head">
+              <div className="about-page__kicker">
+                <Education size={16} />
+                <span>Mission</span>
+              </div>
+              <h2 id="mission-title" className="about-page__section-title">Research &amp; Education</h2>
+            </div>
+
+            <div className="about-page__mission-body">
+              <p className="about-page__mission-pullquote">
+                MAP2 exists to make the full stack of professional audio &mdash; from kernel scheduling to plugin graphs
+                to touch-surface UIs &mdash; legible, hackable, and teachable.
+              </p>
+
+              <div className="about-page__mission-pillars">
+                <article className="about-page__pillar">
+                  <div className="about-page__pillar-icon"><Book size={22} /></div>
+                  <h3 className="about-page__pillar-title">Research documentation</h3>
+                  <p className="about-page__pillar-copy">
+                    Every architectural decision &mdash; kernel tuning, buffer sizes, signal chains, protocol choices &mdash;
+                    is documented alongside the code. The repository is both a product and a study guide.
+                  </p>
+                </article>
+                <article className="about-page__pillar">
+                  <div className="about-page__pillar-icon"><Education size={22} /></div>
+                  <h3 className="about-page__pillar-title">Pedagogical clarity</h3>
+                  <p className="about-page__pillar-copy">
+                    Code is written to be read. Naming, structure, and comments are optimized for learners working through
+                    real-time audio systems for the first time &mdash; not for the smallest possible diff.
+                  </p>
+                </article>
+                <article className="about-page__pillar">
+                  <div className="about-page__pillar-icon"><Scales size={22} /></div>
+                  <h3 className="about-page__pillar-title">Transparent licensing</h3>
+                  <p className="about-page__pillar-copy">
+                    AGPLv3 ensures that knowledge stays open. If you deploy a modified MAP2 over a network, your users
+                    have the right to the corresponding source. No proprietary forks, no closed derivatives.
+                  </p>
+                </article>
+                <article className="about-page__pillar">
+                  <div className="about-page__pillar-icon"><Headphones size={22} /></div>
+                  <h3 className="about-page__pillar-title">Respect for the craft</h3>
+                  <p className="about-page__pillar-copy">
+                    MAP2 references commercial hardware and software with reverence, not imitation. We study the giants;
+                    we do not impersonate them. Trademarks remain with their owners.
+                  </p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── HERO LEVEL TWO: Open-Source Projects That Power MAP2 ──────── */}
+        <section className="about-page__oss" aria-labelledby="oss-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker">
+              <Package size={16} />
+              <span>Standing on the shoulders of giants</span>
+            </div>
+            <h2 id="oss-title" className="about-page__section-title">
+              The open-source projects<br />that make MAP2 possible.
+            </h2>
+            <p className="about-page__section-sub">
+              Every layer of MAP2 &mdash; the real-time kernel, the audio engine, the UI, the ML inference &mdash;
+              rests on decades of work by the free and open-source community. These are the projects we depend on,
+              the licenses we respect, and the communities we are deeply grateful to.
+            </p>
+          </div>
+
+          <div className="about-page__oss-grid">
+            {HERO_PROJECTS.map((project) => (
+              <a
+                key={project.name}
+                href={project.website}
+                target="_blank"
+                rel="noreferrer"
+                className="about-page__oss-card"
+              >
+                <div className="about-page__oss-card-top">
+                  <div className="about-page__oss-icon">{project.icon}</div>
+                  <span className="about-page__oss-category">{project.category}</span>
+                </div>
+                <h3 className="about-page__oss-name">{project.name}</h3>
+                <p className="about-page__oss-tagline">{project.tagline}</p>
+                <p className="about-page__oss-desc">{project.description}</p>
+                <div className="about-page__oss-card-foot">
+                  <div className="about-page__oss-meta">
+                    <span className="about-page__oss-meta-label">Role</span>
+                    <span className="about-page__oss-meta-value">{project.role}</span>
+                  </div>
+                  <div className="about-page__oss-meta">
+                    <span className="about-page__oss-meta-label">License</span>
+                    <span className="about-page__oss-meta-value">{project.license}</span>
+                  </div>
+                </div>
+                <span className="about-page__oss-cta">
+                  Visit project <Launch size={14} />
+                </span>
+              </a>
+            ))}
+          </div>
+
+          {/* Supporting libraries table */}
+          <div className="about-page__supporting">
+            <div className="about-page__supporting-head">
+              <h3 className="about-page__h3">Supporting libraries</h3>
+              <p className="about-page__supporting-sub">
+                Additional open-source components integrated throughout the stack.
+              </p>
+            </div>
+
+            <DataTable rows={supportingRows} headers={SUPPORTING_HEADERS} isSortable>
+              {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+                <TableContainer {...getTableContainerProps()} className="about-page__table">
+                  <Table {...getTableProps()} aria-label="Supporting libraries">
+                    <TableHead>
+                      <TableRow>
+                        {headers.map((header) => {
+                          const { key: _k, ...hProps } = getHeaderProps({ header })
+                          return (
+                            <TableHeader key={header.key} {...hProps}>
+                              {header.header}
+                            </TableHeader>
+                          )
+                        })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {rows.map((row) => {
+                        const { key: _k, ...rProps } = getRowProps({ row })
+                        const sourceRow = supportingRows.find((r) => r.id === row.id)
+                        return (
+                          <TableRow key={row.id} {...rProps}>
+                            {row.cells.map((cell) => {
+                              if (cell.info.header === 'name') {
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <strong>{String(cell.value)}</strong>
+                                  </TableCell>
+                                )
+                              }
+                              if (cell.info.header === 'license') {
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <Tag type="cool-gray" size="sm">{String(cell.value)}</Tag>
+                                  </TableCell>
+                                )
+                              }
+                              if (cell.info.header === 'link') {
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <a
+                                      href={sourceRow?.link ?? '#'}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="about-page__link"
+                                    >
+                                      Visit <Launch size={12} />
+                                    </a>
+                                  </TableCell>
+                                )
+                              }
+                              return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                            })}
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </DataTable>
+          </div>
+        </section>
+
+        {/* ── DOCUMENTATION LIBRARY ─────────────────────────────────────── */}
+        <section className="about-page__docs" aria-labelledby="docs-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker">
+              <Book size={16} />
+              <span>Documentation</span>
+            </div>
+            <h2 id="docs-title" className="about-page__section-title">Research library</h2>
+            <p className="about-page__section-sub">
+              Architecture notes, setup guides, protocol references, and performance tuning &mdash; searchable and
+              downloadable directly from the platform.
+            </p>
+          </div>
           <PlatformInfoGuideSection />
         </section>
 
-        {/* ── Version Information ─────────────────────────────────────────── */}
-        <DataTable rows={versionRows} headers={VERSION_HEADERS} useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
-            <TableContainer
-              {...getTableContainerProps()}
-              className={tablePanelClassName}
-              title="Platform version"
-              description="Build identity and license for the running MAP2 instance."
-            >
-              <Table {...getTableProps()} aria-label="Platform version table">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _k, ...hProps } = getHeaderProps({ header })
-                      return (
-                        <TableHeader key={header.key} {...hProps}>
-                          {header.header}
-                        </TableHeader>
-                      )
-                    })}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _k, ...rProps } = getRowProps({ row })
-                    return (
-                      <TableRow key={row.id} {...rProps}>
-                        {row.cells.map((cell) => (
-                          <TableCell key={cell.id}>
-                            {cell.info.header === 'field' ? (
-                              <strong>{String(cell.value)}</strong>
-                            ) : cell.info.header === 'value' && row.id === 'commit' && cell.value !== '—' ? (
-                              <code className="about-page__inline-code">
-                                {String(cell.value)}
-                              </code>
-                            ) : (
-                              String(cell.value)
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DataTable>
-
-        {/* ── Technology Stack ────────────────────────────────────────────── */}
-        <DataTable rows={techRows} headers={TECH_HEADERS} isSortable useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
-            <TableContainer
-              {...getTableContainerProps()}
-              className={tablePanelClassName}
-              title="Technology stack"
-              description={`${techRows.length} open-source components across Core, Backend, Frontend, Audio DSP, and Utilities.`}
-            >
-              <TableToolbar {...getToolbarProps()}>
-                <TableToolbarContent>
-                  <Tag type="cool-gray" size="sm" className="about-page__count-tag">
-                    {techRows.length} dependencies
-                  </Tag>
-                </TableToolbarContent>
-              </TableToolbar>
-              <Table {...getTableProps()} aria-label="Technology stack table">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _k, ...hProps } = getHeaderProps({ header })
-                      return (
-                        <TableHeader key={header.key} {...hProps}>
-                          {header.header}
-                        </TableHeader>
-                      )
-                    })}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _k, ...rProps } = getRowProps({ row })
-                    return (
-                      <TableRow key={row.id} {...rProps}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === 'name') {
-                            const website = TECH_WEBSITE_MAP[String(cell.value)]
-                            return (
-                              <TableCell key={cell.id}>
-                                <a
-                                  href={website}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="about-page__table-link"
-                                >
-                                  {String(cell.value)}
-                                </a>
-                              </TableCell>
-                            )
-                          }
-                          if (cell.info.header === 'license') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <Tag type="cool-gray" size="sm">{String(cell.value)}</Tag>
-                              </TableCell>
-                            )
-                          }
-                          if (cell.info.header === 'description') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <span title={String(cell.value)} className="about-page__truncate">
-                                  {String(cell.value)}
-                                </span>
-                              </TableCell>
-                            )
-                          }
-                          if (cell.info.header === 'category') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <Tag type="blue" size="sm">{String(cell.value)}</Tag>
-                              </TableCell>
-                            )
-                          }
-                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
-                        })}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DataTable>
-
-        {/* ── Open Source Licenses ────────────────────────────────────────── */}
-        <DataTable rows={licenseRows} headers={LICENSE_HEADERS} isSortable useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
-            <TableContainer
-              {...getTableContainerProps()}
-              className={tablePanelClassName}
-              title="Open source licenses"
-              description="Licenses used by MAP2 and its dependencies. MAP2-owned code: AGPL-3.0-only."
-            >
-              <Table {...getTableProps()} aria-label="Open source licenses table">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _k, ...hProps } = getHeaderProps({ header })
-                      return (
-                        <TableHeader key={header.key} {...hProps}>
-                          {header.header}
-                        </TableHeader>
-                      )
-                    })}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _k, ...rProps } = getRowProps({ row })
-                    return (
-                      <TableRow key={row.id} {...rProps}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === 'shortName') {
-                            const url = LICENSE_URL_MAP[row.id]
-                            return (
-                              <TableCell key={cell.id}>
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="about-page__table-link about-page__table-link--prominent"
-                                >
-                                  {String(cell.value)}
-                                </a>
-                              </TableCell>
-                            )
-                          }
-                          if (cell.info.header === 'description') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <span title={String(cell.value)} className="about-page__truncate about-page__truncate--compact">
-                                  {String(cell.value)}
-                                </span>
-                              </TableCell>
-                            )
-                          }
-                          return (
-                            <TableCell key={cell.id}>
-                              <span className="about-page__cell-copy">
-                                {String(cell.value)}
-                              </span>
-                            </TableCell>
-                          )
-                        })}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DataTable>
-
-        {/* ── Resources & Links ───────────────────────────────────────────── */}
-        <DataTable rows={linkRows} headers={LINKS_HEADERS} useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
-            <TableContainer
-              {...getTableContainerProps()}
-              title="Resources & links"
-              className={tablePanelClassName}
-            >
-              <Table {...getTableProps()} aria-label="Resources and links table">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _k, ...hProps } = getHeaderProps({ header })
-                      return (
-                        <TableHeader key={header.key} {...hProps}>
-                          {header.header}
-                        </TableHeader>
-                      )
-                    })}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _k, ...rProps } = getRowProps({ row })
-                    return (
-                      <TableRow key={row.id} {...rProps}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === 'url') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <a
-                                  href={String(cell.value)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="about-page__table-link about-page__table-link--inline"
-                                >
-                                  {String(cell.value)}
-                                  <Launch size={12} />
-                                </a>
-                              </TableCell>
-                            )
-                          }
-                          return <TableCell key={cell.id}><strong>{String(cell.value)}</strong></TableCell>
-                        })}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DataTable>
-
-        {/* ── Platform Credits ────────────────────────────────────────────── */}
-        <DataTable rows={creditRows} headers={CREDITS_HEADERS} useZebraStyles>
-          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
-            <TableContainer
-              {...getTableContainerProps()}
-              title="Platform credits"
-              className={tablePanelClassName}
-            >
-              <Table {...getTableProps()} aria-label="Platform credits table">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _k, ...hProps } = getHeaderProps({ header })
-                      return (
-                        <TableHeader key={header.key} {...hProps}>
-                          {header.header}
-                        </TableHeader>
-                      )
-                    })}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _k, ...rProps } = getRowProps({ row })
-                    return (
-                      <TableRow key={row.id} {...rProps}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === 'contact') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <a
-                                  href={`mailto:${String(cell.value)}`}
-                                  className="about-page__table-link about-page__table-link--inline"
-                                >
-                                  {String(cell.value)}
-                                </a>
-                              </TableCell>
-                            )
-                          }
-                          if (cell.info.header === 'person') {
-                            return (
-                              <TableCell key={cell.id}>
-                                <div className="about-page__person">
-                                  <UserFavorite size={16} className="about-page__person-icon" />
-                                  <strong>{String(cell.value)}</strong>
-                                </div>
-                              </TableCell>
-                            )
-                          }
-                          return (
-                            <TableCell key={cell.id}>
-                              <span className="about-page__cell-copy">
-                                {String(cell.value)}
-                              </span>
-                            </TableCell>
-                          )
-                        })}
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DataTable>
-
-        {/* ── Help Me Find Hardware ────────────────────────────────────────── */}
-        <section className="about-page__panel about-page__hardware">
-          <div className="about-page__section-header">
-            <Headphones size={20} className="about-page__section-icon" />
-            <h2 className="about-page__section-heading">
-              Help Me Find Hardware
-            </h2>
+        {/* ── HARDWARE HELPERS ──────────────────────────────────────────── */}
+        <section className="about-page__hw" aria-labelledby="hw-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker">
+              <Headphones size={16} />
+              <span>Get oriented</span>
+            </div>
+            <h2 id="hw-title" className="about-page__section-title">Explore the platform</h2>
           </div>
-          <div className="about-page__hardware-grid">
-            <NavLink to="/host-machine" className="about-page__hardware-card">
-              <Chip size={28} className="about-page__hardware-icon" />
-              <div className="about-page__hardware-title">
-                Host Machine Status
-              </div>
-              <div className="about-page__hardware-copy">
-                Review hardware and operating-system details
-              </div>
+          <div className="about-page__hw-grid">
+            <NavLink to="/host-machine" className="about-page__hw-tile">
+              <Chip size={24} />
+              <span className="about-page__hw-title">Host Machine</span>
+              <span className="about-page__hw-sub">Hardware &amp; OS details</span>
             </NavLink>
-
-            <NavLink to="/motu-rme" className="about-page__hardware-card">
-              <Flow size={28} className="about-page__hardware-icon" />
-              <div className="about-page__hardware-title">
-                Multi Channel ADAT Is Magic
-              </div>
-              <div className="about-page__hardware-copy">
-                MOTU + RME ADAT monitoring
-              </div>
+            <NavLink to="/engine" className="about-page__hw-tile">
+              <ChartLine size={24} />
+              <span className="about-page__hw-title">Audio Engine</span>
+              <span className="about-page__hw-sub">Runtime CPU &amp; latency</span>
             </NavLink>
-
-            <button
-              type="button"
-              onClick={() => setShowShoppingDialog(true)}
-              className="about-page__hardware-card"
-            >
-              <Package size={28} className="about-page__hardware-icon" />
-              <div className="about-page__hardware-title">
-                Find a Pro Interface
-              </div>
-              <div className="about-page__hardware-copy">
-                Search eBay, Reverb & ShopGoodwill
-              </div>
+            <NavLink to="/motu-rme" className="about-page__hw-tile">
+              <Flow size={24} />
+              <span className="about-page__hw-title">ADAT Monitoring</span>
+              <span className="about-page__hw-sub">MOTU + RME routing</span>
+            </NavLink>
+            <button type="button" onClick={() => setShowShoppingDialog(true)} className="about-page__hw-tile">
+              <Package size={24} />
+              <span className="about-page__hw-title">Find Hardware</span>
+              <span className="about-page__hw-sub">eBay · Reverb · ShopGoodwill</span>
             </button>
-
-            <NavLink to="/engine" className="about-page__hardware-card">
-              <ChartLine size={28} className="about-page__hardware-icon" />
-              <div className="about-page__hardware-title">
-                Audio Engine Status
-              </div>
-              <div className="about-page__hardware-copy">
-                Open runtime CPU, latency, and health controls
-              </div>
-            </NavLink>
           </div>
         </section>
 
-        {/* Dialogs */}
-        <ShoppingSearchDialog
-          open={showShoppingDialog}
-          onClose={() => setShowShoppingDialog(false)}
-        />
+        {/* ── CREDITS ───────────────────────────────────────────────────── */}
+        <section className="about-page__credits" aria-labelledby="credits-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker">
+              <UserFavorite size={16} />
+              <span>Credits</span>
+            </div>
+            <h2 id="credits-title" className="about-page__section-title">Platform stewardship</h2>
+          </div>
+          <div className="about-page__credits-card">
+            <div className="about-page__credits-role">Platform Leadership</div>
+            <div className="about-page__credits-name">Matthew Mackes</div>
+            <div className="about-page__credits-title-text">Vibe Scrum Master &amp; AI Taskmaster &middot; Buffalo, NY</div>
+            <a href="mailto:matthewmackes@outlook.com" className="about-page__link">
+              matthewmackes@outlook.com <Launch size={12} />
+            </a>
+          </div>
+        </section>
 
+        {/* ── LEGAL DETAIL: Full text for those who need it ─────────────── */}
+        <section className="about-page__legal-full" aria-labelledby="legal-full-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker about-page__kicker--warning">
+              <Scales size={16} />
+              <span>Legal detail</span>
+            </div>
+            <h2 id="legal-full-title" className="about-page__section-title">Licenses &amp; disclosures</h2>
+            <p className="about-page__section-sub">
+              Full license text, open-source summaries, and responsibility acknowledgements.
+            </p>
+          </div>
+
+          <Accordion className="about-page__accordion" align="start">
+            <AccordionItem title="GNU Affero General Public License v3.0 (AGPL-3.0-only)">
+              <div className="about-page__prose">
+                <p>
+                  MAP2-owned code in this repository is licensed under the <strong>GNU Affero General Public License v3.0
+                  (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions
+                  beyond AGPLv3.
+                </p>
+                <p>
+                  Source availability path for MAP2-owned code is this repository. Modified networked deployments should
+                  provide corresponding source in an accessible location for their users.
+                </p>
+                <p>Third-party components remain under their original licenses and are not relicensed by MAP2.</p>
+              </div>
+            </AccordionItem>
+
+            <AccordionItem title="No affiliation or endorsement">
+              <div className="about-page__prose">
+                <p>
+                  This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo
+                  files, and related materials are <strong>not affiliated with, endorsed by, sponsored by, or officially
+                  connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer,
+                  plugin creator, or rights holder.
+                </p>
+                <p>
+                  All trademarks, service marks, trade names, brand names, product names, model designations, logos, and
+                  related intellectual property are the <strong>property of their respective owners</strong>. References
+                  are used for educational, historical, descriptive, comparative, referential, and interoperability
+                  purposes only. No trademark rights are granted by this repository license, documentation, or code.
+                </p>
+              </div>
+            </AccordionItem>
+
+            <AccordionItem title="No warranty">
+              <div className="about-page__prose">
+                <p>
+                  This project and all associated materials are provided <strong>"AS IS"</strong> and{' '}
+                  <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for
+                  a particular purpose, and non-infringement.
+                </p>
+              </div>
+            </AccordionItem>
+
+            <AccordionItem title="Your responsibility">
+              <div className="about-page__prose">
+                <p>By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:</p>
+                <ol>
+                  <li>Comply with AGPLv3 requirements for MAP2-owned code.</li>
+                  <li>Comply with all applicable third-party licenses for included dependencies.</li>
+                  <li>Avoid representing this project as officially affiliated with third-party brands or products.</li>
+                  <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
+                </ol>
+              </div>
+            </AccordionItem>
+
+            <AccordionItem title="Open-source license reference">
+              <DataTable rows={licenseRows} headers={LICENSE_HEADERS} isSortable>
+                {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+                  <TableContainer {...getTableContainerProps()} className="about-page__table">
+                    <Table {...getTableProps()} aria-label="Open-source licenses">
+                      <TableHead>
+                        <TableRow>
+                          {headers.map((header) => {
+                            const { key: _k, ...hProps } = getHeaderProps({ header })
+                            return (
+                              <TableHeader key={header.key} {...hProps}>
+                                {header.header}
+                              </TableHeader>
+                            )
+                          })}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rows.map((row) => {
+                          const { key: _k, ...rProps } = getRowProps({ row })
+                          return (
+                            <TableRow key={row.id} {...rProps}>
+                              {row.cells.map((cell) => {
+                                if (cell.info.header === 'shortName') {
+                                  const url = LICENSE_URL_MAP[row.id]
+                                  return (
+                                    <TableCell key={cell.id}>
+                                      <a href={url} target="_blank" rel="noreferrer" className="about-page__link">
+                                        <strong>{String(cell.value)}</strong>
+                                      </a>
+                                    </TableCell>
+                                  )
+                                }
+                                return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                              })}
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </DataTable>
+            </AccordionItem>
+          </Accordion>
+          <p className="about-page__legal-updated">Last updated 2026-04-18</p>
+        </section>
+
+        <ShoppingSearchDialog open={showShoppingDialog} onClose={() => setShowShoppingDialog(false)} />
       </Layer>
     </section>
   )

@@ -218,6 +218,42 @@ class TestJuceEngineMocked:
         service._engine.trigger_parallel_ab_switch.assert_called_once_with(7, 1)
 
     @pytest.mark.asyncio
+    async def test_set_input_channel_mode_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.set_input_channel_mode.return_value = True
+
+        result = await service.set_input_channel_mode("mono_left")
+
+        assert result is True
+        assert service.config.input_channel_mode == "mono_left"
+        service._engine.set_input_channel_mode.assert_called_once_with(0)
+
+    @pytest.mark.asyncio
+    async def test_set_input_gain_db_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.set_input_gain_db.return_value = True
+
+        result = await service.set_input_gain_db(6.0)
+
+        assert result is True
+        assert service.config.input_gain_db == 6.0
+        service._engine.set_input_gain_db.assert_called_once_with(6.0)
+
+    @pytest.mark.asyncio
+    async def test_set_output_gain_db_uses_engine_when_available(self):
+        service = JuceEngineService()
+        service._engine = MagicMock()
+        service._engine.set_output_gain_db.return_value = True
+
+        result = await service.set_output_gain_db(-3.0)
+
+        assert result is True
+        assert service.config.output_gain_db == -3.0
+        service._engine.set_output_gain_db.assert_called_once_with(-3.0)
+
+    @pytest.mark.asyncio
     async def test_apply_routing_topology_uses_engine_when_available(self):
         service = JuceEngineService()
         service._engine = MagicMock()

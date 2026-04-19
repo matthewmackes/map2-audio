@@ -26,6 +26,9 @@ class InitializeRequest(BaseModel):
     sample_rate: int = 48000
     buffer_size: int = 256
     audio_device: str = "default"
+    input_channel_mode: str = "stereo"
+    input_gain_db: float = 0.0
+    output_gain_db: float = 0.0
     enable_midi: bool = True
     config_file: str = ""
 
@@ -160,6 +163,9 @@ async def initialize(request: InitializeRequest):
         sample_rate=request.sample_rate,
         buffer_size=request.buffer_size,
         audio_device=request.audio_device,
+        input_channel_mode=request.input_channel_mode,
+        input_gain_db=request.input_gain_db,
+        output_gain_db=request.output_gain_db,
         enable_midi=request.enable_midi,
         config_file=request.config_file
     )

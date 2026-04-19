@@ -5,6 +5,8 @@ import json
 import pytest
 
 import app.services.maschine_lcd_service as maschine_lcd_service_module
+from app.services.maschine.admin_console import reset_maschine_admin_console_service
+from app.services.maschine.incident_log import get_maschine_incident_log_service, reset_maschine_incident_log_service
 from app.services.maschine_lcd_service import (
     MaschineLCDRenderService,
     get_maschine_lcd_render_service,
@@ -111,9 +113,10 @@ def test_maschine_lcd_render_service_singleton_reset():
 @pytest.mark.asyncio
 async def test_render_phase2_monitor_help_profiles_and_menu_metadata(monkeypatch, tmp_path):
     reset_maschine_lcd_render_service()
+    reset_maschine_incident_log_service()
+    reset_maschine_admin_console_service()
+    get_maschine_incident_log_service().set_path(incident_log := tmp_path / "maschine_incident_log.jsonl")
     service = MaschineLCDRenderService()
-
-    incident_log = tmp_path / "maschine_incident_log.jsonl"
     incident_log.write_text(
         "\n".join(
             [
@@ -175,7 +178,6 @@ async def test_render_phase2_monitor_help_profiles_and_menu_metadata(monkeypatch
     monkeypatch.setattr(service, "_get_health_payload", _fake_health)
     monkeypatch.setattr(service, "_get_audio_payload", _fake_audio)
     monkeypatch.setattr(service, "_get_midi_payload", _fake_midi)
-    monkeypatch.setattr(maschine_lcd_service_module, "_INCIDENT_LOG_PATH", incident_log)
     monkeypatch.setattr(maschine_lcd_service_module, "get_runtime_config_manager", lambda: _FakeRuntimeConfig())
 
     rendered_profiles = {}
@@ -205,6 +207,56 @@ async def test_render_phase2_monitor_help_profiles_and_menu_metadata(monkeypatch
     assert rendered_profiles["t17_system_health"]["meta"]["category"] == "Monitor"
     assert rendered_profiles["t23_preferences"]["meta"]["category"] == "Admin"
     assert len(rendered_profiles["t25_reference_card"]["left"]["data"]) > 100
+
+
+@pytest.mark.asyncio
+async def test_render_admin_console_profile_uses_live_admin_snapshot(monkeypatch):
+    reset_maschine_lcd_render_service()
+    reset_maschine_admin_console_service()
+    service = MaschineLCDRenderService()
+
+    async def _fake_health():
+        return {"overall_status": "healthy", "status": "healthy", "issues": []}
+
+    async def _fake_audio():
+        return {"running": True, "cpu_load": 0.2}
+
+    async def _fake_midi():
+        return {"route_count": 2}
+
+    class _FakeAdminService:
+        @staticmethod
+        def snapshot():
+            return {
+                "session_unlocked": True,
+                "selected_action_index": 1,
+                "selected_action_label": "RESTART WEB",
+                "confirmation_progress": 2,
+                "busy": False,
+                "actions": [
+                    {"action_id": "restart_backend", "label": "RESTART BACKEND", "is_selected": False, "is_active": False},
+                    {"action_id": "restart_web", "label": "RESTART WEB", "is_selected": True, "is_active": False},
+                    {"action_id": "restart_maschine", "label": "RESTART MASCHINE", "is_selected": False, "is_active": False},
+                ],
+                "last_result": {"status": "completed", "label": "START ALL"},
+            }
+
+    monkeypatch.setattr(service, "_get_health_payload", _fake_health)
+    monkeypatch.setattr(service, "_get_audio_payload", _fake_audio)
+    monkeypatch.setattr(service, "_get_midi_payload", _fake_midi)
+    monkeypatch.setattr(maschine_lcd_service_module, "get_maschine_admin_console_service", lambda: _FakeAdminService())
+
+    rendered = await service.render(
+        session=None,
+        maschine_service=_FakeMaschineService(),
+        context="audio_grid",
+        profile_id="t18_admin_console",
+    )
+
+    assert rendered["profile_name"] == "T18 ADMIN CONSOLE"
+    assert rendered["meta"]["admin_only"] is True
+    assert len(rendered["left"]["data"]) > 100
+    assert len(rendered["right"]["data"]) > 100
 
 
 @pytest.mark.asyncio

@@ -608,6 +608,7 @@ export function SnapshotDeployModal({
 
         <div className="snapshot-deploy-modal__selection-status">
           {statusTag('blue', `${selectedTargetIds.size} target node${selectedTargetIds.size === 1 ? '' : 's'} selected`)}
+          {statusTag('cool-gray', 'Deploy copies it. Publish makes it live.')}
           {unresolvedAssetDependencies.length > 0 && (
             <span className="snapshot-deploy-modal__blocked-hint">
               <WarningAlt size={16} aria-hidden="true" />

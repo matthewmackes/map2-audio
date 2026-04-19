@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Snapshot
 from app.services.chain_service import ChainService
+from app.services.maschine.incident_log import get_maschine_incident_log_service
 from app.services.maschine_encoder_map_service import (
     default_maschine_encoder_map,
     normalize_maschine_encoder_map,
@@ -123,8 +124,11 @@ class MaschineService(Singleton):
         capabilities: dict[str, Any] | None = None,
         status: str | None = None,
     ) -> dict[str, Any]:
+        incident_entry: dict[str, Any] | None = None
         async with self._lock:
             now = _utcnow_iso()
+            was_connected = bool(self._state.connected)
+            previous_status = str(self._state.status or "disconnected")
             self._state.connected = True
             self._state.status = str(status or "connected")
             self._state.daemon_version = daemon_version or self._state.daemon_version
@@ -143,30 +147,71 @@ class MaschineService(Singleton):
             self._state.heartbeat_at = now
             if self._state.registered_at is None:
                 self._state.registered_at = now
+            if not was_connected:
+                incident_entry = {
+                    "severity": "info",
+                    "source": "maschine-service",
+                    "message": "Maschine daemon connected",
+                    "detail": self._state.virtual_port_name,
+                    "event": "daemon_connected",
+                    "context": {"status": self._state.status},
+                }
+            elif status is not None and self._state.status != previous_status:
+                incident_entry = {
+                    "severity": "info",
+                    "source": "maschine-service",
+                    "message": f"Maschine daemon status {self._state.status}",
+                    "detail": self._state.virtual_port_name,
+                    "event": "daemon_status",
+                    "context": {"previous_status": previous_status, "status": self._state.status},
+                }
             payload = self._status_event_payload_locked(event="registered")
         await self._broadcast_status_payload(payload)
+        if incident_entry is not None:
+            get_maschine_incident_log_service().append(**incident_entry)
         return payload["data"]
 
     async def disconnect_daemon(self, *, reason: str = "disconnected") -> dict[str, Any]:
+        incident_entry: dict[str, Any] | None = None
         async with self._lock:
             self._state.connected = False
             self._state.websocket_connected = False
             self._state.status = reason
             self._state.last_event_type = "disconnect"
+            incident_entry = {
+                "severity": "warn" if str(reason or "disconnected") != "disconnected" else "info",
+                "source": "maschine-service",
+                "message": "Maschine daemon disconnected",
+                "detail": str(reason or "disconnected"),
+                "event": "daemon_disconnected",
+            }
             payload = self._status_event_payload_locked(event="disconnect")
         await self._broadcast_status_payload(payload)
+        if incident_entry is not None:
+            get_maschine_incident_log_service().append(**incident_entry)
         return payload["data"]
 
     async def set_websocket_connected(self, connected: bool) -> dict[str, Any]:
+        incident_entry: dict[str, Any] | None = None
         async with self._lock:
+            previous_connected = bool(self._state.websocket_connected)
             self._state.websocket_connected = bool(connected)
             if connected:
                 self._state.connected = True
                 self._state.status = "connected"
                 self._state.last_seen_at = _utcnow_iso()
             self._state.last_event_type = "ws_connect" if connected else "ws_disconnect"
+            if previous_connected != bool(connected):
+                incident_entry = {
+                    "severity": "info" if connected else "warn",
+                    "source": "maschine-service",
+                    "message": "Maschine websocket connected" if connected else "Maschine websocket disconnected",
+                    "event": self._state.last_event_type,
+                }
             payload = self._status_event_payload_locked(event=self._state.last_event_type)
         await self._broadcast_status_payload(payload)
+        if incident_entry is not None:
+            get_maschine_incident_log_service().append(**incident_entry)
         return payload["data"]
 
     def get_status(self) -> dict[str, Any]:

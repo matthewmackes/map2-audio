@@ -287,8 +287,9 @@ export function SnapshotChainManagementCard({
                         renderIcon={SettingsAdjust}
                         className="juce-grid-page__snapshot-status-config-button"
                         onClick={onOpenProgressModal}
+                        title="Open publish to live workspace"
                       >
-                        Snapshot Configuration
+                        Publish to live
                       </Button>
                     ) : null}
                     <h2 className="juce-grid-page__snapshot-status-title">

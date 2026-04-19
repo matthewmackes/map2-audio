@@ -13,6 +13,7 @@ class _FakeUpdateOrchestrator:
     def __init__(self) -> None:
         self.progress = None
         self.calls: list[tuple[str, bool]] = []
+        self.cancel_calls = 0
         self.snapshots_dir = Path("/tmp/map2-cluster-snapshots")
 
     async def trigger_cluster_update(self, *, target_version: str, dry_run: bool):
@@ -28,6 +29,10 @@ class _FakeUpdateOrchestrator:
 
     def get_current_progress(self):
         return self.progress
+
+    async def cancel_update(self):
+        self.cancel_calls += 1
+        return True
 
 
 class _FakeRegistry:
@@ -102,6 +107,27 @@ def test_validate_update_forces_dry_run(monkeypatch):
     assert orchestrator.calls == [("v3.1.0", True)]
     assert response.json()["validation_passed"] is True
     assert response.json()["details"]["message"] == "validated"
+
+
+def test_abort_update_calls_scheduler_cancel(monkeypatch):
+    orchestrator = _FakeUpdateOrchestrator()
+    orchestrator.progress = {
+        "total_nodes": 4,
+        "completed_nodes": 1,
+        "failed_nodes": 0,
+        "remaining_nodes": 3,
+        "current_node": "node-b",
+        "status": "running",
+        "message": "Phase: updating",
+    }
+    client = _build_client(monkeypatch, orchestrator=orchestrator)
+
+    response = client.post("/api/cluster/update/abort")
+
+    assert response.status_code == 200
+    assert orchestrator.cancel_calls == 1
+    assert response.json()["status"] == "ok"
+    assert response.json()["nodes_remaining"] == 3
 
 
 def test_manifest_drift_reports_degraded_storage(monkeypatch):

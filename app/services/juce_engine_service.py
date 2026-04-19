@@ -121,6 +121,9 @@ class AudioEngineConfig:
     audio_device: str = EDIROL_UA1000["alsa_device"]
     input_channels: int = EDIROL_UA1000["input_channels"]
     output_channels: int = EDIROL_UA1000["output_channels"]
+    input_channel_mode: str = "stereo"
+    input_gain_db: float = 0.0
+    output_gain_db: float = 0.0
     enable_midi: bool = True
     lv2_path: str = "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2"
     config_file: str = ""
@@ -151,6 +154,32 @@ class JuceEngineService(Singleton):
             return default
         return await asyncio.to_thread(handler, *args)
 
+    @staticmethod
+    def _normalize_input_channel_mode(mode: str | None) -> str:
+        normalized = str(mode or "").strip().lower()
+        if normalized in {"mono_left", "mono-left", "left", "mono_left_only"}:
+            return "mono_left"
+        if normalized in {"mono_right", "mono-right", "right", "mono_right_only"}:
+            return "mono_right"
+        return "stereo"
+
+    @staticmethod
+    def _input_channel_mode_value(mode: str) -> int:
+        normalized = JuceEngineService._normalize_input_channel_mode(mode)
+        if normalized == "mono_left":
+            return 0
+        if normalized == "mono_right":
+            return 1
+        return 2
+
+    @staticmethod
+    def _normalize_io_gain_db(value: float | int | str | None) -> float:
+        try:
+            normalized = float(value)
+        except (TypeError, ValueError):
+            normalized = 0.0
+        return max(-24.0, min(24.0, normalized))
+
     async def initialize(self) -> bool:
         """Initialize engine with full configuration"""
         if not JUCE_AVAILABLE:
@@ -166,6 +195,18 @@ class JuceEngineService(Singleton):
             await asyncio.to_thread(self._engine.set_buffer_size, self.config.buffer_size)
             await asyncio.to_thread(self._engine.set_audio_device, self.config.audio_device)
             await asyncio.to_thread(self._engine.set_lv2_path, self.config.lv2_path)
+            handler = getattr(self._engine, "set_input_channel_mode", None)
+            if callable(handler):
+                await asyncio.to_thread(
+                    handler,
+                    self._input_channel_mode_value(self.config.input_channel_mode),
+                )
+            input_gain_handler = getattr(self._engine, "set_input_gain_db", None)
+            if callable(input_gain_handler):
+                await asyncio.to_thread(input_gain_handler, self.config.input_gain_db)
+            output_gain_handler = getattr(self._engine, "set_output_gain_db", None)
+            if callable(output_gain_handler):
+                await asyncio.to_thread(output_gain_handler, self.config.output_gain_db)
 
             # Configure channel counts (for multi-channel interfaces like UA-1000)
             await asyncio.to_thread(self._engine.set_num_input_channels, self.config.input_channels)
@@ -253,6 +294,78 @@ class JuceEngineService(Singleton):
             logger.info("JUCE audio device set to %s", normalized_device)
         else:
             logger.warning("JUCE engine rejected audio device %s", normalized_device)
+        return success
+
+    async def set_input_channel_mode(self, mode: str) -> bool:
+        """Switch how hardware input channels are copied into the graph."""
+        normalized_mode = self._normalize_input_channel_mode(mode)
+        self.config.input_channel_mode = normalized_mode
+        if not self._engine:
+            return True
+
+        handler = getattr(self._engine, "set_input_channel_mode", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not expose input channel mode control")
+            return False
+
+        try:
+            result = await asyncio.to_thread(
+                handler,
+                self._input_channel_mode_value(normalized_mode),
+            )
+        except Exception as exc:
+            logger.error("Failed to set input channel mode %s: %s", normalized_mode, exc)
+            return False
+
+        success = True if result is None else bool(result)
+        if success:
+            logger.info("JUCE input channel mode set to %s", normalized_mode)
+        return success
+
+    async def set_input_gain_db(self, gain_db: float) -> bool:
+        """Set the engine input gain in dB."""
+        normalized_gain = self._normalize_io_gain_db(gain_db)
+        self.config.input_gain_db = normalized_gain
+        if not self._engine:
+            return True
+
+        handler = getattr(self._engine, "set_input_gain_db", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not expose input gain control")
+            return False
+
+        try:
+            result = await asyncio.to_thread(handler, normalized_gain)
+        except Exception as exc:
+            logger.error("Failed to set input gain %.2f dB: %s", normalized_gain, exc)
+            return False
+
+        success = True if result is None else bool(result)
+        if success:
+            logger.info("JUCE input gain set to %.2f dB", normalized_gain)
+        return success
+
+    async def set_output_gain_db(self, gain_db: float) -> bool:
+        """Set the engine output gain in dB."""
+        normalized_gain = self._normalize_io_gain_db(gain_db)
+        self.config.output_gain_db = normalized_gain
+        if not self._engine:
+            return True
+
+        handler = getattr(self._engine, "set_output_gain_db", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not expose output gain control")
+            return False
+
+        try:
+            result = await asyncio.to_thread(handler, normalized_gain)
+        except Exception as exc:
+            logger.error("Failed to set output gain %.2f dB: %s", normalized_gain, exc)
+            return False
+
+        success = True if result is None else bool(result)
+        if success:
+            logger.info("JUCE output gain set to %.2f dB", normalized_gain)
         return success
 
     async def set_monitoring_output_index(self, index: int) -> bool:
@@ -2595,6 +2708,9 @@ class JuceEngineService(Singleton):
         info = self._engine.get_system_info()
         info["available"] = JUCE_AVAILABLE
         info["initialized"] = self._initialized
+        info.setdefault("input_channel_mode", self.config.input_channel_mode)
+        info.setdefault("input_gain_db", self.config.input_gain_db)
+        info.setdefault("output_gain_db", self.config.output_gain_db)
         # Override audio_running to reflect actual PipeWire/JACK state
         # The C++ flag only tracks addAudioCallback, but audio flows
         # through PipeWire as soon as the JACK client connects

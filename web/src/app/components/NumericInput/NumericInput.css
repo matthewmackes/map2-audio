@@ -9,12 +9,7 @@
         var(--cds-layer)
       )
     );
-  --numeric-input-border:
-    color-mix(
-      in srgb,
-      var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border, #c6c6c6))) 82%,
-      var(--numeric-input-accent) 18%
-    );
+  --numeric-input-border: transparent;
   --numeric-input-text:
     var(--cds-text-primary, var(--text-primary, #161616));
   --numeric-input-text-secondary:
@@ -22,7 +17,7 @@
   --numeric-input-text-helper:
     var(--cds-text-helper, #6f6f6f);
   --numeric-input-track-bg:
-    color-mix(in srgb, var(--numeric-input-border) 68%, transparent);
+    color-mix(in srgb, var(--numeric-input-accent) 22%, transparent);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;

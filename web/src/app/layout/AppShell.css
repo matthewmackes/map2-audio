@@ -128,6 +128,7 @@
   min-height: 100vh;
   overflow: hidden;
   padding-bottom: var(--stage-notification-reserved-height, 0px);
+  transition: padding-bottom 160ms ease;
 }
 
 .app-shell__nav-collapsed-rail {
@@ -1703,4 +1704,398 @@ button.topbar-pro__latency-pressure:focus-visible {
   .advanced-menu-control-panel__details-btn {
     transition: none;
   }
+}
+
+/* ── Reboot quick-action button ─────────────────────────────────────────── */
+.global-tree-nav__quick-action--reboot {
+  color: #a78bfa;
+  border-color: color-mix(in srgb, #a78bfa 32%, var(--border));
+  background: color-mix(in srgb, #a78bfa 10%, var(--surface-2));
+}
+
+.global-tree-nav__quick-action--reboot:hover {
+  background: color-mix(in srgb, #a78bfa 18%, var(--surface-2));
+  border-color: color-mix(in srgb, #a78bfa 52%, var(--border));
+}
+
+/* ── Reboot confirm modal ────────────────────────────────────────────────── */
+.shell-reboot-modal .cds--modal-container {
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 94%, transparent);
+  border-radius: 0;
+  background: var(--window-shell-surface);
+  box-shadow: none;
+}
+
+.shell-reboot-modal .cds--modal-header {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--window-shell-titlebar-border);
+  background: var(--window-shell-titlebar);
+}
+
+.shell-reboot-modal .cds--modal-header__label {
+  color: var(--window-shell-titlebar-contrast-muted, var(--window-shell-titlebar-contrast));
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+}
+
+.shell-reboot-modal .cds--modal-header__heading {
+  color: var(--window-shell-titlebar-contrast);
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--cds-body-01-font-size, 1rem);
+  font-weight: 600;
+}
+
+.shell-reboot-modal .cds--modal-close {
+  border-left: 1px solid color-mix(in srgb, var(--window-shell-titlebar-border) 82%, transparent);
+  background: color-mix(in srgb, var(--window-shell-titlebar) 88%, var(--window-shell-titlebar-contrast) 12%);
+  color: var(--window-shell-titlebar-contrast);
+}
+
+.shell-reboot-modal .cds--modal-content {
+  padding-top: 1rem;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-size: var(--cds-body-01-font-size, 1rem);
+  line-height: 1.5;
+}
+
+.shell-reboot-modal .cds--modal-footer {
+  border-top: 1px solid color-mix(in srgb, var(--window-shell-border) 88%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-hover, #dde1e6) 84%, var(--window-shell-surface) 16%);
+}
+
+.shell-reboot-modal .cds--modal-footer .cds--btn {
+  min-height: 2rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.shell-reboot-modal__lead {
+  margin: 0 0 1.1rem;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-body-01-font-size, 0.9375rem);
+  line-height: 1.55;
+}
+
+.shell-reboot-modal__preflight-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shell-reboot-modal__preflight-skeleton {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.shell-reboot-modal__preflight-list {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+}
+
+.shell-reboot-modal__preflight-row {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr auto 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.48rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--window-shell-border) 84%, transparent);
+  background: color-mix(in srgb, var(--cds-layer, #ffffff) 94%, var(--window-shell-surface) 6%);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+.shell-reboot-modal__preflight-row--loading {
+  height: 2.1rem;
+  background: color-mix(in srgb, var(--cds-layer) 90%, var(--cds-skeleton-01, #e0e0e0) 10%);
+  animation: reboot-preflight-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes reboot-preflight-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.shell-reboot-modal__preflight-row--ok {
+  color: var(--cds-text-primary);
+}
+
+.shell-reboot-modal__preflight-row--warn {
+  border-color: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 44%, var(--window-shell-border));
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 7%, var(--cds-layer));
+}
+
+.shell-reboot-modal__preflight-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cds-text-secondary);
+}
+
+.shell-reboot-modal__preflight-row--warn .shell-reboot-modal__preflight-icon {
+  color: var(--cds-support-warning, #f1c21b);
+}
+
+.shell-reboot-modal__preflight-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shell-reboot-modal__preflight-value {
+  color: var(--cds-text-secondary);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.shell-reboot-modal__preflight-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cds-support-success, #24a148);
+}
+
+.shell-reboot-modal__preflight-row--warn .shell-reboot-modal__preflight-status-icon {
+  color: var(--cds-support-warning, #f1c21b);
+}
+
+.shell-reboot-modal__warning-note {
+  margin: 0 0 0.75rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.shell-reboot-modal__irrevocable {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #a78bfa;
+  background: color-mix(in srgb, #a78bfa 8%, var(--cds-layer));
+  color: var(--cds-text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ── Reboot overlay ──────────────────────────────────────────────────────── */
+.reboot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: color-mix(in srgb, black 72%, #0f0a1a 28%);
+}
+
+.reboot-overlay--timeout {
+  background: color-mix(in srgb, #1a0505 60%, black 40%);
+}
+
+.reboot-overlay--ready {
+  background: color-mix(in srgb, #021208 60%, black 40%);
+}
+
+.reboot-overlay__panel {
+  width: min(34rem, calc(100vw - 2rem));
+  overflow: hidden;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, #a78bfa 55%, transparent);
+  border-left: 1px solid color-mix(in srgb, #a78bfa 42%, transparent);
+  border-right: 1px solid color-mix(in srgb, #a78bfa 22%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, #a78bfa 28%, transparent);
+  background: color-mix(in srgb, #0f0a1a 92%, var(--window-shell-surface) 8%);
+  box-shadow:
+    0 0 0 1px rgba(167,139,250,0.1),
+    0 24px 60px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(167,139,250,0.15);
+}
+
+.reboot-overlay--timeout .reboot-overlay__panel {
+  border-top-color: color-mix(in srgb, var(--cds-support-danger, #da1e28) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--cds-support-danger, #da1e28) 42%, transparent);
+}
+
+.reboot-overlay--ready .reboot-overlay__panel {
+  border-top-color: color-mix(in srgb, var(--cds-support-success, #24a148) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--cds-support-success, #24a148) 42%, transparent);
+}
+
+.reboot-overlay__titlebar {
+  padding: 0.42rem 0.88rem;
+  border-bottom: 1px solid rgba(167,139,250,0.18);
+  background: rgba(167,139,250,0.08);
+}
+
+.reboot-overlay__eyebrow {
+  color: #a78bfa;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reboot-overlay__logo {
+  display: grid;
+  gap: 0.12rem;
+  padding: 1.1rem 0.95rem 0.6rem;
+}
+
+.reboot-overlay__logo-text {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ede9fe;
+}
+
+.reboot-overlay__logo-sub {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #a78bfa;
+  text-transform: uppercase;
+}
+
+.reboot-overlay__waveform-wrap {
+  padding: 0 0.95rem 0.4rem;
+}
+
+.reboot-overlay__waveform {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 72px;
+  opacity: 0.88;
+}
+
+.reboot-overlay__copy {
+  padding: 0.55rem 0.95rem 0.55rem;
+}
+
+.reboot-overlay__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.3rem;
+  color: #ede9fe;
+  font-size: var(--cds-heading-04-font-size, 1.5rem);
+  line-height: 1.18;
+}
+
+.reboot-overlay--timeout .reboot-overlay__title {
+  color: var(--cds-support-danger, #da1e28);
+}
+
+.reboot-overlay--ready .reboot-overlay__title {
+  color: var(--cds-support-success, #24a148);
+}
+
+.reboot-overlay__subtitle {
+  margin: 0;
+  color: #c4b5fd;
+  font-size: var(--cds-body-01-font-size, 1rem);
+  line-height: 1.55;
+}
+
+.reboot-overlay__reassurance {
+  margin: 0.65rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid #7c3aed;
+  background: rgba(124,58,237,0.1);
+  color: #c4b5fd;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.reboot-overlay__irrevocable {
+  margin: 0.55rem 0 0;
+  padding: 0.45rem 0.65rem;
+  border-left: 3px solid var(--cds-support-danger, #da1e28);
+  background: rgba(218,30,40,0.09);
+  color: #fca5a5;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.reboot-overlay__progress {
+  padding: 0.6rem 0.95rem 0.5rem;
+}
+
+.reboot-overlay__progress .cds--progress-bar__bar {
+  background: #7c3aed;
+}
+
+.reboot-overlay__progress .cds--progress-bar__track {
+  background: rgba(167,139,250,0.18);
+}
+
+.reboot-overlay__progress .cds--progress-bar__helper-text {
+  color: #a78bfa;
+  font-size: 0.75rem;
+}
+
+.reboot-overlay__steps {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0 0.95rem 1rem;
+}
+
+.reboot-overlay__step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1rem 1fr auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 0.65rem 0.42rem 0.5rem;
+  border: 1px solid rgba(167,139,250,0.16);
+  background: rgba(167,139,250,0.04);
+  color: #7c6fad;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 500;
+}
+
+.reboot-overlay__step.is-active {
+  border-color: rgba(167,139,250,0.48);
+  background: rgba(167,139,250,0.12);
+  color: #ede9fe;
+}
+
+.reboot-overlay__step.is-complete {
+  border-color: rgba(52,211,153,0.28);
+  background: rgba(52,211,153,0.06);
+  color: #6ee7b7;
+}
+
+.reboot-overlay__step-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: inherit;
+}
+
+.reboot-overlay__step-label {
+  min-width: 0;
+}
+
+.reboot-overlay__step-active-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a78bfa;
+  white-space: nowrap;
+}
+
+.reboot-overlay__copy .cds--btn {
+  margin-top: 0.85rem;
+  min-height: 2rem;
+  border-radius: 0;
 }

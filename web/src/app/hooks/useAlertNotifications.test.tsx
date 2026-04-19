@@ -7,6 +7,29 @@ import { ToastProvider, useNotifications as useAppNotifications } from '../compo
 import { AlertNotificationsContainer, type AlertNotification } from './useAlertNotifications'
 import { useAlertNotifications } from './useAlertNotifications'
 
+const mockUseClusterSnapshotRuntimeLiveState = jest.fn()
+const mockUseVuMeters = jest.fn()
+const mockUseCPUMetrics = jest.fn()
+const mockGetStatus = jest.fn()
+
+jest.mock('./useSnapshotRuntimeState', () => ({
+  useClusterSnapshotRuntimeLiveState: (...args: unknown[]) => mockUseClusterSnapshotRuntimeLiveState(...args),
+}))
+
+jest.mock('./useVuMeters', () => ({
+  useVuMeters: (...args: unknown[]) => mockUseVuMeters(...args),
+}))
+
+jest.mock('./useCPUMetrics', () => ({
+  useCPUMetrics: (...args: unknown[]) => mockUseCPUMetrics(...args),
+}))
+
+jest.mock('../../map2/clients/audio', () => ({
+  audioApi: {
+    getStatus: (...args: unknown[]) => mockGetStatus(...args),
+  },
+}))
+
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -33,6 +56,58 @@ function makeWrapper() {
 }
 
 describe('AlertNotificationsContainer', () => {
+  beforeEach(() => {
+    mockUseClusterSnapshotRuntimeLiveState.mockReturnValue({
+      data: {
+        nodes: [],
+      },
+    })
+    mockUseVuMeters.mockReturnValue({
+      levels: {
+        outputLeft: -12,
+        outputRight: -12,
+      },
+      peakHold: {
+        outputLeft: -9,
+        outputRight: -9,
+      },
+      isConnected: true,
+      isRunning: false,
+      resetPeaks: jest.fn(),
+    })
+    mockUseCPUMetrics.mockReturnValue({
+      metrics: {
+        totalCpuPercent: 0,
+        audioCallbackPercent: 0,
+        peakCpuPercent: 0,
+        averageCpuPercent: 0,
+        xrunCount: 0,
+        budgetMs: 0,
+        currentCallbackMs: 0,
+        headroomPercent: 100,
+        perPluginPercent: {},
+        running: false,
+      },
+      isConnected: true,
+      isLoading: false,
+      isError: false,
+      status: 'ok',
+      hasXruns: false,
+      getPluginCpu: jest.fn(),
+      getTopConsumers: jest.fn(() => []),
+      warningThreshold: 70,
+      criticalThreshold: 90,
+    })
+    mockGetStatus.mockResolvedValue({
+      running: false,
+      sample_rate: 48000,
+      buffer_size: 64,
+      cpu_load: 0,
+      engine: 'JUCE',
+      available: true,
+    })
+  })
+
   it('renders notifications without MUI wrappers and allows dismiss', () => {
     const onDismiss = jest.fn()
     const notifications: AlertNotification[] = [

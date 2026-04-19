@@ -174,6 +174,7 @@ class AutomationLaneState:
     # Output
     current_value: float = 0.5
     last_update_time: float = 0.0
+    midi_source_id: str = ""
 
     def add_point(self, time: float, value: float, curve: CurveType = CurveType.LINEAR) -> None:
         """Add automation point, maintaining time-sorted order."""
@@ -225,6 +226,7 @@ class AutomationEngine:
         # Audio input for envelope follower
         self._audio_buffer: Optional[np.ndarray] = None
         self._sidechain_buffer: Optional[np.ndarray] = None
+        self._midi_source_values: Dict[str, float] = {}
 
         # Parameter callback
         self._parameter_callback: Optional[Callable[..., Awaitable[None]]] = None
@@ -376,6 +378,8 @@ class AutomationEngine:
             return self._calculate_lfo_value(lane, time)
         elif lane.modulation_source == ModulationSource.ENVELOPE:
             return self._calculate_envelope_value(lane)
+        elif lane.modulation_source == ModulationSource.MIDI:
+            return self._calculate_midi_value(lane)
         return None
 
     def _calculate_timeline_value(self, lane: AutomationLaneState, time: float) -> Optional[float]:
@@ -583,6 +587,13 @@ class AutomationEngine:
 
         return max(0.0, min(1.0, result))
 
+    def _calculate_midi_value(self, lane: AutomationLaneState) -> float:
+        """Return the latest normalized external MIDI modulation value for a lane."""
+        source_id = str(lane.midi_source_id or "").strip()
+        if not source_id:
+            return lane.current_value
+        return max(0.0, min(1.0, float(self._midi_source_values.get(source_id, lane.current_value))))
+
     def set_audio_input(self, audio: np.ndarray) -> None:
         """Set main audio input buffer for envelope follower."""
         self._audio_buffer = audio
@@ -673,6 +684,7 @@ class AutomationEngine:
             "param_name": lane.param_name,
             "enabled": lane.enabled,
             "modulation_source": lane.modulation_source.value,
+            "midi_source_id": lane.midi_source_id,
             "points": [
                 {"time": point.time, "value": point.value, "curve": point.curve.value}
                 for point in lane.points
@@ -719,6 +731,7 @@ class AutomationEngine:
         lane.loop_enabled = bool(data.get("loop_enabled", False))
         lane.loop_start = float(data.get("loop_start", 0.0))
         lane.loop_end = float(data.get("loop_end", 4.0))
+        lane.midi_source_id = str(data.get("midi_source_id") or "")
         lane.points.clear()
         for point in data.get("points", []):
             try:
@@ -826,6 +839,25 @@ class AutomationEngine:
         lane.modulation_source = ModulationSource.TIMELINE
         lane.envelope = EnvelopeFollowerState()
         return True
+
+    def configure_midi_source(self, parameter_id: str, source_id: str) -> bool:
+        """Configure a lane to follow an external MIDI modulation source."""
+        lane = self.lanes.get(parameter_id)
+        source_key = str(source_id or "").strip()
+        if not lane or not source_key:
+            return False
+        lane.modulation_source = ModulationSource.MIDI
+        lane.midi_source_id = source_key
+        self._midi_source_values.setdefault(source_key, lane.current_value)
+        logger.info("Configured MIDI modulation source for %s: %s", parameter_id, source_key)
+        return True
+
+    def push_midi_modulation(self, source_id: str, normalized_value: float) -> None:
+        """Update an external MIDI modulation source value."""
+        source_key = str(source_id or "").strip()
+        if not source_key:
+            return
+        self._midi_source_values[source_key] = max(0.0, min(1.0, float(normalized_value)))
 
     # ==========================================================================
     # Playback Control
@@ -996,6 +1028,7 @@ class AutomationEngine:
                 "param_name": lane.param_name,
                 "enabled": lane.enabled,
                 "modulation_source": lane.modulation_source.value,
+                "midi_source_id": lane.midi_source_id,
                 "points": [
                     {"time": p.time, "value": p.value, "curve": p.curve.value}
                     for p in lane.points

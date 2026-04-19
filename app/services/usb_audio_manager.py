@@ -23,6 +23,17 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+AUDIO_INTERFACE_VENDOR_IDS = {
+    "046d",  # Logitech
+    "0582",  # Roland / Edirol
+    "0763",  # M-Audio
+    "0d8c",  # C-Media
+    "1235",  # Focusrite
+    "1397",  # Behringer
+    "17cc",  # Native Instruments
+    "84ef",  # Hotone
+}
+
 
 # ============================================================================
 # HOTONE DEVICE DEFINITIONS
@@ -197,8 +208,14 @@ class USBAudioManager:
                         hotone_model=hotone_model,
                     )
 
-                    # Only add audio-related devices or Hotone devices
-                    if is_hotone or "audio" in name.lower():
+                    is_audio_device = (
+                        is_hotone
+                        or "audio" in name.lower()
+                        or vendor_id.lower() in AUDIO_INTERFACE_VENDOR_IDS
+                    )
+
+                    # Only add USB audio devices.
+                    if is_audio_device:
                         devices.append(device_status)
 
         except subprocess.TimeoutExpired:
@@ -572,7 +589,7 @@ pcm.hotone_dmix {{
 
         status = {
             "hotone_detected": len(hotone_devices) > 0,
-            "device_count": len(hotone_devices),
+            "device_count": len(self.detected_devices),
             "primary_device": None,
             "all_devices": [],
             "recommendations": [],
@@ -605,7 +622,7 @@ pcm.hotone_dmix {{
                     "Device running at Full Speed (12 Mbps) - this is normal for USB Audio Class 2.0"
                 )
 
-        for dev in hotone_devices:
+        for dev in self.detected_devices:
             status["all_devices"].append({
                 "name": dev.name,
                 "model": dev.hotone_model,
@@ -613,6 +630,7 @@ pcm.hotone_dmix {{
                 "device": dev.device,
                 "alsa_device": dev.alsa_device,
                 "power_control": dev.power_control,
+                "is_hotone": dev.is_hotone,
             })
 
         return status

@@ -1,0 +1,5 @@
+# Allow bounded headless Maschine admin actions without interactive sudo prompts.
+Cmnd_Alias MAP2_MASCHINE_ADMIN = /usr/bin/systemctl restart map2-backend.service, /usr/bin/systemctl restart map2-web-prod.service, /usr/bin/systemctl restart map2-maschine.service, /usr/bin/systemctl reboot
+
+map2 ALL=(root) NOPASSWD: MAP2_MASCHINE_ADMIN
+mm ALL=(root) NOPASSWD: MAP2_MASCHINE_ADMIN

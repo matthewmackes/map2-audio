@@ -377,6 +377,8 @@ describe('SnapshotPublishPage', () => {
     expect(screen.getByText('Choose the live host')).toBeTruthy()
     expect(screen.getByText('Confirm the sound path')).toBeTruthy()
     expect(screen.getByText('Publish to live')).toBeTruthy()
+    expect(screen.getAllByText('Publish makes the audio chain live').length).toBeGreaterThan(0)
+    expect(screen.getByText(/makes this snapshot the live audio chain/i)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Continue to publish' })).toBeTruthy()
   })
 

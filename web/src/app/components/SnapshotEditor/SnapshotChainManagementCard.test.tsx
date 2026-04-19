@@ -206,9 +206,9 @@ describe('SnapshotChainManagementCard', () => {
 
     expect(screen.queryByText('Audio Grid')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Snapshot Configuration' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Publish to live' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Snapshot Configuration' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Publish to live' }))
 
     expect(props.onOpenProgressModal).toHaveBeenCalledTimes(1)
   })

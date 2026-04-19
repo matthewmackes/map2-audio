@@ -100,6 +100,7 @@ class PerformanceBrainService(Singleton):
         self._library_cache: BrainLibraryStateModel | None = None
         self._library_cache_built_at_monotonic = 0.0
         self._library_cache_ttl_s = 30.0
+        self._pad_pressure_observers: dict[str, dict[int, dict[str, Any]]] = {}
 
     def _build_instance_key(
         self,
@@ -833,6 +834,46 @@ class PerformanceBrainService(Singleton):
                 ),
                 state=state,
             ).model_dump(mode="json")
+
+    def record_pad_pressure(
+        self,
+        *,
+        pad: int,
+        pressure: int,
+        normalized: float,
+        velocity: int,
+        note: int,
+        pressed: bool,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            runtime_instance_id = self._build_instance_key(instance_id, plugin_position)
+            observer_state = self._pad_pressure_observers.setdefault(runtime_instance_id, {})
+            observer_state[int(pad)] = {
+                "pad": int(pad),
+                "pressure": int(pressure),
+                "normalized": max(0.0, min(1.0, float(normalized))),
+                "velocity": int(velocity),
+                "note": int(note),
+                "pressed": bool(pressed),
+                "updated_at": _utcnow_iso(),
+            }
+            return dict(observer_state[int(pad)])
+
+    def get_pad_pressure_snapshot(
+        self,
+        *,
+        instance_id: str | int | None = None,
+        plugin_position: int | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            runtime_instance_id = self._build_instance_key(instance_id, plugin_position)
+            entries = self._pad_pressure_observers.get(runtime_instance_id, {})
+            return {
+                "runtime_instance_id": runtime_instance_id,
+                "pads": [dict(value) for _pad, value in sorted(entries.items())],
+            }
 
     def update_state(
         self,

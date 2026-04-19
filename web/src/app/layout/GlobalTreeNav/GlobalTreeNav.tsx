@@ -1,4 +1,4 @@
-import { FeatureFlags, Layer, Popover, PopoverContent, TreeView } from '@carbon/react'
+import { FeatureFlags, Layer, Popover, PopoverContent, Tooltip, TreeView } from '@carbon/react'
 import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -10,6 +10,7 @@ import {
   Logout,
   Pin,
   PinFilled,
+  Power,
   Renew,
   Restart,
   ScreenMap,
@@ -43,6 +44,7 @@ import './GlobalTreeNav.css'
 type GlobalTreeNavProps = {
   isPinned: boolean
   onLogOut: () => void
+  onOpenRebootConfirm: () => void
   onOpenRestartConfirm: () => void
   onRefreshPage: () => void
   onTogglePinned: () => void
@@ -365,6 +367,7 @@ function syncNodeScope(setViewedNode: (pageKey: string, nodeId: string) => void,
 export function GlobalTreeNav({
   isPinned,
   onLogOut,
+  onOpenRebootConfirm,
   onOpenRestartConfirm,
   onRefreshPage,
   onTogglePinned,
@@ -481,6 +484,49 @@ export function GlobalTreeNav({
               </div>
             </PopoverContent>
           </Popover>
+
+          <div className="global-tree-nav__quick-actions" role="group" aria-label="System actions">
+            <Tooltip label="Refresh" align="bottom" enterDelayMs={300}>
+              <button
+                type="button"
+                className="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
+                aria-label="Refresh"
+                onClick={onRefreshPage}
+              >
+                <Renew size={18} aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip label="Restart" align="bottom" enterDelayMs={300}>
+              <button
+                type="button"
+                className="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
+                aria-label="Restart"
+                onClick={onOpenRestartConfirm}
+              >
+                <Restart size={18} aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip label="Log Out" align="bottom" enterDelayMs={300}>
+              <button
+                type="button"
+                className="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
+                aria-label="Log Out"
+                onClick={onLogOut}
+              >
+                <Logout size={18} aria-hidden />
+              </button>
+            </Tooltip>
+            <Tooltip label="Full system reboot" align="bottom" enterDelayMs={300}>
+              <button
+                type="button"
+                className="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
+                aria-label="Full system reboot"
+                onClick={onOpenRebootConfirm}
+              >
+                <Power size={18} aria-hidden />
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         <div className="global-tree-nav__body">
@@ -498,20 +544,6 @@ export function GlobalTreeNav({
           </FeatureFlags>
         </div>
 
-        <div className="global-tree-nav__footer" role="group" aria-label="System actions">
-          <button type="button" className="global-tree-nav__footer-button" onClick={onRefreshPage}>
-            <Renew size={16} aria-hidden />
-            Refresh
-          </button>
-          <button type="button" className="global-tree-nav__footer-button" onClick={onOpenRestartConfirm}>
-            <Restart size={16} aria-hidden />
-            Restart
-          </button>
-          <button type="button" className="global-tree-nav__footer-button" onClick={onLogOut}>
-            <Logout size={16} aria-hidden />
-            Log Out
-          </button>
-        </div>
       </aside>
     </Layer>
   )

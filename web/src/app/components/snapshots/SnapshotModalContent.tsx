@@ -953,6 +953,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                 {activeSnapshot?.program_number !== null && activeSnapshot?.program_number !== undefined && (
                   <Tag type="purple">PC {activeSnapshot.program_number}</Tag>
                 )}
+                <Tag type="purple">Publish makes it live</Tag>
               </div>
             </div>
 
@@ -979,6 +980,7 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
               ) : (
                 <Tag type="warm-gray">{savedSnapshots.length} saved snapshots available</Tag>
               )}
+              <Tag type="cool-gray">Deploy copies it, publish makes it live</Tag>
               {activeSnapshot && authoritySnapshotDetailQuery.isLoading && (
                 <Tag type="blue">Inspecting active snapshot</Tag>
               )}

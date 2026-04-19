@@ -4,8 +4,11 @@ import type { CSSProperties } from 'react'
 import { Pin } from '@carbon/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
+import { RebootConfirmModal } from './RebootConfirmModal'
+import { RebootOverlay } from './RebootOverlay'
 import { RestartOverlay } from './RestartOverlay'
 import { ShellPowerModal } from './ShellPowerModal'
+import { useRebootSystem } from './useRebootSystem'
 import { ShellWindowProvider } from './ShellWindowContext'
 import type { ShellWindowContextValue } from './ShellWindowContext'
 import { useAppShellPresentation } from './useAppShellPresentation'
@@ -57,6 +60,20 @@ export function AppShell({ children }: { children: ReactNode }) {
     closeShellMenus,
     closeDurationMs: 0,
   })
+  const {
+    rebootConfirmOpen,
+    rebootStage,
+    rebootError,
+    preflight,
+    preflightLoading,
+    rebootProgressIndex,
+    rebootCurrentStep,
+    handleOpenRebootConfirm,
+    handleConfirmReboot,
+    setRebootStage,
+    setRebootConfirmOpen,
+  } = useRebootSystem({ closeShellMenus, websocketStatus })
+
   const {
     restartConfirmOpen,
     restartProgressStage,
@@ -124,6 +141,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <GlobalTreeNav
             isPinned={globalNavPinned}
             onLogOut={() => returnHomeDesktopToBoot()}
+            onOpenRebootConfirm={() => void handleOpenRebootConfirm()}
             onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
             onRefreshPage={() => reloadHomeDesktopShell()}
             onTogglePinned={() => setGlobalNavPinned(false)}
@@ -152,6 +170,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span>Connection lost - reconnecting...</span>
         </div>
       ) : null}
+      <RebootConfirmModal
+        open={rebootConfirmOpen}
+        preflightLoading={preflightLoading}
+        preflight={preflight}
+        onClose={() => setRebootConfirmOpen(false)}
+        onConfirm={() => void handleConfirmReboot()}
+      />
+      <RebootOverlay
+        rebootStage={rebootStage}
+        rebootError={rebootError}
+        rebootProgressIndex={rebootProgressIndex}
+        rebootCurrentStep={rebootCurrentStep}
+        onDismiss={() => setRebootStage('idle')}
+      />
       <ShellPowerModal
         open={restartConfirmOpen}
         onClose={() => setRestartConfirmOpen(false)}

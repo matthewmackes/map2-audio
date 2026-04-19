@@ -56,6 +56,38 @@ from app.services.maschine.led_animations import (
     normalize_pad_led_entry,
     resolve_led_value,
 )
+from app.services.maschine.boot_sequence import (
+    MaschineBootSequence,
+    build_boot_button_overrides,
+    build_boot_pad_overlay,
+)
+from app.services.maschine.incident_log import get_maschine_incident_log_service
+from app.services.maschine.led_choreography import (
+    build_audio_reactive_pad_overlay,
+    build_brain_choreography_pad_overlay,
+    build_choreography_button_overrides,
+    is_brain_profile,
+)
+from app.services.maschine.long_op_feedback import (
+    MaschineLongOperationFeedback,
+    MaschineLongOperationSnapshot,
+)
+from app.services.maschine.onboarding import (
+    MaschineOnboardingTour,
+    build_onboarding_button_overrides,
+    build_onboarding_pad_overlay,
+)
+from app.services.maschine.screensaver import (
+    MaschineScreensaverState,
+    build_screensaver_button_overrides,
+    build_screensaver_pad_overlay,
+    build_screensaver_snapshot,
+)
+from app.services.maschine.shutdown_sequence import (
+    MaschineShutdownSequence,
+    build_shutdown_button_overrides,
+    build_shutdown_pad_overlay,
+)
 from app.services.maschine.mk1_usb_transport import (
     MaschineMK1NotFound,
     MaschineMK1UsbTransport,
@@ -70,6 +102,8 @@ from app.services.maschine_lcd_service import (
     _safe_label,
 )
 from app.services.maschine_service import MaschineService
+from app.services.automation_engine import automation_engine
+from app.services.performance_brain_service import get_performance_brain_service
 from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 try:
@@ -98,7 +132,19 @@ ENCODER_CC_BASE = 1
 MASTER_CC_BASE = 9
 BACKEND_MESSAGE_QUEUE_LIMIT = 256
 _CATEGORY_ORDER = ("Control", "Chain", "Brain", "Sampler", "Monitor", "Admin", "Help")
+_INSPECTION_MODES = ("off", "assigned", "muted", "automated")
 _PROFILE_SWITCH_OSD_SECONDS = 1.5
+_STOP_THREAD_JOIN_TIMEOUT_SECONDS = 1.0
+_STOP_SHUTDOWN_SEQUENCE_BUDGET_SECONDS = 4.0
+_STOP_SHUTDOWN_WRITE_TIMEOUT_MS = 50
+_STOP_SHUTDOWN_STAGE_MIN_SECONDS = 0.05
+_LONG_OPERATION_PROGRESS_LEDS: tuple[Led, ...] = (
+    Led.TransportLeft,
+    Led.Play,
+    Led.Rec,
+    Led.Loop,
+    Led.TransportRight,
+)
 
 # Button → transport action mapping
 _TRANSPORT_BUTTONS: dict[int, str] = {
@@ -127,6 +173,23 @@ _TRANSPORT_LED_MAP: dict[str, int] = {
     "record": int(Led.Rec),
     "stop": int(Led.TransportRight),
     "loop": int(Led.Loop),
+}
+
+_CATEGORY_LED_BUTTONS: tuple[Led, ...] = (
+    Led.GroupA,
+    Led.GroupB,
+    Led.GroupC,
+    Led.GroupD,
+    Led.GroupE,
+    Led.GroupF,
+    Led.GroupG,
+    Led.GroupH,
+)
+
+_INSPECTION_MODE_BUTTONS: dict[str, Led] = {
+    "assigned": Led.Keyboard,
+    "muted": Led.Pattern,
+    "automated": Led.Scene,
 }
 
 
@@ -186,6 +249,10 @@ def _build_ws_url(base_url: str, path: str) -> str:
     return f"{scheme}://{parsed.netloc}{normalized_path}"
 
 
+def _maschine_pad_pressure_source_id(pad_index: int) -> str:
+    return f"maschine.pad.{max(0, int(pad_index))}"
+
+
 @dataclass
 class DaemonConfig:
     backend_url: str = DEFAULT_BACKEND_URL
@@ -227,8 +294,10 @@ class SharedRuntimeState:
     menu_return_context: str = "t1_ctrl"
     menu_category_index: int = 0
     top_level_menu_index: int = 0
+    inspection_mode: str = "off"
     profile_switch_osd_until: float = 0.0
     profile_switch_osd_profile_id: str | None = None
+    automation_parameter_ids: list[str] = field(default_factory=list)
     stats_metric_keys: list[str] = field(default_factory=list)
     stats_focus_metric: str | None = None
     audio_grid: dict[str, Any] = field(
@@ -252,6 +321,17 @@ class SharedRuntimeState:
     last_touched_control: LastTouchedControl | None = None
     stats_payload: dict[str, Any] = field(default_factory=dict)
     transport_state: dict[str, Any] = field(default_factory=dict)
+    drum_transport_state: dict[str, Any] = field(default_factory=dict)
+    audio_levels_state: dict[str, Any] = field(default_factory=dict)
+    spectrum_state: dict[str, Any] = field(default_factory=dict)
+    true_peak_state: dict[str, Any] = field(default_factory=dict)
+    brain_state: dict[str, Any] = field(default_factory=dict)
+    brain_sequence_state: dict[str, Any] = field(default_factory=dict)
+    beat_anchor_monotonic: float = 0.0
+    screensaver_active: bool = False
+    boot_active: bool = False
+    onboarding_active: bool = False
+    admin_console_state: dict[str, Any] = field(default_factory=dict)
 
 
 class VirtualMidiOutput:
@@ -489,6 +569,124 @@ def build_profile_switch_osd_frames(*, profile_name: str, description: str, cate
     return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
 
 
+def build_screensaver_frames(
+    *,
+    profile_id: str,
+    transport_state: dict[str, Any],
+    backend_connected: bool,
+    device_connected: bool,
+    idle_seconds: float,
+) -> dict[str, dict[str, Any]]:
+    snapshot = build_screensaver_snapshot(
+        profile_id=profile_id,
+        transport_state=transport_state,
+        backend_connected=backend_connected,
+        device_connected=device_connected,
+        idle_seconds=idle_seconds,
+    )
+    left = _Canvas()
+    left.draw_text("AMBIENT", 4, 4, scale=2)
+    left.draw_hline(4, 22, LCD_WIDTH - 8)
+    left.draw_text(snapshot.profile_label, 4, 28, scale=2)
+    left.draw_text(snapshot.idle_label, 4, 48)
+    left.draw_text(snapshot.status_label, 4, 56)
+
+    right = _Canvas()
+    right.draw_text("PRESENCE WAKE", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(snapshot.transport_label, 4, 22, scale=2)
+    right.draw_text(snapshot.owner_label, 4, 46)
+    right.draw_text(snapshot.wake_label, 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
+
+
+def build_boot_sequence_frames(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text(_safe_label(snapshot.get("title") or "BOOT", limit=12), 4, 4, scale=2)
+    left.draw_hline(4, 22, LCD_WIDTH - 8)
+    left.draw_text(_safe_label(snapshot.get("subtitle") or "STARTING", limit=18), 4, 30)
+    left.draw_text(_safe_label(snapshot.get("profile_label") or "CTRL", limit=16), 4, 44, scale=2)
+    progress_width = 4 + int(float(snapshot.get("progress") or 0.0) * (LCD_WIDTH - 8))
+    left.fill_rect(4, 56, progress_width, 4)
+
+    right = _Canvas()
+    right.draw_text("BOOT CEREMONY", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(_safe_label(snapshot.get("backend_label") or "BACKEND", limit=16), 4, 22, scale=2)
+    right.draw_text(_safe_label(snapshot.get("device_label") or "DEVICE", limit=16), 4, 40, scale=2)
+    right.draw_text("ANY INPUT SKIPS", 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
+
+
+def build_shutdown_sequence_frames(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text(_safe_label(snapshot.get("title") or "SHUTDOWN", limit=12), 4, 4, scale=2)
+    left.draw_hline(4, 22, LCD_WIDTH - 8)
+    left.draw_text(_safe_label(snapshot.get("subtitle") or "STOPPING", limit=18), 4, 32)
+    progress_width = 4 + int(float(snapshot.get("progress") or 0.0) * (LCD_WIDTH - 8))
+    left.fill_rect(4, 56, progress_width, 4)
+
+    right = _Canvas()
+    right.draw_text("SESSION CLOSE", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(_safe_label(str(snapshot.get("stage_id") or "bye").replace("_", " "), limit=16), 4, 22, scale=2)
+    right.draw_text("THANK YOU", 4, 40, scale=2)
+    right.draw_text("POWER SAFE", 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
+
+
+def build_long_operation_frames(snapshot: MaschineLongOperationSnapshot) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text(_safe_label(snapshot.title, limit=12), 4, 4, scale=2)
+    left.draw_hline(4, 22, LCD_WIDTH - 8)
+    left.draw_text(_safe_label(snapshot.subtitle, limit=18), 4, 30)
+    left.draw_text(_safe_label(snapshot.detail, limit=18), 4, 44)
+    progress_width = 4 + int(_clamp(int(snapshot.progress * 1000.0), 0, 1000) / 1000.0 * (LCD_WIDTH - 8))
+    left.fill_rect(4, 56, progress_width, 4)
+
+    right = _Canvas()
+    status_label = str(snapshot.status or "running").replace("_", " ").upper()
+    right.draw_text(_safe_label(status_label, limit=16), 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(f"{int(snapshot.progress * 100):03d}%".rjust(4), 4, 22, scale=2)
+    if snapshot.can_cancel:
+        right.draw_text("SHIFT+ERASE", 4, 46)
+        right.draw_text("CANCEL", 4, 56)
+    elif snapshot.status in {"completed", "failed", "cancelled"}:
+        right.draw_text("RECEIPT", 4, 46)
+        right.draw_text("PROFILE READY", 4, 56)
+    else:
+        right.draw_text("BACKGROUND", 4, 46)
+        right.draw_text("WORK ACTIVE", 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
+
+
+def build_onboarding_frames(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    left = _Canvas()
+    left.draw_text(_safe_label(snapshot.get("title") or "WELCOME", limit=12), 4, 4, scale=2)
+    left.draw_hline(4, 22, LCD_WIDTH - 8)
+    left.draw_text(_safe_label(snapshot.get("subtitle") or "", limit=18), 4, 30)
+    left.draw_text(_safe_label(snapshot.get("detail") or "", limit=18), 4, 44)
+    progress_width = 4 + int(float(snapshot.get("progress") or 0.0) * (LCD_WIDTH - 8))
+    left.fill_rect(4, 56, progress_width, 4)
+
+    right = _Canvas()
+    right.draw_text("ONBOARDING", 4, 4)
+    right.draw_hline(4, 14, LCD_WIDTH - 8)
+    right.draw_text(
+        _safe_label(
+            f"STEP {int(snapshot.get('step_number') or 1)}/{int(snapshot.get('total_steps') or 1)}",
+            limit=18,
+        ),
+        4,
+        22,
+        scale=2,
+    )
+    right.draw_text("NR NEXT", 4, 46)
+    right.draw_text("NAV BACK  ERASE SKIP", 4, 56)
+    return {"left": _canvas_panel(left), "right": _canvas_panel(right)}
+
+
 class MaschineMK1Daemon:
     def __init__(self, config: DaemonConfig) -> None:
         self.config = config
@@ -498,6 +696,11 @@ class MaschineMK1Daemon:
         self._state = SharedRuntimeState()
         self._state.lcd_frames = build_reconnecting_frames()
         self._menu_catalog = MaschineLCDRenderService().menu_items()
+        self._boot_sequence = MaschineBootSequence()
+        self._shutdown_sequence = MaschineShutdownSequence()
+        self._long_operation_feedback = MaschineLongOperationFeedback()
+        self._onboarding = MaschineOnboardingTour()
+        self._screensaver = MaschineScreensaverState()
         self._transport: MaschineMK1UsbTransport | None = None
         self._midi = VirtualMidiOutput(config.virtual_port_name)
         self._hotplug_monitor = MaschineDeviceHotplugMonitor()
@@ -505,9 +708,15 @@ class MaschineMK1Daemon:
         self._input_thread = threading.Thread(target=self._input_loop, name="maschine-input", daemon=True)
         self._display_thread = threading.Thread(target=self._display_loop, name="maschine-display", daemon=True)
         self._output_thread = threading.Thread(target=self._output_loop, name="maschine-output", daemon=True)
+        self._stop_lock = threading.Lock()
+        self._stop_started = False
 
     def run(self) -> int:
         LOGGER.info("Starting Maschine MK1 daemon")
+        self._boot_sequence.start()
+        with self._state_lock:
+            self._state.boot_active = True
+        self._record_incident(severity="info", message="Maschine boot ceremony started", event="boot_started")
         self._midi.open()
         self._hotplug_monitor.start()
         self._input_thread.start()
@@ -524,18 +733,25 @@ class MaschineMK1Daemon:
         return 0
 
     def stop(self) -> None:
-        if self._stop_event.is_set():
-            return
+        with self._stop_lock:
+            if self._stop_started:
+                return
+            self._stop_started = True
+        self._record_incident(severity="info", message="Maschine shutdown ceremony started", event="shutdown_started")
         self._stop_event.set()
         self._render_requested.set()
+        self._hotplug_monitor.stop()
+        stop_deadline = time.monotonic() + _STOP_SHUTDOWN_SEQUENCE_BUDGET_SECONDS
+        for thread in (self._input_thread, self._display_thread, self._output_thread):
+            if thread.is_alive():
+                thread.join(timeout=_STOP_THREAD_JOIN_TIMEOUT_SECONDS)
+                if thread.is_alive():
+                    LOGGER.warning("Maschine daemon thread %s did not stop before shutdown deadline", thread.name)
+        self._play_shutdown_sequence_directly(deadline_monotonic=stop_deadline)
         transport = self._transport
         if transport is not None:
             transport.close()
-        self._hotplug_monitor.stop()
         self._midi.close()
-        for thread in (self._input_thread, self._display_thread, self._output_thread):
-            if thread.is_alive():
-                thread.join(timeout=2.0)
 
     # ------------------------------------------------------------------
     # Input loop — reads pads + buttons/encoders from the USB device
@@ -666,6 +882,21 @@ class MaschineMK1Daemon:
         pad_press_started: dict[int, float],
         active_pad_pressures: dict[int, int],
     ) -> None:
+        now = time.monotonic()
+        if self._state.boot_active and self._refresh_boot_sequence_state(now=now):
+            self._skip_boot_sequence()
+            return
+        if event.pressed:
+            if self._refresh_onboarding_state():
+                self._note_activity(now=now)
+                return
+            if self._screensaver.active:
+                if self._screensaver.wake_from_pressure(raw_pressure=event.pressure, now=now):
+                    with self._state_lock:
+                        self._state.screensaver_active = False
+                    self._request_render()
+                return
+            self._note_activity(now=now)
         note = PAD_NOTE_BASE + event.pad
         velocity_midi = _clamp(int(event.pressure * 127 / 4095), 0, 127) if event.pressed else 0
         previous_pressure = active_pad_pressures.get(event.pad)
@@ -693,6 +924,13 @@ class MaschineMK1Daemon:
             decoded_type = "pad_release"
 
         self._midi.send_messages(midi_messages)
+        self._fanout_pad_pressure(
+            pad_index=event.pad,
+            note=note,
+            raw_pressure=event.pressure,
+            midi_velocity=velocity_midi,
+            pressed=event.pressed,
+        )
         self._enqueue_backend_message({
             "type": "hid_event",
             "payload": {
@@ -709,6 +947,32 @@ class MaschineMK1Daemon:
             },
         })
 
+    def _fanout_pad_pressure(
+        self,
+        *,
+        pad_index: int,
+        note: int,
+        raw_pressure: int,
+        midi_velocity: int,
+        pressed: bool,
+    ) -> None:
+        normalized = max(0.0, min(1.0, float(raw_pressure) / 4095.0))
+        try:
+            automation_engine.push_midi_modulation(_maschine_pad_pressure_source_id(pad_index), normalized)
+        except Exception as exc:
+            LOGGER.debug("Maschine pad pressure automation fanout failed: %s", exc)
+        try:
+            get_performance_brain_service().record_pad_pressure(
+                pad=pad_index,
+                pressure=raw_pressure,
+                normalized=normalized,
+                velocity=midi_velocity,
+                note=note,
+                pressed=pressed,
+            )
+        except Exception as exc:
+            LOGGER.debug("Maschine pad pressure brain fanout failed: %s", exc)
+
     # ------------------------------------------------------------------
     # Button dispatch
     # ------------------------------------------------------------------
@@ -722,6 +986,42 @@ class MaschineMK1Daemon:
     ) -> None:
         button = change.button
         pressed = change.pressed
+        if pressed and self._state.boot_active and self._refresh_boot_sequence_state(now=time.monotonic()):
+            self._skip_boot_sequence()
+            return
+        if pressed:
+            now = time.monotonic()
+            if self._wake_screensaver(now=now):
+                return
+            self._note_activity(now=now)
+
+        if pressed and self._refresh_onboarding_state():
+            if button == int(Button.NoteRepeat):
+                self._advance_onboarding()
+            elif button == int(Button.Navigate):
+                self._retreat_onboarding()
+            elif button == int(Button.Erase):
+                self._skip_onboarding()
+            return
+
+        if pressed and shift and button == int(Button.Erase):
+            if self._cancel_active_long_operation(client):
+                return
+
+        with self._state_lock:
+            display_context = self._state.display_context
+
+        if pressed and shift and button == int(Button.Control):
+            self._open_admin_console()
+            return
+
+        if pressed and display_context == "t18_admin_console":
+            if button == int(Button.NoteRepeat):
+                self._confirm_admin_console_action(client)
+                return
+            if button == int(Button.Erase):
+                self._cancel_admin_console_action(client)
+                return
 
         # Group buttons
         if button in _GROUP_BUTTONS:
@@ -781,7 +1081,10 @@ class MaschineMK1Daemon:
         elif button == int(Button.AutoWrite) and pressed:
             self._set_display_context("t16_monitor", show_osd=True)
         elif button == int(Button.Navigate) and pressed:
-            self._open_top_level_menu()
+            if shift:
+                self._cycle_inspection_mode()
+            else:
+                self._open_top_level_menu()
         elif button == int(Button.NoteRepeat) and pressed:
             if shift:
                 self._cycle_menu_category(activate=False)
@@ -817,6 +1120,19 @@ class MaschineMK1Daemon:
         delta: EncoderDelta,
         held_groups: set[int],
     ) -> None:
+        now = time.monotonic()
+        if self._state.boot_active and self._refresh_boot_sequence_state(now=now):
+            self._skip_boot_sequence()
+            return
+        if self._wake_screensaver(now=now):
+            return
+        self._note_activity(now=now)
+        if self._refresh_onboarding_state():
+            if delta.direction > 0:
+                self._advance_onboarding()
+            elif delta.direction < 0:
+                self._retreat_onboarding()
+            return
         encoder = delta.encoder
         direction = delta.direction
 
@@ -873,6 +1189,12 @@ class MaschineMK1Daemon:
                 try:
                     with ws_connect(_build_ws_url(self.config.backend_url, websocket_url), ping_interval=30, open_timeout=5, close_timeout=1) as websocket:
                         LOGGER.info("Maschine backend websocket connected")
+                        self._record_incident(
+                            severity="info",
+                            message="Maschine backend websocket connected",
+                            detail=self.config.backend_url,
+                            event="backend_ws_connected",
+                        )
                         backoff_seconds = self.config.reconnect_backoff_min_seconds
                         self._set_backend_connected(True)
                         self._send_json(websocket, {"type": "request_state", "payload": {}})
@@ -908,6 +1230,13 @@ class MaschineMK1Daemon:
 
                 except Exception as exc:
                     LOGGER.warning("Maschine backend websocket disconnected: %s", exc)
+                    self._record_incident(
+                        severity="warn",
+                        message="Maschine backend websocket disconnected",
+                        detail=str(exc),
+                        event="backend_ws_disconnected",
+                        context={"backend_url": self.config.backend_url},
+                    )
                     self._set_backend_connected(False)
                     self._set_reconnecting(True)
                     reconnect_frames = build_reconnecting_frames()
@@ -983,9 +1312,131 @@ class MaschineMK1Daemon:
         """
         led = [0] * LED_DATA_SIZE
         now = time.monotonic()
+        long_operation_snapshot = self._long_operation_feedback.snapshot(now=now)
 
-        # Pad LEDs from audio grid
-        pads = list(led_state.get("pads") or [])
+        with self._state_lock:
+            transport_state = dict(self._state.transport_state)
+            drum_transport_state = dict(self._state.drum_transport_state)
+            backend_connected = bool(self._state.backend_connected)
+            device_connected = bool(self._state.device_connected)
+            display_context = str(self._state.display_context or "t1_ctrl")
+            menu_category_index = self._state.menu_category_index
+            menu_return_context = str(self._state.menu_return_context or "t1_ctrl")
+            inspection_mode = str(self._state.inspection_mode or "off")
+            profile_switch_osd_until = self._state.profile_switch_osd_until
+            profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
+            current_audio_grid = dict(self._state.audio_grid)
+            current_encoder_map = dict(self._state.encoder_map)
+            automation_parameter_ids = list(self._state.automation_parameter_ids)
+            audio_levels_state = dict(self._state.audio_levels_state)
+            spectrum_state = dict(self._state.spectrum_state)
+            true_peak_state = dict(self._state.true_peak_state)
+            brain_state = dict(self._state.brain_state)
+            brain_sequence_state = dict(self._state.brain_sequence_state)
+            beat_anchor_monotonic = float(self._state.beat_anchor_monotonic or 0.0)
+            screensaver_active = bool(self._state.screensaver_active)
+            boot_active = bool(self._state.boot_active)
+            onboarding_active = bool(self._state.onboarding_active)
+            admin_console_state = dict(self._state.admin_console_state)
+
+        effective_transport_state = dict(drum_transport_state)
+        effective_transport_state.update(transport_state)
+
+        if boot_active:
+            snapshot = self._boot_sequence.snapshot(
+                profile_id=display_context,
+                backend_connected=backend_connected,
+                device_connected=device_connected,
+                now=now,
+            )
+            for index, pad_entry in enumerate(build_boot_pad_overlay(stage_index=int(snapshot["stage_index"]), stage_progress=float(snapshot["stage_progress"]), pad_count=16)):
+                led[LED_PAD_INDEX[index]] = normalize_pad_led_entry(pad_entry, now=now, phase_offset=(index / 16.0))
+            for button_index, entry in build_boot_button_overrides(
+                stage_id=str(snapshot["stage_id"]),
+                backend_connected=backend_connected,
+                device_connected=device_connected,
+            ).items():
+                led[button_index] = max(
+                    led[button_index],
+                    resolve_led_value(
+                        level=str(entry.get("level") or "off"),
+                        animation=str(entry.get("animation") or "steady"),
+                        now=now,
+                        phase_offset=0.0,
+                    ),
+            )
+            led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+            return led
+
+        if onboarding_active:
+            snapshot = self._onboarding.snapshot()
+            for index, pad_entry in enumerate(
+                build_onboarding_pad_overlay(
+                    step_index=int(snapshot.get("step_index") or 0),
+                    total_steps=int(snapshot.get("total_steps") or 0),
+                    pad_count=16,
+                )
+            ):
+                led[LED_PAD_INDEX[index]] = normalize_pad_led_entry(pad_entry, now=now, phase_offset=(index / 16.0))
+            for button_index, entry in build_onboarding_button_overrides(
+                can_go_back=bool(snapshot.get("can_go_back")),
+            ).items():
+                led[button_index] = max(
+                    led[button_index],
+                    resolve_led_value(
+                        level=str(entry.get("level") or "off"),
+                        animation=str(entry.get("animation") or "steady"),
+                        now=now,
+                        phase_offset=0.0,
+                    ),
+                )
+            led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+            return led
+
+        if screensaver_active and long_operation_snapshot is None:
+            pads = build_screensaver_pad_overlay(now=now, pad_count=16)
+            for i, pad_entry in enumerate(pads[:16]):
+                brightness = normalize_pad_led_entry(pad_entry, now=now, phase_offset=(i / 16.0))
+                if i < len(LED_PAD_INDEX):
+                    led[LED_PAD_INDEX[i]] = _clamp(brightness, 0, 255)
+            for button_index, entry in build_screensaver_button_overrides(
+                backend_connected=backend_connected,
+                device_connected=device_connected,
+                transport_state=effective_transport_state,
+            ).items():
+                led[button_index] = max(
+                    led[button_index],
+                    resolve_led_value(
+                        level=str(entry.get("level") or "off"),
+                        animation=str(entry.get("animation") or "steady"),
+                        now=now,
+                        phase_offset=0.0,
+                    ),
+                )
+            led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+            return led
+
+        pads = self._apply_choreography_pads(
+            list(led_state.get("pads") or []),
+            display_context=display_context,
+            drum_transport_state=effective_transport_state,
+            audio_levels_state=audio_levels_state,
+            spectrum_state=spectrum_state,
+            brain_state=brain_state,
+            brain_sequence_state=brain_sequence_state,
+            beat_anchor_monotonic=beat_anchor_monotonic,
+            now=now,
+        )
+        pads = self._apply_led_overlays(
+            pads,
+            audio_grid=current_audio_grid,
+            encoder_map=current_encoder_map,
+            automation_parameter_ids=automation_parameter_ids,
+            inspection_mode=inspection_mode,
+            profile_switch_osd_profile_id=profile_switch_osd_profile_id,
+            profile_switch_osd_until=profile_switch_osd_until,
+            now=now,
+        )
         for i, pad_entry in enumerate(pads[:16]):
             if not isinstance(pad_entry, dict):
                 continue
@@ -993,18 +1444,10 @@ class MaschineMK1Daemon:
             if i < len(LED_PAD_INDEX):
                 led[LED_PAD_INDEX[i]] = _clamp(brightness, 0, 255)
 
-        # Transport button LEDs (E2)
-        with self._state_lock:
-            transport_state = dict(self._state.transport_state)
-            backend_connected = bool(self._state.backend_connected)
-            device_connected = bool(self._state.device_connected)
-            display_context = str(self._state.display_context or "t1_ctrl")
-            profile_switch_osd_until = self._state.profile_switch_osd_until
-            profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
-        if transport_state:
-            is_playing = bool(transport_state.get("is_playing"))
-            is_recording = bool(transport_state.get("is_recording"))
-            is_looping = bool(transport_state.get("is_looping"))
+        if effective_transport_state:
+            is_playing = bool(effective_transport_state.get("is_playing"))
+            is_recording = bool(effective_transport_state.get("is_recording"))
+            is_looping = bool(effective_transport_state.get("is_looping"))
 
             if is_playing:
                 led[int(Led.Play)] = 255
@@ -1033,8 +1476,14 @@ class MaschineMK1Daemon:
         led[int(Led.NoteRepeat)] = max(
             led[int(Led.NoteRepeat)],
             resolve_led_value(
-                level="bright" if display_context == "menu" else "mid",
-                animation="steady" if display_context == "menu" else "pulse_slow",
+                level=(
+                    "full" if display_context == "t18_admin_console" else
+                    ("bright" if display_context == "menu" else "mid")
+                ),
+                animation=(
+                    "double_pulse" if display_context == "t18_admin_console" and not bool(admin_console_state.get("session_unlocked")) else
+                    ("steady" if display_context in {"menu", "t18_admin_console"} else "pulse_slow")
+                ),
                 now=now,
                 phase_offset=0.15,
             ),
@@ -1042,8 +1491,14 @@ class MaschineMK1Daemon:
         led[int(Led.Control)] = max(
             led[int(Led.Control)],
             resolve_led_value(
-                level="full" if display_context == "t1_ctrl" else ("bright" if device_connected else "dim"),
-                animation="steady" if display_context == "t1_ctrl" else ("pulse_fast" if device_connected else "blink_slow"),
+                level=(
+                    "full" if display_context in {"t1_ctrl", "t18_admin_console"} else
+                    ("bright" if device_connected else "dim")
+                ),
+                animation=(
+                    "double_pulse" if display_context == "t18_admin_console" else
+                    ("steady" if display_context == "t1_ctrl" else ("pulse_fast" if device_connected else "blink_slow"))
+                ),
                 now=now,
                 phase_offset=0.25,
             ),
@@ -1066,15 +1521,47 @@ class MaschineMK1Daemon:
                 phase_offset=0.0,
             ),
         )
+        if display_context == "t18_admin_console":
+            led[int(Led.Erase)] = max(
+                led[int(Led.Erase)],
+                resolve_led_value(
+                    level="bright" if bool(admin_console_state.get("session_unlocked")) else "dim",
+                    animation="steady",
+                    now=now,
+                    phase_offset=0.0,
+                ),
+            )
+        self._apply_choreography_leds(
+            led,
+            display_context=display_context,
+            drum_transport_state=effective_transport_state,
+            audio_levels_state=audio_levels_state,
+            true_peak_state=true_peak_state,
+            brain_state=brain_state,
+            brain_sequence_state=brain_sequence_state,
+            beat_anchor_monotonic=beat_anchor_monotonic,
+            now=now,
+        )
 
-        if profile_switch_osd_profile_id and now < profile_switch_osd_until:
-            overlay = build_profile_signature_overlay(profile_switch_osd_profile_id, now=now, pad_count=16)
-            for index, brightness in enumerate(overlay[:16]):
-                led_index = LED_PAD_INDEX[index]
-                led[led_index] = max(led[led_index], brightness)
+        active_category_context = menu_return_context if display_context == "menu" else display_context
+        self._apply_category_leds(
+            led,
+            display_context=display_context,
+            active_context=active_category_context,
+            menu_category_index=menu_category_index,
+            inspection_mode=inspection_mode,
+            now=now,
+        )
 
         # Display backlight always on
         led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+
+        if long_operation_snapshot is not None:
+            self._apply_long_operation_leds(
+                led,
+                snapshot=long_operation_snapshot,
+                now=now,
+            )
 
         return led
 
@@ -1139,7 +1626,51 @@ class MaschineMK1Daemon:
         audio_grid = self._poll_audio_grid(client)
         encoder_map = self._poll_encoder_map(client)
         stats_payload = self._poll_stats_payload(renderer, client)
-        self._update_polled_state(audio_grid=audio_grid, encoder_map=encoder_map, stats_payload=stats_payload)
+        startup_progress = self._poll_startup_progress(client)
+        cluster_update_status = self._poll_cluster_update_status(client)
+        plugin_scan_status = self._poll_plugin_scan_status(client)
+        admin_console_state = self._poll_admin_console_state(client)
+        automation_parameter_ids = self._poll_automation_parameter_ids(client)
+        audio_levels_state = self._poll_audio_levels(client)
+        spectrum_state = self._poll_spectrum_state(client)
+        true_peak_state = self._poll_true_peak_state(client)
+        drum_transport_state = self._poll_drum_transport_state(client)
+
+        with self._state_lock:
+            active_context = (
+                str(self._state.menu_return_context or "t1_ctrl")
+                if self._state.display_context == "menu"
+                else str(self._state.display_context or "t1_ctrl")
+            )
+        brain_state = self._poll_brain_state(client) if is_brain_profile(active_context) else {}
+        brain_sequence_state = self._poll_brain_sequence_state(client) if is_brain_profile(active_context) else {}
+
+        self._update_polled_state(
+            audio_grid=audio_grid,
+            encoder_map=encoder_map,
+            stats_payload=stats_payload,
+            admin_console_state=admin_console_state,
+            automation_parameter_ids=automation_parameter_ids,
+            audio_levels_state=audio_levels_state,
+            spectrum_state=spectrum_state,
+            true_peak_state=true_peak_state,
+            drum_transport_state=drum_transport_state,
+            brain_state=brain_state,
+            brain_sequence_state=brain_sequence_state,
+        )
+        feedback_now = time.monotonic()
+        self._long_operation_feedback.observe_startup_progress(startup_progress, now=feedback_now)
+        self._long_operation_feedback.observe_update_status(cluster_update_status, now=feedback_now)
+        self._long_operation_feedback.observe_plugin_scan_status(plugin_scan_status, now=feedback_now)
+        boot_active = self._refresh_boot_sequence_state()
+        with self._state_lock:
+            reconnecting_now = bool(self._state.reconnecting)
+            backend_connected_now = bool(self._state.backend_connected)
+        if not boot_active and not reconnecting_now and backend_connected_now:
+            self._activate_onboarding_if_needed()
+        onboarding_active = self._refresh_onboarding_state()
+        screensaver_active = self._refresh_screensaver_state()
+        long_operation_snapshot = self._long_operation_feedback.snapshot(now=feedback_now)
 
         with self._state_lock:
             reconnecting = self._state.reconnecting
@@ -1151,9 +1682,36 @@ class MaschineMK1Daemon:
             led_state = dict(self._state.led_state)
             profile_switch_osd_until = self._state.profile_switch_osd_until
             profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
+            backend_connected = bool(self._state.backend_connected)
+            device_connected = bool(self._state.device_connected)
+            effective_transport_state = dict(self._state.drum_transport_state)
+            effective_transport_state.update(self._state.transport_state)
 
-        if reconnecting:
+        if boot_active:
+            active_context = menu_return_context if display_context == "menu" else display_context
+            frames = build_boot_sequence_frames(
+                self._boot_sequence.snapshot(
+                    profile_id=str(active_context or "t1_ctrl"),
+                    backend_connected=backend_connected,
+                    device_connected=device_connected,
+                )
+            )
+        elif reconnecting:
             frames = build_reconnecting_frames()
+        elif onboarding_active:
+            frames = build_onboarding_frames(self._onboarding.snapshot())
+        elif long_operation_snapshot is not None:
+            frames = build_long_operation_frames(long_operation_snapshot)
+        elif screensaver_active:
+            idle_seconds = self._screensaver.idle_seconds()
+            active_context = menu_return_context if display_context == "menu" else display_context
+            frames = build_screensaver_frames(
+                profile_id=str(active_context or "t1_ctrl"),
+                transport_state=effective_transport_state,
+                backend_connected=backend_connected,
+                device_connected=device_connected,
+                idle_seconds=idle_seconds,
+            )
         elif display_context == "menu":
             menu_items, category_label = self._menu_items_for_category_index(menu_category_index)
             frames = build_top_level_menu_frames(
@@ -1235,12 +1793,126 @@ class MaschineMK1Daemon:
             "updated_at": _utcnow_iso(),
         }
 
+    def _poll_startup_progress(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/services/startup-order")
+            response.raise_for_status()
+            payload = response.json()
+            return dict(payload.get("startup_progress") or {})
+        except Exception as exc:
+            LOGGER.debug("Startup progress poll failed: %s", exc)
+            return {}
+
+    def _poll_cluster_update_status(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/cluster/update/status")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Cluster update status poll failed: %s", exc)
+            return {}
+
+    def _poll_plugin_scan_status(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/plugins/scan-status")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Plugin scan status poll failed: %s", exc)
+            return {}
+
+    def _poll_admin_console_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/maschine/admin-console")
+            response.raise_for_status()
+            payload = response.json()
+            return dict(payload.get("admin_console") or {})
+        except Exception as exc:
+            LOGGER.debug("Admin console poll failed: %s", exc)
+            return {}
+
+    def _poll_automation_parameter_ids(self, client: httpx.Client) -> list[str]:
+        try:
+            response = client.get("/api/automation/lanes")
+            response.raise_for_status()
+            payload = response.json()
+            return [
+                str(parameter_id)
+                for parameter_id in payload.get("parameters", [])
+                if str(parameter_id or "").strip()
+            ]
+        except Exception as exc:
+            LOGGER.debug("Automation lane poll failed: %s", exc)
+            return []
+
+    def _poll_audio_levels(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/audio/levels")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Audio levels poll failed: %s", exc)
+            return {}
+
+    def _poll_spectrum_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/engine/spectrum")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Spectrum poll failed: %s", exc)
+            return {}
+
+    def _poll_true_peak_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/engine/loudness/true-peak")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("True-peak poll failed: %s", exc)
+            return {}
+
+    def _poll_drum_transport_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/engine/drums/transport")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Drum transport poll failed: %s", exc)
+            return {}
+
+    def _poll_brain_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/engine/brain/state")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Brain state poll failed: %s", exc)
+            return {}
+
+    def _poll_brain_sequence_state(self, client: httpx.Client) -> dict[str, Any]:
+        try:
+            response = client.get("/api/engine/brain/sequence")
+            response.raise_for_status()
+            return dict(response.json() or {})
+        except Exception as exc:
+            LOGGER.debug("Brain sequence poll failed: %s", exc)
+            return {}
+
     def _update_polled_state(
         self,
         *,
         audio_grid: dict[str, Any],
         encoder_map: dict[str, Any],
         stats_payload: dict[str, Any],
+        admin_console_state: dict[str, Any],
+        automation_parameter_ids: list[str],
+        audio_levels_state: dict[str, Any],
+        spectrum_state: dict[str, Any],
+        true_peak_state: dict[str, Any],
+        drum_transport_state: dict[str, Any],
+        brain_state: dict[str, Any],
+        brain_sequence_state: dict[str, Any],
     ) -> None:
         with self._state_lock:
             if audio_grid:
@@ -1257,6 +1929,30 @@ class MaschineMK1Daemon:
                 self._state.stats_metric_keys = metric_keys
                 if metric_keys and self._state.stats_focus_metric not in metric_keys:
                     self._state.stats_focus_metric = metric_keys[0]
+            if admin_console_state:
+                self._state.admin_console_state = dict(admin_console_state)
+            self._state.automation_parameter_ids = list(automation_parameter_ids)
+            if audio_levels_state:
+                self._state.audio_levels_state = dict(audio_levels_state)
+            if spectrum_state:
+                self._state.spectrum_state = dict(spectrum_state)
+            if true_peak_state:
+                self._state.true_peak_state = dict(true_peak_state)
+            if drum_transport_state:
+                previous_transport = dict(self._state.drum_transport_state)
+                previous_playing = bool(previous_transport.get("is_playing"))
+                previous_bpm = _safe_float(previous_transport.get("bpm"), 0.0)
+                next_playing = bool(drum_transport_state.get("is_playing"))
+                next_bpm = _safe_float(drum_transport_state.get("bpm"), 0.0)
+                if next_playing and (not previous_playing or abs(next_bpm - previous_bpm) >= 0.5):
+                    self._state.beat_anchor_monotonic = time.monotonic()
+                elif not next_playing:
+                    self._state.beat_anchor_monotonic = 0.0
+                self._state.drum_transport_state = dict(drum_transport_state)
+            if brain_state:
+                self._state.brain_state = dict(brain_state)
+            if brain_sequence_state:
+                self._state.brain_sequence_state = dict(brain_sequence_state)
 
     def _handle_backend_message(self, message: dict[str, Any]) -> None:
         message_type = str(message.get("type") or "")
@@ -1321,11 +2017,205 @@ class MaschineMK1Daemon:
             except queue.Full:
                 LOGGER.debug("Dropping outbound Maschine websocket payload after queue saturation")
 
+    @staticmethod
+    def _record_incident(
+        *,
+        severity: str,
+        message: str,
+        detail: str | None = None,
+        event: str | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        try:
+            get_maschine_incident_log_service().append(
+                severity=severity,
+                source="maschine-daemon",
+                message=message,
+                detail=detail,
+                event=event,
+                context=context,
+            )
+        except Exception as exc:
+            LOGGER.debug("Maschine incident log append failed: %s", exc)
+
+    def _refresh_screensaver_state(self, *, now: float | None = None) -> bool:
+        active = self._screensaver.update(now=now)
+        with self._state_lock:
+            self._state.screensaver_active = active
+        return active
+
+    def _refresh_boot_sequence_state(self, *, now: float | None = None) -> bool:
+        active = self._boot_sequence.is_active(now=now)
+        with self._state_lock:
+            previous = bool(self._state.boot_active)
+            self._state.boot_active = active
+        if previous and not active and not self._boot_sequence.skipped:
+            self._record_incident(severity="info", message="Maschine boot ceremony completed", event="boot_completed")
+        return active
+
+    def _skip_boot_sequence(self) -> bool:
+        skipped = self._boot_sequence.skip()
+        with self._state_lock:
+            self._state.boot_active = False
+        if skipped:
+            self._record_incident(severity="info", message="Maschine boot ceremony skipped", event="boot_skipped")
+            self._request_render()
+        return skipped
+
+    def _wake_screensaver(self, *, now: float | None = None) -> bool:
+        woke = self._screensaver.wake(now=now)
+        with self._state_lock:
+            self._state.screensaver_active = False
+        if woke:
+            self._request_render()
+        return woke
+
+    def _note_activity(self, *, now: float | None = None) -> None:
+        self._screensaver.note_activity(now=now)
+        with self._state_lock:
+            self._state.screensaver_active = False
+
+    def _refresh_onboarding_state(self) -> bool:
+        active = self._onboarding.is_active()
+        with self._state_lock:
+            self._state.onboarding_active = active
+        return active
+
+    def _activate_onboarding_if_needed(self) -> bool:
+        changed = self._onboarding.activate_if_needed()
+        active = self._onboarding.is_active()
+        with self._state_lock:
+            self._state.onboarding_active = active
+        if changed:
+            snapshot = self._onboarding.snapshot()
+            event = "onboarding_resumed" if int(snapshot.get("step_index") or 0) > 0 else "onboarding_started"
+            self._record_incident(
+                severity="info",
+                message="Maschine onboarding tour activated",
+                event=event,
+                context={"step_index": int(snapshot.get("step_index") or 0)},
+            )
+            self._request_render()
+        return active
+
+    def _advance_onboarding(self) -> bool:
+        if not self._onboarding.advance():
+            return False
+        active = self._onboarding.is_active()
+        with self._state_lock:
+            self._state.onboarding_active = active
+        if active:
+            snapshot = self._onboarding.snapshot()
+            self._record_incident(
+                severity="info",
+                message="Maschine onboarding advanced",
+                event="onboarding_advanced",
+                context={"step_index": int(snapshot.get("step_index") or 0)},
+            )
+        else:
+            self._record_incident(
+                severity="info",
+                message="Maschine onboarding completed",
+                event="onboarding_completed",
+            )
+        self._request_render()
+        return True
+
+    def _retreat_onboarding(self) -> bool:
+        if not self._onboarding.previous():
+            return False
+        with self._state_lock:
+            self._state.onboarding_active = True
+        self._record_incident(
+            severity="info",
+            message="Maschine onboarding moved backward",
+            event="onboarding_back",
+            context={"step_index": int(self._onboarding.snapshot().get("step_index") or 0)},
+        )
+        self._request_render()
+        return True
+
+    def _skip_onboarding(self) -> bool:
+        skipped = self._onboarding.skip()
+        with self._state_lock:
+            self._state.onboarding_active = False
+        if skipped:
+            self._record_incident(
+                severity="warn",
+                message="Maschine onboarding skipped",
+                event="onboarding_skipped",
+            )
+            self._request_render()
+        return skipped
+
+    def _play_shutdown_sequence_directly(self, *, deadline_monotonic: float | None = None) -> None:
+        transport = self._transport
+        if transport is None or not transport.is_open:
+            self._record_incident(severity="info", message="Maschine shutdown ceremony completed", event="shutdown_completed")
+            return
+        try:
+            snapshots = self._shutdown_sequence.stage_snapshots()
+            remaining_stages = len(snapshots)
+            for snapshot in snapshots:
+                remaining_budget = None if deadline_monotonic is None else max(0.0, deadline_monotonic - time.monotonic())
+                if remaining_budget is not None and remaining_budget <= 0.0:
+                    LOGGER.warning("Skipping remaining shutdown ceremony stages because the stop budget was exhausted")
+                    break
+                frames = build_shutdown_sequence_frames(snapshot)
+                led = [0] * LED_DATA_SIZE
+                now = time.monotonic()
+                for index, pad_entry in enumerate(build_shutdown_pad_overlay(stage_index=int(snapshot["stage_index"]), pad_count=16)):
+                    led[LED_PAD_INDEX[index]] = normalize_pad_led_entry(pad_entry, now=now, phase_offset=(index / 16.0))
+                for button_index, entry in build_shutdown_button_overrides(stage_id=str(snapshot["stage_id"])).items():
+                    led[button_index] = max(
+                        led[button_index],
+                        resolve_led_value(
+                            level=str(entry.get("level") or "off"),
+                            animation=str(entry.get("animation") or "steady"),
+                            now=now,
+                            phase_offset=0.0,
+                        ),
+                    )
+                led[int(Led.DisplayBacklight)] = LED_BACKLIGHT_DEFAULT
+                transport.write_leds(led, timeout_ms=_STOP_SHUTDOWN_WRITE_TIMEOUT_MS)
+                transport.write_display_frame(
+                    0,
+                    bytes.fromhex(str(frames["left"].get("framebuffer") or "")),
+                    timeout_ms=_STOP_SHUTDOWN_WRITE_TIMEOUT_MS,
+                )
+                transport.write_display_frame(
+                    1,
+                    bytes.fromhex(str(frames["right"].get("framebuffer") or "")),
+                    timeout_ms=_STOP_SHUTDOWN_WRITE_TIMEOUT_MS,
+                )
+                if remaining_budget is not None:
+                    hold_seconds = min(
+                        float(snapshot["duration_seconds"]),
+                        max(
+                            _STOP_SHUTDOWN_STAGE_MIN_SECONDS,
+                            remaining_budget / max(1, remaining_stages),
+                        ),
+                    )
+                else:
+                    hold_seconds = float(snapshot["duration_seconds"])
+                time.sleep(max(_STOP_SHUTDOWN_STAGE_MIN_SECONDS, hold_seconds))
+                remaining_stages = max(0, remaining_stages - 1)
+        except Exception as exc:
+            LOGGER.debug("Shutdown ceremony playback failed: %s", exc)
+        self._record_incident(severity="info", message="Maschine shutdown ceremony completed", event="shutdown_completed")
+
     def _set_device_connected(self, connected: bool) -> None:
         with self._state_lock:
+            previous = bool(self._state.device_connected)
             self._state.device_connected = bool(connected)
             if not connected:
                 self._state.reconnecting = True
+        if previous != bool(connected):
+            self._record_incident(
+                severity="info" if connected else "warn",
+                message="Maschine device connected" if connected else "Maschine device disconnected",
+                event="device_connected" if connected else "device_disconnected",
+            )
         self._request_render()
 
     def _set_backend_connected(self, connected: bool) -> None:
@@ -1341,10 +2231,15 @@ class MaschineMK1Daemon:
         self._request_render()
 
     def _visible_menu_catalog(self) -> list[dict[str, Any]]:
+        admin_unlocked = bool((self._state.admin_console_state or {}).get("session_unlocked"))
         return [
             item
             for item in self._menu_catalog
-            if not bool(item.get("hidden_from_cycle")) and not bool(item.get("admin_only"))
+            if (
+                not bool(item.get("hidden_from_cycle"))
+                or (admin_unlocked and bool(item.get("admin_only")))
+            )
+            and (admin_unlocked or not bool(item.get("admin_only")))
         ]
 
     def _menu_categories(self) -> list[str]:
@@ -1479,6 +2374,16 @@ class MaschineMK1Daemon:
                 self._show_profile_switch_osd(next_context)
         self._request_render()
 
+    def _cycle_inspection_mode(self) -> None:
+        with self._state_lock:
+            current = str(self._state.inspection_mode or "off")
+            try:
+                index = _INSPECTION_MODES.index(current)
+            except ValueError:
+                index = 0
+            self._state.inspection_mode = _INSPECTION_MODES[(index + 1) % len(_INSPECTION_MODES)]
+        self._request_render()
+
     def _request_render(self) -> None:
         self._render_requested.set()
 
@@ -1522,6 +2427,9 @@ class MaschineMK1Daemon:
             current_metric = self._state.stats_focus_metric
             current_menu_category_index = self._state.menu_category_index
             current_menu_index = self._state.top_level_menu_index
+        if display_context == "t18_admin_console":
+            self._select_relative_admin_console_action(client, delta)
+            return
         if display_context == "menu":
             menu_items, _category_label = self._menu_items_for_category_index(current_menu_category_index)
             if not menu_items:
@@ -1543,6 +2451,295 @@ class MaschineMK1Daemon:
             self._request_render()
             return
         self._select_relative_audio_grid_block(client, delta)
+
+    @staticmethod
+    def _parse_automation_parameter_id(parameter_id: str) -> tuple[str, int | None]:
+        raw = str(parameter_id or "").strip()
+        if not raw:
+            return "", None
+        base, _, position_suffix = raw.rpartition("@")
+        candidate = base if position_suffix else raw
+        plugin_position = None
+        if position_suffix:
+            try:
+                plugin_position = int(position_suffix)
+            except ValueError:
+                plugin_position = None
+        plugin_uri, _, _param_index = candidate.rpartition(":")
+        return plugin_uri or candidate, plugin_position
+
+    @classmethod
+    def _assigned_block_ids(cls, encoder_map: dict[str, Any]) -> set[str]:
+        return {
+            str(entry.get("block_id"))
+            for entry in encoder_map.values()
+            if isinstance(entry, dict) and str(entry.get("block_id") or "").strip()
+        }
+
+    @classmethod
+    def _automated_block_ids(cls, audio_grid: dict[str, Any], automation_parameter_ids: list[str]) -> set[str]:
+        blocks = [block for block in audio_grid.get("blocks", []) if isinstance(block, dict)]
+        automated_targets = {cls._parse_automation_parameter_id(parameter_id) for parameter_id in automation_parameter_ids}
+        automated_blocks: set[str] = set()
+        for block in blocks:
+            plugin_uri = str(block.get("plugin_uri") or "").strip()
+            plugin_position_raw = block.get("plugin_position")
+            plugin_position = plugin_position_raw if isinstance(plugin_position_raw, int) else None
+            if (plugin_uri, plugin_position) in automated_targets or (plugin_uri, None) in automated_targets:
+                automated_blocks.add(str(block.get("block_id") or ""))
+        return {block_id for block_id in automated_blocks if block_id}
+
+    @staticmethod
+    def _inspection_overlay_pads(
+        pads: list[dict[str, Any]],
+        *,
+        inspection_mode: str,
+        assigned_block_ids: set[str],
+        automated_block_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        if inspection_mode == "off":
+            return pads
+        overlayed: list[dict[str, Any]] = []
+        for index, pad in enumerate(pads):
+            if not isinstance(pad, dict):
+                overlayed.append(pad)
+                continue
+            block_id = str(pad.get("block_id") or "")
+            bypassed = bool(pad.get("color") == "bypassed")
+            is_selected = bool(pad.get("selected"))
+            highlighted = False
+            if inspection_mode == "assigned":
+                highlighted = block_id in assigned_block_ids
+            elif inspection_mode == "muted":
+                highlighted = bypassed
+            elif inspection_mode == "automated":
+                highlighted = block_id in automated_block_ids
+            overlay = dict(pad)
+            overlay["inspection_mode"] = inspection_mode
+            overlay["brightness_level"] = "full" if highlighted else ("mid" if is_selected else "off")
+            overlay["animation"] = (
+                "pulse_fast" if is_selected and highlighted else
+                "steady" if highlighted else
+                "steady"
+            )
+            overlay["state"] = "full" if highlighted else ("mid" if is_selected else "off")
+            overlayed.append(overlay)
+        while len(overlayed) < 16:
+            overlayed.append({"index": len(overlayed), "state": "off", "brightness_level": "off", "animation": "steady"})
+        return overlayed
+
+    def _apply_led_overlays(
+        self,
+        pads: list[dict[str, Any]],
+        *,
+        audio_grid: dict[str, Any],
+        encoder_map: dict[str, Any],
+        automation_parameter_ids: list[str],
+        inspection_mode: str,
+        profile_switch_osd_profile_id: str | None,
+        profile_switch_osd_until: float,
+        now: float,
+    ) -> list[dict[str, Any]]:
+        overlayed = list(pads)
+        if inspection_mode != "off":
+            overlayed = self._inspection_overlay_pads(
+                overlayed,
+                inspection_mode=inspection_mode,
+                assigned_block_ids=self._assigned_block_ids(encoder_map),
+                automated_block_ids=self._automated_block_ids(audio_grid, automation_parameter_ids),
+            )
+        if profile_switch_osd_profile_id and now < profile_switch_osd_until:
+            overlay = build_profile_signature_overlay(profile_switch_osd_profile_id, now=now, pad_count=16)
+            signature_pads: list[dict[str, Any]] = []
+            for index, brightness in enumerate(overlay[:16]):
+                entry = dict(overlayed[index]) if index < len(overlayed) and isinstance(overlayed[index], dict) else {"index": index}
+                level = "off"
+                if brightness >= 220:
+                    level = "full"
+                elif brightness >= 150:
+                    level = "bright"
+                elif brightness >= 90:
+                    level = "mid"
+                elif brightness > 0:
+                    level = "dim"
+                entry["signature_overlay"] = True
+                entry["brightness_level"] = level if level != "off" else str(entry.get("brightness_level") or "off")
+                entry["animation"] = str(entry.get("animation") or "steady") if level == "off" else "pulse_fast"
+                signature_pads.append(entry)
+            return signature_pads
+        return overlayed
+
+    @staticmethod
+    def _merge_pad_overlay(
+        pads: list[dict[str, Any]],
+        overlay: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        merged: list[dict[str, Any]] = []
+        target_count = max(16, len(pads), len(overlay))
+        for index in range(target_count):
+            base = dict(pads[index]) if index < len(pads) and isinstance(pads[index], dict) else {"index": index}
+            if index < len(overlay) and isinstance(overlay[index], dict):
+                for key in ("state", "brightness_level", "animation", "choreography", "brain_slot_mode"):
+                    if key in overlay[index]:
+                        base[key] = overlay[index][key]
+            merged.append(base)
+        return merged[:16]
+
+    def _apply_choreography_pads(
+        self,
+        pads: list[dict[str, Any]],
+        *,
+        display_context: str,
+        drum_transport_state: dict[str, Any],
+        audio_levels_state: dict[str, Any],
+        spectrum_state: dict[str, Any],
+        brain_state: dict[str, Any],
+        brain_sequence_state: dict[str, Any],
+        beat_anchor_monotonic: float,
+        now: float,
+    ) -> list[dict[str, Any]]:
+        if display_context == "menu":
+            return pads
+        if is_brain_profile(display_context):
+            overlay = build_brain_choreography_pad_overlay(
+                brain_state=brain_state,
+                brain_sequence=brain_sequence_state,
+                transport_state=drum_transport_state,
+                beat_anchor_monotonic=beat_anchor_monotonic,
+                now=now,
+                pad_count=16,
+            )
+        else:
+            overlay = build_audio_reactive_pad_overlay(
+                audio_levels=audio_levels_state,
+                spectrum_state=spectrum_state,
+                transport_state=drum_transport_state,
+                beat_anchor_monotonic=beat_anchor_monotonic,
+                now=now,
+                pad_count=16,
+            )
+        return self._merge_pad_overlay(pads, overlay)
+
+    def _apply_choreography_leds(
+        self,
+        led: list[int],
+        *,
+        display_context: str,
+        drum_transport_state: dict[str, Any],
+        audio_levels_state: dict[str, Any],
+        true_peak_state: dict[str, Any],
+        brain_state: dict[str, Any],
+        brain_sequence_state: dict[str, Any],
+        beat_anchor_monotonic: float,
+        now: float,
+    ) -> None:
+        if display_context == "menu":
+            return
+        for button_index, entry in build_choreography_button_overrides(
+            profile_id=display_context,
+            transport_state=drum_transport_state,
+            audio_levels=audio_levels_state,
+            true_peak_state=true_peak_state,
+            brain_state=brain_state,
+            brain_sequence=brain_sequence_state,
+            beat_anchor_monotonic=beat_anchor_monotonic,
+            now=now,
+        ).items():
+            led[button_index] = max(
+                led[button_index],
+                resolve_led_value(
+                    level=str(entry.get("level") or "off"),
+                    animation=str(entry.get("animation") or "steady"),
+                    now=now,
+                    phase_offset=0.0,
+                ),
+            )
+
+    def _apply_category_leds(
+        self,
+        led: list[int],
+        *,
+        display_context: str,
+        active_context: str,
+        menu_category_index: int,
+        inspection_mode: str,
+        now: float,
+    ) -> None:
+        categories = self._menu_categories()
+        active_category = str(self._profile_meta(active_context).get("category") or "")
+        active_category_index = categories.index(active_category) if active_category in categories else menu_category_index
+        for index, category in enumerate(categories[: len(_CATEGORY_LED_BUTTONS)]):
+            button = _CATEGORY_LED_BUTTONS[index]
+            if display_context == "menu":
+                level = "full" if index == menu_category_index else "dim"
+                animation = "steady" if index == menu_category_index else "pulse_slow"
+            else:
+                level = "bright" if index == active_category_index else "off"
+                animation = "steady"
+            led[int(button)] = max(
+                led[int(button)],
+                resolve_led_value(level=level, animation=animation, now=now, phase_offset=(index / max(1, len(categories) or 1))),
+            )
+
+        for mode, button in _INSPECTION_MODE_BUTTONS.items():
+            active = inspection_mode == mode
+            led[int(button)] = max(
+                led[int(button)],
+                resolve_led_value(
+                    level="full" if active else "off",
+                    animation="double_pulse" if active else "steady",
+                    now=now,
+                    phase_offset=0.0,
+                ),
+            )
+
+    def _apply_long_operation_leds(
+        self,
+        led: list[int],
+        *,
+        snapshot: MaschineLongOperationSnapshot,
+        now: float,
+    ) -> None:
+        slot_count = len(_LONG_OPERATION_PROGRESS_LEDS)
+        fractional_slots = _clamp(int(snapshot.progress * 1000.0), 0, 1000) / 1000.0 * slot_count
+        filled_slots = int(fractional_slots)
+        active_slot = min(slot_count - 1, filled_slots)
+
+        for index, button in enumerate(_LONG_OPERATION_PROGRESS_LEDS):
+            level = "off"
+            animation = "steady"
+            if snapshot.status == "completed":
+                level = "full"
+            elif snapshot.status in {"failed", "cancelled"}:
+                level = "bright" if index <= filled_slots else "dim"
+                animation = "blink_slow"
+            elif index < filled_slots:
+                level = "full"
+            elif index == active_slot:
+                level = "bright"
+                animation = "pulse_fast" if snapshot.status != "cancel_requested" else "double_pulse"
+            else:
+                level = "dim"
+            led[int(button)] = max(
+                led[int(button)],
+                resolve_led_value(
+                    level=level,
+                    animation=animation,
+                    now=now,
+                    phase_offset=(index / max(1, slot_count)),
+                ),
+            )
+
+        if snapshot.can_cancel or snapshot.status == "cancel_requested":
+            led[int(Led.Erase)] = max(
+                led[int(Led.Erase)],
+                resolve_led_value(
+                    level="full" if snapshot.status != "cancel_requested" else "bright",
+                    animation="pulse_fast" if snapshot.status != "cancel_requested" else "double_pulse",
+                    now=now,
+                    phase_offset=0.0,
+                ),
+            )
 
     def _render_context_for_profile(self, profile_id: str) -> str:
         category = str(self._profile_meta(profile_id).get("category") or "")
@@ -1633,6 +2830,75 @@ class MaschineMK1Daemon:
             response.raise_for_status()
         except Exception as exc:
             LOGGER.debug("Transport action %s failed: %s", action, exc)
+
+    def _cancel_active_long_operation(self, client: httpx.Client) -> bool:
+        snapshot = self._long_operation_feedback.snapshot(now=time.monotonic())
+        if snapshot is None or not snapshot.can_cancel or not snapshot.cancel_path:
+            return False
+        try:
+            response = client.post(snapshot.cancel_path)
+            response.raise_for_status()
+            self._long_operation_feedback.mark_cancel_requested(snapshot.source)
+            self._record_incident(
+                severity="warn",
+                message=f"Maschine cancel requested for {snapshot.title.lower()}",
+                event="long_op_cancel_requested",
+                context={"source": snapshot.source, "operation_id": snapshot.operation_id},
+            )
+        except Exception as exc:
+            self._long_operation_feedback.push_receipt(
+                source=snapshot.source,
+                title=snapshot.title,
+                subtitle="CANCEL FAILED",
+                detail=_safe_label(str(exc), limit=18),
+                progress=snapshot.progress,
+                status="failed",
+            )
+            self._record_incident(
+                severity="error",
+                message=f"Maschine cancel failed for {snapshot.title.lower()}",
+                detail=str(exc),
+                event="long_op_cancel_failed",
+                context={"source": snapshot.source, "operation_id": snapshot.operation_id},
+            )
+        self._request_render()
+        return True
+
+    def _open_admin_console(self) -> None:
+        self._set_display_context("t18_admin_console", show_osd=True)
+
+    def _select_relative_admin_console_action(self, client: httpx.Client, delta: int) -> None:
+        try:
+            response = client.post("/api/maschine/admin-console/select", json={"delta": delta})
+            response.raise_for_status()
+            payload = response.json()
+            with self._state_lock:
+                self._state.admin_console_state = dict(payload.get("admin_console") or {})
+        except Exception as exc:
+            LOGGER.debug("Admin console relative select failed: %s", exc)
+        self._request_render()
+
+    def _confirm_admin_console_action(self, client: httpx.Client) -> None:
+        try:
+            response = client.post("/api/maschine/admin-console/confirm")
+            response.raise_for_status()
+            payload = response.json()
+            with self._state_lock:
+                self._state.admin_console_state = dict(payload.get("admin_console") or {})
+        except Exception as exc:
+            LOGGER.debug("Admin console confirm failed: %s", exc)
+        self._request_render()
+
+    def _cancel_admin_console_action(self, client: httpx.Client) -> None:
+        try:
+            response = client.post("/api/maschine/admin-console/cancel")
+            response.raise_for_status()
+            payload = response.json()
+            with self._state_lock:
+                self._state.admin_console_state = dict(payload.get("admin_console") or {})
+        except Exception as exc:
+            LOGGER.debug("Admin console cancel failed: %s", exc)
+        self._request_render()
 
     def _record_last_touched_control(self, *, control_index: int, midi_value: int) -> None:
         with self._state_lock:

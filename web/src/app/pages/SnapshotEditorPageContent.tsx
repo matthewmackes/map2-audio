@@ -2080,9 +2080,9 @@ export function SnapshotEditorPage() {
       return null
     }
     if (snapshotsDirty) {
-      return 'Save draft stores your latest edits. Publish to live runs checks and then sends this snapshot to the live system.'
+      return 'Save draft stores your latest edits. Publish to live is the step that makes this snapshot the active audio chain after checks pass.'
     }
-    return 'Publish to live runs checks first, sends this snapshot to the live system, and waits for confirmation.'
+    return 'Publish to live runs checks first, makes this snapshot the active audio chain, and waits for confirmation.'
   }, [activeSnapshot, snapshotsDirty])
   const goLiveReadinessItems = useMemo<Array<{
     id: string

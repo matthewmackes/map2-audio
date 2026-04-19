@@ -105,6 +105,14 @@ _BASE_5X7: dict[str, GlyphRows] = {
     "X": ("10001", "10001", "01010", "00100", "01010", "10001", "10001"),
     "Y": ("10001", "10001", "01010", "00100", "00100", "00100", "00100"),
     "Z": ("11111", "00001", "00010", "00100", "01000", "10000", "11111"),
+    "♪": ("00100", "00110", "00101", "00101", "01100", "11100", "01100"),
+    "♫": ("01010", "01010", "01111", "01011", "11010", "11010", "01000"),
+    "♩": ("00100", "00100", "00100", "00100", "01100", "11100", "01100"),
+    "♬": ("01010", "01010", "01111", "01011", "01111", "11111", "01100"),
+    "♭": ("10000", "10000", "11100", "10010", "11100", "10010", "11100"),
+    "♯": ("01010", "11111", "01010", "01010", "11111", "01010", "00000"),
+    "MAP2_LOGO": ("11111", "10001", "11111", "10101", "11111", "10001", "11111"),
+    "MAP2_MONOGRAM": ("11110", "10101", "11110", "10100", "10110", "10101", "10101"),
 }
 
 
@@ -125,6 +133,7 @@ def _scale_font(
     scale_y: int,
     tracking: int,
     notes: str,
+    aliases: dict[str, str] | None = None,
 ) -> BitmapFontAtlas:
     width = len(next(iter(base.values()))[0]) * scale_x
     height = len(next(iter(base.values()))) * scale_y
@@ -134,6 +143,7 @@ def _scale_font(
         pixel_height=height,
         glyphs={char: _scale_glyph(rows, scale_x=scale_x, scale_y=scale_y) for char, rows in base.items()},
         tracking=tracking,
+        aliases=dict(aliases or {}),
         notes=notes,
     )
 
@@ -195,8 +205,11 @@ def build_default_font_roster() -> dict[str, BitmapFontAtlas]:
             scale_x=4,
             scale_y=4,
             tracking=3,
-            notes="Initial custom display face for Phase 1: uppercase A-Z, 0-9, punctuation, and MAP2 wordmark tokens.",
+            aliases={
+                "¤": "MAP2_LOGO",
+                "§": "MAP2_MONOGRAM",
+            },
+            notes="Phase 5 display face: uppercase A-Z, 0-9, punctuation, MAP2 logo tokens, and musical symbols.",
         ),
     }
     return roster
-

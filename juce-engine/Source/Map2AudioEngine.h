@@ -71,6 +71,12 @@ namespace map2 {
 
 class Map2AudioEngine {
 public:
+    enum class InputChannelMode {
+        MonoLeft = 0,
+        MonoRight = 1,
+        Stereo = 2,
+    };
+
     Map2AudioEngine();
     ~Map2AudioEngine();
 
@@ -96,6 +102,8 @@ public:
         double sampleRate;
         int bufferSize;
         std::string audioDevice;
+        float inputGainDb;
+        float outputGainDb;
         std::string lv2Path;
         bool running;
         bool audioRunning;
@@ -279,6 +287,13 @@ public:
 
     void setNumOutputChannels(int channels);
     int getNumOutputChannels() const { return numOutputChannels_; }
+
+    void setInputChannelMode(int mode);
+    int getInputChannelMode() const { return static_cast<int>(inputChannelMode_); }
+    bool setInputGainDb(float db);
+    float getInputGainDb() const { return inputGainDb_.load(std::memory_order_acquire); }
+    bool setOutputGainDb(float db);
+    float getOutputGainDb() const { return outputGainDb_.load(std::memory_order_acquire); }
 
     bool setMonitoringOutputIndex(int index);
     int getMonitoringOutputIndex() const;
@@ -1712,6 +1727,11 @@ private:
     int bufferSize_ = DEFAULT_BUFFER_SIZE;
     int numInputChannels_ = 2;
     int numOutputChannels_ = 2;
+    InputChannelMode inputChannelMode_ = InputChannelMode::Stereo;
+    std::atomic<float> inputGainDb_{0.0f};
+    std::atomic<float> outputGainDb_{0.0f};
+    std::atomic<float> inputGainLinear_{1.0f};
+    std::atomic<float> outputGainLinear_{1.0f};
     std::atomic<int> monitoringOutputIndex_{0};
     std::atomic<int> topologyTransitionSamplesRemaining_{0};
     std::atomic<int> topologyTransitionTotalSamples_{0};

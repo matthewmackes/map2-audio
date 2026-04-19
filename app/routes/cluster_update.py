@@ -220,8 +220,11 @@ async def abort_update():
         
         if not progress or progress["status"] == "idle":
             raise HTTPException(400, "No update in progress")
-        
-        # In production, would abort the update
+
+        cancelled = await orchestrator.cancel_update()
+        if not cancelled:
+            raise HTTPException(409, "Update cancellation rejected")
+
         return {
             "status": "ok",
             "message": "Update aborted",

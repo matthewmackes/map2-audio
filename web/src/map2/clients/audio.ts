@@ -28,15 +28,37 @@ export const audioApi = {
   getSourceOfTruth: (nodeId?: string | null) =>
     fetchJson<AudioSourceTruthPayload>(appendNodeQuery(`${API_BASE}/audio/source-of-truth`, nodeId)),
 
-  configure: (config: { sampleRate?: number; bufferSize?: number }, nodeId?: string | null) => {
+  configure: (
+    config: {
+      sampleRate?: number
+      bufferSize?: number
+      audioDevice?: string
+      inputChannelMode?: 'mono_left' | 'mono_right' | 'stereo'
+      inputGainDb?: number
+      outputGainDb?: number
+    },
+    nodeId?: string | null,
+  ) => {
     const params = new URLSearchParams()
     if (config.sampleRate) params.append('sample_rate', config.sampleRate.toString())
     if (config.bufferSize) params.append('buffer_size', config.bufferSize.toString())
+    if (config.audioDevice) params.append('audio_device', config.audioDevice)
+    if (config.inputChannelMode) params.append('input_channel_mode', config.inputChannelMode)
+    if (config.inputGainDb != null) params.append('input_gain_db', config.inputGainDb.toString())
+    if (config.outputGainDb != null) params.append('output_gain_db', config.outputGainDb.toString())
     return fetchJson<{
       success: boolean
       message: string
-      updated_settings: Record<string, number>
-      current_config: { sample_rate: number; buffer_size: number; cpu_load: number }
+      updated_settings: Record<string, number | string>
+      current_config: {
+        sample_rate: number
+        buffer_size: number
+        cpu_load: number
+        audio_device?: string | null
+        input_channel_mode?: 'mono_left' | 'mono_right' | 'stereo'
+        input_gain_db?: number
+        output_gain_db?: number
+      }
     }>(appendNodeQuery(`${API_BASE}/audio/config?${params.toString()}`, nodeId), { method: 'POST' })
   },
 

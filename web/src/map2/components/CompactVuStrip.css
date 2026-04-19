@@ -1,0 +1,102 @@
+.compact-vu-strip {
+  background:
+    linear-gradient(135deg, rgba(9, 18, 34, 0.94), rgba(14, 30, 57, 0.9)),
+    radial-gradient(circle at top right, rgba(74, 158, 255, 0.16), transparent 42%);
+  border: 1px solid rgba(77, 158, 255, 0.24);
+  border-radius: 16px;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 18px 20px 16px;
+}
+
+.compact-vu-strip__header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.compact-vu-strip__eyebrow {
+  color: #7fb2ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.compact-vu-strip__title {
+  color: #f7fbff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.compact-vu-strip__status {
+  align-items: center;
+  background: rgba(7, 16, 28, 0.66);
+  border: 1px solid rgba(127, 178, 255, 0.18);
+  border-radius: 999px;
+  color: #d8e7ff;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.compact-vu-strip__status.is-live {
+  color: #d8ffe8;
+}
+
+.compact-vu-strip__dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.compact-vu-strip__dot.is-connected {
+  background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+}
+
+.compact-vu-strip__dot.is-polling {
+  background: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+}
+
+.compact-vu-strip__meters {
+  column-gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 8px;
+}
+
+.compact-vu-strip__meter {
+  min-width: 0;
+}
+
+.compact-vu-strip__caption {
+  color: #9fb4d7;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+@media (max-width: 768px) {
+  .compact-vu-strip {
+    padding: 16px;
+  }
+
+  .compact-vu-strip__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .compact-vu-strip__meters {
+    grid-template-columns: 1fr;
+  }
+}

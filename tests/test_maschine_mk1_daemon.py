@@ -149,6 +149,99 @@ def test_menu_buttons_use_back_and_select_semantics() -> None:
     assert daemon._state.menu_category_index == 1
 
 
+def test_shift_navigate_cycles_inspection_modes_without_opening_menu() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+
+    class _FakeClient:
+        def post(self, *_args, **_kwargs):
+            raise AssertionError("inspection mode should not hit the backend")
+
+    client = _FakeClient()
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), True)
+    assert daemon._state.inspection_mode == "assigned"
+    assert daemon._state.display_context == "t1_ctrl"
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), True)
+    assert daemon._state.inspection_mode == "muted"
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), True)
+    assert daemon._state.inspection_mode == "automated"
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Navigate), "pressed": True})(), set(), True)
+    assert daemon._state.inspection_mode == "off"
+
+
+def test_shift_control_opens_hidden_admin_console() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+
+    class _FakeClient:
+        def post(self, *_args, **_kwargs):
+            raise AssertionError("hidden admin open should not hit the backend")
+
+    client = _FakeClient()
+
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Control), "pressed": True})(), set(), True)
+
+    assert daemon._state.display_context == "t18_admin_console"
+    assert daemon._state.profile_switch_osd_profile_id == "t18_admin_console"
+
+
+def test_admin_console_buttons_and_encoder_call_backend_routes() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+    daemon._state.display_context = "t18_admin_console"
+
+    class _Response:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self):
+            return self._payload
+
+    class _FakeClient:
+        def __init__(self) -> None:
+            self.posts: list[tuple[str, dict | None]] = []
+
+        def post(self, path: str, json: dict | None = None):
+            self.posts.append((path, json))
+            return _Response(
+                {
+                    "admin_console": {
+                        "session_unlocked": True,
+                        "selected_action_index": 1,
+                        "selected_action_label": "RESTART WEB",
+                    }
+                }
+            )
+
+    client = _FakeClient()
+
+    daemon._handle_navigation_encoder(client, 1)
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.NoteRepeat), "pressed": True})(), set(), False)
+    daemon._dispatch_button(client, type("Change", (), {"button": int(Button.Erase), "pressed": True})(), set(), False)
+
+    assert client.posts == [
+        ("/api/maschine/admin-console/select", {"delta": 1}),
+        ("/api/maschine/admin-console/confirm", None),
+        ("/api/maschine/admin-console/cancel", None),
+    ]
+    assert daemon._state.admin_console_state["session_unlocked"] is True
+
+
+def test_visible_menu_catalog_includes_admin_profiles_when_session_unlocked() -> None:
+    daemon = MaschineMK1Daemon(DaemonConfig())
+
+    locked_catalog = daemon._visible_menu_catalog()
+    assert not any(item["profile_id"] == "t18_admin_console" for item in locked_catalog)
+
+    daemon._state.admin_console_state = {"session_unlocked": True}
+    unlocked_catalog = daemon._visible_menu_catalog()
+    assert any(item["profile_id"] == "t18_admin_console" for item in unlocked_catalog)
+
+
 def test_hotplug_monitor_matches_vendor_and_product_ids() -> None:
     class _FakeAttributes:
         @staticmethod

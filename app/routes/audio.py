@@ -245,6 +245,10 @@ try:
             "version": info.get("version", "unknown"),
             "plugin_count": info.get("plugin_count", 0),
             "active_pedalboard": info.get("active_pedalboard", None),
+            "audio_device": info.get("audio_device"),
+            "input_channel_mode": info.get("input_channel_mode", "stereo"),
+            "input_gain_db": info.get("input_gain_db", 0.0),
+            "output_gain_db": info.get("output_gain_db", 0.0),
             "input_device": info.get("input_device"),
             "output_device": info.get("output_device"),
             "available_input_devices": info.get("available_input_devices", []) or [],
@@ -898,7 +902,14 @@ try:
         }
 
     @router.post("/config")
-    async def configure_audio(sample_rate: int = None, buffer_size: int = None):
+    async def configure_audio(
+        sample_rate: int = None,
+        buffer_size: int = None,
+        audio_device: str | None = None,
+        input_channel_mode: str | None = None,
+        input_gain_db: float | None = None,
+        output_gain_db: float | None = None,
+    ):
         """
         Configure audio engine settings.
 
@@ -916,6 +927,9 @@ try:
 
         success = True
         updated_settings = {}
+
+        normalized_audio_device = str(audio_device or "").strip()
+        normalized_input_channel_mode = str(input_channel_mode or "").strip().lower()
 
         # Update sample rate if provided
         if sample_rate is not None:
@@ -955,6 +969,35 @@ try:
             if success:
                 updated_settings["buffer_size"] = buffer_size
 
+        if normalized_audio_device:
+            success = await service.set_audio_device(normalized_audio_device)
+            if success:
+                updated_settings["audio_device"] = normalized_audio_device
+
+        if normalized_input_channel_mode:
+            supported_modes = {"mono_left", "mono_right", "stereo"}
+            if normalized_input_channel_mode not in supported_modes:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported input channel mode. Must be one of: {sorted(supported_modes)}",
+                )
+
+            success = await service.set_input_channel_mode(normalized_input_channel_mode)
+            if success:
+                updated_settings["input_channel_mode"] = normalized_input_channel_mode
+
+        if input_gain_db is not None:
+            normalized_input_gain = max(-24.0, min(24.0, float(input_gain_db)))
+            success = await service.set_input_gain_db(normalized_input_gain)
+            if success:
+                updated_settings["input_gain_db"] = normalized_input_gain
+
+        if output_gain_db is not None:
+            normalized_output_gain = max(-24.0, min(24.0, float(output_gain_db)))
+            success = await service.set_output_gain_db(normalized_output_gain)
+            if success:
+                updated_settings["output_gain_db"] = normalized_output_gain
+
         if not success:
             raise HTTPException(status_code=500, detail="Failed to apply configuration changes")
 
@@ -968,7 +1011,11 @@ try:
             "current_config": {
                 "sample_rate": info.get("sample_rate", 48000),
                 "buffer_size": info.get("buffer_size", 256),
-                "cpu_load": info.get("cpu_load", 0.0)
+                "cpu_load": info.get("cpu_load", 0.0),
+                "audio_device": info.get("audio_device"),
+                "input_channel_mode": info.get("input_channel_mode", "stereo"),
+                "input_gain_db": info.get("input_gain_db", 0.0),
+                "output_gain_db": info.get("output_gain_db", 0.0),
             }
         }
 

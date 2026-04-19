@@ -6,6 +6,13 @@ export type PlatformFontPresetId =
   | 'fira-sans'
   | 'space-grotesk'
   | 'inter'
+  | 'open-sans'
+  | 'lato'
+  | 'poppins'
+  | 'montserrat'
+  | 'source-sans-3'
+  | 'dm-sans'
+  | 'work-sans'
   | 'system-ui';
 
 export interface PlatformFontPreset {
@@ -61,6 +68,62 @@ export const PLATFORM_FONT_PRESETS: Record<PlatformFontPresetId, PlatformFontPre
     family: "'Inter', 'Helvetica Neue', Arial, sans-serif",
     accent: 'var(--cds-support-success)',
     sample: 'Neutral precision for long sessions',
+  },
+  'open-sans': {
+    id: 'open-sans',
+    name: 'Open Sans',
+    description: 'Humanist workhorse with wide proportions and strong legibility at small sizes.',
+    family: "'Open Sans', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-info)',
+    sample: 'Approachable clarity for mixed audiences',
+  },
+  lato: {
+    id: 'lato',
+    name: 'Lato',
+    description: 'Warm, semi-rounded sans that stays calm across body copy and UI labels.',
+    family: "'Lato', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-info)',
+    sample: 'Quiet confidence across dashboards',
+  },
+  poppins: {
+    id: 'poppins',
+    name: 'Poppins',
+    description: 'Geometric sans with even strokes for bold, modern shell aesthetics.',
+    family: "'Poppins', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-link-primary)',
+    sample: 'Bold geometric stage presence',
+  },
+  montserrat: {
+    id: 'montserrat',
+    name: 'Montserrat',
+    description: 'Urban geometric sans with editorial weight and strong display presence.',
+    family: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-link-primary)',
+    sample: 'Editorial weight for hero surfaces',
+  },
+  'source-sans-3': {
+    id: 'source-sans-3',
+    name: 'Source Sans Pro',
+    description: "Adobe's utilitarian sans tuned for interface chrome and long reading passages.",
+    family: "'Source Sans 3', 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-success)',
+    sample: 'Neutral UI chrome for long reading',
+  },
+  'dm-sans': {
+    id: 'dm-sans',
+    name: 'DM Sans',
+    description: 'Low-contrast geometric sans designed for small-size UI and compact layouts.',
+    family: "'DM Sans', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-success)',
+    sample: 'Compact cadence for dense controls',
+  },
+  'work-sans': {
+    id: 'work-sans',
+    name: 'Work Sans',
+    description: 'Grotesque sans optimized for on-screen reading at mid-sized text.',
+    family: "'Work Sans', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-warning)',
+    sample: 'Balanced rhythm for operator screens',
   },
   'system-ui': {
     id: 'system-ui',

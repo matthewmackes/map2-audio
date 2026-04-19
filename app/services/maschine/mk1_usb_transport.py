@@ -163,7 +163,12 @@ class MaschineMK1UsbTransport:
     # Output
     # ------------------------------------------------------------------
 
-    def write_leds(self, led_state: "list[int] | tuple[int, ...]") -> None:
+    def write_leds(
+        self,
+        led_state: "list[int] | tuple[int, ...]",
+        *,
+        timeout_ms: int = 500,
+    ) -> None:
         """Push all 62 LED slots using cabl's two-packet scheme.
 
         Packet 1 (header ``[0x0C, 0x00]``) carries slots 0..30. Packet 2
@@ -178,14 +183,20 @@ class MaschineMK1UsbTransport:
         if self._device is None:
             raise RuntimeError("transport is not open")
         g0, g1 = build_led_packets(led_state)
-        self._write(EP_CONTROL_OUT, g0)
-        self._write(EP_CONTROL_OUT, g1)
+        self._write(EP_CONTROL_OUT, g0, timeout_ms=timeout_ms)
+        self._write(EP_CONTROL_OUT, g1, timeout_ms=timeout_ms)
 
-    def write_display_frame(self, display_index: int, framebuffer: bytes) -> None:
+    def write_display_frame(
+        self,
+        display_index: int,
+        framebuffer: bytes,
+        *,
+        timeout_ms: int = 500,
+    ) -> None:
         if self._device is None:
             raise RuntimeError("transport is not open")
         for packet in build_display_frame_packets(display_index, framebuffer):
-            self._write(EP_DISPLAY_OUT, packet)
+            self._write(EP_DISPLAY_OUT, packet, timeout_ms=timeout_ms)
 
     # ------------------------------------------------------------------
     # Input
@@ -215,10 +226,10 @@ class MaschineMK1UsbTransport:
     # Private
     # ------------------------------------------------------------------
 
-    def _write(self, endpoint: int, payload: bytes) -> None:
+    def _write(self, endpoint: int, payload: bytes, *, timeout_ms: int = 500) -> None:
         assert self._device is not None
         with self._write_lock:
-            self._device.write(endpoint, payload, timeout=500)
+            self._device.write(endpoint, payload, timeout=max(1, int(timeout_ms)))
 
     def _read_raw(self, endpoint: int, length: int, timeout_ms: int) -> bytes | None:
         assert self._device is not None

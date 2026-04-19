@@ -62,8 +62,6 @@ const HOME_TABLE_HEADERS = [
   { key: 'workspace', header: 'Workspace' },
 ] as const
 
-type HeroAlertTagType = 'red' | 'warm-gray'
-
 type InventoryNode = {
   status?: string
   audio_interfaces?: string[]
@@ -90,12 +88,8 @@ type SummaryMetric = {
   value: string
   label: string
   helper: string
-}
-
-type HeroAlert = {
-  id: string
-  label: string
-  type: HeroAlertTagType
+  route: string
+  tone: HomeTelemetryTone
 }
 
 function normalizeText(value: string | null | undefined): string | null {
@@ -585,101 +579,99 @@ export function HomePage() {
     [allTelemetryRows],
   )
 
-  const summaryMetrics = useMemo<SummaryMetric[]>(() => [
-    {
-      id: 'nodes',
-      value: String(onlineNodes.length),
-      label: 'live nodes',
-      helper: onlineNodes.length === 1 ? 'one cluster node responding' : 'cluster nodes responding now',
-    },
-    {
-      id: 'midi-devices',
-      value: String(midiDeviceRows.length),
-      label: 'MIDI devices',
-      helper: 'physical ports reporting into the cluster',
-    },
-    {
-      id: 'midi-mappings',
-      value: String(midiMappingRows.length),
-      label: 'mapped routes',
-      helper: 'enabled transforms and routing filters',
-    },
-    {
-      id: 'audio-interfaces',
-      value: String(audioInterfaceRows.length),
-      label: 'audio interfaces',
-      helper: 'connected interface inventory across nodes',
-    },
-    {
-      id: 'avb-endpoints',
-      value: String(avbDiscoveryQuery.data?.total_discovered ?? Math.max(avbEndpointRows.length - 1, 0)),
-      label: 'AVB endpoints',
-      helper: 'currently discovered on the fabric',
-    },
-    {
-      id: 'snapshots',
-      value: String(snapshotRows.length),
-      label: 'snapshot groups',
-      helper: 'live runtime snapshot states',
-    },
-  ], [
+  const summaryMetrics = useMemo<SummaryMetric[]>(() => {
+    const nodesState = shellSummaryData.platformStatus.nodes.state
+    const avbState = shellSummaryData.platformStatus.avb.state
+    const avdeccState = shellSummaryData.platformStatus.avdecc.state
+
+    const stateToTone = (state: 'ok' | 'warn' | 'off' | 'loading'): HomeTelemetryTone => {
+      if (state === 'warn') return 'warning'
+      if (state === 'off') return 'critical'
+      if (state === 'ok') return 'healthy'
+      return 'neutral'
+    }
+
+    const telemetryTone: HomeTelemetryTone = criticalRowCount > 0
+      ? 'critical'
+      : warningRowCount > 0
+        ? 'warning'
+        : 'healthy'
+
+    const avbDiscovered = avbDiscoveryQuery.data?.total_discovered ?? Math.max(avbEndpointRows.length - 1, 0)
+
+    return [
+      {
+        id: 'nodes',
+        value: String(onlineNodes.length),
+        label: 'live nodes',
+        helper: shellSummaryData.platformStatus.nodes.label,
+        route: buildPlatformNodeWorkspaceHref('audio-engine'),
+        tone: stateToTone(nodesState),
+      },
+      {
+        id: 'midi-devices',
+        value: String(midiDeviceRows.length),
+        label: 'MIDI devices',
+        helper: 'physical ports reporting into the cluster',
+        route: '/midi-hub/connections',
+        tone: midiDeviceRows.length > 0 ? 'healthy' : 'neutral',
+      },
+      {
+        id: 'midi-mappings',
+        value: String(midiMappingRows.length),
+        label: 'mapped routes',
+        helper: 'enabled transforms and routing filters',
+        route: '/midi-hub/processing',
+        tone: midiMappingRows.length > 0 ? 'healthy' : 'neutral',
+      },
+      {
+        id: 'audio-interfaces',
+        value: String(audioInterfaceRows.length),
+        label: 'audio interfaces',
+        helper: 'connected interface inventory across nodes',
+        route: buildPlatformNodeWorkspaceHref('audio-engine'),
+        tone: telemetryTone,
+      },
+      {
+        id: 'avb-endpoints',
+        value: String(avbDiscovered),
+        label: 'AVB endpoints',
+        helper: shellSummaryData.platformStatus.avb.label,
+        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+        tone: stateToTone(avbState),
+      },
+      {
+        id: 'avdecc',
+        value: String(shellSummaryData.platformStatus.avdecc.label.match(/\d+/)?.[0] ?? 0),
+        label: 'AVDECC entities',
+        helper: shellSummaryData.platformStatus.avdecc.label,
+        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+        tone: stateToTone(avdeccState),
+      },
+      {
+        id: 'snapshots',
+        value: String(snapshotRows.length),
+        label: 'snapshot groups',
+        helper: 'live runtime snapshot states',
+        route: '/snapshot-editor',
+        tone: snapshotRows.length > 0 ? 'healthy' : 'neutral',
+      },
+    ]
+  }, [
     audioInterfaceRows.length,
     avbDiscoveryQuery.data?.total_discovered,
     avbEndpointRows.length,
+    criticalRowCount,
     midiDeviceRows.length,
     midiMappingRows.length,
     onlineNodes.length,
+    shellSummaryData.platformStatus.avb.label,
+    shellSummaryData.platformStatus.avb.state,
+    shellSummaryData.platformStatus.avdecc.label,
+    shellSummaryData.platformStatus.avdecc.state,
+    shellSummaryData.platformStatus.nodes.label,
+    shellSummaryData.platformStatus.nodes.state,
     snapshotRows.length,
-  ])
-
-  const heroAlerts = useMemo<HeroAlert[]>(() => {
-    const alerts: HeroAlert[] = []
-    const pushAlert = (id: string, label: string, type: HeroAlertTagType) => {
-      alerts.push({ id, label, type })
-    }
-
-    const platformAlerts: Array<{ id: string; label: string; state: 'ok' | 'warn' | 'off' | 'loading' }> = [
-      { id: 'nodes', ...shellSummaryData.platformStatus.nodes },
-      { id: 'avb', ...shellSummaryData.platformStatus.avb },
-      { id: 'avdecc', ...shellSummaryData.platformStatus.avdecc },
-    ]
-
-    for (const item of platformAlerts) {
-      if (item.state === 'warn') {
-        pushAlert(item.id, item.label, item.label.toLocaleLowerCase().includes('error') ? 'red' : 'warm-gray')
-      }
-      if (item.state === 'off') {
-        pushAlert(item.id, item.label, 'warm-gray')
-      }
-    }
-
-    if (shellSummaryData.launcherInterfaceSummary.errorMessage) {
-      pushAlert('interfaces-error', shellSummaryData.launcherInterfaceSummary.errorMessage, 'red')
-    }
-
-    if (criticalRowCount > 0) {
-      pushAlert(
-        'latency-critical',
-        `${criticalRowCount} signal${criticalRowCount === 1 ? '' : 's'} critical`,
-        'red',
-      )
-    }
-
-    if (warningRowCount > 0) {
-      pushAlert(
-        'telemetry-watch',
-        `${warningRowCount} signal${warningRowCount === 1 ? '' : 's'} need attention`,
-        'warm-gray',
-      )
-    }
-
-    return alerts
-  }, [
-    criticalRowCount,
-    shellSummaryData.launcherInterfaceSummary.errorMessage,
-    shellSummaryData.platformStatus.avb,
-    shellSummaryData.platformStatus.avdecc,
-    shellSummaryData.platformStatus.nodes,
     warningRowCount,
   ])
 
@@ -827,28 +819,23 @@ export function HomePage() {
                     processor, giving artists a world-class tool for creating and routing sound.
                   </p>
 
-                  {heroAlerts.length > 0 ? (
-                    <div className="hp2-home-shell__telemetry-tags" aria-label="Telemetry alerts">
-                      {heroAlerts.map((alert) => (
-                        <Tag key={alert.id} type={alert.type}>
-                          {alert.label}
-                        </Tag>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="hp2-home-shell__hero-status-copy">
-                      No active warnings or failures are reporting into the home surface right now.
-                    </p>
-                  )}
                 </div>
 
                 <aside className="hp2-home-shell__summary-rail" aria-label="Telemetry overview">
                   {summaryMetrics.map((metric) => (
-                    <div key={metric.id} className="hp2-home-shell__summary-metric">
+                    <button
+                      type="button"
+                      key={metric.id}
+                      className="hp2-home-shell__summary-metric"
+                      data-tone={metric.tone}
+                      onMouseEnter={() => prefetchHomeShellRoute(metric.route)}
+                      onFocus={() => prefetchHomeShellRoute(metric.route)}
+                      onClick={() => navigateHomeShellRoute(navigate, metric.route)}
+                    >
                       <span className="hp2-home-shell__summary-value">{metric.value}</span>
                       <span className="hp2-home-shell__summary-label">{metric.label}</span>
                       <span className="hp2-home-shell__summary-helper">{metric.helper}</span>
-                    </div>
+                    </button>
                   ))}
                 </aside>
               </header>

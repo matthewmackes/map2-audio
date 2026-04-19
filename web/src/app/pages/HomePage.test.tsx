@@ -477,7 +477,26 @@ describe('HomePage landing', () => {
     expect(screen.queryByText('Operator telemetry')).toBeNull()
     expect(screen.getByText('live nodes')).toBeInTheDocument()
     expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Play guitar live' })).toBeInTheDocument()
+    expect(screen.getByText('/edirol-ua1000')).toBeInTheDocument()
+    expect(screen.getByText('/snapshot-editor')).toBeInTheDocument()
+    expect(screen.getByText('/metering')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
+  })
+
+  it('navigates through the first-run guitar entry strip', async () => {
+    renderHome()
+
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open device' }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/edirol-ua1000')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open snapshots' }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/snapshot-editor')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open metering' }))
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/metering')
   })
 
   it('skips the opt-in boot splash when desktop session state already exists', async () => {

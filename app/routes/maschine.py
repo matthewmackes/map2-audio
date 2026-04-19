@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
+from app.services.maschine.admin_console import get_maschine_admin_console_service
 from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
 from app.services.maschine.midi_map_config import (
@@ -70,6 +71,12 @@ class MaschineTransportConfigRequest(BaseModel):
     allow_kernel_detach: bool | None = None
 
 
+class MaschineAdminConsoleSelectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    delta: int = 0
+
+
 def _maschine_transport_config_snapshot() -> dict[str, Any]:
     runtime_config = get_runtime_config_manager()
     return {
@@ -128,6 +135,54 @@ async def update_maschine_transport_config(request: MaschineTransportConfigReque
         "status": "ok",
         "config": _maschine_transport_config_snapshot(),
         "note": "Maschine daemon picks up transport policy changes on the next reconnect or next daemon start.",
+    }
+
+
+@router.get("/admin-console")
+async def get_maschine_admin_console() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": get_maschine_admin_console_service().snapshot(),
+    }
+
+
+@router.post("/admin-console/unlock")
+async def unlock_maschine_admin_console() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": await get_maschine_admin_console_service().unlock(),
+    }
+
+
+@router.post("/admin-console/select")
+async def select_maschine_admin_console_action(request: MaschineAdminConsoleSelectRequest) -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": await get_maschine_admin_console_service().select_relative(request.delta),
+    }
+
+
+@router.post("/admin-console/confirm")
+async def confirm_maschine_admin_console_action() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": await get_maschine_admin_console_service().confirm(),
+    }
+
+
+@router.post("/admin-console/cancel")
+async def cancel_maschine_admin_console_action() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": await get_maschine_admin_console_service().cancel(),
+    }
+
+
+@router.post("/admin-console/lock")
+async def lock_maschine_admin_console() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "admin_console": await get_maschine_admin_console_service().lock(),
     }
 
 

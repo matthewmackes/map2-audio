@@ -72,7 +72,6 @@
   gap: var(--cds-spacing-06, 1.5rem);
 }
 
-.hp2-home-shell__operations-hero,
 .hp2-home-shell__operations-table-shell {
   border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -80,17 +79,34 @@
 }
 
 .hp2-home-shell__operations-hero {
+  --hp2-plex-sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --hp2-plex-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(20rem, 0.95fr);
-  gap: clamp(1.25rem, 2vw, 2rem);
+  grid-template-columns: minmax(0, 1.55fr) minmax(22rem, 1fr);
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
   align-items: start;
-  padding: clamp(1.25rem, 2vw, 1.75rem);
+  padding: clamp(1.75rem, 3vw, 2.75rem);
+  border: 1px solid var(--cds-border-subtle);
+  border-radius: 0;
+  background: var(--cds-layer);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.hp2-home-shell__operations-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--cds-link-primary, var(--cds-interactive));
 }
 
 .hp2-home-shell__operations-copy {
   display: grid;
-  gap: var(--cds-spacing-05, 1rem);
+  gap: clamp(1rem, 1.5vw, 1.5rem);
   min-width: 0;
+  font-family: var(--hp2-plex-sans);
 }
 
 .hp2-home-shell__operations-kicker-row {
@@ -102,89 +118,140 @@
 
 .hp2-home-shell__hero-kicker {
   margin: 0;
-  color: var(--text-tertiary);
-  font-size: var(--cds-label-01-font-size, 0.75rem);
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  color: var(--cds-text-helper);
+  font-family: var(--hp2-plex-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
 .hp2-home-shell__operations-kicker-row .cds--overflow-menu {
-  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-2) 76%, transparent);
+  border: 1px solid var(--cds-border-subtle);
+  border-radius: 0;
+  background: transparent;
 }
 
 .hp2-home-shell__operations-title {
   display: block;
   margin: 0;
   max-width: min(100%, 44rem);
-  height: clamp(4rem, 12vw, 7.25rem);
 }
 
 .hp2-home-shell__title-brand-image {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   max-width: min(100%, 42rem);
-  object-fit: cover;
-  object-position: left center;
+  max-height: clamp(4rem, 12vw, 7.25rem);
+  object-fit: contain;
+  object-position: left top;
 }
 
-.hp2-home-shell__operations-lede,
-.hp2-home-shell__hero-status-copy {
+.hp2-home-shell__operations-lede {
   margin: 0;
   max-width: 52rem;
-  color: var(--text-secondary);
+  color: var(--cds-text-secondary);
+  font-family: var(--hp2-plex-sans);
   font-size: var(--cds-body-02-font-size, 1rem);
+  font-weight: 300;
   line-height: 1.55;
-}
-
-.hp2-home-shell__telemetry-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cds-spacing-03, 0.5rem);
 }
 
 .hp2-home-shell__summary-rail {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
   align-self: stretch;
-  border-left: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  font-family: var(--hp2-plex-sans);
+  border: 1px solid var(--cds-border-subtle);
+  border-right: 0;
+  border-bottom: 0;
 }
 
 .hp2-home-shell__summary-metric {
+  position: relative;
   display: grid;
-  gap: var(--cds-spacing-02, 0.25rem);
+  gap: var(--cds-spacing-03, 0.5rem);
   align-content: start;
-  padding: var(--cds-spacing-05, 1rem);
-  border-top: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  padding: clamp(0.875rem, 1.5vw, 1.25rem);
+  min-height: 6.5rem;
+  border-right: 1px solid var(--cds-border-subtle);
+  border-bottom: 1px solid var(--cds-border-subtle);
+  background: transparent;
+  color: var(--cds-text-primary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
-.hp2-home-shell__summary-metric:nth-child(-n + 2) {
-  border-top: 0;
+.hp2-home-shell__summary-metric::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: transparent;
+  transition: background-color 120ms ease;
 }
 
-.hp2-home-shell__summary-metric:nth-child(2n) {
-  border-left: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+.hp2-home-shell__summary-metric[data-tone='healthy']::before {
+  background: var(--cds-support-success, #198038);
+}
+
+.hp2-home-shell__summary-metric[data-tone='warning']::before {
+  background: var(--cds-support-warning, #f1c21b);
+}
+
+.hp2-home-shell__summary-metric[data-tone='critical']::before {
+  background: var(--cds-support-error, #da1e28);
+}
+
+.hp2-home-shell__summary-metric[data-tone='neutral']::before {
+  background: var(--cds-border-strong, var(--cds-border-subtle));
+}
+
+.hp2-home-shell__summary-metric:hover,
+.hp2-home-shell__summary-metric:focus-visible {
+  background: var(--cds-layer-hover);
+}
+
+.hp2-home-shell__summary-metric:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
 }
 
 .hp2-home-shell__summary-value {
-  font-size: clamp(2rem, 4vw, 3.15rem);
-  font-weight: 700;
-  line-height: 0.88;
-  letter-spacing: -0.06em;
+  font-family: var(--hp2-plex-sans);
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--cds-text-primary);
 }
 
 .hp2-home-shell__summary-label {
-  font-size: var(--cds-body-compact-02-font-size, 1rem);
-  font-weight: 600;
+  font-family: var(--hp2-plex-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
 }
 
 .hp2-home-shell__summary-helper {
-  color: var(--text-secondary);
-  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper);
+  font-family: var(--hp2-plex-sans);
+  font-size: 0.75rem;
+  font-weight: 400;
   line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .hp2-home-shell__operations-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .hp2-home-shell__table-container {
@@ -352,6 +419,10 @@
     border-left: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   }
+
+  .hp2-home-shell__guitar-entry-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 42rem) {
@@ -365,11 +436,11 @@
 
   .hp2-home-shell__operations-title {
     max-width: 100%;
-    height: clamp(3.25rem, 15vw, 4.5rem);
   }
 
   .hp2-home-shell__title-brand-image {
     max-width: 100%;
+    max-height: clamp(3.25rem, 15vw, 4.5rem);
   }
 
   .hp2-home-shell__operations-kicker-row {

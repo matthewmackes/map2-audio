@@ -59,6 +59,7 @@ import {
   useTheme,
 } from '../theme'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
+import { GuiOptionsShowcase } from '../components/ThemeGuiOptions/GuiOptionsShowcase'
 import { IconPickerModal } from '../components/pluginAppearance/IconPickerModal'
 import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppearanceIcon'
 import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
@@ -295,6 +296,7 @@ const THEME_PAGE_SECTION_IDS = {
   fontsObjects: 'theme-fonts-objects',
   background: 'theme-background',
   behavior: 'theme-behavior',
+  guiOptions: 'theme-gui-options',
 } as const
 
 const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
@@ -302,6 +304,7 @@ const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
   { id: THEME_PAGE_SECTION_IDS.fontsObjects, label: 'Fonts and Objects' },
   { id: THEME_PAGE_SECTION_IDS.background, label: 'Background' },
   { id: THEME_PAGE_SECTION_IDS.behavior, label: 'Behavior' },
+  { id: THEME_PAGE_SECTION_IDS.guiOptions, label: 'GUI Options' },
 ]
 
 const PREVIEW_FOCUS_OPTIONS = [
@@ -1904,6 +1907,20 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
               ) : null}
             </div>
           </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.guiOptions) {
+    return (
+      <section
+        id={`${THEME_PAGE_SECTION_IDS.guiOptions}-panel`}
+        aria-labelledby={`${THEME_PAGE_SECTION_IDS.guiOptions}-tab`}
+        role="tabpanel"
+      >
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <GuiOptionsShowcase />
         </div>
       </section>
     )

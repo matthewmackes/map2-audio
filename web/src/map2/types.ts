@@ -14,6 +14,10 @@ export interface AudioStatus {
   version?: string;
   plugin_count?: number;
   active_pedalboard?: string;
+  audio_device?: string | null;
+  input_channel_mode?: 'mono_left' | 'mono_right' | 'stereo';
+  input_gain_db?: number;
+  output_gain_db?: number;
   input_device?: string | null;
   output_device?: string | null;
   available_input_devices?: string[];

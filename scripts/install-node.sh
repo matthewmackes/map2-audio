@@ -964,6 +964,25 @@ create_directories() {
     print_success "Directory structure created"
 }
 
+install_maschine_admin_sudoers() {
+    print_info "Installing Maschine admin sudoers contract..."
+    local source_path="${INSTALL_DIR}/config/sudoers/map2-maschine-admin"
+    local target_path="/etc/sudoers.d/map2-maschine-admin"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would install ${source_path} to ${target_path} with mode 0440"
+        return
+    fi
+    if [[ ! -f "$source_path" ]]; then
+        print_warning "Maschine admin sudoers source not found at ${source_path}; skipping"
+        return
+    fi
+    install -D -m 0440 "$source_path" "$target_path"
+    if command -v visudo >/dev/null 2>&1; then
+        visudo -cf "$target_path" >/dev/null
+    fi
+    print_success "Maschine admin sudoers installed"
+}
+
 create_configuration() {
     print_info "Creating configuration file..."
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -1110,7 +1129,7 @@ configure_audio() {
 install_systemd_services() {
     print_info "Installing systemd services..."
     if [[ "$DRY_RUN" == "true" ]]; then
-        print_info "[DRY RUN] Would install MAP2 backend, frontend, and cluster service units"
+        print_info "[DRY RUN] Would install MAP2 backend, frontend, cluster, and Maschine admin contract artifacts"
         return
     fi
     
@@ -1573,6 +1592,7 @@ main() {
     configure_firewall
     configure_audio
     install_systemd_services
+    install_maschine_admin_sudoers
     
     # Start services
     start_services

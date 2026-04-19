@@ -29,6 +29,53 @@ class _FakeRuntimeConfigManager:
         return True
 
 
+class _FakeAdminConsoleService:
+    def __init__(self) -> None:
+        self.state = {
+            "session_unlocked": False,
+            "selected_action_index": 0,
+            "selected_action_label": "RESTART BACKEND",
+            "confirmation_progress": 0,
+            "actions": [
+                {"action_id": "restart_backend", "label": "RESTART BACKEND", "is_selected": True},
+                {"action_id": "restart_web", "label": "RESTART WEB", "is_selected": False},
+            ],
+        }
+        self.select_calls: list[int] = []
+        self.confirm_calls = 0
+        self.cancel_calls = 0
+        self.unlock_calls = 0
+        self.lock_calls = 0
+
+    def snapshot(self) -> dict[str, object]:
+        return dict(self.state)
+
+    async def unlock(self) -> dict[str, object]:
+        self.unlock_calls += 1
+        self.state["session_unlocked"] = True
+        return self.snapshot()
+
+    async def select_relative(self, delta: int) -> dict[str, object]:
+        self.select_calls.append(delta)
+        self.state["selected_action_index"] = int(self.state["selected_action_index"]) + delta
+        return self.snapshot()
+
+    async def confirm(self) -> dict[str, object]:
+        self.confirm_calls += 1
+        self.state["confirmation_progress"] = int(self.state["confirmation_progress"]) + 1
+        return self.snapshot()
+
+    async def cancel(self) -> dict[str, object]:
+        self.cancel_calls += 1
+        self.state["confirmation_progress"] = 0
+        return self.snapshot()
+
+    async def lock(self) -> dict[str, object]:
+        self.lock_calls += 1
+        self.state["session_unlocked"] = False
+        return self.snapshot()
+
+
 def _init_temp_db(tmp_path):
     database_module._tables_created = False
     database_module._pragmas_set = False
@@ -86,6 +133,47 @@ def test_maschine_service_getter_uses_shared_singleton():
         assert MaschineService.has_instance() is True
     finally:
         reset_maschine_service()
+
+
+def test_maschine_admin_console_routes(tmp_path):
+    _init_temp_db(tmp_path)
+    reset_maschine_service()
+    reset_maschine_lcd_render_service()
+    client = _build_client()
+    fake_admin = _FakeAdminConsoleService()
+
+    monkeypatch = __import__("pytest").MonkeyPatch()
+    monkeypatch.setattr(maschine_routes, "get_maschine_admin_console_service", lambda: fake_admin)
+
+    get_response = client.get("/api/maschine/admin-console")
+    assert get_response.status_code == 200
+    assert get_response.json()["admin_console"]["session_unlocked"] is False
+
+    unlock_response = client.post("/api/maschine/admin-console/unlock")
+    assert unlock_response.status_code == 200
+    assert unlock_response.json()["admin_console"]["session_unlocked"] is True
+    assert fake_admin.unlock_calls == 1
+
+    select_response = client.post("/api/maschine/admin-console/select", json={"delta": 1})
+    assert select_response.status_code == 200
+    assert fake_admin.select_calls == [1]
+
+    confirm_response = client.post("/api/maschine/admin-console/confirm")
+    assert confirm_response.status_code == 200
+    assert confirm_response.json()["admin_console"]["confirmation_progress"] == 1
+    assert fake_admin.confirm_calls == 1
+
+    cancel_response = client.post("/api/maschine/admin-console/cancel")
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["admin_console"]["confirmation_progress"] == 0
+    assert fake_admin.cancel_calls == 1
+
+    lock_response = client.post("/api/maschine/admin-console/lock")
+    assert lock_response.status_code == 200
+    assert lock_response.json()["admin_console"]["session_unlocked"] is False
+    assert fake_admin.lock_calls == 1
+
+    monkeypatch.undo()
 
 
 def test_update_encoder_map_persists_snapshot_timestamp_as_utc():

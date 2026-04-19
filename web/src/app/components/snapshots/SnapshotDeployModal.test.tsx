@@ -272,5 +272,6 @@ describe('SnapshotDeployModal', () => {
     })
 
     expect(screen.getAllByText('Will deploy').length).toBeGreaterThan(0)
+    expect(screen.getByText('Deploy copies it. Publish makes it live.')).toBeInTheDocument()
   })
 })
