@@ -1,0 +1,14 @@
+{
+  "surface": "lcd",
+  "action_type": "lcd_event",
+  "event_id": "00000000-0000-0000-0000-000000000000",
+  "payload": {
+    "event_id": "00000000-0000-0000-0000-000000000000",
+    "event_type": "alert",
+    "severity": "warning",
+    "title": "> Workflow progress",
+    "message": "Applying update",
+    "source_node": "AUDIO-NODE-0001",
+    "broadcast": true
+  }
+}

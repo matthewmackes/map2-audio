@@ -1,0 +1,37 @@
+{
+  "surface": "mk1",
+  "action_type": "overlay",
+  "event_id": "00000000-0000-0000-0000-000000000000",
+  "payload": {
+    "mode": "exclusive_overlay",
+    "event_id": "00000000-0000-0000-0000-000000000000",
+    "severity": "critical",
+    "kind": "system.cpu.critical",
+    "title": "CPU critical",
+    "message": "CPU sustained at 95%",
+    "ttl_seconds": 300,
+    "pads": [
+      {"index": 0, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 1, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 2, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 3, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 4, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 5, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 6, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 7, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 8, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 9, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 10, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 11, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 12, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 13, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 14, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"},
+      {"index": 15, "state": "full", "color": "red", "selected": false, "brightness_level": "full", "animation": "pulse_fast"}
+    ],
+    "lcd": {
+      "left": {"title": "!! CPU critical", "body": "CPU sustained at 95%"},
+      "right": {"title": "AUDIO-NODE-0001", "body": "system.cpu.critical"}
+    }
+  }
+}
+

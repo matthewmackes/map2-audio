@@ -1,0 +1,13 @@
+{
+  "surface": "push",
+  "action_type": "render_frame",
+  "event_id": "00000000-0000-0000-0000-000000000000",
+  "payload": {
+    "title": "Workflow progress",
+    "lines": ["Applying update", "AUDIO-NODE-0001"],
+    "urgent": false,
+    "urgent_controls": [],
+    "color": "white"
+  }
+}
+

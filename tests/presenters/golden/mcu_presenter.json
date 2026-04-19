@@ -1,0 +1,10 @@
+{
+  "surface": "mcu",
+  "action_type": "scribble_strip",
+  "event_id": "00000000-0000-0000-0000-000000000000",
+  "payload": {
+    "labels": ["JOB WOR", "", "", "", "", "", "", ""],
+    "title": "JOB WOR",
+    "message": "Applying update"
+  }
+}

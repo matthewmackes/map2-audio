@@ -1,0 +1,12 @@
+{
+  "surface": "tui",
+  "action_type": "screen_update",
+  "event_id": "00000000-0000-0000-0000-000000000000",
+  "payload": {
+    "region": "platform_event",
+    "status_line": "JOB Workflow progress",
+    "message": "Applying update",
+    "severity": "error",
+    "urgent": true
+  }
+}

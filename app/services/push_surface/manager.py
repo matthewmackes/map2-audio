@@ -21,6 +21,8 @@ from app.services.push_surface.input_parser import PushInputParser
 from app.services.push_surface.labs_store import get_push_surface_labs_store
 from app.services.push_surface.map2_bridge import DirectMap2SurfaceBridge, Map2SurfaceAPI, RestWebSocketMap2SurfaceBridge
 from app.services.push_surface.models.render_state import RenderFrame
+from app.services.push_surface.models.render_state import ControlLightState, DisplayFrame
+from app.services.push_surface.models.capabilities import SurfaceColor
 from app.services.push_surface.models.state import PageId
 from app.services.push_surface.output_renderer import PushOutputRenderer
 from app.services.push_surface.page_controller import PushPageController, SurfaceCommand, SurfaceCommandType
@@ -356,6 +358,26 @@ class PushSurfaceManager:
     async def render(self, *, urgent_controls: set[str] | None = None, force: bool = False) -> None:
         frame = self.controller.build_render_frame()
         await self._send_frame(frame, urgent_controls=urgent_controls, force=force)
+
+    async def present_platform_event(
+        self,
+        *,
+        title: str,
+        lines: tuple[str, ...],
+        urgent: bool = False,
+    ) -> None:
+        if not self._running or self.active_device is None:
+            return
+        urgent_controls = {"top_row_0", "top_row_1"} if urgent else set()
+        color = SurfaceColor.RED if urgent else SurfaceColor.WHITE
+        frame = RenderFrame(
+            button_lights={
+                "top_row_0": ControlLightState(color=color, pulse=urgent, brightness=127),
+                "top_row_1": ControlLightState(color=color, pulse=urgent, brightness=127),
+            },
+            display=DisplayFrame(title=title[:32], lines=tuple(str(line)[:32] for line in lines[:2])),
+        )
+        await self._send_frame(frame, urgent_controls=urgent_controls, force=True, metadata={"message_type": "platform_event"})
 
     async def push_snapshot_activation(self, *, snapshot_id: int, snapshot_name: str) -> dict[str, Any]:
         if not self._running:

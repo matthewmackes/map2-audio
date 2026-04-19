@@ -1397,12 +1397,16 @@ class ServiceOrchestrator(Singleton):
         """Start event publisher service."""
         from app.services.event_publisher import event_publisher
         from app.services.websocket_manager import ws_manager
+        from app.services.platform_event.runtime import get_platform_event_presenter_runtime
         event_publisher.set_websocket_manager(ws_manager)
+        await get_platform_event_presenter_runtime().start()
 
     async def _stop_event_publisher(self):
         """Stop event publisher service."""
         try:
             from app.services.event_publisher import event_publisher
+            from app.services.platform_event.runtime import get_platform_event_presenter_runtime
+            await get_platform_event_presenter_runtime().stop()
             event_publisher.set_websocket_manager(None)
             logger.info("Event publisher stopped")
         except Exception as e:

@@ -28652,7 +28652,7 @@ Validation:
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Presenter ABC + per-surface presenters (MK1, LCD, TUI, Push, MCU)
 Description:
 - Goal / acceptance criteria: Implement the presenter ABC at [app/services/platform_event/presenter.py](app/services/platform_event/presenter.py) with `surface`, `wants(event) -> bool`, `present(event) -> SurfaceAction | None`, `on_dismiss(event_id)`, `tick(now)`. Implement per-surface presenters under [app/services/platform_event/presenters/](app/services/platform_event/presenters/):
@@ -28667,11 +28667,19 @@ Description:
 - Dependencies: T2363-subA, T2363-subB
 - Estimated effort: Very High
 - Required outputs: ABC + 5 presenters + 5 golden-file test modules + integration wiring that registers each presenter with the bus on startup (gated by `PLATFORM_EVENT_BUS_ENABLED`).
+- Progress notes:
+  - 2026-04-19 10:22 EDT - Codex: Began the backend presenter slice immediately after shipping `T2363-subC` at `f089c9d7`; auditing MK1 LED choreography, Maschine LCD rendering, TUI debounced screen updates, Push render-frame manager, and Maschine daemon state before adding the presenter ABC and surface-specific adapters.
+- Completion notes:
+  - Added the canonical presenter contract in [app/services/platform_event/presenter.py](app/services/platform_event/presenter.py) plus the runtime/wiring in [app/services/platform_event/runtime.py](app/services/platform_event/runtime.py), exported through [app/services/platform_event/__init__.py](app/services/platform_event/__init__.py), and started/stopped the presenter runtime from [app/services/service_orchestrator.py](app/services/service_orchestrator.py) whenever the event publisher is active.
+  - Landed the five concrete presenters in [app/services/platform_event/presenters/](app/services/platform_event/presenters/) with `policy.hints_for()` as the shared interpretation layer, including MK1 exclusive-overlay versus long-op behavior, LCD/TUI/MCU shape adapters, and Push render-frame actions.
+  - Integrated MK1 and Push execution paths into existing surface runtimes: [app/services/maschine_service.py](app/services/maschine_service.py) now stores and broadcasts `platform_event_overlay`, [app/services/maschine/maschine_mk1_daemon.py](app/services/maschine/maschine_mk1_daemon.py) renders overlay pads/LCD/priority LEDs with wall-clock expiry handling, and [app/services/push_surface/manager.py](app/services/push_surface/manager.py) can render platform-event frames directly.
+  - Added deterministic golden coverage in [tests/presenters/](tests/presenters/) for MK1, LCD, TUI, Push, and MCU action output, including package setup for pytest collection and fixtures pinned to a stable `event_id`.
 - Notes: Locked decision #1 — MK1 WARNING+ is full-override, dismiss is first-class. Verify by inspecting [app/services/maschine/led_choreography.py](app/services/maschine/led_choreography.py) for the existing layer stack and adding the 5th (highest-priority) layer. Do not alter the audio-reactive inputs (those keep reading meter topics directly).
 Validation:
-- `pytest tests/presenters/ -q` -> must PASS
-- `pytest tests/test_maschine_service.py tests/test_maschine_lcd_service.py tests/test_tui_screen_manager.py tests/test_push_surface_manager.py -q` -> must PASS (no regressions)
-- `pytest tests/test_platform_event_bus.py -q` -> must PASS
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests/presenters -q` -> PASS
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests/test_maschine_mk1_daemon.py tests/test_mcu_surface_service.py tests/push_surface/test_manager.py -q` -> PASS
+- `PYTHONDONTWRITEBYTECODE=1 pytest tests/presenters tests/test_maschine_mk1_daemon.py tests/test_mcu_surface_service.py tests/push_surface/test_manager.py -q` -> PASS
+- `python3 - <<'PY' ... import PlatformEventPresenterRuntime / ServiceOrchestrator ... PY` -> PASS
 - `git push origin master && git push gitlab master`
 
 ID: T2363-subE

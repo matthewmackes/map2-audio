@@ -312,6 +312,23 @@ class SharedRuntimeState:
     )
     encoder_map: dict[str, Any] = field(default_factory=default_maschine_encoder_map)
     led_state: dict[str, Any] = field(default_factory=lambda: {"pads": [], "updated_at": None})
+    platform_event_overlay: dict[str, Any] = field(
+        default_factory=lambda: {
+            "active": False,
+            "event_id": None,
+            "severity": "info",
+            "mode": "shared_receipt",
+            "title": "",
+            "message": "",
+            "pads": [],
+            "lcd": {
+                "left": {"width": LCD_WIDTH, "height": LCD_HEIGHT, "format": "xbm", "data": ""},
+                "right": {"width": LCD_WIDTH, "height": LCD_HEIGHT, "format": "xbm", "data": ""},
+            },
+            "updated_at": None,
+            "expires_at": None,
+        }
+    )
     lcd_frames: dict[str, Any] = field(
         default_factory=lambda: {
             "left": {"width": LCD_WIDTH, "height": LCD_HEIGHT, "format": "xbm", "data": ""},
@@ -1312,6 +1329,7 @@ class MaschineMK1Daemon:
         """
         led = [0] * LED_DATA_SIZE
         now = time.monotonic()
+        wall_clock_now = time.time()
         long_operation_snapshot = self._long_operation_feedback.snapshot(now=now)
 
         with self._state_lock:
@@ -1335,6 +1353,7 @@ class MaschineMK1Daemon:
             brain_sequence_state = dict(self._state.brain_sequence_state)
             beat_anchor_monotonic = float(self._state.beat_anchor_monotonic or 0.0)
             screensaver_active = bool(self._state.screensaver_active)
+            platform_event_overlay = dict(self._state.platform_event_overlay)
             boot_active = bool(self._state.boot_active)
             onboarding_active = bool(self._state.onboarding_active)
             admin_console_state = dict(self._state.admin_console_state)
@@ -1436,6 +1455,11 @@ class MaschineMK1Daemon:
             profile_switch_osd_profile_id=profile_switch_osd_profile_id,
             profile_switch_osd_until=profile_switch_osd_until,
             now=now,
+        )
+        pads = self._apply_platform_event_overlay_pads(
+            pads,
+            overlay_state=platform_event_overlay,
+            now=wall_clock_now,
         )
         for i, pad_entry in enumerate(pads[:16]):
             if not isinstance(pad_entry, dict):
@@ -1563,6 +1587,12 @@ class MaschineMK1Daemon:
                 now=now,
             )
 
+        self._apply_platform_event_overlay_leds(
+            led,
+            overlay_state=platform_event_overlay,
+            now=wall_clock_now,
+        )
+
         return led
 
     # ------------------------------------------------------------------
@@ -1680,6 +1710,7 @@ class MaschineMK1Daemon:
             top_level_menu_index = self._state.top_level_menu_index
             focus_metric = self._state.stats_focus_metric
             led_state = dict(self._state.led_state)
+            platform_event_overlay = dict(self._state.platform_event_overlay)
             profile_switch_osd_until = self._state.profile_switch_osd_until
             profile_switch_osd_profile_id = self._state.profile_switch_osd_profile_id
             backend_connected = bool(self._state.backend_connected)
@@ -1702,6 +1733,8 @@ class MaschineMK1Daemon:
             frames = build_onboarding_frames(self._onboarding.snapshot())
         elif long_operation_snapshot is not None:
             frames = build_long_operation_frames(long_operation_snapshot)
+        elif self._platform_event_overlay_is_active(platform_event_overlay, now=time.time()):
+            frames = dict(platform_event_overlay.get("lcd") or {}) or build_reconnecting_frames()
         elif screensaver_active:
             idle_seconds = self._screensaver.idle_seconds()
             active_context = menu_return_context if display_context == "menu" else display_context
@@ -1967,12 +2000,14 @@ class MaschineMK1Daemon:
                     state = dict(data["state"])
                     if isinstance(state.get("audio_grid"), dict):
                         self._state.audio_grid = dict(state["audio_grid"])
-                    if isinstance(state.get("lcd"), dict):
-                        self._state.lcd_frames = dict(state["lcd"])
-                    if isinstance(state.get("led_state"), dict):
-                        self._state.led_state = dict(state["led_state"])
-                    if isinstance(state.get("transport"), dict):
-                        self._state.transport_state = dict(state["transport"])
+                if isinstance(state.get("lcd"), dict):
+                    self._state.lcd_frames = dict(state["lcd"])
+                if isinstance(state.get("led_state"), dict):
+                    self._state.led_state = dict(state["led_state"])
+                if isinstance(state.get("platform_event_overlay"), dict):
+                    self._state.platform_event_overlay = dict(state["platform_event_overlay"])
+                if isinstance(state.get("transport"), dict):
+                    self._state.transport_state = dict(state["transport"])
             self._request_render()
             return
 
@@ -1984,6 +2019,8 @@ class MaschineMK1Daemon:
                     self._state.lcd_frames = dict(data["lcd"])
                 if isinstance(data.get("led_state"), dict):
                     self._state.led_state = dict(data["led_state"])
+                if isinstance(data.get("platform_event_overlay"), dict):
+                    self._state.platform_event_overlay = dict(data["platform_event_overlay"])
                 if isinstance(data.get("transport"), dict):
                     self._state.transport_state = dict(data["transport"])
             self._request_render()
@@ -2527,6 +2564,69 @@ class MaschineMK1Daemon:
         while len(overlayed) < 16:
             overlayed.append({"index": len(overlayed), "state": "off", "brightness_level": "off", "animation": "steady"})
         return overlayed
+
+    @staticmethod
+    def _platform_event_overlay_is_active(overlay_state: dict[str, Any], *, now: float) -> bool:
+        if not bool(overlay_state.get("active")):
+            return False
+        expires_at = str(overlay_state.get("expires_at") or "").strip()
+        if not expires_at:
+            return True
+        try:
+            return datetime.fromisoformat(expires_at.replace("Z", "+00:00")).timestamp() > now
+        except ValueError:
+            return True
+
+    def _apply_platform_event_overlay_pads(
+        self,
+        pads: list[dict[str, Any]],
+        *,
+        overlay_state: dict[str, Any],
+        now: float,
+    ) -> list[dict[str, Any]]:
+        if not self._platform_event_overlay_is_active(overlay_state, now=now):
+            return pads
+        overlay_pads = [
+            dict(entry)
+            for entry in list(overlay_state.get("pads") or [])[:16]
+            if isinstance(entry, dict)
+        ]
+        if not overlay_pads:
+            return pads
+        if str(overlay_state.get("mode") or "") == "exclusive_overlay":
+            merged = [
+                {
+                    "index": index,
+                    **(
+                        overlay_pads[index]
+                        if index < len(overlay_pads)
+                        else {"index": index, "state": "off", "brightness_level": "off", "animation": "steady"}
+                    ),
+                }
+                for index in range(16)
+            ]
+            return merged
+        return self._merge_pad_overlay(pads, overlay_pads)
+
+    def _apply_platform_event_overlay_leds(
+        self,
+        led: list[int],
+        *,
+        overlay_state: dict[str, Any],
+        now: float,
+    ) -> None:
+        if not self._platform_event_overlay_is_active(overlay_state, now=now):
+            return
+        if str(overlay_state.get("mode") or "") != "exclusive_overlay":
+            return
+        led[int(Led.Navigate)] = max(
+            led[int(Led.Navigate)],
+            resolve_led_value(level="full", animation="pulse_fast", now=now, phase_offset=0.0),
+        )
+        led[int(Led.Control)] = max(
+            led[int(Led.Control)],
+            resolve_led_value(level="bright", animation="pulse_fast", now=now, phase_offset=0.2),
+        )
 
     def _apply_led_overlays(
         self,

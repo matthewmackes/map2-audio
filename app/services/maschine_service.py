@@ -7,7 +7,7 @@ import contextlib
 import copy
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
 from fastapi import WebSocket
@@ -39,6 +39,26 @@ _DEFAULT_LCD_BITMAP = {
     "format": "xbm",
     "data": "",
 }
+
+
+def _default_platform_event_overlay() -> dict[str, Any]:
+    return {
+        "active": False,
+        "event_id": None,
+        "severity": "info",
+        "mode": "shared_receipt",
+        "title": "",
+        "message": "",
+        "pads": [],
+        "lcd": {
+            "left": copy.deepcopy(_DEFAULT_LCD_BITMAP),
+            "right": copy.deepcopy(_DEFAULT_LCD_BITMAP),
+        },
+        "updated_at": None,
+        "expires_at": None,
+    }
+
+
 def _utcnow_iso() -> str:
     return utc_now().isoformat().replace("+00:00", "Z")
 
@@ -81,6 +101,7 @@ class MaschineDaemonState:
             "snapshot_name": None,
         }
     )
+    platform_event_overlay: dict[str, Any] = field(default_factory=_default_platform_event_overlay)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -101,6 +122,7 @@ class MaschineDaemonState:
             "lcd": copy.deepcopy(self.lcd),
             "led_state": copy.deepcopy(self.led_state),
             "audio_grid": copy.deepcopy(self.audio_grid),
+            "platform_event_overlay": copy.deepcopy(self.platform_event_overlay),
         }
 
 
@@ -412,6 +434,61 @@ class MaschineService(Singleton):
             payload = self._status_event_payload_locked(event="lcd")
         await self._broadcast_status_payload(payload)
         return copy.deepcopy(self._state.lcd)
+
+    async def set_platform_event_overlay(
+        self,
+        *,
+        event_id: str,
+        title: str,
+        message: str,
+        severity: str,
+        mode: str,
+        pads: list[dict[str, Any]],
+        lcd: dict[str, Any] | None = None,
+        ttl_seconds: int = 300,
+    ) -> dict[str, Any]:
+        now = utc_now()
+        expires_at = None if ttl_seconds <= 0 else (now + timedelta(seconds=max(1, int(ttl_seconds)))).isoformat().replace("+00:00", "Z")
+        overlay_lcd = dict(lcd or {})
+        normalized = {
+            "active": True,
+            "event_id": str(event_id or ""),
+            "severity": str(severity or "info"),
+            "mode": str(mode or "shared_receipt"),
+            "title": str(title or ""),
+            "message": str(message or ""),
+            "pads": [dict(entry) for entry in pads[:16] if isinstance(entry, dict)],
+            "lcd": {
+                "left": {
+                    **copy.deepcopy(_DEFAULT_LCD_BITMAP),
+                    **dict(overlay_lcd.get("left") or {}),
+                },
+                "right": {
+                    **copy.deepcopy(_DEFAULT_LCD_BITMAP),
+                    **dict(overlay_lcd.get("right") or {}),
+                },
+            },
+            "updated_at": now.isoformat().replace("+00:00", "Z"),
+            "expires_at": expires_at,
+        }
+        async with self._lock:
+            self._state.platform_event_overlay = normalized
+            self._state.last_seen_at = normalized["updated_at"]
+            self._state.last_event_type = "platform_event_overlay"
+            payload = self._status_event_payload_locked(event="platform_event_overlay")
+        await self._broadcast_status_payload(payload)
+        return copy.deepcopy(normalized)
+
+    async def clear_platform_event_overlay(self, *, event_id: str | None = None) -> dict[str, Any]:
+        async with self._lock:
+            current_event_id = str(self._state.platform_event_overlay.get("event_id") or "")
+            if event_id and current_event_id and current_event_id != str(event_id):
+                return copy.deepcopy(self._state.platform_event_overlay)
+            self._state.platform_event_overlay = _default_platform_event_overlay()
+            self._state.last_event_type = "platform_event_overlay_cleared"
+            payload = self._status_event_payload_locked(event="platform_event_overlay_cleared")
+        await self._broadcast_status_payload(payload)
+        return copy.deepcopy(self._state.platform_event_overlay)
 
     async def handle_ws_message(self, session: AsyncSession, message: dict[str, Any]) -> dict[str, Any] | None:
         message_type = str(message.get("type") or "").strip().lower()
