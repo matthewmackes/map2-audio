@@ -28518,3 +28518,312 @@ Last updated: 2026-04-18 22:06 EDT - Codex
   - `/tmp/map2-pip-audit/bin/pip-audit -r requirements-backend-runtime.txt -r requirements-installer.txt -r requirements-search.txt` -> PASS (`No known vulnerabilities found`)
   - `/tmp/map2-pip-audit/bin/pip-audit -r juce-engine/Modules/NeuralAmpModelerCore/docs/requirements.txt` -> PASS (`No known vulnerabilities found`)
   - `gh api --jq 'length' repos/matthewmackes/map2-audio/dependabot/alerts?state=open\&per_page=100` -> PASS (`0`)
+
+---
+
+ID: T2363
+Status: [>] In Progress
+Title: Unified PlatformEvent control-plane — canonical producer + uniform consumers for all surfaces
+Description:
+- Goal / acceptance criteria: Replace the current sprawl of ~40 independent event/notification/status producers and ~15 parallel consumer patterns with a single canonical `PlatformEvent` envelope, one `PlatformEventBus` producer, and a uniform presenter layer for every surface (web, MK1, LCD cluster, TUI, Push, MCU, cluster federation). Acceptance requires: (1) a `PlatformEvent` pydantic envelope + TypeScript mirror + RT-safe C++ struct; (2) a `PlatformEventBus` service with emit / subscribe / replay / ack + SQLite persistence + cluster federation + session-replay ring buffer; (3) a shared `policy.hints_for()` presentation module and `Presenter` ABC consumed by every headless surface; (4) migration of all Wave 1/2/3 producers off legacy buses onto the new plane with dual-write shadow and feature-flag gating; (5) verified cluster-wide dedupe, correlation, and page-reload replay. All changes land on master as a sequence of independently-revertable commits gated by `PLATFORM_EVENT_BUS_ENABLED` plus per-wave `PLATFORM_EVENT_DIRECT_<wave>` flags.
+- Why it matters: The platform today has four parallel event-bus implementations ([event_publisher.py](app/services/event_publisher.py), [event_bus.py](app/services/event_bus.py), [cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [lcd_event_bus.py](app/services/lcd_event_bus.py)), four severity enums with no mapping (`LCDSeverity`, `ClusterSeverity`, `HealthStatus`, web `tone`), triple-emission of CPU/memory alerts (HealthMonitor + SystemHealthProducer + MK1 long_op_feedback), duplicate peer-online paths, no cluster-wide dedupe, no correlation_id propagation, and no replay on reconnect. Recent commits like `fdadfbf8` (FOH stage notifications + MK1 headless surface) added new paths instead of unifying. A single control-plane eliminates silent duplicate emissions, makes cluster-wide dedupe possible, provides replay on page reload, and turns surface-specific presentation into a thin presenter layer rather than event-interpretation logic scattered across 12+ frontend surfaces and 5+ backend buses.
+- Dependencies: T2360, T2351
+- Estimated effort: Very High
+- Locked design decisions (from user review before planning):
+  1. **MK1 overlay on WARNING+ is full-override.** Any WARNING/ERROR/CRITICAL event fully replaces the audio-reactive choreography on the 16 pads until dismissed or expired. INFO-level events do not interrupt. `MK1EventPresenter` owns an exclusive render mode that suspends choreography layers 1–4 when an active WARNING+ event exists; upon dismissal/expiry, choreography resumes. Dismiss affordance must be first-class (HW button or auto-expire via `ttl_seconds`).
+  2. **Imperative local web toasts stay local.** `pushNotification()` remains a client-only API for transient UI feedback (clipboard copy, form validation, local confirmations). The bus is reserved for cross-system events with cluster/audit value. No server round-trip for trivial UI feedback.
+  3. **First implementation slice = Phases 1 through 3 (subA–subK).** Foundation + all producer-migration waves + cluster federation rebuilt on the new plane in one coordinated slice. Phase 4 (C++ engine emission, legacy-bus removal, store consolidation deletions) lands as a follow-up epic and is explicitly out of scope for this task.
+  4. Telemetry (metering / spectrum / LUFS at 15–30 Hz) stays on its existing topics and is NEVER pulled into the plane.
+  5. RT-safety is sacred: engine emission uses lock-free `AbstractFifo` (same pattern as the meter pipeline); zero heap / mutex / string allocation in the audio callback. Phase 4 only.
+  6. Reuse over reinvent: `websocket_manager` gzip + topic history, `RealtimeMessagePublisher` protocol, existing `DistributedEventBus` SQLite store, `AlertPrioritizer` / `AlertGrouper`, and the `StageNotificationConfig` taxonomy are all preserved and integrated — not replaced.
+  7. Python 3.14: `asyncio.run()` not `get_event_loop()`.
+  8. No web dev server: preview-based e2e only (`npm run build` + `npm run preview`) per [docs/CLAUDE.md](docs/CLAUDE.md).
+- Phased rollout (all within T2363 scope):
+  - **Phase 1 — Foundation (subA–subE, dual-write OFF, `PLATFORM_EVENT_BUS_ENABLED=False` by default):** envelope + severity/kind mapping + bus + frontend transport + one-way legacy→new bridges so every legacy event becomes observable on `platform:events` with zero behavior change.
+  - **Phase 2 — Proof families (subF–subH, dual-write ON for Waves 1–2):** migrate Wave 1 (health_monitor, system_producer, network_producer) and Wave 2 (snapshot_runtime_state_service, snapshot_controller_display_push_service, IR + SoundFont download managers) producers to direct emission. Per-wave flag: `PLATFORM_EVENT_DIRECT_WAVE1`, `PLATFORM_EVENT_DIRECT_WAVE2`.
+  - **Phase 3 — Federation + Wave 3 (subI–subK):** `ws_federation.WebSocketFederator` subscribes to `platform:events` with echo suppression; Wave 3 producers (cluster/*, midi_hub/*, tesira/*, avb_event_sync, realtime_parameter_bridge) migrated; `DistributedEventBus.publish_event` callers migrated; `DistributedEventBus` downgraded to audit-log consumer. Flag: `PLATFORM_EVENT_DIRECT_WAVE3`.
+  - **Phase 4 — Out of scope for this epic:** Engine `PlatformEventRaw` fifo, removal of legacy `event_bus.EventBus`, deletion of `nodeAlertStore.ts`, deletion of `LCDEventBus.publish()`. A follow-up epic (T2364+) will land these after Phase 1–3 is stable on master.
+- Evidence-based audit — the following files are the concrete inputs for this migration (all are already in the repo and were audited during plan construction):
+  - Four legacy buses: [app/services/event_publisher.py](app/services/event_publisher.py), [app/services/event_bus.py](app/services/event_bus.py), [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [app/services/lcd_event_bus.py](app/services/lcd_event_bus.py) + [app/services/lcd_event_router.py](app/services/lcd_event_router.py).
+  - Producers to migrate in Wave 1: [app/services/health_monitor.py](app/services/health_monitor.py), [app/services/event_producers/system_producer.py](app/services/event_producers/system_producer.py), [app/services/event_producers/network_producer.py](app/services/event_producers/network_producer.py), [app/services/event_producers/audio_producer.py](app/services/event_producers/audio_producer.py).
+  - Wave 2 producers: [app/services/snapshot_runtime_state_service.py](app/services/snapshot_runtime_state_service.py), [app/services/snapshot_controller_display_push_service.py](app/services/snapshot_controller_display_push_service.py), [app/services/ir_library/download_manager.py](app/services/ir_library/download_manager.py), [app/services/soundfont_library/download_manager.py](app/services/soundfont_library/download_manager.py).
+  - Wave 3 producers: [app/services/cluster/](app/services/cluster/), [app/services/midi_hub/](app/services/midi_hub/), [app/services/tesira/](app/services/tesira/), [app/services/avb_event_sync.py](app/services/avb_event_sync.py), [app/services/realtime_parameter_bridge.py](app/services/realtime_parameter_bridge.py).
+  - Presenter targets on headless surfaces: [app/services/maschine_service.py](app/services/maschine_service.py), [app/services/maschine/led_choreography.py](app/services/maschine/led_choreography.py), [app/services/maschine/long_op_feedback.py](app/services/maschine/long_op_feedback.py), [app/services/maschine_lcd_service.py](app/services/maschine_lcd_service.py), [app/services/tui_screen_manager.py](app/services/tui_screen_manager.py), [app/services/push_surface/manager.py](app/services/push_surface/manager.py).
+  - Frontend consumers to adapt: [web/src/app/components/Toasts.tsx](web/src/app/components/Toasts.tsx), [web/src/app/stores/nodeAlertStore.ts](web/src/app/stores/nodeAlertStore.ts), [web/src/app/stores/platformStore.ts](web/src/app/stores/platformStore.ts), [web/src/app/hooks/useHealthMonitoring.ts](web/src/app/hooks/useHealthMonitoring.ts), [web/src/app/hooks/useAlertNotifications.tsx](web/src/app/hooks/useAlertNotifications.tsx), [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts), [web/src/app/hooks/useMidiClusterEvents.ts](web/src/app/hooks/useMidiClusterEvents.ts), [web/src/app/hooks/usePushConfirmation.ts](web/src/app/hooks/usePushConfirmation.ts), [web/src/app/hooks/useSnapshotRuntimeState.ts](web/src/app/hooks/useSnapshotRuntimeState.ts).
+  - Integration points: [app/services/alert_services.py](app/services/alert_services.py) (`AlertPrioritizer` / `AlertGrouper` — integrate, do not replace), [app/services/websocket_manager.py](app/services/websocket_manager.py) (layer on top; extend `topic_history_limits`), [app/services/ws_federation.py](app/services/ws_federation.py) (wire federation subscriber).
+- Required outputs (overall epic):
+  - Canonical envelope in Python (`app/services/platform_event/envelope.py`), TypeScript (`web/src/map2/platformEvent.ts`), and C++ header (`src/engine/PlatformEvent.h` — header only in this epic; engine emission deferred to Phase 4).
+  - `PlatformEventBus` service (`app/services/platform_event/bus.py`) with emit / subscribe / subscribe_callback / replay / ack / threadsafe-emit API.
+  - Severity mapping module (`app/services/platform_event/severity.py`) with total-function conversion from all four legacy enums (`LCDSeverity`, `ClusterSeverity`, `HealthStatus`, web `tone`) proven by test.
+  - Flat snake_case dot-namespaced kind taxonomy (`app/services/platform_event/kind.py`) with 1:1 mapping from every legacy enum value to a canonical kind.
+  - Shared presentation policy (`app/services/platform_event/policy.py`) computing `PresentationHints` (led_color, led_animation, lcd_icon, sound, ttl_seconds, urgent, mcu_prefix, web_tone, web_stage_class) — single source of truth for all surfaces.
+  - Factories (`app/services/platform_event/factories.py`) with `make_node_online()`, `make_cpu_critical()`, `make_snapshot_activation_*()`, etc., encapsulating dedupe-key conventions.
+  - Presenter ABC (`app/services/platform_event/presenter.py`) and per-surface presenters (`app/services/platform_event/presenters/{mk1,lcd,tui,push,mcu}_presenter.py`).
+  - One-way legacy→new bridges (`app/services/platform_event/bridges/{event_bus,lcd_bus,distributed_bus}_bridge.py`) so every legacy emission is observable on `platform:events` without behavior change.
+  - Frontend transport (`web/src/app/services/platformEventTransport.ts`), provider + single hook (`web/src/app/components/PlatformEventProvider.tsx`, `web/src/app/hooks/usePlatformEvents.ts`), pure-function router (`web/src/app/services/platformEventRouter.ts`), Zustand store (`web/src/app/stores/platformEventStore.ts`), and presenter components under `web/src/app/components/presenters/`.
+  - SQLite schema migration (additive columns on the existing `DistributedEventBus` store: `event_id`, `kind`, `dedupe_key`, `priority`, `title`, `ttl_seconds`, `expires_at`, `supersedes`, `target_surfaces` with indexes; 7-day retention preserved).
+  - Session replay ring buffer (`app/services/platform_event/replay.py`, cap 1000 per session).
+  - Cluster federation wired in `ws_federation.WebSocketFederator` with `(event_id, source_node)` LRU echo cache (10k entries).
+  - Feature-flag plumbing in [app/config/settings.py](app/config/settings.py): `PLATFORM_EVENT_BUS_ENABLED`, `PLATFORM_EVENT_DIRECT_WAVE1`, `PLATFORM_EVENT_DIRECT_WAVE2`, `PLATFORM_EVENT_DIRECT_WAVE3`.
+  - Adapted frontend hooks (`useHealthMonitoring`, `useAlertNotifications`, `useLCDEvents`, `useMidiClusterEvents`, `usePushConfirmation`, `useSnapshotRuntimeState`) as adapters over `usePlatformEvents`.
+  - New tests: `tests/test_platform_event_envelope.py`, `tests/test_platform_event_bus.py`, `tests/test_platform_event_mapping.py`, `tests/fixtures/platform_events/` (one JSON fixture per kind), `tests/presenters/test_*_presenter.py` (golden-file per surface), `tests/integration/test_cpu_critical_e2e.py`.
+  - Existing tests stay green via adapters: [tests/test_snapshot_runtime_state_progress.py](tests/test_snapshot_runtime_state_progress.py), [web/src/app/components/Toasts.test.tsx](web/src/app/components/Toasts.test.tsx), health/event-bus/lcd-event-bus/distributed-event-bus suites.
+- Notes:
+  - Design reference: `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md` — contains full envelope schema (Section A), bus API and internal pipeline (Section B), frontend control-plane (Section C), presenter pattern (Section D), producer migration plan (Section E), phased rollout detail (Section F), critical files list (Section G), and verification scenarios (Section H). Treat that document as the authoritative design spec for this epic.
+  - Every subtask below must land as its own revertable commit on `master` (no feature branch), and after every commit push to both remotes: `git push origin master && git push gitlab master`.
+  - Each subtask must finish with `npm --prefix web run typecheck`, `npm --prefix web run build`, `pytest tests/` (for touched Python paths), and `CI=1 npm --prefix web test -- --runInBand --runTestsByPath <touched files>` where applicable.
+  - No Carbon regressions: new UI pieces (presenter components, provider) must use `@carbon/react` tokens / `Layer` / `Tag` / `Toast` patterns already used in `Toasts.tsx`. No MUI, no Phosphor.
+  - The unified node-pill directive in [docs/CLAUDE.md](docs/CLAUDE.md) is preserved: node alerts continue to surface through `NodeNavChip` via the existing `nodeAlertStore`, which will be fed by the router's `node_alert` decision. Do not add new per-page node identity UI.
+- `pushNotification()` in [web/src/app/components/Toasts.tsx](web/src/app/components/Toasts.tsx) must remain callable as a local-only imperative API; its payloads are NOT round-tripped through the bus.
+- Tier A locked settings are not touched by this epic.
+Assigned to: Codex
+Last updated: 2026-04-19 09:40 EDT - Codex
+- Progress notes:
+  - Completed the `T2363-subA` foundation slice: added the canonical Python envelope, severity mapping, kind taxonomy, presentation policy, TypeScript mirror, and exhaustive foundation tests.
+  - Left the epic in progress for the next revertable slice (`T2363-subB` PlatformEventBus + replay + SQLite migration).
+
+ID: T2363-subA
+Status: [✓] Done
+Title: Envelope + severity + kind + policy — canonical types and total-function mappings
+Description:
+- Goal / acceptance criteria: Create the canonical `PlatformEvent` pydantic model at [app/services/platform_event/envelope.py](app/services/platform_event/envelope.py) matching the schema in Section A.3 of `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md` (fields: `event_id`, `kind`, `severity`, `source_node`, `source_service`, `occurred_at`, `monotonic_ns`, `title<=40`, `message<=200`, `context`, `correlation_id`, `dedupe_key`, `ttl_seconds=300`, `expires_at`, `priority=0.0`, `icon`, `color`, `sound`, `sticky=False`, `resource`, `broadcast=True`, `target_nodes`, `target_surfaces`, `workflow`, `supersedes`, `ack_required=False`). Create the unified 4-level `Severity` enum at [app/services/platform_event/severity.py](app/services/platform_event/severity.py) with total-function mappers from `LCDSeverity`, `ClusterSeverity`, `HealthStatus`, and web `tone` — each mapping proven exhaustive by test (no legacy value may map to `None`). `HealthStatus.HEALTHY` maps to a sentinel "not-a-notification" value that the bus filters. Create the flat snake_case dot-namespaced kind taxonomy at [app/services/platform_event/kind.py](app/services/platform_event/kind.py) covering every legacy event value in the codebase (full list in Section A.2 of the design file). Create the TypeScript mirror at [web/src/map2/platformEvent.ts](web/src/map2/platformEvent.ts) and a JSON-schema round-trip test proving Python↔TS parity. Create the shared presentation policy at [app/services/platform_event/policy.py](app/services/platform_event/policy.py) exposing `hints_for(event) -> PresentationHints` returning (led_color, led_animation, lcd_icon, sound, ttl_seconds, urgent, mcu_prefix, web_tone, web_stage_class) — absorbing MK1's current severity→animation table, Push's urgent flag, MCU truncation prefix, and web tone mapping into one place. Tests at [tests/test_platform_event_envelope.py](tests/test_platform_event_envelope.py) and [tests/test_platform_event_mapping.py](tests/test_platform_event_mapping.py) must pass; both must be exhaustive (parametrized over every legacy enum value).
+- Why it matters: Envelope + severity + kind + policy are the vocabulary every other subtask depends on. Getting them total and test-enforced prevents the 4-enum mismatch that motivated the epic. Policy centralization converts the current "each surface interprets events independently" design into "each surface renders hints it was given", which is the whole point of the unification.
+- Dependencies: none (foundation)
+- Estimated effort: High
+- Required outputs: `envelope.py`, `severity.py`, `kind.py`, `policy.py`, `web/src/map2/platformEvent.ts`, JSON round-trip test, total-function mapping tests, `PresentationHints` dataclass with `hints_for()` function.
+- Notes: Keep `PlatformEvent` pydantic v2. No imports of legacy enums in `envelope.py`/`kind.py` — mapping flows through `severity.py` only. Factories come in a later subtask.
+Assigned to: Codex
+Last updated: 2026-04-19 09:40 EDT - Codex
+- Completion notes:
+  - Added `app/services/platform_event/envelope.py`, `severity.py`, `kind.py`, `policy.py`, and `__init__.py` as the canonical PlatformEvent foundation package.
+  - Added `web/src/map2/platformEvent.ts` as the TypeScript mirror with shared field, severity, surface, and kind manifests aligned to the Python envelope.
+  - Added `tests/test_platform_event_envelope.py` and `tests/test_platform_event_mapping.py`, including TS-manifest parity checks, expiry/default validation, and exhaustive legacy severity/kind mapping coverage.
+  - Kept the slice installer-neutral because it introduced no new runtime dependencies, services, or build requirements beyond the existing Python/pydantic and frontend TypeScript toolchains already shipped by MAP2.
+Validation:
+- `pytest tests/test_platform_event_envelope.py tests/test_platform_event_mapping.py -q` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subB
+Status: [ ] Todo
+Title: PlatformEventBus + SQLite schema migration + session replay
+Description:
+- Goal / acceptance criteria: Implement [app/services/platform_event/bus.py](app/services/platform_event/bus.py) with the API from Section B of `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md`: `await bus.emit(event) -> event_id`, `bus.emit_threadsafe(event)`, `await bus.subscribe(kinds, severities, nodes, surfaces, min_priority) -> AsyncIterator`, `await bus.subscribe_callback(cb, filter) -> Subscription`, `await bus.replay(cursor, filter, session_id, limit) -> list[PlatformEvent]`, `await bus.ack(session_id, event_id)`. Internal pipeline: validate+stamp → dedupe/supersede via existing `AlertPrioritizer` from [app/services/alert_services.py](app/services/alert_services.py) (INTEGRATE, do not reimplement) → priority calc (Section A.4 formula) → persist (SQLite) → fanout to in-proc subscribers + `websocket_manager.broadcast_json(topic="platform:events")` + per-severity / per-kind-prefix sub-topics. Implement an additive SQLite schema migration on the existing [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) store: new columns `event_id, kind, dedupe_key, priority, title, ttl_seconds, expires_at, supersedes, target_surfaces` with indexes on (`event_id`), (`dedupe_key`), (`kind`), (`occurred_at`); preserve the 7-day retention policy. Extend [app/services/websocket_manager.py](app/services/websocket_manager.py) `topic_history_limits` via constructor kwarg to 200 for all `platform:events*` topics. Implement [app/services/platform_event/replay.py](app/services/platform_event/replay.py) with a per-session in-memory ring buffer (cap 1000) keyed by `session_id`; on reconnect `{action:"replay", cursor:<last_event_id>}` returns missed events from SQLite `WHERE event_id > cursor AND not expired`, then resumes live. Implement dedupe-key conventions from Section A.5 (node:`node:{node_id}:{kind}`, system:`system:cpu:{node_id}`, audio.xrun:`audio:xrun:{node_id}` with 5s window, snapshot:`snapshot:{snapshot_id}:activation`, midihub-peer:`midihub:peer:{peer_id}`, downloads:`download:{download_id}` latest-wins, workflow:`workflow:{workflow_id}` latest-wins, midi-conn:`midi:conn:{connection_id}`). Supersede semantics: same `dedupe_key` with higher severity replaces prior; ring buffer stores both; replay surfaces latest only; `supersedes = prior.event_id`. Tests in [tests/test_platform_event_bus.py](tests/test_platform_event_bus.py) must cover emit, subscribe, dedupe, supersede, replay, and filter correctness. Gate the whole service behind `PLATFORM_EVENT_BUS_ENABLED` in [app/config/settings.py](app/config/settings.py) (default `False`).
+- Why it matters: The bus is the single server-side producer every surface subscribes to. SQLite persistence gives replay on page reload; sub-topics keep bandwidth-sensitive dashboards from seeing the full stream; the additive schema migration means we don't break the existing `DistributedEventBus` callers while we migrate them. Gating behind a feature flag makes the whole epic revertable with a single config flip.
+- Dependencies: T2363-subA
+- Estimated effort: Very High
+- Required outputs: `bus.py`, `replay.py`, additive SQLite migration, `websocket_manager.topic_history_limits` constructor kwarg, settings flag, `test_platform_event_bus.py`, factories shell at [app/services/platform_event/factories.py](app/services/platform_event/factories.py) with `make_*` helpers (implementations can land incrementally with producer migrations).
+- Notes: The bus MUST use `AlertPrioritizer` for priority + suppression and `AlertGrouper` for correlation — do not reimplement. No direct `asyncio.get_event_loop()`; use `asyncio.run()` / `asyncio.get_running_loop()` per Python 3.14.
+Validation:
+- `pytest tests/test_platform_event_bus.py -q` -> must PASS
+- `pytest tests/test_websocket_manager.py tests/test_cluster_distributed_event_bus.py tests/test_alert_services.py -q` -> must PASS (no regressions)
+- `npm --prefix web run typecheck` -> must PASS
+- `npm --prefix web run build` -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subC
+Status: [ ] Todo
+Title: Frontend transport + provider + single hook + router + store + presenter shells
+Description:
+- Goal / acceptance criteria: Implement [web/src/app/services/platformEventTransport.ts](web/src/app/services/platformEventTransport.ts) that subscribes to the `platform:events` WS topic (register in [web/src/map2/websocket.ts](web/src/map2/websocket.ts)) with a `session_id` stored in `sessionStorage`, a last-event-id cursor in `localStorage`, and sends `{action:"replay", cursor}` on reconnect. Implement the single hook [web/src/app/hooks/usePlatformEvents.ts](web/src/app/hooks/usePlatformEvents.ts) with signature `usePlatformEvents({ kinds?, kindPrefixes?, severities?, minPriority?, nodes? }) -> { events, allEvents, connected, replayComplete, ack }`. Implement [web/src/app/components/PlatformEventProvider.tsx](web/src/app/components/PlatformEventProvider.tsx) as the single root subscriber (mounted once at app root). Implement the pure-function router [web/src/app/services/platformEventRouter.ts](web/src/app/services/platformEventRouter.ts) with signature `(event) => RouterDecision[]` whose targets are `toast | stage_kyron | node_alert | device_banner | lcd_feed | browser_notification | audio_beep` — consolidating routing logic currently scattered across [Toasts.tsx](web/src/app/components/Toasts.tsx), [useAlertNotifications.tsx](web/src/app/hooks/useAlertNotifications.tsx), [useHealthMonitoring.ts](web/src/app/hooks/useHealthMonitoring.ts), [useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts); migrate the existing `StageNotificationConfig` taxonomy verbatim (it is already well-thought-out). Implement the Zustand store [web/src/app/stores/platformEventStore.ts](web/src/app/stores/platformEventStore.ts) holding the canonical list + dismissal set + replay cursor. Create presenter shells under [web/src/app/components/presenters/](web/src/app/components/presenters/): `ToastsPresenter`, `NodeAlertsPresenter`, `DeviceBannerPresenter`, `LCDFeedPresenter`, `BrowserNotificationsPresenter`, `AudioBeepsPresenter`. Each presenter reads the router decisions matching its `surface` and renders through existing Carbon components (do NOT delete or bypass `Toasts.tsx` internals — ToastsPresenter feeds into it as a pass-through initially). All new UI must use `@carbon/react` tokens. Tests must cover: provider mounts once, router produces expected decision sets for representative events, store dedupes, session-id persistence, replay cursor persistence and advancement.
+- Why it matters: This is the frontend twin of the bus. Putting routing in a pure function is what lets us add/remove surfaces without touching consumer hooks. The provider pattern removes today's ~7 WebSocket subscriptions spread across `useHealthMonitoring`, `useAlertNotifications`, `useLCDEvents`, etc.
+- Dependencies: T2363-subB
+- Estimated effort: Very High
+- Required outputs: transport, hook, provider, router, store, 6 presenter components, WS topic registration, jest tests for each piece.
+- Notes: Do not remove or rewrite [Toasts.tsx](web/src/app/components/Toasts.tsx) in this subtask — wire it as a pass-through. Its deep consolidation happens in a later Phase 4 follow-up. `pushNotification()` stays local-only. All presenters must live under `PlatformEventProvider`.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/services/platformEventRouter.test.ts src/app/hooks/usePlatformEvents.test.tsx src/app/stores/platformEventStore.test.ts src/app/components/PlatformEventProvider.test.tsx` -> must PASS
+- `npm --prefix web run typecheck` -> must PASS
+- `npm --prefix web run build` -> must PASS
+- `npm --prefix web run preview` + playwright smoke on preview -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subD
+Status: [ ] Todo
+Title: Presenter ABC + per-surface presenters (MK1, LCD, TUI, Push, MCU)
+Description:
+- Goal / acceptance criteria: Implement the presenter ABC at [app/services/platform_event/presenter.py](app/services/platform_event/presenter.py) with `surface`, `wants(event) -> bool`, `present(event) -> SurfaceAction | None`, `on_dismiss(event_id)`, `tick(now)`. Implement per-surface presenters under [app/services/platform_event/presenters/](app/services/platform_event/presenters/):
+  - `mk1_presenter.py` — new 5th LED overlay layer with highest priority on top of existing audio-reactive/beat-sync layers; EXCLUSIVE_OVERLAY mode on WARNING/ERROR/CRITICAL fully suspends choreography layers 1–4 (per locked decision #1); INFO events do NOT interrupt; dismiss via HW button or `ttl_seconds` auto-expire; consumes `workflow.*` + `*.download.progress` for long-op feedback. Must NOT break existing audio-reactive choreography inputs.
+  - `lcd_presenter.py` — `LCDEventBus` becomes adapter-in; presenter's dedupe removed (centralized in bus); existing LCD message shapes preserved via `hints_for()`.
+  - `tui_presenter.py` — uses existing `DebouncedScreenUpdater` 10Hz cap; status-line updates driven by `hints`.
+  - `push_presenter.py` — emits diffs into existing `RenderFrame`; `hints.urgent=True` → reserved pad rows; pad diff mechanics stay surface-specific.
+  - `mcu_presenter.py` — truncates `hints.mcu_prefix + title` to 7-char scribble strip.
+  - Optional stubs for Launch Control / Midi Commander / GCP with CRITICAL-only sysex/CC pings.
+  Each presenter calls `policy.hints_for(event)` before rendering — no inline severity/color math. Golden-file tests per surface in [tests/presenters/](tests/presenters/) verify that representative events produce the expected `SurfaceAction`.
+- Why it matters: The presenter layer is what makes this unification valuable on the physical surfaces. Today MK1 has its own severity→LED table, Push has its own urgent flag, MCU has its own truncation prefix. Moving all of that into `policy.hints_for()` + presenters means a new surface can be added by implementing one class, not by re-deriving the event-interpretation rules.
+- Dependencies: T2363-subA, T2363-subB
+- Estimated effort: Very High
+- Required outputs: ABC + 5 presenters + 5 golden-file test modules + integration wiring that registers each presenter with the bus on startup (gated by `PLATFORM_EVENT_BUS_ENABLED`).
+- Notes: Locked decision #1 — MK1 WARNING+ is full-override, dismiss is first-class. Verify by inspecting [app/services/maschine/led_choreography.py](app/services/maschine/led_choreography.py) for the existing layer stack and adding the 5th (highest-priority) layer. Do not alter the audio-reactive inputs (those keep reading meter topics directly).
+Validation:
+- `pytest tests/presenters/ -q` -> must PASS
+- `pytest tests/test_maschine_service.py tests/test_maschine_lcd_service.py tests/test_tui_screen_manager.py tests/test_push_surface_manager.py -q` -> must PASS (no regressions)
+- `pytest tests/test_platform_event_bus.py -q` -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subE
+Status: [ ] Todo
+Title: One-way legacy→new bridges — observability with zero behavior change
+Description:
+- Goal / acceptance criteria: Implement bridges under [app/services/platform_event/bridges/](app/services/platform_event/bridges/) that subscribe to each legacy bus and re-emit every legacy event as a `PlatformEvent` on `platform:events` WITHOUT changing any legacy behavior:
+  - `event_bus_bridge.py` — wraps [app/services/event_bus.py](app/services/event_bus.py).
+  - `lcd_bus_bridge.py` — wraps [app/services/lcd_event_bus.py](app/services/lcd_event_bus.py) / [app/services/lcd_event_router.py](app/services/lcd_event_router.py).
+  - `distributed_bus_bridge.py` — wraps [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py).
+  Each bridge uses the `severity.py` mapper + `kind.py` taxonomy to translate legacy payloads into `PlatformEvent` envelopes via factories. Factories for every legacy event value land in [app/services/platform_event/factories.py](app/services/platform_event/factories.py) in this subtask. Add [app/services/event_publisher.py](app/services/event_publisher.py) helper `publish_platform_event(event)` that is a thin wrapper delegating to `PlatformEventBus.emit()`. Phase 1 acceptance gate: with `PLATFORM_EVENT_BUS_ENABLED=True` and all `PLATFORM_EVENT_DIRECT_*=False`, every legacy bus emission is observable on `platform:events` and NO producer has changed its emission path. Dual-write counter metric `dual_emitters_remaining` exposed via existing health endpoint.
+- Why it matters: This is the safety cutover. Turning the bus on this way provides full observability of the current event surface without touching a single producer, and lets us validate the envelope + router + presenters against production traffic before migrating producers.
+- Dependencies: T2363-subA, T2363-subB, T2363-subC, T2363-subD
+- Estimated effort: High
+- Required outputs: 3 bridge modules, completed factories, `publish_platform_event()` helper, `dual_emitters_remaining` counter.
+- Notes: Bridges MUST NOT disable or skip legacy emission — they are purely observational in Phase 1. Dual-write logic (direct emission + legacy emission) arrives in Phase 2 subtasks.
+Validation:
+- `pytest tests/test_platform_event_bridges.py -q` -> must PASS
+- `pytest tests/ -q` -> full test suite must PASS (no regressions in legacy bus tests)
+- `PLATFORM_EVENT_BUS_ENABLED=True pytest tests/integration/test_legacy_observability.py -q` -> must PASS (all legacy events observable on `platform:events`)
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subF
+Status: [ ] Todo
+Title: Wave 1 migration — health_monitor + system_producer + network_producer + audio_producer
+Description:
+- Goal / acceptance criteria: Migrate Wave 1 producers to direct `PlatformEventBus` emission via factories, with dual-write shadow enabled:
+  - [app/services/health_monitor.py](app/services/health_monitor.py) — single emission point for `system.cpu.*`, `system.memory.*`, `system.disk.*`, `system.temp.*` using dedupe key `system:<resource>:<node_id>` (severity upgrades supersede).
+  - [app/services/event_producers/system_producer.py](app/services/event_producers/system_producer.py) — migrated; CPU/memory duplicate emissions eliminated (this producer previously triple-emitted with health_monitor + MK1 long_op_feedback).
+  - [app/services/event_producers/network_producer.py](app/services/event_producers/network_producer.py) — single emission for `node.{online,offline,degraded}`, `device.midihub.peer.{online,offline}` with shared dedupe key `midihub:peer:{peer_id}`.
+  - [app/services/event_producers/audio_producer.py](app/services/event_producers/audio_producer.py) — `audio.xrun` with dedupe `audio:xrun:{node_id}` (5s window), `audio.engine.status`, `audio.path.changed`.
+  Dual-write: each producer emits on both the new bus and its legacy path, gated by `PLATFORM_EVENT_DIRECT_WAVE1` (default `False`). MK1 `long_op_feedback` CPU path is disconnected from direct emission and subscribes to the bus instead (becomes a consumer via `MK1EventPresenter`). The `dual_emitters_remaining` counter reflects Wave 1 completion when flipped.
+- Why it matters: CPU/memory triple-emit is the most visible duplication in the codebase; collapsing it to one emitter + dedupe key is the quickest proof that the unification works. The same severity going up on CPU now produces exactly one supersede chain instead of three parallel alert streams.
+- Dependencies: T2363-subE
+- Estimated effort: High
+- Required outputs: migrated producers, disconnected MK1 `long_op_feedback` emission (it now consumes), `PLATFORM_EVENT_DIRECT_WAVE1` flag, test updates.
+- Notes: Do not remove legacy emission in this subtask — it stays until Phase 4. Only add direct emission + dedupe.
+Validation:
+- `pytest tests/test_health_monitor.py tests/test_event_producers/ tests/test_platform_event_bus.py -q` -> must PASS
+- `pytest tests/integration/test_cpu_critical_e2e.py -q` -> must PASS (Section H.1 of design: inject cpu=95%, assert exactly one `PlatformEvent` with `kind=system.cpu.critical`, dedupe key `system:cpu:<node_id>`, no duplicates from the three former emitters)
+- `PLATFORM_EVENT_DIRECT_WAVE1=True pytest tests/ -q` -> must PASS (direct-emission mode)
+- `PLATFORM_EVENT_DIRECT_WAVE1=False pytest tests/ -q` -> must PASS (bridge-only mode)
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subG
+Status: [ ] Todo
+Title: Wave 2 migration — snapshot + download managers + workflow progress
+Description:
+- Goal / acceptance criteria: Migrate Wave 2 producers to direct `PlatformEventBus` emission:
+  - [app/services/snapshot_runtime_state_service.py](app/services/snapshot_runtime_state_service.py) — emits `snapshot.activation.{started,ok,failed}`, `snapshot.live.pinned`, `snapshot.runtime.progress` with dedupe key `snapshot:{snapshot_id}:activation`.
+  - [app/services/snapshot_controller_display_push_service.py](app/services/snapshot_controller_display_push_service.py) — consumes from the bus for controller display.
+  - [app/services/ir_library/download_manager.py](app/services/ir_library/download_manager.py) — emits `ir.download.progress` with dedupe key `download:{download_id}` (latest-wins).
+  - [app/services/soundfont_library/download_manager.py](app/services/soundfont_library/download_manager.py) — emits `soundfont.download.progress` with same pattern.
+  - Workflow events (`workflow.{started,progress,completed,cancelled}`) emitted with dedupe key `workflow:{workflow_id}` latest-wins, including the optional `workflow` envelope field (`{stage, progress, can_cancel, cancel_path}`). MK1EventPresenter consumes workflow + download.progress for long-op feedback.
+  Dual-write gated by `PLATFORM_EVENT_DIRECT_WAVE2` (default `False`). [web/src/app/hooks/useSnapshotRuntimeState.ts](web/src/app/hooks/useSnapshotRuntimeState.ts) keeps its live-state model but now reads progress through `usePlatformEvents`. Page-reload replay verified per Section H.3 of the design (long workflow emitting `workflow.progress` @1Hz, hard refresh mid-flight, `usePlatformEvents` replays from SQLite to last cursor, stage Kyron resumes without gap).
+- Why it matters: Workflow + download progress is the user-visible high-frequency path. Making sure replay works here is what makes the FOH stage Kyron surface trustworthy across page reloads.
+- Dependencies: T2363-subF
+- Estimated effort: High
+- Required outputs: migrated services, updated `useSnapshotRuntimeState.ts`, workflow envelope support, `PLATFORM_EVENT_DIRECT_WAVE2` flag.
+- Notes: [tests/test_snapshot_runtime_state_progress.py](tests/test_snapshot_runtime_state_progress.py) must stay green via adapter — do not rewrite its contract.
+Validation:
+- `pytest tests/test_snapshot_runtime_state_service.py tests/test_snapshot_controller_display_push_service.py tests/test_snapshot_runtime_state_progress.py tests/test_ir_library.py tests/test_soundfont_library.py -q` -> must PASS
+- `pytest tests/integration/test_page_reload_replay.py -q` -> must PASS (Section H.3)
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useSnapshotRuntimeState.test.tsx src/app/components/Toasts.test.tsx` -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subH
+Status: [ ] Todo
+Title: Frontend consumer adaptation — legacy hooks become thin adapters over usePlatformEvents
+Description:
+- Goal / acceptance criteria: Rewrite each of the following hooks as thin adapters over `usePlatformEvents` with appropriate filters, preserving their existing public signatures and returned shapes:
+  - [web/src/app/hooks/useHealthMonitoring.ts](web/src/app/hooks/useHealthMonitoring.ts) — metrics history stays; alert generation REMOVED (now server-emitted and consumed via bus).
+  - [web/src/app/hooks/useAlertNotifications.tsx](web/src/app/hooks/useAlertNotifications.tsx) — becomes `BrowserNotificationsPresenter` + `AudioBeepsPresenter` under the hood; imperative `triggerAlert()` preserved as a local-only API (same policy as `pushNotification()`).
+  - [web/src/app/hooks/useLCDEvents.ts](web/src/app/hooks/useLCDEvents.ts) — adapter filtering on LCD-relevant kinds.
+  - [web/src/app/hooks/useMidiClusterEvents.ts](web/src/app/hooks/useMidiClusterEvents.ts) — adapter filtering on `device.midihub.*` + `cluster.*`.
+  - [web/src/app/hooks/usePushConfirmation.ts](web/src/app/hooks/usePushConfirmation.ts) — adapter filtering on Push-specific confirmations.
+  [web/src/app/stores/platformStore.ts](web/src/app/stores/platformStore.ts) `alerts` field becomes a derived selector sourced from `platformEventStore`. Do NOT delete [web/src/app/stores/nodeAlertStore.ts](web/src/app/stores/nodeAlertStore.ts) in this subtask — its deletion is Phase 4. Instead, make it a write-through store fed by the `node_alert` router decision so the node-pill (per CLAUDE.md directive) continues to surface node alerts correctly. Existing tests (including [web/src/app/components/Toasts.test.tsx](web/src/app/components/Toasts.test.tsx)) stay green.
+- Why it matters: This is where the frontend fragmentation actually gets removed. Today the same underlying cluster/health/LCD state passes through 5+ independent subscriptions with 5+ payload shapes; after this subtask they all share one source.
+- Dependencies: T2363-subC, T2363-subF, T2363-subG
+- Estimated effort: High
+- Required outputs: 5 adapter hooks (public signatures unchanged), derived-selector `platformStore.alerts`, write-through `nodeAlertStore` feed, jest tests for each adapter.
+- Notes: Unified node-pill directive (CLAUDE.md) is preserved — `NodeNavChip` continues to render node identity; `nodeAlertStore` is the only feed into its pulse/alert-row behavior.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useHealthMonitoring.test.tsx src/app/hooks/useAlertNotifications.test.tsx src/app/hooks/useLCDEvents.test.tsx src/app/hooks/useMidiClusterEvents.test.tsx src/app/hooks/usePushConfirmation.test.tsx src/app/components/Toasts.test.tsx src/app/stores/platformStore.test.ts src/app/stores/nodeAlertStore.test.ts` -> must PASS
+- `npm --prefix web run typecheck` -> must PASS
+- `npm --prefix web run build` -> must PASS
+- `npm --prefix web run preview` + playwright smoke against preview per CLAUDE.md -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subI
+Status: [ ] Todo
+Title: Cluster federation — ws_federation subscribes to platform:events with echo suppression
+Description:
+- Goal / acceptance criteria: Wire [app/services/ws_federation.py](app/services/ws_federation.py) `WebSocketFederator` to subscribe to `platform:events` on each peer on startup. Echo suppression via `(event_id, source_node)` LRU cache of 10k entries. Federated events re-emitted locally with a federation flag (`context["federated"]=True`, `context["origin_peer"]=<peer_id>`) preventing re-echo. Verify per Section H.2: two-node harness; simulate NODE B failure → NODE A emits `node.failover` exactly once (not 3×); NODE C federation sees `source_node=A`, no echo. [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py) `publish_event` callers keep working via the Phase 1 bridge; direct callers in cluster/*/* paths migrate to factory emission in subJ.
+- Why it matters: Cluster-wide dedupe is impossible without federation on the same envelope. Today `DistributedEventBus` does cluster replication but uses a different payload shape than `event_bus`/`lcd_event_bus`, so cross-node dedupe doesn't work. Federation on `PlatformEvent` fixes this at the root.
+- Dependencies: T2363-subB, T2363-subE
+- Estimated effort: High
+- Required outputs: ws_federation subscription + echo suppression + integration test.
+- Notes: Federation subscribes to the topic; it does NOT become a second producer. Echo cache must be bounded (LRU 10k, ~ hours of events).
+Validation:
+- `pytest tests/test_ws_federation.py tests/integration/test_cluster_federation_echo.py tests/integration/test_cluster_failover_dedupe.py -q` -> must PASS (Section H.2)
+- `pytest tests/test_cluster_distributed_event_bus.py -q` -> must PASS (no regression on the existing bus)
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subJ
+Status: [ ] Todo
+Title: Wave 3 migration — cluster + midi_hub + tesira + avb_event_sync + realtime_parameter_bridge
+Description:
+- Goal / acceptance criteria: Migrate Wave 3 producers to direct `PlatformEventBus` emission via factories with dual-write gated by `PLATFORM_EVENT_DIRECT_WAVE3`:
+  - [app/services/cluster/](app/services/cluster/) — `node.{online,offline,degraded,failover,recovered}`, `cluster.federation.state`, `cluster.update.{started,completed}`.
+  - [app/services/midi_hub/](app/services/midi_hub/) — `midi.port.{discovered,lost}`, `midi.connection.{established,lost}`, `midi.clock.drift`.
+  - [app/services/tesira/](app/services/tesira/) — `device.tesira.fleet.delta`.
+  - [app/services/avb_event_sync.py](app/services/avb_event_sync.py) — `device.avb.stream.delta`.
+  - [app/services/realtime_parameter_bridge.py](app/services/realtime_parameter_bridge.py) — `config.{changed,sync.completed}`, `api.observatory.anomaly`, `plugin.{added,removed}`, `plugin.preset.loaded`, `plugin.output.clipping`, `plugin.scan.progress`.
+  `DistributedEventBus.publish_event` callers migrated; `DistributedEventBus` downgraded to audit-log consumer (still persists, no longer a primary producer).
+- Why it matters: Wave 3 is the bulk of the cluster / device surface. Once these are on the new plane, the bridges from Phase 1 can be inspected for zero-traffic (bridge events drop to only the stragglers), which is the signal that Phase 4 removal is safe.
+- Dependencies: T2363-subI
+- Estimated effort: Very High
+- Required outputs: migrated producers for the five families, `PLATFORM_EVENT_DIRECT_WAVE3` flag, updated tests.
+- Notes: Dual-write stays on for one release per the design's Section E.3.
+Validation:
+- `pytest tests/test_cluster/ tests/test_midi_hub/ tests/test_tesira/ tests/test_avb_event_sync.py tests/test_realtime_parameter_bridge.py -q` -> must PASS
+- `PLATFORM_EVENT_DIRECT_WAVE3=True pytest tests/ -q` -> must PASS
+- `PLATFORM_EVENT_DIRECT_WAVE3=False pytest tests/ -q` -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subK
+Status: [ ] Todo
+Title: E2E verification — CPU-critical, cluster failover, page-reload replay, dual-emitters=0, preview smoke
+Description:
+- Goal / acceptance criteria: Run the full Section H verification matrix as integration tests and ship it green:
+  - **H.1 CPU critical** ([tests/integration/test_cpu_critical_e2e.py](tests/integration/test_cpu_critical_e2e.py)) — inject `psutil.cpu_percent=95%`; within 12 s assert exactly one `PlatformEvent` with `kind="system.cpu.critical"`, dedupe_key `system:cpu:<node_id>` (no duplicates); web shows one Kyron + one node-alert + one `platformStore.alerts` entry; MK1 shows red pulse overlay + LCD `⚠ CPU 95%`; TUI status-line shows `CRIT CPU 95%`; LCD cluster feed receives the translated event; continued emission every 10s produces NO new events (supersedes chain in SQLite); recovery to 60% yields a single `system.cpu.recovered` INFO clearing the overlay on all surfaces.
+  - **H.2 Cluster failover** — two-node harness; NODE B failure; NODE A emits `node.failover` once; NODE C federation sees `source_node=A`, no echo.
+  - **H.3 Page-reload replay** — long workflow emitting `workflow.progress` @1Hz; hard refresh mid-flight; `usePlatformEvents` replays from SQLite to last cursor; stage Kyron resumes without gap.
+  - **H.4 Build/preview** — `npm --prefix web run build` + `npm --prefix web run preview`; playwright smoke against preview exercising toasts, stage Kyron, node-alert pulse, and disconnected overlay (per CLAUDE.md constraint: no dev server).
+  - **H.5 Dual-emitters counter** — with all `PLATFORM_EVENT_DIRECT_WAVE*=True`, `dual_emitters_remaining` is reported as 0 over a 5-minute production-traffic simulation.
+  - **H.6 Existing suites** — [tests/test_snapshot_runtime_state_progress.py](tests/test_snapshot_runtime_state_progress.py), [Toasts.test.tsx](web/src/app/components/Toasts.test.tsx), health / event-bus / lcd-event-bus / distributed-event-bus suites all still green.
+  All integration tests land under [tests/integration/](tests/integration/) or [tests/presenters/](tests/presenters/); fixtures under [tests/fixtures/platform_events/](tests/fixtures/platform_events/) (one JSON per kind).
+- Why it matters: Without this verification we ship a plausible design — not a proven one. The H.1 test is the canonical proof of the CPU-triple-emit fix that motivated the whole epic.
+- Dependencies: T2363-subA through T2363-subJ
+- Estimated effort: High
+- Required outputs: 5 integration test modules, fixture set (one per kind), preview-mode playwright smoke, completion notes with pass/fail telemetry for each acceptance bullet.
+- Notes: RT-safety stress (10k simulated XRuns in 1s, engine-side) is DEFERRED to the Phase 4 follow-up epic because it depends on C++ engine emission. Call that out explicitly in completion notes.
+Validation:
+- `pytest tests/integration/ tests/presenters/ -q` -> must PASS
+- `pytest tests/ -q` -> full suite must PASS
+- `CI=1 npm --prefix web test -- --runInBand` -> must PASS
+- `npm --prefix web run typecheck` -> must PASS
+- `npm --prefix web run build` -> must PASS
+- `npm --prefix web run preview` + playwright smoke -> must PASS
+- `git push origin master && git push gitlab master`
+
+ID: T2363-subL
+Status: [ ] Todo
+Title: Documentation + operator runbook + phase 4 handoff
+Description:
+- Goal / acceptance criteria: Create [docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md](docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md) documenting: envelope schema, kind taxonomy, severity mapping, dedupe-key conventions, supersede semantics, presenter pattern, feature-flag rollout plan, cluster-federation model, and replay/ack protocol. Create [docs/platform/PLATFORM_EVENT_OPERATIONS.md](docs/platform/PLATFORM_EVENT_OPERATIONS.md) for operator runbook: how to read the `platform:events` topic, how to interpret the `dual_emitters_remaining` counter, how to flip `PLATFORM_EVENT_DIRECT_WAVE*` flags for incident rollback, and how to inspect the SQLite store during federation debugging. Write a Phase 4 handoff section enumerating the follow-up epic's scope (engine `PlatformEventRaw` fifo, removal of legacy `event_bus.EventBus`, deletion of `nodeAlertStore.ts`, deletion of `LCDEventBus.publish()`, store consolidation) with file paths and expected risk. Update [docs/CLAUDE.md](docs/CLAUDE.md) Style & Architecture Rules to add a new rule: "All new cross-system events flow through `PlatformEventBus.emit()` — do not add a new bus."
+- Why it matters: Without docs + runbook, ops cannot safely flip the feature flags during an incident, and future AIs will rebuild the same wheel in another corner of the codebase. Updating CLAUDE.md writes the rule into the living knowledge base so this sprawl doesn't recur.
+- Dependencies: T2363-subK
+- Estimated effort: Medium
+- Required outputs: 2 new docs under `docs/platform/`, CLAUDE.md update, Phase 4 follow-up epic drafted at the bottom of [docs/PROJECT_WORKLIST.md](docs/PROJECT_WORKLIST.md) as T2364 stub (Title: "PlatformEvent Phase 4 — engine emission + legacy removal + store consolidation") with a one-paragraph goal and dependency T2363.
+- Notes: Keep both docs concise and operator-focused — the design file `.claude/plans/audit-and-recommend-a-foamy-feigenbaum.md` is the long-form design record; the new docs are runtime references.
+Validation:
+- `ls -1 docs/platform/PLATFORM_EVENT_CONTROL_PLANE.md docs/platform/PLATFORM_EVENT_OPERATIONS.md` -> files exist
+- `grep -n 'PlatformEventBus.emit' docs/CLAUDE.md` -> new rule present
+- `grep -n '^ID: T2364' docs/PROJECT_WORKLIST.md` -> Phase 4 stub present
+- `git push origin master && git push gitlab master`
