@@ -70,11 +70,16 @@ def _get_runtime_reloader():
 
 async def _publish_config_sync_event(event_type: str, message: str, details: Optional[Dict[str, Any]] = None) -> None:
     try:
-        from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType, get_event_bus
+        from app.services.cluster.distributed_event_bus import (
+            ClusterEvent,
+            EventSeverity,
+            EventType,
+            get_event_bus as get_distributed_event_bus,
+        )
         from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 
         mapped = getattr(EventType, event_type)
-        event_bus = get_event_bus()
+        event_bus = get_distributed_event_bus()
         identity = get_enhanced_node_identity()
         await event_bus.publish_event(
             ClusterEvent(

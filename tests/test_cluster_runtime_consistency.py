@@ -213,16 +213,15 @@ def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware
         published_payloads: list[dict] = []
 
         class _FakeBus:
-            async def publish(self, _event_type, payload):
-                published_payloads.append(payload)
+            async def emit(self, event):
+                published_payloads.append(event.context)
 
         import sys
         import types
         import asyncio
 
-        fake_event_bus_module = types.SimpleNamespace(
-            get_event_bus=lambda: _FakeBus(),
-            EventType=types.SimpleNamespace(NODE_FAILOVER="NODE_FAILOVER"),
+        fake_platform_event_bus_module = types.SimpleNamespace(
+            get_platform_event_bus=lambda: _FakeBus(),
         )
         fake_distributed_module = types.SimpleNamespace(
             ClusterEvent=lambda **kwargs: kwargs,
@@ -231,12 +230,12 @@ def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware
             get_event_bus=lambda: types.SimpleNamespace(publish_event=lambda _event: asyncio.sleep(0)),
         )
 
-        sys.modules["app.services.event_bus"] = fake_event_bus_module
+        sys.modules["app.services.platform_event.bus"] = fake_platform_event_bus_module
         sys.modules["app.services.cluster.distributed_event_bus"] = fake_distributed_module
         try:
             asyncio.run(first._publish_failover_event())
         finally:
-            sys.modules.pop("app.services.event_bus", None)
+            sys.modules.pop("app.services.platform_event.bus", None)
             sys.modules.pop("app.services.cluster.distributed_event_bus", None)
 
         assert published_payloads

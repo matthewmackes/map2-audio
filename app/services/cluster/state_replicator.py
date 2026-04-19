@@ -301,18 +301,27 @@ class StateReplicator(Singleton):
             self.logger.warning(f"Failed to update local primary role in registry: {e}")
 
     async def _publish_failover_event(self) -> None:
-        """Publish failover completion on local and distributed buses."""
+        """Publish failover completion on canonical and distributed buses."""
         payload = {
             "timestamp": utc_now().isoformat(),
             "standby_host": self.standby_host,
             "primary_host": self.primary_host,
         }
         try:
-            from app.services.event_bus import get_event_bus, EventType
+            from app.services.platform_event.bus import get_platform_event_bus
+            from app.services.platform_event.factories import make_node_failover
 
-            await get_event_bus().publish(EventType.NODE_FAILOVER, payload)
+            source_node = str(self.standby_host or self.primary_host or "state-replicator")
+            await get_platform_event_bus().emit(
+                make_node_failover(
+                    source_node=source_node,
+                    source_service="state_replicator",
+                    payload=payload,
+                    occurred_at=payload["timestamp"],
+                )
+            )
         except Exception as e:
-            self.logger.debug(f"Failed to publish local failover event: {e}")
+            self.logger.debug(f"Failed to publish platform failover event: {e}")
 
         try:
             from app.services.cluster.distributed_event_bus import (

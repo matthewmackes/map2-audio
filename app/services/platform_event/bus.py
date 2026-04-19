@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import inspect
 import logging
 import os
 from dataclasses import dataclass
@@ -260,17 +261,24 @@ class PlatformEventBus(Singleton):
 
     async def _fanout_callbacks(self, event: PlatformEvent) -> None:
         with self._lock:
-            callbacks = list(self._callbacks.items())
-        for subscription_id, subscription in callbacks:
-            if not subscription.active:
-                with self._lock:
-                    self._callbacks.pop(subscription_id, None)
+            stale_subscription_ids = [
+                subscription_id
+                for subscription_id, subscription in self._callbacks.items()
+                if not subscription.active
+            ]
+            callbacks = [
+                (subscription_id, subscription)
+                for subscription_id, subscription in self._callbacks.items()
+                if subscription.active and subscription.event_filter.matches(event)
+            ]
+            for subscription_id in stale_subscription_ids:
+                self._callbacks.pop(subscription_id, None)
+        for _, subscription in callbacks:
+            if inspect.iscoroutinefunction(subscription.callback):
+                await subscription.callback(event)
                 continue
-            if not subscription.event_filter.matches(event):
-                continue
-            result = subscription.callback(event)
-            if asyncio.iscoroutine(result):
-                await result
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, subscription.callback, event)
 
     async def _fanout_websocket(self, event: PlatformEvent) -> None:
         payload = {"type": "platform_event", "data": event.model_dump(mode="json")}

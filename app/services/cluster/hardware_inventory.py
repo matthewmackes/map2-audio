@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import EventType, get_event_bus
+from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.cluster.mdns_discovery_enhanced import (
     EnhancedMDNSDiscovery,
@@ -69,7 +69,7 @@ class ClusterHardwareInventory(Singleton):
         self._lock = asyncio.Lock()
         self._cache: Dict[str, NodeHardware] = {}
         self._cached_at = 0.0
-        self._event_bus = event_bus or get_event_bus()
+        self._event_bus = event_bus or get_distributed_event_bus()
         self._subscribe_to_events()
 
     def _subscribe_to_events(self) -> None:

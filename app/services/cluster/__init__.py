@@ -339,7 +339,7 @@ try:
 except ImportError as e:
     logger.warning(f"Failed to import Failover Monitor: {e}")
 
-# Import distributed event bus (use prefixed names to avoid shadowing app.services.event_bus)
+# Import distributed event bus with explicit aliases to avoid ambiguous bus names.
 try:
     from app.services.cluster.distributed_event_bus import (
         DistributedEventBus,

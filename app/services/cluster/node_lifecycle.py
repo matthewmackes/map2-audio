@@ -24,7 +24,7 @@ from pathlib import Path
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.cluster.distributed_event_bus import (
-    get_event_bus,
+    get_event_bus as get_distributed_event_bus,
     EventType,
     EventSeverity,
     ClusterEvent,
@@ -114,7 +114,7 @@ class NodeLifecycleManager:
         self.logger = logging.getLogger(__name__)
         self.registry = get_cluster_registry()
         self.ca = get_cluster_ca()
-        self.event_bus = get_event_bus()
+        self.event_bus = get_distributed_event_bus()
         self.current_state = NodeState.DISCOVERED
         self.transition_history: List[LifecycleTransition] = []
         self._callbacks: Dict[NodeState, List[Callable]] = {}

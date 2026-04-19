@@ -13,7 +13,9 @@ from typing import Optional
 from app.database import get_session
 from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
 from app.services.cluster.registry import get_cluster_registry
-from app.services.event_bus import EventType, get_event_bus
+from app.services.platform_event.bus import PlatformEventFilter, get_platform_event_bus
+from app.services.platform_event.envelope import PlatformEvent
+from app.services.platform_event.factories import make_node_failover
 from app.services.snapshot_deployment_service import SnapshotDeploymentService
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
@@ -27,8 +29,9 @@ class FailoverMonitor(Singleton):
     def __init__(self):
         self.registry = get_cluster_registry()
         self.heartbeat_monitor = get_heartbeat_monitor()
-        self.event_bus = get_event_bus()
+        self.event_bus = get_platform_event_bus()
         self.is_running = False
+        self._subscription = None
 
     async def start(self):
         """Start failover monitoring."""
@@ -37,7 +40,10 @@ class FailoverMonitor(Singleton):
 
         logger.info("Starting failover monitor")
         self.is_running = True
-        await self.event_bus.subscribe(EventType.NODE_OFFLINE, self.on_node_offline)
+        self._subscription = await self.event_bus.subscribe_callback(
+            self._handle_node_offline_event,
+            PlatformEventFilter(kinds=frozenset({"node.offline"})),
+        )
 
     async def stop(self):
         """Stop failover monitoring."""
@@ -46,7 +52,15 @@ class FailoverMonitor(Singleton):
 
         logger.info("Stopping failover monitor")
         self.is_running = False
-        await self.event_bus.unsubscribe(EventType.NODE_OFFLINE, self.on_node_offline)
+        if self._subscription is not None:
+            self._subscription.close()
+            self._subscription = None
+
+    async def _handle_node_offline_event(self, event: PlatformEvent) -> None:
+        payload = dict(event.context)
+        payload.setdefault("node_id", event.source_node)
+        payload.setdefault("timestamp", event.occurred_at.isoformat())
+        await self.on_node_offline(payload)
 
     async def on_node_offline(self, event_data: dict):
         """Called when a node goes offline."""
@@ -87,7 +101,14 @@ class FailoverMonitor(Singleton):
             payload["flows_succeeded"] = payload["snapshots_succeeded"]
             payload["flows_failed"] = payload["snapshots_failed"]
 
-            await self.event_bus.publish(EventType.NODE_FAILOVER, payload)
+            await self.event_bus.emit(
+                make_node_failover(
+                    source_node=node_id,
+                    source_service="failover_monitor",
+                    payload=payload,
+                    occurred_at=payload["timestamp"],
+                )
+            )
             logger.info("Snapshot failover complete: %s succeeded, %s failed", successful, failed)
         except Exception as exc:
             logger.error("Error during failover for node %s: %s", node_id, exc, exc_info=True)

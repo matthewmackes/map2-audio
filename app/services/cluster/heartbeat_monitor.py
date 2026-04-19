@@ -18,7 +18,8 @@ from urllib.parse import urlparse
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
-from app.services.event_bus import get_event_bus, EventType
+from app.services.platform_event.bus import get_platform_event_bus
+from app.services.platform_event.factories import make_node_offline, make_node_online
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -49,7 +50,7 @@ class HeartbeatMonitor(Singleton):
     
     def __init__(self):
         self.registry = get_cluster_registry()
-        self.event_bus = get_event_bus()
+        self.event_bus = get_platform_event_bus()
         self.node_health: Dict[str, NodeHealthStatus] = {}
         self.is_running = False
         self._monitor_task: Optional[asyncio.Task] = None
@@ -212,13 +213,16 @@ class HeartbeatMonitor(Singleton):
                 response_time_ms=response_time_ms,
                 metadata=metadata
             )
-            await self.event_bus.publish(EventType.NODE_ONLINE, {
-                'node_id': node_id,
-                'timestamp': now.isoformat(),
-                'response_time_ms': response_time_ms,
-                'metadata': metadata,
-                'first_seen': True,
-            })
+            await self.event_bus.emit(
+                make_node_online(
+                    node_id=node_id,
+                    source_service="heartbeat_monitor",
+                    response_time_ms=response_time_ms,
+                    metadata=metadata,
+                    first_seen=True,
+                    occurred_at=now,
+                )
+            )
             self.registry.update_node_status(node_id, 'online')
         else:
             status = self.node_health[node_id]
@@ -234,12 +238,15 @@ class HeartbeatMonitor(Singleton):
             # If node just came back online, publish event
             if was_offline:
                 logger.info(f"Node {node_id} is back ONLINE (response time: {response_time_ms:.1f}ms)")
-                await self.event_bus.publish(EventType.NODE_ONLINE, {
-                    'node_id': node_id,
-                    'timestamp': now.isoformat(),
-                    'response_time_ms': response_time_ms,
-                    'metadata': metadata
-                })
+                await self.event_bus.emit(
+                    make_node_online(
+                        node_id=node_id,
+                        source_service="heartbeat_monitor",
+                        response_time_ms=response_time_ms,
+                        metadata=metadata,
+                        occurred_at=now,
+                    )
+                )
                 
                 # Update registry
                 self.registry.update_node_status(node_id, 'online')
@@ -267,12 +274,15 @@ class HeartbeatMonitor(Singleton):
                 logger.error(f"Node {node_id} is OFFLINE (failed {status.consecutive_failures} consecutive checks)")
                 
                 # Publish offline event
-                await self.event_bus.publish(EventType.NODE_OFFLINE, {
-                    'node_id': node_id,
-                    'timestamp': now.isoformat(),
-                    'consecutive_failures': status.consecutive_failures,
-                    'last_error': error
-                })
+                await self.event_bus.emit(
+                    make_node_offline(
+                        node_id=node_id,
+                        source_service="heartbeat_monitor",
+                        consecutive_failures=status.consecutive_failures,
+                        last_error=error,
+                        occurred_at=now,
+                    )
+                )
                 
                 # Update registry
                 self.registry.update_node_status(node_id, 'offline')

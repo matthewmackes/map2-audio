@@ -21,7 +21,7 @@ from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.cluster.update_orchestrator import get_update_scheduler
 from app.services.cluster.config_pusher import get_config_sync
 from app.services.cluster.state_replicator import get_state_replicator
-from app.services.cluster.distributed_event_bus import get_event_bus, EventType
+from app.services.cluster.distributed_event_bus import get_event_bus as get_distributed_event_bus, EventType
 from app.services.cluster.node_lifecycle import get_lifecycle_manager
 from app.services.cluster.disaster_recovery import get_disaster_recovery
 from app.services.cluster.network_topology import get_topology_monitor
@@ -686,7 +686,7 @@ async def get_update_history(limit: int = 50) -> Dict:
         updates: List[Dict[str, Any]] = []
 
         # Primary source: distributed event log (persisted).
-        event_bus = get_event_bus()
+        event_bus = get_distributed_event_bus()
         update_event_types = [
             EventType.UPDATE_STARTED,
             EventType.UPDATE_COMPLETED,
@@ -890,7 +890,7 @@ async def get_events(
         - total: Number of events returned
     """
     try:
-        event_bus = get_event_bus()
+        event_bus = get_distributed_event_bus()
         
         # Convert string filters to enums if provided
         event_type_enum = None
@@ -938,7 +938,7 @@ async def get_node_events(
 ) -> Dict:
     """Get all events related to a specific node."""
     try:
-        event_bus = get_event_bus()
+        event_bus = get_distributed_event_bus()
         events = event_bus.get_events_by_node(node_id, hours=hours, limit=limit)
         
         return {
@@ -966,7 +966,7 @@ async def get_event_statistics(hours: int = 24) -> Dict:
         - top_nodes: Most active nodes
     """
     try:
-        event_bus = get_event_bus()
+        event_bus = get_distributed_event_bus()
         stats = event_bus.get_statistics(hours=hours)
         
         return {

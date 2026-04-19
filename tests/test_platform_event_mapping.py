@@ -6,7 +6,6 @@ from app.lcd_models.lcd_event import EventSeverity as LCDSeverity
 from app.lcd_models.lcd_event import EventType as LCDEventType
 from app.services.cluster.distributed_event_bus import EventSeverity as ClusterSeverity
 from app.services.cluster.distributed_event_bus import EventType as ClusterEventType
-from app.services.event_bus import EventType as EventBusType
 from app.services.event_publisher import EventType as PublisherEventType
 from app.services.health_monitor import HealthStatus
 from app.services.platform_event.kind import (
@@ -24,6 +23,16 @@ from app.services.platform_event.severity import (
     severity_from_health_status,
     severity_from_lcd,
     severity_from_web_tone,
+)
+
+LEGACY_EVENT_BUS_VALUES = (
+    "node.online",
+    "node.offline",
+    "node.failover",
+    "flow.assigned",
+    "flow.unassigned",
+    "config.updated",
+    "audio_path.changed",
 )
 
 
@@ -66,9 +75,9 @@ def test_web_tone_mapping_is_total(value: str, expected: Severity) -> None:
     assert severity_from_web_tone(value) == expected
 
 
-@pytest.mark.parametrize("value", list(EventBusType))
-def test_event_bus_kind_mapping_is_total(value: EventBusType) -> None:
-    mapped = kind_for_event_bus_value(value.value)
+@pytest.mark.parametrize("value", LEGACY_EVENT_BUS_VALUES)
+def test_event_bus_kind_mapping_is_total(value: str) -> None:
+    mapped = kind_for_event_bus_value(value)
     assert mapped in ALL_KINDS
 
 

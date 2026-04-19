@@ -158,13 +158,16 @@ class ConfigurationHotReloader:
     def _init_cluster_sync(self) -> None:
         """Attach to the distributed event bus for cluster config propagation."""
         try:
-            from app.services.cluster.distributed_event_bus import EventType, get_event_bus
+            from app.services.cluster.distributed_event_bus import (
+                EventType,
+                get_event_bus as get_distributed_event_bus,
+            )
             from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 
             identity = get_enhanced_node_identity()
             self.local_node_id = identity.get_node_id()
             self.local_node_role = identity.get_role()
-            self._event_bus = get_event_bus()
+            self._event_bus = get_distributed_event_bus()
             self._event_bus.subscribe(EventType.CONFIG_CHANGED, self._on_cluster_config_changed)
         except Exception as exc:
             logger.debug(f"Cluster config sync unavailable: {exc}")

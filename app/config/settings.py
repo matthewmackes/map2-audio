@@ -245,7 +245,7 @@ class Configuration:
             # PLATFORM EVENT CONTROL-PLANE
             # ================================================================
             'platform_event': {
-                'enabled': False,
+                'enabled': True,
                 'direct_wave1': False,
                 'direct_wave2': False,
                 'direct_wave3': False,

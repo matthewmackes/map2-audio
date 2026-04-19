@@ -614,6 +614,9 @@ class DistributedEventBus(Singleton):
             return {}
 
 
-def get_event_bus() -> DistributedEventBus:
-    """Get or create the event bus"""
+def get_distributed_event_bus() -> DistributedEventBus:
+    """Get or create the distributed event bus."""
     return DistributedEventBus.get_instance()
+
+
+get_event_bus = get_distributed_event_bus

@@ -4,7 +4,7 @@ import asyncio
 
 from app.middleware.cluster_proxy import ClusterProxyMiddleware
 from app.services.cluster.heartbeat_monitor import HeartbeatMonitor
-from app.services.event_bus import EventType
+from app.services.platform_event.envelope import PlatformEvent
 
 
 class _Registry:
@@ -21,10 +21,10 @@ class _Registry:
 
 class _EventBus:
     def __init__(self):
-        self.events: list[tuple[EventType, dict]] = []
+        self.events: list[PlatformEvent] = []
 
-    async def publish(self, event_type: EventType, data: dict):
-        self.events.append((event_type, data))
+    async def emit(self, event: PlatformEvent):
+        self.events.append(event)
 
 
 class _Response:
@@ -64,8 +64,8 @@ def test_heartbeat_monitor_skips_self_prunes_removed_nodes_and_emits_first_onlin
 
     assert monitor._client.calls == ["http://10.0.0.2:8080/api/health"]
     assert "stale-node" not in monitor.node_health
-    assert monitor.event_bus.events[0][0] == EventType.NODE_ONLINE
-    assert monitor.event_bus.events[0][1]["first_seen"] is True
+    assert monitor.event_bus.events[0].kind == "node.online"
+    assert monitor.event_bus.events[0].context["first_seen"] is True
 
 
 def test_heartbeat_monitor_stop_closes_shared_client():

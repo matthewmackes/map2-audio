@@ -6,7 +6,11 @@ from datetime import datetime, timezone
 from app.response_models import APIResponse, StatusEnum
 from app.services.audio_state_snapshot_compiler import _utcnow_iso
 from app.services.cluster.raft_consensus import RaftConsensus
-from app.services.event_bus import EventBus, EventType
+from app.services.platform_event.bus import PlatformEventBus
+from app.services.platform_event.factories import make_node_online
+from app.services.platform_event.replay import PlatformEventReplayBuffer
+from app.services.platform_event.store import PlatformEventStore
+from app.services.websocket_manager import WebSocketManager
 from app.services.graceful_degradation import DegradationStrategy, Feature, FeatureLevel
 from app.services.snapshot_runtime_state_service import _parse_iso_datetime, _utcnow as snapshot_runtime_utcnow
 from app.services.snapshot_service import _utcnow as snapshot_service_utcnow
@@ -26,14 +30,31 @@ def test_feature_defaults_and_recovery_accept_timezone_aware_utc():
     assert strategy.should_attempt_recovery(datetime.now(timezone.utc)) is False
 
 
-def test_event_bus_history_uses_timezone_aware_utc_timestamps():
-    bus = EventBus()
+def test_platform_event_store_replay_uses_timezone_aware_utc_timestamps(tmp_path):
+    PlatformEventStore.reset_instance()
+    store = PlatformEventStore(
+        db_path=tmp_path / "platform-events.db",
+        legacy_db_path=tmp_path / "cluster-events.db",
+    )
+    bus = PlatformEventBus(
+        store=store,
+        websocket_manager=WebSocketManager(enable_compression=False),
+        replay_buffer=PlatformEventReplayBuffer(session_limit=5),
+        enabled=True,
+    )
 
-    asyncio.run(bus.publish(EventType.NODE_ONLINE, {"node_id": "node-a"}))
+    asyncio.run(
+        bus.emit(
+            make_node_online(
+                node_id="node-a",
+                source_service="timestamp_test",
+                first_seen=True,
+            )
+        )
+    )
 
-    history = bus.get_history(limit=1)
-    parsed = datetime.fromisoformat(history[0]["timestamp"])
-    assert parsed.tzinfo == timezone.utc
+    replayed = asyncio.run(bus.replay(limit=1))
+    assert replayed[0].occurred_at.tzinfo == timezone.utc
 
 
 def test_snapshot_helpers_emit_timezone_aware_utc():

@@ -26,7 +26,7 @@ import subprocess
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.distributed_event_bus import (
-    get_event_bus,
+    get_event_bus as get_distributed_event_bus,
     EventType,
     EventSeverity,
     ClusterEvent,
@@ -91,7 +91,7 @@ class DisasterRecoveryManager(Singleton):
         self.backup_dir = Path(backup_dir)
         self.retention_days = retention_days
         self.logger = logging.getLogger(__name__)
-        self.event_bus = get_event_bus()
+        self.event_bus = get_distributed_event_bus()
         self.registry = get_cluster_registry()
         self._init_backup_dir()
     

@@ -9,7 +9,12 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.config import config_get
-from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType, get_event_bus
+from app.services.cluster.distributed_event_bus import (
+    ClusterEvent,
+    EventSeverity,
+    EventType,
+    get_event_bus as get_distributed_event_bus,
+)
 from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
 from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiEndpoint, get_midi_cluster_router
 from app.services.midi_hub.device_registry import get_midi_device_registry
@@ -365,7 +370,7 @@ def _midi_events(
     hours: int,
     limit: int,
 ) -> List[ClusterEvent]:
-    event_bus = get_event_bus()
+    event_bus = get_distributed_event_bus()
     safe_limit = max(1, min(int(limit), 1000))
     safe_hours = max(1, min(int(hours), 24 * 30))
 

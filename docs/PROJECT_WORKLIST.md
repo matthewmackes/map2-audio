@@ -28714,7 +28714,7 @@ Validation:
 - `rg -n "cluster-events.db|platform-events.db" installer app docs --glob '!docs/fit-for-purpose-evidence/**' --glob '!docs/archive/**'` -> only intended references remain
 
 ID: T2363-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Hard-cut all app/services/event_bus.py producers and subscribers onto PlatformEventBus
 Description:
 - Goal / acceptance criteria: Replace every runtime use of `app/services/event_bus.py` with direct `PlatformEventBus.emit()` factory calls or `PlatformEventBus.subscribe_callback()` filtered subscriptions. This includes heartbeat/failover/state-replication paths and any services currently subscribing to `NODE_ONLINE`, `NODE_OFFLINE`, or `NODE_FAILOVER`. After the replacements are green, delete `app/services/event_bus.py` entirely.
@@ -28723,8 +28723,17 @@ Description:
 - Estimated effort: High
 - Required outputs: migrated services, deleted legacy in-process bus, rewritten tests, and canonical `PlatformEvent` kinds for every former event-bus emission.
 - Notes: Use canonical kinds only (`node.online`, `node.offline`, `node.failover`, `audio.path.changed`, `config.updated`). Do not recreate a local compatibility enum.
+- Last updated: 2026-04-19 12:46 EDT - Codex
+- Progress notes:
+  - 2026-04-19 12:39 EDT - Codex: Started the hard-cut legacy event-bus slice immediately after shipping `T2363-subE` at `731fa054`; auditing all runtime imports, producer call sites, subscription hooks, and validation surfaces tied to `app/services/event_bus.py` before rewriting them onto canonical `PlatformEventBus` usage.
+  - 2026-04-19 12:46 EDT - Codex: Migrated the remaining in-process runtime flows onto `PlatformEventBus`: [app/services/cluster/heartbeat_monitor.py](app/services/cluster/heartbeat_monitor.py) now emits canonical `node.online` / `node.offline` events via new factories in [app/services/platform_event/factories.py](app/services/platform_event/factories.py); [app/services/cluster/failover_monitor.py](app/services/cluster/failover_monitor.py) subscribes through `PlatformEventFilter(kinds={"node.offline"})` and emits `node.failover`; [app/services/cluster/state_replicator.py](app/services/cluster/state_replicator.py) now publishes local failover completion through the platform bus.
+  - 2026-04-19 12:46 EDT - Codex: Removed [app/services/event_bus.py](app/services/event_bus.py), set `platform_event.enabled` default-on in [app/config/settings.py](app/config/settings.py), updated [app/services/platform_event/bus.py](app/services/platform_event/bus.py) callback fanout to preserve subscriber-snapshot semantics while dispatching sync callbacks off the event loop thread, and normalized distributed-bus aliases across cluster routes/services so the legacy-bus validation scan is unambiguous.
+  - 2026-04-19 12:46 EDT - Codex: Rewrote the focused regression surface in [tests/test_backend_audit_shared_state.py](tests/test_backend_audit_shared_state.py), [tests/test_backend_audit_network_lifecycle.py](tests/test_backend_audit_network_lifecycle.py), [tests/test_timestamp_foundations.py](tests/test_timestamp_foundations.py), and [tests/test_cluster_runtime_consistency.py](tests/test_cluster_runtime_consistency.py); added [tests/test_platform_event_cluster_runtime.py](tests/test_platform_event_cluster_runtime.py); and converted [tests/test_platform_event_mapping.py](tests/test_platform_event_mapping.py) to literal legacy event-bus values so the mapping contract survives the file deletion without reintroducing the enum.
 Validation:
-- `pytest tests/test_backend_audit_shared_state.py tests/test_backend_audit_network_lifecycle.py tests/test_timestamp_foundations.py tests/test_platform_event_cluster_runtime.py -q` -> must PASS
+- `pytest tests/test_backend_audit_shared_state.py tests/test_backend_audit_network_lifecycle.py tests/test_timestamp_foundations.py tests/test_platform_event_cluster_runtime.py -q` -> PASS
+- `pytest tests/test_platform_event_mapping.py -q` -> PASS
+- `pytest tests/test_cluster_runtime_consistency.py -q -k state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware` -> PASS
+- `pytest tests/test_platform_event_bus.py tests/test_platform_event_store.py -q` -> PASS
 - `rg -n "app\\.services\\.event_bus|get_event_bus\\(" app/services app/routes` -> no matches
 
 ID: T2363-subG
