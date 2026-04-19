@@ -47,7 +47,7 @@
     "dagre": "^0.8.5",
     "framer-motion": "^12.34.0",
     "history": "^5.3.0",
-    "monaco-editor": "^0.55.1",
+    "monaco-editor": "^0.53.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^6.28.0",
@@ -65,7 +65,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@types/react-window": "^1.8.8",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9.19.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.19",
@@ -73,8 +73,8 @@
     "playwright": "^1.55.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
-    "vite": "^6.4.1",
-    "vite-plugin-svgr": "^4.3.0"
+    "vite": "^6.4.2",
+    "vite-plugin-svgr": "^4.5.0"
   },
   "author": "Mackes Audio Platform 2 (based on PiPedal by Robin Davies)",
   "license": "SEE LICENSE IN LICENSE"

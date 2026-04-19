@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-18 - Closed T2360 after finishing the warnings-card edge cases, reduced-motion/a11y pass, and final frontend validation for the FOH-grade stage notification surface.
+Last updated: 2026-04-18 - Closed T2361 after clearing the root/web/tui npm audit findings and validating the updated package trees.
 
 ---
 
@@ -28432,3 +28432,33 @@ Last updated: 2026-04-18 21:50 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/Toasts.test.tsx src/app/hooks/useAlertNotifications.test.tsx` -> PASS
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
+
+---
+
+ID: T2361
+Status: [✓] Done
+Title: Audit and remediate dependency vulnerabilities surfaced on shipped `master`
+Description:
+- Goal / acceptance criteria: Convert the post-push GitHub vulnerability alert on `master` into a concrete remediation plan and first safe fix slice. Acceptance requires identifying which package ecosystems and direct/transitive dependencies are actually vulnerable in the current repo, recording the findings in the canonical worklist, applying any safe dependency updates that do not break the shipped app contracts, and updating any installer/runtime artifacts if dependency or build assumptions change.
+- Why it matters: The just-shipped branch triggered a GitHub alert reporting 23 vulnerabilities (9 high, 14 moderate). That is now the clearest new actionable risk surfaced after the previous cycle completed.
+- Dependencies: T2360
+- Estimated effort: Medium
+- Required outputs: audited vulnerability inventory, targeted dependency/package updates or explicit deferral notes, focused validation for affected apps, and reconciled worklist state.
+Assigned to: Codex
+Last updated: 2026-04-18 21:58 EDT - Codex
+- Notes:
+  - Trigger source: GitHub post-push warning on `master` immediately after shipping `fdadfbf8`.
+  - Initial triage commands were `npm --prefix web audit --json` plus package-manifest inventory across root/web/tui/backend requirement files.
+- Completion notes:
+  - Cleared the root and `tui` audit findings with lockfile-only npm audit fixes, updating `package-lock.json`, `node_modules/.package-lock.json`, and `tui/package-lock.json` without changing any runtime code paths or installer assumptions.
+  - Reduced the `web` dependency graph to zero audit findings by patching the build toolchain (`vite` `6.4.1 -> 6.4.2`, `@vitejs/plugin-react` `4.3.4 -> 4.7.0`, `vite-plugin-svgr` `4.3.0 -> 4.5.0`), then downgrading `monaco-editor` `0.55.1 -> 0.53.0` to exit the vulnerable `dompurify` range while staying within the supported `@monaco-editor/react` peer contract.
+  - Reconciled the resulting lockfiles with `npm audit fix` so the remaining transitive parser/glob/bundler findings (`rollup`, `picomatch`, `minimatch`, `lodash`, `flatted`, `ajv`, `js-yaml`, `brace-expansion`, `yaml`) are now resolved in the shipped package trees.
+  - No installer, service, or runtime environment artifacts needed updates in this slice because the remediation stayed within existing Node/npm build assumptions and did not add or remove project dependencies at the platform layer.
+- Validation:
+  - `npm audit --json` -> PASS (`0` vulnerabilities)
+  - `npm --prefix tui audit --json` -> PASS (`0` vulnerabilities)
+  - `npm --prefix web audit --json` -> PASS (`0` vulnerabilities)
+  - `npm --prefix web run typecheck` -> PASS
+  - `npm --prefix web run build` -> PASS
+  - `npm --prefix tui run build` -> PASS
+  - `git diff --check` -> PASS

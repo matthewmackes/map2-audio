@@ -137,7 +137,7 @@ When adding significant updates, append to this log:
 **Core Framework:**
 - **React**: 19.0.0 (latest)
 - **TypeScript**: 5.x (via tsc -b)
-- **Vite**: 6.4.1 (build tool & preview server)
+- **Vite**: 6.4.2 (build tool & preview server)
 
 **UI Libraries:**
 - **Carbon Design System (target standard)**: `@carbon/react` (required for new/updated UI under T114)
