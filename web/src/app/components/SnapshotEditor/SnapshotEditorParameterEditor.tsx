@@ -10,6 +10,10 @@ import {
 import { irApi } from '../../../map2/clients/assets'
 import type { ChainPlugin, IRWaveformPreview, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginAccentConfig } from '../../utils/pluginAccent'
+import {
+  SnapshotSchematicLed,
+  SnapshotSchematicReadout,
+} from './SnapshotSchematicSurface'
 
 export interface JuceGridParameterEditorProps {
   plugin: ChainPlugin | null
@@ -414,6 +418,11 @@ export function JuceGridParameterEditor({
       ? group.parameters.filter((parameter) => smartControlSymbols.has(parameter.symbol))
       : group.parameters,
   })).filter((group) => group.parameters.length > 0)
+  const editorModeLabel = readOnly
+    ? 'Read only'
+    : touchMode
+      ? (showAllParameters ? 'Touch all' : 'Touch smart')
+      : 'Edit'
 
   return (
     <div
@@ -433,6 +442,19 @@ export function JuceGridParameterEditor({
           </div>
         </div>
       ) : null}
+      <div className="juce-grid-page__parameter-editor-schematic-header">
+        <SnapshotSchematicReadout
+          label="Block"
+          value={`${meta.name} / ${parameters.length} params`}
+          tone={plugin.bypassed ? 'warning' : 'active'}
+        />
+        <SnapshotSchematicReadout
+          label="Mode"
+          value={editorModeLabel}
+          tone={readOnly ? 'warning' : 'active'}
+        />
+      </div>
+
       {touchMode && parameters.length > 0 && (
         <div className="juce-grid-page__parameter-editor-header">
           <div className="juce-grid-page__parameter-editor-copy">
@@ -467,7 +489,7 @@ export function JuceGridParameterEditor({
       )}
 
       {irPreviewType && (
-        <Tile className="juce-grid-page__parameter-editor-ir-preview">
+        <Tile className="juce-grid-page__parameter-editor-ir-preview snapshot-schematic-subpanel">
           <div className="juce-grid-page__parameter-editor-ir-preview-header">
             <div className="juce-grid-page__parameter-editor-copy">
               <h3 className="juce-grid-page__parameter-editor-subheading">
@@ -514,13 +536,16 @@ export function JuceGridParameterEditor({
 
       <div className="juce-grid-page__parameter-editor-groups">
         {groupedParameters.map((group) => (
-          <section key={group.id} className="juce-grid-page__parameter-group-card" aria-label={`${group.title} parameters`}>
+          <section key={group.id} className="juce-grid-page__parameter-group-card snapshot-schematic-subpanel" aria-label={`${group.title} parameters`}>
             <div className="juce-grid-page__parameter-group-header">
               <div>
                 <h3 className="juce-grid-page__parameter-group-heading">{group.title}</h3>
                 <p>{group.parameters.length} control{group.parameters.length === 1 ? '' : 's'}</p>
               </div>
-              <Tag type="cool-gray" size="sm">{group.parameters.length}</Tag>
+              <div className="juce-grid-page__compact-actions">
+                <SnapshotSchematicLed tone={group.parameters.length > 0 ? 'active' : 'idle'} />
+                <Tag type="cool-gray" size="sm">{group.parameters.length}</Tag>
+              </div>
             </div>
 
             <div className="juce-grid-page__parameter-group-grid">

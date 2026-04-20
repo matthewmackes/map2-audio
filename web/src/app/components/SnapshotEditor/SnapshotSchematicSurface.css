@@ -134,6 +134,23 @@
   white-space: nowrap;
 }
 
+.juce-grid-page__parameter-editor-schematic-header,
+.juce-grid-page__routing-readouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.juce-grid-page__parameter-group-card.snapshot-schematic-subpanel {
+  padding: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--cds-layer) 86%, var(--cds-background));
+}
+
+.juce-grid-page__parameter-editor-ir-preview.snapshot-schematic-subpanel {
+  border-radius: 0;
+}
+
 .snapshot-schematic-revision-list {
   display: flex;
   flex-direction: column;

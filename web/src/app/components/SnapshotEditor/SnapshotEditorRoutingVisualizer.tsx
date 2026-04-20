@@ -1,5 +1,6 @@
 import { memo, useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { ArrowRight } from '@carbon/icons-react'
+import { SnapshotSchematicReadout } from './SnapshotSchematicSurface'
 
 type RoutingMode =
   | 'parallel_blend'
@@ -67,6 +68,14 @@ const C_FOCUS        = 'var(--cds-focus, #ffffff)'
 const GRAD_ACTIVE_ID = 'jgr-wire-gradient-active'
 const GRAD_MORPH_ID  = 'jgr-wire-gradient-morph'
 
+const ROUTING_MODE_LABELS: Record<RoutingMode, string> = {
+  parallel_blend: 'Parallel blend',
+  ab_switch: 'A/B switch',
+  series: 'Series',
+  parameter_morph: 'Parameter morph',
+  sidechain: 'Sidechain',
+}
+
 export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer({
   mode,
   flows,
@@ -112,9 +121,23 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
   // Determine accent color for active-wire gradient (morph mode = purple, else link)
   const isMorph = mode === 'parameter_morph'
   const activeWireColor = isMorph ? C_PURPLE : C_LINK
+  const activeFlowCount = diagram.flows.filter((flow) => flow.active).length
 
   return (
-    <div className="juce-grid-page__routing-diagram">
+    <div className="juce-grid-page__routing-diagram" data-routing-mode={mode}>
+      <div className="juce-grid-page__routing-readouts">
+        <SnapshotSchematicReadout
+          label="Routing"
+          value={ROUTING_MODE_LABELS[mode]}
+          tone="active"
+        />
+        <SnapshotSchematicReadout
+          label="Active"
+          value={`${activeFlowCount}/${diagram.flows.length} flows`}
+          tone={activeFlowCount > 0 ? 'active' : 'idle'}
+        />
+      </div>
+
       <svg
         className="juce-grid-page__routing-svg"
         viewBox={`0 0 ${diagram.width} ${diagram.height}`}

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2369 slice 2 MIDI/control surfaces.
+Last updated: 2026-04-20 - Completed T2369 Snapshot Editor modal and parameter surface redesign.
 
 ---
 
@@ -66,7 +66,7 @@ Last updated: 2026-04-20 11:04 EDT - Codex
 ---
 
 ID: T2369
-Status: [>] In Progress
+Status: [✓] Done
 Title: Phase 2 — Apply schematic redesign to Snapshot Editor modal and parameter surfaces
 Description:
 - Goal / acceptance criteria: After T2368 lands the Canvas + Toolbar + Rails redesign, bring the remaining Snapshot Editor surfaces into visual conformance with the schematic aesthetic: `SnapshotEditorParameterEditor.tsx` (rotary knobs, automation lanes), `SnapshotEditorRoutingVisualizer.tsx` (routing-mode modal opened from `PARALLEL · N` / `BLEND` / `Routing` chips), `SnapshotEditorSelectedBlockMidiPanel.tsx`, `SnapshotFootswitchLabelCard.tsx`, `SnapshotExpressionMappingsCard.tsx`, `SnapshotAbSwitchMidiCard.tsx`, and `SnapshotVersionHistoryModal.tsx`. Each surface adopts the same token map, sprite iconography, LED/LCD primitives where applicable, and Carbon-conformant focus + motion behavior. Acceptance requires all seven surfaces to pass typecheck + build + jest, to render correctly in both Carbon themes, and to reuse primitives from `SignalCanvas/` and `components/shared/` (not duplicate them).
@@ -75,7 +75,7 @@ Description:
 - Estimated effort: Medium.
 - Required outputs: Seven surface-level redesigns, shared primitive reuse, updated tests, worklist reconciliation.
 Assigned to: Codex
-Last updated: 2026-04-20 11:17 EDT - Codex
+Last updated: 2026-04-20 11:22 EDT - Codex
 - In-progress notes:
   - Started after T2368 SHIP `4c1a7c96`: inventory the seven remaining Snapshot Editor modal and parameter surfaces, then land the first reusable schematic primitives and focused surface redesign slice with tests.
   - Slice 1 complete: added shared schematic panel/readout/LED primitives and applied them to `SnapshotAbSwitchMidiCard.tsx`, `SnapshotFootswitchLabelCard.tsx`, and `SnapshotVersionHistoryModal.tsx`.
@@ -86,6 +86,11 @@ Last updated: 2026-04-20 11:17 EDT - Codex
   - Slice 2 complete: converted `SnapshotExpressionMappingsCard.tsx` to the shared schematic panel/readout/LED primitives without nested Carbon cards, added a schematic MIDI-map readout to `SnapshotEditorSelectedBlockMidiPanel.tsx`, and added focused selected-block MIDI coverage.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotExpressionMappingsCard.test.tsx src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by slice 2; changed files are MAP2-owned AGPL scope.
+  - Slice 2 shipped: commit `187d27be` pushed to `origin/master` and `gitlab/master`; production web restarted on port 3000 with live bundle `index-BlhNLUkI.js`.
+  - Slice 3 started: apply schematic readouts and panel vocabulary to `SnapshotEditorParameterEditor.tsx` and `SnapshotEditorRoutingVisualizer.tsx`, then run focused tests, typecheck, and build.
+  - Slice 3 complete: added schematic block/mode readouts to `SnapshotEditorParameterEditor.tsx`, applied schematic subpanel styling to parameter groups and IR preview, added routing/active-flow readouts to `SnapshotEditorRoutingVisualizer.tsx`, and added focused routing visualizer coverage.
+  - Final T2369 validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotEditorParameterEditor.test.tsx src/app/components/SnapshotEditor/SnapshotEditorRoutingVisualizer.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand --testPathPatterns=SnapshotEditor --no-coverage` -> PASS (25 suites, 80 tests); `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by slice 3; changed files are MAP2-owned AGPL scope. T2369 is complete across all seven named surfaces.
 
 ---
 

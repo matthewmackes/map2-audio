@@ -51,6 +51,8 @@ describe('SnapshotEditorParameterEditor IR waveform preview', () => {
     )
 
     expect(screen.getByText('Cabinet IR waveform')).toBeInTheDocument()
+    expect(screen.getByLabelText('Block: Cabinet IR / 0 params')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: Edit')).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByText('Deluxe.wav')).toBeInTheDocument()
@@ -127,6 +129,7 @@ describe('SnapshotEditorParameterEditor IR waveform preview', () => {
     )
 
     expect(screen.getByLabelText('Drive')).toBeDisabled()
+    expect(screen.getByLabelText('Mode: Read only')).toBeInTheDocument()
   })
 
   it('renders the channel context header using the current flow label', () => {
