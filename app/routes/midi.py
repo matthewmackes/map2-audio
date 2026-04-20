@@ -19,7 +19,7 @@ try:
     from pydantic import BaseModel
     from app.services.midi_engine import MIDIEngineService
 
-    router = APIRouter(prefix="/api/midi", tags=["midi-legacy"])
+    router = APIRouter(prefix="/api/midi", tags=["midi-legacy"], deprecated=True)
     midi_service = MIDIEngineService()
 
     # In-memory storage for additional MIDI state

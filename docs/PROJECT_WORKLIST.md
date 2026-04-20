@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2364-subB PlatformEvent presenter cleanup.
+Last updated: 2026-04-20 - Started T2365-subK MIDI v1/v2 reconciliation.
 
 ---
 
@@ -29305,7 +29305,7 @@ Validation:
 - Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new MAP2-owned AGPL or third-party notice gaps.
 
 ID: T2365-subK
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Reconcile MIDI v1 (legacy routes) and v2 — delete v1 once parity is proven
 Description:
 - Goal / acceptance criteria: Audit [app/routes/midi_v2.py](app/routes/midi_v2.py) for feature parity with the legacy v1 routes tagged `["midi-legacy"]` (search `rg -n 'midi-legacy' app/routes`). Produce a feature-delta report. For any gap, either (a) backfill on v2, or (b) explicitly retire the feature if unused. Then delete the v1 routes and the four "Compatibility wrapper used by legacy MIDI routes" functions at [midi_engine.py:38](app/services/midi_engine.py), [midi_engine.py:482](app/services/midi_engine.py), [midi_engine.py:495](app/services/midi_engine.py), [midi_engine.py:509](app/services/midi_engine.py). After deletion, `rg -n "midi-legacy|Compatibility wrapper used by legacy MIDI" app tests` must return zero matches.
@@ -29314,9 +29314,18 @@ Description:
 - Estimated effort: High
 - Required outputs: parity report, v1 route deletion, wrapper deletion, all MIDI tests green.
 - Notes: Update the OpenAPI `deprecated: true` flag on v1 in an intermediate commit before deletion, so external integrators see one release of warning.
+Last updated: 2026-04-20 11:55 EDT - Codex
+- Progress notes:
+  - 2026-04-20 11:55 EDT - Codex: Started the required intermediate phase after T2364-subB SHIP `d6a81929`; first slice is v1/v2 feature-delta evidence plus OpenAPI deprecation on the legacy `/api/midi` router before any deletion.
+  - 2026-04-20 12:00 EDT - Codex: Produced [docs/audits/midi-v1-v2-parity-20260420.md](docs/audits/midi-v1-v2-parity-20260420.md), marked the legacy `/api/midi` router deprecated in OpenAPI, and added regression coverage proving every legacy operation advertises `deprecated: true`. Deletion remains blocked by identified gaps for start/stop/refresh, routing, filters, monitor clear, clock, and legacy bundled presets.
 Validation:
-- `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> must PASS
-- `rg -n "midi-legacy" app tests` -> no matches
+- `pytest tests/test_midi_legacy_deprecation.py tests/test_midi_v2_routes.py -q` -> PASS (`10 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi.py app/routes/midi_v2.py tests/test_midi_legacy_deprecation.py` -> PASS
+- `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> PASS (`70 passed, 3 warnings`; warnings are existing `datetime.utcnow()` deprecations in MIDI tests)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+- Licensing compliance spot-check: no new dependencies, packages, services, runtime assumptions, installer changes, or third-party assets; touched code/docs/tests remain MAP2-owned AGPL-covered artifacts.
 
 ID: T2365-subL
 Status: [✓] Done
@@ -29585,7 +29594,7 @@ Validation:
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 
 ID: T2370
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Remove PlatformEvent migration compatibility kinds after the T2363 aging window
 Description:
 - Goal / acceptance criteria: On or after 2026-07-18, audit `app/services/platform_event/kind.py` and remove the T2363 migration compatibility kind set that was retained only for persisted pre-cutover events. Update the TypeScript mirror, presenter mappings, tests, and any stored-event replay assumptions so only canonical post-cutover kinds remain. Acceptance requires no runtime producers or frontend consumers to reference the retired kinds, and persisted-event replay to handle aged-out records without restoring a compatibility taxonomy.
@@ -29593,6 +29602,8 @@ Description:
 - Dependencies: T2363 hard cutover landed 2026-04-19; removal date 2026-07-18 or later.
 - Estimated effort: Medium
 - Required outputs: audited kind removal, Python/TypeScript manifest parity, updated presenter/store tests, and a scan proving no references to the removed migration kinds remain.
-Last updated: 2026-04-20 11:37 EDT - Codex
+Last updated: 2026-04-20 11:55 EDT - Codex
+- Blocked notes:
+  - 2026-04-20 11:55 EDT - Codex: Blocked until 2026-07-18 by design; current date is 2026-04-20, so removing the persisted-event compatibility kinds now would violate the T2363 aging window.
 
 ---
