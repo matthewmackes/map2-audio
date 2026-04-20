@@ -36,15 +36,10 @@ type ClusterChainsFanoutResponse = {
 
 type MetricTone = 'gray' | 'green' | 'warm-gray'
 
-const SNAPSHOT_PATH_SOURCE_KIND = 'snapshot_path'
-const RUNTIME_CHAIN_CONTROL_NOTICE = 'This page is a read-only runtime view of snapshot-owned paths. Edit and publish live truth from Audio Grid and Snapshot Publish.'
+const RUNTIME_CHAIN_CONTROL_NOTICE = 'This page is a read-only runtime view of known chains. Edit and publish snapshot-owned live truth from Audio Grid and Snapshot Publish.'
 
 function AudioGridActionIcon(props: { className?: string }) {
   return <MapAudioGridIcon {...props} size={16} />
-}
-
-function isSnapshotOwnedChain(chain: Chain): boolean {
-  return chain.source_kind === SNAPSHOT_PATH_SOURCE_KIND || chain.management_scope === 'snapshot' || chain.snapshot_id != null
 }
 
 function formatUpdatedAt(value: string | undefined): string {
@@ -67,7 +62,7 @@ function formatSnapshotLabel(chain: Chain): string {
   if (typeof chain.snapshot_id === 'number') {
     return `Snapshot #${chain.snapshot_id}`
   }
-  return 'Snapshot-owned path'
+  return 'Runtime chain'
 }
 
 function formatPathLabel(chain: Chain): string {
@@ -171,32 +166,30 @@ export function ChainsPage() {
   })
 
   const allNodeChains = chainsQuery.data?.chains ?? []
-  const snapshotOwnedChains = useMemo(
-    () => allNodeChains.filter(isSnapshotOwnedChain),
+  const runtimeChains = useMemo(
+    () => allNodeChains,
     [allNodeChains],
   )
-  const hiddenLegacyChainCount = Math.max(0, allNodeChains.length - snapshotOwnedChains.length)
 
   const filteredChains = useMemo(() => {
     const query = searchValue.trim().toLowerCase()
     if (!query) {
-      return snapshotOwnedChains
+      return runtimeChains
     }
 
-    return snapshotOwnedChains.filter((chain) => (
+    return runtimeChains.filter((chain) => (
       chain.name.toLowerCase().includes(query)
       || formatSnapshotLabel(chain).toLowerCase().includes(query)
       || formatPathLabel(chain).toLowerCase().includes(query)
     ))
-  }, [searchValue, snapshotOwnedChains])
+  }, [searchValue, runtimeChains])
 
-  const activeSnapshotPath = snapshotOwnedChains.find((chain) => chain.is_active)
+  const activeRuntimeChain = runtimeChains.find((chain) => chain.is_active)
 
   const clusterRows = useMemo(() => {
     const payload = clusterChainsQuery.data?.nodes ?? {}
     return clusterNodes.map((node) => {
-      const chains = (payload[node.nodeId]?.body?.chains ?? []).filter(isSnapshotOwnedChain)
-      const fullInventory = payload[node.nodeId]?.body?.chains ?? []
+      const chains = payload[node.nodeId]?.body?.chains ?? []
       const active = chains.find((chain) => chain.is_active)
 
       return {
@@ -204,7 +197,6 @@ export function ChainsPage() {
         chainCount: chains.length,
         activeName: active ? formatPathLabel(active) : null,
         snapshotLabel: active ? formatSnapshotLabel(active) : null,
-        hiddenLegacyCount: Math.max(0, fullInventory.length - chains.length),
         statusCode: payload[node.nodeId]?.status_code ?? (node.isOnline ? 200 : undefined),
       }
     })
@@ -221,8 +213,7 @@ export function ChainsPage() {
 
   if (allNodesSelected) {
     const totalClusterChains = clusterRows.reduce((sum, row) => sum + row.chainCount, 0)
-    const nodesWithLivePaths = clusterRows.filter((row) => row.activeName).length
-    const totalHiddenLegacyChains = clusterRows.reduce((sum, row) => sum + row.hiddenLegacyCount, 0)
+    const nodesWithLiveChains = clusterRows.filter((row) => row.activeName).length
 
     return (
       <div className="chains-page">
@@ -233,7 +224,7 @@ export function ChainsPage() {
               <Flow size={32} aria-hidden="true" className="chains-page__title-icon" />
               <div>
                 <h1 className="chains-page__title">Chains</h1>
-                <p className="chains-page__subtitle">Cluster view of snapshot-owned runtime paths only</p>
+                <p className="chains-page__subtitle">Cluster view of known runtime chains</p>
               </div>
             </div>
             <div className="chains-page__actions">
@@ -247,7 +238,7 @@ export function ChainsPage() {
             <div className="chains-page__scope-label">Chain scope</div>
             <strong className="chains-page__scope-title">All nodes cluster comparison</strong>
             <p className="chains-page__scope-copy">
-              Compare snapshot-owned runtime path projections across the cluster. Legacy standalone chains are intentionally omitted here.
+              Compare known runtime chain projections across the cluster.
             </p>
           </Layer>
 
@@ -261,16 +252,15 @@ export function ChainsPage() {
         </Layer>
 
         <div className="chains-page__metrics-grid">
-          <ChainsMetricCard label="Snapshot paths" value={totalClusterChains} helper="Across all nodes" />
-          <ChainsMetricCard label="Nodes with live path" value={nodesWithLivePaths} helper="Runtime projection" tone="green" />
-          <ChainsMetricCard label="Hidden legacy chains" value={totalHiddenLegacyChains} helper="Excluded from this page" tone="warm-gray" />
+          <ChainsMetricCard label="Runtime chains" value={totalClusterChains} helper="Across all nodes" />
+          <ChainsMetricCard label="Nodes with live chain" value={nodesWithLiveChains} helper="Runtime projection" tone="green" />
         </div>
 
         <Layer className="chains-page__panel">
           <div className="chains-page__panel-header">
             <div>
-              <h2 className="chains-page__panel-title">Cluster snapshot path inventory</h2>
-              <p className="chains-page__panel-subtitle">Inspect a node to review its snapshot-owned runtime projections.</p>
+              <h2 className="chains-page__panel-title">Cluster runtime chain inventory</h2>
+              <p className="chains-page__panel-subtitle">Inspect a node to review its known runtime projections.</p>
             </div>
           </div>
 
@@ -290,9 +280,8 @@ export function ChainsPage() {
                 <TableHead>
                   <TableRow>
                     <TableHeader>Node</TableHeader>
-                    <TableHeader>Snapshot paths</TableHeader>
-                    <TableHeader>Live path</TableHeader>
-                    <TableHeader>Hidden legacy chains</TableHeader>
+                    <TableHeader>Runtime chains</TableHeader>
+                    <TableHeader>Live chain</TableHeader>
                     <TableHeader>Status</TableHeader>
                     <TableHeader className="chains-page__table-cell--actions">Action</TableHeader>
                   </TableRow>
@@ -308,10 +297,9 @@ export function ChainsPage() {
                       </TableCell>
                       <TableCell>{row.chainCount}</TableCell>
                       <TableCell>
-                        <div className="chains-page__row-primary">{row.activeName ?? 'No live snapshot path'}</div>
+                        <div className="chains-page__row-primary">{row.activeName ?? 'No live chain'}</div>
                         <div className="chains-page__row-secondary">{row.snapshotLabel ?? 'No active snapshot'}</div>
                       </TableCell>
-                      <TableCell>{row.hiddenLegacyCount}</TableCell>
                       <TableCell>
                         <Tag type={statusTagType(row.statusCode)}>{row.statusCode === 200 ? 'Online' : 'Unavailable'}</Tag>
                       </TableCell>
@@ -349,8 +337,8 @@ export function ChainsPage() {
               <h1 className="chains-page__title">{remoteSelected ? `Chains - ${selectedNode?.hostname ?? viewedNodeId}` : 'Chains'}</h1>
               <p className="chains-page__subtitle">
                 {remoteSelected
-                  ? `Inspect snapshot-owned runtime paths on ${selectedNode?.hostname ?? viewedNodeId}.`
-                  : 'Inspect snapshot-owned runtime paths for this node.'}
+                  ? `Inspect known runtime chains on ${selectedNode?.hostname ?? viewedNodeId}.`
+                  : 'Inspect known runtime chains for this node.'}
               </p>
             </div>
           </div>
@@ -374,7 +362,7 @@ export function ChainsPage() {
             <p className="chains-page__scope-copy">
               {remoteSelected
                 ? `Runtime path inspection is proxied to ${selectedNode?.hostname ?? viewedNodeId}${remoteLatencyMs == null ? '' : ` with peer latency ${remoteLatencyMs.toFixed(1)} ms`}.`
-                : 'This page is limited to snapshot-owned runtime projections. Legacy standalone chains are hidden, and canonical edits live in the snapshot workflow.'}
+                : 'This page shows runtime chain projections. Canonical snapshot-owned edits live in the snapshot workflow.'}
             </p>
           </Layer>
         ) : null}
@@ -387,48 +375,33 @@ export function ChainsPage() {
           subtitle={RUNTIME_CHAIN_CONTROL_NOTICE}
         />
 
-        {hiddenLegacyChainCount > 0 ? (
-          <InlineNotification
-            kind="info"
-            lowContrast
-            hideCloseButton
-            title="Legacy standalone chains hidden"
-            subtitle={`${hiddenLegacyChainCount} non-snapshot runtime chain${hiddenLegacyChainCount === 1 ? '' : 's'} omitted from this page.`}
-          />
-        ) : null}
       </Layer>
 
       <div className="chains-page__metrics-grid">
         <ChainsMetricCard
-          label="Snapshot paths"
-          value={snapshotOwnedChains.length}
+          label="Runtime chains"
+          value={runtimeChains.length}
           helper={chainsQuery.isFetching ? 'Refreshing' : 'Visible on this node'}
         />
         <ChainsMetricCard
-          label="Live path"
-          value={activeSnapshotPath ? formatPathLabel(activeSnapshotPath) : 'No live snapshot path'}
-          helper={activeSnapshotPath ? formatSnapshotLabel(activeSnapshotPath) : 'Runtime projection'}
-          tone={activeSnapshotPath ? 'green' : 'warm-gray'}
-        />
-        <ChainsMetricCard
-          label="Hidden legacy chains"
-          value={hiddenLegacyChainCount}
-          helper="Excluded from this page"
-          tone="warm-gray"
+          label="Live chain"
+          value={activeRuntimeChain ? formatPathLabel(activeRuntimeChain) : 'No live chain'}
+          helper={activeRuntimeChain ? formatSnapshotLabel(activeRuntimeChain) : 'Runtime projection'}
+          tone={activeRuntimeChain ? 'green' : 'warm-gray'}
         />
       </div>
 
       <Layer className="chains-page__panel">
         <div className="chains-page__panel-header">
           <div>
-            <h2 className="chains-page__panel-title">Live snapshot paths</h2>
-            <p className="chains-page__panel-subtitle">Search the snapshot-owned runtime projections currently known for this node.</p>
+            <h2 className="chains-page__panel-title">Live runtime chains</h2>
+            <p className="chains-page__panel-subtitle">Search the runtime projections currently known for this node.</p>
           </div>
           <Search
             id="chains-search"
             size="sm"
-            labelText="Search snapshot paths"
-            placeholder="Filter by path or snapshot"
+            labelText="Search runtime chains"
+            placeholder="Filter by path, chain, or snapshot"
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
             className="chains-page__search"
@@ -447,10 +420,10 @@ export function ChainsPage() {
           />
         ) : filteredChains.length === 0 ? (
           <EmptyState
-            title={searchValue.trim() ? 'No snapshot paths match this filter' : 'No snapshot-owned runtime paths'}
+            title={searchValue.trim() ? 'No runtime chains match this filter' : 'No runtime chains'}
             description={searchValue.trim()
-              ? 'Try a different snapshot or path label.'
-              : 'Open Snapshot Editor or Snapshot Publish to stage and activate a live snapshot path.'}
+              ? 'Try a different chain, snapshot, or path label.'
+              : 'Open Snapshot Editor or Snapshot Publish to stage and activate a live chain.'}
             compact
           />
         ) : (

@@ -2944,9 +2944,6 @@ export interface SnapshotDraftData {
   chains: Record<string, ChainSnapshot>;  // chainId -> ChainSnapshot
 }
 
-/** @deprecated Use SnapshotDraftData */
-export type FlowSnapshotData = SnapshotDraftData;
-
 /** Flow slot summary for list view */
 export interface FlowSlotSummary {
   id: string;
@@ -2973,7 +2970,7 @@ export interface FlowSnapshot {
 
 /** Flow snapshot with full data (detail view) */
 export interface FlowSnapshotDetail extends FlowSnapshot {
-  snapshot_data: FlowSnapshotData;
+  snapshot_data: SnapshotDraftData;
 }
 
 /** WebSocket event for flow snapshot loaded */
@@ -2983,7 +2980,7 @@ export interface FlowSnapshotLoadedEvent {
   data: {
     snapshot_id: number;
     snapshot_name: string;
-    snapshot_data: FlowSnapshotData;
+    snapshot_data: SnapshotDraftData;
     triggered_by?: 'midi_pc' | 'ui';
     program_number?: number;
   };
@@ -3114,8 +3111,6 @@ export interface DiskInfo {
   uncorrectable_errors: number;
   power_on_hours: number;
   estimated_lifespan_percent: number;
-  /** @deprecated alias kept for backwards compat */
-  device?: string;
   mount_point?: string;
   total_gb?: number;
   used_gb?: number;

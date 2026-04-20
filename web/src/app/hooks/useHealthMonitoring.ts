@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import type { SystemHealthOverview, DiskHealthData } from '@/map2/types';
+import type { SystemHealthOverview, DiskHealthData, DiskInfo } from '@/map2/types';
 
 export interface HistoricalMetric {
   timestamp: number;
@@ -149,6 +149,29 @@ export interface HealthAlert {
   threshold: number;
 }
 
+type FlatDiskHealth = { device: string; use_percent: number; overall_health?: string }
+
+function diskDisplayName(disk: DiskInfo): string {
+  return disk.name || disk.mount_point || 'Disk'
+}
+
+function flatDiskHealthToDiskInfo(diskHealth: FlatDiskHealth): DiskInfo {
+  return {
+    name: diskHealth.device,
+    model: '',
+    size_gb: 0,
+    health_status: diskHealth.overall_health ?? 'unknown',
+    temperature_c: null,
+    used_percent: diskHealth.use_percent,
+    smart_status: 'unknown',
+    reallocated_sectors: 0,
+    uncorrectable_errors: 0,
+    power_on_hours: 0,
+    estimated_lifespan_percent: 0,
+    use_percent: diskHealth.use_percent,
+  }
+}
+
 export function useHealthAlarms(thresholds: HealthThresholds = DEFAULT_THRESHOLDS) {
   const alertsRef = useRef<HealthAlert[]>([]);
   const acknowledgedRef = useRef<Set<string>>(new Set());
@@ -231,22 +254,23 @@ export function useHealthAlarms(thresholds: HealthThresholds = DEFAULT_THRESHOLD
       // Disk usage checks
       if (diskHealth?.disks) {
         diskHealth.disks.forEach((disk) => {
+          const label = diskDisplayName(disk);
           if (disk.use_percent >= thresholds.diskUsageCritical) {
             newAlerts.push({
-              id: `disk-critical-${disk.device}-${Date.now()}`,
+              id: `disk-critical-${label}-${Date.now()}`,
               type: 'disk',
               severity: 'critical',
-              message: `Critical: ${disk.device} usage ${disk.use_percent.toFixed(1)}% exceeds ${thresholds.diskUsageCritical}%`,
+              message: `Critical: ${label} usage ${disk.use_percent.toFixed(1)}% exceeds ${thresholds.diskUsageCritical}%`,
               timestamp: Date.now(),
               value: disk.use_percent,
               threshold: thresholds.diskUsageCritical,
             });
           } else if (disk.use_percent >= thresholds.diskUsageWarning) {
             newAlerts.push({
-              id: `disk-warning-${disk.device}-${Date.now()}`,
+              id: `disk-warning-${label}-${Date.now()}`,
               type: 'disk',
               severity: 'warning',
-              message: `Warning: ${disk.device} usage ${disk.use_percent.toFixed(1)}% exceeds ${thresholds.diskUsageWarning}%`,
+              message: `Warning: ${label} usage ${disk.use_percent.toFixed(1)}% exceeds ${thresholds.diskUsageWarning}%`,
               timestamp: Date.now(),
               value: disk.use_percent,
               threshold: thresholds.diskUsageWarning,
@@ -329,7 +353,7 @@ export function useHealthMonitoring(
 
   const checkHealth = (
     healthOverview: SystemHealthOverview | undefined,
-    diskHealth: DiskHealthData | { device: string; use_percent: number; overall_health?: string } | undefined
+    diskHealth: DiskHealthData | FlatDiskHealth | undefined
   ) => {
     let normalizedDiskHealth: DiskHealthData | undefined;
     if (diskHealth && typeof diskHealth === 'object' && Array.isArray((diskHealth as DiskHealthData).disks)) {
@@ -340,7 +364,7 @@ export function useHealthMonitoring(
       typeof (diskHealth as { device?: unknown }).device === 'string' &&
       typeof (diskHealth as { use_percent?: unknown }).use_percent === 'number'
     ) {
-      normalizedDiskHealth = { disks: [diskHealth as DiskHealthData['disks'][number]] };
+      normalizedDiskHealth = { disks: [flatDiskHealthToDiskInfo(diskHealth as FlatDiskHealth)] };
     }
 
     return alarms.checkHealth(healthOverview, normalizedDiskHealth);

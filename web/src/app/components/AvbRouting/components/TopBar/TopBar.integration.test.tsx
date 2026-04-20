@@ -2675,7 +2675,7 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-scenes-button'))
     fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
     fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
-      target: { value: 'legacy' },
+      target: { value: 'scene' },
     })
 
     act(() => {
@@ -2695,7 +2695,7 @@ describe('TopBar filter controls provider integration', () => {
     })
 
     await waitFor(() => {
-      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('legacy')
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('scene')
       expect(screen.getByTestId('topbar-probe-scene-sync-scenes').textContent).toContain('Baseline Scene:scene-b')
       expect(screen.getByTestId('topbar-probe-scene-sync-scenes').textContent).not.toContain('Baseline Scene:scene-a')
       expect(screen.getByTestId('topbar-probe-scene-sync-audit-sequence').textContent).toBe(
@@ -2803,7 +2803,7 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-scenes-button'))
     fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
     fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
-      target: { value: 'legacy' },
+      target: { value: 'scene' },
     })
 
     act(() => {
@@ -2955,7 +2955,7 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-scenes-button'))
     fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
     fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
-      target: { value: 'legacy' },
+      target: { value: 'scene' },
     })
 
     act(() => {

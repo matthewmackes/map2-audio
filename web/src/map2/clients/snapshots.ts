@@ -3,7 +3,6 @@ import { API_BASE } from '../transport'
 import type {
   CommunitySnapshot,
   FlowSnapshot,
-  FlowSnapshotData,
   FlowSnapshotDetail,
   FlowSnapshotLoadedEvent,
   FlowSlotSummary,
@@ -324,7 +323,7 @@ export function snapshotDetailToDraftData(detail: SnapshotDetail): SnapshotDraft
 }
 
 export function flowSnapshotDataToSnapshotPayload(
-  snapshotData: FlowSnapshotData,
+  snapshotData: SnapshotDraftData,
 ): Pick<SnapshotDetail, 'paths' | 'channels' | 'chains' | 'routing' | 'midi_map' | 'controls'> {
   const chainEntries = Object.entries(snapshotData.chains ?? {})
   const snapshotChainIdBySourceKey = new Map<string, number>(
@@ -432,8 +431,6 @@ export function snapshotSummaryToFlowSnapshot(summary: SnapshotSummary): FlowSna
     updated_at: summary.updated_at ?? '',
   }
 }
-
-export const snapshotDetailToFlowSnapshotData = snapshotDetailToDraftData
 
 export function snapshotDetailToFlowSnapshotDetail(detail: SnapshotDetail): FlowSnapshotDetail {
   return {

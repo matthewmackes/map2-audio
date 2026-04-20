@@ -48,7 +48,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
               <div>
                 <div className="hm-disk-card__name">
                   <HardDrive size={16} />
-                  {(disk.name || disk.device || 'Unknown').toUpperCase()}
+                  {(disk.name || 'Unknown').toUpperCase()}
                 </div>
                 {(disk.mount_point || disk.model) && (
                   <div className="hm-disk-card__sub">

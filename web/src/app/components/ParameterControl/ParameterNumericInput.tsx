@@ -15,7 +15,7 @@ export interface ParameterNumericInputProps {
   value: number
   onLiveChange?: (value: number) => void
   onCommit?: (value: number) => void
-  commitStrategy?: ParameterCommitStrategy | 'legacy'
+  commitStrategy?: ParameterCommitStrategy
   label?: string
   ariaLabel?: string
   accentColor?: string

@@ -8,14 +8,14 @@ import { snapValue } from './scale'
 export interface UseParameterControlStateOptions {
   descriptor: ParameterDescriptor
   value: number
-  commitStrategy?: ParameterCommitStrategy | 'legacy'
+  commitStrategy?: ParameterCommitStrategy
   valueFormatter?: (value: number) => string
   onLiveChange?: (value: number) => void
   onCommit?: (value: number) => void
 }
 
 export interface UseParameterControlStateResult {
-  commitStrategy: ParameterCommitStrategy | 'legacy'
+  commitStrategy: ParameterCommitStrategy
   descriptor: ParameterDescriptor
   editableValue: string
   formattedValue: string

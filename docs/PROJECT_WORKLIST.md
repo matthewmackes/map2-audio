@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Reconciled T2365-subQ after removing production stub paths from plugin scanning, optional guitar route registration, and VST2 preset import exposure.
+Last updated: 2026-04-20 - Completed T2365-subS frontend legacy variant cleanup and build validation.
 
 ---
 
@@ -29318,7 +29318,7 @@ Validation:
 - `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned backend/config/test/docs cleanup
 
 ID: T2365-subS
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove frontend 'legacy' variant enums (NumericInput commitStrategy, updateApplicationApi, ChainsPage hidden-legacy)
 Description:
 - Goal / acceptance criteria: Delete the `'legacy'` variant from:
@@ -29331,11 +29331,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: deleted variants, migrated call sites, updated snapshots, passing frontend tests.
 - Notes: Must use Carbon components only. Must not introduce new per-page node UI (preserve unified pill directive).
+Last updated: 2026-04-20 07:03 EDT - Codex
+- Completion notes:
+  - Removed the `NumericInput`/`ParameterControl` `'legacy'` commit strategy variant and made deferred pointer-up behavior the default, preserving explicit blur/idle/explicit strategies and adding pending live-change tracking so touch/wheel/keyboard gestures still emit deterministic `onChangeEnd` notifications.
+  - Hard-cut `updateApplicationApi` to the canonical hybrid endpoint namespace and rewrote its focused tests to assert no fallback request is attempted after hybrid `404` responses.
+  - Removed the Chains page hidden-legacy filtering/metrics so snapshot-owned and standalone runtime chains render in one runtime inventory, with updated copy and regression coverage.
+  - Deleted the deprecated `FlowSnapshotData` alias and `DiskInfo.device` alias from the frontend type surface, migrated snapshot/workflow consumers to `SnapshotDraftData`, and normalized disk-health display paths onto canonical `DiskInfo.name`.
 Validation:
-- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NumericInput src/app/hooks src/app/pages/ChainsPage*.test.tsx` -> PASS
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NumericInput/NumericInput.test.tsx src/app/pages/ChainsPage.test.tsx` -> PASS (`9 passed`)
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/NumericInput/NumericInput.test.tsx src/app/components/ParameterControl/ParameterControl.test.tsx src/app/hooks/updateApplicationApi.test.ts src/app/pages/ChainsPage.test.tsx src/app/hooks/__tests__/usePhase3Hooks.test.ts src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx` -> PASS (`71 passed`)
 - `npm --prefix web run typecheck` -> PASS
-- `npm --prefix web run build` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.92s`; existing chunk-size warning only)
 - `rg -n "'legacy'|UpdateApplicationApiVariant.*legacy|hidden-legacy" web/src` -> no matches
+- `rg -n "@deprecated|FlowSnapshotData|snapshotDetailToFlowSnapshotData" web/src/map2 web/src/app` -> no matches
+- `git diff --check` -> PASS
+- Licensing review: touched frontend/test/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md web/src/app web/src/map2` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T2365-subT
 Status: [✓] Done

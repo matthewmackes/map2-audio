@@ -32,7 +32,7 @@ export interface NumericInputProps {
   value: number
   onChange: (value: number) => void
   onChangeEnd?: (value: number) => void
-  commitStrategy?: ParameterCommitStrategy | 'legacy'
+  commitStrategy?: ParameterCommitStrategy
   label?: string
   ariaLabel?: string
   accentColor?: string
@@ -93,7 +93,7 @@ export function NumericInput({
   value,
   onChange,
   onChangeEnd,
-  commitStrategy = 'legacy',
+  commitStrategy = descriptor.commitStrategy ?? 'pointer-up',
   label,
   ariaLabel,
   accentColor = '#0f62fe',
@@ -115,6 +115,7 @@ export function NumericInput({
   const wheelCommitTimeoutRef = useRef<number | null>(null)
   const touchDragRef = useRef<TouchDragState | null>(null)
   const activeTouchIdsRef = useRef<Set<number>>(new Set())
+  const hasPendingLiveChangeRef = useRef(false)
 
   const [isFocused, setIsFocused] = useState(false)
   const [isTouchDragging, setIsTouchDragging] = useState(false)
@@ -128,7 +129,7 @@ export function NumericInput({
     () => quantizeToStep(clampNumericValue(value, descriptor), descriptor),
     [descriptor, value],
   )
-  const usesDeferredCommit = commitStrategy !== 'legacy'
+  const usesDeferredCommit = true
 
   const formatDisplayValue = useCallback((nextValue: number) => {
     return valueFormatter ? valueFormatter(nextValue) : formatRawValue(nextValue, descriptor)
@@ -146,16 +147,20 @@ export function NumericInput({
   }, [])
 
   useEffect(() => {
-    if (!usesDeferredCommit || (!isFocused && !isTouchDragging)) {
+    if (!usesDeferredCommit) {
       lastCommittedValueRef.current = currentValue
       liveValueRef.current = currentValue
-      if (!isFocused && !isTouchDragging) {
-        syncDisplayedValue(currentValue, false)
-      }
+      hasPendingLiveChangeRef.current = false
+      syncDisplayedValue(currentValue, false)
       return
     }
 
-    liveValueRef.current = currentValue
+    if (!isFocused && !isTouchDragging) {
+      lastCommittedValueRef.current = currentValue
+      liveValueRef.current = currentValue
+      hasPendingLiveChangeRef.current = false
+      syncDisplayedValue(currentValue, false)
+    }
   }, [currentValue, isFocused, isTouchDragging, syncDisplayedValue, usesDeferredCommit])
 
   useEffect(() => {
@@ -193,6 +198,7 @@ export function NumericInput({
     liveValueRef.current = normalized
 
     if (changed) {
+      hasPendingLiveChangeRef.current = true
       onChange(normalized)
     }
 
@@ -204,12 +210,13 @@ export function NumericInput({
     const normalized = quantizeToStep(clampNumericValue(nextValue, descriptor), descriptor)
     const previous = lastCommittedValueRef.current
     const changed = Math.abs(normalized - previous) > 1e-9
-
+    const shouldNotifyEnd = changed || hasPendingLiveChangeRef.current
     liveValueRef.current = normalized
     lastCommittedValueRef.current = normalized
+    hasPendingLiveChangeRef.current = false
     syncDisplayedValue(normalized)
 
-    if (changed) {
+    if (shouldNotifyEnd) {
       onChangeEnd?.(normalized)
     }
 
@@ -218,6 +225,7 @@ export function NumericInput({
 
   const revertToCommittedValue = useCallback(() => {
     liveValueRef.current = lastCommittedValueRef.current
+    hasPendingLiveChangeRef.current = false
     syncDisplayedValue(lastCommittedValueRef.current, false)
     setIsFocused(false)
     clearPendingWheelCommit()
@@ -367,8 +375,9 @@ export function NumericInput({
     const direction = event.deltaY < 0 ? 1 : -1
     const magnitude = Math.max(1, Math.round(Math.abs(event.deltaY) / 100))
     const velocity = Number.isFinite(elapsed) ? Math.abs(event.deltaY) / elapsed : 0
+    const baseValue = usesDeferredCommit ? liveValueRef.current : lastCommittedValueRef.current
     const nextValue = applyNumericDelta({
-      value: lastCommittedValueRef.current,
+      value: baseValue,
       deltaSteps: direction * magnitude * profileConfig.wheelStep,
       descriptor,
       modifiers: { fine },
@@ -526,7 +535,10 @@ export function NumericInput({
     for (const touch of Array.from(event.changedTouches)) {
       finishTouchDrag(touch.identifier)
     }
-  }, [finishTouchDrag])
+    if (activeTouchIdsRef.current.size === 0 && usesDeferredCommit && commitStrategy !== 'explicit') {
+      commitLiveValue()
+    }
+  }, [commitLiveValue, commitStrategy, finishTouchDrag, usesDeferredCommit])
 
   const handleDoubleClick = useCallback(() => {
     if (disabled) {

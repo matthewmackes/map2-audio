@@ -74,7 +74,7 @@ describe('ChainsPage', () => {
     })
   })
 
-  it('shows only snapshot-owned runtime paths and counts hidden legacy chains separately', async () => {
+  it('shows snapshot-owned and standalone runtime chains in one inventory', async () => {
     mockChainsApiList.mockResolvedValue({
       count: 2,
       chains: [
@@ -113,8 +113,8 @@ describe('ChainsPage', () => {
     await screen.findAllByText('Sunday Set')
     await screen.findAllByText('guitar-main')
 
-    expect(screen.getByText('1 non-snapshot runtime chain omitted from this page.')).toBeInTheDocument()
-    expect(screen.queryByText('Old Standalone Chain')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Old Standalone Chain').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Hidden legacy chains')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New chain' })).not.toBeInTheDocument()
     expect(screen.queryByText('Deploy')).not.toBeInTheDocument()
   })

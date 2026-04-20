@@ -3,7 +3,6 @@ import type {
   CreateSnapshotRequest,
   EffectsLoop,
   FlowSnapshot,
-  FlowSnapshotData,
   FlowSnapshotDetail,
   HistoryEntry,
   HistoryStatus,
@@ -13,10 +12,11 @@ import type {
   SessionsResponse,
   SnapshotCategory,
   SnapshotsResponse,
+  SnapshotDraftData,
 } from '../types'
 import {
   flowSnapshotDataToSnapshotPayload,
-  snapshotDetailToFlowSnapshotData,
+  snapshotDetailToDraftData,
   snapshotDetailToFlowSnapshotDetail,
   snapshotSummaryToFlowSnapshot,
   snapshotsApi as unifiedSnapshotsApi,
@@ -256,7 +256,7 @@ export const flowSnapshotsApi = {
     description?: string
     tags?: string[]
     program_number?: number | null
-    snapshot_data: FlowSnapshotData
+    snapshot_data: SnapshotDraftData
   }) => {
     const response = await unifiedSnapshotsApi.create({
       name: request.name,
@@ -280,7 +280,7 @@ export const flowSnapshotsApi = {
       tags?: string[]
       display_order?: number
       is_favorite?: boolean
-      snapshot_data?: FlowSnapshotData
+      snapshot_data?: SnapshotDraftData
     },
     _nodeId?: string | null,
   ) => {
@@ -308,15 +308,15 @@ export const flowSnapshotsApi = {
       status: response.status,
       snapshot_id: response.snapshot_id,
       name: response.name,
-      snapshot_data: snapshotDetailToFlowSnapshotData(response.snapshot_data),
+      snapshot_data: snapshotDetailToDraftData(response.snapshot_data),
     }
   },
 
-  preview: async (request: { snapshot_data: FlowSnapshotData }) => {
+  preview: async (request: { snapshot_data: SnapshotDraftData }) => {
     const response = await unifiedSnapshotsApi.preview(request.snapshot_data)
     return {
       status: response.status,
-      snapshot_data: snapshotDetailToFlowSnapshotData(response.snapshot_data),
+      snapshot_data: snapshotDetailToDraftData(response.snapshot_data),
       chains_created: response.chains_created,
       params_applied: response.params_applied,
       bypass_applied: response.bypass_applied,

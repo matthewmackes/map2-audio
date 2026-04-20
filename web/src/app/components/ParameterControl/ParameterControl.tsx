@@ -11,7 +11,7 @@ export interface ParameterControlProps {
   variant?: ParameterControlVariant
   onLiveChange?: (value: number) => void
   onCommit?: (value: number) => void
-  commitStrategy?: ParameterCommitStrategy | 'legacy'
+  commitStrategy?: ParameterCommitStrategy
   label?: string
   ariaLabel?: string
   accentColor?: string

@@ -110,10 +110,12 @@ describe('NumericInput', () => {
     expect(onChange).toHaveBeenNthCalledWith(1, 55)
     expect(onChange).toHaveBeenNthCalledWith(2, 0)
     expect(onChange).toHaveBeenNthCalledWith(3, 100)
+    fireEvent.blur(input)
     expect(onChangeEnd).toHaveBeenLastCalledWith(100)
   })
 
   it('accelerates repeated wheel changes', () => {
+    jest.useFakeTimers()
     const onChange = jest.fn()
     const onChangeEnd = jest.fn()
     const nowSpy = jest.spyOn(Date, 'now')
@@ -140,7 +142,13 @@ describe('NumericInput', () => {
 
     expect(onChange).toHaveBeenNthCalledWith(1, 55)
     expect(onChange).toHaveBeenNthCalledWith(2, 95)
+
+    act(() => {
+      jest.advanceTimersByTime(200)
+    })
+
     expect(onChangeEnd).toHaveBeenLastCalledWith(95)
+    jest.useRealTimers()
   })
 
   it('supports touch drag with two-finger fine mode', () => {
