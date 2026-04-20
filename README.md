@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1188** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2428** total commits | **3** stars | **0** forks | **0** open issues
+**1188** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2430** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c059522b`](https://github.com/matthewmackes/map2-audio/commit/c059522b8691da2654e84a43d908fe7acf3f8695) | Backfill MIDI v2 lifecycle endpoints | Map2 Audio | 2026-04-20 |
+| [`42285c2b`](https://github.com/matthewmackes/map2-audio/commit/42285c2b9f63e2f897efcba65720e7d2f8d1bcbf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`0b372e7f`](https://github.com/matthewmackes/map2-audio/commit/0b372e7ffec26f40e06f1308159c0a6b616dd941) | Deprecate legacy MIDI route surface | Map2 Audio | 2026-04-20 |
 | [`4da109b3`](https://github.com/matthewmackes/map2-audio/commit/4da109b371b8a913dd7d18cf011fc74052e10a75) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`d6a81929`](https://github.com/matthewmackes/map2-audio/commit/d6a81929ae74fcc5e416088c249e62e97ffd2a26) | Centralize PlatformEvent presenter decisions | Map2 Audio | 2026-04-20 |
 | [`88d75dfa`](https://github.com/matthewmackes/map2-audio/commit/88d75dfad83e78e05c6869426210b27f2f1ee735) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`fbc9ff79`](https://github.com/matthewmackes/map2-audio/commit/fbc9ff7998ba3d9d15e87e371407a5e334a9a7f9) | Add bounded PlatformEvent store selectors | Map2 Audio | 2026-04-20 |
 | [`d22d56f7`](https://github.com/matthewmackes/map2-audio/commit/d22d56f7ea31cd01551a6cfe464d50ce833fc83c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`6d6ddc96`](https://github.com/matthewmackes/map2-audio/commit/6d6ddc9673dcb495f778a89ab81d59c8abd09f7e) | Remove small legacy fallback paths | Map2 Audio | 2026-04-20 |
-| [`732a3551`](https://github.com/matthewmackes/map2-audio/commit/732a3551665834eb4b387e4cd8db2de4637a3085) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
