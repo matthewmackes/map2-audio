@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1186** Python | **1164** TypeScript | **136** C++/H | **144** Docs | **2418** total commits | **3** stars | **0** forks | **0** open issues
+**1186** Python | **1165** TypeScript | **136** C++/H | **144** Docs | **2420** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e6913076`](https://github.com/matthewmackes/map2-audio/commit/e6913076159b6f505e3356b1c0245c38d733f612) | Finish schematic parameter routing surfaces | Map2 Audio | 2026-04-20 |
+| [`138f4682`](https://github.com/matthewmackes/map2-audio/commit/138f46829459f693f81525b780bc1aa86c556d80) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`187d27be`](https://github.com/matthewmackes/map2-audio/commit/187d27be8fa8b9ba36460bd1b5c2b73212799733) | Apply schematic MIDI control surfaces | Map2 Audio | 2026-04-20 |
 | [`7b7a622e`](https://github.com/matthewmackes/map2-audio/commit/7b7a622ecf265785f818a5abafb24d95cc6fed99) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`a73a9085`](https://github.com/matthewmackes/map2-audio/commit/a73a9085b543178472ddeaf53129f23b866b7b95) | Add snapshot schematic support surfaces | Map2 Audio | 2026-04-20 |
 | [`f638d18e`](https://github.com/matthewmackes/map2-audio/commit/f638d18ee2175cf533c261c6458291adb0d4da2a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`4c1a7c96`](https://github.com/matthewmackes/map2-audio/commit/4c1a7c9676d88b581d6cd8421be818a40685abfa) | Finalize signal canvas redesign validation | Map2 Audio | 2026-04-20 |
 | [`e9a69ac5`](https://github.com/matthewmackes/map2-audio/commit/e9a69ac52e458dfa04651aa3733529f50e6cbe32) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`722cdd01`](https://github.com/matthewmackes/map2-audio/commit/722cdd014c6bee59f89e21eb33c2c54663528cb0) | Wire signal canvas settings | Map2 Audio | 2026-04-20 |
-| [`2c9d3c6f`](https://github.com/matthewmackes/map2-audio/commit/2c9d3c6fd2a9c4510c67ee88160d7c105ceeecac) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
