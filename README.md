@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1187** Python | **1165** TypeScript | **136** C++/H | **144** Docs | **2424** total commits | **3** stars | **0** forks | **0** open issues
+**1187** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2426** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d6a81929`](https://github.com/matthewmackes/map2-audio/commit/d6a81929ae74fcc5e416088c249e62e97ffd2a26) | Centralize PlatformEvent presenter decisions | Map2 Audio | 2026-04-20 |
+| [`88d75dfa`](https://github.com/matthewmackes/map2-audio/commit/88d75dfad83e78e05c6869426210b27f2f1ee735) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`fbc9ff79`](https://github.com/matthewmackes/map2-audio/commit/fbc9ff7998ba3d9d15e87e371407a5e334a9a7f9) | Add bounded PlatformEvent store selectors | Map2 Audio | 2026-04-20 |
 | [`d22d56f7`](https://github.com/matthewmackes/map2-audio/commit/d22d56f7ea31cd01551a6cfe464d50ce833fc83c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`6d6ddc96`](https://github.com/matthewmackes/map2-audio/commit/6d6ddc9673dcb495f778a89ab81d59c8abd09f7e) | Remove small legacy fallback paths | Map2 Audio | 2026-04-20 |
 | [`732a3551`](https://github.com/matthewmackes/map2-audio/commit/732a3551665834eb4b387e4cd8db2de4637a3085) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`e6913076`](https://github.com/matthewmackes/map2-audio/commit/e6913076159b6f505e3356b1c0245c38d733f612) | Finish schematic parameter routing surfaces | Map2 Audio | 2026-04-20 |
 | [`138f4682`](https://github.com/matthewmackes/map2-audio/commit/138f46829459f693f81525b780bc1aa86c556d80) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`187d27be`](https://github.com/matthewmackes/map2-audio/commit/187d27be8fa8b9ba36460bd1b5c2b73212799733) | Apply schematic MIDI control surfaces | Map2 Audio | 2026-04-20 |
-| [`7b7a622e`](https://github.com/matthewmackes/map2-audio/commit/7b7a622ecf265785f818a5abafb24d95cc6fed99) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
