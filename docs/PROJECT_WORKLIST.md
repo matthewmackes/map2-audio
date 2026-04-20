@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Started T2365-subK MIDI v1/v2 reconciliation.
+Last updated: 2026-04-20 12:30 EDT - Completed T2365-subO circular-import cleanup.
 
 ---
 
@@ -29421,7 +29421,7 @@ Validation:
 - `rg -n "avdecc.enabled" app tests installer` -> only matches are in the migration code and its test
 
 ID: T2365-subO
-Status: [ ] Todo
+Status: [✓] Done
 Title: Fix the three circular-import band-aids — audit module graph and refactor boundaries
 Description:
 - Goal / acceptance criteria: Three modules carry "Import here to avoid circular imports" comments as band-aids:
@@ -29437,6 +29437,23 @@ Validation:
 - `pytest tests/ -q` -> must PASS
 - `python -c "import app.services.midi_device_profiles, app.services.cluster.raft_consensus, app.services.avb.avb_discovery"` -> imports cleanly without warnings
 - `rg -n "circular import|avoid circular" app` -> no matches
+Last updated: 2026-04-20 12:30 EDT - Codex
+- Progress notes:
+  - 2026-04-20 12:20 EDT - Codex: Started the circular-import cleanup after T2365-subK SHIP `cb858360`; scoped to hoisting safe leaf imports and adding a dependency graph artifact without adding tooling dependencies.
+- Completion notes:
+  - Hoisted safe Raft, Special Settings, and AVB dependencies to module scope and removed the stale lazy-import comments.
+  - Extracted MIDI DTO/enums into leaf module `app/services/midi_models.py`, keeping `app/services/midi_service.py` as a compatibility re-export while preventing profile imports from initializing the MIDI Hub/cluster stack.
+  - Added `docs/architecture/service-dependency-graph-20260420.dot` as the committed service dependency graph artifact for this cleanup.
+  - Licensing/platform: changed files are MAP2-owned AGPL scope; no new dependencies, packages, services, runtime assumptions, installer changes, or environment artifacts were introduced.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/midi_models.py app/services/midi_service.py app/services/midi_device_profiles.py app/services/cluster/raft_consensus.py app/services/avb/avb_discovery.py app/routes/special_settings.py` -> PASS
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -c "import app.services.midi_device_profiles, app.services.cluster.raft_consensus, app.services.avb.avb_discovery, app.routes.special_settings"` -> PASS with no stderr warnings
+  - `rg -n "circular import|avoid circular" app` -> PASS (no matches)
+  - `pytest tests/test_raft_consensus.py tests/test_special_settings_routes.py tests/test_avb_discovery_service.py tests/test_midi_v2_routes.py -q` -> PASS (`39 passed`)
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
+  - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+  - `pytest tests/ -q` -> PASS (`2307 passed, 38 skipped, 24 warnings`; warnings are existing SQLAlchemy/aiosqlite/datetime/mock cleanup warnings outside this task)
 
 ID: T2365-subP
 Status: [✓] Done

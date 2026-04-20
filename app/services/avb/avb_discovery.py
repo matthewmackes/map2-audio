@@ -22,6 +22,9 @@ from datetime import datetime, timezone
 from app.config import config_get
 from app.services.cluster.mdns_discovery_enhanced import EnhancedMDNSDiscovery, MDNSNode
 from app.services.avb import is_avb_available
+from app.services.avb.avb_service import get_avb_service
+from app.services.avb.ptp_monitor import get_ptp_monitor
+from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
 
 logger = logging.getLogger(__name__)
 
@@ -153,11 +156,6 @@ class AvbDiscoveryService:
             return None
 
         try:
-            # Import here to avoid circular dependency
-            from app.services.avb.ptp_monitor import get_ptp_monitor
-            from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
-            from app.services.avb.avb_service import get_avb_service
-
             # Get PTP status
             ptp_monitor = get_ptp_monitor()
             ptp_status = ptp_monitor.last_status

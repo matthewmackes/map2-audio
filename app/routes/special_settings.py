@@ -47,6 +47,7 @@ from app.services.special_settings_normalization import (
     resolve_snapshot_setlist_mode_from_settings,
     resolve_snapshot_setlist_order_from_settings,
 )
+from app.services.cluster.raft_consensus import get_raft_consensus
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/settings/special", tags=["special"])
@@ -105,9 +106,8 @@ async def create_default_special_settings(session: AsyncSession) -> SpecialSetti
 
 
 def _get_raft_consensus():
-    """Get Raft consensus instance (lazy import to avoid circular deps)."""
+    """Get Raft consensus instance when cluster replication is available."""
     try:
-        from app.services.cluster.raft_consensus import get_raft_consensus
         return get_raft_consensus()
     except Exception as e:
         logger.debug(f"Raft consensus not available: {e}")

@@ -19,6 +19,14 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
+from app.services.midi_models import (
+    ActionType,
+    CommandType,
+    CurveType as ServiceCurveType,
+    MIDICommandDTO,
+    MIDIMappingDTO,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -311,9 +319,6 @@ class MIDIDeviceProfileService:
         if not self._midi_service:
             logger.warning("MIDI service not set, cannot apply profile mappings")
             return results
-
-        # Import here to avoid circular imports
-        from app.services.midi_service import MIDIMappingDTO, MIDICommandDTO, CurveType as ServiceCurveType, ActionType, CommandType
 
         if clear_existing:
             # Clear existing commands for this profile's PC range

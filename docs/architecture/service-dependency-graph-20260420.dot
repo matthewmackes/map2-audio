@@ -1,0 +1,31 @@
+digraph map2_service_dependencies_20260420 {
+  rankdir=LR;
+  graph [
+    label="MAP2 service dependency graph after circular-import cleanup (2026-04-20)",
+    labelloc=t,
+    fontsize=18
+  ];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+
+  "app.routes.special_settings" -> "app.services.cluster.raft_consensus";
+  "app.routes.special_settings" -> "app.database";
+  "app.routes.special_settings" -> "app.services.special_settings_normalization";
+
+  "app.services.cluster.raft_consensus" -> "app.database";
+  "app.services.cluster.raft_consensus" -> "app.services.special_settings_raft";
+  "app.services.cluster.raft_consensus" -> "app.utils.singleton";
+  "app.services.cluster.raft_consensus" -> "app.utils.time";
+
+  "app.services.midi_device_profiles" -> "app.services.midi_models";
+  "app.services.midi_service" -> "app.services.midi_models";
+  "app.services.midi_service" -> "app.services.midi_hub.hub";
+  "app.services.midi_service" -> "app.services.midi_hub.ports";
+
+  "app.services.avb.avb_discovery" -> "app.config";
+  "app.services.avb.avb_discovery" -> "app.services.cluster.mdns_discovery_enhanced";
+  "app.services.avb.avb_discovery" -> "app.services.avb";
+  "app.services.avb.avb_discovery" -> "app.services.avb.avb_service";
+  "app.services.avb.avb_discovery" -> "app.services.avb.ptp_monitor";
+  "app.services.avb.avb_discovery" -> "app.services.avb.tsn_qdisc";
+}

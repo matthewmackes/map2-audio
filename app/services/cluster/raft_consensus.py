@@ -26,6 +26,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
+from app.database import get_session
+from app.services.special_settings_raft import SpecialSettingsStateManager
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -336,10 +338,6 @@ class RaftConsensus(Singleton):
     async def _apply_special_settings_to_db(self, entry: LogEntry) -> None:
         """Apply special settings log entry to database."""
         try:
-            # Lazy import to avoid circular dependencies
-            from app.database import get_session
-            from app.services.special_settings_raft import SpecialSettingsStateManager
-            
             state_manager = SpecialSettingsStateManager(get_session)
             await state_manager.apply_entry(entry.data)
             
