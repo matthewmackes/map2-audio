@@ -13,6 +13,8 @@ class JuceProcessMixin:
         self._initialized = False
         self._midi_runtime = JuceRuntimeMidiService(self)
         self._metering_runtime = JuceRuntimeMeteringService(self)
+        self._platform_event_drain_task: asyncio.Task | None = None
+        self._platform_event_drain_interval_seconds = 1.0
 
     @property
     def engine(self):
@@ -101,6 +103,7 @@ class JuceProcessMixin:
                     await asyncio.to_thread(self._engine.enable_midi, True)
 
                 self._initialized = True
+                self._start_platform_event_drain_loop()
                 version = await asyncio.to_thread(self._engine.get_version)
                 system_info = await asyncio.to_thread(self._engine.get_system_info)
                 logger.info(f"JUCE Audio Engine initialized: {version}")
@@ -115,8 +118,52 @@ class JuceProcessMixin:
             traceback.print_exc()
             return False
 
+    def _start_platform_event_drain_loop(self) -> None:
+        """Start the control-plane PlatformEvent FIFO drain when an event loop is running."""
+        if (
+            self._platform_event_drain_task is not None
+            and not self._platform_event_drain_task.done()
+        ):
+            return
+        if not self._engine or not hasattr(self._engine, "drain_platform_events"):
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._platform_event_drain_task = loop.create_task(self._platform_event_drain_loop())
+
+    async def _platform_event_drain_loop(self) -> None:
+        """Drain native engine events off the realtime path and publish them to PlatformEventBus."""
+        while True:
+            try:
+                await self.publish_engine_platform_events()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.warning("Failed to publish JUCE engine PlatformEvents: %s", exc)
+            await asyncio.sleep(self._platform_event_drain_interval_seconds)
+
+    async def _stop_platform_event_drain_loop(self) -> None:
+        task = self._platform_event_drain_task
+        self._platform_event_drain_task = None
+        if task is None:
+            return
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
     async def shutdown(self) -> None:
         """Shutdown engine"""
+        await self._stop_platform_event_drain_loop()
+        try:
+            await self.publish_engine_platform_events()
+        except Exception as e:
+            logger.warning("Failed to flush JUCE engine PlatformEvents during shutdown: %s", e)
+
         if self._engine:
             try:
                 await asyncio.to_thread(self._engine.stop_audio)

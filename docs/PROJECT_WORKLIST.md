@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:57 EDT - Completed T2364-subC engine-native PlatformEvent FIFO.
+Last updated: 2026-04-20 14:08 EDT - Completed T2364-subD automatic engine PlatformEvent drain and closed T2364.
 
 ---
 
@@ -29010,7 +29010,7 @@ Description:
 - Required outputs: RT-safe engine event emission design and implementation, focused store/presenter cleanup commits, docs updates, and validation proving platform events still flow through the single bus.
 - Notes: This epic is strictly post-cutover work. Do not add compatibility buses, re-export deleted legacy modules, or restore removed public legacy event routes.
 - Assigned to: Codex
-- Last updated: 2026-04-20 13:57 EDT - Codex
+- Last updated: 2026-04-20 14:08 EDT - Codex
 - Progress notes:
   - 2026-04-20 11:40 EDT - Codex: Started the first restartable post-cutover slice after T2365-subV SHIP `6d6ddc96`; taking the frontend PlatformEvent store ergonomics work independently of RT-safe engine emission.
   - 2026-04-20 11:40 EDT - Codex: Completed T2364-subA by adding store-level PlatformEvent filter helpers, visible-event selection, and bounded retention at 1000 events while preserving the existing `usePlatformEvents` API.
@@ -29019,6 +29019,8 @@ Description:
   - 2026-04-20 13:52 EDT - Codex: Started T2364-subC to add the missing C++ engine-native PlatformEvent FIFO and Python drain/publish bridge without reintroducing any legacy bus.
   - 2026-04-20 13:57 EDT - Codex: Completed T2364-subC by adding a bounded native FIFO for audio start/stop/xrun records, pybind drain/drop-count bindings, and a `JuceEngineService.publish_engine_platform_events()` bridge that emits only through canonical `PlatformEventBus.emit()`.
   - 2026-04-20 13:57 EDT - Codex: Closed T2364; store ergonomics, presenter decision cleanup, and engine-native FIFO emission are now all shipped in restartable subtasks.
+  - 2026-04-20 14:01 EDT - Codex: Reopened T2364 for T2364-subD after identifying that subC shipped the FIFO and publish bridge but not the automatic control-plane drain loop required for production event flow.
+  - 2026-04-20 14:08 EDT - Codex: Closed T2364 after T2364-subD added the lifecycle-owned automatic drain loop, clean shutdown cancellation, and final shutdown flush.
 - Validation:
   - `rg -n "PlatformEventBus.emit" app web docs/CLAUDE.md docs/platform` -> canonical entrypoint usage and docs present
   - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no runtime legacy paths
@@ -29089,6 +29091,26 @@ Validation:
 - `npm --prefix web run typecheck` -> PASS
 - `git diff --check` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013540301`, existing chunk-size warning only)
+
+ID: T2364-subD
+Status: [✓] Done
+Title: Start automatic JUCE engine PlatformEvent FIFO drain loop
+Description:
+- Goal / acceptance criteria: Wire the `JuceEngineService` lifecycle so initialized engines automatically drain native FIFO records and publish them through `PlatformEventBus.emit()` on a lightweight control-plane task. The loop must not run on the realtime callback, must stop cleanly on shutdown, must flush pending records once during shutdown, and must degrade safely when the native binding is absent.
+- Why it matters: T2364-subC created the RT-safe FIFO and manual publish bridge, but production event flow still needs a lifecycle-owned drain so audio start/stop/xrun records leave the engine without an ad hoc caller.
+- Dependencies: T2364-subC
+- Estimated effort: Low
+- Required outputs: lifecycle drain-loop implementation, focused tests for start/stop/flush behavior, typecheck/build validation.
+Last updated: 2026-04-20 14:08 EDT - Codex
+- Progress notes:
+  - 2026-04-20 14:01 EDT - Codex: Started immediately after T2364-subC SHIP `f83a25a1`; scope is Python lifecycle wiring only, no new dependencies or installer changes.
+  - 2026-04-20 14:08 EDT - Codex: Added a `JuceEngineService` control-plane drain task started after successful initialization, guarded for missing native bindings, stopped on shutdown, and followed by a one-shot pending-event flush.
+Validation:
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce/juce_process.py app/services/juce/juce_audio_io.py tests/test_juce_engine_platform_events.py` -> PASS
+- `pytest tests/test_juce_engine_platform_events.py -q` -> PASS (`4 passed`)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013591601`, existing chunk-size warning only)
 
 ---
 

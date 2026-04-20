@@ -16,6 +16,12 @@ class _FakeEngine:
     def get_dropped_platform_event_count(self):
         return self.dropped
 
+    def stop_audio(self):
+        return True
+
+    def shutdown(self):
+        return None
+
 
 class _FakePlatformEventBus:
     def __init__(self):
@@ -107,3 +113,34 @@ def test_get_dropped_platform_event_count_defaults_to_zero():
 
     service._engine = _FakeEngine(dropped=3)  # noqa: SLF001
     assert asyncio.run(service.get_dropped_platform_event_count()) == 3
+
+
+def test_platform_event_drain_loop_starts_and_flushes_on_shutdown():
+    async def _run():
+        service = JuceEngineService()
+        service._engine = _FakeEngine()  # noqa: SLF001 - focused lifecycle seam test
+        service._platform_event_drain_interval_seconds = 60.0  # noqa: SLF001
+        publish_calls = 0
+
+        async def _fake_publish(max_events=128):
+            nonlocal publish_calls
+            publish_calls += 1
+            return [f"event-{publish_calls}"]
+
+        service.publish_engine_platform_events = _fake_publish
+
+        service._start_platform_event_drain_loop()  # noqa: SLF001
+        task = service._platform_event_drain_task  # noqa: SLF001
+        assert task is not None
+
+        await asyncio.sleep(0)
+        assert publish_calls == 1
+
+        await service.shutdown()
+
+        assert service._platform_event_drain_task is None  # noqa: SLF001
+        assert task.done()
+        assert publish_calls == 2
+        assert service._engine is None  # noqa: SLF001
+
+    asyncio.run(_run())
