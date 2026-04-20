@@ -1,8 +1,5 @@
 /**
- * SidechainConnector Component
- *
- * Displays a visual connector for incoming sidechain signals
- * Shows the source chain/plugin and connection status
+ * Displays a visual connector for incoming sidechain signals.
  */
 
 import { Link, Unlink } from '@carbon/icons-react'
@@ -28,9 +25,11 @@ export function SidechainConnector({
   onClick,
 }: SidechainConnectorProps) {
   return (
-    <div
-      className={`h-sidechain-connector ${isConnected ? 'connected' : 'disconnected'} ${isActive ? 'active' : ''}`}
+    <button
+      type="button"
+      className={`snapshot-sidechain-connector h-sidechain-connector ${isConnected ? 'connected' : 'disconnected'} ${isActive ? 'active' : ''}`}
       onClick={onClick}
+      aria-label={isConnected ? `Sidechain from ${source || 'unknown source'}` : 'Sidechain input not connected'}
       title={isConnected ? `Sidechain from: ${source || 'Unknown'}` : 'Sidechain input (not connected)'}
     >
       {/* Vertical connector line coming from above */}
@@ -52,7 +51,7 @@ export function SidechainConnector({
 
       {/* Arrow pointing down to plugin */}
       <div className="h-sidechain-arrow-down" />
-    </div>
+    </button>
   )
 }
 

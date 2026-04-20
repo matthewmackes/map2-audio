@@ -53,6 +53,7 @@ import {
   Checkbox,
   Column,
   Grid,
+  InlineNotification,
   InlineLoading,
   Layer,
   Modal,
@@ -1509,6 +1510,11 @@ export function SnapshotEditorPage() {
     refetchOnWindowFocus: false,
   })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
+  const snapshotLoadFailureMessage = authoritySnapshotDetailQuery.isError
+    ? authoritySnapshotDetailQuery.error instanceof Error
+      ? authoritySnapshotDetailQuery.error.message
+      : 'Snapshot detail could not be loaded.'
+    : null
   const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
   const existingSnapshotNames = useMemo(
     () => (snapshotsSummaryQuery.data?.snapshots ?? [])
@@ -7932,6 +7938,25 @@ export function SnapshotEditorPage() {
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
       <ShellWindowTitleStrip />
       <LandscapePrompt componentId="juce-grid" />
+      {snapshotLoadFailureMessage ? (
+        <div className="juce-grid-page__inline-error" role="alert">
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Snapshot load failed"
+            subtitle={snapshotLoadFailureMessage}
+          />
+          <Button
+            size="sm"
+            kind="tertiary"
+            renderIcon={Renew}
+            onClick={() => authoritySnapshotDetailQuery.refetch()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : null}
       <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">
           <SnapshotEditorSnapshotStatusPanel

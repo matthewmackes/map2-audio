@@ -150,6 +150,24 @@ describe('SnapshotEditorSignalCanvas', () => {
     expect(screen.queryByTestId('snapshot-signal-node-delete-0')).not.toBeInTheDocument()
   })
 
+  it('renders the sidechain connector for sidechain routing', () => {
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain()}
+        chainLabel="E"
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        audioStatus={{ routingMode: 'sidechain', isRunning: true }}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Sidechain from KEY SEND' })).toHaveClass('snapshot-sidechain-connector')
+  })
+
   it('routes chain header and side-panel callbacks', () => {
     const handleRename = jest.fn()
     const handleDuplicate = jest.fn()

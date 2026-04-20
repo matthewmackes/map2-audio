@@ -8,6 +8,7 @@ import { SignalNode } from './Node'
 import { SignalGrid } from './SignalGrid'
 import { SignalCanvasIcon } from './icons'
 import { Terminal } from './Terminal'
+import { SidechainConnector } from './SidechainConnector'
 import type { PluginCategorySpriteId } from '../../shared/pluginCategoryIcon'
 
 export interface ChainRowPlugin {
@@ -145,6 +146,14 @@ export function ChainRow({
                   </button>
                 ) : null}
               </div>
+              {sendLabel !== 'NO SEND' ? (
+                <SidechainConnector
+                  source={sendLabel}
+                  sourceChainLabel={chainLabel}
+                  isConnected
+                  isActive={active}
+                />
+              ) : null}
               <Terminal role="output" active={active} />
             </div>
           </SignalGrid>

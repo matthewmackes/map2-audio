@@ -39,8 +39,10 @@ interface SnapshotEditorToolbarProps {
   favoritePending: boolean
   onOpenWorkspace: () => void
   activeLabel?: string
+  readOnly?: boolean
   liveLabel?: string
   liveStreaming?: boolean
+  engineReconnecting?: boolean
   blendLabel?: string
   routingLabel?: string
   masterMuted?: boolean
@@ -70,8 +72,10 @@ export function SnapshotEditorToolbar({
   redoPending,
   onOpenWorkspace,
   activeLabel = 'No chain assigned',
+  readOnly = false,
   liveLabel = 'LIVE',
   liveStreaming = false,
+  engineReconnecting = false,
   blendLabel = '100% BLEND',
   routingLabel = 'NO ROUTING',
   masterMuted = false,
@@ -88,8 +92,10 @@ export function SnapshotEditorToolbar({
   const liveClassName = [
     'snapshot-toolbar__status-chip',
     'snapshot-toolbar__status-chip--live',
+    engineReconnecting ? 'is-reconnecting' : '',
     liveStreaming && !prefersReducedMotion ? 'is-streaming' : '',
   ].filter(Boolean).join(' ')
+  const resolvedLiveLabel = engineReconnecting ? 'RECONNECTING' : liveLabel
 
   const renderMonitorButton = (segment: MonitorSegment, label: string, active: boolean) => (
     <button
@@ -170,9 +176,10 @@ export function SnapshotEditorToolbar({
         <div className="snapshot-toolbar__group" role="group" aria-label="Snapshot live status">
           <span className="snapshot-toolbar__label">Active</span>
           <span className="snapshot-toolbar__value" title={activeLabel}>{activeLabel}</span>
+          {readOnly ? <span className="snapshot-toolbar__status-chip snapshot-toolbar__status-chip--readonly">READ ONLY</span> : null}
           <span className={liveClassName}>
             <span className="snapshot-toolbar__status-dot" aria-hidden />
-            {liveLabel}
+            {resolvedLiveLabel}
           </span>
           <button type="button" className="snapshot-toolbar__status-chip" onClick={onOpenRouting}>
             {blendLabel}

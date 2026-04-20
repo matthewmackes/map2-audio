@@ -41,8 +41,10 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof SnapshotEd
     favoritePending: false,
     onOpenWorkspace: jest.fn(),
     activeLabel: 'A Main Chain',
+    readOnly: false,
     liveLabel: 'LIVE',
     liveStreaming: true,
+    engineReconnecting: false,
     blendLabel: '84% BLEND',
     routingLabel: 'PARALLEL · 2',
     masterMuted: false,
@@ -132,6 +134,13 @@ describe('SnapshotEditorToolbar', () => {
 
     expect(screen.getByText('LIVE')).not.toHaveClass('is-streaming')
   })
+
+  it('renders readonly and reconnecting status chips', () => {
+    renderToolbar({ readOnly: true, engineReconnecting: true })
+
+    expect(screen.getByText('READ ONLY')).toHaveClass('snapshot-toolbar__status-chip--readonly')
+    expect(screen.getByText('RECONNECTING')).toHaveClass('is-reconnecting')
+  })
 })
 
 function renderToolbarDefaults(): React.ComponentProps<typeof SnapshotEditorToolbar> {
@@ -166,5 +175,7 @@ function renderToolbarDefaults(): React.ComponentProps<typeof SnapshotEditorTool
     favoriteActive: false,
     favoritePending: false,
     onOpenWorkspace: jest.fn(),
+    readOnly: false,
+    engineReconnecting: false,
   }
 }

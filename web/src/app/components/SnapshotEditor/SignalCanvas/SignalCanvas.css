@@ -595,6 +595,44 @@
   cursor: pointer;
 }
 
+.snapshot-sidechain-connector {
+  position: relative;
+  inline-size: 40px;
+  block-size: var(--snapshot-node-height);
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--cds-support-info);
+  background: var(--snapshot-inset-bg);
+  color: var(--cds-support-info);
+  cursor: pointer;
+}
+
+.snapshot-sidechain-connector .h-sidechain-line-vertical {
+  position: absolute;
+  inset-block-start: -1rem;
+  inline-size: 1px;
+  block-size: 1rem;
+  border-inline-start: 1px dashed currentColor;
+}
+
+.snapshot-sidechain-connector .h-sidechain-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.625rem;
+}
+
+.snapshot-sidechain-connector .h-sidechain-arrow-down {
+  position: absolute;
+  inset-block-end: -0.4rem;
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+
 .snapshot-chain-row__empty {
   min-block-size: 8rem;
   display: grid;

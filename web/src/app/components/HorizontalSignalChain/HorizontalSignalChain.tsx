@@ -8,7 +8,7 @@
 import { useState, useCallback, useRef } from 'react'
 import type { HorizontalSignalChainProps } from './types'
 import { HorizontalPluginNode } from './HorizontalPluginNode'
-import { SidechainConnector } from './SidechainConnector'
+import { SidechainConnector } from '../SnapshotEditor/SignalCanvas/SidechainConnector'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import { buildPluginOrderRef, samePluginIdentity } from '../../../map2/utils/pluginIdentity'
 import './HorizontalSignalChain.css'
