@@ -4,7 +4,7 @@ Handles import/export across all supported preset formats.
 
 Supported Formats:
 - MAP2UPF (.map2preset) - MAP2 Universal Preset Format (primary, open standard)
-- FXP/FXB (.fxp, .fxb) - VST2 presets (import only, legacy)
+- FXP/FXB (.fxp, .fxb) - VST2 presets (import only, default-off legacy feature)
 - VST3 (.vstpreset) - VST3 presets (import/export)
 - LV2 (.lv2preset) - LV2 presets (import/export)
 - JUCE (.jucepreset) - JUCE state files (import/export)
@@ -27,9 +27,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from app.config import config_get
 from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
+VST2_LEGACY_CONFIG_KEY = "preset_converter.vst2_legacy_enabled"
 
 
 # =============================================================================
@@ -730,24 +732,39 @@ class JUCEPresetConverter(BasePresetConverter):
 # UNIVERSAL CONVERTER (ORCHESTRATOR)
 # =============================================================================
 
+def is_vst2_legacy_import_enabled() -> bool:
+    """Return whether VST2 FXP/FXB import should be exposed."""
+    try:
+        return bool(config_get(VST2_LEGACY_CONFIG_KEY, False))
+    except Exception:
+        logger.warning("Unable to read %s; VST2 legacy preset import disabled", VST2_LEGACY_CONFIG_KEY)
+        return False
+
+
 class UniversalPresetConverter(Singleton):
     """Main converter orchestrating all format converters.
 
     Usage:
         converter = UniversalPresetConverter()
-        result = converter.import_preset(Path("my_preset.fxp"))
+        result = converter.import_preset(Path("my_preset.map2preset"))
         if result.success:
             print(f"Imported: {result.name} with {result.parameter_count} parameters")
     """
 
-    def __init__(self):
+    def __init__(self, vst2_legacy_enabled: Optional[bool] = None):
+        self.vst2_legacy_enabled = (
+            is_vst2_legacy_import_enabled()
+            if vst2_legacy_enabled is None
+            else bool(vst2_legacy_enabled)
+        )
         self.converters: List[BasePresetConverter] = [
             MAP2UPFConverter(),
-            FXPPresetConverter(),
             VST3PresetConverter(),
             LV2PresetConverter(),
             JUCEPresetConverter(),
         ]
+        if self.vst2_legacy_enabled:
+            self.converters.insert(1, FXPPresetConverter())
 
         # Build extension -> converter mapping
         self._ext_map: Dict[str, BasePresetConverter] = {}
@@ -775,13 +792,16 @@ class UniversalPresetConverter(Singleton):
             '.map2preset': PresetFormat.MAP2UPF,
             '.map2bank': PresetFormat.MAP2UPF,
             '.vstpreset': PresetFormat.VST3,
-            '.fxp': PresetFormat.FXP,
-            '.fxb': PresetFormat.FXB,
             '.aupreset': PresetFormat.AUPRESET,
             '.lv2preset': PresetFormat.LV2,
             '.ttl': PresetFormat.LV2,
             '.jucepreset': PresetFormat.JUCE,
         }
+        if self.vst2_legacy_enabled:
+            format_map.update({
+                '.fxp': PresetFormat.FXP,
+                '.fxb': PresetFormat.FXB,
+            })
 
         return format_map.get(ext, PresetFormat.UNKNOWN)
 

@@ -102,7 +102,7 @@
       "default": "'8080'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 424,
+      "line": 429,
       "variable": "MAP2_API_PORT"
     },
     {
@@ -228,7 +228,7 @@
       "default": "'false'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 588,
+      "line": 593,
       "variable": "MAP2_CLUSTER_ENABLED"
     },
     {
@@ -242,7 +242,7 @@
       "default": null,
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 602,
+      "line": 607,
       "variable": "MAP2_CONFIG_GIT_REPO"
     },
     {
@@ -263,7 +263,7 @@
       "default": "'AUDIO-NODE'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 385,
+      "line": 390,
       "variable": "MAP2_DEPLOYMENT_MODE"
     },
     {
@@ -298,7 +298,7 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 785,
+      "line": 790,
       "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
     },
     {
@@ -438,7 +438,7 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 556,
+      "line": 561,
       "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
     },
     {
@@ -543,7 +543,7 @@
       "default": "'false'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 543,
+      "line": 548,
       "variable": "MAP2_PUSH_SURFACE_ENABLED"
     },
     {
@@ -564,7 +564,7 @@
       "default": null,
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 405,
+      "line": 410,
       "variable": "MAP2_REMOTE_BACKEND_URL"
     },
     {
@@ -592,14 +592,14 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 841,
+      "line": 848,
       "variable": "MAP2_STRICT_ROUTE_LOADING"
     },
     {
       "default": "'false'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 331,
+      "line": 336,
       "variable": "MAP2_TEST_MODE"
     },
     {
@@ -620,14 +620,14 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 811,
+      "line": 816,
       "variable": "MAP2_TRAFFIC_CAPTURE"
     },
     {
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 423,
+      "line": 428,
       "variable": "MAP2_USE_MOCK_LCD"
     },
     {
@@ -829,7 +829,7 @@
           "default": "'8080'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 424,
+          "line": 429,
           "variable": "MAP2_API_PORT"
         },
         {
@@ -1011,7 +1011,7 @@
           "default": "'false'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 588,
+          "line": 593,
           "variable": "MAP2_CLUSTER_ENABLED"
         },
         {
@@ -1030,7 +1030,7 @@
           "default": null,
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 602,
+          "line": 607,
           "variable": "MAP2_CONFIG_GIT_REPO"
         }
       ],
@@ -1061,7 +1061,7 @@
           "default": "'AUDIO-NODE'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 385,
+          "line": 390,
           "variable": "MAP2_DEPLOYMENT_MODE"
         },
         {
@@ -1106,7 +1106,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 785,
+          "line": 790,
           "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
         }
       ],
@@ -1324,7 +1324,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 556,
+          "line": 561,
           "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
         }
       ],
@@ -1499,7 +1499,7 @@
           "default": null,
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 405,
+          "line": 410,
           "variable": "MAP2_REMOTE_BACKEND_URL"
         }
       ],
@@ -1547,7 +1547,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 841,
+          "line": 848,
           "variable": "MAP2_STRICT_ROUTE_LOADING"
         }
       ],
@@ -1559,7 +1559,7 @@
           "default": "'false'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 331,
+          "line": 336,
           "variable": "MAP2_TEST_MODE"
         },
         {
@@ -1585,7 +1585,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 811,
+          "line": 816,
           "variable": "MAP2_TRAFFIC_CAPTURE"
         }
       ],
@@ -1597,7 +1597,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 423,
+          "line": 428,
           "variable": "MAP2_USE_MOCK_LCD"
         }
       ],
@@ -2224,6 +2224,15 @@
       "value_type": "bool"
     },
     {
+      "config_key": "preset_converter.vst2_legacy_enabled",
+      "default": false,
+      "description": "Enable read-only import for legacy VST2 FXP/FXB preset files",
+      "env_var": "MAP2_PRESET_CONVERTER_VST2_LEGACY_ENABLED",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    },
+    {
       "config_key": "push_surface.default_bridge",
       "default": "direct",
       "description": "Backend bridge mode for the Push surface",
@@ -2300,7 +2309,7 @@
     "direct_env_read_count": 94,
     "direct_only_env_count": 73,
     "runtime_requirement_count": 18,
-    "schema_env_count": 53,
+    "schema_env_count": 54,
     "systemd_inline_env_count": 11
   },
   "systemd_backend_service": {

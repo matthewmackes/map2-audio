@@ -11,7 +11,7 @@ pip install -r requirements-backend-runtime.txt
 ## Summary
 
 - Runtime manifest packages: `18`
-- Schema-backed environment variables: `53`
+- Schema-backed environment variables: `54`
 - Direct environment reads in `app/`: `94`
 - Direct-only environment variables (not modeled in `app/config.py`): `73`
 - Inline backend systemd environment entries: `11`
@@ -140,6 +140,7 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 | `MAP2_MIDI_CLUSTER_RTP_MIDI_PORT` | `midi.cluster.rtp_midi_port` | `5004` | `False` | `False` | UDP port for RTP-MIDI transport between nodes |
 | `MAP2_MIDI_CLUSTER_TRANSPORT` | `midi.cluster.transport` | `rtp-midi` | `False` | `False` | Transport protocol for inter-node MIDI messages |
 | `MAP2_MIDI_ENABLED` | `midi.enabled` | `true` | `False` | `False` | Enable MIDI functionality |
+| `MAP2_PRESET_CONVERTER_VST2_LEGACY_ENABLED` | `preset_converter.vst2_legacy_enabled` | `false` | `True` | `False` | Enable read-only import for legacy VST2 FXP/FXB preset files |
 | `MAP2_PUSH_SURFACE_DEFAULT_BRIDGE` | `push_surface.default_bridge` | `direct` | `False` | `False` | Backend bridge mode for the Push surface |
 | `MAP2_PUSH_SURFACE_ENABLED` | `push_surface.enabled` | `false` | `False` | `False` | Enable the Ableton Push hardware surface subsystem |
 | `MAP2_PUSH_SURFACE_REST_BASE_URL` | `push_surface.rest_base_url` | `http://127.0.0.1:8080` | `False` | `False` | REST base URL for external Push surface bridge mode |
@@ -168,7 +169,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_API_AUTH_MODE` | `app/middleware/api_auth.py:53` | `'disabled'` | 1 |
 | `MAP2_API_CLUSTER_TOKEN` | `app/middleware/api_auth.py:56` | `''` | 1 |
 | `MAP2_API_OPERATOR_TOKEN` | `app/middleware/api_auth.py:54` | `''` | 1 |
-| `MAP2_API_PORT` | `app/main.py:424` | `'8080'` | 2 |
+| `MAP2_API_PORT` | `app/main.py:429` | `'8080'` | 2 |
 | `MAP2_APP_DIR` | `app/services/backup_service.py:1649` | `` | 1 |
 | `MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS` | `app/routes/audio.py:123` | `'0.50'` | 1 |
 | `MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio.py:107` | `'0.20'` | 1 |
@@ -182,12 +183,12 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_BOOTSTRAP_TOKEN_SECRET` | `app/services/cluster/adoption_bootstrap.py:85` | `` | 1 |
 | `MAP2_BRAIN_ROOT` | `app/services/performance_brain_service.py:69` | `Path.home() / '.map2' / 'performance_brain'` | 1 |
 | `MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS` | `app/routes/chains.py:88` | `'2.0'` | 1 |
-| `MAP2_CLUSTER_ENABLED` | `app/main.py:588` | `'false'` | 2 |
-| `MAP2_CONFIG_GIT_REPO` | `app/main.py:602` | `` | 1 |
+| `MAP2_CLUSTER_ENABLED` | `app/main.py:593` | `'false'` | 2 |
+| `MAP2_CONFIG_GIT_REPO` | `app/main.py:607` | `` | 1 |
 | `MAP2_CORE_CONFIG_FILE` | `app/routes/system.py:33` | `'/tmp/map2_core_config_state.json'` | 1 |
 | `MAP2_DEPLOYMENT_MODE` | `app/deployment/deployment.py:184` | `'ALL-IN-ONE'` | 5 |
 | `MAP2_DEV_PROXY` | `app/routes/dev_proxy.py:64` | `''` | 1 |
-| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:785` | `'true'` | 1 |
+| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:790` | `'true'` | 1 |
 | `MAP2_DRUMS_ACTIVE_KIT_STATE_PATH` | `app/services/drum_kit_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'active_kit.json'` | 1 |
 | `MAP2_DRUMS_AUTOSAVE_PATH` | `app/services/drum_sequencer_service.py:25` | `_DEFAULT_DRUMS_ROOT / 'sequencer-autosave.json'` | 1 |
 | `MAP2_DRUMS_BACKING_TRACK_STATE_PATH` | `app/services/drum_machine_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'backing_track_state.json'` | 1 |
@@ -204,7 +205,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS` | `app/services/drum_machine_service.py:34` | `'0.05'` | 1 |
 | `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` | `app/services/chain_service.py:49` | `'true'` | 1 |
 | `MAP2_ENABLE_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:236` | `'false'` | 1 |
-| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:556` | `'true'` | 1 |
+| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:561` | `'true'` | 1 |
 | `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:242` | `'false'` | 1 |
 | `MAP2_ENGINE_OP_MAX_RETRIES` | `app/routes/plugins.py:249` | `'6'` | 1 |
 | `MAP2_ENGINE_OP_QUEUE_MAX` | `app/routes/plugins.py:248` | `'2048'` | 1 |
@@ -218,14 +219,14 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_PUSH_SURFACE_CONFIG` | `app/services/push_surface/config.py:34` | `Path.home() / '.map2' / 'push_surface.json'` | 1 |
 | `MAP2_PUSH_SURFACE_LABS_STORE` | `app/services/push_surface/labs_store.py:15` | `Path.home() / '.map2' / 'push_surface_labs.json'` | 1 |
 | `MAP2_RAFT_STATE_DIR` | `app/services/cluster/raft_consensus.py:189` | `''` | 1 |
-| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:405` | `` | 1 |
+| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:410` | `` | 1 |
 | `MAP2_REQUEST_LOGGING` | `app/middleware/request_logging.py:39` | `''` | 1 |
 | `MAP2_RUNTIME_BOOT_PROFILE` | `app/services/runtime_profiles.py:73` | `''` | 1 |
 | `MAP2_SECRETS_MASTER_PASSWORD` | `app/services/secrets_manager.py:120` | `` | 1 |
-| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:841` | `'true'` | 1 |
-| `MAP2_TEST_MODE` | `app/main.py:331` | `'false'` | 3 |
-| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:811` | `'true'` | 1 |
-| `MAP2_USE_MOCK_LCD` | `app/main.py:423` | `'true'` | 1 |
+| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:848` | `'true'` | 1 |
+| `MAP2_TEST_MODE` | `app/main.py:336` | `'false'` | 3 |
+| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:816` | `'true'` | 1 |
+| `MAP2_USE_MOCK_LCD` | `app/main.py:428` | `'true'` | 1 |
 | `NODE_ID` | `app/routes/special_settings.py:148` | `'standalone'` | 3 |
 | `PROMETHEUS_URL` | `app/services/cluster/post_update_health.py:360` | `'http://localhost:9090'` | 1 |
 

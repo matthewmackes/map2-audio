@@ -112,7 +112,12 @@ class TestUniversalPresetConverter:
     @pytest.fixture
     def converter(self):
         """Get converter instance."""
-        return UniversalPresetConverter()
+        return UniversalPresetConverter(vst2_legacy_enabled=False)
+
+    @pytest.fixture
+    def converter_with_vst2(self):
+        """Get converter instance with default-off VST2 import enabled."""
+        return UniversalPresetConverter(vst2_legacy_enabled=True)
 
     def test_singleton(self):
         """Test singleton pattern."""
@@ -127,18 +132,28 @@ class TestUniversalPresetConverter:
     def test_supported_formats(self, converter):
         """Test supported_formats property."""
         formats = converter.supported_formats
-        assert len(formats) >= 5  # At least 5 converters
+        assert len(formats) >= 4
 
         format_names = [f["format"] for f in formats]
         assert "MAP2 Universal Preset Format" in format_names
-        assert "VST2 Preset/Bank" in format_names
         assert "VST3 Preset" in format_names
+        assert "VST2 Preset/Bank" not in format_names
+
+    def test_vst2_formats_are_available_when_feature_flag_enabled(self, converter_with_vst2):
+        """Test default-off VST2 support can be enabled for read-only migration."""
+        formats = converter_with_vst2.supported_formats
+        format_names = [f["format"] for f in formats]
+
+        assert "VST2 Preset/Bank" in format_names
+        assert converter_with_vst2.detect_format(Path("test.fxp")) == PresetFormat.FXP
+        assert converter_with_vst2.detect_format(Path("test.fxb")) == PresetFormat.FXB
+        assert isinstance(converter_with_vst2.get_converter_for_file(Path("test.fxp")), FXPPresetConverter)
 
     def test_detect_format(self, converter):
         """Test format detection from file extension."""
         assert converter.detect_format(Path("test.map2preset")) == PresetFormat.MAP2UPF
-        assert converter.detect_format(Path("test.fxp")) == PresetFormat.FXP
-        assert converter.detect_format(Path("test.fxb")) == PresetFormat.FXB
+        assert converter.detect_format(Path("test.fxp")) == PresetFormat.UNKNOWN
+        assert converter.detect_format(Path("test.fxb")) == PresetFormat.UNKNOWN
         assert converter.detect_format(Path("test.vstpreset")) == PresetFormat.VST3
         assert converter.detect_format(Path("test.lv2preset")) == PresetFormat.LV2
         assert converter.detect_format(Path("test.ttl")) == PresetFormat.LV2
@@ -148,7 +163,7 @@ class TestUniversalPresetConverter:
     def test_get_converter_for_file(self, converter):
         """Test getting appropriate converter for file."""
         assert isinstance(converter.get_converter_for_file(Path("test.map2preset")), MAP2UPFConverter)
-        assert isinstance(converter.get_converter_for_file(Path("test.fxp")), FXPPresetConverter)
+        assert converter.get_converter_for_file(Path("test.fxp")) is None
         assert isinstance(converter.get_converter_for_file(Path("test.vstpreset")), VST3PresetConverter)
         assert converter.get_converter_for_file(Path("test.unknown")) is None
 
@@ -607,7 +622,7 @@ class TestBatchImport:
 
     @pytest.fixture
     def converter(self):
-        return UniversalPresetConverter()
+        return UniversalPresetConverter(vst2_legacy_enabled=False)
 
     def test_batch_import(self, converter):
         """Test importing multiple files at once."""

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Reconciled T2365-subP after confirming the named orphaned AVDECC C++ files are already absent and AVDECC-enabled native build passes.
+Last updated: 2026-04-20 - Reconciled T2365-subQ after removing production stub paths from plugin scanning, optional guitar route registration, and VST2 preset import exposure.
 
 ---
 
@@ -29260,7 +29260,7 @@ Validation:
 - `rg -n "AvdeccEntity|AvdeccEntityModel|AvdeccEnumerator" juce-engine/Source` -> PASS (matches only explanatory compatibility comments in `AvdeccController.h`)
 
 ID: T2365-subQ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove stub paths: plugin_scanner compat wrapper, guitar.py stub router, preset_converter VST2 legacy
 Description:
 - Goal / acceptance criteria: Three stub paths identified in the audit:
@@ -29271,9 +29271,23 @@ Description:
 - Dependencies: none
 - Estimated effort: Medium
 - Required outputs: three cleaned-up call sites, new `FeatureUnavailable` exception or clean router-absent pattern for guitar.py, feature flag for VST2.
+Last updated: 2026-04-20 06:47 EDT - Codex
+- Completion notes:
+  - Removed the `PluginScannerCompat` wrapper and migrated plugin scanner API/package-manager callers to the real `get_plugin_scanner()` singleton accessor.
+  - Replaced the guitar route's dependency-missing stub endpoint with an optional-route plugin pattern: `app.routes.guitar` exports no router when its chain dependencies are absent, and `app.main` skips optional missing routers without failing strict route loading.
+  - Kept the VST2 FXP/FXB parser available for direct migration use, but removed it from `UniversalPresetConverter` unless `preset_converter.vst2_legacy_enabled` / `MAP2_PRESET_CONVERTER_VST2_LEGACY_ENABLED` is explicitly enabled; regenerated backend runtime contract artifacts for the new schema-backed flag.
+  - Updated the preset-exchange route help text so FXP/FXB import is documented as explicitly feature-gated instead of universally supported.
+  - Removed the remaining production `stub|Stub` comment hits in MIDI and alert services so the scan now has zero production matches; T2365-subV remains open for its behavioral legacy-fallback removals.
 Validation:
-- `pytest tests/test_plugin_scanner*.py tests/test_guitar*.py tests/test_preset_converter*.py -q` -> must PASS
-- `rg -n "stub|Stub" app/routes app/services` -> remaining matches are only in factory test fixtures
+- `pytest tests/test_plugin_scanner*.py tests/test_guitar*.py tests/test_preset_converter*.py tests/test_config_manager_validation.py tests/test_route_registration_policy.py tests/test_route_prefix_uniqueness_policy.py tests/test_midi_engine*.py tests/test_health_services.py -q` -> PASS (`59 passed, 1 existing datetime warning in 13.25s`)
+- `pytest tests/test_preset_exchange_routes.py tests/test_generate_backend_contract.py -q` -> PASS (`7 passed in 4.41s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/main.py app/routes/guitar.py app/routes/plugin_scanner.py app/routes/preset_exchange.py app/services/plugin_scanner.py app/services/package_manager.py app/services/preset_converter_service.py app/config_schema.py app/services/midi_engine.py app/services/alert_services.py tests/test_guitar_routes.py tests/test_plugin_scanner_routes.py tests/test_preset_converter.py tests/test_config_manager_validation.py` -> PASS
+- `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `54 schema env vars`, `73 direct-only env vars`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `23.88s`; existing chunk-size warning only)
+- `rg -n "stub|Stub" app/routes app/services` -> PASS (no matches)
+- `rg -n "from app.services.plugin_scanner import plugin_scanner|PluginScannerCompat|Backwards compatibility wrapper|Replace stub|Create stub router|Guitar chain dependencies not installed" app tests` -> PASS (no matches)
+- `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned backend/test/docs cleanup
 
 ID: T2365-subR
 Status: [✓] Done
@@ -29385,6 +29399,9 @@ Description:
 - Dependencies: T2363 for the `kind.py` item only; others are independent.
 - Estimated effort: Medium
 - Required outputs: five small commits (or one well-structured commit), migration script for expression JSON, telemetry on the runtime interpolation fallback, follow-up ticket for kind.py.
+Last updated: 2026-04-20 06:47 EDT - Codex
+- Progress notes:
+  - 2026-04-20 06:47 EDT - Codex: Item 5 (`app/services/alert_services.py` "complete with no stubs" comment) was removed during T2365-subQ to make the production stub scan zero-match. Items 1-4 remain open.
 Validation:
 - `pytest tests/test_snapshot_runtime*.py tests/test_performance_brain*.py tests/test_expression_service*.py tests/test_platform_event_mapping.py -q` -> must PASS
 - `rg -n "legacy interpolation|legacy drum|Legacy JSON|complete with no stubs" app` -> only documented residual matches

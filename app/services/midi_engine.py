@@ -35,7 +35,7 @@ except Exception:  # pragma: no cover - optional integration path
     VirtualMidiPort = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
 
-# Try to import rtmidi, fall back to stub if not available
+# Track optional rtmidi availability; MidiHub or virtual ports cover unavailable hosts.
 try:
     import rtmidi
     RTMIDI_AVAILABLE = True

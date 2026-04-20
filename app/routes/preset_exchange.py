@@ -2,7 +2,7 @@
 Preset Exchange API - Universal Import/Export and Community Features
 
 Provides:
-- Universal preset import from FXP, VST3, LV2, JUCE, and MAP2UPF formats
+- Universal preset import from VST3, LV2, JUCE, MAP2UPF, and optionally FXP/FXB formats
 - Export to MAP2UPF (primary), VST3, and LV2 formats
 - Community preset sharing with ratings and downloads
 - Open/permissionless upload model
@@ -292,7 +292,7 @@ async def import_preset(
 
     **Supported formats:**
     - `.map2preset` - MAP2 Universal Preset Format (recommended)
-    - `.fxp` / `.fxb` - VST2 presets (legacy)
+    - `.fxp` / `.fxb` - VST2 presets (legacy, requires `preset_converter.vst2_legacy_enabled`)
     - `.vstpreset` - VST3 presets
     - `.lv2preset` / `.ttl` - LV2 presets
     - `.jucepreset` - JUCE state files

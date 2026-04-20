@@ -54,7 +54,7 @@ class _FakeScanner:
 def _build_client(monkeypatch, scanner: _FakeScanner) -> TestClient:
     app = FastAPI()
     app.include_router(plugin_scanner_routes.router)
-    monkeypatch.setattr(plugin_scanner_routes, "plugin_scanner", scanner)
+    monkeypatch.setattr(plugin_scanner_routes, "_get_scanner", lambda: scanner)
     return TestClient(app)
 
 

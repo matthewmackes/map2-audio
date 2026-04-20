@@ -30,6 +30,8 @@ def test_schema_surfaces_locked_and_element_type_metadata(manager: ConfigManager
     assert schema["audio.sample_rate"]["locked"] is True
     assert schema["audio.allowed_rates_hz"]["element_type"] == "int"
     assert schema["clock_sync.selected_profile"]["default"] == "pipewire_quantum_48k"
+    assert schema["preset_converter.vst2_legacy_enabled"]["default"] is False
+    assert schema["preset_converter.vst2_legacy_enabled"]["env_var"] == "MAP2_PRESET_CONVERTER_VST2_LEGACY_ENABLED"
     assert "audio.engine" not in schema
     assert "audio.allow_python_io" not in schema
     assert "audio.sync_profile" not in schema

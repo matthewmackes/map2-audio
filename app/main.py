@@ -198,6 +198,11 @@ from app.utils.health_metrics import init_health_metrics
 logger = logging.getLogger(__name__)
 
 
+def _route_module_is_optional_unavailable(route_module: Any) -> bool:
+    """Return True when an optional route plugin intentionally exports no router."""
+    return bool(getattr(route_module, "OPTIONAL_ROUTE", False)) and not getattr(route_module, "router", None)
+
+
 def _midi_cluster_enabled() -> bool:
     try:
         from app.config import config_get
@@ -829,6 +834,8 @@ def create_app():
                 if hasattr(route_module, 'router') and route_module.router:
                     app.include_router(route_module.router)
                     logger.info(f"Registered route: {route_name}")
+                elif _route_module_is_optional_unavailable(route_module):
+                    logger.info(f"Optional route not registered: {route_name}")
                 else:
                     route_load_failures.append((route_name, "router missing or None"))
             except Exception as e:

@@ -1,6 +1,5 @@
 """
 Alert Services Implementation
-All 10 LCD improvements, complete with no stubs
 """
 
 from dataclasses import dataclass

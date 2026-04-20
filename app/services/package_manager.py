@@ -410,9 +410,9 @@ class PackageManager:
         logger.info("Scanning LV2 plugins...")
         
         try:
-            from app.services.plugin_scanner import plugin_scanner
+            from app.services.plugin_scanner import get_plugin_scanner
             
-            plugins = plugin_scanner.scan_all(force_rescan=False)
+            plugins = get_plugin_scanner().scan_all(force_rescan=False)
             
             for uri, metadata in plugins.items():
                 pkg_key = f"lv2:{uri}"

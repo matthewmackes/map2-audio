@@ -49,6 +49,7 @@ class ConfigSection(Enum):
     AVB = "avb"
     SPDIF = "spdif"
     CLOCK_SYNC = "clock_sync"
+    PRESET_CONVERTER = "preset_converter"
 
 
 def _merge_schema_sections(*sections: dict[str, ConfigOption]) -> dict[str, ConfigOption]:
@@ -718,6 +719,18 @@ PLUGIN_SCHEMA: dict[str, ConfigOption] = {
 }
 
 
+PRESET_CONVERTER_SCHEMA: dict[str, ConfigOption] = {
+    "preset_converter.vst2_legacy_enabled": ConfigOption(
+        key="preset_converter.vst2_legacy_enabled",
+        default=False,
+        description="Enable read-only import for legacy VST2 FXP/FXB preset files",
+        value_type=bool,
+        env_var="MAP2_PRESET_CONVERTER_VST2_LEGACY_ENABLED",
+        restart_required=True,
+    ),
+}
+
+
 WEBSOCKET_SCHEMA: dict[str, ConfigOption] = {
     # WebSocket settings
     "websocket.ping_interval": ConfigOption(
@@ -1259,6 +1272,7 @@ CONFIG_SCHEMA = _merge_schema_sections(
     DATABASE_SCHEMA,
     AUTOMATION_SCHEMA,
     PLUGIN_SCHEMA,
+    PRESET_CONVERTER_SCHEMA,
     WEBSOCKET_SCHEMA,
     MONITORING_SCHEMA,
     BACKUP_SCHEMA,

@@ -530,39 +530,3 @@ class PluginScanner(Singleton):
 def get_plugin_scanner() -> PluginScanner:
     """Get or create global plugin scanner instance."""
     return PluginScanner.get_instance()
-
-
-# Backwards compatibility wrapper matching the old stub API
-class PluginScannerCompat:
-    """Compatibility wrapper matching the old stub API."""
-
-    def scan_all(self, force_rescan=False):
-        return get_plugin_scanner().scan_all(force_rescan)
-
-    def get_plugin(self, uri):
-        return get_plugin_scanner().get_plugin(uri)
-
-    def search_plugins(self, **kwargs):
-        return get_plugin_scanner().search_plugins(**kwargs)
-
-    def get_categories(self):
-        return get_plugin_scanner().get_categories()
-
-    def clear_cache(self):
-        return get_plugin_scanner().clear_cache()
-
-    @property
-    def plugin_cache(self):
-        return get_plugin_scanner().plugin_cache
-
-    @property
-    def cache_file(self):
-        return get_plugin_scanner().cache_file
-
-    @property
-    def lv2_paths(self):
-        return get_plugin_scanner().lv2_paths
-
-
-# Replace stub with real implementation - maintains backwards compatibility
-plugin_scanner = PluginScannerCompat()
