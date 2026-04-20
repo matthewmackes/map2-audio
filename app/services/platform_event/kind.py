@@ -6,7 +6,11 @@ from typing import Final
 
 
 # Canonical kinds from the PlatformEvent control-plane design plus LCD surface
-# kinds used by the hardware/UI projection layer.
+# kinds used by the hardware/UI projection layer. T2363 retained migration
+# compatibility kinds only to let persisted pre-cutover events age out; remove
+# the audited compatibility set under T2370 no earlier than 2026-07-18.
+PLATFORM_EVENT_MIGRATION_COMPATIBILITY_REMOVAL_AFTER: Final[str] = "2026-07-18"
+
 PLATFORM_EVENT_KINDS: Final[tuple[str, ...]] = (
     "audio.xrun",
     "audio.engine.status",

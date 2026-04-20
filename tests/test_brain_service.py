@@ -296,9 +296,11 @@ def test_brain_service_imports_drum_machine_payloads(tmp_path):
     }
     assert any(
         assignment["target"] == "transport:midi-clock"
+        and assignment["source"] == "drums:midi-clock"
+        and assignment["mode"] == "midi_clock"
         for assignment in imported["inputs"]["controller_assignments"]
     )
-    assert "Imported Drum Machine MIDI clock output remains a legacy transport feature." in imported["diagnostics"]["warnings"]
+    assert "Imported Drum Machine MIDI clock output remains a transport bridge." in imported["diagnostics"]["warnings"]
     assert imported["diagnostics"]["last_import_source"] == "drums"
 
 

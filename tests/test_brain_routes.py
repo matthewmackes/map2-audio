@@ -444,7 +444,7 @@ def test_brain_routes_import_drum_machine_state(tmp_path):
     assert payload["sequence"]["patterns"][0]["summary"] == "2 lanes · 2 active steps · locks: filter, volume"
     assert payload["sequence"]["lanes"][0]["step_lock_targets"] == ["volume"]
     assert payload["diagnostics"]["last_import_source"] == "drums"
-    assert "Imported Drum Machine MIDI clock output remains a legacy transport feature." in payload["diagnostics"]["warnings"]
+    assert "Imported Drum Machine MIDI clock output remains a transport bridge." in payload["diagnostics"]["warnings"]
     assert authority_sync.calls[-1] == {
         "instance_id": "23",
         "plugin_position": None,

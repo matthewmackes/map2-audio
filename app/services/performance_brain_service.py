@@ -9,6 +9,7 @@ time while legacy routes remain available.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import threading
@@ -62,6 +63,8 @@ from app.services.performance_brain import (
     utcnow_iso as _utcnow_iso,
 )
 from app.utils.singleton import Singleton
+
+logger = logging.getLogger(__name__)
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -1192,7 +1195,7 @@ class PerformanceBrainService(Singleton):
             current_variation=current_variation,
             patterns=pattern_summaries,
             lanes=lane_summaries,
-            fill_mode="legacy-drum-import",
+            fill_mode="drum-import",
             song_entry_count=0,
         )
 
@@ -1335,29 +1338,41 @@ class PerformanceBrainService(Singleton):
             if bool(midi_output_config.get("midi_output_enabled", False)):
                 imported_note_assignments.append(
                     BrainControllerAssignmentModel(
-                        source=f"legacy:drums:midi-out:{int(midi_output_config.get('midi_output_channel', 9)) + 1}",
+                        source=f"drums:midi-out:{int(midi_output_config.get('midi_output_channel', 9)) + 1}",
                         target="transport:midi-output",
-                        mode="legacy",
+                        mode="midi_output",
                         enabled=True,
                     )
                 )
             if bool(midi_output_config.get("midi_clock_output_enabled", False)):
                 imported_note_assignments.append(
                     BrainControllerAssignmentModel(
-                        source="legacy:drums:midi-clock",
+                        source="drums:midi-clock",
                         target="transport:midi-clock",
-                        mode="legacy",
+                        mode="midi_clock",
                         enabled=True,
                     )
                 )
             if bool(midi_output_config.get("program_change_enabled", False)):
                 imported_note_assignments.append(
                     BrainControllerAssignmentModel(
-                        source="legacy:drums:program-change",
+                        source="drums:program-change",
                         target="transport:program-change",
-                        mode="legacy",
+                        mode="program_change",
                         enabled=True,
                     )
+                )
+            if any(
+                bool(midi_output_config.get(key, False))
+                for key in ("midi_output_enabled", "midi_clock_output_enabled", "program_change_enabled")
+            ):
+                logger.info(
+                    "Imported Drum Machine transport bridge assignments into Performance Brain.",
+                    extra={
+                        "midi_output_enabled": bool(midi_output_config.get("midi_output_enabled", False)),
+                        "midi_clock_output_enabled": bool(midi_output_config.get("midi_clock_output_enabled", False)),
+                        "program_change_enabled": bool(midi_output_config.get("program_change_enabled", False)),
+                    },
                 )
             state.inputs.trigger_profiles = [
                 BrainTriggerProfileModel(
@@ -1406,9 +1421,9 @@ class PerformanceBrainService(Singleton):
             state.diagnostics.peak_voices = 16
             state.diagnostics.warnings = []
             if bool(midi_output_config.get("midi_clock_output_enabled", False)):
-                state.diagnostics.warnings.append("Imported Drum Machine MIDI clock output remains a legacy transport feature.")
+                state.diagnostics.warnings.append("Imported Drum Machine MIDI clock output remains a transport bridge.")
             if bool(midi_output_config.get("program_change_enabled", False)):
-                state.diagnostics.warnings.append("Imported Drum Machine program-change output remains a legacy transport feature.")
+                state.diagnostics.warnings.append("Imported Drum Machine program-change output remains a transport bridge.")
             hybrid_slots = [str(slot.slot_id + 1) for slot in state.slots if slot.mode == "hybrid"]
             if hybrid_slots:
                 state.diagnostics.warnings.append(
@@ -1421,7 +1436,7 @@ class PerformanceBrainService(Singleton):
             ]
             if cv_gate_slots:
                 state.diagnostics.warnings.append(
-                    f"Pads {', '.join(cv_gate_slots[:6])} retain legacy CV/gate output assignments from Drum Machine."
+                    f"Pads {', '.join(cv_gate_slots[:6])} retain Drum Machine CV/gate output assignments."
                 )
             self._refresh_derived_state(state)
             self._persist_state(state)

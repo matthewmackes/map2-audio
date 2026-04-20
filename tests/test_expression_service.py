@@ -9,7 +9,7 @@ from app.services import expression_service as expression_module
 @pytest.fixture
 def expression_service(monkeypatch):
     monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
-    monkeypatch.setattr(expression_module.ExpressionService, "_import_legacy_json_if_needed", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_raise_if_retired_json_exists", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_ensure_default_performance_mappings", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_subscribe_to_midi_hub", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_save_assignment_to_db", lambda self, record: None)
@@ -54,6 +54,17 @@ def test_assignment_crud_and_sort_order(expression_service):
 
     assert expression_service.delete_assignment("user_wah") is True
     assert expression_service.delete_assignment("missing") is False
+
+
+def test_expression_service_fails_loud_when_retired_json_exists(tmp_path, monkeypatch):
+    retired_path = tmp_path / "expression_assignments.json"
+    retired_path.write_text("[]", encoding="utf-8")
+
+    monkeypatch.setattr(expression_module, "_RETIRED_JSON_PATH", str(retired_path))
+    monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
+
+    with pytest.raises(RuntimeError, match="migrate_expression_json_to_sqlite.py"):
+        expression_module.ExpressionService()
 
 
 def test_listen_for_cc_detects_delta(expression_service):
@@ -199,7 +210,7 @@ def test_performance_events_emit_for_cc_and_pc(expression_service):
 
 def test_get_expression_service_uses_shared_singleton_registry(monkeypatch):
     monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
-    monkeypatch.setattr(expression_module.ExpressionService, "_import_legacy_json_if_needed", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_raise_if_retired_json_exists", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_ensure_default_performance_mappings", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_subscribe_to_midi_hub", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_save_assignment_to_db", lambda self, record: None)
@@ -217,7 +228,7 @@ def test_get_expression_service_uses_shared_singleton_registry(monkeypatch):
 
 def test_snapshot_morph_assignment_routes_through_live_snapshot_service(monkeypatch):
     monkeypatch.setattr(expression_module.ExpressionService, "_load_assignments_from_db", lambda self: None)
-    monkeypatch.setattr(expression_module.ExpressionService, "_import_legacy_json_if_needed", lambda self: None)
+    monkeypatch.setattr(expression_module.ExpressionService, "_raise_if_retired_json_exists", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_ensure_default_performance_mappings", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_subscribe_to_midi_hub", lambda self: None)
     monkeypatch.setattr(expression_module.ExpressionService, "_save_assignment_to_db", lambda self, record: None)

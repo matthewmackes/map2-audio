@@ -2,7 +2,7 @@
 Expression pedal assignment service (T097).
 
 Provides:
-- SQLite-backed assignment CRUD (with legacy JSON import fallback)
+- SQLite-backed assignment CRUD
 - Live CC -> mapped parameter state
 - Auto-detect listener for "move your pedal" UX
 - Retime stats (CC receive -> parameter apply)
@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import asdict, dataclass, field
-import json
 import logging
 import os
 import queue
@@ -28,7 +27,7 @@ from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
-_LEGACY_JSON_PATH = os.path.expanduser("~/.map2/expression_assignments.json")
+_RETIRED_JSON_PATH = os.path.expanduser("~/.map2/expression_assignments.json")
 _CC_DETECT_WINDOW_NS = 500_000_000
 _CC_DETECT_MIN_DELTA = 10
 
@@ -188,7 +187,7 @@ class ExpressionService(Singleton):
         self._midi_subscriber_id = "expression_service"
 
         self._load_assignments_from_db()
-        self._import_legacy_json_if_needed()
+        self._raise_if_retired_json_exists()
         self._ensure_default_performance_mappings()
         self._apply_thread.start()
         self._subscribe_to_midi_hub()
@@ -254,39 +253,14 @@ class ExpressionService(Singleton):
         finally:
             session.close()
 
-    def _import_legacy_json_if_needed(self) -> None:
-        if self._assignments:
+    def _raise_if_retired_json_exists(self) -> None:
+        if not os.path.exists(_RETIRED_JSON_PATH):
             return
-        if not os.path.exists(_LEGACY_JSON_PATH):
-            return
-        try:
-            with open(_LEGACY_JSON_PATH, encoding="utf-8") as fh:
-                legacy = json.load(fh)
-            if not isinstance(legacy, list):
-                return
-            for item in legacy:
-                if not isinstance(item, dict):
-                    continue
-                record = AssignmentRecord(
-                    id=str(item.get("id") or uuid.uuid4()),
-                    cc=int(item.get("cc", 0)),
-                    channel=int(item.get("channel", 0)),
-                    cc_min=int(item.get("cc_min", 0)),
-                    cc_max=int(item.get("cc_max", 127)),
-                    param_id=str(item.get("param_id", "engine.reverb_mix")),
-                    param_label=str(item.get("param_label") or item.get("param_id") or ""),
-                    out_min=float(item.get("out_min", 0.0)),
-                    out_max=float(item.get("out_max", 1.0)),
-                    curve=str(item.get("curve", "linear")),
-                    custom_curve=list(item.get("custom_curve") or []),
-                    active=bool(item.get("active", True)),
-                    source=str(item.get("source", "user")),
-                )
-                self._assignments[record.id] = record
-                self._save_assignment_to_db(record)
-            logger.info("Imported %d legacy expression assignments from JSON.", len(self._assignments))
-        except Exception:
-            logger.exception("Failed importing legacy expression assignments from %s", _LEGACY_JSON_PATH)
+        raise RuntimeError(
+            "Retired expression assignment JSON exists at "
+            f"{_RETIRED_JSON_PATH}; run scripts/migrate_expression_json_to_sqlite.py "
+            "before starting ExpressionService."
+        )
 
     def _ensure_default_performance_mappings(self) -> None:
         perf_existing = any(a.source == "performance_mode" for a in self._assignments.values())

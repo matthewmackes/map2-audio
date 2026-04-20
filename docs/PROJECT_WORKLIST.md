@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2369 Snapshot Editor modal and parameter surface redesign.
+Last updated: 2026-04-20 - Completed and shipped T2365-subV small legacy fallback cleanup.
 
 ---
 
@@ -29044,9 +29044,10 @@ Description:
   - Each subtask ends with: `typecheck` + relevant `pytest` file + build, plus a targeted `rg` scan proving no remaining imports of the removed symbol/file.
   - Do not attempt multiple subtasks in one commit — the whole point of this epic is that each change is small, verifiable, and independently revertable.
 Assigned to: Codex
-Last updated: 2026-04-19 23:25 EDT - Codex
+Last updated: 2026-04-20 11:37 EDT - Codex
 - Progress notes:
   - 2026-04-19 23:25 EDT - Codex: Began the first cleanup slice after completing T2363; starting with T2365-subA to delete the deprecated service manager facade and migrate remaining runtime/test references to ServiceOrchestrator-backed access.
+  - 2026-04-20 11:37 EDT - Codex: Completed T2365-subV by adding quad-morph scalar fallback telemetry, removing remaining legacy-labeled Drum Machine bridge assignments, replacing expression JSON auto-import with an explicit migration script plus fail-loud service guard, and opening T2370 for PlatformEvent compatibility-kind removal after the 90-day aging window.
 
 ID: T2365-subA
 Status: [✓] Done
@@ -29504,7 +29505,7 @@ Validation:
 - Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new MAP2-owned AGPL or third-party notice gaps.
 
 ID: T2365-subV
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove small misc legacy fallbacks (snapshot runtime interpolation, performance brain drum-import, expression JSON→SQLite)
 Description:
 - Goal / acceptance criteria: Address five small legacy fallbacks identified in the audit:
@@ -29517,11 +29518,29 @@ Description:
 - Dependencies: T2363 for the `kind.py` item only; others are independent.
 - Estimated effort: Medium
 - Required outputs: five small commits (or one well-structured commit), migration script for expression JSON, telemetry on the runtime interpolation fallback, follow-up ticket for kind.py.
-Last updated: 2026-04-20 06:47 EDT - Codex
+Last updated: 2026-04-20 11:37 EDT - Codex
 - Progress notes:
   - 2026-04-20 06:47 EDT - Codex: Item 5 (`app/services/alert_services.py` "complete with no stubs" comment) was removed during T2365-subQ to make the production stub scan zero-match. Items 1-4 remain open.
+  - 2026-04-20 11:24 EDT - Codex: Started the next independent cleanup slice after T2369 SHIP `e6913076`; inventorying the remaining snapshot-runtime interpolation, performance-brain drum-import, expression JSON migration, and platform-event compatibility-kind removal-date items.
+  - 2026-04-20 11:37 EDT - Codex: Added `get_quad_morph_scalar_fallback_count()` telemetry plus warning logs for runtime quad-morph fallback use; renamed Drum Machine import bridge sources/modes and diagnostics away from legacy labels while preserving MIDI/clock/program-change bridge behavior; added `scripts/migrate_expression_json_to_sqlite.py`, removed the in-service JSON auto-import path, and made `ExpressionService` fail loud while the retired JSON file remains; documented the PlatformEvent compatibility-kind removal date as 2026-07-18 and opened T2370.
 Validation:
-- `pytest tests/test_snapshot_runtime*.py tests/test_performance_brain*.py tests/test_expression_service*.py tests/test_platform_event_mapping.py -q` -> must PASS
-- `rg -n "legacy interpolation|legacy drum|Legacy JSON|complete with no stubs" app` -> only documented residual matches
+- `pytest tests/test_snapshot_runtime*.py tests/test_performance_brain*.py tests/test_expression_service*.py tests/test_platform_event_mapping.py -q` -> PASS (`50 passed in 8.83s`)
+- `pytest tests/test_brain_service.py tests/test_brain_routes.py -q` -> PASS (`18 passed in 6.10s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_service.py app/services/performance_brain_service.py app/services/expression_service.py app/services/platform_event/kind.py scripts/migrate_expression_json_to_sqlite.py tests/test_snapshot_runtime_service.py tests/test_expression_service.py tests/test_brain_service.py tests/test_brain_routes.py tests/test_platform_event_mapping.py` -> PASS
+- `python3 scripts/migrate_expression_json_to_sqlite.py --source <tmp-json> --dry-run` -> PASS (`{"archived_to": null, "created": 0, "read": 1, "updated": 0}`)
+- `rg -n "legacy interpolation|legacy drum|Legacy JSON|complete with no stubs" app` -> PASS (no matches)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+
+ID: T2370
+Status: [ ] Todo
+Title: Remove PlatformEvent migration compatibility kinds after the T2363 aging window
+Description:
+- Goal / acceptance criteria: On or after 2026-07-18, audit `app/services/platform_event/kind.py` and remove the T2363 migration compatibility kind set that was retained only for persisted pre-cutover events. Update the TypeScript mirror, presenter mappings, tests, and any stored-event replay assumptions so only canonical post-cutover kinds remain. Acceptance requires no runtime producers or frontend consumers to reference the retired kinds, and persisted-event replay to handle aged-out records without restoring a compatibility taxonomy.
+- Why it matters: T2363 intentionally hard-cut the event architecture, but the kind taxonomy kept a temporary migration bridge while persisted events age out. Leaving that bridge indefinitely would weaken the single canonical PlatformEvent contract.
+- Dependencies: T2363 hard cutover landed 2026-04-19; removal date 2026-07-18 or later.
+- Estimated effort: Medium
+- Required outputs: audited kind removal, Python/TypeScript manifest parity, updated presenter/store tests, and a scan proving no references to the removed migration kinds remain.
+Last updated: 2026-04-20 11:37 EDT - Codex
 
 ---

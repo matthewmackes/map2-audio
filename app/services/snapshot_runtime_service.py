@@ -22,6 +22,8 @@ from app.services.juce_parameter_schema import is_fixed_native_processor_uri
 
 logger = logging.getLogger(__name__)
 
+_QUAD_MORPH_SCALAR_FALLBACK_COUNT = 0
+
 _TEMPO_PARAMETER_SYMBOLS = {
     "tempo",
     "tempo_bpm",
@@ -34,6 +36,16 @@ _SYNC_PARAMETER_HINTS = (
     "beat_sync",
     "host_sync",
 )
+
+
+def get_quad_morph_scalar_fallback_count() -> int:
+    """Return the number of runtime quad-morph failures that used scalar interpolation."""
+    return _QUAD_MORPH_SCALAR_FALLBACK_COUNT
+
+
+def reset_quad_morph_scalar_fallback_count_for_tests() -> None:
+    global _QUAD_MORPH_SCALAR_FALLBACK_COUNT
+    _QUAD_MORPH_SCALAR_FALLBACK_COUNT = 0
 
 
 def snapshot_plugin_position(plugin: Dict[str, Any]) -> Optional[int]:
@@ -592,8 +604,17 @@ async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dic
                 "morph_position": morph_position,
                 "engine_mode": "quad_morph",
             }
-        except Exception as exc:
-            logger.debug("Engine quad morph apply failed, falling back to legacy interpolation: %s", exc)
+        except Exception:
+            global _QUAD_MORPH_SCALAR_FALLBACK_COUNT
+            _QUAD_MORPH_SCALAR_FALLBACK_COUNT += 1
+            logger.warning(
+                "Engine quad morph apply failed; using scalar parameter interpolation fallback.",
+                extra={
+                    "quad_morph_scalar_fallback_count": _QUAD_MORPH_SCALAR_FALLBACK_COUNT,
+                    "snapshot_id": snapshot_detail.get("id"),
+                },
+                exc_info=True,
+            )
 
     if not hasattr(engine, "set_parameter"):
         return {
@@ -648,6 +669,7 @@ async def apply_snapshot_morph_to_engine(snapshot_detail: Dict[str, Any]) -> Dic
         "plugin_count": plugin_count,
         "applied_count": applied_count,
         "morph_position": morph_position,
+        "engine_mode": "scalar_interpolation",
     }
 
 
