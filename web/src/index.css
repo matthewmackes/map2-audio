@@ -9,6 +9,24 @@ img {
   display: block;
 }
 
+body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: var(--cds-border-strong, var(--border));
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--cds-background, var(--bg));
+}
+
+body {
+  scrollbar-color: var(--cds-border-strong, var(--border)) var(--cds-background, var(--bg));
+  scrollbar-width: thin;
+}
+
 /* Upload progress bar */
 /* Enhanced Parameter Sliders */
 input[type="range"] {

@@ -1,0 +1,67 @@
+.snapshot-editor-signal-canvas {
+  --snapshot-trace: var(--cds-text-helper);
+  --snapshot-trace-active: var(--cds-interactive);
+  --snapshot-led-off: var(--cds-layer-accent-02);
+  --snapshot-lcd-phosphor-on: #78e38a;
+  --snapshot-lcd-phosphor-dim: #3a6a43;
+  --snapshot-grid-line: color-mix(in oklab, var(--cds-text-primary) 5%, transparent);
+  --snapshot-inset-bg: color-mix(in oklab, var(--cds-background) 90%, black);
+  --snapshot-chain-accent-a: var(--cds-support-success);
+  --snapshot-chain-accent-b: var(--cds-support-error);
+  --snapshot-chain-accent-c: var(--cds-interactive);
+  --snapshot-chain-accent-d: var(--cds-support-warning);
+  --snapshot-chain-accent-e: #a56eff;
+  --snapshot-chain-accent-f: #1192e8;
+  --snapshot-focus-ring: var(--cds-focus);
+  --snapshot-node-radius: 0;
+  --snapshot-node-height: 40px;
+  --snapshot-terminal-width: 64px;
+  --snapshot-chain-tab-width: 40px;
+  --snapshot-chain-side-width: 280px;
+  color: var(--cds-text-primary);
+  background: var(--cds-background);
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
+}
+
+.snapshot-editor-signal-canvas[data-grid-backdrop='false'] {
+  --snapshot-grid-line: transparent;
+}
+
+.snapshot-editor-signal-canvas[data-node-shape='rounded'] {
+  --snapshot-node-radius: 2px;
+}
+
+.snapshot-editor-signal-canvas[data-node-shape='hex'] {
+  --snapshot-node-radius: 0;
+}
+
+.snapshot-editor-signal-canvas .traces {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.snapshot-editor-signal-canvas .traces path {
+  fill: none;
+  stroke: var(--snapshot-trace);
+  stroke-width: 1;
+}
+
+.snapshot-editor-signal-canvas .chain.active .traces path {
+  stroke: var(--snapshot-trace-active);
+}
+
+.snapshot-editor-signal-canvas .traces .flow {
+  stroke-dasharray: 4 6;
+}
+
+.snapshot-editor-signal-canvas .chain:not(.active) .traces .flow {
+  opacity: 0.35;
+  animation-play-state: paused !important;
+}
+
+.snapshot-editor-signal-canvas :focus-visible {
+  outline: 2px solid var(--snapshot-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--cds-background), 0 0 0 3px var(--snapshot-focus-ring);
+}

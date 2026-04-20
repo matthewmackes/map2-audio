@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 export type PlatformFontPresetId =
   | 'ibm-plex-sans'
+  | 'jetbrains-mono'
   | 'roboto'
   | 'fira-sans'
   | 'space-grotesk'
@@ -36,6 +37,14 @@ export const PLATFORM_FONT_PRESETS: Record<PlatformFontPresetId, PlatformFontPre
     family: "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif",
     accent: 'var(--cds-link-primary)',
     sample: 'Carbon-aligned operator UI',
+  },
+  'jetbrains-mono': {
+    id: 'jetbrains-mono',
+    name: 'JetBrains Mono',
+    description: 'Technical mono preset for schematic meters, trace labels, and dense engineering readouts.',
+    family: "'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace",
+    accent: 'var(--cds-support-success)',
+    sample: 'SCHEMATIC BUS 01',
   },
   roboto: {
     id: 'roboto',
