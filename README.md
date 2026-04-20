@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1180** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2367** total commits | **3** stars | **0** forks | **0** open issues
+**1181** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2370** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fa0befe7`](https://github.com/matthewmackes/map2-audio/commit/fa0befe7a8cf6a75f88c42e48e35aea0be1d34f3) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
+| [`8509689c`](https://github.com/matthewmackes/map2-audio/commit/8509689c3d25c0dcf033be28f50bc2e00822abbc) | refactor: share Tesira telnet protocol constants | Map2 Audio | 2026-04-20 |
+| [`19cb69ab`](https://github.com/matthewmackes/map2-audio/commit/19cb69aba726f08b81e22705be980d1f15c8b510) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`6c5b6b83`](https://github.com/matthewmackes/map2-audio/commit/6c5b6b83b0b9c044af6070f7b95b8c755186d468) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`ebf32901`](https://github.com/matthewmackes/map2-audio/commit/ebf32901d601535f79294263ce634c287b5ec3ec) | refactor: centralize legacy plugin instance resolution | Map2 Audio | 2026-04-20 |
 | [`eb325424`](https://github.com/matthewmackes/map2-audio/commit/eb3254249c46ae4c70d2198d95b64a6a993532ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`2f95fb36`](https://github.com/matthewmackes/map2-audio/commit/2f95fb36b583dea8c146103be592902d080d5957) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
 | [`d238fa4e`](https://github.com/matthewmackes/map2-audio/commit/d238fa4ead5841c96d61a516d038178f18f6a09c) | refactor: centralize clock sync profile fallback | Map2 Audio | 2026-04-19 |
-| [`42e80229`](https://github.com/matthewmackes/map2-audio/commit/42e80229fd7074a3ce370b0d824da5a3427be23a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`5f785319`](https://github.com/matthewmackes/map2-audio/commit/5f785319f927db26cb56f835f01ff351973c226a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
-| [`36d4994e`](https://github.com/matthewmackes/map2-audio/commit/36d4994e48e01a7789d5a9d43150754f48afe3d5) | refactor: remove unified services facade | Map2 Audio | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
