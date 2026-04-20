@@ -10,6 +10,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
+from app.services.tesira.telnet_protocol import _DO, _DONT, _IAC_BYTE, _SB, _SE, _WILL, _WONT
 from app.services.tesira.ttp_client import TTPClient, TTPResponse
 
 
@@ -36,6 +37,56 @@ def make_reader_writer(chunks: list[bytes]):
     writer.wait_closed = AsyncMock()
     writer.is_closing = MagicMock(return_value=False)
     return reader, writer
+
+
+@pytest.mark.asyncio
+async def test_telnet_negotiation_replies_and_returns_plain_ttp_payload():
+    writer = MagicMock()
+    writer.write = MagicMock()
+    writer.drain = AsyncMock()
+
+    client = TTPClient(host="192.168.1.10")
+    client._writer = writer
+
+    plain = await client._extract_plain_text(
+        bytes(
+            [
+                _IAC_BYTE,
+                _DO,
+                1,
+                _IAC_BYTE,
+                _WILL,
+                3,
+                ord("+"),
+                ord("O"),
+                ord("K"),
+                ord("\r"),
+                ord("\n"),
+            ]
+        )
+    )
+
+    assert plain == b"+OK\r\n"
+    writer.write.assert_called_once_with(bytes([_IAC_BYTE, _WONT, 1, _IAC_BYTE, _DONT, 3]))
+    writer.drain.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_telnet_subnegotiation_is_removed_from_plain_payload():
+    writer = MagicMock()
+    writer.write = MagicMock()
+    writer.drain = AsyncMock()
+
+    client = TTPClient(host="192.168.1.10")
+    client._writer = writer
+
+    plain = await client._extract_plain_text(
+        bytes([ord("a"), _IAC_BYTE, _SB, 24, 1, _IAC_BYTE, _SE, ord("b")])
+    )
+
+    assert plain == b"ab"
+    writer.write.assert_not_called()
+    writer.drain.assert_not_awaited()
 
 
 # ── Test 1: basic GET parses +OK value ───────────────────────────────────────

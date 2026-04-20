@@ -22,17 +22,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-logger = logging.getLogger(__name__)
+from app.services.tesira.telnet_protocol import _DO, _DONT, _IAC, _IAC_BYTE, _SB, _SE, _WILL, _WONT
 
-# Telnet negotiation bytes to swallow on connect (IAC sequences)
-_IAC = b'\xff'
-_IAC_BYTE = 0xFF
-_DO = 0xFD
-_DONT = 0xFE
-_WILL = 0xFB
-_WONT = 0xFC
-_SB = 0xFA
-_SE = 0xF0
+logger = logging.getLogger(__name__)
 
 
 @dataclass

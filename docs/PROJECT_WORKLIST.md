@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2365-subJ by centralizing legacy plugin instance-id resolver lookup/call semantics in `app/services/plugin_instance_id.py`.
+Last updated: 2026-04-20 - Completed T2365-subU by moving Tesira Telnet negotiation byte constants into `app/services/tesira/telnet_protocol.py`.
 
 ---
 
@@ -29310,7 +29310,7 @@ Validation:
 - `rg -n "node.*switch.*banner" web/src/app/pages` -> all matches are canonical component usage only
 
 ID: T2365-subU
-Status: [ ] Todo
+Status: [✓] Done
 Title: Consolidate Tesira TTP telnet byte constants into a shared protocol module
 Description:
 - Goal / acceptance criteria: The Tesira TTP client at [app/services/tesira/ttp_client.py](app/services/tesira/ttp_client.py) uses magic TELNET bytes (0xFF, 0xFD, 0xFE, 0xFB, 0xFC, 0xFA, 0xF0) with local constants. Move the named constants (`_IAC_BYTE`, `_DO`, `_DONT`, `_WILL`, `_WONT`, `_SB`, `_SE`) to a new `app/services/tesira/telnet_protocol.py` and re-export. Any other module that speaks raw telnet (search `rg -n "0xFF.*0xFD|IAC" app`) must also consume the shared constants.
@@ -29318,9 +29318,19 @@ Description:
 - Dependencies: none
 - Estimated effort: Low
 - Required outputs: new `telnet_protocol.py`, migrated `ttp_client.py`, unit test covering the negotiation sequence.
+Last updated: 2026-04-20 06:04 EDT - Codex
+- Completion notes:
+  - Added [app/services/tesira/telnet_protocol.py](app/services/tesira/telnet_protocol.py) as the shared Tesira Telnet protocol byte module and imported/re-exported the constants from [app/services/tesira/ttp_client.py](app/services/tesira/ttp_client.py).
+  - Added TTP negotiation coverage in [tests/tesira/test_ttp_client.py](tests/tesira/test_ttp_client.py) for conservative `DO`/`WILL` replies and subnegotiation stripping.
+  - Audited raw Tesira byte hits; the remaining `0xFF` in [app/services/tesira/port61451_probe.py](app/services/tesira/port61451_probe.py) is a binary port-61451 response sentinel, not Telnet negotiation.
 Validation:
-- `pytest tests/test_tesira*.py -q` -> must PASS
-- `rg -n "0xFF.*0xFD|0xFA.*SE" app/services/tesira` -> only match is in `telnet_protocol.py`
+- `pytest tests/tesira/test_ttp_client.py tests/test_tesira_client.py -q` -> PASS (`10 passed in 4.82s`)
+- `pytest tests/test_tesira*.py tests/tesira/test_ttp_client.py -q` -> PASS (`12 passed in 4.69s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/tesira/telnet_protocol.py app/services/tesira/ttp_client.py tests/tesira/test_ttp_client.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `22.53s`; existing chunk-size warning only)
+- `rg -n "0xFF|0xFD|0xFE|0xFB|0xFC|0xFA|0xF0" app/services/tesira` -> PASS (Telnet negotiation constants only in `telnet_protocol.py`; one unrelated port-61451 binary sentinel remains)
+- Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new MAP2-owned AGPL or third-party notice gaps.
 
 ID: T2365-subV
 Status: [ ] Todo
