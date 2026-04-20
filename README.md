@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1182** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2382** total commits | **3** stars | **0** forks | **0** open issues
+**1183** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2385** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`807dc720`](https://github.com/matthewmackes/map2-audio/commit/807dc720af5f86ca2e7cf3a1c19492845b1b0bab) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
+| [`effa9864`](https://github.com/matthewmackes/map2-audio/commit/effa9864e69d0f6393e205b3d86226485bc16f3c) | Clean up stub preset and guitar routes | Map2 Audio | 2026-04-20 |
+| [`ecee678f`](https://github.com/matthewmackes/map2-audio/commit/ecee678f07672c8ea987b13d341ed320ce44b34a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`829e7822`](https://github.com/matthewmackes/map2-audio/commit/829e78226884f5c0ee5dea1bed037299169f3230) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`ed841ea5`](https://github.com/matthewmackes/map2-audio/commit/ed841ea5bb78c59e3b884e0ba0ffbc0afa16026b) | config: retire legacy audio engine defaults | Map2 Audio | 2026-04-20 |
 | [`d7cd3cf6`](https://github.com/matthewmackes/map2-audio/commit/d7cd3cf67277d7438bdcc78fc61c39786702e364) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`98410229`](https://github.com/matthewmackes/map2-audio/commit/9841022986f59d23ef95470d5ec6dc74a90d5355) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`77bb6fdf`](https://github.com/matthewmackes/map2-audio/commit/77bb6fdf080e3f896e23fd947e5c83f05e108c7e) | refactor: canonicalize python audio io module | Map2 Audio | 2026-04-20 |
-| [`1a195c1d`](https://github.com/matthewmackes/map2-audio/commit/1a195c1d16685a7f9f51be28d8cdf9b2647c1d23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`f4789da5`](https://github.com/matthewmackes/map2-audio/commit/f4789da5f5f8504743eecf85ba34adbc4dba5a58) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
-| [`f03ac28a`](https://github.com/matthewmackes/map2-audio/commit/f03ac28a3359e705d953ff5c7a8836bfd66a44ac) | refactor: remove stale device context migrations | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
