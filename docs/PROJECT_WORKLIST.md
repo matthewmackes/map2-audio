@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2365-subS frontend legacy variant cleanup and build validation.
+Last updated: 2026-04-20 - Completed T2365-subH audio route split and runtime contract regeneration.
 
 ---
 
@@ -29097,7 +29097,7 @@ Validation:
 - `wc -l app/services/backup/*.py` -> each file under 2,000 lines
 
 ID: T2365-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Split app/routes/audio.py (2,453 lines) into io / config / monitoring route modules
 Description:
 - Goal / acceptance criteria: Break [app/routes/audio.py](app/routes/audio.py) into `app/routes/audio/{io,config,monitoring}.py` plus an aggregator. Preserve `/api/audio/*` URL namespace and OpenAPI operation IDs.
@@ -29106,9 +29106,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: three modules, aggregator, preserved OpenAPI paths.
 - Notes: The `clock_sync.selected_profile` fallback at [audio.py:306](app/routes/audio.py) is addressed in T2365-subI and is not part of this split.
+Last updated: 2026-04-20 07:13 EDT - Codex
+- Completion notes:
+  - Replaced the monolithic [app/routes/audio.py](app/routes/audio.py) with the `app.routes.audio` package: [app/routes/audio/monitoring.py](app/routes/audio/monitoring.py) owns runtime/status/levels/health/diagnostics, [app/routes/audio/config.py](app/routes/audio/config.py) owns lifecycle/config endpoints, [app/routes/audio/io.py](app/routes/audio/io.py) owns ports and routing, and [app/routes/audio/__init__.py](app/routes/audio/__init__.py) aggregates the same `/api/audio/*` namespace.
+  - Preserved existing public imports and test seams from `from app.routes import audio`, including `router`, `get_audio_status_route`, `get_engine_service`, `get_audio_engine`, `utc_now`, and the chain-routing override map used by focused route tests.
+  - Regenerated backend runtime contract artifacts so `MAP2_AUDIO_*` direct env-var references now point at `app/routes/audio/monitoring.py` instead of the deleted monolith.
 Validation:
-- `pytest tests/test_audio_routes*.py tests/test_pipewire*.py -q` -> must PASS
-- OpenAPI path-diff is empty for `/api/audio/*`.
+- `pytest tests/test_audio_interface_controls_routes.py tests/test_audio_runtime_diagnostic_routes.py tests/test_audio_source_of_truth_routes.py tests/test_audio_routing_chain_avb.py tests/test_avb_readiness_routes.py tests/test_api_route_readiness.py -q` -> PASS (`20 passed`)
+- `pytest tests/test_audio_*.py tests/test_pipewire*.py -q` -> PASS (`86 passed`; repo has `test_audio_*.py` route coverage files, not a matching `test_audio_routes*.py` glob)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/audio/*.py app/main.py app/services/maschine_lcd_service.py` -> PASS
+- `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `54 schema env vars`, `73 direct-only env vars`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.53s`; existing chunk-size warning only)
+- OpenAPI path-method diff against `HEAD:app/routes/audio.py` for `/api/audio/*` -> PASS (no changes)
+- `wc -l app/routes/audio/*.py` -> PASS (`monitoring.py` 1330, `io.py` 722, `config.py` 318, `common.py` 137, `__init__.py` 17)
+- Licensing review: touched backend/docs/worklist/version artifacts remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .github/copilot-instructions.md app/routes/audio requirements-backend-runtime.txt` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gaps requiring follow-up work.
 
 ID: T2365-subI
 Status: [✓] Done
