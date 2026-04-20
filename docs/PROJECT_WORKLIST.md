@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 12:56 EDT - Completed T2365-subE AVB route split.
+Last updated: 2026-04-20 13:03 EDT - Completed T2365-subN AVDECC config fallback cleanup.
 
 ---
 
@@ -29438,17 +29438,30 @@ Validation:
 - `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned backend/test/script cleanup
 
 ID: T2365-subN
-Status: [ ] Todo
-Title: Collapse the AVDECC feature-flag fallback at app/routes/avb.py:687-700
+Status: [✓] Done
+Title: Collapse the AVDECC feature-flag fallback in app/routes/avb/common.py
 Description:
-- Goal / acceptance criteria: The fallback at [app/routes/avb.py:687-700](app/routes/avb.py) checks `avb.avdecc_enabled` and falls back to `avdecc.enabled`. Pick one canonical key (`avb.avdecc_enabled`, per the `project_state_authority.md` plane model), migrate all config producers (installer, defaults, docs) to write the canonical key, add a one-release migration path in `ConfigManager` that reads the legacy key and rewrites it to the canonical key on startup, then delete the runtime fallback branch.
+- Goal / acceptance criteria: The fallback now at [app/routes/avb/common.py](app/routes/avb/common.py) checks `avb.avdecc_enabled` and falls back to `avdecc.enabled`. Pick one canonical key (`avb.avdecc_enabled`, per the `project_state_authority.md` plane model), migrate all config producers (installer, defaults, docs) to write the canonical key, add a one-release migration path in `ConfigManager` that reads the legacy key and rewrites it to the canonical key on startup, then delete the runtime fallback branch.
 - Why it matters: Double-reading the same concept under two keys is a configuration-authority violation per the rules in [docs/CLAUDE.md](docs/CLAUDE.md).
 - Dependencies: T2365-subE
 - Estimated effort: Low
 - Required outputs: canonical key chosen, migration in `ConfigManager`, deleted fallback, installer update.
+Last updated: 2026-04-20 13:03 EDT - Codex
+- Progress notes:
+  - 2026-04-20 12:58 EDT - Codex: Started after T2365-subE SHIP `a705f971`; canonical key remains `avb.avdecc_enabled`, with scope limited to migrating legacy `avdecc.enabled` producers/readers and deleting the runtime double-read fallback.
+- Completion notes:
+  - Added a startup `ConfigManager` migration that rewrites persisted legacy `avdecc.enabled` to canonical `avb.avdecc_enabled`, removes the retired key from the persisted config file, and preserves explicit canonical values when both keys are present.
+  - Deleted the runtime AVDECC feature-flag fallback from `app/routes/avb/common.py` so routes read only `avb.avdecc_enabled`, then updated AVDECC/AVB docs that still advertised legacy `avdecc.enabled` or `discovery.avdecc_enabled`.
+  - Licensing/platform: no new dependencies, packages, services, installer changes, or runtime requirements were introduced; config migration is in the existing startup config layer and docs remain MAP2-owned AGPL-covered artifacts.
 Validation:
-- `pytest tests/test_avb*.py tests/test_config*.py -q` -> must PASS
-- `rg -n "avdecc.enabled" app tests installer` -> only matches are in the migration code and its test
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py app/routes/avb/common.py tests/test_config_manager_validation.py` -> PASS
+- `pytest tests/test_config_manager_validation.py tests/test_avb_service_stats.py tests/test_avdecc_controller_contract.py -q` -> PASS (`33 passed`)
+- `pytest tests/test_avb*.py tests/test_config*.py -q` -> PASS (`240 passed, 12 skipped`)
+- `rg -n "avdecc\\.enabled" app tests install_on_new_host.sh scripts config` -> PASS (only `app/config.py` migration constant and `tests/test_config_manager_validation.py` regression assertion)
+- `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `54 schema env vars`, `73 direct-only env vars`; no generated contract content changes)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013012501`, existing chunk-size warning only)
 
 ID: T2365-subO
 Status: [✓] Done

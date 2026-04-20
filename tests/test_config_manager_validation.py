@@ -116,6 +116,23 @@ def test_config_load_migrates_retired_clock_profile_default(tmp_path: Path) -> N
     assert persisted["clock_sync"]["selected_profile"] == "pipewire_quantum_48k"
 
 
+def test_config_load_migrates_legacy_avdecc_enabled_key(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({"avdecc": {"enabled": "true"}}),
+        encoding="utf-8",
+    )
+
+    manager = ConfigManager(config_path=config_path)
+
+    assert manager.get("avb.avdecc_enabled") is True
+    assert manager.get("avdecc.enabled") is None
+
+    persisted = json.loads(config_path.read_text(encoding="utf-8"))
+    assert persisted["avb"]["avdecc_enabled"] is True
+    assert "avdecc" not in persisted
+
+
 def test_observer_notification_uses_snapshot_when_callbacks_mutate_observers(manager: ConfigManager) -> None:
     seen: list[str] = []
 

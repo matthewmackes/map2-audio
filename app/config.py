@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 _RETIRED_AUDIO_ENGINE_KEYS = ("audio.engine", "audio.allow_python_io")
 _RETIRED_AUDIO_SYNC_PROFILE_KEY = "audio.sync_profile"
 _RETIRED_CLOCK_SYNC_PROFILE = "legacy_fixed_48k"
+_RETIRED_AVDECC_ENABLED_KEY = "avdecc.enabled"
+_CANONICAL_AVDECC_ENABLED_KEY = "avb.avdecc_enabled"
 
 
 def _atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
@@ -212,11 +214,28 @@ class ConfigManager:
             changed = True
 
         changed = self._delete_nested(config, _RETIRED_AUDIO_SYNC_PROFILE_KEY) or changed
+
+        canonical_avdecc = self._get_nested(config, _CANONICAL_AVDECC_ENABLED_KEY, None)
+        legacy_avdecc = self._get_nested(config, _RETIRED_AVDECC_ENABLED_KEY, None)
+        if not self._has_config_value(canonical_avdecc) and self._has_config_value(legacy_avdecc):
+            self._set_nested(
+                config,
+                _CANONICAL_AVDECC_ENABLED_KEY,
+                self._coerce_legacy_bool(legacy_avdecc),
+            )
+            changed = True
+        changed = self._delete_nested(config, _RETIRED_AVDECC_ENABLED_KEY) or changed
         return changed
 
     @staticmethod
     def _has_config_value(value: Any) -> bool:
         return value is not None and str(value).strip() != ""
+
+    @staticmethod
+    def _coerce_legacy_bool(value: Any) -> bool:
+        if isinstance(value, str):
+            return value.strip().lower() in ("true", "1", "yes", "on")
+        return bool(value)
 
     @staticmethod
     def _is_retired_clock_profile(value: Any) -> bool:

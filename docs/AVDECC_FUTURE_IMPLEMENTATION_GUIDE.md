@@ -646,7 +646,7 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
     """
     Connect an AVTP stream from talker to listener via ACMP.
     """
-    if not config_get("avdecc.enabled", False):
+    if not config_get("avb.avdecc_enabled", False):
         raise HTTPException(503, "AVDECC not enabled")
 
     engine = get_juce_engine()

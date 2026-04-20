@@ -557,7 +557,7 @@ Full AVB configuration in `~/.map2/config.json`:
 - `streams.presentation_time_offset_us`: Buffer time before playback (2000μs typical)
 - `avb.failover_policy`: Interface failover mode (`none`, `prefer_primary`, `round_robin`, `manual`)
 - `avb.failover_interfaces`: Ordered fallback interface candidates (comma or JSON list)
-- `discovery.avdecc_enabled`: Set `true` for third-party AVB device interop (Phase 8)
+- `avb.avdecc_enabled`: Set `true` for third-party AVB device interop (Phase 8)
 
 ### Environment Variables
 

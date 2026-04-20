@@ -683,23 +683,8 @@ def _raise_srp_denied(
 
 
 def _is_avdecc_enabled() -> bool:
-    """
-    Check AVDECC feature flag with backward-compatible key fallback.
-
-    Canonical key: avb.avdecc_enabled
-    Legacy keys kept for existing config files:
-    - avdecc.enabled
-    - avb.discovery.avdecc_enabled
-    """
-    canonical = config_get("avb.avdecc_enabled", None)
-    if canonical is not None:
-        return bool(canonical)
-
-    legacy = config_get("avdecc.enabled", None)
-    if legacy is not None:
-        return bool(legacy)
-
-    return bool(config_get("avb.discovery.avdecc_enabled", False))
+    """Check the canonical AVDECC feature flag."""
+    return bool(config_get("avb.avdecc_enabled", False))
 
 
 def _resolve_entity_capability_enum():
