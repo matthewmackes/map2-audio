@@ -19,7 +19,7 @@ from enum import Enum
 from app.services.health_monitor import (
     HealthMonitor, HealthStatus, ServiceMetrics, AlertRule, Alert, get_health_monitor
 )
-from app.services.audio_io_v2 import (
+from app.services.audio_io import (
     RealAudioIOManager, AudioHealthMetrics, AudioThreadState, SignalState, XRunEvent
 )
 from app.utils.singleton import Singleton

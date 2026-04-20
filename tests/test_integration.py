@@ -12,7 +12,7 @@ class TestAudioAPI:
     @pytest.mark.asyncio
     async def test_audio_status(self):
         """Test getting audio status."""
-        from app.services.audio_io_v2 import AudioIOFactory
+        from app.services.audio_io import AudioIOFactory
 
         service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
         status = service.get_stats()
@@ -22,8 +22,8 @@ class TestAudioAPI:
     @pytest.mark.asyncio
     async def test_audio_start_stop(self, monkeypatch):
         """Test starting and stopping audio."""
-        import app.services.audio_io_v2 as audio_io_module
-        from app.services.audio_io_v2 import AudioIOFactory
+        import app.services.audio_io as audio_io_module
+        from app.services.audio_io import AudioIOFactory
 
         monkeypatch.setattr(audio_io_module, "SOUNDDEVICE_AVAILABLE", False)
         service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
@@ -35,7 +35,7 @@ class TestAudioAPI:
     @pytest.mark.asyncio
     async def test_latency(self):
         """Test latency calculation."""
-        from app.services.audio_io_v2 import AudioIOFactory
+        from app.services.audio_io import AudioIOFactory
 
         service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
         latency = service.get_stats()["latency_ms"]
@@ -44,7 +44,7 @@ class TestAudioAPI:
     @pytest.mark.asyncio
     async def test_levels(self):
         """Test level monitoring."""
-        from app.services.audio_io_v2 import AudioIOFactory
+        from app.services.audio_io import AudioIOFactory
 
         service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
         stats = service.get_stats()
@@ -138,7 +138,7 @@ class TestServices:
     @pytest.mark.asyncio
     async def test_audio_processor_service(self):
         """Test audio processor service."""
-        from app.services.audio_io_v2 import get_audio_status
+        from app.services.audio_io import get_audio_status
 
         metrics = get_audio_status()
         assert metrics["sample_rate"] == 48000

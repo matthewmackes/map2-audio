@@ -29,7 +29,7 @@ try:
     # Import new audio health monitoring
     try:
         from app.services.audio_health_monitor import get_audio_health_monitor, init_audio_health_monitor
-        from app.services.audio_io_v2 import AudioIOFactory, BUFFER_PRESETS
+        from app.services.audio_io import AudioIOFactory, BUFFER_PRESETS
         AUDIO_HEALTH_AVAILABLE = True
     except ImportError:
         AUDIO_HEALTH_AVAILABLE = False

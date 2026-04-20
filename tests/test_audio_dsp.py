@@ -22,16 +22,16 @@ from unittest.mock import Mock, patch, MagicMock
 import sys
 sys.path.insert(0, '/home/mm/map2-audio')
 
-from app.services.audio_io_v2 import (
-    RealAudioIOManager,
+from app.services.audio_io import (
     AudioIOFactory,
-    SignalDetector,
-    AudioWatchdog,
     AudioHealthMetrics,
+    AudioWatchdog,
+    RealAudioIOManager,
+    SignalDetector,
     AudioThreadState,
+    BUFFER_PRESETS,
     SignalState,
     XRunEvent,
-    BUFFER_PRESETS,
 )
 from app.services.plugin_health import (
     PluginHealthTracker,

@@ -7,7 +7,7 @@ from app.models.node import NodeHealth, NodeServices
 from app.routes import cluster_health
 from app.services import system_health_summary
 from app.services.audio_health_monitor import AudioHealthMonitor, get_audio_health_monitor
-from app.services.audio_io_v2 import AudioHealthMetrics, AudioThreadState, SignalState
+from app.services.audio_io import AudioHealthMetrics, AudioThreadState, SignalState
 from app.services.cluster.heartbeat_monitor import NodeHealthStatus
 from app.services.deployment_health import CheckStatus, DeploymentModeHealthChecker, HealthCheckResult, get_deployment_health_checker
 from app.services.deployment_remediation import DeploymentRemediationService, get_remediation_service

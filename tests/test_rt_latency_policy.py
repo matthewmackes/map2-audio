@@ -4,7 +4,7 @@ from pathlib import Path
 
 SERVICES_ROOT = Path(__file__).resolve().parents[1] / "app" / "services"
 SUB_5MS_ALLOWLIST = {
-    "audio_io_v2.py": "Audio I/O queue servicing intentionally stays faster than the general 5ms policy while keeping work off the callback thread.",
+    "audio_io.py": "Audio I/O queue servicing intentionally stays faster than the general 5ms policy while keeping work off the callback thread.",
     "metering_broadcast.py": "Metering cadence is governed by topic FPS configuration rather than a fixed sub-5ms sleep loop.",
     "realtime_parameter_bridge.py": "The RT parameter bridge is a narrow exception because it is the low-latency control handoff path into the engine.",
 }

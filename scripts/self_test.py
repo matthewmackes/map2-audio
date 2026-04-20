@@ -105,7 +105,12 @@ def test_audio_processor():
     print("  Testing audio I/O...")
     
     try:
-        from app.services.audio_io_v2 import RealAudioIOManager, get_audio_status, HAS_SOUNDDEVICE
+        from app.services.audio_io import (
+            AudioBackendUnavailableError,
+            RealAudioIOManager,
+            SOUNDDEVICE_AVAILABLE,
+            get_audio_status,
+        )
         
         # Test status retrieval
         status = get_audio_status()
@@ -116,9 +121,13 @@ def test_audio_processor():
         manager = RealAudioIOManager()
         
         # Test device enumeration
-        devices = manager.get_devices()
+        try:
+            devices = manager.get_devices()
+        except AudioBackendUnavailableError as e:
+            devices = []
+            print(f"    Audio device enumeration unavailable: {e}")
         assert isinstance(devices, list), "get_devices() should return a list"
-        print(f"    Found {len(devices)} audio devices (HAS_SOUNDDEVICE={HAS_SOUNDDEVICE})")
+        print(f"    Found {len(devices)} audio devices (SOUNDDEVICE_AVAILABLE={SOUNDDEVICE_AVAILABLE})")
         
         if devices:
             # Verify device structure

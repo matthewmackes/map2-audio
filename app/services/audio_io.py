@@ -62,7 +62,7 @@ try:
     SOUNDDEVICE_AVAILABLE = True
 except ImportError:
     SOUNDDEVICE_AVAILABLE = False
-    logger.warning("sounddevice not available - running in simulation mode")
+    logger.warning("sounddevice not available - hardware audio device enumeration disabled")
 
 # Check for RT priority capability
 RT_PRIORITY_AVAILABLE = False
@@ -101,6 +101,10 @@ class AudioDeviceInfo:
     latency_ms: float
     is_input: bool
     is_output: bool
+
+
+class AudioBackendUnavailableError(RuntimeError):
+    """Raised when the system audio backend cannot enumerate real devices."""
 
 
 @dataclass
@@ -479,7 +483,10 @@ class RealAudioIOManager:
     def get_devices(self) -> List[AudioDeviceInfo]:
         """Get list of available audio devices."""
         if not SOUNDDEVICE_AVAILABLE:
-            return self._get_stub_devices()
+            raise AudioBackendUnavailableError(
+                "sounddevice is unavailable; install and configure the audio backend "
+                "before enumerating hardware devices"
+            )
 
         try:
             devices = []
@@ -503,23 +510,9 @@ class RealAudioIOManager:
 
             return devices
         except Exception as e:
-            logger.error(f"Error querying devices: {e}")
-            return self._get_stub_devices()
-
-    def _get_stub_devices(self) -> List[AudioDeviceInfo]:
-        """Return stub devices when sounddevice unavailable."""
-        return [
-            AudioDeviceInfo(
-                index=0,
-                name=HOTONE_JOGG_DEVICE["name"],
-                channels_in=HOTONE_JOGG_DEVICE["channels"],
-                channels_out=HOTONE_JOGG_DEVICE["channels"],
-                sample_rate=float(HOTONE_JOGG_DEVICE["sample_rate"]),
-                latency_ms=5.0,
-                is_input=True,
-                is_output=True,
-            )
-        ]
+            message = f"Error querying audio devices: {e}"
+            logger.error(message)
+            raise AudioBackendUnavailableError(message) from e
 
     def find_hotone_jogg(self) -> Optional[int]:
         """Find the Hotone Jogg USB Audio device index."""

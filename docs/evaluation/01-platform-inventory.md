@@ -217,7 +217,7 @@ Largest individual route modules by decorator count:
 - `app/services/alert_services.py`
 - `app/services/audio_engine_validator.py`
 - `app/services/audio_health_monitor.py`
-- `app/services/audio_io_v2.py`
+- `app/services/audio_io.py`
 - `app/services/audio_meters.py`
 - `app/services/automation_engine.py`
 - `app/services/backup_service.py`

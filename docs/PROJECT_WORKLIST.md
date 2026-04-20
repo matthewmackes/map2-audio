@@ -29183,7 +29183,7 @@ Validation:
 - `rg -n "latency.v1|/api/latency[^_v2]" app tests` -> no matches
 
 ID: T2365-subM
-Status: [ ] Todo
+Status: [✓] Done
 Title: Rename audio_io_v2.py to audio_io.py and delete the stub-device fallback
 Description:
 - Goal / acceptance criteria: [app/services/audio_io_v2.py](app/services/audio_io_v2.py) is the sole current implementation; there is no v1. Rename to `audio_io.py` and remove the `_get_stub_devices()` fallback at [audio_io_v2.py:482,507-510](app/services/audio_io_v2.py). When `sounddevice` is unavailable (e.g. in unit tests), raise a dedicated `AudioBackendUnavailableError` so callers can handle it explicitly instead of silently getting fake devices.
@@ -29192,9 +29192,20 @@ Description:
 - Estimated effort: Low
 - Required outputs: renamed module, deleted stub function, new exception class, migrated tests that previously relied on stubs.
 - Notes: Tests that need a deterministic device list should construct explicit `AudioDevice` fixtures, not rely on `_get_stub_devices()`.
+Last updated: 2026-04-20 06:22 EDT - Codex
+- Completion notes:
+  - Renamed the sole Python audio I/O implementation to [app/services/audio_io.py](app/services/audio_io.py) and migrated backend, test, self-test, Grade-A verification, RT-policy, and inventory references.
+  - Deleted the `_get_stub_devices()` fake Hotone fallback and added `AudioBackendUnavailableError`; `get_devices()` now raises that explicit error when `sounddevice` is missing or device enumeration fails.
+  - Added [tests/test_audio_io.py](tests/test_audio_io.py) coverage proving unavailable backends and query failures raise the dedicated error, while tests needing deterministic device data provide explicit fixtures.
 Validation:
-- `pytest tests/test_audio_io*.py -q` -> must PASS
-- `rg -n "audio_io_v2|_get_stub_devices" app tests` -> no matches
+- `pytest tests/test_audio_io*.py -q` -> PASS (`3 passed in 2.69s`)
+- `pytest tests/test_audio_io*.py tests/test_audio_dsp.py tests/test_integration.py tests/test_health_services.py tests/test_rt_latency_policy.py -q` -> PASS (`67 passed, 1 warning in 7.74s`; warning is existing `datetime.utcnow()` deprecation in MIDI integration coverage)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/audio_io.py app/services/audio_health_monitor.py app/routes/audio.py tests/test_audio_io.py tests/test_audio_dsp.py tests/test_integration.py tests/test_health_services.py tests/test_rt_latency_policy.py scripts/self_test.py` -> PASS
+- `bash -n scripts/verify_grade_a.sh` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `22.86s`; existing chunk-size warning only)
+- `rg -n "audio_io_v2|_get_stub_devices" app tests scripts` -> no matches
+- `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned backend/test/script cleanup
 
 ID: T2365-subN
 Status: [ ] Todo
