@@ -310,6 +310,34 @@ class _FakeTrafficMonitor:
         self.cleared += 1
 
 
+class _FakeClockEngine:
+    def __init__(self) -> None:
+        self.running = False
+        self.configured: dict | None = None
+
+    def status(self):
+        return {"bpm": 120.0, "running": self.running, "source_mode": "internal"}
+
+    def configure(self, **updates):
+        self.configured = dict(updates)
+        return {"bpm": updates.get("bpm", 120.0), "running": self.running, "source_mode": updates.get("source_mode", "internal")}
+
+    async def start(self):
+        self.running = True
+        return self.status()
+
+    async def stop(self):
+        self.running = False
+        return self.status()
+
+    async def cont(self):
+        self.running = True
+        return self.status()
+
+    async def tap(self):
+        return {"bpm": 121.0, "running": self.running, "source_mode": "internal"}
+
+
 def test_engine_lifecycle_uses_midi_hub_when_available(monkeypatch):
     hub = _FakeHub()
     client, service = _build_client(monkeypatch)
@@ -372,6 +400,40 @@ def test_activity_clear_uses_midi_hub_traffic_monitor(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {"success": True, "source": "midi_hub"}
     assert monitor.cleared == 1
+
+
+def test_clock_facade_delegates_to_midi_hub_clock_engine(monkeypatch):
+    clock = _FakeClockEngine()
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_clock_engine", lambda: clock)
+
+    status = client.get("/api/v2/midi/clock")
+    configured = client.put("/api/v2/midi/clock", json={"bpm": 126.5, "source_mode": "external"})
+    started = client.post("/api/v2/midi/clock/start")
+    tapped = client.post("/api/v2/midi/clock/tap")
+    stopped = client.post("/api/v2/midi/clock/stop")
+    continued = client.post("/api/v2/midi/clock/continue")
+
+    assert status.status_code == 200
+    assert status.json()["bpm"] == 120.0
+    assert configured.status_code == 200
+    assert configured.json()["bpm"] == 126.5
+    assert clock.configured == {"bpm": 126.5, "source_mode": "external"}
+    assert started.json()["running"] is True
+    assert tapped.json()["bpm"] == 121.0
+    assert stopped.json()["running"] is False
+    assert continued.json()["running"] is True
+
+
+def test_clock_facade_reports_unavailable_without_midi_hub(monkeypatch):
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+
+    response = client.get("/api/v2/midi/clock")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MIDI clock engine not available"
 
 
 def test_list_commands_includes_duplicate_safe_target_position(monkeypatch):

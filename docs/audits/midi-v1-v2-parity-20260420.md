@@ -29,7 +29,7 @@ Legacy `/api/midi` routes:
 | GET/POST/DELETE | `/routing*` | In-memory port-to-port routes | Gap for v2. MIDI Hub `/routes` is the durable workstation routing owner. |
 | GET/PUT | `/filters` | In-memory message-type filters | Gap. No equivalent v2 API; likely retire or move to MIDI Hub processing. |
 | GET/POST | `/monitor*` | In-memory recent-message monitor buffer | Covered by v2 `/activity` and `/activity/clear`; v2 uses MIDI Hub traffic monitor when available. |
-| GET/PUT/POST | `/clock*` | In-memory MIDI clock config and start/stop | Gap for v2. MIDI Hub `/clock` owns clock configuration and transport. |
+| GET/PUT/POST | `/clock*` | In-memory MIDI clock config and start/stop | Covered by v2 `/clock`, `/clock/tap`, `/clock/start`, `/clock/stop`, and `/clock/continue`, backed by the MIDI Hub clock engine. |
 | GET/POST/POST/DELETE | `/presets*` | In-memory bundle of routes, filters, clock, and mappings | Partially covered by v2 `/presets`; v2 presets do not preserve legacy in-memory route/filter/clock state. |
 
 Authoritative `/api/v2/midi` routes add capabilities not present on v1:
@@ -51,9 +51,7 @@ Before deleting `app/routes/midi.py` and the compatibility wrappers in
 1. Migrate legacy `/routing` clients to MIDI Hub `/api/midi/hub/routes` or add
    a v2 port-route facade backed by the same durable route service.
 2. Retire or migrate `/filters`; there is no durable v2 equivalent today.
-3. Migrate `/clock` clients to MIDI Hub `/clock`, or add a v2 bridge if
-   non-Hub clients still need engine-clock control.
-4. Decide whether legacy presets that bundle routes, filters, and clock state
+3. Decide whether legacy presets that bundle routes, filters, and clock state
    are obsolete; if not, add an explicit migration/export path before deletion.
 
 ## Resolved During T2365-subK
@@ -61,9 +59,11 @@ Before deleting `app/routes/midi.py` and the compatibility wrappers in
 - `2026-04-20`: Added v2 `/engine/start`, `/engine/stop`, `/devices/refresh`,
   and `/activity/clear`; route tests cover MIDI Hub ownership and JUCE engine
   fallback behavior for the lifecycle path.
+- `2026-04-20`: Added the v2 `/clock` facade over the existing MIDI Hub clock
+  engine, including status, configure, tap, start, stop, and continue coverage.
 
 ## Recommended Next Commit
 
-The next commit should resolve either legacy `/routing` by bridging to MIDI Hub
-routes, or legacy `/clock` by bridging to MIDI Hub clock. Those are the next
-largest blockers to deleting `app/routes/midi.py`.
+The next commit should resolve legacy `/routing` by bridging to MIDI Hub routes,
+or explicitly retire legacy `/filters`. Those are the next largest blockers to
+deleting `app/routes/midi.py`.

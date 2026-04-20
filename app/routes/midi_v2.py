@@ -32,10 +32,12 @@ from app.services.midi_service import (
 from app.services.midi_device_profiles import device_profile_service
 
 try:
+    from app.services.midi_hub.clock_engine import get_midi_clock_engine
     from app.services.midi_hub.hub import get_midi_hub
     from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
     MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration
+    get_midi_clock_engine = None  # type: ignore[assignment]
     get_midi_hub = None  # type: ignore[assignment]
     get_midi_traffic_monitor = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
@@ -136,6 +138,19 @@ class GroupCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     color: str = Field("#808080", description="Hex color code")
     description: str = Field("")
+
+
+class ClockConfigRequest(BaseModel):
+    """Request body for configuring the MIDI Hub-owned clock."""
+    bpm: Optional[float] = Field(default=None, ge=20.0, le=300.0)
+    source_mode: Optional[str] = Field(default=None, description="internal or external")
+    output_ports: Optional[List[str]] = None
+    snapshot_sync_enabled: Optional[bool] = None
+    divider: Optional[float] = Field(default=None, ge=0.25, le=16.0)
+    multiplier: Optional[float] = Field(default=None, ge=0.25, le=16.0)
+    offset_ms: Optional[float] = Field(default=None, ge=-500.0, le=500.0)
+    tap_note: Optional[int] = Field(default=None, ge=0, le=127)
+    tap_cc: Optional[int] = Field(default=None, ge=0, le=127)
 
 
 # ==================== Mappings ====================
@@ -758,6 +773,49 @@ async def stop_midi_runtime():
         raise HTTPException(status_code=503, detail="MIDI runtime not available")
 
     return {"status": "stopped", "running": False, "source": source}
+
+
+def _clock_engine_or_503():
+    if not MIDI_HUB_AVAILABLE or get_midi_clock_engine is None:
+        raise HTTPException(status_code=503, detail="MIDI clock engine not available")
+    return get_midi_clock_engine()
+
+
+@router.get("/clock")
+async def get_clock_status() -> Dict[str, Any]:
+    """Get MIDI clock status from the v2 clock owner."""
+    return _clock_engine_or_503().status()
+
+
+@router.put("/clock")
+async def configure_clock(request: ClockConfigRequest) -> Dict[str, Any]:
+    """Configure MIDI clock through the v2 clock owner."""
+    updates = {key: value for key, value in request.model_dump().items() if value is not None}
+    return _clock_engine_or_503().configure(**updates)
+
+
+@router.post("/clock/tap")
+async def tap_clock() -> Dict[str, Any]:
+    """Record a tap-tempo event through the v2 clock owner."""
+    return await _clock_engine_or_503().tap()
+
+
+@router.post("/clock/start")
+async def start_clock() -> Dict[str, Any]:
+    """Start MIDI clock through the v2 clock owner."""
+    return await _clock_engine_or_503().start()
+
+
+@router.post("/clock/stop")
+async def stop_clock() -> Dict[str, Any]:
+    """Stop MIDI clock through the v2 clock owner."""
+    return await _clock_engine_or_503().stop()
+
+
+@router.post("/clock/continue")
+async def continue_clock() -> Dict[str, Any]:
+    """Continue MIDI clock through the v2 clock owner."""
+    return await _clock_engine_or_503().cont()
 
 
 @router.get("/status")
