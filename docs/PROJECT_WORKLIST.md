@@ -28986,7 +28986,7 @@ Validation:
 - `rg -n "service_manager|ServiceManager" app tests` -> PASS (no matches)
 
 ID: T2365-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete app/services/unified_services.py and promote ServiceOrchestrator as the sole facade
 Description:
 - Goal / acceptance criteria: Remove [app/services/unified_services.py](app/services/unified_services.py), the second deprecated facade that wraps both `ServiceManager` and `ServiceOrchestrator`. Migrate every caller to import `ServiceOrchestrator` directly from `app.services.service_orchestrator`. After the migration, `rg -n "unified_services" app tests` must return zero matches.
@@ -28995,9 +28995,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: deleted file, migrated callers, updated tests.
 - Notes: Do not introduce a new facade; the `ServiceOrchestrator` API is already the correct surface.
+- Last updated: 2026-04-19 23:29 EDT - Codex
+- Completion notes:
+  - 2026-04-19 23:28 EDT - Codex: Confirmed the only remaining `unified_services` references are the deprecated module itself and singleton factory coverage; no production call sites require migration.
+  - 2026-04-19 23:29 EDT - Codex: Deleted [app/services/unified_services.py](app/services/unified_services.py) and removed the final singleton factory test dependency so `ServiceOrchestrator` remains the sole service lifecycle facade.
 Validation:
-- `pytest tests/test_service_orchestrator*.py -q` -> must PASS
-- `rg -n "unified_services" app tests` -> no matches
+- `pytest tests/test_service_orchestrator*.py tests/test_singleton_factory_consistency.py -q` -> PASS (`6 passed in 3.81s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/service_orchestrator.py tests/test_singleton_factory_consistency.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `22.21s`; existing chunk-size warning only)
+- `rg -n "unified_services|UnifiedServices" app tests` -> PASS (no matches)
 
 ID: T2365-subC
 Status: [ ] Todo
