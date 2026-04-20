@@ -78,7 +78,21 @@ Required PR evidence:
 3. Accessibility verification notes (keyboard, focus, semantics, contrast).
 4. Screenshots or visual notes for impacted surfaces (desktop + mobile where applicable).
 
-## 7. Exceptions Process
+## 7. Signal Canvas Primitives
+
+Snapshot Editor, MPX1, IntelFX, and future chain-graph surfaces should use the shared Signal Canvas vocabulary when rendering schematic audio flow.
+
+Required primitive contracts:
+
+1. LCD meters use a seven-segment style, Carbon text/support tokens, and explicit stale/clip states. Stale meters render amber placeholder text; clip states escalate to support-error styling and remain keyboard/click clearable when a clear action exists.
+2. LED pips are decorative unless they expose state that is not otherwise named. Decorative LEDs must be hidden from assistive technology; meaningful LEDs need an accessible name or adjacent text.
+3. Trace SVGs use right-angle paths, `--cds-*` token-derived stroke colors, no blurred backdrops, and deterministic dash values so light and dark themes behave consistently.
+4. Flow animation variants live in `web/src/app/components/shared/signalFlowAnimations.css` and are selected by `data-flow`. Supported values are `cascade`, `dashmarch`, `pulse`, `packet`, `morse`, `reverse`, `scan`, `shimmer`, `heartbeat`, `ants`, `slow`, and `off`.
+5. Grid visibility and node shape are data-driven. `data-grid-backdrop="false"` removes grid lines at both canvas and chain-grid levels; `data-node-shape` supports `square`, `rounded`, and `hex`.
+6. Plugin nodes use Carbon focus rings, tokenized color, 40px stable node height, and no drag-only affordances. Bypass state must be visible without relying on color alone.
+7. Signal Canvas components may use schematic CSS primitives, but command controls, modals, toggles, dropdowns, tags, notifications, and form inputs must remain Carbon components unless this document records an exception.
+
+## 8. Exceptions Process
 
 If a change cannot conform immediately:
 
