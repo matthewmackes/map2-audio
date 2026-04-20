@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 14:14 EDT - Completed T2371 canonical worklist duplicate-ID repair.
+Last updated: 2026-04-20 14:23 EDT - Completed T2406 canonical worklist validator.
 
 ---
 
@@ -29818,6 +29818,26 @@ Last updated: 2026-04-20 14:14 EDT - Codex
   - Left blocked task semantics unchanged; this was a canonical worklist integrity repair only.
 Validation:
 - `awk '/^ID: /{count[$2]++; line[$2]=line[$2] ? line[$2] "," NR : NR} END{dups=0; for(id in count) if(count[id]>1){dups++; print id " " count[id] " " line[id]} if(!dups) print "no duplicate ID lines"}' docs/PROJECT_WORKLIST.md | sort` -> PASS (`no duplicate ID lines`)
+- `git diff --check` -> PASS
+
+ID: T2406
+Status: [✓] Done
+Title: Add a canonical worklist integrity validator
+Description:
+- Goal / acceptance criteria: Add a small repository-local validator that parses `docs/PROJECT_WORKLIST.md`, fails on duplicate `ID:` lines, and can list open tasks once per task without being confused by multiple progress-note timestamps. Add focused tests and record validation evidence.
+- Why it matters: T2371 repaired duplicate IDs after the fact. A checked validator gives future agents a deterministic way to keep the canonical worklist usable before shipping more work.
+- Dependencies: T2371
+- Estimated effort: Low
+- Required outputs: validator script, focused tests, worklist completion evidence, and SHIP commit.
+Last updated: 2026-04-20 14:23 EDT - Codex
+- Progress notes:
+  - 2026-04-20 14:19 EDT - Codex: Started after T2371 SHIP `0e5c21fc`; scope is standard-library validation only with no new runtime dependencies.
+  - 2026-04-20 14:23 EDT - Codex: Added `scripts/validate_worklist.py` with duplicate-ID validation and stable open-task listing, plus focused pytest coverage for duplicate detection and progress-note-safe open-task parsing.
+Validation:
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile scripts/validate_worklist.py tests/test_worklist_integrity.py` -> PASS
+- `pytest tests/test_worklist_integrity.py -q` -> PASS (`3 passed`)
+- `python3 scripts/validate_worklist.py docs/PROJECT_WORKLIST.md` -> PASS (`OK: 1149 task IDs are unique`)
+- `python3 scripts/validate_worklist.py --open docs/PROJECT_WORKLIST.md` -> PASS (remaining open tasks list once each; all are Blocked)
 - `git diff --check` -> PASS
 
 ---
