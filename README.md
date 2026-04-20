@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1191** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2440** total commits | **3** stars | **0** forks | **0** open issues
+**1195** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2442** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a705f971`](https://github.com/matthewmackes/map2-audio/commit/a705f9712a660c7788f63af899bfc883f359e291) | refactor: split AVB routes by concern | Map2 Audio | 2026-04-20 |
+| [`ef6862d2`](https://github.com/matthewmackes/map2-audio/commit/ef6862d20cb92ff7465a923b43992964c529f372) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`bf0bfb36`](https://github.com/matthewmackes/map2-audio/commit/bf0bfb36bb7cca9981fe688725f5bf13acfcb691) | Split backup service package | Map2 Audio | 2026-04-20 |
 | [`0c7fce0f`](https://github.com/matthewmackes/map2-audio/commit/0c7fce0faa6fed32972fa92065a10fd66816919d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`23926080`](https://github.com/matthewmackes/map2-audio/commit/23926080c16e17cea58c9036df40d0d15c58fb81) | Resolve service circular import band-aids | Map2 Audio | 2026-04-20 |
 | [`7bcf51e7`](https://github.com/matthewmackes/map2-audio/commit/7bcf51e7428a473c7afd653649f0c84b12916ccb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`cb858360`](https://github.com/matthewmackes/map2-audio/commit/cb858360a185f7b3d2748ddbe970ea52f042d8c8) | Retire legacy MIDI routes | Map2 Audio | 2026-04-20 |
 | [`2f778495`](https://github.com/matthewmackes/map2-audio/commit/2f7784957a632d412d36a64cb12bf488a4f30009) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`1e91bb5b`](https://github.com/matthewmackes/map2-audio/commit/1e91bb5b10ccc44e6100d5ac0132d58dc33202f3) | Bridge MIDI v2 port routes | Map2 Audio | 2026-04-20 |
-| [`75613035`](https://github.com/matthewmackes/map2-audio/commit/75613035594ed60fee3e219f2f25a94c87bbf8d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
