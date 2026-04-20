@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1186** Python | **1160** TypeScript | **136** C++/H | **144** Docs | **2406** total commits | **3** stars | **0** forks | **0** open issues
+**1186** Python | **1161** TypeScript | **136** C++/H | **144** Docs | **2408** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`65a19b5b`](https://github.com/matthewmackes/map2-audio/commit/65a19b5b2d876e03b4645fed3368ed8bfef9dd0d) | Assemble signal canvas chain rows | Map2 Audio | 2026-04-20 |
+| [`9f82497b`](https://github.com/matthewmackes/map2-audio/commit/9f82497bfa7fa8fd90d4e28f47594c5a0ffba3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`5236502b`](https://github.com/matthewmackes/map2-audio/commit/5236502bee9f1f73f003e487ca44dd9228aad5fb) | Add signal canvas chain head side | Map2 Audio | 2026-04-20 |
 | [`d24f9836`](https://github.com/matthewmackes/map2-audio/commit/d24f9836e294df92d1bb4726d84a44d0f8d97273) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`a7d520e5`](https://github.com/matthewmackes/map2-audio/commit/a7d520e5679200eb82c21a5cf3072b245e7b87f9) | Add signal canvas chain primitives | Map2 Audio | 2026-04-20 |
 | [`a34c96fe`](https://github.com/matthewmackes/map2-audio/commit/a34c96fec06fb7df4cbb46c0b0506164dbb0c78f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`96d4431b`](https://github.com/matthewmackes/map2-audio/commit/96d4431b4f156d329b35ba8c9737707be5a5c5e0) | Rewrite snapshot editor toolbar shell | Map2 Audio | 2026-04-20 |
 | [`8d335ed7`](https://github.com/matthewmackes/map2-audio/commit/8d335ed714cf4d2a8748420fe4348813768a95cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`e71478a4`](https://github.com/matthewmackes/map2-audio/commit/e71478a43bb6b73b4d795b381f137af2fb66c7a4) | Collapse snapshot editor rails | Map2 Audio | 2026-04-20 |
-| [`a5f8c9eb`](https://github.com/matthewmackes/map2-audio/commit/a5f8c9ebf6b6c404fc45808acb3ad22efd2ef564) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
