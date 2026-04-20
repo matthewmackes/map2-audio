@@ -10,7 +10,6 @@ no dedicated scoped metering API yet.
 
 from __future__ import annotations
 
-import asyncio
 import inspect
 import json
 import math
@@ -19,6 +18,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import HTTPException
+
+from app.services.plugin_instance_id import resolve_legacy_instance_id
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -89,12 +90,7 @@ async def resolve_scoped_instance_id(
     if not _has_plugin_position(plugin_position):
         return None
 
-    legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
-    if callable(legacy_resolver):
-        resolved_instance_id = await asyncio.to_thread(legacy_resolver, plugin_uri, plugin_position)
-        return resolved_instance_id if isinstance(resolved_instance_id, int) and resolved_instance_id > 0 else None
-
-    return None
+    return await resolve_legacy_instance_id(engine, plugin_uri, plugin_position)
 
 
 @lru_cache(maxsize=1)

@@ -21,6 +21,7 @@ try:
     from app.database import Chain, ChainPlugin, get_db_session
     from app.services.ir_processor import IRProcessor
     from app.services.juce_engine_service import get_audio_engine
+    from app.services.plugin_instance_id import resolve_legacy_instance_id
     from app.services.plugin_uris import (
         CABINET_IR_CONFIG_PLUGIN_URIS,
         CABINET_IR_PLUGIN_URI,
@@ -217,11 +218,7 @@ try:
         if not _has_plugin_position(plugin_position):
             return None
 
-        legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
-        if callable(legacy_resolver):
-            return await asyncio.to_thread(legacy_resolver, IR_PLUGIN_URIS[ir_type], plugin_position)
-
-        return None
+        return await resolve_legacy_instance_id(engine, IR_PLUGIN_URIS[ir_type], plugin_position)
 
     async def _get_instance_ir_status(instance_id: int, ir_type: str) -> Dict[str, Any]:
         engine = get_audio_engine()

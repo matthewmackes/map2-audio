@@ -18,6 +18,11 @@ from typing import List, Dict, Any, Optional
 from app.response_models import PluginLoadResponse, PluginUnloadResponse
 from app.exceptions import PluginNotFoundException, PluginLoadException
 from app.services.plugin_resource_manager import get_resource_manager, ResourceLimits
+from app.services.plugin_instance_id import (
+    call_legacy_instance_id_resolver,
+    get_legacy_instance_id_resolver,
+    resolve_legacy_instance_id,
+)
 from app.services.plugin_key_parameter_registry import attach_plugin_key_parameter_metadata
 from app.services.plugin_uris import build_lexicon_mpx1_plugin_descriptor
 
@@ -481,27 +486,6 @@ try:
             return None
         return numeric if numeric >= 0 else None
 
-    async def _call_instance_resolver(
-        resolver,
-        plugin_uri: str,
-        plugin_position: Optional[int] = None,
-    ) -> Optional[int]:
-        if not callable(resolver):
-            return None
-
-        try:
-            if isinstance(plugin_position, int) and plugin_position >= 0:
-                try:
-                    resolved = await asyncio.to_thread(resolver, plugin_uri, plugin_position)
-                except TypeError:
-                    resolved = await asyncio.to_thread(resolver, plugin_uri)
-            else:
-                resolved = await asyncio.to_thread(resolver, plugin_uri)
-        except Exception:
-            return None
-
-        return resolved if isinstance(resolved, int) and resolved > 0 else None
-
     def _find_plugin_info_in_snapshot(
         plugin_uri: str,
         discovered_snapshot: List[Dict[str, Any]],
@@ -573,14 +557,13 @@ try:
                     if cached_instance is not None:
                         return cached_instance
 
-        resolver = getattr(engine, "_get_instance_id_for_uri", None)
-        return await _call_instance_resolver(resolver, plugin_uri, plugin_position)
+        return await resolve_legacy_instance_id(engine, plugin_uri, plugin_position)
 
     async def _apply_engine_parameter_batch(engine, updates: List[Dict[str, Any]]) -> int:
         if not updates:
             return 0
 
-        resolver = getattr(engine, "_get_instance_id_for_uri", None)
+        resolver = get_legacy_instance_id_resolver(engine)
         instance_id_cache: Dict[tuple[str, int], Optional[int]] = {}
         direct_updates: List[tuple[int, str, float]] = []
 
@@ -604,7 +587,7 @@ try:
                         plugin_position=plugin_position,
                     )
                     if instance_id is None:
-                        instance_id = await _call_instance_resolver(resolver, plugin_uri, plugin_position)
+                        instance_id = await call_legacy_instance_id_resolver(resolver, plugin_uri, plugin_position)
                     instance_id_cache[cache_key] = instance_id
 
             if isinstance(instance_id, int) and instance_id > 0:
@@ -1385,9 +1368,7 @@ try:
                     instance_id = loaded_entry.get("instance_id")
 
                     if not isinstance(instance_id, int) or instance_id <= 0:
-                        resolver = getattr(engine, "_get_instance_id_for_uri", None)
-                        if callable(resolver):
-                            instance_id = resolver(uri)
+                        instance_id = await resolve_legacy_instance_id(engine, uri)
 
                     if isinstance(instance_id, int) and instance_id > 0:
                         engine_unloaded = await engine.unload_plugin(instance_id)

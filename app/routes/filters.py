@@ -3,7 +3,6 @@ EQ/Filter Processing API Routes
 8-band parametric EQ control
 """
 
-import asyncio
 import math
 from typing import Any, Dict, List, Optional
 
@@ -11,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.services.juce_engine_service import get_audio_engine
+from app.services.plugin_instance_id import resolve_legacy_instance_id
 
 router = APIRouter(prefix="/api/engine/eq", tags=["eq"])
 
@@ -99,11 +99,7 @@ async def _resolve_scoped_instance_id(
     if not _has_plugin_position(plugin_position):
         return None
 
-    legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
-    if callable(legacy_resolver):
-        return await asyncio.to_thread(legacy_resolver, EQ_PLUGIN_URI, plugin_position)
-
-    return None
+    return await resolve_legacy_instance_id(engine, EQ_PLUGIN_URI, plugin_position)
 
 
 def _band_symbol(index: int, suffix: str) -> str:

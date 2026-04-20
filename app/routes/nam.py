@@ -25,6 +25,7 @@ try:
     from app.paths import StoragePaths
     from app.database import Chain, ChainPlugin, get_db, get_db_session, NAMModel
     from app.services.juce_engine_service import get_audio_engine
+    from app.services.plugin_instance_id import resolve_legacy_instance_id
     from app.services.plugin_uris import NAM_CONFIG_PLUGIN_URIS, NAM_PLUGIN_URI
     from app.services.upload_service import AssetType, get_upload_service
     from sqlalchemy import or_
@@ -146,11 +147,7 @@ try:
         if not _has_plugin_position(plugin_position):
             return None
 
-        legacy_resolver = getattr(engine, "_get_instance_id_for_uri", None)
-        if callable(legacy_resolver):
-            return await asyncio.to_thread(legacy_resolver, NAM_PLUGIN_URI, plugin_position)
-
-        return None
+        return await resolve_legacy_instance_id(engine, NAM_PLUGIN_URI, plugin_position)
 
     async def _runtime_has_plugin_uri(engine, plugin_uri: str) -> bool:
         getter = getattr(engine, "get_current_pedalboard", None)

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-19 - Completed T2367 by allowing absolute third-party plugin URIs in State Authority snapshot graph documents so snapshot-editor LV2 adds no longer fail schema validation.
+Last updated: 2026-04-20 - Completed T2365-subJ by centralizing legacy plugin instance-id resolver lookup/call semantics in `app/services/plugin_instance_id.py`.
 
 ---
 
@@ -29132,7 +29132,7 @@ Validation:
 - `rg -n "clock_sync\\.selected_profile.*audio\\.sync_profile" app` -> PASS (no matches)
 
 ID: T2365-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract the duplicated legacy instance-id resolver pattern into a shared utility
 Description:
 - Goal / acceptance criteria: The identical 3-line `legacy_resolver` block is duplicated in five route/service files: [app/routes/ir.py:220-222](app/routes/ir.py), [app/routes/nam.py:149-151](app/routes/nam.py), [app/routes/filters.py:102-104](app/routes/filters.py), [app/services/scoped_plugin_utils.py:92-94](app/services/scoped_plugin_utils.py), and once more in `app/routes/plugins.py`. Extract into `app/services/plugin_instance_id.py::get_legacy_instance_id_resolver()` and replace all five call sites. Add a unit test covering the resolver's fallback ordering.
@@ -29141,9 +29141,19 @@ Description:
 - Estimated effort: Low
 - Required outputs: one utility, five migrated call sites, one unit test.
 - Notes: Preserve the exact fallback semantics — this is a refactor, not a behavior change.
+Last updated: 2026-04-20 06:00 EDT - Codex
+- Completion notes:
+  - Added [app/services/plugin_instance_id.py](app/services/plugin_instance_id.py) with `get_legacy_instance_id_resolver()`, `call_legacy_instance_id_resolver()`, and `resolve_legacy_instance_id()` so route code no longer duplicates private JUCE resolver lookup/call fallback behavior.
+  - Migrated the scoped resolver paths in [app/routes/ir.py](app/routes/ir.py), [app/routes/nam.py](app/routes/nam.py), [app/routes/filters.py](app/routes/filters.py), [app/routes/scoped_plugin_utils.py](app/routes/scoped_plugin_utils.py), and [app/routes/plugins.py](app/routes/plugins.py).
+  - Added [tests/test_plugin_instance_id.py](tests/test_plugin_instance_id.py) coverage for resolver lookup, positioned lookup, uri-only fallback after `TypeError`, invalid results, and missing resolvers.
 Validation:
-- `pytest tests/test_plugin_instance_id*.py tests/test_ir_routes*.py tests/test_nam_routes*.py -q` -> must PASS
-- `rg -n "legacy_resolver" app` -> only matches are in `plugin_instance_id.py`
+- `pytest tests/test_plugin_instance_id.py tests/test_filters_route_identity.py tests/test_nam_ir_instance_routes.py tests/test_plugin_parameter_route_identity.py tests/test_plugins_engine_op_pipeline.py -q` -> PASS (`34 passed in 4.38s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/plugin_instance_id.py app/routes/filters.py app/routes/ir.py app/routes/nam.py app/routes/scoped_plugin_utils.py app/routes/plugins.py tests/test_plugin_instance_id.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.38s`; existing chunk-size warning only)
+- `rg -n "legacy_resolver" app` -> PASS (no matches)
+- `rg -n "_get_instance_id_for_uri" app/routes` -> PASS (no matches)
+- Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new MAP2-owned AGPL or third-party notice gaps.
 
 ID: T2365-subK
 Status: [ ] Todo
