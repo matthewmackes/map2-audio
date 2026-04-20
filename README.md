@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1182** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2379** total commits | **3** stars | **0** forks | **0** open issues
+**1182** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2382** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,10 +176,10 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-20 |
+| [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-20 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-19 |
 | [Maschine MK1 Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-18 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-04-17 |
-| [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-17 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-16 |
 <!-- RECENT-DOCS:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`829e7822`](https://github.com/matthewmackes/map2-audio/commit/829e78226884f5c0ee5dea1bed037299169f3230) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
+| [`ed841ea5`](https://github.com/matthewmackes/map2-audio/commit/ed841ea5bb78c59e3b884e0ba0ffbc0afa16026b) | config: retire legacy audio engine defaults | Map2 Audio | 2026-04-20 |
+| [`d7cd3cf6`](https://github.com/matthewmackes/map2-audio/commit/d7cd3cf67277d7438bdcc78fc61c39786702e364) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`98410229`](https://github.com/matthewmackes/map2-audio/commit/9841022986f59d23ef95470d5ec6dc74a90d5355) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`77bb6fdf`](https://github.com/matthewmackes/map2-audio/commit/77bb6fdf080e3f896e23fd947e5c83f05e108c7e) | refactor: canonicalize python audio io module | Map2 Audio | 2026-04-20 |
 | [`1a195c1d`](https://github.com/matthewmackes/map2-audio/commit/1a195c1d16685a7f9f51be28d8cdf9b2647c1d23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`f4789da5`](https://github.com/matthewmackes/map2-audio/commit/f4789da5f5f8504743eecf85ba34adbc4dba5a58) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`f03ac28a`](https://github.com/matthewmackes/map2-audio/commit/f03ac28a3359e705d953ff5c7a8836bfd66a44ac) | refactor: remove stale device context migrations | Map2 Audio | 2026-04-20 |
-| [`14c2862a`](https://github.com/matthewmackes/map2-audio/commit/14c2862a182bf027795d0b4ef86cbaf2dff46ab8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`90c5fb23`](https://github.com/matthewmackes/map2-audio/commit/90c5fb238fe7ea57ef0319fb8d3474f564d0e292) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
-| [`f8a4defe`](https://github.com/matthewmackes/map2-audio/commit/f8a4defe6c66196b661b41aa6dd47262f0830b7a) | docs: reconcile AVDECC orphan cleanup status | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -232,7 +232,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **36** more open-source packages from PyPI and npm.
+...and **35** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
