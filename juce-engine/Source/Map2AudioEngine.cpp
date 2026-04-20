@@ -707,9 +707,26 @@ bool insertionUsesParallelBlend(const std::string& mode) {
         || mode == "multiband_split";
 }
 
+template <size_t N>
+void copyEventText(std::array<char, N>& dest, const char* value) noexcept {
+    dest.fill('\0');
+    if (value == nullptr || N == 0) {
+        return;
+    }
+    std::strncpy(dest.data(), value, N - 1);
+    dest[N - 1] = '\0';
+}
+
+int64_t currentUnixMillis() noexcept {
+    const auto now = std::chrono::system_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()).count();
+}
+
 }  // namespace
 
 Map2AudioEngine::Map2AudioEngine() {
+    audioIO_.setRuntimeEventSink({this, &Map2AudioEngine::handleAudioIoXrunEvent});
     audioGraph_ = std::make_unique<JuceAudioGraph>(pluginHost_);
     snapshotManager_ = std::make_unique<SnapshotManager>(
         pluginHost_,
@@ -721,6 +738,87 @@ Map2AudioEngine::Map2AudioEngine() {
 
 Map2AudioEngine::~Map2AudioEngine() {
     shutdown();
+}
+
+void Map2AudioEngine::enqueuePlatformEvent(
+    const char* kind,
+    const char* severity,
+    const char* title,
+    const char* message) noexcept {
+    uint64_t writeSeq = platformEventWriteSeq_.load(std::memory_order_relaxed);
+    for (;;) {
+        const uint64_t readSeq = platformEventReadSeq_.load(std::memory_order_acquire);
+        if (writeSeq - readSeq >= PLATFORM_EVENT_FIFO_SIZE) {
+            droppedPlatformEventCount_.fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+        if (platformEventWriteSeq_.compare_exchange_weak(
+                writeSeq,
+                writeSeq + 1,
+                std::memory_order_acq_rel,
+                std::memory_order_relaxed)) {
+            break;
+        }
+    }
+
+    auto& slot = platformEventFifo_[writeSeq % PLATFORM_EVENT_FIFO_SIZE];
+    slot.ready.store(false, std::memory_order_release);
+    copyEventText(slot.kind, kind);
+    copyEventText(slot.severity, severity);
+    copyEventText(slot.title, title);
+    copyEventText(slot.message, message);
+    slot.sequence = writeSeq;
+    slot.timestampMs = currentUnixMillis();
+    slot.ready.store(true, std::memory_order_release);
+}
+
+void Map2AudioEngine::handleAudioIoXrunEvent(void* context) noexcept {
+    auto* engine = static_cast<Map2AudioEngine*>(context);
+    if (engine == nullptr) {
+        return;
+    }
+    engine->enqueuePlatformEvent(
+        "audio.xrun",
+        "warning",
+        "Audio xrun",
+        "Audio callback xrun detected");
+}
+
+std::vector<Map2AudioEngine::PlatformEventRecord> Map2AudioEngine::drainPlatformEvents(int maxEvents) {
+    const int limit = std::max(0, std::min(maxEvents, static_cast<int>(PLATFORM_EVENT_FIFO_SIZE)));
+    std::vector<PlatformEventRecord> events;
+    events.reserve(static_cast<size_t>(limit));
+
+    for (int index = 0; index < limit; ++index) {
+        const uint64_t readSeq = platformEventReadSeq_.load(std::memory_order_relaxed);
+        if (readSeq >= platformEventWriteSeq_.load(std::memory_order_acquire)) {
+            break;
+        }
+
+        auto& slot = platformEventFifo_[readSeq % PLATFORM_EVENT_FIFO_SIZE];
+        if (!slot.ready.load(std::memory_order_acquire)) {
+            break;
+        }
+
+        PlatformEventRecord record;
+        record.kind = slot.kind.data();
+        record.severity = slot.severity.data();
+        record.title = slot.title.data();
+        record.message = slot.message.data();
+        record.sequence = slot.sequence;
+        record.timestampMs = slot.timestampMs;
+        record.droppedCount = droppedPlatformEventCount_.load(std::memory_order_relaxed);
+        events.push_back(std::move(record));
+
+        slot.ready.store(false, std::memory_order_release);
+        platformEventReadSeq_.store(readSeq + 1, std::memory_order_release);
+    }
+
+    return events;
+}
+
+uint64_t Map2AudioEngine::getDroppedPlatformEventCount() const {
+    return droppedPlatformEventCount_.load(std::memory_order_relaxed);
 }
 
 bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
@@ -1086,6 +1184,11 @@ bool Map2AudioEngine::startAudio() {
     }
 
     audioRunning_ = true;
+    enqueuePlatformEvent(
+        "audio.engine.status",
+        "info",
+        "Audio started",
+        "JUCE audio processing started");
     std::cout << "Audio processing started" << std::endl;
     return true;
 }
@@ -1095,6 +1198,11 @@ bool Map2AudioEngine::stopAudio() {
 
     audioIO_.stopAudio();
     audioRunning_ = false;
+    enqueuePlatformEvent(
+        "audio.engine.status",
+        "info",
+        "Audio stopped",
+        "JUCE audio processing stopped");
 
     std::cout << "Audio processing stopped" << std::endl;
     return true;

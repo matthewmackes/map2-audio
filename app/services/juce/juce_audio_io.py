@@ -197,6 +197,57 @@ class JuceAudioIOMixin:
             }
         return await asyncio.to_thread(self._engine.get_audio_io_stats)
 
+    async def drain_platform_events(self, max_events: int = 128) -> List[Dict[str, Any]]:
+        """Drain engine-originated PlatformEvent records from the native FIFO."""
+        if not self._engine or not hasattr(self._engine, "drain_platform_events"):
+            return []
+        raw_events = await asyncio.to_thread(self._engine.drain_platform_events, int(max_events))
+        if not isinstance(raw_events, list):
+            return []
+        return [dict(event) for event in raw_events if isinstance(event, dict)]
+
+    async def get_dropped_platform_event_count(self) -> int:
+        """Return engine PlatformEvent records dropped because the native FIFO was full."""
+        if not self._engine or not hasattr(self._engine, "get_dropped_platform_event_count"):
+            return 0
+        try:
+            return int(await asyncio.to_thread(self._engine.get_dropped_platform_event_count))
+        except (TypeError, ValueError):
+            return 0
+
+    async def publish_engine_platform_events(self, max_events: int = 128) -> List[str]:
+        """Publish drained engine-native records through the canonical PlatformEvent bus."""
+        records = await self.drain_platform_events(max_events)
+        if not records:
+            return []
+
+        from app.config import config_get
+        from app.services.platform_event.bus import get_platform_event_bus
+
+        source_node = str(config_get("node.id", "local") or "local")
+        bus = get_platform_event_bus()
+        emitted_ids: List[str] = []
+        for record in records:
+            context = {
+                "engine_sequence": record.get("sequence", 0),
+                "engine_timestamp_ms": record.get("timestamp_ms", 0),
+                "engine_dropped_count": record.get("dropped_count", 0),
+            }
+            event_id = await bus.emit(
+                {
+                    "kind": str(record.get("kind") or "audio.engine.status"),
+                    "severity": str(record.get("severity") or "info"),
+                    "source_node": source_node,
+                    "source_service": "juce_engine",
+                    "title": str(record.get("title") or "Audio engine")[:40],
+                    "message": str(record.get("message") or "Engine event")[:200],
+                    "context": context,
+                    "target_surfaces": ["lcd", "toast"],
+                }
+            )
+            emitted_ids.append(event_id)
+        return emitted_ids
+
     async def get_topology_mutation_stats(self) -> Dict[str, Any]:
         """Get cumulative JUCE graph topology-mutation diagnostics when supported."""
         if not self._engine or not hasattr(self._engine, "get_topology_mutation_stats"):

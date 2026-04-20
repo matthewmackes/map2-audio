@@ -496,6 +496,19 @@ public:
      */
     double getDeviceReportedLatencyMs() const;
 
+    struct PlatformEventRecord {
+        std::string kind;
+        std::string severity;
+        std::string title;
+        std::string message;
+        uint64_t sequence = 0;
+        int64_t timestampMs = 0;
+        uint64_t droppedCount = 0;
+    };
+
+    std::vector<PlatformEventRecord> drainPlatformEvents(int maxEvents = 128);
+    uint64_t getDroppedPlatformEventCount() const;
+
     // ========================================
     // Convolution (NEW - replaces Python ReevR)
     // ========================================
@@ -1538,6 +1551,28 @@ private:
     void cleanupExpiredNativeSpillovers();
     void clearAllNativeSpillovers();
     void processNativeSpillovers(juce::AudioBuffer<float>& buffer, int numSamples);
+
+    struct PlatformEventSlot {
+        std::array<char, 64> kind{};
+        std::array<char, 16> severity{};
+        std::array<char, 48> title{};
+        std::array<char, 160> message{};
+        uint64_t sequence = 0;
+        int64_t timestampMs = 0;
+        std::atomic<bool> ready{false};
+    };
+
+    static constexpr size_t PLATFORM_EVENT_FIFO_SIZE = 128;
+    std::array<PlatformEventSlot, PLATFORM_EVENT_FIFO_SIZE> platformEventFifo_{};
+    std::atomic<uint64_t> platformEventWriteSeq_{0};
+    std::atomic<uint64_t> platformEventReadSeq_{0};
+    std::atomic<uint64_t> droppedPlatformEventCount_{0};
+    void enqueuePlatformEvent(
+        const char* kind,
+        const char* severity,
+        const char* title,
+        const char* message) noexcept;
+    static void handleAudioIoXrunEvent(void* context) noexcept;
 
     // JUCE Components (NEW)
     JuceAudioIO audioIO_;

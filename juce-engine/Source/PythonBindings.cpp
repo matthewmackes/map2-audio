@@ -4481,6 +4481,27 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return d;
         }, "Get audio device connection health")
 
+        .def("drain_platform_events", [](Map2AudioEngine& self, int maxEvents) {
+            auto events = self.drainPlatformEvents(maxEvents);
+            py::list result;
+            for (const auto& event : events) {
+                py::dict d;
+                d["kind"] = event.kind;
+                d["severity"] = event.severity;
+                d["title"] = event.title;
+                d["message"] = event.message;
+                d["sequence"] = event.sequence;
+                d["timestamp_ms"] = event.timestampMs;
+                d["dropped_count"] = event.droppedCount;
+                result.append(d);
+            }
+            return result;
+        }, py::arg("max_events") = 128,
+           "Drain engine-originated PlatformEvent records from the native FIFO")
+
+        .def("get_dropped_platform_event_count", &Map2AudioEngine::getDroppedPlatformEventCount,
+             "Return the number of engine PlatformEvent records dropped due to FIFO pressure")
+
         .def("get_xrun_history", [](const Map2AudioEngine& self) {
             auto history = self.getXrunHistory();
             py::list result;

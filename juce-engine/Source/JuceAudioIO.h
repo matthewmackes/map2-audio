@@ -119,6 +119,15 @@ public:
 
     void setProcessCallback(ProcessCallback callback);
 
+    using RuntimeEventCallback = void (*)(void*) noexcept;
+
+    struct RuntimeEventSink {
+        void* context = nullptr;
+        RuntimeEventCallback onXrun = nullptr;
+    };
+
+    void setRuntimeEventSink(RuntimeEventSink sink) noexcept;
+
     // ========================================
     // Statistics & Diagnostics
     // ========================================
@@ -238,6 +247,8 @@ private:
     std::array<int64_t, XRUN_HISTORY_SIZE> xrunHistory_{};
     std::atomic<int> xrunHistoryHead_{0};
     void recordXrun();  // Thread-safe xrun recording
+    std::atomic<void*> runtimeEventContext_{nullptr};
+    std::atomic<RuntimeEventCallback> xrunEventCallback_{nullptr};
 
     // Error handling
     std::string lastError_;

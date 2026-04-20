@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:48 EDT - Completed T2365 cleanup epic.
+Last updated: 2026-04-20 13:57 EDT - Completed T2364-subC engine-native PlatformEvent FIFO.
 
 ---
 
@@ -29000,7 +29000,7 @@ Validation:
 ---
 
 ID: T2364
-Status: [>] In Progress
+Status: [✓] Done
 Title: Post-cutover PlatformEvent follow-through — engine emission, store ergonomics, and surface cleanup
 Description:
 - Goal / acceptance criteria: Continue from the shipped T2363 hard cutover without reintroducing legacy buses. Add engine-native platform event emission through an RT-safe FIFO, simplify the frontend platform event store ergonomics, and clean up any remaining surface-specific presentation duplication now that `PlatformEventBus.emit()` is the only cross-system event entrypoint.
@@ -29010,12 +29010,15 @@ Description:
 - Required outputs: RT-safe engine event emission design and implementation, focused store/presenter cleanup commits, docs updates, and validation proving platform events still flow through the single bus.
 - Notes: This epic is strictly post-cutover work. Do not add compatibility buses, re-export deleted legacy modules, or restore removed public legacy event routes.
 - Assigned to: Codex
-- Last updated: 2026-04-20 11:40 EDT - Codex
+- Last updated: 2026-04-20 13:57 EDT - Codex
 - Progress notes:
   - 2026-04-20 11:40 EDT - Codex: Started the first restartable post-cutover slice after T2365-subV SHIP `6d6ddc96`; taking the frontend PlatformEvent store ergonomics work independently of RT-safe engine emission.
   - 2026-04-20 11:40 EDT - Codex: Completed T2364-subA by adding store-level PlatformEvent filter helpers, visible-event selection, and bounded retention at 1000 events while preserving the existing `usePlatformEvents` API.
   - 2026-04-20 11:42 EDT - Codex: Started T2364-subB presenter cleanup after confirming there is no active C++ `PlatformEvent` header/source path to safely wire RT emission in a small commit.
   - 2026-04-20 11:48 EDT - Codex: Completed T2364-subB by adding a shared PlatformEvent decision hook/helper and migrating all frontend presenters off per-component router derivation.
+  - 2026-04-20 13:52 EDT - Codex: Started T2364-subC to add the missing C++ engine-native PlatformEvent FIFO and Python drain/publish bridge without reintroducing any legacy bus.
+  - 2026-04-20 13:57 EDT - Codex: Completed T2364-subC by adding a bounded native FIFO for audio start/stop/xrun records, pybind drain/drop-count bindings, and a `JuceEngineService.publish_engine_platform_events()` bridge that emits only through canonical `PlatformEventBus.emit()`.
+  - 2026-04-20 13:57 EDT - Codex: Closed T2364; store ergonomics, presenter decision cleanup, and engine-native FIFO emission are now all shipped in restartable subtasks.
 - Validation:
   - `rg -n "PlatformEventBus.emit" app web docs/CLAUDE.md docs/platform` -> canonical entrypoint usage and docs present
   - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no runtime legacy paths
@@ -29064,6 +29067,28 @@ Validation:
 - `git diff --check` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 - Licensing compliance spot-check: no new dependencies or third-party assets; README, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` remain present for AGPLv3 posture.
+
+ID: T2364-subC
+Status: [✓] Done
+Title: Add engine-native PlatformEvent FIFO and Python publish bridge
+Description:
+- Goal / acceptance criteria: Add an RT-safe fixed-size FIFO inside the JUCE engine for engine-originated PlatformEvent records, initially covering audio start, audio stop, and audio xrun detection. Expose a Python binding to drain the FIFO and a `JuceEngineService` helper that publishes drained records through canonical `PlatformEventBus.emit()` with no legacy buses or compatibility event types. Acceptance requires focused Python bridge tests, native build validation, and scans proving no legacy event bus imports return.
+- Why it matters: T2364's remaining hard requirement is engine-native emission. The audio callback cannot call Python or SQLite directly, so engine events need a bounded native FIFO that the control plane can drain safely.
+- Dependencies: T2363, T2364-subA, T2364-subB
+- Estimated effort: Medium
+- Required outputs: C++ FIFO/bindings, Python drain/publish helper, focused tests, docs/worklist validation.
+Last updated: 2026-04-20 13:57 EDT - Codex
+- Progress notes:
+  - 2026-04-20 13:52 EDT - Codex: Started after T2365 SHIP `68e40684`; first pass is native event records plus Python service bridge, not a background scheduler.
+  - 2026-04-20 13:57 EDT - Codex: Added the RT-safe event sink from `JuceAudioIO::recordXrun()` into `Map2AudioEngine`'s fixed-size FIFO, plus non-RT start/stop event enqueueing and native drop-count telemetry.
+Validation:
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce/juce_audio_io.py tests/test_juce_engine_platform_events.py tests/test_no_legacy_imports.py` -> PASS
+- `pytest tests/test_juce_engine_platform_events.py tests/test_no_legacy_imports.py -q` -> PASS (`5 passed`)
+- `cmake --build juce-engine/build` -> PASS (`map2_audio_engine`, `avb_tests`, `la_avdecc_cxx`, `la_avdecc_controller_cxx`)
+- native binding smoke (`create_engine()`, `drain_platform_events(4)`, `get_dropped_platform_event_count()`) -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013540301`, existing chunk-size warning only)
 
 ---
 

@@ -477,6 +477,11 @@ void JuceAudioIO::resetXrunCounter() {
     stats_.xrunsSinceReset = 0;
 }
 
+void JuceAudioIO::setRuntimeEventSink(RuntimeEventSink sink) noexcept {
+    runtimeEventContext_.store(sink.context, std::memory_order_release);
+    xrunEventCallback_.store(sink.onXrun, std::memory_order_release);
+}
+
 std::vector<int64_t> JuceAudioIO::getXrunHistory() const {
     std::vector<int64_t> history;
     int head = xrunHistoryHead_.load(std::memory_order_relaxed);
@@ -501,6 +506,10 @@ void JuceAudioIO::recordXrun() {
             stats_.xrunsSinceReset++;
             stats_.lastXrunTimestamp = ms;
         }
+    }
+    auto callback = xrunEventCallback_.load(std::memory_order_acquire);
+    if (callback != nullptr) {
+        callback(runtimeEventContext_.load(std::memory_order_acquire));
     }
 }
 
