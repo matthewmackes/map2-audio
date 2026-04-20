@@ -1492,7 +1492,7 @@ class SnapshotRuntimeStateService:
         next_revision = snapshot_revision
         if not next_revision:
             try:
-                from app.services.snapshot_service import SnapshotService
+                from app.services.snapshot import SnapshotService
 
                 helper = SnapshotService(self.session)  # type: ignore[arg-type]
                 normalized = helper._normalize_detail_payload(next_payload)

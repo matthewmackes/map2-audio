@@ -13,7 +13,7 @@ from app.services.platform_event.store import PlatformEventStore
 from app.services.websocket_manager import WebSocketManager
 from app.services.graceful_degradation import DegradationStrategy, Feature, FeatureLevel
 from app.services.snapshot_runtime_state_service import _parse_iso_datetime, _utcnow as snapshot_runtime_utcnow
-from app.services.snapshot_service import _utcnow as snapshot_service_utcnow
+from app.services.snapshot import _utcnow as snapshot_service_utcnow
 
 
 def test_api_response_timestamp_defaults_to_timezone_aware_utc():

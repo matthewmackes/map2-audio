@@ -13,7 +13,7 @@ from app.routes import unified_snapshots as routes
 from app.services.chain_service import ChainService
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services import snapshot_runtime_service
-from app.services import snapshot_service as snapshot_service_module
+from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services import upload_service as upload_service_module
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI

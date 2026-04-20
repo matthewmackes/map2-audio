@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.database import get_session
 from app.services.publish_readiness_service import PublishReadinessService
-from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService, UNSET
+from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService, UNSET
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["snapshots"])

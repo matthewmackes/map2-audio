@@ -264,7 +264,7 @@ async def test_launch_control_service_dispatches_live_snapshot_mappings(monkeypa
 
     monkeypatch.setattr(launch_control_surface_service_module, "get_session", lambda: _FakeSessionContext())
     monkeypatch.setattr(launch_control_surface_service_module, "SnapshotRuntimeStateService", _FakeRuntimeStateService)
-    monkeypatch.setattr("app.services.snapshot_service.SnapshotService", _FakeSnapshotService)
+    monkeypatch.setattr("app.services.snapshot.SnapshotService", _FakeSnapshotService)
     monkeypatch.setattr("app.services.juce_engine_service.get_audio_engine", lambda: _FakeEngine())
     monkeypatch.setattr("app.services.maschine_service.get_maschine_service", lambda: _FakeMaschineService())
     monkeypatch.setattr(launch_control_surface_service_module, "get_transport_service", lambda: _FakeTransportService())

@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import SnapshotDeployment
 from app.services.cluster.content_distributor import get_content_distributor
 from app.services.cluster.registry import get_cluster_registry
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 
 class SnapshotDeploymentService:

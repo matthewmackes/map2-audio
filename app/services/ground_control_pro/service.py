@@ -449,7 +449,7 @@ class GroundControlProService(Singleton):
         live_snapshot_payload: dict[str, Any],
         action_payload: dict[str, Any],
     ) -> dict[str, Any]:
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         snapshot_id = int(live_snapshot_payload.get("id") or 0)
         routing = live_snapshot_payload.get("routing") if isinstance(live_snapshot_payload.get("routing"), dict) else {}

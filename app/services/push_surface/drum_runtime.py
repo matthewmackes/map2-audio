@@ -1072,7 +1072,7 @@ class PushDrumSessionService(Singleton):
             return False
         if descriptor.node_id == _local_node_id():
             from app.database import get_session
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             async with get_session() as session:
                 await SnapshotService(session).activate_snapshot(int(snapshot_id), triggered_by="push_surface")

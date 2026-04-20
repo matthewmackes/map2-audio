@@ -16,7 +16,7 @@ from app.models.audio_state import (
 )
 from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
 from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 router = APIRouter(prefix="/api/audio/state", tags=["audio-state"])
 

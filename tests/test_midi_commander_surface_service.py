@@ -138,7 +138,7 @@ async def test_midi_commander_service_dispatches_live_snapshot_button_and_expres
     monkeypatch.setattr(midi_commander_surface_service_module, "SnapshotRuntimeStateService", _FakeRuntimeStateService)
     monkeypatch.setattr(midi_commander_surface_service_module, "get_transport_service", lambda: _FakeTransportService())
 
-    import app.services.snapshot_service as snapshot_service_module
+    import app.services.snapshot as snapshot_service_module
 
     monkeypatch.setattr(snapshot_service_module, "SnapshotService", _FakeSnapshotService, raising=False)
 

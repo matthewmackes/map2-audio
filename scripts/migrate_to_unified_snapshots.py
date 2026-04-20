@@ -31,7 +31,7 @@ from app.database import (
     _resolve_database_path,
     init_db,
 )
-from app.services.snapshot_service import SnapshotService, sanitize_snapshot_name_seed
+from app.services.snapshot import SnapshotService, sanitize_snapshot_name_seed
 
 args = argparse.Namespace(skip_backup=False)
 

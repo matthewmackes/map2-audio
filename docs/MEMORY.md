@@ -3,7 +3,7 @@
 ## E-SNAP Canonical Surfaces
 
 - Backend snapshot API: `app/routes/unified_snapshots.py`
-- Backend snapshot service: `app/services/snapshot_service.py`
+- Backend snapshot service: `app/services/snapshot/`
 - Snapshot runtime helpers: `app/services/snapshot_runtime_service.py`
 - Cluster snapshot deployment API: `app/routes/cluster_snapshots.py`
 - Cluster snapshot deployment service: `app/services/snapshot_deployment_service.py`
@@ -19,7 +19,7 @@
 - Snapshot editor live-chain helpers: `web/src/app/components/SnapshotEditor/snapshotEditorLiveChains.ts`
 - Snapshot editor comparison helpers: `web/src/app/components/SnapshotEditor/snapshotEditorComparison.ts`
 - Snapshot editor live-path helpers: `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts`
-- Snapshot chain management: `web/src/app/components/SnapshotEditor/SnapshotChainManagementCard.tsx`
+- Snapshot signal canvas: `web/src/app/components/SnapshotEditor/SignalCanvas/`
 - Chain graph canvas owner: `web/src/map2/components/ChainBuilder/ChainGraphCanvas.tsx`
 - MPX1 signal-path owner: `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`
 - IntelFX signal-path owner: `web/src/app/components/IntelFX/IntelFXSignalPathCanvas.tsx`

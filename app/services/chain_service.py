@@ -2028,7 +2028,7 @@ class ChainService:
                                 runtime_chains=active_runtime_chains,
                             )
 
-                            from app.services.snapshot_service import SnapshotService
+                            from app.services.snapshot import SnapshotService
 
                             snapshot_detail = await SnapshotService(self.session).get_snapshot(snapshot_id)
                             if snapshot_detail is not None:

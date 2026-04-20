@@ -297,7 +297,7 @@ class DirectMap2SurfaceBridge:
             return self._selected_snapshot_id
 
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             service = SnapshotService(session)
             control_plane_snapshot_id = await service.get_control_plane_snapshot_id()
@@ -314,7 +314,7 @@ class DirectMap2SurfaceBridge:
         if snapshot_id in self._detail_cache:
             return copy.deepcopy(self._detail_cache[snapshot_id])
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             detail = await SnapshotService(session).get_snapshot(snapshot_id)
             if detail is None:
@@ -324,7 +324,7 @@ class DirectMap2SurfaceBridge:
 
     async def list_presets(self) -> list[PresetSummary]:
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             service = SnapshotService(session)
             presets = await service.list_snapshots()
@@ -379,7 +379,7 @@ class DirectMap2SurfaceBridge:
         plugin["parameters"] = parameters
 
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             updated = await SnapshotService(session).update_snapshot(snapshot_id, detail_payload=mutable)
             if updated is None:
@@ -402,7 +402,7 @@ class DirectMap2SurfaceBridge:
             raise RuntimeError(f"node not found: {node_id}")
         plugin["bypass"] = not bool(plugin.get("bypass", False))
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             updated = await SnapshotService(session).update_snapshot(snapshot_id, detail_payload=mutable)
             if updated is None:
@@ -419,7 +419,7 @@ class DirectMap2SurfaceBridge:
     async def load_preset(self, preset_id: str) -> None:
         snapshot_id = int(preset_id)
         async with self._session() as session:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             activation = await SnapshotService(session).activate_snapshot(snapshot_id)
             if activation is None:
@@ -445,7 +445,7 @@ class DirectMap2SurfaceBridge:
         else:
             path_id = source_id.removeprefix("snapshot:path:")
             async with self._session() as session:
-                from app.services.snapshot_service import SnapshotService
+                from app.services.snapshot import SnapshotService
 
                 updated = await SnapshotService(session).update_routing(snapshot_id, {"active_channel_key": path_id})
                 if updated is None:

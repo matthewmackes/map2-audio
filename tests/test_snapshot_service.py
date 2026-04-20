@@ -20,14 +20,14 @@ from app.services import performance_brain_authority_sync as performance_brain_a
 from app.services import performance_metrics as performance_metrics_module
 from app.services import performance_brain_service as performance_brain_service_module
 from app.services import snapshot_runtime_service
-from app.services import snapshot_service as snapshot_service_module
+from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services import upload_service as upload_service_module
 from app.services import websocket_manager as websocket_manager_module
 from app.services.chain_service import ChainService
 from app.services.midi_service import ActionType, CommandType, MIDICommandDTO, midi_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
+from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 from sqlalchemy import delete, select

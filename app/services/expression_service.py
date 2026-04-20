@@ -807,7 +807,7 @@ class ExpressionService(Singleton):
     def _apply_snapshot_morph_position(self, value: float) -> bool:
         async def _apply() -> bool:
             from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             async with get_session() as session:
                 runtime_state_service = SnapshotRuntimeStateService(session)

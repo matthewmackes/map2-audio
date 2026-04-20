@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:03 EDT - Completed T2365-subN AVDECC config fallback cleanup.
+Last updated: 2026-04-20 13:15 EDT - Completed T2365-subC snapshot service split.
 
 ---
 
@@ -29144,7 +29144,7 @@ Validation:
 - `rg -n "unified_services|UnifiedServices" app tests` -> PASS (no matches)
 
 ID: T2365-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Split app/services/snapshot_service.py (6,170 lines) into runtime / editor / persistence services
 Description:
 - Goal / acceptance criteria: Break [app/services/snapshot_service.py](app/services/snapshot_service.py) into three focused modules under `app/services/snapshot/`:
@@ -29157,10 +29157,23 @@ Description:
 - Estimated effort: Very High
 - Required outputs: three new modules, updated callers (every `from app.services.snapshot_service import ...` becomes a specific import), preserved public API via `app/services/snapshot/__init__.py` (no function renames), and all existing snapshot tests green.
 - Notes: No behavior change in this subtask — it is a pure structural split. Any simplification or dead-code removal belongs in follow-up subtasks.
+Last updated: 2026-04-20 13:15 EDT - Codex
+- Completion notes:
+  - 2026-04-20 13:05 EDT - Codex: Started after T2365-subN SHIP `df8f42cd`; first step is mapping the monolith's public imports, test monkeypatch seams, and method boundaries before moving code into `app/services/snapshot/`.
+  - 2026-04-20 13:15 EDT - Codex: Replaced the 6,170-line monolith with `app/services/snapshot/` package modules: `common.py`, `snapshot_runtime.py`, `snapshot_editor.py`, and `snapshot_persistence.py`, with `__init__.py` preserving the public `SnapshotService` import surface and monkeypatch seams for existing tests.
+  - Updated backend routes, services, scripts, and tests to import from `app.services.snapshot`; updated current snapshot index docs in `docs/CLAUDE.md` and `docs/MEMORY.md`.
+  - Kept `to_legacy_snapshot_data()` in `snapshot_persistence.py` for T2365-subD so this split remains behavior-preserving.
 Validation:
-- `pytest tests/test_snapshot*.py tests/test_unified_snapshots*.py -q` -> must PASS
-- `wc -l app/services/snapshot/*.py` -> each file under 3,000 lines
-- `rg -n "from app.services.snapshot_service import" app tests` -> no matches (all routed through the new package)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot/*.py` -> PASS
+- `pytest tests/test_snapshot_service.py tests/test_state_authority_snapshot_workflows.py tests/test_snapshot_routes.py -q` -> PASS (88 passed)
+- `pytest tests/test_snapshot*.py -q` -> PASS (115 passed; no `tests/test_unified_snapshots*.py` files exist in this repo)
+- `pytest tests/test_ground_control_pro_integration.py tests/test_ground_control_pro_service.py tests/test_launch_control_surface_service.py tests/test_midi_commander_surface_service.py tests/test_midi_service_snapshot_program_change.py tests/test_publish_readiness_service.py tests/test_state_authority_snapshot_workflows.py tests/test_timestamp_foundations.py -q` -> PASS (42 passed)
+- `wc -l app/services/snapshot/*.py` -> PASS (`snapshot_runtime.py` 2016, `snapshot_persistence.py` 1926, `snapshot_editor.py` 1470, `common.py` 782, `__init__.py` 35)
+- `rg -n "from app\.services\.snapshot_service import|import app\.services\.snapshot_service|from app\.services import snapshot_service" app tests scripts` -> PASS (no matches)
+- `python3 scripts/generate_backend_contract.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 
 ID: T2365-subD
 Status: [ ] Todo

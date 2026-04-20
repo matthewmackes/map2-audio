@@ -4,7 +4,7 @@ from app import database as database_module
 from app.services import snapshot_deployment_service as deployment_service_module
 from app.services.snapshot_deployment_service import SnapshotDeploymentService
 from app.services.snapshot_runtime_service import enrich_snapshot_data
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 
 class _FakeRegistry:

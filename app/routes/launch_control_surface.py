@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.database import get_session
 from app.services.launch_control_surface import get_launch_control_surface_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 router = APIRouter(prefix="/api/launch-control", tags=["launch-control"])
 

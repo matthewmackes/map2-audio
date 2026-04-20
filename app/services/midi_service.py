@@ -640,7 +640,7 @@ class MIDIService:
         Returns True if a snapshot was found and loaded, False otherwise.
         """
         try:
-            from app.services.snapshot_service import SnapshotService
+            from app.services.snapshot import SnapshotService
 
             snapshot_service = SnapshotService(session)
             snapshot = await snapshot_service.get_snapshot_by_program(program)

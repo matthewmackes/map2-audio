@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from app.database import get_session
 from app.services.cluster.registry import get_cluster_registry
 from app.services.snapshot_deployment_service import SnapshotDeploymentService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["cluster-snapshots"])

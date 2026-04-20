@@ -94,7 +94,7 @@ class McuSnapshotEditorBridgeService(Singleton):
         self._last_projection: dict[str, Any] | None = None
 
     async def _default_snapshot_provider(self, session: Any) -> dict[str, Any] | None:
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         return await SnapshotService(session).get_control_plane_snapshot()
 
@@ -105,7 +105,7 @@ class McuSnapshotEditorBridgeService(Singleton):
 
     async def _default_parameter_applier(self, context: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
         from app.services.juce_engine_service import get_audio_engine
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         session = context["session"]
         snapshot_id = _safe_int(context.get("snapshot_id"))

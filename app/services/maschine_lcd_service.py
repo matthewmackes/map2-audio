@@ -23,7 +23,7 @@ from app.services.maschine.render import GrayFramebuffer
 from app.services.maschine.render.framebuffer import DamageRect
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
 from app.services.performance_brain_service import get_performance_brain_service
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 from app.services.snapshot_tempo_service import get_snapshot_tempo_service
 from app.services.transport_service import get_transport_service
 from app.services.juce_engine_service import get_audio_engine

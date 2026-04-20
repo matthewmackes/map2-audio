@@ -11,11 +11,11 @@ from sqlalchemy import delete, select
 
 from app import database as database_module
 from app.services import snapshot_runtime_service
-from app.services import snapshot_service as snapshot_service_module
+from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services import upload_service as upload_service_module
 from app.services.chain_service import ChainService
-from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
+from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 
 

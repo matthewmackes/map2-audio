@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.database import get_session
 from app.services.midi_commander_surface import get_midi_commander_surface_service
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 router = APIRouter(prefix="/api/midi-commander", tags=["midi-commander"])
 

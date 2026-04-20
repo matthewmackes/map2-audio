@@ -6,11 +6,11 @@ from sqlalchemy import select
 from app import database as database_module
 from app.services import audio_state_authority as audio_state_authority_module
 from app.services import snapshot_runtime_service
-from app.services import snapshot_service as snapshot_service_module
+from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services.chain_service import ChainService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
 
 

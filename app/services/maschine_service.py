@@ -668,7 +668,7 @@ class MaschineService(Singleton):
         }
 
     async def _get_live_snapshot_detail(self, session: AsyncSession) -> dict[str, Any] | None:
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         return await SnapshotService(session).get_control_plane_snapshot()
 
@@ -745,7 +745,7 @@ class MaschineService(Singleton):
         }
 
     async def _get_active_snapshot(self, session: AsyncSession) -> Snapshot | None:
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         snapshot_id = await SnapshotService(session).get_control_plane_snapshot_id()
         if snapshot_id is None:

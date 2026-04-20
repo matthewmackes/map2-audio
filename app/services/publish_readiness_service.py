@@ -26,7 +26,7 @@ from app.models.audio_state import (
 )
 from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotActivationPreflightError, SnapshotService
+from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService
 from app.utils.time import utc_now
 
 

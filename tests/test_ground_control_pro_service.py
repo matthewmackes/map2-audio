@@ -8,7 +8,7 @@ import pytest
 
 from app import database as database_module
 from app.services import snapshot_runtime_service
-from app.services import snapshot_service as snapshot_service_module
+from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
 from app.services.chain_service import ChainService
 from app.services.ground_control_pro.model import GroundControlTransportOptions
@@ -18,7 +18,7 @@ from app.services.ground_control_pro.service import (
     reset_ground_control_pro_service,
 )
 from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 from sqlalchemy import select
 
 

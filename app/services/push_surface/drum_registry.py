@@ -57,14 +57,14 @@ class DrumInstanceRegistry:
 
     async def _list_local_snapshot_summaries(self) -> list[dict[str, Any]]:
         from app.database import get_session
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         async with get_session() as session:
             return await SnapshotService(session).list_snapshots()
 
     async def _get_local_snapshot_detail(self, snapshot_id: int) -> dict[str, Any] | None:
         from app.database import get_session
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         async with get_session() as session:
             return await SnapshotService(session).get_snapshot(snapshot_id)

@@ -383,7 +383,7 @@ class LaunchControlSurfaceService(Singleton):
         event: dict[str, Any],
     ) -> dict[str, Any]:
         from app.services.juce_engine_service import get_audio_engine
-        from app.services.snapshot_service import SnapshotService
+        from app.services.snapshot import SnapshotService
 
         assignment = self._resolve_assignment_payload(mapping)
         snapshot_id = int(live_snapshot_payload.get("id") or 0)

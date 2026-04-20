@@ -2,7 +2,7 @@ import asyncio
 
 from app import database as database_module
 from app.services.midi_service import MIDIService
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot import SnapshotService
 
 
 def _init_temp_db(tmp_path):
