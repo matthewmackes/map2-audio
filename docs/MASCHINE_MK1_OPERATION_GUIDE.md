@@ -1,10 +1,17 @@
-# Maschine MK1 Operation Guide
+# MAP2 + Maschine MK1 Headless Operation Guide
+
+> **Revision:** 2026-04-20 (T700 Phase 5 epic deliverable)  
+> **Epic:** T700 MK1 Headless Primary Interface  
+> **Hardware:** Native Instruments Maschine MK1 (VID `0x17CC` / PID `0x0808`)  
+> **75 locked design decisions:** Q1–Q75 (stored in `.claude/projects/-home-mm-map2-audio/memory/project_t700_mk1_headless.md`)
+
+---
 
 ## Overview
 
 The Native Instruments Maschine MK1 is the primary headless control surface for the MAP2 Audio Platform. In MAP2 it is not treated as a local authority. The daemon renders controller state by observing backend-owned services, and all snapshot, transport, automation, Brain, and admin decisions remain rooted in platform services.
 
-This guide describes the shipped MK1 contract as of `2026-04-18`:
+This guide describes the shipped MK1 contract as of `2026-04-20`:
 
 - retained-mode dual LCD rendering at `255x64` per panel
 - all `T1` through `T25` LCD profiles, including hidden `T18 Admin Console`
@@ -140,6 +147,33 @@ Persistence:
 - current step index is retained in runtime config
 - completion writes the initial Maschine transport-policy config
 - skip/completion prevents automatic replay on subsequent boots unless state is manually cleared
+
+## SHIFT State Machine (Q53)
+
+Three SHIFT tiers:
+
+| State | Activation | SHIFT LED | LCD header suffix |
+|---|---|---|---|
+| `OFF` | Default | Off | `SHIFT: OFF` |
+| `STICKY` (one-shot) | Single tap SHIFT | Solid | `SHIFT: STICKY` |
+| `META` (caps-lock) | Double-tap SHIFT | Pulse | `SHIFT: META` |
+
+- **STICKY:** SHIFT applies to the next single action, then releases automatically.
+- **META:** SHIFT is locked until a second explicit exit (tap SHIFT again).
+- If META is stuck, double-tap SHIFT to clear it.
+
+## Universal Encoder Rules (Q54)
+
+| Action | Result |
+|---|---|
+| Turn | Coarse adjust (medium resolution per Q10/4=D) |
+| SHIFT + Turn | Fine adjust (1-step resolution) |
+| Push | Commit / select current value |
+| Push-hold 500ms | Secondary action (context-dependent) |
+| Push while turning | **Not supported** — release push before turning |
+
+- LED flashes on push confirmation.
+- LCD shows ring-fill progress bar during push-hold.
 
 ## Profile Navigation
 
@@ -577,6 +611,68 @@ Hardware verification:
 - `./scripts/maschine_e2e_verify.sh --blink`
 - `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink`
 
+## Snapshot Workflow on Hardware (Q73)
+
+MK1 performs **recall, quick-save, and delete only.** All authoring (rename, edit, version, template) stays in the web UI.
+
+### Recall
+
+1. Navigate to `T5 SNAP` profile.
+2. Turn NAV encoder to browse the snapshot roster.
+3. Push NAV to activate the highlighted snapshot.
+4. LCD shows activation phases: **VALIDATING → STAGING → APPLYING → VERIFYING → LIVE**
+5. Transport LED bar fills as each phase completes.
+6. If rollback triggers: transport LED bar reverses, LCD shows `ROLLBACK`.
+
+### Quick-Save (Q73)
+
+Hold `SHIFT + REC` for 2 seconds → snapshot quick-saved with timestamp name. LCD confirms: `SAVED — <timestamp>`.
+
+### Delete (Q41 tier-3)
+
+In `T5 SNAP`, highlight the snapshot to delete → double-tap **ERASE** → LCD confirmation dialog → push NAV to confirm.
+
+## Config Two-Layer (Q74)
+
+```
+~/.map2/maschine_midi_map.json              ← global defaults
+snapshot JSONB: document.controllers.maschine_mk1.overrides  ← per-snapshot overrides
+```
+
+| Setting | Scope |
+|---|---|
+| Button bindings | Global |
+| Encoder assignments | Global |
+| Screensaver config | Global |
+| Admin unlock timeout | Global |
+| Pad layout | Per-snapshot |
+| LCD profile | Per-snapshot |
+| LED animations | Per-snapshot |
+
+## Boot Ceremony Durations (Q60)
+
+| Stage | Duration | Left LCD | Right LCD |
+|---|---|---|---|
+| `wordmark` | 0.55 s | `MAP2` | `PIXEL WIPE` |
+| `status` | 0.80 s | `SYSTEM STATUS` | `BACKEND AND USB` |
+| `led_chase` | 0.75 s | `LED CHASE` | `SURFACE TEST` |
+| `lcd_test` | 0.45 s | `LCD TEST` | `DUAL PANEL` |
+| `profile_load` | 0.55 s | `PROFILE LOAD` | `CTRL READY` |
+
+Total: ~3.1 seconds. Any interaction during boot skips the remainder.
+
+## Shutdown Ceremony Durations (Q61)
+
+| Stage | Duration | Left LCD | Right LCD |
+|---|---|---|---|
+| `saving` | 0.60 s | `SAVING STATE` | `SNAPSHOT AND LOG` |
+| `receipts` | 0.60 s | `RECEIPTS` | `ENGINE / AUDIO` |
+| `summary` | 0.60 s | `SESSION SUMMARY` | `READY TO STOP` |
+| `farewell` | 0.60 s | `FAREWELL` | `LED WAVE` |
+| `goodbye` | 0.60 s | `GOODBYE` | `POWER SAFE` |
+
+Session summary includes: session duration, snapshot count, incident count, xrun count.
+
 ## State Authority Sign-Off
 
 The Maschine path remains aligned with the MAP2 State Authority contract:
@@ -594,6 +690,15 @@ Final verification on April 18, 2026:
 - `sudo -n systemctl restart map2-maschine.service` completed cleanly and the service returned `active`
 - `./scripts/maschine_e2e_verify.sh --hardware-catalog --dwell-ms 250 --blink` passed with zero warnings on the connected MK1
 - the daemon-aware E2E pass validated route health, all-profile catalog traversal, hardware blink, admin action surface, and the observer-only audit in one run
+
+**T700 Phase 5 epic closure (2026-04-20):**
+
+- All 75 locked design decisions (Q1–Q75) are implemented and referenced in this guide.
+- Phases 1–4 delivered via T666 subtasks (T2407–T2410 in the canonical worklist).
+- This document is the final Phase 5 deliverable per Q75=A.
+- 120 backend tests pass across the full MK1 service suite.
+- Source of truth for hardware constants: `app/services/maschine/mk1_protocol.py`
+- Source of truth for profile definitions: `app/services/maschine/profiles/`
 
 ## Quick Reference
 

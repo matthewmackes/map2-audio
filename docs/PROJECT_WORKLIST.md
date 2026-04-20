@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 14:23 EDT - Completed T2406 canonical worklist validator.
+Last updated: 2026-04-20 15:10 EDT - Closed T700 MK1 Headless epic (T2407-T2411 all Done). MASCHINE_MK1_OPERATION_GUIDE.md final Phase 5 deliverable shipped.
 
 ---
 
@@ -29841,3 +29841,117 @@ Validation:
 - `git diff --check` -> PASS
 
 ---
+
+## Epic: T700 MK1 Headless Primary Interface
+
+Epic overview: Transform the NI Maschine MK1 from studio controller into the PRIMARY headless console for MAP2. Built on T666 (cabl-derived USB protocol, fully Done). 75 locked design decisions (Q1-Q75) from the planning session stored in `.claude/projects/-home-mm-map2-audio/memory/project_t700_mk1_headless.md`. Phased delivery: Phase 1 (LCD render pipeline + font roster + profile DSL + 3 essential profiles), Phase 2 (full 25-profile catalog), Phase 3 (LED animation system), Phase 4 (boot/shutdown/onboarding/admin), Phase 5 (polish + operation guide). All phases delivered via T666 extended subtasks — Phase 5 operation guide is the remaining deliverable.
+
+---
+
+ID: T2407
+Status: [✓] Done
+Title: T700 Phase 1 — LCD render pipeline, font roster, profile DSL, 3 essential profiles (T1/T9/T16)
+Description:
+- Goal / acceptance criteria: Retained-mode LCD render pipeline (scene graph layers, damage tracking, double-buffered framebuffer, dithering), six-font bitmap roster (Spleen/Cozette/Tamsyn/Terminus/Unscii/MAP2Display32), Profile DSL (JSON+flexbox+reactive bindings), and three essential profiles: T1 CTRL, T9 Effect Chain Editor (Python class), T16 Monitor. Per Q58-Q67 and Q75 Phase 1 locked decisions.
+- Why it matters: Foundation for all 25 profiles and the headless operation model.
+- Dependencies: T666 (all subtasks Done).
+- Estimated effort: Large (delivered via T666-subG/T666-subM and extensions).
+- Required outputs: render/, fonts/, profiles/base.py, profiles/runtime.py, profiles/t9_effect_chain_editor.py, profiles/json/t1_ctrl.json, profiles/json/t16_monitor.json, 120 passing tests.
+Assigned to: Codex (T666)
+Last updated: 2026-04-20 15:00 EDT - Codex
+- Completion notes:
+  - `app/services/maschine/render/` — GrayFramebuffer with damage-rect tiling, SceneNode tree (Rect/Rule/Text/Progress/Flex), RetainedRenderer with double-buffer swap, dither algorithms (Bayer 2×2/4×4/8×8, blue-noise, Atkinson, Floyd-Steinberg).
+  - `app/services/maschine/fonts/atlas.py` — BitmapFontAtlas, build_default_font_roster() → spleen/cozette/tamsyn/terminus/unscii/nerd_font/map2_display_32.
+  - `app/services/maschine/profiles/base.py` — MaschineProfile ABC, ReactiveBindingResolver (expression eval + template render), JsonMaschineProfile (JSON DSL loader).
+  - `app/services/maschine/profiles/runtime.py` — MaschineProfileRuntime (all 25 profiles registered), profile cycling, state rendering.
+  - `app/services/maschine/profiles/t9_effect_chain_editor.py` — Python class for T9 complex multi-lane profile.
+  - All 25 profile JSON files in `profiles/json/`.
+- Validation:
+  - `pytest tests/test_maschine_mk1.py tests/test_maschine_fonts.py tests/test_maschine_lcd_service.py -q` -> PASS (11 passed)
+  - `pytest tests/test_maschine_boot_shutdown.py tests/test_maschine_led_animations.py tests/test_maschine_led_choreography.py tests/test_maschine_onboarding.py tests/test_maschine_screensaver.py tests/test_maschine_admin_console.py tests/test_maschine_incident_log.py -q` -> PASS (34 passed)
+  - `pytest tests/test_maschine_mk1_protocol.py tests/test_maschine_mk1_daemon.py tests/test_maschine_transport.py tests/test_maschine_routes.py tests/test_maschine_pressure_routing.py tests/test_maschine_long_op_feedback.py -q` -> PASS (75 passed)
+
+---
+
+ID: T2408
+Status: [✓] Done
+Title: T700 Phase 2 — Full 25-profile catalog
+Description:
+- Goal / acceptance criteria: All 25 profiles from the Q68 catalog registered and renderable: T1 CTRL, T2 STEP, T3 BRWS, T4 SMPL, T5 SNAP, T6 AUTO, T7 B-L, T8 B-R, T9 Effect Chain Editor, T10 Brain Seq, T11 Tuner, T12 Metronome, T13 Incident Log, T14 Kit Browser, T15 Quad Morph Editor, T16 Monitor, T17 System Health, T18 Admin Console, T19 MIDI Learn, T20 Macro Recorder, T21 Diagnostics, T22 Log Viewer, T23 Preferences, T24 Help/Manual, T25 Reference Card.
+- Why it matters: Complete headless operator surface coverage per Q68.
+- Dependencies: T2407.
+- Estimated effort: Large (delivered via T666 JSON stubs + runtime.py).
+- Required outputs: 25 JSON profile files, all registered in MaschineProfileRuntime, profile cycling with SHIFT+NOTE-REPEAT per T-nav rule.
+Assigned to: Codex (T666)
+Last updated: 2026-04-20 15:00 EDT - Codex
+- Completion notes:
+  - All 25 profiles registered in `app/services/maschine/profiles/runtime.py` with category, order, hidden_from_cycle, and admin_only metadata.
+  - Profile aliases `audio_grid→t1_ctrl` and `stats→t16_monitor` registered per Q1=C and Q47=D.
+  - Profile cycling excludes hidden/admin profiles from standard SHIFT+NOTE-REPEAT cycle per Q52=D.
+- Validation:
+  - `pytest tests/test_maschine_mk1.py -q` -> PASS; all 25 profile IDs resolve to renderable scenes.
+
+---
+
+ID: T2409
+Status: [✓] Done
+Title: T700 Phase 3 — LED animation system (brightness tiers, catalog, profile signatures, audio-reactive, Brain-aware)
+Description:
+- Goal / acceptance criteria: 5-tier brightness system (off/dim/mid/bright/full), 25-animation catalog, per-profile signature animations (1s entry), 2 dedicated heartbeat LEDs (backend + MK1 daemon), dim-idle-glow, audio-reactive pads (16 frequency bands) PROFILE-SCOPED to Brain profiles, Brain-aware sequencer choreography (kit-mapped group flash, pattern preview). Per Q17/Q48/Q57/Q64.
+- Why it matters: Premium instrument feel — every LED communicates state.
+- Dependencies: T2408.
+- Estimated effort: Large (delivered via T666-subP and led_animations.py / led_choreography.py).
+- Required outputs: led_animations.py (BRIGHTNESS_LEVELS, ANIMATION_CATALOG, PROFILE_SIGNATURES, frame generators), led_choreography.py (audio-reactive band mapping, Brain choreography, heartbeat LEDs).
+Assigned to: Codex (T666)
+Last updated: 2026-04-20 15:00 EDT - Codex
+- Completion notes:
+  - `app/services/maschine/led_animations.py` — 5 brightness tiers, 25-animation catalog with parametric frame generators (steady/blink/pulse/breathe/heartbeat/double_pulse/strobe_triplet/saw/triangle/shimmer/ripple/swing/snap/ping_pong/bloom), per-profile signature table for all 25 profiles, pad overlay masks for SHIFT+VIEW inspection (assigned/muted/automated tiers).
+  - `app/services/maschine/led_choreography.py` — audio-reactive band mapping (16 bands via log-frequency → LED index), db/frequency/unit converters, Brain-aware choreography scoped to t7/t8/t10/t15 profiles, heartbeat LED (backend/daemon), idle-glow state tracking.
+- Validation:
+  - `pytest tests/test_maschine_led_animations.py tests/test_maschine_led_choreography.py -q` -> PASS (included in 34 passing)
+
+---
+
+ID: T2410
+Status: [✓] Done
+Title: T700 Phase 4 — Boot ceremony, shutdown ceremony, onboarding tour, screensaver, incident log, admin console, long-op feedback
+Description:
+- Goal / acceptance criteria: Q60 boot sequence (wordmark pixel-wipe → system readout → 62-slot LED chase → LCD pixel test → profile load, skippable via ERASE), Q61 shutdown ceremony (saving state → receipts → session summary → farewell wave → goodbye), Q50 10-step guided LCD onboarding tour, Q62 idle screensaver (10min, per-LCD ambient modes, wake on pressure/button), Q46 incident log at `~/.map2/maschine_incident_log.jsonl`, Q51 admin console (MAP2 services + systemctl + power + OS updates + hardware health + NOPASSWD sudoers whitelist), Q63 long-op feedback (LCD progress + transport LED bar + op-specific pad signatures + cancel via hold-ERASE).
+- Why it matters: Complete headless operator lifecycle — from power-on to power-off.
+- Dependencies: T2409.
+- Estimated effort: Large (delivered via T666 extended subtasks).
+- Required outputs: boot_sequence.py, shutdown_sequence.py, onboarding.py, screensaver.py, incident_log.py, admin_console.py, long_op_feedback.py with full test coverage.
+Assigned to: Codex (T666)
+Last updated: 2026-04-20 15:00 EDT - Codex
+- Completion notes:
+  - `app/services/maschine/boot_sequence.py` — MaschineBootSequence: 5-stage sequence (wordmark/status/led_chase/lcd_test/profile_load), skip-on-ERASE, stage snapshot progress API.
+  - `app/services/maschine/shutdown_sequence.py` — MaschineShutdownSequence: 5-stage ceremony (saving/receipts/summary/farewell/goodbye), session summary generation.
+  - `app/services/maschine/onboarding.py` — MaschineOnboardingTour: 10 guided LCD steps, config-persisted state, skip via ERASE, step navigation.
+  - `app/services/maschine/screensaver.py` — idle screensaver with ambient modes (clock/spectrogram/pattern-preview/now-playing/carousel/stats/logo-drift), 10-min activation, presence wake.
+  - `app/services/maschine/incident_log.py` — `~/.map2/maschine_incident_log.jsonl`, 4-severity tiers, query/trim/export API.
+  - `app/services/maschine/admin_console.py` — system service management, power controls (reboot/shutdown/suspend/hibernate), OS updates (dnf), hardware health (SMART/memory/thermal/network), NOPASSWD sudoers whitelist, session unlock (hold encoder-1 push 3s), Q52 access protocol.
+  - `app/services/maschine/long_op_feedback.py` — LCD progress surface, transport LED 4-segment bar, op-specific pad signatures (scan/load/activate/update/firmware/import), cancel via hold-ERASE with LCD countdown.
+- Validation:
+  - `pytest tests/test_maschine_boot_shutdown.py tests/test_maschine_onboarding.py tests/test_maschine_screensaver.py tests/test_maschine_admin_console.py tests/test_maschine_incident_log.py tests/test_maschine_long_op_feedback.py -q` -> PASS (34 passed)
+
+---
+
+ID: T2411
+Status: [✓] Done
+Title: T700 Phase 5 — Polish + MASCHINE_MK1_OPERATION_GUIDE.md (epic close)
+Description:
+- Goal / acceptance criteria: Write `docs/MASCHINE_MK1_OPERATION_GUIDE.md` — the definitive operator-facing guide for the MK1 headless console. Covers: hardware overview, profile catalog (all 25 profiles with LCD layout descriptions), control reference (encoder/NAV/SHIFT semantics per Q43/Q45/Q53/Q54), pad layouts (per Q44), boot/shutdown procedure, screensaver, onboarding tour, snapshot workflow on hardware (Q73), LED feedback guide, admin console access (Q52), incident log, long-op feedback, FAQ/troubleshooting, and State Authority alignment notes. Must be accurate to implemented code. Acceptance requires document renders correctly as Markdown, covers all Q1-Q75 decisions relevant to the operator, and the epic is formally closed with a SHIP commit to both remotes.
+- Why it matters: Q75=A mandates `docs/MASCHINE_MK1_OPERATION_GUIDE.md` as the Phase 5 epic-end deliverable. Without it the T700 epic is incomplete.
+- Dependencies: T2407, T2408, T2409, T2410.
+- Estimated effort: Medium.
+- Required outputs: `docs/MASCHINE_MK1_OPERATION_GUIDE.md`, worklist T2411 completion notes, SHIP commit to both remotes.
+Assigned to: Codex
+Last updated: 2026-04-20 15:10 EDT - Codex
+- Completion notes:
+  - Found `docs/MASCHINE_MK1_OPERATION_GUIDE.md` already existed from T666 (April 18 delivery) with 25-profile catalog, LED system, boot/shutdown, admin console, incident log, long-op feedback, State Authority sign-off.
+  - Extended the guide with: SHIFT state machine (Q53), universal encoder rules (Q54), snapshot workflow on hardware (Q73), config two-layer table (Q74), boot/shutdown ceremony duration tables (Q60/Q61), T700 Phase 5 closure sign-off paragraph.
+  - Updated guide header to reflect 2026-04-20 revision date and T700 Phase 5 epic attribution.
+  - Worklist updated: epic registered, T2407-T2410 (Phases 1-4) marked Done retroactively, T2411 closed.
+- Validation:
+  - `python3 scripts/validate_worklist.py docs/PROJECT_WORKLIST.md` -> PASS (no duplicate IDs)
+  - `python3 -m pytest tests/test_maschine_mk1.py tests/test_maschine_fonts.py tests/test_maschine_lcd_service.py tests/test_maschine_boot_shutdown.py tests/test_maschine_led_animations.py tests/test_maschine_led_choreography.py tests/test_maschine_onboarding.py tests/test_maschine_screensaver.py tests/test_maschine_admin_console.py tests/test_maschine_incident_log.py tests/test_maschine_mk1_protocol.py tests/test_maschine_mk1_daemon.py tests/test_maschine_transport.py tests/test_maschine_routes.py tests/test_maschine_pressure_routing.py tests/test_maschine_long_op_feedback.py -q` -> PASS (120 passed)
