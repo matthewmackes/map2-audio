@@ -34,7 +34,9 @@ describe('SnapshotAbSwitchMidiCard', () => {
     const { container } = renderCard()
 
     expect(screen.getByText('A/B switch MIDI')).toBeInTheDocument()
-    expect(container.querySelector('.juce-grid-page__midi-tile-header')).toHaveTextContent('CC 81')
+    expect(container.querySelector('.snapshot-schematic-panel')).toHaveAttribute('data-tone', 'active')
+    expect(screen.getByLabelText('Status: Configured')).toHaveTextContent('Configured')
+    expect(screen.getByLabelText('A/B trigger: CC 81 / Ch 2')).toBeInTheDocument()
     expect(screen.getByLabelText('Message type')).toBeInTheDocument()
     expect(screen.getByLabelText('MIDI channel')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()

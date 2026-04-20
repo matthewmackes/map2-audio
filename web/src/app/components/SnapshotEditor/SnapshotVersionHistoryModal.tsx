@@ -2,6 +2,10 @@ import { Button, Modal, Tag } from '@carbon/react'
 import type { SnapshotRevisionSummary } from '../../../map2/types'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
+import {
+  SnapshotSchematicLed,
+  SnapshotSchematicReadout,
+} from './SnapshotSchematicSurface'
 
 const REVISION_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -43,6 +47,14 @@ export function SnapshotVersionHistoryModal({
   onClose,
   onRestore,
 }: SnapshotVersionHistoryModalProps) {
+  const revisionReadout = loading
+    ? 'Loading'
+    : errorMessage
+      ? 'Unavailable'
+      : revisions.length === 0
+        ? 'No rev'
+        : `${revisions.length} rev`
+
   return (
     <Modal
       open={open}
@@ -50,8 +62,15 @@ export function SnapshotVersionHistoryModal({
       modalHeading={snapshotName ? `Version History · ${snapshotName}` : 'Version History'}
       onRequestClose={onClose}
       size="md"
+      className="snapshot-schematic-modal"
     >
       <div className="juce-grid-page__version-history">
+        <SnapshotSchematicReadout
+          label="Revision bus"
+          value={revisionReadout}
+          tone={errorMessage ? 'error' : revisions.length > 0 ? 'active' : 'idle'}
+        />
+
         {loading ? (
           <LoadingState description="Loading snapshot revisions" />
         ) : errorMessage ? (
@@ -71,25 +90,26 @@ export function SnapshotVersionHistoryModal({
             align="left"
           />
         ) : (
-          <div className="juce-grid-page__version-history-list" role="list" aria-label="Snapshot revision history">
+          <div className="snapshot-schematic-revision-list" role="list" aria-label="Snapshot revision history">
             {revisions.map((revision) => {
               const restorePending = restoringRevisionNumber === revision.revision_number
               return (
                 <article
                   key={revision.id}
-                  className="juce-grid-page__version-history-item"
+                  className="snapshot-schematic-revision-item"
                   role="listitem"
                 >
-                  <div className="juce-grid-page__version-history-copy">
-                    <div className="juce-grid-page__version-history-headline">
+                  <div className="snapshot-schematic-revision-item__copy">
+                    <div className="snapshot-schematic-revision-item__headline">
+                      <SnapshotSchematicLed tone={restorePending ? 'warning' : 'active'} />
                       <Tag type="cool-gray" size="sm">{`Rev ${revision.revision_number}`}</Tag>
                       {revision.snapshot_revision ? (
-                        <span className="juce-grid-page__version-history-revision-hash">
+                        <span className="snapshot-schematic-revision-item__hash">
                           {revision.snapshot_revision.slice(0, 8)}
                         </span>
                       ) : null}
                     </div>
-                    <p className="juce-grid-page__version-history-summary">
+                    <p className="snapshot-schematic-revision-item__summary">
                       {formatSavedAt(revision.saved_at)}{' '}
                       <span aria-hidden>·</span>{' '}
                       {revision.summary}

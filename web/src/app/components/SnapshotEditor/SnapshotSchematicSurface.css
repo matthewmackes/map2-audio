@@ -1,0 +1,183 @@
+.snapshot-schematic-panel {
+  --snapshot-schematic-accent: var(--cds-interactive);
+  --snapshot-schematic-panel-bg: color-mix(in srgb, var(--cds-layer) 92%, var(--cds-background));
+  --snapshot-schematic-lcd-on: #78e38a;
+  --snapshot-schematic-lcd-dim: #3a6a43;
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  border-inline-start: 2px solid var(--snapshot-schematic-accent);
+  background: var(--snapshot-schematic-panel-bg);
+  color: var(--cds-text-primary);
+}
+
+.snapshot-schematic-panel[data-tone='active'] {
+  --snapshot-schematic-accent: var(--cds-support-success);
+}
+
+.snapshot-schematic-panel[data-tone='warning'] {
+  --snapshot-schematic-accent: var(--cds-support-warning);
+}
+
+.snapshot-schematic-panel[data-tone='error'] {
+  --snapshot-schematic-accent: var(--cds-support-error);
+}
+
+.snapshot-schematic-panel__header,
+.snapshot-schematic-panel__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.snapshot-schematic-panel__copy {
+  min-inline-size: 0;
+}
+
+.snapshot-schematic-panel__copy h3 {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-body-01-font-size, 1rem);
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.snapshot-schematic-panel__copy p {
+  margin: 0.375rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.45;
+}
+
+.snapshot-schematic-panel__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 1.5rem;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  white-space: nowrap;
+}
+
+.snapshot-schematic-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.snapshot-schematic-panel__body {
+  display: grid;
+  gap: 1rem;
+}
+
+.snapshot-schematic-led {
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  border-radius: 50%;
+  background: var(--cds-layer-accent-02);
+}
+
+.snapshot-schematic-led[data-tone='active'] {
+  background: var(--cds-support-success);
+}
+
+.snapshot-schematic-led[data-tone='warning'] {
+  background: var(--cds-support-warning);
+}
+
+.snapshot-schematic-led[data-tone='error'] {
+  background: var(--cds-support-error);
+}
+
+.snapshot-schematic-readout {
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--cds-border-subtle);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, currentColor 8%, transparent), transparent 36%),
+    color-mix(in srgb, var(--cds-background) 90%, black);
+  color: var(--cds-text-secondary);
+}
+
+.snapshot-schematic-readout[data-tone='active'] {
+  color: var(--snapshot-schematic-lcd-on);
+}
+
+.snapshot-schematic-readout[data-tone='warning'] {
+  color: var(--cds-support-warning);
+}
+
+.snapshot-schematic-readout[data-tone='error'] {
+  color: var(--cds-support-error);
+}
+
+.snapshot-schematic-readout__label {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.snapshot-schematic-readout__value {
+  min-inline-size: 0;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.snapshot-schematic-revision-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.snapshot-schematic-revision-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  border-inline-start: 2px solid var(--cds-interactive);
+  background: var(--cds-layer);
+}
+
+.snapshot-schematic-revision-item__copy {
+  display: grid;
+  gap: 0.5rem;
+  min-inline-size: 0;
+}
+
+.snapshot-schematic-revision-item__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.snapshot-schematic-revision-item__hash {
+  color: var(--cds-text-secondary);
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.snapshot-schematic-revision-item__summary {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 672px) {
+  .snapshot-schematic-revision-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

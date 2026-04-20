@@ -1,6 +1,10 @@
-import { Button, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, Tag, TextInput } from '@carbon/react'
 
 import { EmptyState } from '../shared/EmptyState'
+import {
+  SnapshotSchematicPanel,
+  SnapshotSchematicReadout,
+} from './SnapshotSchematicSurface'
 import type { SnapshotFootswitchLabelMap } from '../../utils/snapshotFootswitchLabels'
 import {
   SNAPSHOT_FOOTSWITCH_LABEL_COUNT,
@@ -29,21 +33,34 @@ export function SnapshotFootswitchLabelCard({
   saveDisabled,
 }: SnapshotFootswitchLabelCardProps) {
   const configuredCount = Object.values(labelMap).filter((label) => label.trim().length > 0).length
+  const previewLabels = Object.entries(labelMap)
+    .filter(([, label]) => label.trim().length > 0)
+    .slice(0, 4)
+  const readoutValue = previewLabels.length > 0
+    ? previewLabels.map(([switchNumber, label]) => `S${switchNumber} ${label}`).join(' / ')
+    : 'Controller defaults'
 
   return (
-    <Tile className="juce-grid-page__midi-block-focus-card">
-      <div className="juce-grid-page__midi-tile-header">
-        <div className="juce-grid-page__midi-tile-copy">
-          <h3 className="juce-grid-page__dense-card-heading">Footswitch labels</h3>
-          <p>Store snapshot-specific labels for hardware controllers and the MAP2 LCD companion display.</p>
-        </div>
+    <SnapshotSchematicPanel
+      className="juce-grid-page__midi-block-focus-card"
+      title="Footswitch labels"
+      description="Store snapshot-specific labels for hardware controllers and the MAP2 LCD companion display."
+      statusLabel={configuredCount > 0 ? `${configuredCount} configured` : 'No labels'}
+      statusTone={configuredCount > 0 ? 'active' : 'idle'}
+      meta={
         <div className="juce-grid-page__compact-tags">
           <Tag type={configuredCount > 0 ? 'green' : 'cool-gray'}>
             {configuredCount > 0 ? `${configuredCount} configured` : 'No labels'}
           </Tag>
           <Tag type="cool-gray">{SNAPSHOT_FOOTSWITCH_LABEL_MAX_LENGTH} chars max</Tag>
         </div>
-      </div>
+      }
+    >
+      <SnapshotSchematicReadout
+        label="LCD preview"
+        value={readoutValue}
+        tone={configuredCount > 0 ? 'active' : 'idle'}
+      />
 
       <div className="juce-grid-page__footswitch-label-grid">
         {Array.from({ length: SNAPSHOT_FOOTSWITCH_LABEL_COUNT }, (_, index) => {
@@ -64,15 +81,12 @@ export function SnapshotFootswitchLabelCard({
 
       <div className="juce-grid-page__midi-actions">
         <div className="juce-grid-page__compact-tags">
-          {configuredCount > 0 ? (
-            Object.entries(labelMap)
-              .filter(([, label]) => label.trim().length > 0)
-              .slice(0, 4)
-              .map(([switchNumber, label]) => (
-                <Tag key={`snapshot-footswitch-label-preview-${switchNumber}`} type="green">
-                  S{switchNumber} {label}
-                </Tag>
-              ))
+          {previewLabels.length > 0 ? (
+            previewLabels.map(([switchNumber, label]) => (
+              <Tag key={`snapshot-footswitch-label-preview-${switchNumber}`} type="green">
+                S{switchNumber} {label}
+              </Tag>
+            ))
           ) : (
             <Tag type="cool-gray">Controller defaults stay active until you save labels here.</Tag>
           )}
@@ -106,7 +120,7 @@ export function SnapshotFootswitchLabelCard({
           align="left"
         />
       )}
-    </Tile>
+    </SnapshotSchematicPanel>
   )
 }
 

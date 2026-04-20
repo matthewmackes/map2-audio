@@ -56,6 +56,7 @@ describe('SnapshotVersionHistoryModal', () => {
     )
 
     expect(screen.getByText('Version History · FridayNight')).toBeInTheDocument()
+    expect(screen.getByLabelText('Revision bus: 2 rev')).toBeInTheDocument()
     expect(screen.getByText('Rev 2')).toBeInTheDocument()
     expect(screen.getByText(/3 blocks, 2 channels, parallel blend routing/i)).toBeInTheDocument()
 

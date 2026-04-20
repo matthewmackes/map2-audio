@@ -28,6 +28,8 @@ describe('SnapshotFootswitchLabelCard', () => {
     )
 
     expect(screen.getByLabelText('Switch 8')).not.toBeNull()
+    expect(screen.getByLabelText('Status: 2 configured')).not.toBeNull()
+    expect(screen.getByLabelText('LCD preview: S1 Clean / S2 Lead')).not.toBeNull()
     expect(screen.getByText('S1 Clean')).not.toBeNull()
     expect(screen.getByText('S2 Lead')).not.toBeNull()
 

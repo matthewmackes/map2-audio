@@ -1,7 +1,11 @@
-import { Button, Select, SelectItem, Tag, Tile } from '@carbon/react'
+import { Button, Select, SelectItem, Tag } from '@carbon/react'
 
 import { NumberInput } from '../ParameterControl'
 import { EmptyState } from '../shared/EmptyState'
+import {
+  SnapshotSchematicPanel,
+  SnapshotSchematicReadout,
+} from './SnapshotSchematicSurface'
 import type { SnapshotAbSwitchMidiBinding, SnapshotAbSwitchMidiMessageType } from '../../utils/snapshotAbSwitchMidi'
 
 interface SnapshotAbSwitchMidiCardProps {
@@ -38,19 +42,30 @@ export function SnapshotAbSwitchMidiCard({
   const bindingSummary = binding
     ? `${binding.messageType === 'note_on' ? 'Note' : 'CC'} ${binding.number}`
     : 'Not configured'
+  const channelSummary = draftMidiChannel === 'omni' ? 'Omni' : `Ch ${draftMidiChannel}`
+  const readoutValue = binding
+    ? `${bindingSummary} / ${channelSummary}`
+    : 'Open'
 
   return (
-    <Tile className="juce-grid-page__midi-block-focus-card">
-      <div className="juce-grid-page__midi-tile-header">
-        <div className="juce-grid-page__midi-tile-copy">
-          <h3 className="juce-grid-page__dense-card-heading">A/B switch MIDI</h3>
-          <p>Store a snapshot-scoped MIDI trigger that toggles the active A/B path without reloading the snapshot.</p>
-        </div>
+    <SnapshotSchematicPanel
+      className="juce-grid-page__midi-block-focus-card"
+      title="A/B switch MIDI"
+      description="Store a snapshot-scoped MIDI trigger that toggles the active A/B path without reloading the snapshot."
+      statusLabel={binding ? 'Configured' : 'Open'}
+      statusTone={binding ? 'active' : 'idle'}
+      meta={
         <div className="juce-grid-page__compact-tags">
           <Tag type={binding ? 'green' : 'cool-gray'}>{bindingSummary}</Tag>
-          <Tag type="cool-gray">{draftMidiChannel === 'omni' ? 'Omni' : `Ch ${draftMidiChannel}`}</Tag>
+          <Tag type="cool-gray">{channelSummary}</Tag>
         </div>
-      </div>
+      }
+    >
+      <SnapshotSchematicReadout
+        label="A/B trigger"
+        value={readoutValue}
+        tone={binding ? 'active' : 'idle'}
+      />
 
       <div className="juce-grid-page__midi-block-focus-grid">
         <Select
@@ -128,7 +143,7 @@ export function SnapshotAbSwitchMidiCard({
           align="left"
         />
       )}
-    </Tile>
+    </SnapshotSchematicPanel>
   )
 }
 
