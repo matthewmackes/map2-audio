@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1176** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2345** total commits | **3** stars | **0** forks | **0** open issues
+**1176** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2349** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`19ee4fe2`](https://github.com/matthewmackes/map2-audio/commit/19ee4fe256814e36f53349325fe2cd7eed966d37) | fix: allow absolute third-party plugin URIs in snapshot g... | Map2 Audio | 2026-04-19 |
+| [`8e039653`](https://github.com/matthewmackes/map2-audio/commit/8e039653815334087aa3a1d5a95baaa7bdf5f9e0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
+| [`aa32a1be`](https://github.com/matthewmackes/map2-audio/commit/aa32a1be72cdee5b860b8e463c70d0817f50546c) | fix: narrow lcd feed peer snapshot fallback | Map2 Audio | 2026-04-19 |
+| [`bbe9d35e`](https://github.com/matthewmackes/map2-audio/commit/bbe9d35e6d35f9625a0b7d8f8dcee863ea51ec14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`1312f3ac`](https://github.com/matthewmackes/map2-audio/commit/1312f3ac26b01f99417468c4bdd880d6d7babaca) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
 | [`6e6389c3`](https://github.com/matthewmackes/map2-audio/commit/6e6389c3fb53fff3ba3f432ad6f651e5f759defe) | chore: sync current working tree | Map2 Audio | 2026-04-19 |
 | [`f4bd6828`](https://github.com/matthewmackes/map2-audio/commit/f4bd68289a59d2064bb56e7dee44945febd9aee9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`268a009b`](https://github.com/matthewmackes/map2-audio/commit/268a009b563fba8bfe38fc2e47626ca27e0a58ce) | T2363-subJ purge legacy LCD models and health signals | Map2 Audio | 2026-04-19 |
-| [`d04b7935`](https://github.com/matthewmackes/map2-audio/commit/d04b793597d452551bbe8825bf1bdfebe0851af3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`e4542c0d`](https://github.com/matthewmackes/map2-audio/commit/e4542c0d20dc0f4251880a46d8b83e27e42dec48) | T2363-subI hard-cut legacy event APIs | Map2 Audio | 2026-04-19 |
-| [`0a83ab7b`](https://github.com/matthewmackes/map2-audio/commit/0a83ab7b91b27ffb319c110cbd5944e875a693b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`e5ffd9ed`](https://github.com/matthewmackes/map2-audio/commit/e5ffd9ed3330433403b0b2f18b46095ab016018c) | T2363-subH hard-cut distributed cluster events | Map2 Audio | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
