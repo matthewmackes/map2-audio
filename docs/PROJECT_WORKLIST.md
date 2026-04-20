@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:40 EDT - Completed T2365-subF JUCE engine service split.
+Last updated: 2026-04-20 13:48 EDT - Completed T2365 cleanup epic.
 
 ---
 
@@ -29068,7 +29068,7 @@ Validation:
 ---
 
 ID: T2365
-Status: [>] In Progress
+Status: [✓] Done
 Title: Full-system code-beauty cleanup — retire shims, legacy facades, v1/v2 duplicates, god files, and duplicated patterns
 Description:
 - Goal / acceptance criteria: Execute a comprehensive "beautify the codebase" pass across the Python backend, C++ audio engine, and React frontend that removes 50+ identified sources of accumulated debt: deprecated facade modules, v1/v2 parallel implementations, 6k–9k-line god files, duplicated legacy-resolver and config-fallback patterns, lazy-import band-aids masking circular dependencies, dead C++ files left on disk but not in CMake, frontend `'legacy'` variant enums, schema-level deprecations, and stub/fallback paths. Acceptance requires every subtask below to land as its own revertable commit on `master` (pushed to both `origin` and `gitlab`), to pass `npm --prefix web run typecheck`, `npm --prefix web run build`, and `pytest tests/` (for touched Python paths), and to leave no new shims behind. All removals must be clean deletions — do NOT introduce `// removed` placeholders, `_unused_` renames, or re-exports for deleted symbols. The outcome is a codebase where (1) only one service orchestrator exists, (2) every v1/v2 pair is reconciled to a single implementation with a clear versioning story, (3) no production source file exceeds 3,000 lines without an approved exemption, (4) duplicated resolver/fallback code is collapsed into shared utilities, and (5) the C++ tree has no orphaned files.
@@ -29096,10 +29096,12 @@ Description:
   - Each subtask ends with: `typecheck` + relevant `pytest` file + build, plus a targeted `rg` scan proving no remaining imports of the removed symbol/file.
   - Do not attempt multiple subtasks in one commit — the whole point of this epic is that each change is small, verifiable, and independently revertable.
 Assigned to: Codex
-Last updated: 2026-04-20 11:37 EDT - Codex
+Last updated: 2026-04-20 13:48 EDT - Codex
 - Progress notes:
   - 2026-04-19 23:25 EDT - Codex: Began the first cleanup slice after completing T2363; starting with T2365-subA to delete the deprecated service manager facade and migrate remaining runtime/test references to ServiceOrchestrator-backed access.
   - 2026-04-20 11:37 EDT - Codex: Completed T2365-subV by adding quad-morph scalar fallback telemetry, removing remaining legacy-labeled Drum Machine bridge assignments, replacing expression JSON auto-import with an explicit migration script plus fail-loud service guard, and opening T2370 for PlatformEvent compatibility-kind removal after the 90-day aging window.
+  - 2026-04-20 13:44 EDT - Codex: Started final T2365-subW guard to lock deleted legacy modules/API aliases out of production imports before closing the cleanup epic.
+  - 2026-04-20 13:48 EDT - Codex: Completed T2365-subW and closed the cleanup epic; all T2365 subtasks are Done, the only related follow-up is separately tracked/blocked as T2370 until 2026-07-18.
 
 ID: T2365-subA
 Status: [✓] Done
@@ -29720,6 +29722,26 @@ Validation:
 - `rg -n "legacy interpolation|legacy drum|Legacy JSON|complete with no stubs" app` -> PASS (no matches)
 - `npm --prefix web run typecheck` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+
+ID: T2365-subW
+Status: [✓] Done
+Title: Add final no-legacy-import guard and close the T2365 cleanup epic
+Description:
+- Goal / acceptance criteria: Add a focused regression test or equivalent CI guard that prevents deleted legacy cleanup targets from returning: service-manager/unified-services facades, PiPedal JUCE aliases, legacy snapshot-service imports, MIDI v1 routes, latency v1 routes, and removed AVDECC/AVB fallback names. Run the guard plus targeted syntax checks, typecheck, and build. If the guard passes and no T2365 subtasks remain open, mark the T2365 parent Done with concrete validation.
+- Why it matters: T2365's overall acceptance requires a final guard proving deleted modules and aliases stay deleted, not only one-time `rg` output in individual commits.
+- Dependencies: T2365-subA through T2365-subV
+- Estimated effort: Low
+- Required outputs: `tests/test_no_legacy_imports.py` or equivalent committed guard, validation output, and parent-epic closure notes.
+Last updated: 2026-04-20 13:48 EDT - Codex
+- Progress notes:
+  - 2026-04-20 13:44 EDT - Codex: Started after T2365-subF SHIP `80eae8d6`; scope is a guard-only commit with no runtime dependency changes.
+  - 2026-04-20 13:48 EDT - Codex: Added `tests/test_no_legacy_imports.py` as the final T2365 guard. The guard caught `scripts/benchmark-lcd.py` still importing the removed LCD event bus, so the script now benchmarks canonical `PlatformEventBus` / `PlatformEventStore` LCD-targeted traffic instead.
+Validation:
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile tests/test_no_legacy_imports.py scripts/benchmark-lcd.py` -> PASS
+- `pytest tests/test_no_legacy_imports.py -q` -> PASS (`2 passed`)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013445501`, existing chunk-size warning only)
 
 ID: T2370
 Status: [✗] Blocked
