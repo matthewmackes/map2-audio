@@ -5,8 +5,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SYSTEM_ROUTES = PROJECT_ROOT / "app" / "routes" / "system.py"
-CPU_OVERVIEW = PROJECT_ROOT / "web" / "src" / "app" / "components" / "CPUStatusOverview.tsx"
-CORE_MANAGER = PROJECT_ROOT / "web" / "src" / "app" / "components" / "CoreAssignmentManager.tsx"
+SYSTEM_ARCHITECTURE = PROJECT_ROOT / "web" / "src" / "app" / "components" / "SystemArchitectureFlow.tsx"
 
 
 def _read(path: Path) -> str:
@@ -27,21 +26,17 @@ def test_system_routes_expose_cpu_config_endpoints():
 
 
 def test_frontend_cpu_components_exist():
-    assert CPU_OVERVIEW.exists(), "CPUStatusOverview.tsx not found"
-    if not CORE_MANAGER.exists():
-        content = _read(CPU_OVERVIEW)
-        assert "handleSaveCore" in content, "Core management UI not found"
+    assert SYSTEM_ARCHITECTURE.exists(), "SystemArchitectureFlow.tsx not found"
 
 
 def test_cpu_overview_uses_real_api_paths():
-    content = _read(CPU_OVERVIEW)
+    content = _read(SYSTEM_ARCHITECTURE)
     assert "/api/system/core-config" in content
-    assert "/api/system/core-assignments" in content
+    assert "/api/system-tests/test/juce-engine/latest" in content
 
 
 def test_cpu_overview_has_edit_and_save_flow():
-    content = _read(CPU_OVERVIEW)
-    assert "handleSaveCore" in content
-    assert "editingCoreId" in content
+    content = _read(SYSTEM_ARCHITECTURE)
+    assert "SCHED_FIFO" in content
     assert "priority" in content
-    assert "isolated" in content
+    assert "utilization" in content

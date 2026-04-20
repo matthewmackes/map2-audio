@@ -2,10 +2,10 @@ import subprocess
 from datetime import datetime, timezone
 
 from app.config import CONFIG_SCHEMA
-from app.services.cluster.distributed_event_bus import EventType
 from app.services.cluster.enhanced_node_identity import NodeHardwareDetector
 from app.services.cluster.mdns_discovery_enhanced import EnhancedMDNSDiscovery
 from app.services.cluster.registry import ClusterRegistry
+from app.services.platform_event.kind import PLATFORM_EVENT_KINDS
 
 
 def test_cluster_midi_config_schema_contains_foundation_keys():
@@ -34,25 +34,24 @@ def test_cluster_midi_defaults_fail_closed():
     assert CONFIG_SCHEMA["midi.cluster.auto_connect"].default is False
 
 
-def test_cluster_event_bus_exposes_midi_event_types():
+def test_platform_event_kind_taxonomy_exposes_midi_event_types():
     expected_values = {
-        "MIDI_PORT_DISCOVERED": "midi.port.discovered",
-        "MIDI_PORT_LOST": "midi.port.lost",
-        "MIDI_NODE_DISCOVERED": "midi.node.discovered",
-        "MIDI_NODE_LOST": "midi.node.lost",
-        "MIDI_CONNECTION_REQUESTED": "midi.connection.requested",
-        "MIDI_CONNECTION_ESTABLISHED": "midi.connection.established",
-        "MIDI_CONNECTION_FAILED": "midi.connection.failed",
-        "MIDI_CONNECTION_LOST": "midi.connection.lost",
-        "MIDI_FAILOVER_TRIGGERED": "midi.failover.triggered",
-        "MIDI_FAILOVER_COMPLETED": "midi.failover.completed",
-        "MIDI_CLOCK_MASTER_ELECTED": "midi.clock.master_elected",
-        "MIDI_CLOCK_DRIFT_DETECTED": "midi.clock.drift_detected",
-        "MIDI_PROFILE_SHARED": "midi.profile.shared",
+        "midi.port.discovered",
+        "midi.port.lost",
+        "midi.node.discovered",
+        "midi.node.lost",
+        "midi.connection.requested",
+        "midi.connection.established",
+        "midi.connection.failed",
+        "midi.connection.lost",
+        "midi.failover.triggered",
+        "midi.failover.completed",
+        "midi.clock.master.elected",
+        "midi.clock.drift",
+        "midi.profile.shared",
     }
 
-    for member_name, value in expected_values.items():
-        assert getattr(EventType, member_name).value == value
+    assert expected_values.issubset(set(PLATFORM_EVENT_KINDS))
 
 
 def test_detect_midi_ports_parses_aconnect_output(monkeypatch):

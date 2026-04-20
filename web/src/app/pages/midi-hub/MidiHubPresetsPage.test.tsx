@@ -1,6 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { NotificationProvider } from '../../components/Toasts'
 import { MidiHubNodeScopeProvider } from '../../components/MidiHub/MidiHubNodeScope'
 
@@ -39,6 +40,20 @@ const mockMidiHubApi = {
 
 jest.mock('../../../map2/api', () => ({
   midiHubApi: mockMidiHubApi,
+}))
+
+jest.mock('../../components/Toasts', () => ({
+  NotificationProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useToasts: () => ({
+    pushToast: jest.fn(),
+    dismissToast: jest.fn(),
+  }),
+  useNotifications: () => ({
+    notifications: [],
+    pushNotification: jest.fn(),
+    dismissNotification: jest.fn(),
+    clearNotifications: jest.fn(),
+  }),
 }))
 
 jest.mock('./MidiHubAreaLayout', () => ({
@@ -118,11 +133,18 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <MidiHubNodeScopeProvider nodeId={null} scopeKey="local">
-          <MidiHubPresetsPage />
-        </MidiHubNodeScopeProvider>
-      </NotificationProvider>
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <NotificationProvider>
+          <MidiHubNodeScopeProvider nodeId={null} scopeKey="local">
+            <MidiHubPresetsPage />
+          </MidiHubNodeScopeProvider>
+        </NotificationProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }

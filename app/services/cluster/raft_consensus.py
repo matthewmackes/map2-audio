@@ -153,7 +153,7 @@ class RaftConsensus(Singleton):
         """
         self.node_id = node_id
         self.cluster_nodes = {n: u for n, u in cluster_nodes.items() if n != node_id}
-        self._state_path = Path(state_path) if state_path is not None else self._default_state_path(node_id)
+        self._state_path = Path(state_path) if state_path is not None else type(self)._default_state_path(node_id)
         
         # Persistent state
         self.current_term = 0
@@ -615,6 +615,9 @@ class RaftConsensus(Singleton):
         self._commit_waiters.setdefault(entry.index, []).append(commit_event)
         
         self.logger.info(f"Appended log entry: {command} (index={entry.index})")
+
+        # Single-node clusters can reach majority from the leader's own log.
+        await self._update_commit_index()
         
         # Send to followers
         await self._send_heartbeats()

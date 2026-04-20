@@ -393,6 +393,10 @@ def init_async_db(database_url: str = None) -> None:
     """Initialize async database engine and session factory with power-failure resilience."""
     global _async_engine, _async_session_maker
     database_url = database_url or get_default_database_url(async_mode=True)
+    if _async_engine is not None:
+        # Tests and controlled restarts can re-point the global async DB; dispose
+        # the previous pool first so aiosqlite worker threads do not survive.
+        _async_engine.sync_engine.dispose()
     _async_engine = create_async_engine(
         database_url,
         echo=False,

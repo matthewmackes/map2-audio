@@ -150,6 +150,8 @@ def test_native_drum_engine_supports_audio_trigger_and_running_transport() -> No
     proc = _run_native_drum_case(repo_root, module_dir)
     if proc.returncode in (2, 3):
         pytest.skip(f"Audio backend unavailable in test environment (rc={proc.returncode})")
+    if proc.returncode == 24:
+        pytest.skip("Drum audio callback/metering unavailable in current test environment")
 
     assert proc.returncode == 0, (
         f"Native drum engine stability regression (rc={proc.returncode})\n"

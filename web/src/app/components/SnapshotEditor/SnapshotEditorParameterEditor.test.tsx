@@ -86,7 +86,7 @@ describe('SnapshotEditorParameterEditor IR waveform preview', () => {
     )
 
     expect(screen.getByText('Reverb IR waveform')).toBeInTheDocument()
-    expect(screen.getByText('No WAV impulse loaded for this block yet.')).toBeInTheDocument()
+    expect(screen.getByText('No WAV impulse loaded for this block yet')).toBeInTheDocument()
     expect(mockGetWaveformPreview).not.toHaveBeenCalled()
   })
 

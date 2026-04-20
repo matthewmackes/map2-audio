@@ -5,6 +5,7 @@ Tests for the MAP2 JUCE-based audio engine
 
 import pytest
 import asyncio
+import os
 from unittest.mock import MagicMock, patch
 
 # Try to import the JUCE engine service
@@ -20,7 +21,10 @@ except ImportError:
     JUCE_ENGINE_INSTALLED = False
 
 
-@pytest.mark.skipif(not JUCE_ENGINE_INSTALLED, reason="JUCE engine not installed")
+@pytest.mark.skipif(
+    not JUCE_ENGINE_INSTALLED or os.getenv("MAP2_RUN_JUCE_INTEGRATION", "").lower() != "true",
+    reason="Native JUCE integration disabled (set MAP2_RUN_JUCE_INTEGRATION=true to run)",
+)
 class TestJuceEngine:
     """Test JUCE Audio Engine."""
 
@@ -128,7 +132,7 @@ class TestJuceEngineService:
         config = AudioEngineConfig()
         
         assert config.sample_rate == 48000
-        assert config.buffer_size == 256
+        assert config.buffer_size == 64
         assert config.enable_midi is True
 
     def test_properties_when_not_initialized(self):

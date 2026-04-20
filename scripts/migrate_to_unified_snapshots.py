@@ -31,7 +31,7 @@ from app.database import (
     _resolve_database_path,
     init_db,
 )
-from app.services.snapshot_service import SnapshotService
+from app.services.snapshot_service import SnapshotService, sanitize_snapshot_name_seed
 
 args = argparse.Namespace(skip_backup=False)
 
@@ -166,6 +166,23 @@ def build_detail_from_engine_snapshot(slot: dict[str, Any], slot_index: int) -> 
     }
 
 
+def _migration_snapshot_name(value: Any, *, fallback: str = "MigratedSnapshot") -> str:
+    return sanitize_snapshot_name_seed(value, fallback=fallback)
+
+
+async def _attach_migration_tags(session: Any, snapshot_id: int, tags: list[str]) -> None:
+    snapshot = await session.get(Snapshot, int(snapshot_id))
+    if snapshot is None:
+        return
+    merged_tags: list[str] = []
+    for tag in [*(snapshot.tags or []), *tags]:
+        normalized = str(tag).strip()
+        if normalized and normalized not in merged_tags:
+            merged_tags.append(normalized)
+    snapshot.tags = merged_tags
+    await session.flush()
+
+
 async def migrate() -> None:
     init_db()
     backup_path = backup_database_file(skip_backup=args.skip_backup)
@@ -195,7 +212,7 @@ async def migrate() -> None:
             tags = list(flow_snapshot.tags or [])
             tags.append(migration_tag)
             snapshot = await service.create_snapshot(
-                name=flow_snapshot.name,
+                name=_migration_snapshot_name(flow_snapshot.name, fallback=f"LegacyFlowSnapshot{flow_snapshot.id}"),
                 description=flow_snapshot.description or "",
                 tags=tags,
                 program_number=flow_snapshot.program_number,
@@ -204,6 +221,7 @@ async def migrate() -> None:
             )
             if flow_snapshot.is_active:
                 await service.activate_snapshot(snapshot["id"], triggered_by="migration")
+            await _attach_migration_tags(session, snapshot["id"], tags)
             migrated_tags.add(migration_tag)
             created_count += 1
 
@@ -232,11 +250,12 @@ async def migrate() -> None:
             if chain_payload is None:
                 continue
             snapshot = await service.create_snapshot(
-                name=chain_payload["name"],
+                name=_migration_snapshot_name(chain_payload["name"], fallback=f"LegacyChain{chain.id}"),
                 description="Migrated orphan chain",
                 tags=[migration_tag],
                 detail_payload=build_detail_from_legacy_chain(chain_payload),
             )
+            await _attach_migration_tags(session, snapshot["id"], [migration_tag])
             migrated_tags.add(migration_tag)
             created_count += 1
 
@@ -252,11 +271,12 @@ async def migrate() -> None:
                 if migration_tag in migrated_tags:
                     continue
                 await service.create_snapshot(
-                    name=slot.get("name") or f"Engine Snapshot {slot_id + 1}",
+                    name=_migration_snapshot_name(slot.get("name"), fallback=f"EngineSnapshot{slot_id + 1}"),
                     description="Migrated engine snapshot slot",
                     tags=[migration_tag],
                     detail_payload=build_detail_from_engine_snapshot(slot, slot_id),
                 )
+                await _attach_migration_tags(session, snapshot["id"], [migration_tag])
                 migrated_tags.add(migration_tag)
                 created_count += 1
 

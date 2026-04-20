@@ -101,7 +101,7 @@ describe('SnapshotEditorSignalCanvas', () => {
       />,
     )
 
-    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: #ff7eb6')
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: var(--primary-strong)')
   })
 
   it('renders a single forward lane with explicit input and output terminals', () => {

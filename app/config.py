@@ -15,13 +15,14 @@ Features:
 from __future__ import annotations
 
 import copy
+import contextlib
 import json
 import logging
 import os
 from pathlib import Path
 import tempfile
 import threading
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional
 
 from app.config_schema import CONFIG_SCHEMA, ConfigOption, ConfigSection
 
@@ -75,7 +76,7 @@ class ConfigManager:
         self.config_path = config_path or self.CONFIG_FILE
         self.config_backup_path = self.CONFIG_BACKUP
         self._config: Dict[str, Any] = {}
-        self._observers: Dict[str, Set[Callable[[str, Any, Any], None]]] = {}
+        self._observers: Dict[str, List[Callable[[str, Any, Any], None]]] = {}
         self._dirty = False
 
         # Ensure config directory exists
@@ -408,13 +409,15 @@ class ConfigManager:
             callback: Callback(key, old_value, new_value)
         """
         if key_pattern not in self._observers:
-            self._observers[key_pattern] = set()
-        self._observers[key_pattern].add(callback)
+            self._observers[key_pattern] = []
+        if callback not in self._observers[key_pattern]:
+            self._observers[key_pattern].append(callback)
 
     def remove_observer(self, key_pattern: str, callback: Callable) -> None:
         """Remove observer for configuration changes."""
         if key_pattern in self._observers:
-            self._observers[key_pattern].discard(callback)
+            with contextlib.suppress(ValueError):
+                self._observers[key_pattern].remove(callback)
 
     def _notify_observers(self, key: str, old_value: Any, new_value: Any) -> None:
         """Notify all matching observers of a config change."""

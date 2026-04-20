@@ -3,6 +3,7 @@ import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 
 import { App } from './App'
+import { appHistory } from './history'
 
 const mockUseHomePlatformStatus = jest.fn()
 
@@ -18,9 +19,16 @@ jest.mock('./components/ViewportPolicyGate', () => ({
 
 jest.mock('./components/Toasts', () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  NotificationProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useToasts: () => ({
     pushToast: jest.fn(),
     dismissToast: jest.fn(),
+  }),
+  useNotifications: () => ({
+    notifications: [],
+    pushNotification: jest.fn(),
+    dismissNotification: jest.fn(),
+    clearNotifications: jest.fn(),
   }),
 }))
 
@@ -190,6 +198,14 @@ jest.mock('./pages/MidiCommanderPage', () => ({
   },
 }))
 
+jest.mock('./pages/IntelFXPage', () => ({
+  IntelFXPage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="intelfx-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -201,10 +217,15 @@ jest.mock('./pages/AudioArtifactsPage', () => ({
 describe('App routing', () => {
   beforeEach(() => {
     mockUseHomePlatformStatus.mockReset()
+    appHistory.push('/')
   })
 
+  function navigateTo(path: string) {
+    appHistory.push(path)
+  }
+
   it('keeps /perform outside AppShell chrome', async () => {
-    window.history.pushState({}, '', '/perform')
+    navigateTo('/perform')
 
     render(<App />)
 
@@ -213,7 +234,7 @@ describe('App routing', () => {
   })
 
   it('redirects legacy /platform query routes into the canonical /workspace/platforms workspace path', async () => {
-    window.history.pushState({}, '', '/platform?layer=overview')
+    navigateTo('/platform?layer=overview')
 
     render(<App />)
 
@@ -222,7 +243,7 @@ describe('App routing', () => {
   })
 
   it('redirects legacy /audio-artifacts into the canonical /workspace/artifacts route', async () => {
-    window.history.pushState({}, '', '/audio-artifacts?category=lv2-plugins')
+    navigateTo('/audio-artifacts?category=lv2-plugins')
 
     render(<App />)
 
@@ -230,7 +251,7 @@ describe('App routing', () => {
   })
 
   it('does not keep /audio-table as a routed surface after the platforms hard cut', async () => {
-    window.history.pushState({}, '', '/audio-table')
+    navigateTo('/audio-table')
 
     render(<App />)
 
@@ -238,7 +259,7 @@ describe('App routing', () => {
   })
 
   it('redirects the retired /dsp route into the canonical workspace hub overview', async () => {
-    window.history.pushState({}, '', '/dsp')
+    navigateTo('/dsp')
 
     render(<App />)
 
@@ -246,7 +267,7 @@ describe('App routing', () => {
   })
 
   it('redirects the retired /cpu-performance route into the canonical workspace hub overview', async () => {
-    window.history.pushState({}, '', '/cpu-performance')
+    navigateTo('/cpu-performance')
 
     render(<App />)
 
@@ -254,7 +275,7 @@ describe('App routing', () => {
   })
 
   it('keeps the dedicated /launch-control route available inside AppShell', async () => {
-    window.history.pushState({}, '', '/launch-control')
+    navigateTo('/launch-control')
 
     render(<App />)
 
@@ -263,7 +284,7 @@ describe('App routing', () => {
   })
 
   it('keeps the dedicated /midi-commander route available inside AppShell', async () => {
-    window.history.pushState({}, '', '/midi-commander')
+    navigateTo('/midi-commander')
 
     render(<App />)
 
@@ -272,7 +293,7 @@ describe('App routing', () => {
   })
 
   it('redirects the bare /platforms route into the canonical workspace hub overview', async () => {
-    window.history.pushState({}, '', '/platforms')
+    navigateTo('/platforms')
 
     render(<App />)
 
@@ -280,7 +301,7 @@ describe('App routing', () => {
   })
 
   it('redirects the legacy Platforms adoption route into the workspace hub path', async () => {
-    window.history.pushState({}, '', '/platforms/adoption?state=claimable')
+    navigateTo('/platforms/adoption?state=claimable')
 
     render(<App />)
 
@@ -288,7 +309,7 @@ describe('App routing', () => {
   })
 
   it('redirects the bare /workspace route into the workspace hub platforms overview scaffold', async () => {
-    window.history.pushState({}, '', '/workspace')
+    navigateTo('/workspace')
 
     render(<App />)
 
@@ -297,7 +318,7 @@ describe('App routing', () => {
   })
 
   it('keeps the new workspace hub outboard hardware scaffold route available inside AppShell', async () => {
-    window.history.pushState({}, '', '/workspace/outboard-hardware')
+    navigateTo('/workspace/outboard-hardware')
 
     render(<App />)
 
@@ -306,7 +327,7 @@ describe('App routing', () => {
   })
 
   it('mounts the migrated outboard-hardware device route inside the workspace hub', async () => {
-    window.history.pushState({}, '', '/workspace/outboard-hardware/lexicon-mpx1')
+    navigateTo('/workspace/outboard-hardware/lexicon-mpx1')
 
     render(<App />)
 
@@ -315,7 +336,7 @@ describe('App routing', () => {
   })
 
   it('mounts the migrated physical-surfaces overview inside the workspace hub', async () => {
-    window.history.pushState({}, '', '/workspace/physical-surfaces')
+    navigateTo('/workspace/physical-surfaces')
 
     render(<App />)
 
@@ -324,7 +345,7 @@ describe('App routing', () => {
   })
 
   it('redirects the legacy physical-surfaces overview into the workspace hub path', async () => {
-    window.history.pushState({}, '', '/physical-surfaces')
+    navigateTo('/physical-surfaces')
 
     render(<App />)
 
@@ -333,7 +354,7 @@ describe('App routing', () => {
   })
 
   it('mounts the migrated audio-artifacts overview inside the workspace hub', async () => {
-    window.history.pushState({}, '', '/workspace/artifacts?category=lv2-plugins')
+    navigateTo('/workspace/artifacts?category=lv2-plugins')
 
     render(<App />)
 
@@ -342,7 +363,7 @@ describe('App routing', () => {
   })
 
   it('mounts the migrated audio-artifacts discover route inside the workspace hub', async () => {
-    window.history.pushState({}, '', '/workspace/artifacts/discover?category=nam-models')
+    navigateTo('/workspace/artifacts/discover?category=nam-models')
 
     render(<App />)
 
@@ -351,7 +372,7 @@ describe('App routing', () => {
   })
 
   it('redirects the legacy artifacts discover route into the workspace hub path', async () => {
-    window.history.pushState({}, '', '/artifacts/discover?category=nam-models')
+    navigateTo('/artifacts/discover?category=nam-models')
 
     render(<App />)
 
@@ -360,7 +381,7 @@ describe('App routing', () => {
   })
 
   it('redirects the legacy outboard-hardware device route into the workspace hub path', async () => {
-    window.history.pushState({}, '', '/outboard-hardware/lexicon-mpx1')
+    navigateTo('/outboard-hardware/lexicon-mpx1')
 
     render(<App />)
 
@@ -369,7 +390,7 @@ describe('App routing', () => {
   })
 
   it('redirects the retired Workspace Catalog route into the canonical workspace hub overview', async () => {
-    window.history.pushState({}, '', '/platforms/workspace-catalog')
+    navigateTo('/platforms/workspace-catalog')
 
     render(<App />)
 
@@ -377,7 +398,7 @@ describe('App routing', () => {
   })
 
   it('retires the legacy SynthForge route back to the desktop landing page', async () => {
-    window.history.pushState({}, '', '/synth-forge')
+    navigateTo('/synth-forge')
 
     render(<App />)
 
@@ -385,7 +406,7 @@ describe('App routing', () => {
   })
 
   it('keeps Performance Brain as a first-class routed surface', async () => {
-    window.history.pushState({}, '', '/brain?instance_id=17')
+    navigateTo('/brain?instance_id=17')
 
     render(<App />)
 
@@ -393,18 +414,19 @@ describe('App routing', () => {
   })
 
   it('keeps Ground Control Pro as a first-class routed surface', async () => {
-    window.history.pushState({}, '', '/ground-control-pro')
+    navigateTo('/ground-control-pro')
 
     render(<App />)
 
     expect(await screen.findByTestId('ground-control-pro-route')).toHaveTextContent('/ground-control-pro')
   })
 
-  it('keeps platform-status polling alive and slows it outside the desktop route', async () => {
-    window.history.pushState({}, '', '/intelfx')
+  it('keeps IntelFX as a dedicated routed surface inside AppShell', async () => {
+    navigateTo('/intelfx')
 
     render(<App />)
 
-    expect(mockUseHomePlatformStatus).toHaveBeenCalledWith({ pollMs: 30_000, staleMs: 25_000 })
+    expect(await screen.findByTestId('intelfx-route')).toHaveTextContent('/intelfx')
+    expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 })

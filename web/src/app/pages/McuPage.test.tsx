@@ -34,16 +34,16 @@ function makeClient() {
 function renderPage() {
   return render(
     <QueryClientProvider client={makeClient()}>
-      <ToastProvider>
-        <MemoryRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <ToastProvider>
           <McuPage />
-        </MemoryRouter>
-      </ToastProvider>
+        </ToastProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }

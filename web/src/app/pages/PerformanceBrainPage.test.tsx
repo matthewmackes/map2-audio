@@ -36,13 +36,52 @@ jest.mock('@/app/components/PageHeader', () => ({
   ),
 }))
 
-jest.mock('@carbon/react', () => ({
-  Button: ({ children, onClick, renderIcon: _renderIcon, ...props }: any) => <button onClick={onClick} {...props}>{children}</button>,
-  InlineLoading: ({ description }: { description?: string }) => <div>{description}</div>,
-  InlineNotification: ({ title, subtitle }: { title: string; subtitle?: string }) => <div>{title}{subtitle ? ` ${subtitle}` : ''}</div>,
-  Tag: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-  Tile: ({ children, className }: { children: React.ReactNode; className?: string }) => <section className={className}>{children}</section>,
-}))
+jest.mock('@carbon/react', () => {
+  const React = require('react')
+  const TreeViewContext = React.createContext({ selected: [] as string[] })
+
+  const Button = ({ children, onClick, renderIcon: _renderIcon, kind: _kind, size: _size, ...props }: any) => (
+    <button onClick={onClick} {...props}>{children}</button>
+  )
+  const FeatureFlags = ({ children }: { children: React.ReactNode }) => <>{children}</>
+  const InlineLoading = ({ description }: { description?: string }) => <div>{description}</div>
+  const InlineNotification = ({ title, subtitle }: { title: string; subtitle?: string }) => <div>{title}{subtitle ? ` ${subtitle}` : ''}</div>
+  const Layer = ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>
+  const Tag = ({ children }: { children: React.ReactNode }) => <span>{children}</span>
+  const Tile = ({ children, className }: { children: React.ReactNode; className?: string }) => <section className={className}>{children}</section>
+  const TreeView = Object.assign(
+    ({ children, className, label, selected }: any) => (
+      <TreeViewContext.Provider value={{ selected: Array.isArray(selected) ? selected : [] }}>
+        <div className={className} aria-label={label}>{children}</div>
+      </TreeViewContext.Provider>
+    ),
+    {
+      TreeNode: ({ children, label, onSelect, id, className, 'aria-label': ariaLabel }: any) => {
+        const { selected } = React.useContext(TreeViewContext)
+        const isSelected = selected.includes(id)
+        return (
+          <div id={id} className={className} aria-label={ariaLabel}>
+            <button type="button" onClick={onSelect} aria-current={isSelected ? 'page' : undefined}>
+              {label}
+            </button>
+            {children}
+          </div>
+        )
+      },
+    },
+  )
+
+  return {
+    Button,
+    FeatureFlags,
+    InlineLoading,
+    InlineNotification,
+    Layer,
+    Tag,
+    Tile,
+    TreeView,
+  }
+})
 
 jest.mock('@/map2/api', () => ({
   brainApi: {
@@ -376,17 +415,17 @@ describe('PerformanceBrainPage', () => {
   it('preserves scoped route state when switching sections through the rail', async () => {
     renderPage('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Performance Brain' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Performance Brain' }).length).toBeGreaterThan(0))
     await waitFor(() => expect(mockGetState).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
     expect(screen.getByText('Realtime metrics')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Diagnostics$/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /^Diagnostics/ })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
-    fireEvent.click(screen.getByRole('button', { name: /Sequence$/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Sequence/ }))
 
     await waitFor(() => expect(mockUpdateState).toHaveBeenCalledWith({ active_section: 'sequence' }, { instanceId: 42, pluginPosition: 9 }))
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=sequence'))
-    expect(screen.getByRole('button', { name: /Sequence$/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /^Sequence/ })).toHaveAttribute('aria-current', 'page')
   })
 
   it('normalizes the section query param from backend state when the route is missing it', async () => {
@@ -396,7 +435,7 @@ describe('PerformanceBrainPage', () => {
 
     await waitFor(() => expect(screen.getByText('Layer map')).toBeInTheDocument())
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=7&plugin_position=2&section=layers'))
-    expect(screen.getByRole('button', { name: /Layers$/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /^Layers/ })).toHaveAttribute('aria-current', 'page')
     expect(mockUpdateState).not.toHaveBeenCalled()
   })
 
@@ -462,7 +501,7 @@ describe('PerformanceBrainPage', () => {
     expect(screen.getAllByText('2/4 surfaces ready · Tier A drift').length).toBeGreaterThan(0)
     expect(screen.getAllByText('instance-42__position-9').length).toBeGreaterThan(0)
 
-    fireEvent.click(screen.getByRole('button', { name: /Diagnostics$/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Diagnostics/ }))
 
     await waitFor(() => expect(screen.getByText('Controller qualification')).toBeInTheDocument())
     expect(screen.getByText('No enabled keyboard zones configured.')).toBeInTheDocument()
@@ -535,7 +574,7 @@ describe('PerformanceBrainPage', () => {
 
     await waitFor(() => expect(mockImportFromSynthForge).toHaveBeenCalledWith({ instanceId: 7, pluginPosition: 2 }))
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=7&plugin_position=2&section=library'))
-    expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source')
+    await waitFor(() => expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source'))
     expect(mockImportFromDrums).not.toHaveBeenCalled()
   })
 })

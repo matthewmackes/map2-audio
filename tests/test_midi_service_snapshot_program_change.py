@@ -52,7 +52,7 @@ def test_midi_service_prefers_canonical_snapshot_program_recall(tmp_path, monkey
         return {
             "status": "success",
             "snapshot_id": snapshot_id,
-            "name": "Program Snapshot",
+            "name": "ProgramSnapshot",
             "snapshot_data": {"id": snapshot_id},
             "params_applied": 0,
             "bypass_applied": 0,
@@ -72,7 +72,7 @@ def test_midi_service_prefers_canonical_snapshot_program_recall(tmp_path, monkey
         async with database_module.get_session() as session:
             snapshot_service = SnapshotService(session)
             created = await snapshot_service.create_snapshot(
-                name="Program Snapshot",
+                name="ProgramSnapshot",
                 description="Canonical MIDI recall test",
                 tags=["midi"],
                 program_number=23,

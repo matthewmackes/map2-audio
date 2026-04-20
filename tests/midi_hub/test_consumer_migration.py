@@ -104,6 +104,7 @@ async def test_midi_broadcast_consumes_hub_traffic(monkeypatch):
 
     service = MidiBroadcastService()
     await service.start()
+    await asyncio.sleep(0)
     hub.start()
     hub.inject(
         MidiMessage(
@@ -240,6 +241,7 @@ async def test_midi_broadcast_bridges_platform_event_topics(monkeypatch):
 
     service = MidiBroadcastService()
     await service.start()
+    await asyncio.sleep(0)
 
     node_event = PlatformEvent(
         kind="midi.node.discovered",
@@ -259,6 +261,8 @@ async def test_midi_broadcast_bridges_platform_event_topics(monkeypatch):
         message="Clock drift",
         context={"drift_ms": 1.25, "affected_nodes": ["node-b"]},
     )
+
+    assert subscriptions
 
     subscriptions[0](node_event)
     subscriptions[0](clock_event)

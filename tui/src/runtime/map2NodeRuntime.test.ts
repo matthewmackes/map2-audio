@@ -29,6 +29,15 @@ class MockWebSocket {
   }
 }
 
+function makeJsonResponse(payload: unknown): Response {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: jest.fn().mockResolvedValue(payload),
+  } as unknown as Response
+}
+
 describe('configureNodeMap2Runtime', () => {
   const originalFetch = global.fetch
 
@@ -38,12 +47,7 @@ describe('configureNodeMap2Runtime', () => {
 
   beforeEach(() => {
     resetMap2Runtime()
-    global.fetch = jest.fn(async () =>
-      new Response(JSON.stringify({ status: 'healthy' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    ) as unknown as typeof fetch
+    global.fetch = jest.fn(async () => makeJsonResponse({ status: 'healthy' })) as unknown as typeof fetch
   })
 
   afterEach(() => {

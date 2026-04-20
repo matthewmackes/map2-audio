@@ -14,6 +14,7 @@ import json
 import yaml
 import hashlib
 import logging
+import importlib
 try:
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler, FileModifiedEvent
@@ -146,6 +147,11 @@ class ConfigurationHotReloader:
         self.reload_config()
         self._suspend_cluster_broadcast = False
 
+    def _refresh_platform_event_bus(self) -> None:
+        """Refresh the bus reference after tests/restarts replace the singleton."""
+        module = importlib.import_module("app.services.platform_event.bus")
+        self._platform_event_bus = module.get_platform_event_bus()
+
     def bind_event_loop(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
         """Bind an asyncio loop so callbacks from watcher threads can publish events."""
         if loop is not None:
@@ -161,12 +167,11 @@ class ConfigurationHotReloader:
         """Attach to the PlatformEvent bus for cluster config propagation."""
         try:
             from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
-            from app.services.platform_event.bus import get_platform_event_bus
 
             identity = get_enhanced_node_identity()
             self.local_node_id = identity.get_node_id()
             self.local_node_role = identity.get_role()
-            self._platform_event_bus = get_platform_event_bus()
+            self._refresh_platform_event_bus()
         except Exception as exc:
             logger.debug(f"Cluster config sync unavailable: {exc}")
 
@@ -236,6 +241,10 @@ class ConfigurationHotReloader:
         return False
 
     async def _publish_config_changed(self, key_path: str, value: Any, scope: str, action: str = "modified") -> None:
+        try:
+            self._refresh_platform_event_bus()
+        except Exception:
+            self._init_cluster_sync()
         if self._platform_event_bus is None:
             return
 

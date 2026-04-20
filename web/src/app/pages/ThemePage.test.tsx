@@ -322,8 +322,10 @@ describe('ThemePage', () => {
     expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
 
     openThemeTab('Fonts and Objects')
-    const interTile = screen.getByRole('radio', { name: /inter/i })
-    fireEvent.click(interTile)
+    const interLabel = screen.getByText('Inter')
+    const interTile = interLabel.closest('button')
+    expect(interTile).not.toBeNull()
+    fireEvent.click(interTile as HTMLButtonElement)
 
     return waitFor(() => {
       expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('inter')

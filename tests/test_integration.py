@@ -4,7 +4,6 @@ Comprehensive test suite for APIs, services, and database operations.
 """
 
 import pytest
-from typing import AsyncGenerator
 
 
 class TestAudioAPI:
@@ -13,38 +12,44 @@ class TestAudioAPI:
     @pytest.mark.asyncio
     async def test_audio_status(self):
         """Test getting audio status."""
-        from app.services.audio_processor import AudioProcessorService
-        service = AudioProcessorService()
-        status = await service.get_status()
+        from app.services.audio_io_v2 import AudioIOFactory
+
+        service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
+        status = service.get_stats()
         assert status["sample_rate"] == 48000
         assert status["channels"] == 2
 
     @pytest.mark.asyncio
-    async def test_audio_start_stop(self):
+    async def test_audio_start_stop(self, monkeypatch):
         """Test starting and stopping audio."""
-        from app.services.audio_processor import AudioProcessorService
-        service = AudioProcessorService()
-        await service.start()
+        import app.services.audio_io_v2 as audio_io_module
+        from app.services.audio_io_v2 import AudioIOFactory
+
+        monkeypatch.setattr(audio_io_module, "SOUNDDEVICE_AVAILABLE", False)
+        service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
+        assert await service.start_stream() is True
         assert service.is_running is True
-        await service.stop()
+        assert await service.stop_stream() is True
         assert service.is_running is False
 
     @pytest.mark.asyncio
     async def test_latency(self):
         """Test latency calculation."""
-        from app.services.audio_processor import AudioProcessorService
-        service = AudioProcessorService()
-        latency = await service.get_latency_ms()
+        from app.services.audio_io_v2 import AudioIOFactory
+
+        service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
+        latency = service.get_stats()["latency_ms"]
         assert latency > 0
 
     @pytest.mark.asyncio
     async def test_levels(self):
         """Test level monitoring."""
-        from app.services.audio_processor import AudioProcessorService
-        service = AudioProcessorService()
-        levels = await service.get_levels()
-        assert "input" in levels
-        assert "output" in levels
+        from app.services.audio_io_v2 import AudioIOFactory
+
+        service = AudioIOFactory.create(enable_watchdog=False, enable_signal_detection=False)
+        stats = service.get_stats()
+        assert "input_queue_fill_pct" in stats
+        assert "output_queue_fill_pct" in stats
 
 
 class TestPluginAPI:
@@ -53,29 +58,33 @@ class TestPluginAPI:
     @pytest.mark.asyncio
     async def test_discover_plugins(self):
         """Test plugin discovery."""
-        from app.services.plugin_host_enhanced import EnhancedPluginHostService
-        service = EnhancedPluginHostService()
-        plugins = await service.discover()
-        assert len(plugins) == 3
+        from app.services.plugin_loader_unified import PluginLoaderV2
+
+        service = PluginLoaderV2()
+        plugins = await service.discover_plugins()
+        assert len(plugins) > 0
 
     @pytest.mark.asyncio
     async def test_load_plugin(self):
         """Test loading a plugin."""
-        from app.services.plugin_host_enhanced import EnhancedPluginHostService
-        service = EnhancedPluginHostService()
-        plugins = await service.discover()
-        plugin = await service.load(plugins[0]["uri"])
+        from app.services.plugin_loader_unified import PluginLoaderV2
+
+        service = PluginLoaderV2()
+        plugins = await service.discover_plugins()
+        plugin = await service.get_plugin_by_uri(plugins[0].uri)
         assert plugin is not None
-        assert plugin.name == plugins[0]["name"]
+        assert plugin.name == plugins[0].name
 
     @pytest.mark.asyncio
     async def test_get_parameters(self):
         """Test getting plugin parameters."""
-        from app.services.plugin_host_enhanced import EnhancedPluginHostService
-        service = EnhancedPluginHostService()
-        plugins = await service.discover()
-        plugin = await service.load(plugins[0]["uri"])
-        params = list(plugin.parameters.values())
+        from app.services.plugin_loader_unified import PluginLoaderV2
+
+        service = PluginLoaderV2()
+        plugins = await service.discover_plugins()
+        plugin = await service.get_plugin_by_uri(plugins[0].uri)
+        assert plugin is not None
+        params = list(plugin.parameters)
         assert len(params) > 0
 
 
@@ -120,17 +129,18 @@ class TestServices:
     @pytest.mark.asyncio
     async def test_plugin_host_service(self):
         """Test plugin host service."""
-        from app.services.plugin_host_enhanced import EnhancedPluginHostService
-        service = EnhancedPluginHostService()
-        plugins = await service.discover()
+        from app.services.plugin_loader_unified import PluginLoaderV2
+
+        service = PluginLoaderV2()
+        plugins = await service.discover_plugins()
         assert len(plugins) > 0
 
     @pytest.mark.asyncio
     async def test_audio_processor_service(self):
         """Test audio processor service."""
-        from app.services.audio_processor import AudioProcessorService
-        service = AudioProcessorService()
-        metrics = await service.get_status()
+        from app.services.audio_io_v2 import get_audio_status
+
+        metrics = get_audio_status()
         assert metrics["sample_rate"] == 48000
 
     @pytest.mark.asyncio

@@ -8,7 +8,7 @@ const mockSetActiveNode = jest.fn()
 const mockUseCluster = jest.fn()
 const mockUsePipeWire = jest.fn()
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

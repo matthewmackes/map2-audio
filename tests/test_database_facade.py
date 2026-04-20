@@ -40,8 +40,17 @@ def test_database_session_module_reexports_canonical_get_session():
     import app.database as database_module
     import app.database_session as session_module
 
-    assert session_module.get_session is database_module.get_session
-    assert session_module.get_db_session is database_module.get_session
+    class _SentinelSession:
+        pass
+
+    sentinel = _SentinelSession()
+    original_get_session = database_module.get_session
+    try:
+        database_module.get_session = lambda *args, **kwargs: sentinel
+        assert session_module.get_session() is sentinel
+        assert session_module.get_db_session() is sentinel
+    finally:
+        database_module.get_session = original_get_session
 
 
 def test_database_pool_manager_initialize_uses_structured_logger_fields(monkeypatch):

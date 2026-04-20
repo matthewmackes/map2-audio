@@ -46,9 +46,10 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
-    expect(screen.getByRole('heading', { name: /map2 platform guide/i })).toBeTruthy()
-    expect(screen.getByText(/documentation library/i)).toBeTruthy()
+    await screen.findByRole('heading', { name: /an open, educational/i })
+    expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText(/map2 · platform guide/i)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /research library/i })).toBeTruthy()
     expect(document.querySelector('.about-page')).toBeTruthy()
     expect(document.querySelector('.about-page__surface')).toBeTruthy()
   })
@@ -65,10 +66,11 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
+    await screen.findByRole('heading', { name: /an open, educational/i })
 
-    expect(screen.getByText(/platform version/i)).toBeTruthy()
-    expect(screen.getByText(/help me find hardware/i)).toBeTruthy()
+    expect(screen.getByText('Version')).toBeTruthy()
+    expect(screen.getAllByText('License').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: /the open-source projects that make map2 possible\./i })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /choose theme/i })).toBeNull()
   })
 
@@ -84,14 +86,14 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
+    await screen.findByRole('heading', { name: /an open, educational/i })
 
-    const disclaimerHeading = screen.getByRole('heading', { name: /legal disclaimer/i })
-    const pageHeading = screen.getByRole('heading', { name: /map2 platform guide/i })
-    const agplHeading = screen.getByRole('heading', { name: /gnu affero general public license v3\.0 \(agpl-3\.0-only\)/i })
+    const legalHeading = screen.getByRole('heading', { name: /legal notice · agpl-3\.0-only · not affiliated/i })
+    const missionHeading = screen.getByRole('heading', { name: /research & education/i })
+    const agplHeading = screen.getByRole('button', { name: /gnu affero general public license v3\.0 \(agpl-3\.0-only\)/i })
 
-    expect(disclaimerHeading.compareDocumentPosition(pageHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(disclaimerHeading.compareDocumentPosition(agplHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(legalHeading.compareDocumentPosition(missionHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(legalHeading.compareDocumentPosition(agplHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.queryByRole('button', { name: /legal disclaimer/i })).toBeNull()
   })
 })

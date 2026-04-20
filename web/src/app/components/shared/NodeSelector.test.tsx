@@ -7,7 +7,7 @@ import { NodeSelector } from './NodeSelector'
 const mockSetActiveNode = jest.fn()
 const mockUseCluster = jest.fn()
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

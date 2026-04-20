@@ -368,13 +368,14 @@ describe('Desktop experience integration', () => {
     const { container } = renderDesktopExperience(['/'])
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    fireEvent.click(container.querySelector('a[href="/brain"]') as HTMLElement)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Options' }).at(-1)!)
+    fireEvent.click(await screen.findByText('Display settings'))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/brain')
-    expect(screen.getByRole('button', { name: 'Close Brain' })).toBeInTheDocument()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/theme')
+    expect(screen.getByRole('button', { name: /^Close / })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close Brain' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Close / }))
 
     await act(async () => {
       jest.advanceTimersByTime(50)
@@ -388,24 +389,28 @@ describe('Desktop experience integration', () => {
   it('navigates through the persistent global tree rail', async () => {
     renderDesktopExperience(['/workspace'])
 
-    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Snapshot Editor'))
+    const navTree = screen.getByLabelText('Global navigation tree')
+    expect(navTree).toBeInTheDocument()
+    fireEvent.click(within(navTree).getByText('Snapshot Editor'))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
+    await waitFor(() => {
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
+    })
   })
 
-  it('keeps only the canonical landing launch tiles on the home shell', async () => {
-    const { container } = renderDesktopExperience(['/'])
+  it('renders the operations-first landing shell instead of the legacy launcher tile grid', async () => {
+    renderDesktopExperience(['/'])
 
-    for (const label of ['Device(s) Manager', 'Snapshot Editor', 'Advanced MIDI', 'Brain', 'Drum-Machine', 'SynthForge']) {
-      expect(await screen.findByText(label, { selector: '.hp2-home-shell__workspace-copy h2' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByText('Live operations surface')).toBeInTheDocument()
+    expect(screen.getByText('Operations table')).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /live nodes/i })).toBeInTheDocument()
+
+    for (const label of ['Device(s) Manager', 'Advanced MIDI', 'Drum-Machine', 'SynthForge', 'Program Manager', 'Desktop Objects']) {
+      expect(screen.queryByText(label)).toBeNull()
     }
-
-    for (const label of ['Outboard Hardware', 'Audio Artifacts', 'Physical Surfaces', 'Workspaces', 'Stage Mode', 'Tesira AVB', 'Edirol UA-1000', 'HoTone JoGG', 'MPX1 Rack', 'IntelFX Rack']) {
-      expect(screen.queryByRole('link', { name: new RegExp(label, 'i') })).toBeNull()
-    }
-
-    expect(container.querySelectorAll('.hp2-home-shell__workspace-tile')).toHaveLength(6)
   })
 
   it('runs refresh, logout, and restart actions from the rail footer', async () => {

@@ -37,12 +37,12 @@ from app.services.cluster.prometheus_exporter import MetricsManager, get_prometh
 from app.services.cluster.post_update_health import HealthCheckPhase, HealthCheckResult
 from app.services.cluster.map2_git_updater import MAP2GitUpdater, get_git_updater
 from app.services.cluster.deployment_manager import DeploymentManager, get_deployment_manager
-from app.services.cluster.distributed_event_bus import DistributedEventBus, get_event_bus as get_distributed_event_bus
 from app.services.cluster.hybrid_update_manager import HybridUpdateConfig, HybridUpdateManager, get_hybrid_update_manager
 from app.services.cluster.management_orchestrator import ManagementOrchestrator
 from app.services.cluster.onboarding_portal import NodeOnboardingPortal, OnboardingStep
 from app.services.cluster.registry import ClusterRegistry, get_cluster_registry
 from app.services.cluster.raft_consensus import RaftConsensus, get_raft_consensus, initialize_raft_consensus
+from app.services.platform_event.store import PlatformEventStore, get_platform_event_store
 from app.services.cluster.state_replicator_impl import LogEntry as LegacyReplicatedLogEntry, StateReplicator as LegacyStateReplicator
 from app.services.cluster.state_replicator import StateReplicator, get_state_replicator
 from app.services.cluster.update_orchestrator import UpdateScheduler, UpdateReport
@@ -201,7 +201,7 @@ def test_config_distributor_requires_initialization_and_tracks_utc_sync_time(mon
         ConfigDistributor.reset_instance()
 
 
-def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware():
+def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware(monkeypatch):
     StateReplicator.reset_instance()
     try:
         first = get_state_replicator(standby_host="standby.local", primary_host="primary.local")
@@ -216,18 +216,15 @@ def test_state_replicator_singleton_and_failover_payload_timestamp_are_utc_aware
             async def emit(self, event):
                 published_payloads.append(event.context)
 
-        import sys
-        import types
         import asyncio
+        import app.services.platform_event.bus as platform_event_bus_module
 
-        fake_platform_event_bus_module = types.SimpleNamespace(
-            get_platform_event_bus=lambda: _FakeBus(),
+        monkeypatch.setattr(
+            platform_event_bus_module,
+            "get_platform_event_bus",
+            lambda: _FakeBus(),
         )
-        sys.modules["app.services.platform_event.bus"] = fake_platform_event_bus_module
-        try:
-            asyncio.run(first._publish_failover_event())
-        finally:
-            sys.modules.pop("app.services.platform_event.bus", None)
+        asyncio.run(first._publish_failover_event())
 
         assert published_payloads
         assert datetime.fromisoformat(published_payloads[0]["timestamp"]).tzinfo == timezone.utc
@@ -814,25 +811,24 @@ def test_adoption_bootstrap_override_uses_shared_singleton_registry(tmp_path):
         AdoptionBootstrapService.reset_instance()
 
 
-def test_distributed_event_bus_singleton_getter_is_stable(monkeypatch, tmp_path):
-    DistributedEventBus.reset_instance()
-    original_init = DistributedEventBus.__init__
+def test_platform_event_store_singleton_getter_is_stable(monkeypatch, tmp_path):
+    PlatformEventStore.reset_instance()
+    original_init = PlatformEventStore.__init__
 
-    def _fake_init(self, db_path="/var/lib/map2/cluster-events.db"):
-        self.db_path = tmp_path / "cluster-events.db"
-        self.logger = None
-        self.event_queue = None
-        self._subscribers = {}
-        self._subscribers_lock = None
+    def _fake_init(self, *, db_path=None, legacy_db_path=None, retention_days=None):
+        self.db_path = tmp_path / "platform-events.db"
+        self.legacy_db_path = tmp_path / "cluster-events.db"
+        self.retention_days = retention_days or 7
+        self._lock = None
 
-    monkeypatch.setattr(DistributedEventBus, "__init__", _fake_init)
+    monkeypatch.setattr(PlatformEventStore, "__init__", _fake_init)
     try:
-        first = get_distributed_event_bus()
-        second = get_distributed_event_bus()
+        first = get_platform_event_store()
+        second = get_platform_event_store()
         assert first is second
     finally:
-        DistributedEventBus.reset_instance()
-        monkeypatch.setattr(DistributedEventBus, "__init__", original_init)
+        PlatformEventStore.reset_instance()
+        monkeypatch.setattr(PlatformEventStore, "__init__", original_init)
 
 
 def test_hybrid_update_manager_preserves_first_config_under_shared_singleton(monkeypatch, tmp_path):

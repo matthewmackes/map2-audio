@@ -37,7 +37,7 @@ jest.mock('../../../map2/api', () => ({
   },
 }))
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

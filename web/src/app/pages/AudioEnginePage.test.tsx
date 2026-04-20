@@ -14,7 +14,7 @@ const mockResetXruns = jest.fn()
 const mockUseNodePageContext = jest.fn()
 const mockUseLatencyPressure = jest.fn()
 
-jest.mock('../contexts/ClusterContext', () => ({
+jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

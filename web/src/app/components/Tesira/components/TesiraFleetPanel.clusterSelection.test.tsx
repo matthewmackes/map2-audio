@@ -22,7 +22,7 @@ jest.mock('../context/TesiraContext', () => ({
   useTesiraContext: () => mockUseTesiraContext(),
 }))
 
-jest.mock('../../../contexts/ClusterContext', () => ({
+jest.mock('../../../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

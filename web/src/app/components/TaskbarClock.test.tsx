@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { TaskbarClock } from './TaskbarClock'
 
@@ -41,7 +42,16 @@ describe('TaskbarClock', () => {
   })
 
   it('renders a 12-hour taskbar clock and opens platform details on click', () => {
-    render(<TaskbarClock />)
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <TaskbarClock />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByRole('button', { name: /Open clock details/i })).toHaveTextContent('9:41 AM')
     expect(screen.getByRole('button', { name: /Open clock details/i })).toHaveTextContent('Apr 6')

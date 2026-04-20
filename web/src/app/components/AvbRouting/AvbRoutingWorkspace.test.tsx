@@ -17,7 +17,7 @@ const mockUseAvdeccEntities = jest.fn()
 const mockUseTesiraDevices = jest.fn()
 const mockUseTesiraDevice = jest.fn()
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
 }))
 

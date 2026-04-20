@@ -59,7 +59,9 @@ def test_daemon_build_led_array_applies_signature_overlay_and_heartbeat() -> Non
     assert len(overlay) == 16
 
 
-def test_daemon_build_led_array_applies_menu_category_and_inspection_overlays() -> None:
+def test_daemon_build_led_array_applies_menu_category_and_inspection_overlays(monkeypatch) -> None:
+    monkeypatch.setattr(time, "monotonic", lambda: 10.0)
+
     daemon = MaschineMK1Daemon(DaemonConfig())
     daemon._state.backend_connected = True
     daemon._state.device_connected = True
@@ -117,13 +119,16 @@ def test_daemon_build_led_array_applies_audio_reactive_choreography() -> None:
     assert any(led[index] > 0 for index in LED_PAD_INDEX)
 
 
-def test_daemon_build_led_array_applies_brain_choreography() -> None:
+def test_daemon_build_led_array_applies_brain_choreography(monkeypatch) -> None:
+    fixed_now = 10.0
+    monkeypatch.setattr(time, "monotonic", lambda: fixed_now)
+
     daemon = MaschineMK1Daemon(DaemonConfig())
     daemon._state.backend_connected = True
     daemon._state.device_connected = True
     daemon._state.display_context = "t10_brain_seq"
     daemon._state.drum_transport_state = {"is_playing": True, "bpm": 124}
-    daemon._state.beat_anchor_monotonic = time.monotonic() - 0.01
+    daemon._state.beat_anchor_monotonic = fixed_now - 0.01
     daemon._state.brain_state = {
         "active_slot": 2,
         "slots": [{"slot_id": index, "mode": "drum"} for index in range(16)],

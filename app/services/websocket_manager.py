@@ -72,11 +72,12 @@ class WebSocketManager:
         topic: Optional[str] = None,
         error: Optional[str] = None,
         extra_meta: Optional[Dict[str, Any]] = None,
+        connection_info: Optional[Dict[str, Any]] = None,
     ) -> None:
         try:
             from app.services.api_observatory import get_api_observatory_service
 
-            info = self.connection_info.get(client_id, {})
+            info = connection_info if connection_info is not None else self.connection_info.get(client_id, {})
             subscriptions = info.get("subscriptions", set())
             if not isinstance(subscriptions, set):
                 subscriptions = set(subscriptions or [])
@@ -182,6 +183,7 @@ class WebSocketManager:
             path=str(info.get("path", "/ws")),
             status=1000 if reason == "disconnect" else 1001,
             error=error,
+            connection_info=info,
         )
         logger.info("WebSocket client disconnected: %s", client_id)
 

@@ -2,11 +2,24 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import push_surface as push_surface_routes
 from app.services.push_surface.config import PushSurfaceConfig
+
+
+_TEST_CLIENTS: list[TestClient] = []
+
+
+@pytest.fixture(autouse=True)
+def _close_test_clients():
+    try:
+        yield
+    finally:
+        while _TEST_CLIENTS:
+            _TEST_CLIENTS.pop().close()
 
 
 class _FakeRuntimeConfigManager:
@@ -565,7 +578,9 @@ def _build_client(monkeypatch, *, manager: _FakePushSurfaceManager, runtime_conf
         classmethod(lambda cls, path=None: PushSurfaceConfig(**asdict(manager.config))),
     )
     monkeypatch.setattr(push_surface_routes, "_save_config", lambda _config: "/tmp/push-surface.json")
-    return TestClient(app)
+    client = TestClient(app)
+    _TEST_CLIENTS.append(client)
+    return client
 
 
 def test_get_push_surface_health_state_and_config(monkeypatch):

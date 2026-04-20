@@ -247,15 +247,15 @@ describe('ToastProvider stage notification surface', () => {
     renderProvider()
 
     expect(screen.getByLabelText('Stage notification overview')).toBeInTheDocument()
+    expect(screen.getByLabelText('Live snapshot chyron')).toBeInTheDocument()
     expect(screen.getByText('Arena Intro')).toBeInTheDocument()
-    expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByLabelText('Snapshot path thumbnail')).toBeInTheDocument()
-    expect(screen.getByLabelText('Live snapshot pulse')).toBeInTheDocument()
+    expect(screen.getByText('#12')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy snapshot identity' })).toBeInTheDocument()
     expect(screen.getByText('Master output')).toBeInTheDocument()
     expect(screen.getByLabelText('Stereo output meters')).toBeInTheDocument()
-    expect(screen.getByText('12.5%')).toBeInTheDocument()
+    expect(screen.getAllByText('12.5%').length).toBeGreaterThan(0)
     await waitFor(() => {
-      expect(screen.getByText('48k / 64')).toBeInTheDocument()
+      expect(screen.getAllByText('48k/64').length).toBeGreaterThan(0)
     })
 
     const warningsCard = screen.getByText('Warnings').closest('.stage-notification-card')
@@ -312,7 +312,7 @@ describe('ToastProvider stage notification surface', () => {
       jest.advanceTimersByTime(4000)
     })
 
-    expect(screen.getByText('Critical event active')).toBeInTheDocument()
+    expect(screen.getAllByText('Critical event active').length).toBeGreaterThan(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss Backend unreachable' }))
 
@@ -324,11 +324,11 @@ describe('ToastProvider stage notification surface', () => {
   it('reveals full identity metadata and copies it from the snapshot card', () => {
     renderProvider()
 
-    expect(screen.getByText('Rev rev-7f9')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Copy full snapshot identity' }))
+    expect(screen.getByText('rev-7f9')).toBeInTheDocument()
+    expect(screen.getAllByText('node-local').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Copy snapshot identity' }))
 
-    expect(screen.getByText('Revision rev-7f9a2c1')).toBeInTheDocument()
-    expect(screen.getByText('Node node-local')).toBeInTheDocument()
+    expect(screen.getByText('Copied')).toBeInTheDocument()
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('revision=rev-7f9a2c1 node=node-local')
   })
 
@@ -374,7 +374,7 @@ describe('ToastProvider stage notification surface', () => {
       jest.advanceTimersByTime(3000)
     })
 
-    expect(screen.getByText('Silence detected')).toBeInTheDocument()
+    expect(screen.getAllByText('Silence detected').length).toBeGreaterThan(0)
     expect(screen.getByText('Output has stayed below -60 dBFS for more than three seconds while live.')).toBeInTheDocument()
     jest.useRealTimers()
   })
@@ -420,7 +420,7 @@ describe('ToastProvider stage notification surface', () => {
 
     renderProvider()
 
-    expect(screen.getByText('Snapshot activation failed')).toBeInTheDocument()
+    expect(screen.getAllByText('Snapshot activation failed').length).toBeGreaterThan(0)
     expect(screen.getByText('Arena Intro: Engine rejected the live graph.')).toBeInTheDocument()
   })
 
@@ -466,7 +466,7 @@ describe('ToastProvider stage notification surface', () => {
 
     const surface = screen.getByLabelText('Stage notification overview').closest('.stage-notification-surface')
 
-    expect(screen.getByText('Clip latch x1')).toBeInTheDocument()
+    expect(screen.getAllByText('Clip latch x1').length).toBeGreaterThan(0)
     expect(screen.getByText('Master output has clipped during the current live run.')).toBeInTheDocument()
     expect(screen.getAllByText('Clip x1')).toHaveLength(2)
     expect(surface).toHaveClass('stage-notification-surface--success')
@@ -488,7 +488,7 @@ describe('ToastProvider stage notification surface', () => {
     renderProvider()
 
     await waitFor(() => {
-      expect(screen.getByText('Audio driver lost')).toBeInTheDocument()
+      expect(screen.getAllByText('Audio driver lost').length).toBeGreaterThan(0)
     })
     expect(screen.getByText('USB audio interface disconnected.')).toBeInTheDocument()
   })
@@ -536,7 +536,7 @@ describe('ToastProvider stage notification surface', () => {
 
     renderProvider()
 
-    expect(screen.getByText('AVB sync loss')).toBeInTheDocument()
+    expect(screen.getAllByText('AVB sync loss').length).toBeGreaterThan(0)
     expect(screen.getByText('PTP drift exceeded the stable threshold.')).toBeInTheDocument()
   })
 
@@ -658,7 +658,7 @@ describe('ToastProvider stage notification surface', () => {
 
     renderProvider()
 
-    expect(screen.getByText('Activating Current rig -> Arena Intro')).toBeInTheDocument()
+    expect(screen.getAllByText('Activating Current rig -> Arena Intro').length).toBeGreaterThan(0)
     expect(screen.getByLabelText('Activation progress')).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -675,9 +675,10 @@ describe('ToastProvider stage notification surface', () => {
 
     const overview = await screen.findByLabelText('Stage notification overview')
     expect(overview.closest('.stage-notification-surface')).toHaveAttribute('data-reduced-motion', 'true')
-    expect(screen.getByLabelText('CPU history')).toHaveAttribute('data-reduced-motion', 'true')
-    expect(screen.getByLabelText('XRun history')).toHaveAttribute('data-reduced-motion', 'true')
-    expect(screen.getByLabelText('Live snapshot pulse')).toHaveAttribute('data-reduced-motion', 'true')
+    expect(screen.getByLabelText('Live KPI strap')).toBeInTheDocument()
+    expect(document.querySelector('.stage-chyron__strap-scroll')).toHaveClass('stage-chyron__strap-scroll--static')
+    expect(document.querySelector('.stage-mission-ticker__track')).toHaveClass('stage-mission-ticker__track--static')
+    expect(document.querySelector('.stage-chyron__bug-dot')).not.toHaveClass('stage-chyron__bug-dot--pulse')
     expect(screen.getByLabelText('Stereo output meters')).toBeInTheDocument()
   })
 

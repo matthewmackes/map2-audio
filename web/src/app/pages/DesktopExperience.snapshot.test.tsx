@@ -9,6 +9,7 @@ import { HomePage } from './HomePage'
 import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 
 const mockUpdateSettings = jest.fn()
+const mockUseCluster = jest.fn()
 const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {}
 const mockSpecialSettings = {
   enabled: true,
@@ -49,6 +50,64 @@ jest.mock('../hooks/useNodePageContext', () => ({
       hostname: 'MAP2-TESTBED',
       display_label: null,
       role: 'all_in_one',
+      status: 'ok',
+      cpu_percent: 18,
+      memory_percent: 35,
+      xrun_count: 0,
+      audio_latency_ms: 2.7,
+      services: {
+        backend: true,
+        juce_engine: true,
+        pipewire: true,
+      },
+      last_seen: '2026-04-03T22:00:00Z',
+      is_local: true,
+      is_viewed: true,
+    },
+    viewedNode: {
+      node_id: 'MANAGEMENT-NODE-1',
+      hostname: 'MAP2-TESTBED',
+      display_label: null,
+      role: 'all_in_one',
+      status: 'ok',
+      cpu_percent: 18,
+      memory_percent: 35,
+      xrun_count: 0,
+      audio_latency_ms: 2.7,
+      services: {
+        backend: true,
+        juce_engine: true,
+        pipewire: true,
+      },
+      last_seen: '2026-04-03T22:00:00Z',
+      is_local: true,
+      is_viewed: true,
+    },
+    viewedNodeId: 'MANAGEMENT-NODE-1',
+    topologyNodes: [
+      {
+        node_id: 'MANAGEMENT-NODE-1',
+        hostname: 'MAP2-TESTBED',
+        display_label: null,
+        role: 'all_in_one',
+        status: 'ok',
+        cpu_percent: 18,
+        memory_percent: 35,
+        xrun_count: 0,
+        audio_latency_ms: 2.7,
+        services: {
+          backend: true,
+          juce_engine: true,
+          pipewire: true,
+        },
+        last_seen: '2026-04-03T22:00:00Z',
+        is_local: true,
+        is_viewed: true,
+      },
+    ],
+    nodeTopologyQuery: {
+      isLoading: false,
+      isError: false,
     },
   }),
 }))
@@ -61,10 +120,28 @@ jest.mock('../hooks/useNodeTopology', () => ({
           node_id: 'MANAGEMENT-NODE-1',
           hostname: 'MAP2-TESTBED',
           status: 'ok',
+          display_label: null,
+          role: 'all_in_one',
+          cpu_percent: 18,
+          memory_percent: 35,
+          xrun_count: 0,
+          audio_latency_ms: 2.7,
+          services: {
+            backend: true,
+            juce_engine: true,
+            pipewire: true,
+          },
+          last_seen: '2026-04-03T22:00:00Z',
+          is_local: true,
+          is_viewed: true,
         },
       ],
     },
   }),
+}))
+
+jest.mock('../contexts/useCluster', () => ({
+  useCluster: () => mockUseCluster(),
 }))
 
 jest.mock('../hooks/useHomePlatformStatus', () => ({
@@ -170,6 +247,15 @@ function renderSnapshotHarness(initialEntries: string[] = ['/']) {
 
 describe('Desktop experience visual snapshots', () => {
   beforeEach(() => {
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      nodes: [],
+      localNodeId: 'MANAGEMENT-NODE-1',
+      isClusterMode: false,
+      setActiveNode: jest.fn(),
+      getNodeApiPrefix: jest.fn(() => ''),
+      getNodeWsPrefix: jest.fn(() => ''),
+    })
     jest.useFakeTimers()
     ;(globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
       observe() {}
@@ -221,11 +307,11 @@ describe('Desktop experience visual snapshots', () => {
       jest.advanceTimersByTime(4000)
     })
 
-    expect(await screen.findByTestId('home-desktop')).toBeInTheDocument()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 
-  it('matches the desktop wallpaper context menu', async () => {
+  it('matches the landing actions menu', async () => {
     window.localStorage.setItem(
       HOME_DESKTOP_SESSION_STORAGE_KEY,
       JSON.stringify({
@@ -237,17 +323,16 @@ describe('Desktop experience visual snapshots', () => {
     )
 
     const { container } = renderSnapshotHarness(['/'])
-    fireEvent.contextMenu(await screen.findByTestId('home-desktop'), { clientX: 80, clientY: 120 })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Options' }).at(-1)!)
 
-    expect(screen.getByRole('menu', { name: 'Desktop context menu' })).toBeInTheDocument()
+    expect(await screen.findByText('Display settings')).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 
-  it('matches the taskbar and Start Menu shell', () => {
+  it('matches the global navigation shell', () => {
     const { container } = renderSnapshotHarness(['/workspace/artifacts'])
-    fireEvent.click(screen.getByLabelText('Open platform menu'))
 
-    expect(screen.getByRole('menu', { name: 'Platform menu' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 })

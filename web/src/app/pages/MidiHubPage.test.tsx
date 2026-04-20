@@ -174,7 +174,13 @@ function renderShell(initialEntry = '/midi-hub/connections') {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[initialEntry]}>
+      <MemoryRouter
+        initialEntries={[initialEntry]}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route path="/midi-hub/*" element={<MidiHubShell />}>
             <Route path="connections" element={<MidiHubConnectionsPage />} />
@@ -258,8 +264,7 @@ describe('MidiHubShell', () => {
   it('renders the routed shell and connections area', async () => {
     renderShell()
 
-    expect(await screen.findByLabelText('MIDI Hub navigation')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'MIDI Hub' })).toBeTruthy()
+    expect(await screen.findByText('MAP2 MIDI Hub')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Connections' })).toBeTruthy()
     expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
     expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()

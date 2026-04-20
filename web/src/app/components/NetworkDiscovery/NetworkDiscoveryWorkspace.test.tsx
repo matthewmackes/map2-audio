@@ -17,7 +17,7 @@ jest.mock('react-router-dom', () => {
   }
 })
 
-jest.mock('../../contexts/ClusterContext', () => ({
+jest.mock('../../contexts/useCluster', () => ({
   useCluster: () => ({
     setActiveNode: mockSetActiveNode,
   }),

@@ -1250,7 +1250,7 @@ def test_snapshot_service_rejects_invalid_state_authority_document_write(tmp_pat
         async with database_module.get_session() as session:
             service = SnapshotService(session)
 
-            def _broken_document(snapshot, normalized):
+            def _broken_document(snapshot, normalized, *, document_type="snapshot"):
                 return {
                     "version": "2026.03",
                     "meta": {"name": snapshot.name, "type": "snapshot"},
@@ -1648,6 +1648,9 @@ def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tm
             }
 
     class _AudioEngineStub:
+        is_available = True
+        is_running = False
+
         async def set_audio_device(self, device_name):
             applied_devices.append(device_name)
             return True
@@ -3965,7 +3968,6 @@ def test_snapshot_service_activation_records_topology_mutation_metrics(tmp_path,
 
     async def _run():
         async with database_module.get_session() as session:
-            service = SnapshotService(session)
             engine_stub = _TopologyStatsEngineStub()
 
             monkeypatch.setattr(snapshot_runtime_service, "enrich_snapshot_data", _passthrough)
@@ -3975,6 +3977,8 @@ def test_snapshot_service_activation_records_topology_mutation_metrics(tmp_path,
             monkeypatch.setattr(snapshot_service_module, "push_snapshot_footswitch_labels", _fake_push_footswitch_labels)
             monkeypatch.setattr(snapshot_service_module, "push_snapshot_controller_display_preview", _fake_push_controller_display)
             monkeypatch.setattr(SnapshotRuntimeStateService, "assert_snapshot_channels_active", _healthy_channels)
+
+            service = SnapshotService(session)
 
             created = await service.create_snapshot(
                 name="TopologyMetrics",
@@ -5076,6 +5080,7 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
 
             created = await service.create_snapshot(
                 name="RevisionSnapshot",
+                capture_current_authority_extensions=False,
                 detail_payload={
                     "channels": [
                         {
@@ -5116,6 +5121,7 @@ def test_snapshot_service_version_history_restore(tmp_path, monkeypatch):
 
             saved = await service.update_snapshot(
                 created["id"],
+                capture_current_authority_extensions=False,
                 detail_payload={
                     "channels": created["channels"],
                     "chains": [

@@ -28873,7 +28873,7 @@ Validation:
 - `rg -n "legacy_buses_removed|dual_emitters_remaining|platform_event_store|platform_event_federation" app/routes app/services tests` -> intended matches only
 
 ID: T2363-subK
-Status: [>] In Progress
+Status: [✓] Done
 Title: Run full hard-cut validation and prove there are no remaining legacy runtime paths
 Description:
 - Goal / acceptance criteria: Run the full validation sweep for the hard cutover after all deletions are complete. Acceptance requires all targeted backend suites, frontend PlatformEvent suites, and production build checks to pass, plus a repo scan proving no remaining runtime imports of removed legacy event modules.
@@ -28882,15 +28882,16 @@ Description:
 - Estimated effort: High
 - Required outputs: completion notes with concrete command results, any necessary final test repairs, and a clean post-cutover repo state.
 - Notes: If a removed route or model breaks tests, rewrite the tests to validate the new canonical behavior instead of restoring the old contract.
-- Last updated: 2026-04-19 16:18 EDT - Codex
-- Progress notes:
+- Last updated: 2026-04-19 23:15 EDT - Codex
+- Completion notes:
   - 2026-04-19 16:18 EDT - Codex: Began the full hard-cut sweep immediately after shipping `T2363-subJ`; next work is the full backend `pytest tests/ -q`, frontend Jest run, production build validation, and the final repo-wide scan for removed legacy runtime paths.
+  - 2026-04-19 23:15 EDT - Codex: Completed the destructive PlatformEvent hard-cut validation sweep. Repaired test-only assumptions that still referenced removed adapters or mutable singleton state, closed leaked backend `TestClient`/async DB resources during suite teardown, refreshed config hot-reload event-bus references after bus restarts, preserved websocket disconnect observability context, and hardened snapshot/raft/migration tests so the full backend and frontend suites validate the canonical post-cutover behavior without restoring legacy runtime paths.
 Validation:
-- `pytest tests/ -q` -> must PASS
-- `CI=1 npm --prefix web test -- --runInBand` -> must PASS
-- `npm --prefix web run typecheck` -> must PASS
-- `npm --prefix web run build` -> must PASS
-- `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> only intentionally rewritten historical notes/tests, if any
+- `pytest tests/ -q` -> PASS (`2277 passed, 38 skipped, 54 warnings in 289.06s`)
+- `CI=1 npm --prefix web test -- --runInBand` -> PASS (`267 passed`, `1162 tests passed`, `4 snapshots passed`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.42s`; existing chunk-size warning only)
+- `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no matches
 
 ID: T2363-subL
 Status: [ ] Todo

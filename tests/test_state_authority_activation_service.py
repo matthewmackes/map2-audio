@@ -171,7 +171,7 @@ def test_activate_snapshot_marks_validating_phase_before_preflight_failure(monke
         return {"chains": []}
 
     async def _get_snapshot(_snapshot_id):
-        return {"id": 5, "name": "Broken", "chains": [], "channels": []}
+        return {"id": 5, "name": "Broken", "revision_number": 1, "chains": [], "channels": []}
 
     async def _validate_snapshot_activation_preflight(_detail):
         raise ValueError("preflight failed")

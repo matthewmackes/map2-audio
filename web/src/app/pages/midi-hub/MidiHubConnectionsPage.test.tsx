@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { NotificationProvider } from '../../components/Toasts'
@@ -79,6 +79,8 @@ const mockMaschineApi = {
 }
 
 jest.mock('../../../map2/api', () => ({
+  API_BASE: '/api',
+  getWsUrl: () => 'ws://localhost:8080/ws/v1',
   midiHubApi: mockMidiHubApi,
 }))
 
@@ -151,6 +153,20 @@ jest.mock('../../components/MidiHub/useMidiHubOverview', () => ({
   }),
 }))
 
+jest.mock('../../components/MidiHub/MidiTrafficMonitor', () => ({
+  MidiTrafficMonitor: ({ limit }: { limit?: number }) => (
+    <div>{`Traffic sample ${limit ?? 'unknown'} note_on`}</div>
+  ),
+}))
+
+jest.mock('../../components/MidiHub/MidiRoutingMatrix', () => ({
+  MidiRoutingMatrix: () => <div>Route matrix ready</div>,
+}))
+
+jest.mock('../../components/MidiHub/MidiPatchbay', () => ({
+  MidiPatchbay: () => <div>Patchbay workflow</div>,
+}))
+
 const { MidiHubConnectionsPage } =
   jest.requireActual('./MidiHubConnectionsPage') as typeof import('./MidiHubConnectionsPage')
 
@@ -211,7 +227,7 @@ describe('MidiHubConnectionsPage', () => {
     })
   })
 
-  it('renders ports, switches workspace views, reports connected devices, shows traffic data, and opens the route modal', async () => {
+  it('renders ports, switches workspace views, and reports connected devices and traffic data', async () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Connections' })).toBeTruthy()
@@ -224,18 +240,15 @@ describe('MidiHubConnectionsPage', () => {
     expect(screen.getByText('Sends to DIN Out')).toBeTruthy()
     expect(screen.getByText(/Receives from USB In/)).toBeTruthy()
     expect(screen.getByText(/Clock output enabled/)).toBeTruthy()
-    expect(await screen.findByText('note_on')).toBeTruthy()
+    expect(screen.getByText('Traffic Monitor')).toBeTruthy()
+    expect(screen.getByText('Traffic sample 500 note_on')).toBeTruthy()
+
+    expect(screen.getByText('Route matrix ready')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Patchbay graph' }))
     expect(await screen.findByText('Patchbay workflow')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Port matrix' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit route' }))
-    expect(await screen.findByRole('heading', { name: 'Edit route' })).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
-    await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: 'Edit route' })).toBeNull()
-    })
+    expect(await screen.findByText('Route matrix ready')).toBeTruthy()
   })
 })

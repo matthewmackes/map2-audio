@@ -3,18 +3,21 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from app.services.cluster.distributed_event_bus import DistributedEventBus
+from app.services.platform_event.store import PlatformEventStore
 
 
-def test_cluster_event_bus_adds_platform_event_columns(tmp_path: Path) -> None:
-    DistributedEventBus.reset_instance()
-    bus = DistributedEventBus(db_path=str(tmp_path / "cluster-events.db"))
+def test_platform_event_store_creates_canonical_event_columns(tmp_path: Path) -> None:
+    PlatformEventStore.reset_instance()
+    store = PlatformEventStore(
+        db_path=tmp_path / "platform-events.db",
+        legacy_db_path=tmp_path / "cluster-events.db",
+    )
 
-    conn = sqlite3.connect(Path(bus.db_path))
+    conn = sqlite3.connect(Path(store.db_path))
     try:
         columns = {
             row[1]: row[2]
-            for row in conn.execute("PRAGMA table_info(cluster_events)").fetchall()
+            for row in conn.execute("PRAGMA table_info(platform_events)").fetchall()
         }
     finally:
         conn.close()

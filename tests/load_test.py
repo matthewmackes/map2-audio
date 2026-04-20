@@ -25,6 +25,11 @@ from typing import Deque
 from urllib.parse import urlparse
 from urllib import error as urlerror, parse as urlparse_module, request as urlrequest
 
+if "PYTEST_VERSION" in os.environ and __name__ != "map2_locust_load_test":
+    import pytest
+
+    pytest.skip("Locust profile is exercised through test_load_test_gate.py", allow_module_level=True)
+
 try:
     from locust import HttpUser, between, events, task
 except ModuleNotFoundError:

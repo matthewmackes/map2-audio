@@ -96,6 +96,6 @@ describe('MidiClusterConnectionMatrix', () => {
   it('shows a status note when matrix endpoints are unavailable', () => {
     render(<MidiClusterConnectionMatrix endpoints={[]} connections={[]} />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('No matrix endpoints detected yet')
+    expect(screen.getByText('No matrix endpoints detected yet')).toBeInTheDocument()
   })
 })
