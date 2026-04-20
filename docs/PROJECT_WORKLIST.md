@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 12:40 EDT - Completed T2365-subG backup service split.
+Last updated: 2026-04-20 12:56 EDT - Completed T2365-subE AVB route split.
 
 ---
 
@@ -29177,7 +29177,7 @@ Validation:
 - `rg -n "to_legacy_snapshot_data" app tests` -> no matches
 
 ID: T2365-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Split app/routes/avb.py (4,043 lines) into discovery / routing / metrics submodules
 Description:
 - Goal / acceptance criteria: Break [app/routes/avb.py](app/routes/avb.py) into three route modules under `app/routes/avb/`:
@@ -29190,10 +29190,23 @@ Description:
 - Estimated effort: Very High
 - Required outputs: three route modules, aggregator `APIRouter`, preserved OpenAPI paths/operation IDs, all `tests/test_avb*.py` green.
 - Notes: No behavior change in this subtask — pure structural split. Simplification follows in T2365-subN.
+Last updated: 2026-04-20 12:56 EDT - Codex
+- Progress notes:
+  - 2026-04-20 12:44 EDT - Codex: Started the AVB route split after T2365-subG SHIP `bf0bfb36` and README automation fast-forward `ef6862d2`; scoped to preserving `/api/avb/*` behavior while moving discovery, routing, and metrics endpoints behind a package aggregator.
+- Completion notes:
+  - Replaced the monolithic `app/routes/avb.py` with the `app.routes.avb` package: `metrics.py` owns PTP/status/setup/SRP/TSN endpoints, `routing.py` owns stream lifecycle, router matrix, runtime broadcasts, stream stats, AVDECC stream format, and ACMP connection endpoints, `discovery.py` owns device/capability/discovery/entity/cache reads, and `common.py` owns shared models, normalization helpers, config readers, and SRP/stream-format utilities.
+  - Preserved the `/api/avb/*` namespace through the package aggregator, kept package-level imports such as `from app.routes import avb` working for services/tests, and pinned split endpoint `__module__` metadata so MAP2's generated OpenAPI operation IDs remain under the original `avb_*` prefix.
+  - Licensing/platform: no new dependencies, packages, services, runtime assumptions, installer changes, or environment requirements were introduced; the split only moves MAP2-owned AGPL-covered route code.
 Validation:
-- `pytest tests/test_avb*.py tests/test_avdecc*.py -q` -> must PASS
-- `wc -l app/routes/avb/*.py` -> each file under 2,000 lines
-- OpenAPI diff: only additive operationId changes, no path deletions
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/avb/*.py` -> PASS
+- `pytest tests/test_avb*.py tests/test_avdecc*.py -q` -> PASS (`246 passed, 13 skipped`)
+- `pytest tests/test_api_route_readiness.py -q` -> PASS (`9 passed`)
+- `wc -l app/routes/avb/*.py` -> PASS (`common.py` 1222, `routing.py` 1833, `discovery.py` 676, `metrics.py` 351, `__init__.py` 37)
+- OpenAPI diff for `/api/avb/*` -> PASS (`36` paths before and after, `0` removed, `0` changed path-methods, `0` non-`avb_*` operation IDs)
+- `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `54 schema env vars`, `73 direct-only env vars`; no generated contract content changes)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042012544301`, existing chunk-size warning only)
 
 ID: T2365-subF
 Status: [ ] Todo
