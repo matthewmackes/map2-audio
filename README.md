@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1178** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2352** total commits | **3** stars | **0** forks | **0** open issues
+**1178** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2355** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-19 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-19 |
 | [Maschine MK1 Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-18 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-04-17 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-17 |
 | [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-16 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-16 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ec39ddeb`](https://github.com/matthewmackes/map2-audio/commit/ec39ddeb3378a8bbb6eb2ecafe35b57838008b4d) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
+| [`680d3c12`](https://github.com/matthewmackes/map2-audio/commit/680d3c12b72cfc9bbf966b29e07203311ab557e8) | docs: finalize platform event hard cutover handoff | Map2 Audio | 2026-04-19 |
+| [`c6850e23`](https://github.com/matthewmackes/map2-audio/commit/c6850e23943f78e470e0aaaf7625ad170c8fed80) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`121f397c`](https://github.com/matthewmackes/map2-audio/commit/121f397c02587a2ccd1b51ddd4576d876d6c9892) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
 | [`da6f5ded`](https://github.com/matthewmackes/map2-audio/commit/da6f5dede0d245221035c6f392402496117ce5a9) | test: complete platform event hard cutover validation | Map2 Audio | 2026-04-19 |
 | [`81b86749`](https://github.com/matthewmackes/map2-audio/commit/81b867492adab815919687922d8d76d4d60b6c26) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
 | [`19ee4fe2`](https://github.com/matthewmackes/map2-audio/commit/19ee4fe256814e36f53349325fe2cd7eed966d37) | fix: allow absolute third-party plugin URIs in snapshot g... | Map2 Audio | 2026-04-19 |
 | [`8e039653`](https://github.com/matthewmackes/map2-audio/commit/8e039653815334087aa3a1d5a95baaa7bdf5f9e0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
-| [`aa32a1be`](https://github.com/matthewmackes/map2-audio/commit/aa32a1be72cdee5b860b8e463c70d0817f50546c) | fix: narrow lcd feed peer snapshot fallback | Map2 Audio | 2026-04-19 |
-| [`bbe9d35e`](https://github.com/matthewmackes/map2-audio/commit/bbe9d35e6d35f9625a0b7d8f8dcee863ea51ec14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-19 |
-| [`1312f3ac`](https://github.com/matthewmackes/map2-audio/commit/1312f3ac26b01f99417468c4bdd880d6d7babaca) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
