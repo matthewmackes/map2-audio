@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:28 EDT - Completed T2365-subD legacy snapshot adapter removal.
+Last updated: 2026-04-20 13:40 EDT - Completed T2365-subF JUCE engine service split.
 
 ---
 
@@ -29236,7 +29236,7 @@ Validation:
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042012544301`, existing chunk-size warning only)
 
 ID: T2365-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Split app/services/juce_engine_service.py (4,912 lines) and remove the PiPedal-compatibility aliases at line 4904
 Description:
 - Goal / acceptance criteria: Break [app/services/juce_engine_service.py](app/services/juce_engine_service.py) into focused modules under `app/services/juce/`:
@@ -29250,10 +29250,21 @@ Description:
 - Estimated effort: Very High
 - Required outputs: four new modules, deleted PiPedal aliases, updated callers, all engine tests green.
 - Notes: Preserve the public API surface exported from `app.services.juce_engine_service`; internal reorganization only. Do NOT change `DEFAULT_BUFFER_SIZE`, `audio.sample_rate`, or any Tier A locked value.
+Last updated: 2026-04-20 13:40 EDT - Codex
+- Progress notes:
+  - 2026-04-20 13:31 EDT - Codex: Started after T2365-subD SHIP `cb9547f9`; first pass is mapping class/method boundaries and PiPedal alias callers before moving code under `app/services/juce/`.
+  - 2026-04-20 13:40 EDT - Codex: SHIP-ready at version `2026042013371001`; moved the monolith behind the existing `app.services.juce_engine_service` facade into `app/services/juce/{common,juce_process,juce_audio_io,juce_plugin_host,juce_snapshot_bridge}.py`, removed PiPedal compatibility aliases and direct tests/callers, and kept all new implementation modules below 2,500 lines.
 Validation:
-- `pytest tests/test_juce_engine*.py tests/test_juce_audio*.py -q` -> must PASS
-- `wc -l app/services/juce/*.py` -> each file under 2,500 lines
-- `rg -n "# PiPedal|pipedal_" app/services/juce` -> no matches
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/juce/*.py app/services/juce_engine_service.py tests/test_juce_engine.py` -> PASS
+- `pytest tests/test_juce_engine*.py -q` -> PASS (`47 passed, 7 skipped`)
+- `pytest tests/test_audio*.py tests/test_usb_audio_manager.py -q` -> PASS (`78 passed`)
+- `pytest tests/test_juce_engine*.py tests/test_juce_audio*.py -q` -> BLOCKED by missing `tests/test_juce_audio*.py` files in this checkout before collection; substituted available audio-focused tests above.
+- `wc -l app/services/juce/*.py app/services/juce_engine_service.py` -> PASS (largest implementation file: `juce_audio_io.py` 2,397 lines; facade 44 lines)
+- `rg -n "# PiPedal|pipedal_" app/services/juce app/services/juce_engine_service.py` -> PASS (no matches)
+- `rg -n "get_pipedal_service|PiPedalConfig|PiPedalEngineService|PIPEDAL_AVAILABLE" app tests scripts` -> PASS (no matches)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, version `2026042013371001`, existing chunk-size warning only)
 
 ID: T2365-subG
 Status: [✓] Done

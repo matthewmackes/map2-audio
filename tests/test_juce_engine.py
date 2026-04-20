@@ -321,31 +321,3 @@ class TestJuceEngineMocked:
                 }
             ]
         )
-
-
-class TestPiPedalCompatibility:
-    """Test backward compatibility with PiPedal API."""
-
-    def test_pipedal_aliases_exist(self):
-        """Test that PiPedal compatibility aliases exist."""
-        from app.services.juce_engine_service import (
-            get_pipedal_service,
-            PIPEDAL_AVAILABLE,
-            PiPedalEngineService,
-            PiPedalConfig
-        )
-        
-        # These should exist for backward compatibility
-        assert get_pipedal_service is not None
-        assert PiPedalEngineService is not None
-        assert PiPedalConfig is not None
-
-    def test_get_pipedal_service_returns_juce(self):
-        """Test that get_pipedal_service returns JUCE engine."""
-        from app.services.juce_engine_service import get_pipedal_service, get_audio_engine
-        
-        pipedal = get_pipedal_service()
-        juce = get_audio_engine()
-        
-        # Should be the same object
-        assert pipedal is juce
