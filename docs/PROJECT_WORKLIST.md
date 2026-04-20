@@ -28565,10 +28565,10 @@ Last updated: 2026-04-18 22:06 EDT - Codex
 ---
 
 ID: T2363
-Status: [>] In Progress
+Status: [✓] Done
 Title: Unified PlatformEvent control-plane — canonical producer + uniform consumers for all surfaces
 Description:
-- Goal / acceptance criteria: Replace the current sprawl of ~40 independent event/notification/status producers and ~15 parallel consumer patterns with a single canonical `PlatformEvent` envelope, one `PlatformEventBus` producer, and a uniform presenter layer for every surface (web, MK1, LCD cluster, TUI, Push, MCU, cluster federation). Acceptance requires: (1) a `PlatformEvent` pydantic envelope + TypeScript mirror + RT-safe C++ struct; (2) a `PlatformEventBus` service with emit / subscribe / replay / ack + SQLite persistence + cluster federation + session-replay ring buffer; (3) a shared `policy.hints_for()` presentation module and `Presenter` ABC consumed by every headless surface; (4) migration of all Wave 1/2/3 producers off legacy buses onto the new plane with dual-write shadow and feature-flag gating; (5) verified cluster-wide dedupe, correlation, and page-reload replay. All changes land on master as a sequence of independently-revertable commits gated by `PLATFORM_EVENT_BUS_ENABLED` plus per-wave `PLATFORM_EVENT_DIRECT_<wave>` flags.
+- Goal / acceptance criteria: Replace the current sprawl of independent event/notification/status producers and parallel consumer patterns with a single canonical `PlatformEvent` envelope, one `PlatformEventBus` producer, and a uniform presenter layer for every surface (web, MK1, LCD cluster, TUI, Push, MCU, cluster federation). Acceptance requires: (1) a `PlatformEvent` pydantic envelope + TypeScript mirror + RT-safe C++ struct; (2) a `PlatformEventBus` service with emit / subscribe / replay / ack + SQLite persistence + cluster federation + session-replay ring buffer; (3) a shared `policy.hints_for()` presentation module and `Presenter` ABC consumed by every headless surface; (4) destructive migration of Wave 1/2/3 producers onto the new plane with no compatibility buses left behind; (5) verified cluster-wide dedupe, correlation, and page-reload replay. The shipped result is the canonical post-cutover architecture: all cross-system events enter through `PlatformEventBus.emit()`.
 - Why it matters: The platform today has four parallel event-bus implementations ([event_publisher.py](app/services/event_publisher.py), [event_bus.py](app/services/event_bus.py), [cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [lcd_event_bus.py](app/services/lcd_event_bus.py)), four severity enums with no mapping (`LCDSeverity`, `ClusterSeverity`, `HealthStatus`, web `tone`), triple-emission of CPU/memory alerts (HealthMonitor + SystemHealthProducer + MK1 long_op_feedback), duplicate peer-online paths, no cluster-wide dedupe, no correlation_id propagation, and no replay on reconnect. Recent commits like `fdadfbf8` (FOH stage notifications + MK1 headless surface) added new paths instead of unifying. A single control-plane eliminates silent duplicate emissions, makes cluster-wide dedupe possible, provides replay on page reload, and turns surface-specific presentation into a thin presenter layer rather than event-interpretation logic scattered across 12+ frontend surfaces and 5+ backend buses.
 - Dependencies: T2360, T2351
 - Estimated effort: Very High
@@ -28581,11 +28581,11 @@ Description:
   6. Reuse over reinvent: `websocket_manager` gzip + topic history, `RealtimeMessagePublisher` protocol, existing `DistributedEventBus` SQLite store, `AlertPrioritizer` / `AlertGrouper`, and the `StageNotificationConfig` taxonomy are all preserved and integrated — not replaced.
   7. Python 3.14: `asyncio.run()` not `get_event_loop()`.
   8. No web dev server: preview-based e2e only (`npm run build` + `npm run preview`) per [docs/CLAUDE.md](docs/CLAUDE.md).
-- Phased rollout (all within T2363 scope):
-  - **Phase 1 — Foundation (subA–subE, dual-write OFF, `PLATFORM_EVENT_BUS_ENABLED=False` by default):** envelope + severity/kind mapping + bus + frontend transport + one-way legacy→new bridges so every legacy event becomes observable on `platform:events` with zero behavior change.
-  - **Phase 2 — Proof families (subF–subH, dual-write ON for Waves 1–2):** migrate Wave 1 (health_monitor, system_producer, network_producer) and Wave 2 (snapshot_runtime_state_service, snapshot_controller_display_push_service, IR + SoundFont download managers) producers to direct emission. Per-wave flag: `PLATFORM_EVENT_DIRECT_WAVE1`, `PLATFORM_EVENT_DIRECT_WAVE2`.
-  - **Phase 3 — Federation + Wave 3 (subI–subK):** `ws_federation.WebSocketFederator` subscribes to `platform:events` with echo suppression; Wave 3 producers (cluster/*, midi_hub/*, tesira/*, avb_event_sync, realtime_parameter_bridge) migrated; `DistributedEventBus.publish_event` callers migrated; `DistributedEventBus` downgraded to audit-log consumer. Flag: `PLATFORM_EVENT_DIRECT_WAVE3`.
-  - **Phase 4 — Out of scope for this epic:** Engine `PlatformEventRaw` fifo, removal of legacy `event_bus.EventBus`, deletion of `nodeAlertStore.ts`, deletion of `LCDEventBus.publish()`. A follow-up epic (T2364+) will land these after Phase 1–3 is stable on master.
+- Shipped hard-cutover architecture:
+  - `PlatformEventBus.emit()` is the only cross-system event entrypoint; legacy event-bus modules and public legacy LCD/cluster event APIs are deleted rather than adapted.
+  - `platform-events.db` is the canonical persistence file for platform events, with health/readiness reporting proving the removed buses stay removed.
+  - The frontend consumes `platform:events` through the platform event transport/provider/router/store path and surface presenters. Local-only web toasts remain local and are not platform events.
+  - Engine-native emission, store ergonomics, and any remaining surface cleanup are tracked only in the follow-on T2364 epic.
 - Evidence-based audit — the following files are the concrete inputs for this migration (all are already in the repo and were audited during plan construction):
   - Four legacy buses: [app/services/event_publisher.py](app/services/event_publisher.py), [app/services/event_bus.py](app/services/event_bus.py), [app/services/cluster/distributed_event_bus.py](app/services/cluster/distributed_event_bus.py), [app/services/lcd_event_bus.py](app/services/lcd_event_bus.py) + [app/services/lcd_event_router.py](app/services/lcd_event_router.py).
   - Producers to migrate in Wave 1: [app/services/health_monitor.py](app/services/health_monitor.py), [app/services/event_producers/system_producer.py](app/services/event_producers/system_producer.py), [app/services/event_producers/network_producer.py](app/services/event_producers/network_producer.py), [app/services/event_producers/audio_producer.py](app/services/event_producers/audio_producer.py).
@@ -28602,7 +28602,7 @@ Description:
   - Shared presentation policy (`app/services/platform_event/policy.py`) computing `PresentationHints` (led_color, led_animation, lcd_icon, sound, ttl_seconds, urgent, mcu_prefix, web_tone, web_stage_class) — single source of truth for all surfaces.
   - Factories (`app/services/platform_event/factories.py`) with `make_node_online()`, `make_cpu_critical()`, `make_snapshot_activation_*()`, etc., encapsulating dedupe-key conventions.
   - Presenter ABC (`app/services/platform_event/presenter.py`) and per-surface presenters (`app/services/platform_event/presenters/{mk1,lcd,tui,push,mcu}_presenter.py`).
-  - One-way legacy→new bridges (`app/services/platform_event/bridges/{event_bus,lcd_bus,distributed_bus}_bridge.py`) so every legacy emission is observable on `platform:events` without behavior change.
+  - Deleted legacy event bus modules and route contracts, with all remaining cross-system producers migrated to `PlatformEventBus.emit()`.
   - Frontend transport (`web/src/app/services/platformEventTransport.ts`), provider + single hook (`web/src/app/components/PlatformEventProvider.tsx`, `web/src/app/hooks/usePlatformEvents.ts`), pure-function router (`web/src/app/services/platformEventRouter.ts`), Zustand store (`web/src/app/stores/platformEventStore.ts`), and presenter components under `web/src/app/components/presenters/`.
   - SQLite schema migration (additive columns on the existing `DistributedEventBus` store: `event_id`, `kind`, `dedupe_key`, `priority`, `title`, `ttl_seconds`, `expires_at`, `supersedes`, `target_surfaces` with indexes; 7-day retention preserved).
   - Session replay ring buffer (`app/services/platform_event/replay.py`, cap 1000 per session).
@@ -28620,18 +28620,19 @@ Description:
 - `pushNotification()` in [web/src/app/components/Toasts.tsx](web/src/app/components/Toasts.tsx) must remain callable as a local-only imperative API; its payloads are NOT round-tripped through the bus.
 - Tier A locked settings are not touched by this epic.
 Assigned to: Codex
-Last updated: 2026-04-19 12:08 EDT - Codex
-- Progress notes:
+Last updated: 2026-04-19 23:23 EDT - Codex
+- Completion notes:
   - Completed the `T2363-subA` foundation slice: added the canonical Python envelope, severity mapping, kind taxonomy, presentation policy, TypeScript mirror, and exhaustive foundation tests.
   - Left the epic in progress for the next revertable slice (`T2363-subB` PlatformEventBus + replay + SQLite migration).
-  - 2026-04-19 12:08 EDT - Codex: The original bridge/dual-write rollout for `T2363-subE` through `T2363-subL` was superseded on April 19, 2026 by a hard-cutover directive. From this point forward the authoritative plan is destructive cutover only: no shims, no runtime compatibility layer, and no public legacy event APIs.
+  - 2026-04-19 12:08 EDT - Codex: The original staged rollout for `T2363-subE` through `T2363-subL` was superseded on April 19, 2026 by a hard-cutover directive. From this point forward the authoritative plan is destructive cutover only: no shims, no runtime compatibility layer, and no public legacy event APIs.
+  - 2026-04-19 23:23 EDT - Codex: Completed the T2363 hard cutover through `T2363-subL`. The canonical architecture now documents `PlatformEventBus.emit()` as the only cross-system event entrypoint, the worklist no longer points future agents at stale staged-rollout text, and T2364 tracks strictly post-cutover improvements.
 - Locked defaults (2026-04-19 hard cutover):
-  - Hard cutover only: no bridges, no dual-write, no runtime compatibility layer.
+  - Hard cutover only: no compatibility buses, no shadow emission, no runtime compatibility layer.
   - Full public API break is allowed: legacy LCD/cluster event routes are deleted, not preserved.
   - Deliver as one architecture in several revertable commits, not one giant commit.
   - `platform-events.db` is the canonical persistence file after the cutover; installer/runtime artifacts must be updated in the same work.
   - `event_publisher` survives only for non-PlatformEvent realtime UI traffic and must not become a new compatibility bus.
-  - The `T2363-subE` through `T2363-subL` definitions below override any older bridge, dual-write, or legacy-preservation language that still appears in the parent epic for shipped historical context.
+  - The `T2363-subE` through `T2363-subL` definitions below override any older staged-rollout or legacy-preservation language that still appears in shipped historical context.
 
 ID: T2363-subA
 Status: [✓] Done
@@ -28894,19 +28895,39 @@ Validation:
 - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no matches
 
 ID: T2363-subL
-Status: [ ] Todo
+Status: [✓] Done
 Title: Reconcile docs and hand off the post-cutover epic
 Description:
-- Goal / acceptance criteria: Rewrite the remaining PlatformEvent docs and worklist text to reflect the hard cutover that actually shipped. Remove bridge/dual-write language from `docs/PROJECT_WORKLIST.md` and platform docs, document `PlatformEventBus` as the only cross-system event entrypoint, and add the next epic stub for post-cutover work: engine-native emission, remaining surface cleanup, and store ergonomics.
+- Goal / acceptance criteria: Rewrite the remaining PlatformEvent docs and worklist text to reflect the hard cutover that actually shipped. Remove stale staged-rollout language from `docs/PROJECT_WORKLIST.md` and platform docs, document `PlatformEventBus` as the only cross-system event entrypoint, and add the next epic stub for post-cutover work: engine-native emission, remaining surface cleanup, and store ergonomics.
 - Why it matters: If the docs still describe the deleted bridge plan, the next AI will reintroduce the legacy architecture by mistake.
 - Dependencies: T2363-subK
 - Estimated effort: Medium
 - Required outputs: updated docs, final T2363 completion notes, and new epic stub `T2364` for post-cutover work only.
 - Notes: `T2364` should be strictly post-cutover work, not deferred legacy compatibility.
+- Last updated: 2026-04-19 23:23 EDT - Codex
+- Completion notes:
+  - 2026-04-19 23:20 EDT - Codex: Began final post-cutover doc reconciliation immediately after shipping `T2363-subK`; current work is removing stale staged-rollout text, adding the canonical PlatformEventBus entrypoint rule, and adding the T2364 follow-on epic stub.
+  - 2026-04-19 23:23 EDT - Codex: Rewrote the T2363 parent epic around the shipped hard-cutover architecture, added [docs/platform/platform-event-control-plane.md](docs/platform/platform-event-control-plane.md), added the `PlatformEventBus.emit()` rule to [docs/CLAUDE.md](docs/CLAUDE.md), and created the T2364 follow-on epic for post-cutover engine emission, store ergonomics, and surface cleanup.
 Validation:
-- `grep -n "dual-write\\|bridge-only\\|legacy observability" docs/PROJECT_WORKLIST.md docs/platform/*` -> no stale plan references
-- `grep -n "^ID: T2364" docs/PROJECT_WORKLIST.md` -> new stub present
-- `grep -n "PlatformEventBus.emit" docs/CLAUDE.md docs/platform/*` -> canonical event-entrypoint rule present
+- stale rollout-language scan across `docs/PROJECT_WORKLIST.md` and `docs/platform/*` -> PASS (no matches)
+- `grep -n "^ID: T2364" docs/PROJECT_WORKLIST.md` -> PASS (`28918:ID: T2364`)
+- `grep -RIn "PlatformEventBus.emit" docs/CLAUDE.md docs/platform` -> PASS (`3` matches)
+
+---
+
+ID: T2364
+Status: [ ] Todo
+Title: Post-cutover PlatformEvent follow-through — engine emission, store ergonomics, and surface cleanup
+Description:
+- Goal / acceptance criteria: Continue from the shipped T2363 hard cutover without reintroducing legacy buses. Add engine-native platform event emission through an RT-safe FIFO, simplify the frontend platform event store ergonomics, and clean up any remaining surface-specific presentation duplication now that `PlatformEventBus.emit()` is the only cross-system event entrypoint.
+- Why it matters: T2363 removed the legacy runtime event architecture. The remaining work should improve the new architecture directly rather than preserving old contracts.
+- Dependencies: T2363
+- Estimated effort: High
+- Required outputs: RT-safe engine event emission design and implementation, focused store/presenter cleanup commits, docs updates, and validation proving platform events still flow through the single bus.
+- Notes: This epic is strictly post-cutover work. Do not add compatibility buses, re-export deleted legacy modules, or restore removed public legacy event routes.
+- Validation:
+  - `rg -n "PlatformEventBus.emit" app web docs/CLAUDE.md docs/platform` -> canonical entrypoint usage and docs present
+  - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no runtime legacy paths
 
 ---
 

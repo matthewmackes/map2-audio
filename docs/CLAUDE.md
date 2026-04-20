@@ -318,6 +318,13 @@ Never assume:
 
 ## Critical System Rules
 
+### PlatformEvent Control Plane
+
+- `PlatformEventBus.emit()` is the only permitted cross-system event entrypoint for backend producers.
+- Do not restore deleted legacy event buses, public legacy LCD/cluster event routes, or compatibility adapters for removed event contracts.
+- Web-only local toasts may remain local through `pushNotification()`; they are not platform events unless they have cluster, audit, replay, or surface-presentation value.
+- Reference: `docs/platform/platform-event-control-plane.md`
+
 ### Configuration Authority Model
 
 - MAP2 uses a plane-based authority model for config and state, not a fake single-file source of truth.
