@@ -218,7 +218,7 @@ import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
-import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
+import { SnapshotEditorSnapshotStatusPanel } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { SnapshotEditorRail, type SnapshotEditorRailItemId } from '../components/SnapshotEditor/SnapshotEditorRail'
@@ -7386,6 +7386,9 @@ export function SnapshotEditorPage() {
       <JuceGridSignalCanvas
         chain={flowChain || null}
         branchId={flow.id}
+        chainLabel={flowLabel}
+        chainMuted={flow.muted}
+        chainSoloed={flow.solo}
         pluginMeta={pluginMeta}
         selectedPluginUri={isActive ? selectedPluginUri : null}
         selectedPluginPosition={isActive ? selectedPluginPosition : null}
@@ -7478,6 +7481,18 @@ export function SnapshotEditorPage() {
           })
         }}
         onAddPlugin={flow.id === addEffectFlowId ? handleAddPlugin : undefined}
+        onRenameChain={isActive ? handleRenameChain : undefined}
+        onDuplicateChain={isActive ? handleDuplicateChain : undefined}
+        onToggleChainActive={isActive ? handleToggleChainActive : undefined}
+        onDeleteChain={flowChain ? () => handleChainRemoved(flowChain.id) : undefined}
+        onMuteToggle={() => {
+          if (snapshotEditorMutationDisabled) return
+          updateFlow(flow.id, { muted: !flow.muted })
+        }}
+        onSoloToggle={() => {
+          if (snapshotEditorMutationDisabled) return
+          updateFlow(flow.id, { solo: !flow.solo })
+        }}
         showAddPluginSlot={flow.id === addEffectFlowId}
         audioStatus={audioInterfaceStatus}
         audioOutputStatus={audioOutputStatus}
@@ -7919,7 +7934,7 @@ export function SnapshotEditorPage() {
       <LandscapePrompt componentId="juce-grid" />
       <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">
-          <SnapshotChainManagementCard
+          <SnapshotEditorSnapshotStatusPanel
             selectedChainId={activeFlow?.chainId ?? null}
             onChainSelect={(chainId) => {
               if (!activeFlow) return

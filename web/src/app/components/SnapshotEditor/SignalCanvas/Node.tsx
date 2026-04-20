@@ -7,6 +7,8 @@ export interface SignalNodeProps {
   selected?: boolean
   bypassed?: boolean
   cpuLoad?: number
+  showBypassControl?: boolean
+  bypassDisabled?: boolean
   onSelect?: () => void
   onBypassToggle?: () => void
 }
@@ -17,6 +19,8 @@ export function SignalNode({
   selected = false,
   bypassed = false,
   cpuLoad = 0,
+  showBypassControl = true,
+  bypassDisabled = false,
   onSelect,
   onBypassToggle,
 }: SignalNodeProps) {
@@ -40,17 +44,20 @@ export function SignalNode({
       <span className="node-led" aria-hidden />
       <SignalCanvasIcon id={iconId} className="snapshot-node__icon" />
       <span className="snapshot-node__label">{label}</span>
-      <button
-        type="button"
-        className="snapshot-node__bypass"
-        aria-label={bypassed ? `Enable ${label}` : `Bypass ${label}`}
-        onClick={(event) => {
-          event.stopPropagation()
-          onBypassToggle?.()
-        }}
-      >
-        {bypassed ? 'ON' : 'BYP'}
-      </button>
+      {showBypassControl ? (
+        <button
+          type="button"
+          className="snapshot-node__bypass"
+          aria-label={bypassed ? `Enable ${label}` : `Bypass ${label}`}
+          disabled={bypassDisabled || !onBypassToggle}
+          onClick={(event) => {
+            event.stopPropagation()
+            onBypassToggle?.()
+          }}
+        >
+          {bypassed ? 'ON' : 'BYP'}
+        </button>
+      ) : null}
     </div>
   )
 }

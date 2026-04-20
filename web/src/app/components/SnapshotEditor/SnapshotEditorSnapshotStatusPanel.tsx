@@ -12,7 +12,7 @@ interface FlowSlotRef {
   color: string
 }
 
-interface SnapshotChainManagementCardProps {
+interface SnapshotEditorSnapshotStatusPanelProps {
   selectedChainId?: number | null
   onChainSelect?: (chainId: number) => void
   onSelectedChainRemoved?: (chainId: number) => void
@@ -190,7 +190,7 @@ function buildChannelActivityBadge(
   }
 }
 
-export function SnapshotChainManagementCard({
+export function SnapshotEditorSnapshotStatusPanel({
   liveSnapshot = null,
   authoritativeAudioState = null,
   onRenameSnapshot,
@@ -204,7 +204,7 @@ export function SnapshotChainManagementCard({
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
   onOpenProgressModal,
-}: SnapshotChainManagementCardProps) {
+}: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
     [authoritativeAudioState, liveSnapshot],
@@ -351,4 +351,4 @@ export function SnapshotChainManagementCard({
   )
 }
 
-export default SnapshotChainManagementCard
+export default SnapshotEditorSnapshotStatusPanel

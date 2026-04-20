@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom'
-import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import { JuceGridSignalCanvas } from './SnapshotEditorSignalCanvas'
@@ -15,141 +14,90 @@ const pluginMeta = {
     name: 'Noise Gate',
     category: 'Dynamics',
   },
-  'map2://juce/nam': {
-    uri: 'map2://juce/nam',
-    name: 'Neural Amp Modeler',
-    category: 'Amplifier',
-  },
 } as any
 
-function buildChainFromPlugins(plugins: Array<Record<string, unknown>>) {
+function buildChain(overrides: Record<string, unknown> = {}) {
   return {
     id: 101,
     name: 'Main Chain',
     is_active: true,
     created_at: '2026-04-01T00:00:00Z',
     updated_at: '2026-04-01T00:00:00Z',
-    plugins: plugins.map((plugin, index) => ({
-      uri: 'plugin://drive',
-      name: 'Drive',
-      position: index,
-      bypassed: false,
-      parameters: {},
-      ...plugin,
-    })),
+    plugins: [
+      {
+        uri: 'plugin://drive',
+        name: 'Drive',
+        position: 0,
+        bypassed: false,
+        parameters: {},
+      },
+    ],
     loop_insertions: [],
     effects_loops: [],
     runtime_sync: null,
+    ...overrides,
   }
 }
 
-function buildChain(bypassed: boolean, uri = 'plugin://drive', name = 'Drive', pluginCount = 1) {
-  return buildChainFromPlugins(
-    Array.from({ length: pluginCount }, (_, index) => ({
-      uri,
-      name: pluginCount > 1 ? `${name} ${index + 1}` : name,
-      position: index,
-      bypassed: index === 0 ? bypassed : false,
-      parameters: {},
-    })),
-  )
-}
-
 describe('SnapshotEditorSignalCanvas', () => {
-  it('marks bypassed plugins with the dimmed card class', () => {
+  it('assembles the chain row with head, terminals, node, meter, and side panel', () => {
     render(
       <JuceGridSignalCanvas
-        chain={buildChain(true)}
+        chain={buildChain()}
+        chainLabel="A"
         pluginMeta={pluginMeta}
         selectedPluginUri={null}
         selectedPluginPosition={null}
         onPluginSelect={jest.fn()}
         onToggleBypass={jest.fn()}
         onReorderPlugins={jest.fn()}
+        audioStatus={{ isRunning: true, routingMode: 'series' }}
+        audioOutputStatus={{ isRunning: true, meterLevels: [0.25, 0.5] }}
       />,
     )
 
-    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveClass('is-bypassed')
+    expect(screen.getByTestId('snapshot-signal-chain-row')).toBeInTheDocument()
+    expect(screen.getByLabelText('IN terminal')).toBeInTheDocument()
+    expect(screen.getByLabelText('OUT terminal')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Drive' })).toBeInTheDocument()
+    expect(screen.getAllByText('Main Chain')).toHaveLength(2)
+    expect(screen.getByLabelText('Main Chain chain side panel')).toBeInTheDocument()
   })
 
-  it('keeps active plugins at full-opacity state', () => {
+  it('routes plugin selection, bypass, and delete through live handlers', () => {
+    const handleSelect = jest.fn()
+    const handleBypass = jest.fn()
+    const handleDelete = jest.fn()
+
     render(
       <JuceGridSignalCanvas
-        chain={buildChain(false)}
+        chain={buildChain()}
+        chainLabel="A"
         pluginMeta={pluginMeta}
-        selectedPluginUri={null}
-        selectedPluginPosition={null}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={jest.fn()}
+        selectedPluginUri="plugin://drive"
+        selectedPluginPosition={0}
+        onPluginSelect={handleSelect}
+        onToggleBypass={handleBypass}
+        onDeletePlugin={handleDelete}
         onReorderPlugins={jest.fn()}
+        audioStatus={{ isRunning: true }}
       />,
     )
 
-    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).not.toHaveClass('is-bypassed')
+    fireEvent.click(screen.getByRole('button', { name: 'Drive' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bypass Drive' }))
+    fireEvent.click(screen.getByTestId('snapshot-signal-node-delete-0'))
+
+    expect(handleSelect).toHaveBeenCalledWith('plugin://drive', 0)
+    expect(handleBypass).toHaveBeenCalledWith('plugin://drive', true, 0)
+    expect(handleDelete).toHaveBeenCalledWith('plugin://drive', 0)
   })
 
-  it('applies the NAM magenta accent even when the plugin category is Amplifier', () => {
+  it('hides mutation controls in readonly mode', () => {
     render(
       <JuceGridSignalCanvas
-        chain={buildChain(false, 'map2://juce/nam', 'Neural Amp Modeler')}
-        pluginMeta={pluginMeta}
-        selectedPluginUri={null}
-        selectedPluginPosition={null}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={jest.fn()}
-        onReorderPlugins={jest.fn()}
-      />,
-    )
-
-    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toHaveStyle('--juce-grid-signal-accent: var(--primary-strong)')
-  })
-
-  it('renders a single forward lane with explicit input and output terminals', () => {
-    render(
-      <JuceGridSignalCanvas
-        chain={buildChain(false, 'plugin://drive', 'Drive', 6)}
-        pluginMeta={pluginMeta}
-        selectedPluginUri={null}
-        selectedPluginPosition={null}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={jest.fn()}
-        onReorderPlugins={jest.fn()}
-      />,
-    )
-
-    const row = screen.getByTestId('juce-grid-signal-row-0')
-    const slotKinds = Array.from(row.querySelectorAll<HTMLElement>('[data-slot-kind]')).map((node) => node.dataset.slotKind)
-
-    expect(row).toHaveAttribute('data-row-direction', 'forward')
-    expect(screen.queryByTestId('juce-grid-signal-row-1')).not.toBeInTheDocument()
-    expect(screen.getByTestId('juce-grid-signal-terminal-input')).toHaveTextContent('IN')
-    expect(screen.getByTestId('juce-grid-signal-terminal-output')).toHaveTextContent('OUT')
-    expect(slotKinds[0]).toBe('terminal')
-    expect(slotKinds[slotKinds.length - 1]).toBe('terminal')
-  })
-
-  it('uses a merge terminal for parallel blend routing', () => {
-    render(
-      <JuceGridSignalCanvas
-        chain={buildChain(false)}
-        pluginMeta={pluginMeta}
-        selectedPluginUri={null}
-        selectedPluginPosition={null}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={jest.fn()}
-        onReorderPlugins={jest.fn()}
-        audioStatus={{ routingMode: 'parallel_blend' }}
-      />,
-    )
-
-    expect(screen.getByTestId('juce-grid-signal-terminal-output')).toHaveTextContent('SUM')
-    expect(screen.getByLabelText('Merge bus node')).toBeInTheDocument()
-  })
-
-  it('hides destructive editing affordances when the canvas is read-only', () => {
-    render(
-      <JuceGridSignalCanvas
-        chain={buildChain(false, 'plugin://drive', 'Drive', 2)}
+        chain={buildChain()}
+        chainLabel="B"
         pluginMeta={pluginMeta}
         selectedPluginUri="plugin://drive"
         selectedPluginPosition={0}
@@ -158,80 +106,36 @@ describe('SnapshotEditorSignalCanvas', () => {
         onDeletePlugin={jest.fn()}
         onReorderPlugins={jest.fn()}
         onAddPlugin={jest.fn()}
+        showAddPluginSlot
         readOnly
       />,
     )
 
+    expect(screen.queryByRole('button', { name: 'Bypass Drive' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('snapshot-signal-node-delete-0')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Add effect' })).not.toBeInTheDocument()
-    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-0')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
   })
 
-  it('shows bypass and delete controls only for the selected plugin card and fires live handlers immediately', () => {
-    const handleToggleBypass = jest.fn()
-    const handleDelete = jest.fn()
-
+  it('renders system blocks with a badge and no delete affordance', () => {
     render(
       <JuceGridSignalCanvas
-        chain={buildChain(false)}
-        pluginMeta={pluginMeta}
-        selectedPluginUri="plugin://drive"
-        selectedPluginPosition={0}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={handleToggleBypass}
-        onDeletePlugin={handleDelete}
-        onReorderPlugins={jest.fn()}
-      />,
-    )
-
-    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-bypass-0'))
-    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-delete-0'))
-
-    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-1')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-1')).not.toBeInTheDocument()
-    expect(handleToggleBypass).toHaveBeenCalledWith('plugin://drive', true, 0)
-    expect(handleDelete).toHaveBeenCalledWith('plugin://drive', 0)
-  })
-
-  it('keeps selected-card controls hidden when no plugin is selected', () => {
-    render(
-      <JuceGridSignalCanvas
-        chain={buildChain(false)}
-        pluginMeta={pluginMeta}
-        selectedPluginUri={null}
-        selectedPluginPosition={null}
-        onPluginSelect={jest.fn()}
-        onToggleBypass={jest.fn()}
-        onDeletePlugin={jest.fn()}
-        onReorderPlugins={jest.fn()}
-      />,
-    )
-
-    expect(screen.queryByTestId('juce-grid-signal-plugin-bypass-0')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
-  })
-
-  it('marks the system noise gate with a SYS badge and hides delete affordances', () => {
-    render(
-      <JuceGridSignalCanvas
-        chain={buildChainFromPlugins([
-          {
-            uri: 'map2://juce/dynamics/gate',
-            name: 'Noise Gate',
-            position: 0,
-            loader_state: {
-              system_block_role: 'noise_gate',
-              system_block_locked: true,
-              system_block_label: 'SYS',
+        chain={buildChain({
+          plugins: [
+            {
+              uri: 'map2://juce/dynamics/gate',
+              name: 'Noise Gate',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+              loader_state: {
+                system_block_role: 'noise_gate',
+                system_block_locked: true,
+                system_block_label: 'SYS',
+              },
             },
-            parameters: { threshold: -40, ratio: 10, attack: 1, release: 100 },
-          },
-          {
-            uri: 'plugin://drive',
-            name: 'Drive',
-            position: 1,
-          },
-        ])}
+          ],
+        })}
+        chainLabel="C"
         pluginMeta={pluginMeta}
         selectedPluginUri="map2://juce/dynamics/gate"
         selectedPluginPosition={0}
@@ -242,48 +146,51 @@ describe('SnapshotEditorSignalCanvas', () => {
       />,
     )
 
-    expect(screen.getByTestId('juce-grid-signal-plugin-system-badge-0')).toHaveTextContent('SYS')
-    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).not.toBeInTheDocument()
-    expect(screen.getByTestId('juce-grid-signal-plugin-card-0').getAttribute('aria-label')).toContain('system block')
+    expect(screen.getByTestId('snapshot-signal-system-badge-0')).toHaveTextContent('SYS')
+    expect(screen.queryByTestId('snapshot-signal-node-delete-0')).not.toBeInTheDocument()
   })
 
-  it('refuses drag reorder interactions across the system noise gate', () => {
-    const handleReorderPlugins = jest.fn()
+  it('routes chain header and side-panel callbacks', () => {
+    const handleRename = jest.fn()
+    const handleDuplicate = jest.fn()
+    const handleActivate = jest.fn()
+    const handleDelete = jest.fn()
+    const handleMute = jest.fn()
+    const handleSolo = jest.fn()
 
     render(
       <JuceGridSignalCanvas
-        chain={buildChainFromPlugins([
-          {
-            uri: 'map2://juce/dynamics/gate',
-            name: 'Noise Gate',
-            position: 0,
-            loader_state: {
-              system_block_role: 'noise_gate',
-              system_block_locked: true,
-              system_block_label: 'SYS',
-            },
-            parameters: { threshold: -40, ratio: 10, attack: 1, release: 100 },
-          },
-          {
-            uri: 'plugin://drive',
-            name: 'Drive',
-            position: 1,
-          },
-        ])}
+        chain={buildChain()}
+        chainLabel="D"
+        chainMuted
+        chainSoloed
         pluginMeta={pluginMeta}
         selectedPluginUri={null}
         selectedPluginPosition={null}
         onPluginSelect={jest.fn()}
         onToggleBypass={jest.fn()}
-        onDeletePlugin={jest.fn()}
-        onReorderPlugins={handleReorderPlugins}
+        onReorderPlugins={jest.fn()}
+        onRenameChain={handleRename}
+        onDuplicateChain={handleDuplicate}
+        onToggleChainActive={handleActivate}
+        onDeleteChain={handleDelete}
+        onMuteToggle={handleMute}
+        onSoloToggle={handleSolo}
       />,
     )
 
-    fireEvent.dragStart(screen.getByTestId('juce-grid-signal-plugin-card-1'))
-    fireEvent.dragOver(screen.getByTestId('juce-grid-signal-plugin-card-0'))
-    fireEvent.drop(screen.getByTestId('juce-grid-signal-plugin-card-0'))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Rename Main Chain' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Duplicate Main Chain' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Deactivate Main Chain' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete Main Chain' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Unmute Main Chain' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Unsolo Main Chain' }))
 
-    expect(handleReorderPlugins).not.toHaveBeenCalled()
+    expect(handleRename).toHaveBeenCalledTimes(1)
+    expect(handleDuplicate).toHaveBeenCalledTimes(1)
+    expect(handleActivate).toHaveBeenCalledTimes(1)
+    expect(handleDelete).toHaveBeenCalledTimes(1)
+    expect(handleMute).toHaveBeenCalledTimes(1)
+    expect(handleSolo).toHaveBeenCalledTimes(1)
   })
 })

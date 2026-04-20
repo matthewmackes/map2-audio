@@ -3,7 +3,7 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import type { AuthoritativeAudioState, SnapshotDetail } from '../../../map2/types'
-import { SnapshotChainManagementCard } from './SnapshotChainManagementCard'
+import { SnapshotEditorSnapshotStatusPanel } from './SnapshotEditorSnapshotStatusPanel'
 
 function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail {
   return {
@@ -185,8 +185,8 @@ function buildAuthoritativeAudioState(overrides: Partial<AuthoritativeAudioState
   }
 }
 
-function renderCard(overrides: Partial<React.ComponentProps<typeof SnapshotChainManagementCard>> = {}) {
-  const props: React.ComponentProps<typeof SnapshotChainManagementCard> = {
+function renderPanel(overrides: Partial<React.ComponentProps<typeof SnapshotEditorSnapshotStatusPanel>> = {}) {
+  const props: React.ComponentProps<typeof SnapshotEditorSnapshotStatusPanel> = {
     onToggleSelectedChainActive: jest.fn(),
     onDuplicateChain: jest.fn(),
     onRenameChain: jest.fn(),
@@ -196,13 +196,13 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof SnapshotChain
     ...overrides,
   }
 
-  render(<SnapshotChainManagementCard {...props} />)
+  render(<SnapshotEditorSnapshotStatusPanel {...props} />)
   return props
 }
 
-describe('SnapshotChainManagementCard', () => {
+describe('SnapshotEditorSnapshotStatusPanel', () => {
   it('renders the snapshot title without the Audio Grid banner and opens snapshot progress from the configuration launcher', () => {
-    const props = renderCard()
+    const props = renderPanel()
 
     expect(screen.queryByText('Audio Grid')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
@@ -214,7 +214,7 @@ describe('SnapshotChainManagementCard', () => {
   })
 
   it('shows waiting-channel progress text from authoritative status reasons', () => {
-    renderCard({
+    renderPanel({
       authoritativeAudioState: buildAuthoritativeAudioState({
         derived: {
           active_channel_count: 0,
@@ -250,7 +250,7 @@ describe('SnapshotChainManagementCard', () => {
     const onSnapshotNameDraftChange = jest.fn()
     const onSubmitSnapshotName = jest.fn()
 
-    renderCard({
+    renderPanel({
       snapshotNameEditing: true,
       snapshotNameDraft: 'Friday Night Drive v2',
       onSnapshotNameDraftChange,

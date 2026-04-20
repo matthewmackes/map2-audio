@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Shipped T2368 phase 6 ChainHead and ChainSide primitives.
+Last updated: 2026-04-20 - Shipped T2368 phase 7 ChainRow and canvas assembly.
 
 ---
 
@@ -20,7 +20,7 @@ Description:
 - Estimated effort: Large (10 execution phases; ~16 new files; 4 retirements; tests rewritten for Canvas/Toolbar/Rail; settings wiring; integration test; conformance-docs addition).
 - Required outputs: redesigned `SnapshotEditorSignalCanvas.tsx` / `SnapshotEditorToolbar.tsx` / new `SnapshotEditorRail.tsx` with tests, ~10 new `SignalCanvas/*` subcomponents (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `SidechainConnector`) + `icons.tsx` + `tracePath.ts` + tests, `SignalCanvas.css`, shared `signalFlowAnimations.css`, shared `pluginCategoryIcon.ts`, three user-pref keys + Appearance/UI section UI, `@fontsource/jetbrains-mono` dep + `usePlatformFontPreference` exposure, global scrollbar styling, updated canvas/toolbar/rail tests plus new `SnapshotEditorPage.integration.test.tsx`, removal of `SnapshotEditorMenuRail.tsx` / `SnapshotEditorOptionsRail.tsx` / `SnapshotChainManagementCard.tsx` and their tests, moved `SidechainConnector.tsx`, `Signal Canvas Primitives` section added to `docs/design/CARBON_CONFORMANCE_STANDARD.md`, unused MUI/Phosphor imports stripped from touched files, 10 atomic build-verified commits on `master` pushed to both `origin` and `gitlab`, and reconciled worklist completion notes.
 Assigned to: Codex
-Last updated: 2026-04-20 10:18 EDT - Codex
+Last updated: 2026-04-20 10:28 EDT - Codex
 - In-progress notes:
   - Phase 1 started: add `@fontsource/jetbrains-mono`, shared signal-flow animation CSS, scoped Signal Canvas token stylesheet, plugin-category icon mapper, global scrollbar styling, and font preset exposure before phase 2 trace/icon work.
   - Phase 1 complete: installed `@fontsource/jetbrains-mono` 400/500/600, exposed the JetBrains Mono typography preset, added shared signal-flow animation CSS, added scoped Signal Canvas Carbon token primitives, added the plugin category icon mapper with focused tests, and applied global Carbon scrollbar styling.
@@ -46,6 +46,10 @@ Last updated: 2026-04-20 10:18 EDT - Codex
   - Phase 6 complete: added `ChainHead` and `ChainSide` primitives with inline rename/duplicate/activate/delete controls, clickable routing/send tags, unassigned `+ Assign`, readonly mutation disabling, M/S pedal toggles, side-panel stats, 1280px icon-collapse styling, and an inline delete-undo status surface for phase 7 wiring.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SignalCanvas/ChainHeadSide.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by phase 6; changed files are MAP2-owned AGPL scope, and license scans found existing AGPL/third-party notices intact.
+  - Phase 7 started: compose `ChainRow` with the phase 5/6 primitives, rewrite `SnapshotEditorSignalCanvas.tsx` and its tests around the new Signal Canvas assembly, move snapshot status into a non-retired status panel, remove `SnapshotChainManagementCard.*`, and run the retirement grep gate.
+  - Phase 7 complete: added `SignalCanvas/ChainRow`, rewrote `SnapshotEditorSignalCanvas.tsx` around the Signal Canvas primitives, wired row-level chain callbacks from `SnapshotEditorPageContent.tsx`, moved the snapshot status surface to `SnapshotEditorSnapshotStatusPanel`, and removed the retired `SnapshotChainManagementCard` component and test.
+  - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx src/app/components/SnapshotEditor/SignalCanvas/ChainHeadSide.test.tsx src/app/components/SnapshotEditor/SignalCanvas/SignalCanvasPrimitives.test.tsx src/app/components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `rg -n "SnapshotEditorMenuRail|SnapshotEditorOptionsRail|SnapshotChainManagementCard|HorizontalSignalChain/SidechainConnector" web/src` -> no matches; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by phase 7; changed files remain MAP2-owned AGPL scope.
 
 ---
 
