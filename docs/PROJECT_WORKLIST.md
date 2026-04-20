@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2365-subH audio route split and runtime contract regeneration.
+Last updated: 2026-04-20 - Completed T2365-subL latency v1/v2 reconciliation.
 
 ---
 
@@ -29182,7 +29182,7 @@ Validation:
 - `rg -n "midi-legacy" app tests` -> no matches
 
 ID: T2365-subL
-Status: [ ] Todo
+Status: [✓] Done
 Title: Reconcile latency v1 / v2 — delete v1 after parity
 Description:
 - Goal / acceptance criteria: [app/routes/latency_v2.py](app/routes/latency_v2.py) exists; locate the v1 equivalent (probably inside [app/routes/audio.py](app/routes/audio.py) or a dedicated v1 file), audit parity, backfill gaps on v2, and delete v1. Same methodology as T2365-subK.
@@ -29190,9 +29190,21 @@ Description:
 - Dependencies: T2365-subH (audio split stabilizes latency surfaces).
 - Estimated effort: Medium
 - Required outputs: parity report, v1 deletion, tests green.
+Last updated: 2026-04-20 07:24 EDT - Codex
+- Completion notes:
+  - Parity report: the v1 equivalent was the dedicated `app/routes/latency.py` router under `/api/latency`, with status, compensation toggle, plugin measurement, plugin lookup, chain compensation calculation, delay-line reset, and chain-total lookup endpoints. V2 already covered rolling jitter stats and xrun reset.
+  - Backfilled the v1 compensation and measurement surface into [app/routes/latency_v2.py](app/routes/latency_v2.py) under `/api/v2/latency`, preserving the existing v2 jitter and xrun endpoints while using the async database session contract for reported plugin latency reads.
+  - Removed the legacy route module from [app/main.py](app/main.py) startup registration and deleted `app/routes/latency.py`, leaving no `/api/latency` route namespace in backend code or tests.
+  - Extended [tests/test_latency_v2_routes.py](tests/test_latency_v2_routes.py) to cover the consolidated route surface, compensation status/toggle, plugin latency lookup, chain compensation, chain total, delay-line reset, reported measurement, unknown-method rejection, jitter stats, and xrun reset.
+  - No new dependencies, services, runtime assumptions, packages, or installer/environment changes were introduced.
 Validation:
-- `pytest tests/test_latency*.py -q` -> must PASS
-- `rg -n "latency.v1|/api/latency[^_v2]" app tests` -> no matches
+- `pytest tests/test_latency*.py -q` -> PASS (`9 passed in 2.93s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/latency_v2.py app/main.py tests/test_latency_v2_routes.py` -> PASS
+- `pytest tests/test_api_route_readiness.py -q` -> PASS (`9 passed in 3.23s`)
+- `rg -n "latency.v1|/api/latency[^_v2]" app tests` -> PASS (no matches)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.29s`; existing chunk-size warning only)
+- Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new MAP2-owned AGPL or third-party notice gaps.
 
 ID: T2365-subM
 Status: [✓] Done
