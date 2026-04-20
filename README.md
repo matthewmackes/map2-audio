@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1181** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2376** total commits | **3** stars | **0** forks | **0** open issues
+**1182** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2379** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`98410229`](https://github.com/matthewmackes/map2-audio/commit/9841022986f59d23ef95470d5ec6dc74a90d5355) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
+| [`77bb6fdf`](https://github.com/matthewmackes/map2-audio/commit/77bb6fdf080e3f896e23fd947e5c83f05e108c7e) | refactor: canonicalize python audio io module | Map2 Audio | 2026-04-20 |
+| [`1a195c1d`](https://github.com/matthewmackes/map2-audio/commit/1a195c1d16685a7f9f51be28d8cdf9b2647c1d23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`f4789da5`](https://github.com/matthewmackes/map2-audio/commit/f4789da5f5f8504743eecf85ba34adbc4dba5a58) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`f03ac28a`](https://github.com/matthewmackes/map2-audio/commit/f03ac28a3359e705d953ff5c7a8836bfd66a44ac) | refactor: remove stale device context migrations | Map2 Audio | 2026-04-20 |
 | [`14c2862a`](https://github.com/matthewmackes/map2-audio/commit/14c2862a182bf027795d0b4ef86cbaf2dff46ab8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`90c5fb23`](https://github.com/matthewmackes/map2-audio/commit/90c5fb238fe7ea57ef0319fb8d3474f564d0e292) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`f8a4defe`](https://github.com/matthewmackes/map2-audio/commit/f8a4defe6c66196b661b41aa6dd47262f0830b7a) | docs: reconcile AVDECC orphan cleanup status | Map2 Audio | 2026-04-20 |
-| [`9be1cd39`](https://github.com/matthewmackes/map2-audio/commit/9be1cd3998e70b4a03492b69d4b38fcf3f3f985a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`fa0befe7`](https://github.com/matthewmackes/map2-audio/commit/fa0befe7a8cf6a75f88c42e48e35aea0be1d34f3) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
-| [`8509689c`](https://github.com/matthewmackes/map2-audio/commit/8509689c3d25c0dcf033be28f50bc2e00822abbc) | refactor: share Tesira telnet protocol constants | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
