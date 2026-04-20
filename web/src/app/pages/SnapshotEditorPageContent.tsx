@@ -909,58 +909,7 @@ function normalizeRuntimeGridState(
   )
 }
 
-// Migration from legacy localStorage format
-function migrateLocalStorage(): { slots: FlowSlot[]; routing: RoutingConfig; activeIndex: number } | null {
-  const MIGRATION_KEY = 'map2_juce_grid_migrated_v2'
-
-  if (localStorage.getItem(MIGRATION_KEY) === 'true') {
-    return null
-  }
-
-  try {
-    const oldFlows = localStorage.getItem('map2_juce_grid_flows')
-      ?? localStorage.getItem('map2_grid_flows')
-    if (oldFlows) {
-      const parsed = JSON.parse(oldFlows)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Check if already has new properties
-        if (parsed[0] && parsed[0].dryWetMix !== undefined) {
-          localStorage.setItem(MIGRATION_KEY, 'true')
-          return null
-        }
-        const migratedState = normalizeRuntimeGridState(parsed, createDefaultRouting(), 0)
-
-        localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify(migratedState.flowSlots))
-        localStorage.setItem('map2_juce_grid_routing_v2', JSON.stringify(migratedState.routing))
-        localStorage.setItem('map2_juce_grid_active_v2', String(migratedState.activeFlowIndex))
-        localStorage.setItem(MIGRATION_KEY, 'true')
-
-        return {
-          slots: migratedState.flowSlots,
-          routing: migratedState.routing,
-          activeIndex: migratedState.activeFlowIndex,
-        }
-      }
-    }
-    localStorage.setItem(MIGRATION_KEY, 'true')
-    return null
-  } catch (e) {
-    console.error('Grid migration failed:', e)
-    localStorage.setItem(MIGRATION_KEY, 'true')
-    return null
-  }
-}
-
 function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingConfig; activeFlowIndex: number } {
-  const migratedState = migrateLocalStorage()
-  if (migratedState) {
-    return normalizeRuntimeGridState(
-      migratedState.slots,
-      migratedState.routing,
-      migratedState.activeIndex,
-    )
-  }
-
   return normalizeRuntimeGridState(
     parseStoredGridJson('map2_juce_grid_flows_v2', 'map2_grid_flows_v2'),
     parseStoredGridJson('map2_juce_grid_routing_v2', 'map2_grid_routing_v2'),

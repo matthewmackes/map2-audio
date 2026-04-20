@@ -29301,7 +29301,7 @@ Validation:
 - `rg -n "'legacy'|UpdateApplicationApiVariant.*legacy|hidden-legacy" web/src` -> no matches
 
 ID: T2365-subT
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove legacy localStorage migration in SnapshotEditorPageContent.tsx and audit the 14 DeviceContextBanner consumers
 Description:
 - Goal / acceptance criteria: Two related cleanups on the snapshot editor and device pages:
@@ -29311,10 +29311,19 @@ Description:
 - Dependencies: none
 - Estimated effort: Medium
 - Required outputs: deleted migration block, 14-page audit report in commit message, fixes for any violations found.
+Last updated: 2026-04-20 06:15 EDT - Codex
+- Completion notes:
+  - Removed the Snapshot Editor one-shot legacy localStorage migration path and now load only the canonical v2 grid/routing/active-state keys before normalization.
+  - Removed the duplicate IntelFX remote proxy inline notification, its page-specific CSS, and the now-unused Carbon notification import so the page relies on the canonical `DeviceContextBanner` surface.
+  - Audited current `DeviceContextBanner` consumers in this checkout: 5 production pages (`EdirolUA1000Page`, `GroundControlProPage`, `HoToneJoGGPage`, `IntelFXPage`, `MPX1Page`) plus 2 test mocks. The worklist's older 14-page estimate no longer matches the active tree; no ad-hoc node-switch banner code remains.
 Validation:
-- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotEditorPageContent*.test.tsx` -> PASS
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/pages/SnapshotEditorPage.test.tsx src/app/pages/HoToneJoGGPage.test.tsx src/app/pages/GroundControlProPage.test.tsx` -> PASS (`3 passed, 8 tests`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `23.36s`; existing chunk-size warning only)
 - `rg -n "legacy localStorage format" web/src` -> no matches
-- `rg -n "node.*switch.*banner" web/src/app/pages` -> all matches are canonical component usage only
+- `rg -n "node.*switch.*banner" web/src/app/pages` -> no matches
+- `rg -n "map2_juce_grid_migrated_v2|Remote control proxy active|intelfx-page__proxy-notice|InlineNotification" web/src/app/pages/IntelFXPage.tsx web/src/app/pages/IntelFXPage.css web/src/app/pages/SnapshotEditorPageContent.tsx` -> no matches
+- `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned frontend cleanup
 
 ID: T2365-subU
 Status: [✓] Done

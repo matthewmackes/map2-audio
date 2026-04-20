@@ -10,7 +10,6 @@ import {
 } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Book, Branch, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
-import { InlineLoading, InlineNotification } from '@carbon/react'
 
 import { IntelFXStatusBar } from '../components/IntelFX/IntelFXStatusBar'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
@@ -284,17 +283,6 @@ export function IntelFXPage() {
 
           <div className="intelfx-shell__main">
             <DeviceContextBanner deviceName="Rocktron IntelFX" deviceKey="rocktron-intelfx" />
-            {remoteSelected ? (
-              <div className="intelfx-page__proxy-notice">
-                <InlineNotification
-                  kind="info"
-                  lowContrast
-                  hideCloseButton
-                  title="Remote control proxy active"
-                  subtitle={`IntelFX control is proxied to ${selectedNode?.hostname ?? selectedNodeId}.`}
-                />
-              </div>
-            ) : null}
             <div className="intelfx-shell__content">
               <Outlet />
             </div>
