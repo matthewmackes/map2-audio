@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Shipped T2368 phase 4 Snapshot Editor toolbar rewrite.
+Last updated: 2026-04-20 - Shipped T2368 phase 5 Signal Canvas chain primitives.
 
 ---
 
@@ -20,7 +20,7 @@ Description:
 - Estimated effort: Large (10 execution phases; ~16 new files; 4 retirements; tests rewritten for Canvas/Toolbar/Rail; settings wiring; integration test; conformance-docs addition).
 - Required outputs: redesigned `SnapshotEditorSignalCanvas.tsx` / `SnapshotEditorToolbar.tsx` / new `SnapshotEditorRail.tsx` with tests, ~10 new `SignalCanvas/*` subcomponents (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `SidechainConnector`) + `icons.tsx` + `tracePath.ts` + tests, `SignalCanvas.css`, shared `signalFlowAnimations.css`, shared `pluginCategoryIcon.ts`, three user-pref keys + Appearance/UI section UI, `@fontsource/jetbrains-mono` dep + `usePlatformFontPreference` exposure, global scrollbar styling, updated canvas/toolbar/rail tests plus new `SnapshotEditorPage.integration.test.tsx`, removal of `SnapshotEditorMenuRail.tsx` / `SnapshotEditorOptionsRail.tsx` / `SnapshotChainManagementCard.tsx` and their tests, moved `SidechainConnector.tsx`, `Signal Canvas Primitives` section added to `docs/design/CARBON_CONFORMANCE_STANDARD.md`, unused MUI/Phosphor imports stripped from touched files, 10 atomic build-verified commits on `master` pushed to both `origin` and `gitlab`, and reconciled worklist completion notes.
 Assigned to: Codex
-Last updated: 2026-04-20 09:34 EDT - Codex
+Last updated: 2026-04-20 09:39 EDT - Codex
 - In-progress notes:
   - Phase 1 started: add `@fontsource/jetbrains-mono`, shared signal-flow animation CSS, scoped Signal Canvas token stylesheet, plugin-category icon mapper, global scrollbar styling, and font preset exposure before phase 2 trace/icon work.
   - Phase 1 complete: installed `@fontsource/jetbrains-mono` 400/500/600, exposed the JetBrains Mono typography preset, added shared signal-flow animation CSS, added scoped Signal Canvas Carbon token primitives, added the plugin category icon mapper with focused tests, and applied global Carbon scrollbar styling.
@@ -38,6 +38,10 @@ Last updated: 2026-04-20 09:34 EDT - Codex
   - Phase 4 complete: rewrote `SnapshotEditorToolbar.tsx` around the schematic 48px toolbar contract with breadcrumbs, command icons, live/blend/routing status chips, Master M/S, Monitor IN/OUT/CLIP, and Routing/Devices actions; replaced toolbar coverage with focused tests for rendering, callbacks, and reduced-motion live chip behavior.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: no new dependencies, services, installer scripts, or runtime platform assumptions introduced by phase 4.
+  - Phase 5 started: add standalone `SignalCanvas` chain primitives (`ChainTab`, `Terminal`, `Joiner`, `Node`, `Meter`, `SignalGrid`) with focused tests before chain-head and full canvas assembly.
+  - Phase 5 complete: added standalone `SignalCanvas` primitives for chain tabs, IN/OUT terminals, split/merge joiners, plugin nodes, stereo/stale/clip meters, and fixed-dimension grids, with scoped Carbon/schematic styles in `SignalCanvas.css`.
+  - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SignalCanvas/SignalCanvasPrimitives.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, services, installer scripts, or runtime platform assumptions introduced by phase 5.
 
 ---
 
