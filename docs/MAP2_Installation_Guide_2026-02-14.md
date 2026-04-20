@@ -25,7 +25,7 @@ The repository includes a master script, `install_on_new_host.sh`, designed to f
 
 ### How It Works (Created by AI. Not Yet Tested - Matt)
 
-The `install_on_new_host.sh` script is a high-level wrapper. Its primary function is to clone or update the repository and then execute a Python script (`app/services/backup_service.py`) that dynamically generates a much more detailed and comprehensive rebuild script. This generated script then performs the actual, idempotent installation of all packages, dependencies, and configurations.
+The `install_on_new_host.sh` script is a high-level wrapper. Its primary function is to clone or update the repository and then execute the package-backed backup service facade (`app/services/backup_service.py`, implemented under `app/services/backup/`) that dynamically generates a much more detailed and comprehensive rebuild script. This generated script then performs the actual, idempotent installation of all packages, dependencies, and configurations.
 
 ### Steps (Created by AI. Not Yet Tested - Matt)
 

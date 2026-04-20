@@ -156,7 +156,7 @@ These variables are read directly in code and are not represented in `app/config
 
 | Variable | First observed source | Default | Occurrences |
 | --- | --- | --- | ---: |
-| `CLUSTER_MODE` | `app/routes/special_settings.py:46` | `'disabled'` | 1 |
+| `CLUSTER_MODE` | `app/routes/special_settings.py:56` | `'disabled'` | 1 |
 | `DEBUG` | `app/routes/www.py:172` | `'false'` | 1 |
 | `DEBUG_RESILIENCE` | `app/deployment/resilience_config.py:98` | `'false'` | 1 |
 | `ENABLE_CIRCUIT_BREAKER` | `app/deployment/resilience_config.py:85` | `'true'` | 1 |
@@ -170,7 +170,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_API_CLUSTER_TOKEN` | `app/middleware/api_auth.py:56` | `''` | 1 |
 | `MAP2_API_OPERATOR_TOKEN` | `app/middleware/api_auth.py:54` | `''` | 1 |
 | `MAP2_API_PORT` | `app/main.py:429` | `'8080'` | 2 |
-| `MAP2_APP_DIR` | `app/services/backup_service.py:1649` | `` | 1 |
+| `MAP2_APP_DIR` | `app/services/backup/orchestration.py:33` | `` | 1 |
 | `MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS` | `app/routes/audio/monitoring.py:26` | `'0.50'` | 1 |
 | `MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio/monitoring.py:10` | `'0.20'` | 1 |
 | `MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS` | `app/routes/audio/monitoring.py:14` | `'0.04'` | 1 |
@@ -181,7 +181,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_BACKEND_URL` | `app/services/maschine/maschine_mk1_daemon.py:274` | `DEFAULT_BACKEND_URL` | 2 |
 | `MAP2_BOOTSTRAP_ALLOW_REMOTE_CODE` | `app/routes/bootstrap.py:101` | `'false'` | 1 |
 | `MAP2_BOOTSTRAP_TOKEN_SECRET` | `app/services/cluster/adoption_bootstrap.py:85` | `` | 1 |
-| `MAP2_BRAIN_ROOT` | `app/services/performance_brain_service.py:69` | `Path.home() / '.map2' / 'performance_brain'` | 1 |
+| `MAP2_BRAIN_ROOT` | `app/services/performance_brain_service.py:72` | `Path.home() / '.map2' / 'performance_brain'` | 1 |
 | `MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS` | `app/routes/chains.py:88` | `'2.0'` | 1 |
 | `MAP2_CLUSTER_ENABLED` | `app/main.py:593` | `'false'` | 2 |
 | `MAP2_CONFIG_GIT_REPO` | `app/main.py:607` | `` | 1 |
@@ -218,7 +218,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_PUSH_DEVICE_ASSIGNMENTS_PATH` | `app/services/push_surface/device_assignment_service.py:24` | `Path.home() / '.map2' / 'push_surface' / 'device_assignments.json'` | 1 |
 | `MAP2_PUSH_SURFACE_CONFIG` | `app/services/push_surface/config.py:34` | `Path.home() / '.map2' / 'push_surface.json'` | 1 |
 | `MAP2_PUSH_SURFACE_LABS_STORE` | `app/services/push_surface/labs_store.py:15` | `Path.home() / '.map2' / 'push_surface_labs.json'` | 1 |
-| `MAP2_RAFT_STATE_DIR` | `app/services/cluster/raft_consensus.py:189` | `''` | 1 |
+| `MAP2_RAFT_STATE_DIR` | `app/services/cluster/raft_consensus.py:191` | `''` | 1 |
 | `MAP2_REMOTE_BACKEND_URL` | `app/main.py:410` | `` | 1 |
 | `MAP2_REQUEST_LOGGING` | `app/middleware/request_logging.py:39` | `''` | 1 |
 | `MAP2_RUNTIME_BOOT_PROFILE` | `app/services/runtime_profiles.py:73` | `''` | 1 |
@@ -227,7 +227,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_TEST_MODE` | `app/main.py:336` | `'false'` | 3 |
 | `MAP2_TRAFFIC_CAPTURE` | `app/main.py:816` | `'true'` | 1 |
 | `MAP2_USE_MOCK_LCD` | `app/main.py:428` | `'true'` | 1 |
-| `NODE_ID` | `app/routes/special_settings.py:148` | `'standalone'` | 3 |
+| `NODE_ID` | `app/routes/special_settings.py:169` | `'standalone'` | 3 |
 | `PROMETHEUS_URL` | `app/services/cluster/post_update_health.py:360` | `'http://localhost:9090'` | 1 |
 
 ## Notes

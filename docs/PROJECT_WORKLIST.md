@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 12:30 EDT - Completed T2365-subO circular-import cleanup.
+Last updated: 2026-04-20 12:40 EDT - Completed T2365-subG backup service split.
 
 ---
 
@@ -29216,7 +29216,7 @@ Validation:
 - `rg -n "# PiPedal|pipedal_" app/services/juce` -> no matches
 
 ID: T2365-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Split app/services/backup_service.py (3,857 lines) into orchestration / file-io / recovery
 Description:
 - Goal / acceptance criteria: Break [app/services/backup_service.py](app/services/backup_service.py) into three modules under `app/services/backup/`:
@@ -29232,6 +29232,23 @@ Description:
 Validation:
 - `pytest tests/test_backup*.py -q` -> must PASS
 - `wc -l app/services/backup/*.py` -> each file under 2,000 lines
+Last updated: 2026-04-20 12:40 EDT - Codex
+- Progress notes:
+  - 2026-04-20 12:34 EDT - Codex: Started the independent backup service split after T2365-subO SHIP `23926080`; scoped to structural package extraction with no new dependencies, preserving `app.services.backup_service` as a compatibility import surface.
+- Completion notes:
+  - Split the monolithic backup implementation into `app/services/backup/file_io.py`, `app/services/backup/recovery.py`, and `app/services/backup/orchestration.py`, with all package files under the 2,000-line target and `app/services/backup_service.py` retained as a thin compatibility facade.
+  - Migrated the backup route to import from `app.services.backup`, regenerated backend runtime contract artifacts for the moved `MAP2_APP_DIR` reader, and updated the installation guide to document the package-backed facade.
+  - Corrected generated backup archive license text from the stale MIT wording to the repository AGPLv3 posture and removed stale PiPedal generated-doc references in the touched backup documentation generator.
+  - Licensing/platform: changed files remain MAP2-owned AGPL-covered artifacts; no new dependencies, packages, services, runtime assumptions, installer changes, or environment requirements were introduced.
+- Validation:
+  - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/backup/*.py app/services/backup_service.py app/routes/backup.py tests/test_backup_service_split.py` -> PASS
+  - `pytest tests/test_backup*.py -q` -> PASS (`3 passed`)
+  - `pytest tests/test_api_route_readiness.py -q` -> PASS (`9 passed`)
+  - `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `54 schema env vars`, `73 direct-only env vars`)
+  - `wc -l app/services/backup/*.py` -> PASS (`file_io.py` 1679, `recovery.py` 1846, `orchestration.py` 304, `__init__.py` 12)
+  - `npm --prefix web run typecheck` -> PASS
+  - `git diff --check` -> PASS
+  - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 
 ID: T2365-subH
 Status: [✓] Done
