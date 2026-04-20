@@ -1,15 +1,13 @@
 import { useMemo } from 'react'
 
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 
 export function LCDFeedPresenter() {
-  const { events } = usePlatformEvents()
+  const { decisions } = usePlatformEventDecisions()
   const lcdCount = useMemo(
-    () => events.flatMap((event) => routePlatformEvent(event)).filter((decision) => decision.target === 'lcd_feed').length,
-    [events],
+    () => filterPlatformEventDecisions(decisions, 'lcd_feed').length,
+    [decisions],
   )
 
   return <div hidden data-testid="platform-event-lcd-feed-count">{lcdCount}</div>
 }
-

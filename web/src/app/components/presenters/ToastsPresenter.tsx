@@ -1,30 +1,24 @@
 import { useEffect, useRef } from 'react'
 
 import { useNotifications } from '../Toasts'
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 
 export function ToastsPresenter() {
-  const { events } = usePlatformEvents()
+  const { decisions } = usePlatformEventDecisions()
   const { pushNotification, dismissNotification } = useNotifications()
   const activeToastIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const nextToastIds = new Set<string>()
 
-    for (const event of events) {
-      for (const decision of routePlatformEvent(event)) {
-        if (decision.target !== 'toast') {
-          continue
-        }
-        nextToastIds.add(decision.eventId)
-        pushNotification(decision.message, decision.tone, {
-          id: decision.eventId,
-          title: decision.title,
-          persistent: decision.persistent,
-          stage: decision.stage,
-        })
-      }
+    for (const decision of filterPlatformEventDecisions(decisions, 'toast')) {
+      nextToastIds.add(decision.eventId)
+      pushNotification(decision.message, decision.tone, {
+        id: decision.eventId,
+        title: decision.title,
+        persistent: decision.persistent,
+        stage: decision.stage,
+      })
     }
 
     for (const toastId of activeToastIdsRef.current) {
@@ -34,8 +28,7 @@ export function ToastsPresenter() {
     }
 
     activeToastIdsRef.current = nextToastIds
-  }, [dismissNotification, events, pushNotification])
+  }, [decisions, dismissNotification, pushNotification])
 
   return null
 }
-

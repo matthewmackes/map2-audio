@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
 
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 
 export function BrowserNotificationsPresenter() {
-  const { events } = usePlatformEvents()
+  const { decisions } = usePlatformEventDecisions()
   const presentedIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -12,8 +11,8 @@ export function BrowserNotificationsPresenter() {
       return
     }
 
-    for (const decision of events.flatMap((event) => routePlatformEvent(event))) {
-      if (decision.target !== 'browser_notification' || presentedIdsRef.current.has(decision.eventId)) {
+    for (const decision of filterPlatformEventDecisions(decisions, 'browser_notification')) {
+      if (presentedIdsRef.current.has(decision.eventId)) {
         continue
       }
       presentedIdsRef.current.add(decision.eventId)
@@ -23,8 +22,7 @@ export function BrowserNotificationsPresenter() {
         requireInteraction: decision.requireInteraction,
       })
     }
-  }, [events])
+  }, [decisions])
 
   return null
 }
-

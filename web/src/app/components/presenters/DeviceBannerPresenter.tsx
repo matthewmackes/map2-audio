@@ -1,15 +1,12 @@
 import { InlineNotification } from '@carbon/react'
 
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 
 export function DeviceBannerPresenter() {
-  const { events } = usePlatformEvents()
-  const banner = events
-    .flatMap((event) => routePlatformEvent(event))
-    .find((decision) => decision.target === 'device_banner')
+  const { decisions } = usePlatformEventDecisions()
+  const banner = filterPlatformEventDecisions(decisions, 'device_banner')[0]
 
-  if (!banner || banner.target !== 'device_banner') {
+  if (!banner) {
     return null
   }
 
@@ -25,4 +22,3 @@ export function DeviceBannerPresenter() {
     </div>
   )
 }
-

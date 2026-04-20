@@ -1,16 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 import { useNodeAlertStore } from '../../stores/nodeAlertStore'
 import { usePlatformStore } from '../../stores/platformStore'
 
 export function NodeAlertsPresenter() {
-  const { events } = usePlatformEvents()
+  const { decisions, events } = usePlatformEventDecisions()
   const setPlatformAlerts = usePlatformStore((state) => state.setAlerts)
+  const eventById = useMemo(
+    () => new Map(events.map((event) => [event.event_id, event])),
+    [events],
+  )
 
   useEffect(() => {
-    const nodeAlerts = events.flatMap((event) => routePlatformEvent(event).filter((decision) => decision.target === 'node_alert'))
+    const nodeAlerts = filterPlatformEventDecisions(decisions, 'node_alert')
 
     useNodeAlertStore.setState((state) => {
       const nextAlerts = nodeAlerts.map((decision) => ({
@@ -19,7 +22,7 @@ export function NodeAlertsPresenter() {
         hostname: decision.nodeId,
         severity: decision.alert.severity === 'critical' ? ('critical' as const) : ('warn' as const),
         message: decision.alert.subtitle,
-        timestamp: events.find((event) => event.event_id === decision.eventId)?.occurred_at ?? new Date().toISOString(),
+        timestamp: eventById.get(decision.eventId)?.occurred_at ?? new Date().toISOString(),
         dismissed: false,
       }))
 
@@ -31,7 +34,7 @@ export function NodeAlertsPresenter() {
     })
 
     setPlatformAlerts(nodeAlerts.map((decision) => decision.alert))
-  }, [events, setPlatformAlerts])
+  }, [decisions, eventById, setPlatformAlerts])
 
   return null
 }

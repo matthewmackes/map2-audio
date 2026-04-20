@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2364-subA PlatformEvent store ergonomics.
+Last updated: 2026-04-20 - Completed T2364-subB PlatformEvent presenter cleanup.
 
 ---
 
@@ -29014,6 +29014,8 @@ Description:
 - Progress notes:
   - 2026-04-20 11:40 EDT - Codex: Started the first restartable post-cutover slice after T2365-subV SHIP `6d6ddc96`; taking the frontend PlatformEvent store ergonomics work independently of RT-safe engine emission.
   - 2026-04-20 11:40 EDT - Codex: Completed T2364-subA by adding store-level PlatformEvent filter helpers, visible-event selection, and bounded retention at 1000 events while preserving the existing `usePlatformEvents` API.
+  - 2026-04-20 11:42 EDT - Codex: Started T2364-subB presenter cleanup after confirming there is no active C++ `PlatformEvent` header/source path to safely wire RT emission in a small commit.
+  - 2026-04-20 11:48 EDT - Codex: Completed T2364-subB by adding a shared PlatformEvent decision hook/helper and migrating all frontend presenters off per-component router derivation.
 - Validation:
   - `rg -n "PlatformEventBus.emit" app web docs/CLAUDE.md docs/platform` -> canonical entrypoint usage and docs present
   - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no runtime legacy paths
@@ -29040,6 +29042,28 @@ Validation:
 - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> PASS (no matches)
 - `git diff --check` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+
+ID: T2364-subB
+Status: [✓] Done
+Title: Centralize PlatformEvent presenter router-decision selection
+Description:
+- Goal / acceptance criteria: Replace repeated `events.flatMap((event) => routePlatformEvent(event))` logic across the PlatformEvent presenters with one reusable hook/helper that computes router decisions and target-specific decision lists. Preserve existing presenter behavior for toasts, node alerts, device banners, LCD feed count, browser notifications, and audio beeps.
+- Why it matters: T2364 explicitly calls out surface cleanup after the hard cutover. Keeping every presenter responsible for routing derivation invites duplicated filtering behavior and extra recomputation as more surfaces are added.
+- Dependencies: T2364-subA
+- Estimated effort: Low
+- Required outputs: shared decision-selection helper or hook, migrated presenters, focused presenter/router tests, typecheck/build validation.
+Last updated: 2026-04-20 11:48 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/hooks/usePlatformEventDecisions.ts` with shared router-decision derivation and target-specific decision filtering.
+  - Migrated Toasts, Node Alerts, Device Banner, LCD Feed, Browser Notifications, and Audio Beeps presenters to use the shared hook/helper.
+  - Added focused hook coverage proving decisions are derived from visible PlatformEvents and dismissed/filter-excluded events do not route to presenters.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/usePlatformEvents.test.tsx src/app/hooks/usePlatformEventDecisions.test.tsx src/app/components/PlatformEventProvider.test.tsx` -> PASS (`3 suites, 4 tests`)
+- `npm --prefix web run typecheck` -> PASS
+- `rg -n "events\\.flatMap\\(\\(event\\) => routePlatformEvent\\(event\\)\\)|routePlatformEvent" web/src/app/components/presenters web/src/app/hooks` -> PASS (only shared hook imports/calls `routePlatformEvent`)
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+- Licensing compliance spot-check: no new dependencies or third-party assets; README, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` remain present for AGPLv3 posture.
 
 ---
 

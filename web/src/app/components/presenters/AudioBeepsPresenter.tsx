@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { usePlatformEvents } from '../../hooks/usePlatformEvents'
-import { routePlatformEvent } from '../../services/platformEventRouter'
+import { filterPlatformEventDecisions, usePlatformEventDecisions } from '../../hooks/usePlatformEventDecisions'
 
 function playBeep(frequency: number, durationMs: number) {
   const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -23,7 +22,7 @@ function playBeep(frequency: number, durationMs: number) {
 }
 
 export function AudioBeepsPresenter() {
-  const { events } = usePlatformEvents()
+  const { decisions } = usePlatformEventDecisions()
   const presentedIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -31,15 +30,14 @@ export function AudioBeepsPresenter() {
       return
     }
 
-    for (const decision of events.flatMap((event) => routePlatformEvent(event))) {
-      if (decision.target !== 'audio_beep' || presentedIdsRef.current.has(decision.eventId)) {
+    for (const decision of filterPlatformEventDecisions(decisions, 'audio_beep')) {
+      if (presentedIdsRef.current.has(decision.eventId)) {
         continue
       }
       presentedIdsRef.current.add(decision.eventId)
       playBeep(decision.severity === 'critical' ? 1040 : 820, decision.severity === 'critical' ? 220 : 140)
     }
-  }, [events])
+  }, [decisions])
 
   return null
 }
-
