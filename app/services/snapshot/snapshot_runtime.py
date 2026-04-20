@@ -1807,7 +1807,7 @@ class SnapshotRuntimeMixin:
         bypass_applied = 0
         try:
             params_applied, bypass_applied = await snapshot_runtime_service.apply_snapshot_to_engine(
-                copy.deepcopy(self.to_legacy_snapshot_data(detail))
+                copy.deepcopy(detail)
             )
         except Exception as exc:
             logger.debug("Snapshot preview skipped runtime apply: %s", exc)

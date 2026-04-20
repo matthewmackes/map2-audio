@@ -84,7 +84,7 @@ def test_snapshot_service_crud_activation_and_import(tmp_path, monkeypatch):
         return snapshot_data
 
     async def _fake_apply(snapshot_data):
-        assert snapshot_data["flowSlots"][0]["label"] == "A"
+        assert snapshot_data["channels"][0]["label"] == "A"
         return 3, 2
 
     async def _fake_apply_tempo(_snapshot_data, _bpm):
@@ -2025,8 +2025,13 @@ def test_activate_snapshot_reuses_runtime_chains_for_same_topology(tmp_path, mon
             assert runtime_chain_detail["plugins"][0]["uri"] == "urn:test:plugin"
             assert runtime_chain_detail["plugins"][0]["bypassed"] is True
 
-            assert applied_payloads[-1]["flowSlots"][0]["label"] == "Lead"
-            applied_plugin = applied_payloads[-1]["chains"][str(activated_next["snapshot_data"]["paths"][0]["snapshot_chain_id"])]["plugins"][0]
+            assert applied_payloads[-1]["channels"][0]["label"] == "Lead"
+            applied_chain = next(
+                chain
+                for chain in applied_payloads[-1]["chains"]
+                if chain["id"] == activated_next["snapshot_data"]["paths"][0]["snapshot_chain_id"]
+            )
+            applied_plugin = applied_chain["plugins"][0]
             assert applied_plugin["parameters"] == {"gain": 0.85}
             assert applied_plugin["bypass"] is True
 
@@ -2154,7 +2159,7 @@ def test_activate_snapshot_reuses_runtime_chains_when_authority_has_no_snapshot(
             assert activated_next is not None
             assert activated_next["topology_reused"] is True
             assert activated_next["snapshot_data"]["live_state"]["paths"][0]["runtime_chain_id"] == runtime_chain_id
-            assert applied_payloads[-1]["flowSlots"][0]["label"] == "Lead"
+            assert applied_payloads[-1]["channels"][0]["label"] == "Lead"
 
     asyncio.run(_run())
 
@@ -5036,7 +5041,7 @@ def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_s
                 await service.activate_snapshot(broken["id"])
             except SnapshotActivationPreflightError as exc:
                 assert exc.failures == [
-                    "Cannot go live: Channel Lead - plugin urn:test:missing-plugin is not installed on this node.",
+                    "Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node.",
                     "Cannot go live: Channel Lead - NAM model CleanTone.nam not found on this node.",
                     "Cannot go live: Channel Ambient - cabinet IR WideCab.wav not found on this node.",
                     "Cannot go live: Input device Tour Rack is not available on this node.",

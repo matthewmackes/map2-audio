@@ -1087,7 +1087,7 @@ async def tap_snapshot_tempo(
             tempo_status = await get_snapshot_tempo_service().tap_tempo(
                 snapshot_id,
                 snapshot.get("tempo_bpm"),
-                snapshot_data=service.to_legacy_snapshot_data(snapshot),
+                snapshot_data=snapshot,
                 timestamp_ms=request.timestamp_ms if request is not None else None,
             )
             refreshed_snapshot = await service.get_snapshot(snapshot_id)
@@ -1121,7 +1121,7 @@ async def reset_snapshot_tempo(snapshot_id: int) -> dict[str, Any]:
             tempo_status = await get_snapshot_tempo_service().reset_tempo(
                 snapshot_id,
                 snapshot.get("tempo_bpm"),
-                snapshot_data=service.to_legacy_snapshot_data(snapshot),
+                snapshot_data=snapshot,
             )
             refreshed_snapshot = await service.get_snapshot(snapshot_id)
             if refreshed_snapshot is None:

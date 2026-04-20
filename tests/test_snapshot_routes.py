@@ -1358,7 +1358,7 @@ def test_activate_snapshot_route_returns_structured_preflight_failures(tmp_path,
             assert exc.detail["phase"] == "VALIDATING"
             assert exc.detail["blocking"] is True
             assert exc.detail["failures"] == [
-                "Cannot go live: Channel Lead - plugin urn:test:missing-plugin is not installed on this node.",
+                "Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node.",
                 "Cannot go live: Channel Lead - NAM model CleanTone.nam not found on this node.",
                 "Cannot go live: Input device Tour Rack is not available on this node.",
             ]

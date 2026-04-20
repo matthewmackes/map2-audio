@@ -62,6 +62,15 @@ def snapshot_loader_state(plugin: Dict[str, Any]) -> Dict[str, Any]:
     return dict(loader_state) if isinstance(loader_state, dict) else {}
 
 
+def _iter_snapshot_chains(snapshot_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    chains = snapshot_data.get("chains")
+    if isinstance(chains, dict):
+        return [chain for chain in chains.values() if isinstance(chain, dict)]
+    if isinstance(chains, list):
+        return [chain for chain in chains if isinstance(chain, dict)]
+    return []
+
+
 async def enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]:
     """Refresh plugin parameter snapshots from the running engine when available."""
     from app.routes.plugins import _discovered_plugins
@@ -71,7 +80,7 @@ async def enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]:
     if not engine.is_available or not engine.is_running:
         return snapshot_data
 
-    for chain_data in snapshot_data.get("chains", {}).values():
+    for chain_data in _iter_snapshot_chains(snapshot_data):
         for plugin in chain_data.get("plugins", []):
             plugin_uri = plugin.get("uri", "")
             if not plugin_uri:
@@ -116,7 +125,7 @@ async def apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int, 
     if not engine.is_available or not engine.is_running:
         return params_applied, bypass_applied
 
-    for chain_data in snapshot_data.get("chains", {}).values():
+    for chain_data in _iter_snapshot_chains(snapshot_data):
         for plugin in chain_data.get("plugins", []):
             plugin_uri = plugin.get("uri", "")
             if not plugin_uri:
@@ -194,17 +203,21 @@ async def apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int, 
             param_list = plugin_info.get("parameters", [])
             for idx_str, value in params.items():
                 try:
-                    idx = int(idx_str)
-                    if idx < len(param_list):
-                        symbol = param_list[idx].get("symbol", "")
-                        if symbol:
-                            await engine.set_parameter(
-                                plugin_uri,
-                                symbol,
-                                value,
-                                plugin_position=plugin_position,
-                            )
-                            params_applied += 1
+                    symbol = str(idx_str)
+                    try:
+                        idx = int(idx_str)
+                    except (TypeError, ValueError):
+                        idx = None
+                    if idx is not None and idx < len(param_list):
+                        symbol = str(param_list[idx].get("symbol", "") or "")
+                    if symbol:
+                        await engine.set_parameter(
+                            plugin_uri,
+                            symbol,
+                            value,
+                            plugin_position=plugin_position,
+                        )
+                        params_applied += 1
                 except (ValueError, IndexError, Exception) as exc:
                     logger.debug("Could not set param %s for %s: %s", idx_str, plugin_uri, exc)
 
@@ -928,9 +941,7 @@ async def apply_snapshot_tempo_to_engine(snapshot_data: Dict[str, Any], bpm: flo
         if isinstance(item, dict) and item.get("uri")
     }
 
-    for chain_data in snapshot_data.get("chains", {}).values():
-        if not isinstance(chain_data, dict):
-            continue
+    for chain_data in _iter_snapshot_chains(snapshot_data):
         for plugin in chain_data.get("plugins", []):
             if not isinstance(plugin, dict):
                 continue

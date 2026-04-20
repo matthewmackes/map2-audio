@@ -339,31 +339,9 @@ class StateAuthorityActivationService:
             ]
             plugins.sort(key=lambda item: (int(item["position"]), item["uri"]))
 
-            loop_insertions = [
-                {
-                    key: self._canonicalize_json_value(value)
-                    for key, value in sorted(loop.items())
-                    if key not in (self._canonical_transient_keys | {"insertion_id"})
-                }
-                for loop in chain.get("loop_insertions", [])
-                if isinstance(loop, dict)
-            ]
-
-            effects_loops = [
-                {
-                    key: self._canonicalize_json_value(loop.get(key))
-                    for key in sorted(self._canonical_effects_loop_keys)
-                    if key in loop
-                }
-                for loop in chain.get("effects_loops", [])
-                if isinstance(loop, dict)
-            ]
-
             canonical_chains.append(
                 {
                     "plugins": plugins,
-                    "loop_insertions": loop_insertions,
-                    "effects_loops": effects_loops,
                 }
             )
 
@@ -838,7 +816,7 @@ class StateAuthorityActivationService:
             )
             refreshed_detail = channel_health["snapshot_payload"]
 
-            legacy_payload = self.owner.to_legacy_snapshot_data(refreshed_detail)
+            snapshot_payload = copy.deepcopy(refreshed_detail)
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="APPLYING",
@@ -854,7 +832,7 @@ class StateAuthorityActivationService:
                 bypass_applied = int(graph_document_apply_result.get("bypass_count") or 0)
             else:
                 params_applied, bypass_applied = await self.runtime_service_module.apply_snapshot_to_engine(
-                    copy.deepcopy(legacy_payload)
+                    copy.deepcopy(snapshot_payload)
                 )
             activation_topology_metrics = self._build_activation_topology_metrics(
                 activation_topology_metrics["before"],
@@ -883,7 +861,7 @@ class StateAuthorityActivationService:
                 await get_snapshot_tempo_service().activate_snapshot(
                     snapshot.id,
                     snapshot.tempo_bpm,
-                    snapshot_data=copy.deepcopy(legacy_payload),
+                    snapshot_data=copy.deepcopy(snapshot_payload),
                 )
             except Exception as exc:
                 logger.debug("Snapshot tempo activation skipped for %s: %s", snapshot.id, exc)
@@ -1143,7 +1121,7 @@ class StateAuthorityActivationService:
                     "data": {
                         "snapshot_id": snapshot.id,
                         "snapshot_name": snapshot.name,
-                        "snapshot_data": self.owner.to_legacy_snapshot_data(refreshed_detail),
+                        "snapshot_data": refreshed_detail,
                         "triggered_by": triggered_by,
                         "program_number": snapshot.program_number,
                     },

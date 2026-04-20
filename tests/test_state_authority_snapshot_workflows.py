@@ -761,7 +761,7 @@ def test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_s
                 await service.activate_snapshot(broken["id"])
             except SnapshotActivationPreflightError as exc:
                 assert exc.failures == [
-                    "Cannot go live: Channel Lead - plugin urn:test:missing-plugin is not installed on this node.",
+                    "Cannot go live: Channel Lead - plugin Ghost Drive is not installed on this node.",
                     "Cannot go live: Channel Lead - NAM model CleanTone.nam not found on this node.",
                     "Cannot go live: Channel Ambient - cabinet IR WideCab.wav not found on this node.",
                     "Cannot go live: Input device Tour Rack is not available on this node.",

@@ -322,52 +322,6 @@ class SnapshotPersistenceMixin:
         deployments = result.scalars().all()
         return [self._serialize_deployment(item) for item in deployments]
 
-    def to_legacy_snapshot_data(self, detail: dict[str, Any]) -> dict[str, Any]:
-        """Compatibility adapter for legacy runtime/MIDI bridges, not new authority work."""
-        chains = detail.get("chains", [])
-        chain_map = {
-            str(chain["id"]): {
-                "name": chain.get("name") or f"Chain {chain['id']}",
-                "plugins": [
-                    {
-                        "uri": plugin["uri"],
-                        "position": plugin.get("position", index),
-                        "bypass": bool(plugin.get("bypass", False)),
-                        "parameters": dict(plugin.get("parameters") or {}),
-                        "loader_state": dict(plugin.get("loader_state") or {}),
-                    }
-                    for index, plugin in enumerate(chain.get("plugins", []))
-                ],
-            }
-            for chain in chains
-        }
-        routing = detail.get("routing") or {}
-        return {
-            "flowSlots": [
-                {
-                    "id": channel.get("channel_key") or channel.get("id"),
-                    "chainId": channel.get("chain_id"),
-                    "label": channel.get("label"),
-                    "color": channel.get("color"),
-                    "muted": bool(channel.get("muted", False)),
-                    "solo": bool(channel.get("solo", False)),
-                    "dryWetMix": _safe_float(channel.get("dry_wet_mix", channel.get("dryWetMix")), DEFAULT_DRY_WET_MIX),
-                }
-                for channel in detail.get("channels", [])
-            ],
-            "routing": {
-                "mode": _legacy_mode(str(routing.get("mode") or "parallel_blend")),
-                "activeSlotId": routing.get("active_channel_key") or routing.get("activeChannelId"),
-                "blendPositions": dict(routing.get("blend_positions") or routing.get("blendPositions") or {}),
-                "morphProgress": _safe_float(routing.get("morph_position", routing.get("morphProgress")), 0.5),
-                "morphSourceSlotId": routing.get("morph_source_channel_key") or routing.get("morphSourceChannelId"),
-                "morphTargetSlotId": routing.get("morph_target_channel_key") or routing.get("morphTargetChannelId"),
-                "seriesOrder": list(routing.get("series_order") or routing.get("seriesOrder") or []),
-            },
-            "activeFlowIndex": int(detail.get("active_channel_index", 0) or 0),
-            "chains": chain_map,
-        }
-
     async def _get_snapshot_model(self, snapshot_id: int) -> Optional[Snapshot]:
         result = await self.session.execute(
             select(Snapshot)
@@ -811,8 +765,7 @@ class SnapshotPersistenceMixin:
     async def _enrich_normalized_payload(self, normalized: dict[str, Any]) -> dict[str, Any]:
         detail = self._normalized_to_detail(normalized, snapshot_row=None)
         try:
-            legacy_payload = self.to_legacy_snapshot_data(detail)
-            enriched = await snapshot_runtime_service.enrich_snapshot_data(copy.deepcopy(legacy_payload))
+            enriched = await snapshot_runtime_service.enrich_snapshot_data(copy.deepcopy(detail))
             enriched_normalized = self._normalize_detail_payload(enriched)
             preserved_chain_state = {
                 str(chain.get("source_key")): {

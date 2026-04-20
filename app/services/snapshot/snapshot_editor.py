@@ -423,13 +423,13 @@ class SnapshotEditorMixin:
             try:
                 from app.services.snapshot_tempo_service import get_snapshot_tempo_service
 
-                legacy_payload = None
+                snapshot_payload = None
                 if is_current_live_snapshot:
-                    legacy_payload = copy.deepcopy(self.to_legacy_snapshot_data(detail))
+                    snapshot_payload = copy.deepcopy(detail)
                 await get_snapshot_tempo_service().update_stored_tempo(
                     snapshot.id,
                     snapshot.tempo_bpm,
-                    snapshot_data=legacy_payload,
+                    snapshot_data=snapshot_payload,
                 )
             except Exception as exc:
                 logger.debug("Snapshot tempo runtime update skipped for %s: %s", snapshot.id, exc)

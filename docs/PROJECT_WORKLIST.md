@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 13:15 EDT - Completed T2365-subC snapshot service split.
+Last updated: 2026-04-20 13:28 EDT - Completed T2365-subD legacy snapshot adapter removal.
 
 ---
 
@@ -29176,7 +29176,7 @@ Validation:
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 
 ID: T2365-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove to_legacy_snapshot_data() adapter and migrate the 3 consumers
 Description:
 - Goal / acceptance criteria: Delete `to_legacy_snapshot_data()` at [snapshot_service.py:4380-4414](app/services/snapshot_service.py) (or its new home in `snapshot_persistence.py` after T2365-subC). The three consumers are: [app/routes/unified_snapshots.py:1090](app/routes/unified_snapshots.py), [app/routes/unified_snapshots.py:1124](app/routes/unified_snapshots.py), and one more legacy runtime/MIDI bridge (to be located with `rg -n "to_legacy_snapshot_data"`). Each must be migrated to consume the canonical `SnapshotData` model directly.
@@ -29185,9 +29185,23 @@ Description:
 - Estimated effort: Medium
 - Required outputs: deleted adapter, migrated callers, and a passing integration test that proves the removed callers produce identical HTTP responses pre/post migration (contract test).
 - Notes: If a legacy consumer's output differs from the canonical model, the consumer is what is wrong — update its schema rather than preserving the adapter.
+Last updated: 2026-04-20 13:28 EDT - Codex
+- Completion notes:
+  - 2026-04-20 13:18 EDT - Codex: Started after T2365-subC SHIP `a374fb72`; initial scan found route consumers plus internal activation/persistence bridge calls that all need migration before deleting the adapter.
+  - Deleted `SnapshotService.to_legacy_snapshot_data()` from `app/services/snapshot/snapshot_persistence.py`.
+  - Migrated tempo routes, activation, preview, enrichment, and websocket bridge payloads to pass canonical snapshot detail payloads directly.
+  - Updated `snapshot_runtime_service` to accept canonical chain-list payloads as well as legacy chain maps at its runtime boundary, and to apply parameter dictionaries keyed by either parameter index or symbol.
+  - Preserved topology reuse while reapplying loop/routing state by keeping topology signatures focused on channel-to-chain plugin shape.
 Validation:
-- `pytest tests/test_unified_snapshots*.py tests/test_snapshot_runtime_service*.py -q` -> must PASS
-- `rg -n "to_legacy_snapshot_data" app tests` -> no matches
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_runtime_service.py app/services/state_authority_activation_service.py app/services/snapshot/*.py app/routes/unified_snapshots.py tests/test_snapshot_routes.py tests/test_snapshot_service.py tests/test_state_authority_snapshot_workflows.py` -> PASS
+- `pytest tests/test_snapshot_runtime_service.py tests/test_snapshot_tempo_service.py tests/test_snapshot_service.py::test_snapshot_service_crud_activation_and_import -q` -> PASS (6 passed)
+- `pytest tests/test_snapshot_routes.py::test_activate_snapshot_route_returns_structured_preflight_failures tests/test_snapshot_service.py::test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot tests/test_snapshot_service.py::test_t742_topology_reuse_should_reapply_routing_and_loop_state tests/test_state_authority_snapshot_workflows.py::test_snapshot_activation_preflight_blocks_broken_assets_and_preserves_live_snapshot -q` -> PASS (4 passed)
+- `pytest tests/test_snapshot*.py tests/test_state_authority_snapshot_workflows.py -q` -> PASS (126 passed; no `tests/test_unified_snapshots*.py` files exist in this repo)
+- `python3 scripts/generate_backend_contract.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+- `rg -n "to_legacy_snapshot_data|legacy_payload" app tests` -> PASS (no matches)
 
 ID: T2365-subE
 Status: [✓] Done
