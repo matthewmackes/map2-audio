@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 14:08 EDT - Completed T2364-subD automatic engine PlatformEvent drain and closed T2364.
+Last updated: 2026-04-20 14:14 EDT - Completed T2371 canonical worklist duplicate-ID repair.
 
 ---
 
@@ -3030,7 +3030,7 @@ Last updated: 2026-04-14 17:52 EDT - Codex
 
 ## Physical Surfaces Hero Image Enhancement
 
-ID: T2275
+ID: T2372
 Status: [✓] Done
 Title: Replace "Open Dedicated Route" buttons with vendor hero images on Physical Surfaces cards
 Description:
@@ -5575,7 +5575,7 @@ Last updated: 2026-04-04 13:40 EDT - Codex
 
 Last updated: 2026-04-04 14:01 EDT - Completed T713 by adding preview-target controls, tightening the classic desktop chrome, restoring the transient build stamp, and recording validation/licensing evidence.
 
-ID: T713
+ID: T2373
 Status: [✓] Done
 Title: Tighten Theme dialog fidelity with classic preview targeting and denser desktop chrome
 Description:
@@ -6868,7 +6868,7 @@ Last updated: 2026-04-01 16:15 - Codex
   - Replaced the stale Home landing regression case with still-supported promoted routes, preserving coverage for the landing-tile board without relying on the removed launcher entries.
 - Validation: `npm --prefix web test -- --runInBand web/src/app/data/launcherCatalog.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS
 
-ID: T731
+ID: T2374
 Status: [✓] Done
 Title: Restore Drum Machine and SynthForge to the Workspace Catalog application catalog
 Description:
@@ -10398,7 +10398,7 @@ Last updated: 2026-03-25 11:06 EDT - Codex
   - Extended `web/src/app/pages/AudioArtifactsPage.test.tsx` with a focused regression proving the upgraded left rail renders and the existing routed behaviors still pass.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
-ID: T548
+ID: T2375
 Status: [✓] Done
 Title: Refresh stale hardware-blocker evidence and promote any newly unblocked work
 Description:
@@ -10465,7 +10465,7 @@ Last updated: 2026-03-29 20:28 EDT - Codex
 
 As of 2026-04-02 06:57 EDT, the remaining product backlog is still predominantly blocker-driven, but `T676` through `T681` now capture concrete prerequisite slices that can be executed locally to reduce `T647`'s controller-display blocker surface while the deeper runtime and HIL items below remain blocked.
 
-ID: T2278
+ID: T2376
 Status: [✓] Done
 Title: Refresh AVB and Tesira blocker evidence against the current host
 Description:
@@ -10492,7 +10492,7 @@ Last updated: 2026-04-14 22:49 EDT - Codex
   - `systemctl is-active ptp4l` -> `inactive` (generic unit unused by MAP2)
   - `systemctl is-active map2-backend.service` -> `active`
 
-ID: T2279
+ID: T2377
 Status: [~] Cancelled
 Title: Reconcile AVB readiness `ptp4l` service detection with live system state
 Description:
@@ -10507,7 +10507,7 @@ Last updated: 2026-04-14 22:52 EDT - Codex
   - Follow-up verification showed the canonical managed service is `map2-ptp4l.service`, and it is active on the current host.
   - The earlier mismatch came from checking the generic distro `ptp4l.service`, which MAP2 does not use here, so no backend readiness change was required.
 
-ID: T2280
+ID: T2378
 Status: [✓] Done
 Title: Diagnose and tighten AVB PTP state reporting for active MAP2 hosts
 Description:
@@ -10548,7 +10548,7 @@ Last updated: 2026-03-29 20:26 EDT - Codex
   - Current host still reports AVB operational on `enp11s0`, so the old “no NIC” assumption remains cleared.
   - Refreshed evidence on 2026-04-14 still shows `/api/avb/avdecc/entities` empty, no active streams, `map2-ptp4l.service` active, and `/api/avb/status` now resolving to `MASTER`; the remaining blocker is still lack of a discovered peer/grandmaster-locked AVB bench plus missing engine-bound AVB readiness.
 
-ID: T2281
+ID: T2379
 Status: [✓] Done
 Title: Reorganize legacy utility routes in the global platform shell
 Description:
@@ -10569,7 +10569,7 @@ Last updated: 2026-04-14 23:19 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/layout/AppShell.test.tsx src/app/data/launcherCatalog.test.tsx src/app/App.platformRoute.test.tsx` -> PASS
   - `npm --prefix web run build` -> PASS
 
-ID: T2282
+ID: T2380
 Status: [✓] Done
 Title: Remove stale platform references to retired DSP and CPU utility pages
 Description:
@@ -10590,7 +10590,7 @@ Last updated: 2026-04-14 23:33 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/App.platformRoute.test.tsx` -> PASS (with existing React suspended-resource `act(...)` warnings)
   - `npm --prefix web run build` -> PASS
 
-ID: T2283
+ID: T2381
 Status: [✓] Done
 Title: Add a shared pin toggle for the left global navigation rail
 Description:
@@ -16139,7 +16139,7 @@ Last updated: 2026-03-22 15:12 EDT - Codex
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
   - Licensing: Classified the touched JUCE Grid/worklist files as MAP2-owned AGPL-covered repository artifacts; reused the current repository license/notices scan and found no new AGPL or third-party notice gaps requiring follow-up work.
 
-ID: T317
+ID: T2382
 Status: [✓] Done
 Title: Simplify the Home landing page into a Carbon-first appliance launcher
 Description:
@@ -16919,7 +16919,7 @@ Last updated: 2026-03-23 18:30 EDT - Codex
   - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`.
   - Licensing review: touched frontend/backend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
-ID: T385
+ID: T2383
 Status: [✓] Done
 Title: Home landing-page desktop card emphasis and Labs icon follow-up
 Description:
@@ -16938,7 +16938,7 @@ Last updated: 2026-03-24 07:10 EDT - Codex
   - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx`, and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new build failures).
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
-ID: T386
+ID: T2384
 Status: [✓] Done
 Title: Reduce Home landing-page desktop card title scale from the first emphasis pass
 Description:
@@ -16956,7 +16956,7 @@ Last updated: 2026-03-24 07:29 EDT - Codex
   - Validation passed with `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new failures).
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
-ID: T387
+ID: T2385
 Status: [✓] Done
 Title: Remove routed Labs workspace horizontal divider lines
 Description:
@@ -17485,7 +17485,7 @@ Last updated: 2026-03-25 09:35 EDT - Codex
   - Post-migration inventory is now definitive rather than inferred: `web/src/pipedal/` no longer exists, active-code import scans return no runtime references, and the only remaining repo mentions are documentation/history plus the guard test's own failure message.
   - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/shared/components/PluginChooser/pluginLegacyCompat.test.ts`, `pytest tests/test_frontend_legacy_import_guard.py -q`, and `npm --prefix web run build` from the deleted-tree state.
 
-ID: T389
+ID: T2386
 Status: [✓] Done
 Title: Delete dead rate_limiter.py (525 lines, zero imports)
 Description:
@@ -17501,7 +17501,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
   - Deleted `app/middleware/rate_limiter.py` after confirming there were no remaining imports under `app/` or `tests/`.
   - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
-ID: T390
+ID: T2387
 Status: [✓] Done
 Title: Delete dead configuration_distributor.py (388 lines, zero imports)
 Description:
@@ -17517,7 +17517,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
   - Deleted `app/services/cluster/configuration_distributor.py` after confirming the repo no longer imported it and the active implementation remains `app/services/cluster/config_distributor.py`.
   - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
-ID: T391
+ID: T2388
 Status: [✓] Done
 Title: Delete 7 unregistered route files with no callers
 Description:
@@ -17534,7 +17534,7 @@ Last updated: 2026-03-25 09:48 EDT - Codex
   - Deleted the genuinely dead unregistered route files `app/routes/connection_pool.py`, `app/routes/request_queue.py`, `app/routes/prometheus_exporter.py`, `app/routes/prometheus_metrics.py`, and `app/routes/websocket_metrics.py`.
   - Added `tests/test_chains_ab_mode_route_registration.py` to lock the live A/B chain endpoints into the route registration graph.
 
-ID: T392
+ID: T2389
 Status: [✓] Done
 Title: Delete abandoned email_notifications route and frontend hook
 Description:
@@ -17551,7 +17551,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
   - Pruned the stale email-related entries from `docs/backend-runtime-contract.md` and `docs/backend-runtime-contract.json` so generated contract docs no longer point at removed code.
   - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q` and `npm --prefix web run typecheck`.
 
-ID: T393
+ID: T2390
 Status: [✓] Done
 Title: Delete stale worklog docs and duplicate workspace file
 Description:
@@ -17569,7 +17569,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
 
 ### Phase B: Fix Critical Route Prefix Collisions
 
-ID: T394
+ID: T2391
 Status: [✓] Done
 Title: Resolve NAM route prefix collision — both nam.py and nam_models.py use /api/nam
 Description:
@@ -17587,7 +17587,7 @@ Last updated: 2026-03-25 07:55 EDT - Codex
   - Added `tests/test_nam_route_prefixes.py` to assert the primary NAM router and the library-management router expose disjoint path sets while preserving `/api/nam/upload` and `/api/nam/models` on the primary router.
   - Validation passed with `pytest tests/test_nam_route_prefixes.py tests/test_nam_ir_instance_routes.py -q`.
 
-ID: T395
+ID: T2392
 Status: [✓] Done
 Title: Resolve cluster update route prefix collision — both cluster_update.py and cluster_update_hybrid.py use /api/cluster/update
 Description:
@@ -17604,7 +17604,7 @@ Last updated: 2026-03-25 08:05 EDT - Codex
   - Added `tests/test_route_prefix_collisions_phase_a.py` to assert the primary and hybrid cluster update routers expose disjoint path sets while preserving `/api/cluster/update/trigger` on the primary router.
   - Validation passed with `pytest tests/test_route_prefix_collisions_phase_a.py tests/test_midi_cluster_api_routes.py -q`.
 
-ID: T396
+ID: T2393
 Status: [✓] Done
 Title: Resolve MIDI cluster route prefix collision — both midi_cluster.py and midi_cluster_proxy.py use /api/midi/cluster
 Description:
@@ -17621,7 +17621,7 @@ Last updated: 2026-03-25 08:05 EDT - Codex
   - Extended `tests/test_route_prefix_collisions_phase_a.py` to assert the primary MIDI cluster router and proxy router expose disjoint path sets while preserving `/api/midi/cluster/nodes` on the primary router.
   - Validation passed with `pytest tests/test_route_prefix_collisions_phase_a.py tests/test_midi_cluster_api_routes.py -q`.
 
-ID: T397
+ID: T2394
 Status: [✓] Done
 Title: Decide on unregistered health_monitor.py route — register or delete
 Description:
@@ -17639,7 +17639,7 @@ Last updated: 2026-03-25 08:20 EDT - Codex
 
 ### Phase C: Consolidate Duplicates
 
-ID: T398
+ID: T2395
 Status: [✓] Done
 Title: Complete plugin loader unification — migrate remaining imports to plugin_loader_unified.py
 Description:
@@ -17657,7 +17657,7 @@ Last updated: 2026-03-25 08:37 EDT - Codex
   - Moved the non-loader metadata/cache helpers out of the legacy file into `app/services/plugin_catalog.py`, then deleted `app/services/plugin_loader_v2.py` and `app/services/plugin_manager_v3.py`.
   - Validation passed with `pytest tests/test_phase5.py tests/test_plugins.py tests/test_advanced.py tests/test_advanced_plugins.py -q`.
 
-ID: T399
+ID: T2396
 Status: [✓] Done
 Title: Extract shared scraper_base from IR and SoundFont libraries
 Description:
@@ -17674,7 +17674,7 @@ Last updated: 2026-03-25 08:45 EDT - Codex
   - Rebuilt `app/services/ir_library/scraper_base.py` and `app/services/soundfont_library/scraper_base.py` as thin library-specific subclasses, preserving IR checksum validation and ZIP extraction behavior.
   - Validation passed with `pytest tests/test_scraper_interface_compliance.py tests/test_improvements.py -q`.
 
-ID: T400
+ID: T2397
 Status: [✓] Done
 Title: Clarify preset/snapshot route naming confusion
 Description:
@@ -17694,7 +17694,7 @@ Last updated: 2026-03-25 08:18 EDT - Codex
 
 ### Phase D: Refactor Fragmented Subsystems
 
-ID: T401
+ID: T2398
 Status: [✓] Done
 Title: Consolidate health monitoring hierarchy (8 services, 5 routes)
 Description:
@@ -19932,7 +19932,7 @@ Last updated: 2026-03-30 09:14 EDT - Codex
 
 ---
 
-ID: T590
+ID: T2399
 Status: [✓] Done
 Title: [CRITICAL] Remove mutex lock from ParallelMixerProcessor::processBlock()
 Description:
@@ -20195,7 +20195,7 @@ Last updated: 2026-04-02 04:15 EDT - Codex
 
 ---
 
-ID: T604
+ID: T2400
 Status: [✓] Done
 Title: Harden cabinet/reverb IR list queries against broken library entries
 Description:
@@ -20218,7 +20218,7 @@ Last updated: 2026-04-04 17:09 EDT - Codex
 
 ---
 
-ID: T605
+ID: T2401
 Status: [✓] Done
 Title: Simplify `/platforms/workspace-catalog` to a single browse-everything catalog surface
 Description:
@@ -25748,7 +25748,7 @@ Last updated: 2026-04-10 06:56 EDT - Codex
   - `npm --prefix web run typecheck` -> PASS
   - `npm --prefix web run build` -> PASS
 
-ID: T959
+ID: T2402
 Status: [✓] Done
 Title: Simplify snapshot live activation with plain-language status, preflight checklist, and one-click recovery actions
 Description:
@@ -26886,7 +26886,7 @@ Last updated: 2026-04-14 12:31 EDT - Codex
   - `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/components/layout/WorkspacePageTemplate.test.tsx src/app/pages/WorkspaceHubShell.test.tsx src/app/pages/workspace-hub/platforms/PlatformWorkspaceSection.test.tsx src/app/App.platformRoute.test.tsx` -> PASS (`4 suites, 29 tests`; existing React Router future-flag and suspended-resource warnings only)
   - `npm --prefix web run typecheck` -> PASS
 
-ID: T1004
+ID: T2403
 Status: [✓] Done
 Title: Unified Workspace Hub — unite Platforms, Physical Surfaces, Audio Artifacts, and Outboard Hardware under /workspace/* with one very-flat left-hand tree
 Description:
@@ -27378,7 +27378,7 @@ Subtasks:
 Assigned to: Codex
 Last updated: 2026-04-13 18:42 EDT - Codex
 
-ID: T1005
+ID: T2404
 Status: [✓] Done
 Title: Convert the Theme workspace from an inner side rail to top tabs with one focused panel at a time
 Description:
@@ -27402,7 +27402,7 @@ Last updated: 2026-04-14 12:40 EDT - Codex
 
 ## Workspace Hub UI Unification
 
-ID: T1006
+ID: T2405
 Status: [✓] Done
 Title: Unify the `/workspace/*` area into one cohesive, world-class interface
 Description:
@@ -29802,5 +29802,22 @@ Description:
 Last updated: 2026-04-20 11:55 EDT - Codex
 - Blocked notes:
   - 2026-04-20 11:55 EDT - Codex: Blocked until 2026-07-18 by design; current date is 2026-04-20, so removing the persisted-event compatibility kinds now would violate the T2363 aging window.
+
+ID: T2371
+Status: [✓] Done
+Title: Repair duplicate canonical worklist IDs
+Description:
+- Goal / acceptance criteria: Restore the canonical worklist's unique-ID invariant by finding duplicate `ID:` lines, assigning new unused task IDs to later historical duplicates, and validating that no duplicate `ID:` lines remain. Do not change task statuses, blocked semantics, or completion history beyond the ID repair.
+- Why it matters: Restart-safe work depends on deterministic task IDs. Reused IDs make status scans ambiguous and can cause future agents to resume or close the wrong task.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: repaired `docs/PROJECT_WORKLIST.md`, duplicate-ID scan evidence, and a SHIP commit.
+Last updated: 2026-04-20 14:14 EDT - Codex
+- Completion notes:
+  - Reassigned the later duplicate historical `ID:` lines to unused IDs `T2372` through `T2405`, preserving the original task bodies and statuses.
+  - Left blocked task semantics unchanged; this was a canonical worklist integrity repair only.
+Validation:
+- `awk '/^ID: /{count[$2]++; line[$2]=line[$2] ? line[$2] "," NR : NR} END{dups=0; for(id in count) if(count[id]>1){dups++; print id " " count[id] " " line[id]} if(!dups) print "no duplicate ID lines"}' docs/PROJECT_WORKLIST.md | sort` -> PASS (`no duplicate ID lines`)
+- `git diff --check` -> PASS
 
 ---
