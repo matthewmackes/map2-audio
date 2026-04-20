@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1188** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2432** total commits | **3** stars | **0** forks | **0** open issues
+**1188** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2434** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1e91bb5b`](https://github.com/matthewmackes/map2-audio/commit/1e91bb5b10ccc44e6100d5ac0132d58dc33202f3) | Bridge MIDI v2 port routes | Map2 Audio | 2026-04-20 |
+| [`75613035`](https://github.com/matthewmackes/map2-audio/commit/75613035594ed60fee3e219f2f25a94c87bbf8d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`7849ff92`](https://github.com/matthewmackes/map2-audio/commit/7849ff92ad1ff380c4dab85fecf10f55fd3b1e2d) | Bridge MIDI v2 clock controls | Map2 Audio | 2026-04-20 |
 | [`d9f0216c`](https://github.com/matthewmackes/map2-audio/commit/d9f0216c3582456bda9d088b18230bad7bf478dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`c059522b`](https://github.com/matthewmackes/map2-audio/commit/c059522b8691da2654e84a43d908fe7acf3f8695) | Backfill MIDI v2 lifecycle endpoints | Map2 Audio | 2026-04-20 |
 | [`42285c2b`](https://github.com/matthewmackes/map2-audio/commit/42285c2b9f63e2f897efcba65720e7d2f8d1bcbf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`0b372e7f`](https://github.com/matthewmackes/map2-audio/commit/0b372e7ffec26f40e06f1308159c0a6b616dd941) | Deprecate legacy MIDI route surface | Map2 Audio | 2026-04-20 |
 | [`4da109b3`](https://github.com/matthewmackes/map2-audio/commit/4da109b371b8a913dd7d18cf011fc74052e10a75) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`d6a81929`](https://github.com/matthewmackes/map2-audio/commit/d6a81929ae74fcc5e416088c249e62e97ffd2a26) | Centralize PlatformEvent presenter decisions | Map2 Audio | 2026-04-20 |
-| [`88d75dfa`](https://github.com/matthewmackes/map2-audio/commit/88d75dfad83e78e05c6869426210b27f2f1ee735) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
