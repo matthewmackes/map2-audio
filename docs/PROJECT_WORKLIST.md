@@ -29318,10 +29318,17 @@ Last updated: 2026-04-20 11:55 EDT - Codex
 - Progress notes:
   - 2026-04-20 11:55 EDT - Codex: Started the required intermediate phase after T2364-subB SHIP `d6a81929`; first slice is v1/v2 feature-delta evidence plus OpenAPI deprecation on the legacy `/api/midi` router before any deletion.
   - 2026-04-20 12:00 EDT - Codex: Produced [docs/audits/midi-v1-v2-parity-20260420.md](docs/audits/midi-v1-v2-parity-20260420.md), marked the legacy `/api/midi` router deprecated in OpenAPI, and added regression coverage proving every legacy operation advertises `deprecated: true`. Deletion remains blocked by identified gaps for start/stop/refresh, routing, filters, monitor clear, clock, and legacy bundled presets.
+  - 2026-04-20 12:05 EDT - Codex: Closed the small v1 deletion blockers by adding v2 `/engine/start`, `/engine/stop`, `/devices/refresh`, and `/activity/clear`, with MIDI Hub ownership and JUCE engine fallback coverage. Remaining blockers are legacy routing, filters, clock, and bundled presets.
 Validation:
 - `pytest tests/test_midi_legacy_deprecation.py tests/test_midi_v2_routes.py -q` -> PASS (`10 passed`)
 - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi.py app/routes/midi_v2.py tests/test_midi_legacy_deprecation.py` -> PASS
 - `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> PASS (`70 passed, 3 warnings`; warnings are existing `datetime.utcnow()` deprecations in MIDI tests)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+- `pytest tests/test_midi_v2_routes.py tests/test_midi_legacy_deprecation.py -q` -> PASS (`14 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi_v2.py tests/test_midi_v2_routes.py` -> PASS
+- `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> PASS (`74 passed, 3 warnings`; warnings are existing `datetime.utcnow()` deprecations in MIDI tests)
 - `npm --prefix web run typecheck` -> PASS
 - `git diff --check` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)

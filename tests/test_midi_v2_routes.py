@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -12,10 +13,21 @@ from app.services.midi_service import CurveType
 class _FakeEngine:
     def __init__(self) -> None:
         self.cc_messages: list[tuple[int, int, int]] = []
+        self.midi_enabled: bool | None = None
 
     def midi_send_cc(self, channel: int, cc: int, value: int) -> bool:
         self.cc_messages.append((channel, cc, value))
         return True
+
+    async def enable_midi(self, enable: bool) -> bool:
+        self.midi_enabled = enable
+        return enable
+
+    async def get_midi_input_devices(self):
+        return [{"name": "Engine In"}]
+
+    async def get_midi_output_devices(self):
+        return [{"name": "Engine Out"}]
 
 
 class _FakeMidiService:
@@ -27,6 +39,14 @@ class _FakeMidiService:
         self.created_dto = None
         self.created_command_dto = None
         self.updated_command = None
+        self.attached = 0
+        self.detached = 0
+
+    def attach_midi_hub(self):
+        self.attached += 1
+
+    def detach_midi_hub(self):
+        self.detached += 1
 
     async def get_all_mappings(self, _session, chain_id=None):
         self.recorded_chain_id = chain_id
@@ -251,6 +271,107 @@ def test_send_cc_requires_engine_and_uses_engine_when_present(monkeypatch):
     assert available.status_code == 200
     assert available.json() == {"success": True}
     assert service._engine.cc_messages == [(2, 11, 99)]
+
+
+@dataclass
+class _FakePort:
+    name: str
+    direction: str
+    port_id: str
+    kind: str = "hardware"
+
+
+class _FakeHub:
+    def __init__(self) -> None:
+        self.running = False
+        self.started = 0
+        self.stopped = 0
+
+    def start(self) -> None:
+        self.running = True
+        self.started += 1
+
+    def stop(self) -> None:
+        self.running = False
+        self.stopped += 1
+
+    def list_ports(self):
+        return [
+            _FakePort(name="Keys In", direction="input", port_id="in-1"),
+            _FakePort(name="Synth Out", direction="output", port_id="out-1"),
+        ]
+
+
+class _FakeTrafficMonitor:
+    def __init__(self) -> None:
+        self.cleared = 0
+
+    def clear(self) -> None:
+        self.cleared += 1
+
+
+def test_engine_lifecycle_uses_midi_hub_when_available(monkeypatch):
+    hub = _FakeHub()
+    client, service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_hub", lambda: hub)
+
+    started = client.post("/api/v2/midi/engine/start")
+    stopped = client.post("/api/v2/midi/engine/stop")
+
+    assert started.status_code == 200
+    assert started.json() == {"status": "started", "running": True, "source": "midi_hub"}
+    assert stopped.status_code == 200
+    assert stopped.json() == {"status": "stopped", "running": False, "source": "midi_hub"}
+    assert hub.started == 1
+    assert hub.stopped == 1
+    assert service.attached == 1
+    assert service.detached == 1
+
+
+def test_engine_lifecycle_falls_back_to_juce_engine(monkeypatch):
+    client, service = _build_client(monkeypatch)
+    service._engine = _FakeEngine()
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+
+    started = client.post("/api/v2/midi/engine/start")
+    stopped = client.post("/api/v2/midi/engine/stop")
+
+    assert started.status_code == 200
+    assert started.json() == {"status": "started", "running": True, "source": "juce_engine"}
+    assert stopped.status_code == 200
+    assert stopped.json() == {"status": "stopped", "running": False, "source": "juce_engine"}
+    assert service._engine.midi_enabled is False
+
+
+def test_devices_refresh_uses_shared_inventory_path(monkeypatch):
+    hub = _FakeHub()
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_hub", lambda: hub)
+
+    response = client.post("/api/v2/midi/devices/refresh")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "refreshed",
+        "inputs": [{"index": 0, "name": "Keys In", "type": "input", "port_id": "in-1", "kind": "hardware"}],
+        "outputs": [{"index": 1, "name": "Synth Out", "type": "output", "port_id": "out-1", "kind": "hardware"}],
+        "source": "midi_hub",
+    }
+
+
+def test_activity_clear_uses_midi_hub_traffic_monitor(monkeypatch):
+    monitor = _FakeTrafficMonitor()
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_traffic_monitor", lambda: monitor)
+
+    response = client.post("/api/v2/midi/activity/clear")
+
+    assert response.status_code == 200
+    assert response.json() == {"success": True, "source": "midi_hub"}
+    assert monitor.cleared == 1
 
 
 def test_list_commands_includes_duplicate_safe_target_position(monkeypatch):

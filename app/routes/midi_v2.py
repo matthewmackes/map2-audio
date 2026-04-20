@@ -33,9 +33,11 @@ from app.services.midi_device_profiles import device_profile_service
 
 try:
     from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
     MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration
     get_midi_hub = None  # type: ignore[assignment]
+    get_midi_traffic_monitor = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
 
 # Connect services
@@ -667,43 +669,7 @@ async def create_group(request: GroupCreateRequest):
 
 # ==================== Status & Devices ====================
 
-@router.get("/status")
-async def get_midi_status():
-    """Get comprehensive MIDI system status."""
-    async with get_session() as session:
-        mappings = await midi_service.get_all_mappings(session)
-        commands = await midi_service.get_all_commands(session)
-
-    learn_status = midi_service.get_learn_status()
-
-    # Get engine status if available
-    engine_status = {}
-    if midi_service._engine:
-        try:
-            engine_status = await midi_service._engine.get_midi_status()
-        except Exception as e:
-            logger.debug(f"Could not get engine MIDI status: {e}")
-
-    return {
-        "enabled": engine_status.get("enabled", False),
-        "input_open": engine_status.get("input_open", False),
-        "output_open": engine_status.get("output_open", False),
-        "input_device": engine_status.get("input_device"),
-        "output_device": engine_status.get("output_device"),
-        "learning": learn_status["active"],
-        "learn_target": learn_status["target"],
-        "active_chain_id": midi_service._active_chain_id,
-        "mappings_count": len(mappings),
-        "commands_count": len(commands),
-        "last_channel": engine_status.get("last_channel", 0),
-        "last_cc": engine_status.get("last_cc", 0),
-        "last_value": engine_status.get("last_value", 0),
-    }
-
-
-@router.get("/devices")
-async def get_midi_devices():
-    """List available MIDI devices."""
+async def _collect_midi_devices() -> Dict[str, Any]:
     inputs = []
     outputs = []
 
@@ -744,6 +710,101 @@ async def get_midi_devices():
         "outputs": outputs,
         "source": "juce_engine",
     }
+
+
+@router.post("/engine/start")
+async def start_midi_runtime():
+    """Start the authoritative v2 MIDI runtime owner."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            midi_service.attach_midi_hub()
+            return {"status": "started", "running": bool(hub.running), "source": "midi_hub"}
+        except Exception as e:
+            logger.debug(f"MidiHub start fallback to engine: {e}")
+
+    if midi_service._engine:
+        enabled = await midi_service._engine.enable_midi(True)
+        return {"status": "started", "running": bool(enabled), "source": "juce_engine"}
+
+    raise HTTPException(status_code=503, detail="MIDI runtime not available")
+
+
+@router.post("/engine/stop")
+async def stop_midi_runtime():
+    """Stop the authoritative v2 MIDI runtime owner."""
+    stopped = False
+    source = "none"
+
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            midi_service.detach_midi_hub()
+            if hub.running:
+                hub.stop()
+            stopped = True
+            source = "midi_hub"
+        except Exception as e:
+            logger.debug(f"MidiHub stop fallback to engine: {e}")
+
+    if midi_service._engine:
+        enabled = await midi_service._engine.enable_midi(False)
+        stopped = stopped or not bool(enabled)
+        source = source if source != "none" else "juce_engine"
+
+    if not stopped:
+        raise HTTPException(status_code=503, detail="MIDI runtime not available")
+
+    return {"status": "stopped", "running": False, "source": source}
+
+
+@router.get("/status")
+async def get_midi_status():
+    """Get comprehensive MIDI system status."""
+    async with get_session() as session:
+        mappings = await midi_service.get_all_mappings(session)
+        commands = await midi_service.get_all_commands(session)
+
+    learn_status = midi_service.get_learn_status()
+
+    # Get engine status if available
+    engine_status = {}
+    if midi_service._engine:
+        try:
+            engine_status = await midi_service._engine.get_midi_status()
+        except Exception as e:
+            logger.debug(f"Could not get engine MIDI status: {e}")
+
+    return {
+        "enabled": engine_status.get("enabled", False),
+        "input_open": engine_status.get("input_open", False),
+        "output_open": engine_status.get("output_open", False),
+        "input_device": engine_status.get("input_device"),
+        "output_device": engine_status.get("output_device"),
+        "learning": learn_status["active"],
+        "learn_target": learn_status["target"],
+        "active_chain_id": midi_service._active_chain_id,
+        "mappings_count": len(mappings),
+        "commands_count": len(commands),
+        "last_channel": engine_status.get("last_channel", 0),
+        "last_cc": engine_status.get("last_cc", 0),
+        "last_value": engine_status.get("last_value", 0),
+    }
+
+
+@router.get("/devices")
+async def get_midi_devices():
+    """List available MIDI devices."""
+    return await _collect_midi_devices()
+
+
+@router.post("/devices/refresh")
+async def refresh_midi_devices():
+    """Refresh MIDI devices through the authoritative v2 inventory path."""
+    devices = await _collect_midi_devices()
+    return {"status": "refreshed", **devices}
 
 
 class DeviceOpenRequest(BaseModel):
@@ -936,6 +997,16 @@ async def get_midi_activity(limit: int = Query(50, ge=1, le=200)):
         "count": 0,
         "note": "Use WebSocket topic 'midi' for real-time activity",
     }
+
+
+@router.post("/activity/clear")
+async def clear_midi_activity():
+    """Clear the v2 MIDI activity/traffic monitor."""
+    if MIDI_HUB_AVAILABLE and get_midi_traffic_monitor is not None:
+        monitor = get_midi_traffic_monitor()
+        monitor.clear()
+        return {"success": True, "source": "midi_hub"}
+    return {"success": True, "source": "none"}
 
 
 # ==================== Device Profiles ====================
