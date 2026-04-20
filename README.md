@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1186** Python | **1161** TypeScript | **136** C++/H | **144** Docs | **2410** total commits | **3** stars | **0** forks | **0** open issues
+**1186** Python | **1161** TypeScript | **136** C++/H | **144** Docs | **2412** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`722cdd01`](https://github.com/matthewmackes/map2-audio/commit/722cdd014c6bee59f89e21eb33c2c54663528cb0) | Wire signal canvas settings | Map2 Audio | 2026-04-20 |
+| [`2c9d3c6f`](https://github.com/matthewmackes/map2-audio/commit/2c9d3c6fd2a9c4510c67ee88160d7c105ceeecac) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`ee8e59ac`](https://github.com/matthewmackes/map2-audio/commit/ee8e59ac3e71699b6254e371681f120ba3a29957) | Add signal canvas sidechain readonly states | Map2 Audio | 2026-04-20 |
 | [`48960095`](https://github.com/matthewmackes/map2-audio/commit/489600958e6eb7ab980839c709ebfbd3ec67f163) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`65a19b5b`](https://github.com/matthewmackes/map2-audio/commit/65a19b5b2d876e03b4645fed3368ed8bfef9dd0d) | Assemble signal canvas chain rows | Map2 Audio | 2026-04-20 |
 | [`9f82497b`](https://github.com/matthewmackes/map2-audio/commit/9f82497bfa7fa8fd90d4e28f47594c5a0ffba3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`5236502b`](https://github.com/matthewmackes/map2-audio/commit/5236502bee9f1f73f003e487ca44dd9228aad5fb) | Add signal canvas chain head side | Map2 Audio | 2026-04-20 |
 | [`d24f9836`](https://github.com/matthewmackes/map2-audio/commit/d24f9836e294df92d1bb4726d84a44d0f8d97273) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`a7d520e5`](https://github.com/matthewmackes/map2-audio/commit/a7d520e5679200eb82c21a5cf3072b245e7b87f9) | Add signal canvas chain primitives | Map2 Audio | 2026-04-20 |
-| [`a34c96fe`](https://github.com/matthewmackes/map2-audio/commit/a34c96fec06fb7df4cbb46c0b0506164dbb0c78f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
