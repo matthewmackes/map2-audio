@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed T2365-subU by moving Tesira Telnet negotiation byte constants into `app/services/tesira/telnet_protocol.py`.
+Last updated: 2026-04-20 - Reconciled T2365-subP after confirming the named orphaned AVDECC C++ files are already absent and AVDECC-enabled native build passes.
 
 ---
 
@@ -29228,7 +29228,7 @@ Validation:
 - `rg -n "circular import|avoid circular" app` -> no matches
 
 ID: T2365-subP
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete orphaned AVDECC C++ files (AvdeccEntity.h/cpp, AvdeccEntityModel, AvdeccEnumerator) and audit for other disk-only files
 Description:
 - Goal / acceptance criteria: The memory at `project_state_authority.md` — and the 2026-04-19 audit — confirm that `juce-engine/Source/AvdeccEntity.h`, `AvdeccEntity.cpp`, `AvdeccEntityModel.*`, and `AvdeccEnumerator.*` exist on disk but are NOT in `CMakeLists.txt` after the migration to `la_avdecc` v4.3.1.1. Delete them. Additionally, run `comm -23 <(find juce-engine/Source -name '*.cpp' -o -name '*.h' | sort) <(grep -Eo 'Source/[A-Za-z0-9_]+\.(cpp|h)' juce-engine/CMakeLists.txt | sort -u)` and delete any other orphans that surface.
@@ -29237,9 +29237,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: deleted orphan files, committed audit command, clean build.
 - Notes: Verify each file is truly not referenced elsewhere with `rg -n "AvdeccEntity|AvdeccEnumerator" juce-engine` before deleting.
+Last updated: 2026-04-20 06:09 EDT - Codex
+- Completion notes:
+  - Confirmed [juce-engine/Source](juce-engine/Source) no longer contains `AvdeccEntity.*`, `AvdeccEntityModel.*`, or `AvdeccEnumerator.*`; no deletion patch was required.
+  - Confirmed [juce-engine/CMakeLists.txt](juce-engine/CMakeLists.txt) has no references to the retired custom AVDECC files.
+  - Confirmed remaining `AvdeccEntity*` / `AvdeccEnumerator*` text under [juce-engine/Source/AvdeccController.h](juce-engine/Source/AvdeccController.h) is documentation about the already-retired custom stack and compatibility field names, not live orphaned source files.
 Validation:
-- `cmake -B juce-engine/build -DUSE_AVDECC=ON && cmake --build juce-engine/build` -> must succeed
-- `rg -n "AvdeccEntity|AvdeccEntityModel|AvdeccEnumerator" juce-engine/Source` -> only matches are in `AvdeccController.h/cpp` (the canonical wrapper)
+- `find juce-engine/Source -maxdepth 1 -type f \( -name 'AvdeccEntity*' -o -name 'AvdeccEntityModel*' -o -name 'AvdeccEnumerator*' \) -print | sort` -> PASS (no files)
+- `rg -n "AvdeccEntity\.cpp|AvdeccEntity\.h|AvdeccEntityModel|AvdeccEnumerator" juce-engine/CMakeLists.txt` -> PASS (no matches)
+- `cmake -S juce-engine -B juce-engine/build -DUSE_AVDECC=ON && cmake --build juce-engine/build` -> PASS (`map2_audio_engine`, `avb_tests`, `la_avdecc_cxx`, and `la_avdecc_controller_cxx` built)
+- `rg -n "AvdeccEntity|AvdeccEntityModel|AvdeccEnumerator" juce-engine/Source` -> PASS (matches only explanatory compatibility comments in `AvdeccController.h`)
 
 ID: T2365-subQ
 Status: [ ] Todo
