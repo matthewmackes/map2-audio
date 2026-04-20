@@ -1,6 +1,16 @@
 import { create } from 'zustand'
 
-import type { PlatformEvent } from '../../map2/platformEvent'
+import type { PlatformEvent, PlatformEventSeverity } from '../../map2/platformEvent'
+
+export const PLATFORM_EVENT_STORE_MAX_EVENTS = 1000
+
+export interface PlatformEventFilterOptions {
+  kinds?: string[]
+  kindPrefixes?: string[]
+  severities?: PlatformEventSeverity[]
+  minPriority?: number
+  nodes?: string[]
+}
 
 export interface PlatformEventStoreState {
   sessionId: string | null
@@ -45,6 +55,33 @@ function eventsAreEqual(left: PlatformEvent[], right: PlatformEvent[]): boolean 
     && left.every((event, index) => JSON.stringify(event) === JSON.stringify(right[index]))
 }
 
+export function platformEventMatchesFilters(event: PlatformEvent, options: PlatformEventFilterOptions = {}): boolean {
+  if (options.kinds && options.kinds.length > 0 && !options.kinds.includes(event.kind)) {
+    return false
+  }
+  if (options.kindPrefixes && options.kindPrefixes.length > 0 && !options.kindPrefixes.some((prefix) => event.kind.startsWith(prefix))) {
+    return false
+  }
+  if (options.severities && options.severities.length > 0 && !options.severities.includes(event.severity)) {
+    return false
+  }
+  if (options.minPriority != null && event.priority < options.minPriority) {
+    return false
+  }
+  if (options.nodes && options.nodes.length > 0 && !options.nodes.includes(event.source_node)) {
+    return false
+  }
+  return true
+}
+
+export function selectVisiblePlatformEvents(
+  state: Pick<PlatformEventStoreState, 'events' | 'dismissedEventIds'>,
+  options: PlatformEventFilterOptions = {},
+): PlatformEvent[] {
+  const dismissed = new Set(state.dismissedEventIds)
+  return state.events.filter((event) => !dismissed.has(event.event_id) && platformEventMatchesFilters(event, options))
+}
+
 export const usePlatformEventStore = create<PlatformEventStoreState>((set) => ({
   ...INITIAL_PLATFORM_EVENT_STATE,
   setSessionId: (sessionId) => set((state) => (
@@ -69,7 +106,7 @@ export const usePlatformEventStore = create<PlatformEventStoreState>((set) => ({
       byId.set(event.event_id, event)
     }
 
-    const nextEvents = sortEvents([...byId.values()])
+    const nextEvents = sortEvents([...byId.values()]).slice(0, PLATFORM_EVENT_STORE_MAX_EVENTS)
     const nextCursor = nextEvents[0]?.event_id ?? state.replayCursor
 
     if (nextCursor === state.replayCursor && eventsAreEqual(nextEvents, state.events)) {
@@ -91,4 +128,5 @@ export const usePlatformEventStore = create<PlatformEventStoreState>((set) => ({
 
 export const PLATFORM_EVENT_STORE_TEST_ONLY = {
   INITIAL_PLATFORM_EVENT_STATE,
+  PLATFORM_EVENT_STORE_MAX_EVENTS,
 }

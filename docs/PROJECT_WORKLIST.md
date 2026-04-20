@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Completed and shipped T2365-subV small legacy fallback cleanup.
+Last updated: 2026-04-20 - Completed T2364-subA PlatformEvent store ergonomics.
 
 ---
 
@@ -29000,7 +29000,7 @@ Validation:
 ---
 
 ID: T2364
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Post-cutover PlatformEvent follow-through — engine emission, store ergonomics, and surface cleanup
 Description:
 - Goal / acceptance criteria: Continue from the shipped T2363 hard cutover without reintroducing legacy buses. Add engine-native platform event emission through an RT-safe FIFO, simplify the frontend platform event store ergonomics, and clean up any remaining surface-specific presentation duplication now that `PlatformEventBus.emit()` is the only cross-system event entrypoint.
@@ -29009,9 +29009,37 @@ Description:
 - Estimated effort: High
 - Required outputs: RT-safe engine event emission design and implementation, focused store/presenter cleanup commits, docs updates, and validation proving platform events still flow through the single bus.
 - Notes: This epic is strictly post-cutover work. Do not add compatibility buses, re-export deleted legacy modules, or restore removed public legacy event routes.
+- Assigned to: Codex
+- Last updated: 2026-04-20 11:40 EDT - Codex
+- Progress notes:
+  - 2026-04-20 11:40 EDT - Codex: Started the first restartable post-cutover slice after T2365-subV SHIP `6d6ddc96`; taking the frontend PlatformEvent store ergonomics work independently of RT-safe engine emission.
+  - 2026-04-20 11:40 EDT - Codex: Completed T2364-subA by adding store-level PlatformEvent filter helpers, visible-event selection, and bounded retention at 1000 events while preserving the existing `usePlatformEvents` API.
 - Validation:
   - `rg -n "PlatformEventBus.emit" app web docs/CLAUDE.md docs/platform` -> canonical entrypoint usage and docs present
   - `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> no runtime legacy paths
+
+Subtasks:
+
+ID: T2364-subA
+Status: [✓] Done
+Title: Add bounded selectors and visible-event helpers to the PlatformEvent frontend store
+Description:
+- Goal / acceptance criteria: Move PlatformEvent filtering/dismissal ergonomics out of `usePlatformEvents` and into reusable store helpers so presenters can request visible events through one tested path. Add a bounded event-retention cap to prevent unbounded replay growth, preserve replay cursor semantics, and keep the existing hook API unchanged.
+- Why it matters: T2363 created the canonical event plane quickly; T2364 should make the frontend store easier to consume without creating new transport or presenter duplication.
+- Dependencies: T2363
+- Estimated effort: Low
+- Required outputs: store-level selector/filter helpers, bounded retention behavior, updated `usePlatformEvents`, focused store/hook tests, typecheck/build validation.
+Last updated: 2026-04-20 11:40 EDT - Codex
+- Completion notes:
+  - Added `PlatformEventFilterOptions`, `platformEventMatchesFilters()`, and `selectVisiblePlatformEvents()` in `web/src/app/stores/platformEventStore.ts` so presenters and hooks can share one visibility path.
+  - Bounded retained PlatformEvents to 1000 newest records during upsert, preserving newest-first sort and replay cursor behavior.
+  - Updated `web/src/app/hooks/usePlatformEvents.ts` to use the store selector while keeping its public return shape unchanged.
+Validation:
+- `CI=1 npm --prefix web test -- --runInBand --runTestsByPath src/app/stores/platformEventStore.test.ts src/app/hooks/usePlatformEvents.test.tsx` -> PASS (`2 suites, 5 tests`)
+- `npm --prefix web run typecheck` -> PASS
+- `rg -n "app\\.services\\.(event_bus|lcd_event_bus)|cluster\\.distributed_event_bus|LCDEvent|ClusterEvent" app web tests` -> PASS (no matches)
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
 
 ---
 

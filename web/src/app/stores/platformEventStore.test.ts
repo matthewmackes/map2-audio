@@ -1,4 +1,8 @@
-import { PLATFORM_EVENT_STORE_TEST_ONLY, usePlatformEventStore } from './platformEventStore'
+import {
+  PLATFORM_EVENT_STORE_TEST_ONLY,
+  selectVisiblePlatformEvents,
+  usePlatformEventStore,
+} from './platformEventStore'
 import type { PlatformEvent } from '../../map2/platformEvent'
 
 function resetStore() {
@@ -71,5 +75,41 @@ describe('platformEventStore', () => {
       'event-newer',
       'event-older',
     ])
+  })
+
+  it('selects visible events through dismissal and filter options', () => {
+    const workflow = makeEvent('workflow-1', '2026-04-19T13:00:00Z')
+    const system = {
+      ...makeEvent('system-1', '2026-04-19T13:05:00Z'),
+      kind: 'system.cpu.high',
+      severity: 'warning',
+      priority: 0.7,
+    } as PlatformEvent
+
+    usePlatformEventStore.getState().upsertEvents([workflow, system])
+    usePlatformEventStore.getState().dismissEvent('workflow-1')
+
+    expect(selectVisiblePlatformEvents(usePlatformEventStore.getState(), {
+      kindPrefixes: ['system.'],
+      severities: ['warning'],
+      minPriority: 0.5,
+      nodes: ['node-a'],
+    }).map((event) => event.event_id)).toEqual(['system-1'])
+  })
+
+  it('bounds retained event history to the store cap', () => {
+    const events = Array.from({ length: PLATFORM_EVENT_STORE_TEST_ONLY.PLATFORM_EVENT_STORE_MAX_EVENTS + 5 }, (_, index) => (
+      makeEvent(
+        `event-${index}`,
+        new Date(Date.UTC(2026, 3, 19, 13, 0, index)).toISOString(),
+      )
+    ))
+
+    usePlatformEventStore.getState().upsertEvents(events)
+
+    const state = usePlatformEventStore.getState()
+    expect(state.events).toHaveLength(PLATFORM_EVENT_STORE_TEST_ONLY.PLATFORM_EVENT_STORE_MAX_EVENTS)
+    expect(state.events[0]?.event_id).toBe(`event-${events.length - 1}`)
+    expect(state.events[state.events.length - 1]?.event_id).toBe('event-5')
   })
 })
