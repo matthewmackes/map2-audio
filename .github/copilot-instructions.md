@@ -101,6 +101,21 @@ When adding significant updates, append to this log:
   - Close each completed slice with concrete file/test notes and a timestamp
   - When a user asks to continue, resume from the next unblocked worklist item instead of inventing a side queue
 
+### Definition of Done — MANDATORY gate before marking `[✓] Done`
+
+A task is **not done** until ALL of the following are true:
+
+1. **Code committed to `master`** — changes exist in git history on master, not only on a feature branch or as uncommitted working-tree edits
+2. **Dual-pushed** — `git push origin master && git push gitlab master` completed without error
+3. **Frontend rebuilt** (for any UI task) — `npm --prefix web run build` completed without TypeScript or Vite errors
+4. **Preview server reflects the build** — `web/dist/` is current; the static server at port 3000 is serving the new bundle
+5. **Visually verified** (for any UI task) — the changed surface was viewed in-browser and the expected visual change is present; "Select a chain" placeholder vs. actual schematic canvas are different states and must not be confused
+6. **Tests pass** — `npm --prefix web run test` (or relevant pytest suite) green, no new failures
+
+**NEVER mark `[✓] Done` solely because code was written or a branch exists.** If steps 1–6 are not confirmed, leave the task `[>] In Progress` and note which gate is incomplete.
+
+**Anti-pattern that caused this incident (2026-04-20):** T2368/T2369 were marked `[✓] Done` while the code lived only on `tui-carbon-unification`. The branch had already been merged to master, but the worklist was updated before verifying the built bundle in-browser — leaving the impression of a missing visual change that was actually present.
+
 ### Questioning Workflow
 - **When the user says "ask questions", use the 5-Question Clarification Protocol**
   - Do not switch to ad-hoc grouped question lists
