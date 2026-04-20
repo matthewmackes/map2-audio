@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1207** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2454** total commits | **3** stars | **0** forks | **0** open issues
+**1207** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2456** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`01bdec44`](https://github.com/matthewmackes/map2-audio/commit/01bdec4417e53cd244b1779d679d9868c5d26c86) | feat: drain engine platform events | Map2 Audio | 2026-04-20 |
+| [`0dd27940`](https://github.com/matthewmackes/map2-audio/commit/0dd27940aa78a128accae1acdc48222e31c46aa5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`f83a25a1`](https://github.com/matthewmackes/map2-audio/commit/f83a25a1cdfe71b98d6cc49b94e0c4c7e96cee30) | feat: add engine platform event FIFO | Map2 Audio | 2026-04-20 |
 | [`5469cbef`](https://github.com/matthewmackes/map2-audio/commit/5469cbef9ab905c4e5ae244514871644a8c42bfb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`68e40684`](https://github.com/matthewmackes/map2-audio/commit/68e40684d3b385474e98010e37054e8a2d8dd007) | test: guard retired legacy imports | Map2 Audio | 2026-04-20 |
 | [`feef679f`](https://github.com/matthewmackes/map2-audio/commit/feef679fc95f8b286052ff5e6342fa2fb8c85e75) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`80eae8d6`](https://github.com/matthewmackes/map2-audio/commit/80eae8d6567df36537285940e7aa82efefeaf7c5) | refactor: split JUCE engine service | Map2 Audio | 2026-04-20 |
 | [`bfcfdde8`](https://github.com/matthewmackes/map2-audio/commit/bfcfdde81a938cf67cb440762053a9da172fffae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`cb9547f9`](https://github.com/matthewmackes/map2-audio/commit/cb9547f96552bd3b2932c77ad8dc3c0059984f84) | refactor: remove legacy snapshot data adapter | Map2 Audio | 2026-04-20 |
-| [`ddf825f1`](https://github.com/matthewmackes/map2-audio/commit/ddf825f1a7fdc99148f29846bb578e1b677fe173) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
