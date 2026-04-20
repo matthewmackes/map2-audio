@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1199** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2446** total commits | **3** stars | **0** forks | **0** open issues
+**1199** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2448** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cb9547f9`](https://github.com/matthewmackes/map2-audio/commit/cb9547f96552bd3b2932c77ad8dc3c0059984f84) | refactor: remove legacy snapshot data adapter | Map2 Audio | 2026-04-20 |
+| [`ddf825f1`](https://github.com/matthewmackes/map2-audio/commit/ddf825f1a7fdc99148f29846bb578e1b677fe173) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`a374fb72`](https://github.com/matthewmackes/map2-audio/commit/a374fb72dcf1f66c82c2385c40d93112ea0b640e) | refactor: split snapshot service package | Map2 Audio | 2026-04-20 |
 | [`d1f43242`](https://github.com/matthewmackes/map2-audio/commit/d1f43242254699923219ef21cc8799ea10aaab8f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`df8f42cd`](https://github.com/matthewmackes/map2-audio/commit/df8f42cd9c41e0a1e667a2a5136b8198e8b77116) | fix: migrate AVDECC config flag | Map2 Audio | 2026-04-20 |
 | [`e5aae154`](https://github.com/matthewmackes/map2-audio/commit/e5aae154f88e4d68f32bfe86f9f5169bd35813c1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`a705f971`](https://github.com/matthewmackes/map2-audio/commit/a705f9712a660c7788f63af899bfc883f359e291) | refactor: split AVB routes by concern | Map2 Audio | 2026-04-20 |
 | [`ef6862d2`](https://github.com/matthewmackes/map2-audio/commit/ef6862d20cb92ff7465a923b43992964c529f372) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`bf0bfb36`](https://github.com/matthewmackes/map2-audio/commit/bf0bfb36bb7cca9981fe688725f5bf13acfcb691) | Split backup service package | Map2 Audio | 2026-04-20 |
-| [`0c7fce0f`](https://github.com/matthewmackes/map2-audio/commit/0c7fce0faa6fed32972fa92065a10fd66816919d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
