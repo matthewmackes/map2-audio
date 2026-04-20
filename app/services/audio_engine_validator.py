@@ -1,14 +1,11 @@
 """
 Audio Engine Configuration Validator
 
-Ensures only one audio engine is active at a time and prevents resource conflicts.
-Validates system configuration before audio processing starts.
+Ensures the mandatory JUCE audio engine is available before audio processing starts.
 """
 
 import logging
 from typing import Tuple, List
-from app.config import get_config
-
 logger = logging.getLogger(__name__)
 
 
@@ -28,37 +25,13 @@ class AudioEngineValidator:
             Tuple of (is_valid, list of error messages)
         """
         errors = []
-        config = get_config()
-        
-        # Check audio engine setting
-        audio_engine = config.get("audio.engine", "juce")
-        allow_python_io = config.get("audio.allow_python_io", False)
-        
-        # CRITICAL: Python audio I/O should never be used in production
-        if audio_engine == "python":
-            errors.append(
-                "❌ CRITICAL: audio.engine is set to 'python' - NOT RECOMMENDED!\n"
-                "   Python audio I/O has severe limitations:\n"
-                "   - Python GIL causes non-deterministic latency\n"
-                "   - NOT real-time safe for live performance\n"
-                "   - Will cause audio dropouts (XRuns)\n"
-                "\n"
-                "   SOLUTION: Set audio.engine='juce' in configuration"
-            )
-        
-        if allow_python_io and audio_engine == "juce":
-            errors.append(
-                "⚠️  WARNING: audio.allow_python_io is enabled while using JUCE engine.\n"
-                "   This may cause resource conflicts on the audio interface.\n"
-                "   Recommended: Set audio.allow_python_io=false"
-            )
-        
+
         # Check if JUCE is available
         try:
             from app.services.juce_engine_service import JUCE_AVAILABLE
-            if not JUCE_AVAILABLE and audio_engine == "juce":
+            if not JUCE_AVAILABLE:
                 errors.append(
-                    "❌ CRITICAL: JUCE engine is not available but is set as audio.engine.\n"
+                    "❌ CRITICAL: JUCE engine is not available.\n"
                     "   Install JUCE dependencies or build juce-engine module.\n"
                     "   See: juce-engine/README.md"
                 )
@@ -72,7 +45,7 @@ class AudioEngineValidator:
         
         if is_valid:
             logger.info("✅ Audio engine configuration validated successfully")
-            logger.info(f"   Using audio engine: {audio_engine}")
+            logger.info("   Using mandatory JUCE audio engine")
         else:
             logger.error("❌ Audio engine configuration validation FAILED")
             for error in errors:
@@ -108,21 +81,7 @@ class AudioEngineValidator:
     
     @staticmethod
     def prevent_dual_engine_startup() -> None:
-        """Prevent both JUCE and Python audio engines from running simultaneously.
-        
-        Raises:
-            AudioEngineConflict: If conflict is detected
-        """
-        config = get_config()
-        audio_engine = config.get("audio.engine", "juce")
-        allow_python_io = config.get("audio.allow_python_io", False)
-        
-        if audio_engine == "python" and allow_python_io:
-            raise AudioEngineConflict(
-                "Cannot start Python audio I/O: Deprecated and not recommended.\n"
-                "Set audio.engine='juce' for production use."
-            )
-        
+        """Detect already-registered Python audio callbacks before JUCE startup."""
         # Check if any audio stream is already active
         try:
             import sounddevice as sd

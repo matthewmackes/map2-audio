@@ -6,9 +6,10 @@ from dataclasses import dataclass
 import logging
 from typing import Any, Callable
 
+from app.config_schema import CANONICAL_CLOCK_SYNC_PROFILE
+
 logger = logging.getLogger(__name__)
 
-LEGACY_FIXED_48K_PROFILE = "legacy_fixed_48k"
 _LEGACY_SYNC_PROFILE_WARNING_EMITTED = False
 
 
@@ -49,4 +50,4 @@ def get_clock_sync_profile(
             _LEGACY_SYNC_PROFILE_WARNING_EMITTED = True
         return ClockSyncProfile(str(legacy_profile), "audio.sync_profile")
 
-    return ClockSyncProfile(LEGACY_FIXED_48K_PROFILE, "default")
+    return ClockSyncProfile(CANONICAL_CLOCK_SYNC_PROFILE, "default")

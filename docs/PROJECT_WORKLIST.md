@@ -29276,7 +29276,7 @@ Validation:
 - `rg -n "stub|Stub" app/routes app/services` -> remaining matches are only in factory test fixtures
 
 ID: T2365-subR
-Status: [ ] Todo
+Status: [✓] Done
 Title: Refresh config schema defaults — retire "legacy_fixed_48k" clock profile and deprecated Python audio engine
 Description:
 - Goal / acceptance criteria: In [app/config_schema.py](app/config_schema.py):
@@ -29287,9 +29287,21 @@ Description:
 - Dependencies: T2365-subI
 - Estimated effort: Medium
 - Required outputs: updated schema, migration step, tests proving old configs are upgraded cleanly, deleted legacy field.
+Last updated: 2026-04-20 06:30 EDT - Codex
+- Completion notes:
+  - Removed the retired `audio.engine`, `audio.allow_python_io`, and `audio.sync_profile` schema entries now that JUCE is mandatory and `clock_sync.selected_profile` is canonical.
+  - Set the canonical clock-sync default to `pipewire_quantum_48k` and added `ConfigManager` load-time migration that drops retired Python-engine keys, migrates `audio.sync_profile` into `clock_sync.selected_profile`, and rewrites the old `legacy_fixed_48k` profile to the canonical default.
+  - Removed runtime checks that warned about Python audio-engine selection, stopped adoption profile cloning from writing `audio.sync_profile`, cleaned the obsolete `top-nav` comment in the special-settings database model, and regenerated backend runtime contract artifacts so `MAP2_AUDIO_ENGINE` / `MAP2_ALLOW_PYTHON_IO` are no longer documented schema-backed environment variables.
 Validation:
-- `pytest tests/test_config*.py tests/test_database*.py -q` -> must PASS
-- `rg -n "legacy_fixed_48k|top-nav.*legacy|python audio engine.*deprecated" app tests` -> no matches outside this subtask's migration code
+- `pytest tests/test_config*.py tests/test_database*.py -q` -> PASS (`22 passed in 4.38s`)
+- `pytest tests/test_clock_sync.py tests/test_adoption_routes.py -q` -> PASS (`12 passed in 4.68s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/config.py app/config_schema.py app/services/clock_sync.py app/services/audio_engine_validator.py app/services/service_orchestrator.py app/services/cluster/adoption.py app/database.py tests/test_config_manager_validation.py tests/test_clock_sync.py tests/test_adoption_routes.py` -> PASS
+- `python3 scripts/generate_backend_contract.py` -> PASS (`18 manifest packages`, `53 schema env vars`, `73 direct-only env vars`)
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `22.99s`; existing chunk-size warning only)
+- `rg -n "legacy_fixed_48k|top-nav.*legacy|python audio engine.*deprecated" app tests` -> PASS; remaining `legacy_fixed_48k` hits are only the `ConfigManager` migration constant and its regression test
+- `rg -n "MAP2_AUDIO_ENGINE|MAP2_ALLOW_PYTHON_IO|audio\\.engine|audio\\.allow_python_io" docs/backend-runtime-contract.md docs/backend-runtime-contract.json requirements-backend-runtime.txt app/config_schema.py` -> PASS (no matches)
+- `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; `rg --files -g "LICENSE*" -g "*COPYING*" -g "*NOTICE*"` -> no new licensing gaps found for this MAP2-owned backend/config/test/docs cleanup
 
 ID: T2365-subS
 Status: [ ] Todo

@@ -1196,21 +1196,6 @@ class ServiceOrchestrator(Singleton):
     async def _start_juce_engine(self):
         """Start JUCE audio engine service."""
         try:
-            # Safety check: Verify Python audio I/O is not running
-            from app.config import get_config
-            config = get_config()
-            
-            if not config.get("audio.allow_python_io", False):
-                logger.info("Python audio I/O is disabled (recommended for production)")
-            
-            # Check if audio.engine is set to juce
-            audio_engine = config.get("audio.engine", "juce")
-            if audio_engine != "juce":
-                logger.warning(
-                    f"audio.engine is set to '{audio_engine}' but starting JUCE engine. "
-                    "This may cause resource conflicts!"
-                )
-            
             from app.services.juce_engine_service import get_audio_engine
             service = get_audio_engine()
             success = await service.initialize()

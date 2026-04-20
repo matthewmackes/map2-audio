@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import threading
 from pathlib import Path
 
@@ -28,6 +29,10 @@ def test_schema_surfaces_locked_and_element_type_metadata(manager: ConfigManager
     schema = manager.get_schema()
     assert schema["audio.sample_rate"]["locked"] is True
     assert schema["audio.allowed_rates_hz"]["element_type"] == "int"
+    assert schema["clock_sync.selected_profile"]["default"] == "pipewire_quantum_48k"
+    assert "audio.engine" not in schema
+    assert "audio.allow_python_io" not in schema
+    assert "audio.sync_profile" not in schema
 
     option = manager.get_option_info("clock_sync.remarks")
     assert option == {
@@ -62,6 +67,51 @@ def test_sensitive_option_info_masks_default_and_current(manager: ConfigManager)
 def test_none_value_validates_without_type_or_choice_errors(manager: ConfigManager) -> None:
     assert manager.set("node.display_label", None, save=False) is True
     assert manager.get("node.display_label") is None
+
+
+def test_config_load_migrates_retired_audio_engine_and_clock_keys(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "audio": {
+                    "engine": "python",
+                    "allow_python_io": True,
+                    "sync_profile": "spdif_master_48k",
+                    "sample_rate": 48000,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manager = ConfigManager(config_path=config_path)
+
+    assert manager.get("audio.engine") is None
+    assert manager.get("audio.allow_python_io") is None
+    assert manager.get("audio.sync_profile") is None
+    assert manager.get("clock_sync.selected_profile") == "spdif_master_48k"
+    assert manager.get("audio.sample_rate") == 48000
+
+    persisted = json.loads(config_path.read_text(encoding="utf-8"))
+    assert "engine" not in persisted.get("audio", {})
+    assert "allow_python_io" not in persisted.get("audio", {})
+    assert "sync_profile" not in persisted.get("audio", {})
+    assert persisted["clock_sync"]["selected_profile"] == "spdif_master_48k"
+
+
+def test_config_load_migrates_retired_clock_profile_default(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({"clock_sync": {"selected_profile": "legacy_fixed_48k"}}),
+        encoding="utf-8",
+    )
+
+    manager = ConfigManager(config_path=config_path)
+
+    assert manager.get("clock_sync.selected_profile") == "pipewire_quantum_48k"
+    persisted = json.loads(config_path.read_text(encoding="utf-8"))
+    assert persisted["clock_sync"]["selected_profile"] == "pipewire_quantum_48k"
 
 
 def test_observer_notification_uses_snapshot_when_callbacks_mutate_observers(manager: ConfigManager) -> None:

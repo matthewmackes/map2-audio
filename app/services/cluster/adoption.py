@@ -744,7 +744,6 @@ class AdoptionService:
 
         if selected_profile:
             clock_values["clock_sync.selected_profile"] = selected_profile
-            clock_values["audio.sync_profile"] = selected_profile
             clock_items.append({"key": "clock_sync.selected_profile", "label": "Clock profile", "value": selected_profile})
         if profile_version:
             clock_values["clock_sync.profile_version"] = profile_version

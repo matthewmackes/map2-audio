@@ -7,6 +7,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
+CANONICAL_CLOCK_SYNC_PROFILE = "pipewire_quantum_48k"
+
 
 @dataclass
 class ConfigOption:
@@ -101,23 +103,6 @@ APPLICATION_SCHEMA: dict[str, ConfigOption] = {
 
 AUDIO_SCHEMA: dict[str, ConfigOption] = {
     # Audio settings
-    "audio.engine": ConfigOption(
-        key="audio.engine",
-        default="juce",
-        description="Audio engine to use: 'juce' (recommended) or 'python' (deprecated)",
-        value_type=str,
-        env_var="MAP2_AUDIO_ENGINE",
-        choices=["juce", "python"],
-        restart_required=True,
-    ),
-    "audio.allow_python_io": ConfigOption(
-        key="audio.allow_python_io",
-        default=False,
-        description="Allow deprecated Python audio I/O (NOT recommended for production)",
-        value_type=bool,
-        env_var="MAP2_ALLOW_PYTHON_IO",
-        restart_required=True,
-    ),
     "audio.sample_rate": ConfigOption(
         key="audio.sample_rate",
         default=48000,
@@ -180,12 +165,6 @@ AUDIO_SCHEMA: dict[str, ConfigOption] = {
         value_type=float,
         min_value=-100.0,
         max_value=100.0,
-    ),
-    "audio.sync_profile": ConfigOption(
-        key="audio.sync_profile",
-        default="legacy_fixed_48k",
-        description="Named audio synchronization profile identifier",
-        value_type=str,
     ),
     "audio.clock_master": ConfigOption(
         key="audio.clock_master",
@@ -1066,7 +1045,7 @@ TRANSPORT_SCHEMA: dict[str, ConfigOption] = {
     ),
     "clock_sync.selected_profile": ConfigOption(
         key="clock_sync.selected_profile",
-        default="legacy_fixed_48k",
+        default=CANONICAL_CLOCK_SYNC_PROFILE,
         description="Canonical cross-transport synchronization profile identifier",
         value_type=str,
     ),

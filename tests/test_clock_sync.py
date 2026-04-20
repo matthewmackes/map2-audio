@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 
+from app.config_schema import CANONICAL_CLOCK_SYNC_PROFILE
 from app.services import clock_sync
-from app.services.clock_sync import LEGACY_FIXED_48K_PROFILE, get_clock_sync_profile
+from app.services.clock_sync import get_clock_sync_profile
 
 
 def _getter(values: dict[str, object]):
@@ -45,5 +46,5 @@ def test_clock_sync_profile_warns_once_for_legacy_fallback(caplog) -> None:
 def test_clock_sync_profile_uses_locked_default_when_no_config_value() -> None:
     profile = get_clock_sync_profile(_getter({}))
 
-    assert profile.name == LEGACY_FIXED_48K_PROFILE
+    assert profile.name == CANONICAL_CLOCK_SYNC_PROFILE
     assert profile.source_key == "default"

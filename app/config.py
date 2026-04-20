@@ -24,9 +24,13 @@ import tempfile
 import threading
 from typing import Any, Callable, Dict, List, Optional
 
-from app.config_schema import CONFIG_SCHEMA, ConfigOption, ConfigSection
+from app.config_schema import CANONICAL_CLOCK_SYNC_PROFILE, CONFIG_SCHEMA, ConfigOption, ConfigSection
 
 logger = logging.getLogger(__name__)
+
+_RETIRED_AUDIO_ENGINE_KEYS = ("audio.engine", "audio.allow_python_io")
+_RETIRED_AUDIO_SYNC_PROFILE_KEY = "audio.sync_profile"
+_RETIRED_CLOCK_SYNC_PROFILE = "legacy_fixed_48k"
 
 
 def _atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
@@ -144,6 +148,10 @@ class ConfigManager:
             try:
                 with open(self.config_path, 'r') as f:
                     file_config = json.load(f)
+                migrated = self._migrate_loaded_config(file_config)
+                if migrated:
+                    _atomic_write_json(self.config_path, file_config)
+                    logger.info("Migrated retired configuration keys in %s", self.config_path)
                 self._merge_config(file_config)
                 logger.info(f"Loaded config from {self.config_path}")
             except Exception as e:
@@ -158,6 +166,61 @@ class ConfigManager:
         for key, option in CONFIG_SCHEMA.items():
             self._set_nested(config, key, option.default)
         return config
+
+    def _delete_nested(self, d: Dict[str, Any], key: str) -> bool:
+        """Delete a nested value using dot notation and prune empty containers."""
+        keys = key.split(".")
+        current: Any = d
+        parents: list[tuple[Dict[str, Any], str]] = []
+        for part in keys[:-1]:
+            if not isinstance(current, dict) or part not in current:
+                return False
+            parents.append((current, part))
+            current = current[part]
+        if not isinstance(current, dict) or keys[-1] not in current:
+            return False
+
+        del current[keys[-1]]
+        for parent, part in reversed(parents):
+            child = parent.get(part)
+            if isinstance(child, dict) and not child:
+                del parent[part]
+            else:
+                break
+        return True
+
+    def _migrate_loaded_config(self, config: Dict[str, Any]) -> bool:
+        """Migrate retired persisted config keys before merging with defaults."""
+        changed = False
+
+        for key in _RETIRED_AUDIO_ENGINE_KEYS:
+            changed = self._delete_nested(config, key) or changed
+
+        selected_profile = self._get_nested(config, "clock_sync.selected_profile", None)
+        legacy_profile = self._get_nested(config, _RETIRED_AUDIO_SYNC_PROFILE_KEY, None)
+
+        if self._is_retired_clock_profile(selected_profile):
+            self._set_nested(config, "clock_sync.selected_profile", CANONICAL_CLOCK_SYNC_PROFILE)
+            changed = True
+        elif not self._has_config_value(selected_profile) and self._has_config_value(legacy_profile):
+            migrated_profile = (
+                CANONICAL_CLOCK_SYNC_PROFILE
+                if self._is_retired_clock_profile(legacy_profile)
+                else str(legacy_profile).strip()
+            )
+            self._set_nested(config, "clock_sync.selected_profile", migrated_profile)
+            changed = True
+
+        changed = self._delete_nested(config, _RETIRED_AUDIO_SYNC_PROFILE_KEY) or changed
+        return changed
+
+    @staticmethod
+    def _has_config_value(value: Any) -> bool:
+        return value is not None and str(value).strip() != ""
+
+    @staticmethod
+    def _is_retired_clock_profile(value: Any) -> bool:
+        return str(value).strip() == _RETIRED_CLOCK_SYNC_PROFILE
 
     def _set_nested(self, d: Dict, key: str, value: Any) -> None:
         """Set a nested value using dot notation."""

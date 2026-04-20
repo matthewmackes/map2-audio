@@ -625,7 +625,7 @@ def test_clone_preview_and_apply_for_adopted_node(tmp_path, monkeypatch):
                 200,
                 {
                     "profile": {
-                        "selected_profile": "legacy_fixed_48k",
+                        "selected_profile": "pipewire_quantum_48k",
                         "profile_version": "2026.03",
                         "clock_master": "internal",
                     },
