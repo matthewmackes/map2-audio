@@ -1,10 +1,15 @@
 import { Add, TrashCan } from '@carbon/icons-react'
-import { Button, Checkbox, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
+import { Button, Checkbox, Select, SelectItem, Tag, TextInput } from '@carbon/react'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { SnapshotExpressionCurve, SnapshotExpressionMapping } from '../../../map2/types'
 import { NumberInput } from '../ParameterControl'
 import { EmptyState } from '../shared/EmptyState'
+import {
+  SnapshotSchematicLed,
+  SnapshotSchematicPanel,
+  SnapshotSchematicReadout,
+} from './SnapshotSchematicSurface'
 import { createDefaultSnapshotExpressionMapping, normalizeSnapshotExpressionMappings } from '../../utils/snapshotExpressionMappings'
 
 interface SnapshotExpressionParameterOption {
@@ -62,6 +67,7 @@ export function SnapshotExpressionMappingsCard({
     () => draftMappings.reduce((sum, mapping) => sum + mapping.targets.length, 0),
     [draftMappings],
   )
+  const readoutValue = `${draftMappings.length} pedals / ${totalTargets} targets`
   const saveDisabled = disabled || JSON.stringify(draftMappings) === JSON.stringify(normalizeSnapshotExpressionMappings(mappings))
 
   const updateMapping = (mappingId: string, updater: (mapping: SnapshotExpressionMapping) => SnapshotExpressionMapping) => {
@@ -99,19 +105,26 @@ export function SnapshotExpressionMappingsCard({
   }
 
   return (
-    <Tile className="juce-grid-page__midi-block-focus-card">
-      <div className="juce-grid-page__midi-tile-header">
-        <div className="juce-grid-page__midi-tile-copy">
-          <h3 className="juce-grid-page__dense-card-heading">Snapshot expression mappings</h3>
-          <p>Store per-snapshot expression pedal maps where one CC can drive multiple parameters with independent ranges and curves.</p>
-        </div>
+    <SnapshotSchematicPanel
+      className="juce-grid-page__midi-block-focus-card"
+      title="Snapshot expression mappings"
+      description="Store per-snapshot expression pedal maps where one CC can drive multiple parameters with independent ranges and curves."
+      statusLabel={draftMappings.length > 0 ? `${draftMappings.length} pedals` : 'No pedals'}
+      statusTone={draftMappings.length > 0 ? 'active' : 'idle'}
+      meta={
         <div className="juce-grid-page__compact-tags">
           <Tag type={draftMappings.length > 0 ? 'green' : 'cool-gray'}>
             {draftMappings.length > 0 ? `${draftMappings.length} pedals` : 'No pedals'}
           </Tag>
           <Tag type="cool-gray">{totalTargets} targets</Tag>
         </div>
-      </div>
+      }
+    >
+      <SnapshotSchematicReadout
+        label="Expression bus"
+        value={readoutValue}
+        tone={draftMappings.length > 0 ? 'active' : 'idle'}
+      />
 
       <div className="juce-grid-page__compact-actions">
         <Button size="sm" kind="ghost" renderIcon={Add} onClick={addMapping} disabled={disabled}>
@@ -130,13 +143,14 @@ export function SnapshotExpressionMappingsCard({
       ) : (
         <div className="juce-grid-page__midi-list">
           {draftMappings.map((mapping, mappingIndex) => (
-            <Tile key={mapping.id} className="juce-grid-page__midi-block-focus-card">
-              <div className="juce-grid-page__midi-tile-header">
-                <div className="juce-grid-page__midi-tile-copy">
-                  <h4 className="juce-grid-page__dense-card-heading">{mapping.label || `Expression ${mappingIndex + 1}`}</h4>
+            <section key={mapping.id} className="snapshot-schematic-subpanel" aria-label={mapping.label || `Expression ${mappingIndex + 1}`}>
+              <div className="snapshot-schematic-subpanel__header">
+                <div className="snapshot-schematic-subpanel__copy">
+                  <h4>{mapping.label || `Expression ${mappingIndex + 1}`}</h4>
                   <p>{mapping.targets.length} linked parameter{mapping.targets.length === 1 ? '' : 's'}</p>
                 </div>
                 <div className="juce-grid-page__compact-actions">
+                  <SnapshotSchematicLed tone={mapping.active ? 'active' : 'idle'} />
                   <Checkbox
                     id={`snapshot-expression-active-${mapping.id}`}
                     labelText="Enabled"
@@ -219,13 +233,14 @@ export function SnapshotExpressionMappingsCard({
                 {mapping.targets.map((target, targetIndex) => {
                   const parameterOption = parameterOptions.find((option) => option.id === target.param_id) ?? parameterOptions[0]
                   return (
-                    <Tile key={target.id} className="juce-grid-page__midi-block-focus-card">
-                      <div className="juce-grid-page__midi-tile-header">
-                        <div className="juce-grid-page__midi-tile-copy">
-                          <h5 className="juce-grid-page__dense-card-heading">Target {targetIndex + 1}</h5>
+                    <section key={target.id} className="snapshot-schematic-subpanel" aria-label={`Target ${targetIndex + 1}`}>
+                      <div className="snapshot-schematic-subpanel__header">
+                        <div className="snapshot-schematic-subpanel__copy">
+                          <h5>Target {targetIndex + 1}</h5>
                           <p>{parameterOption.label}</p>
                         </div>
                         <div className="juce-grid-page__compact-actions">
+                          <SnapshotSchematicLed tone={target.active ? 'active' : 'idle'} />
                           <Checkbox
                             id={`snapshot-expression-target-active-${target.id}`}
                             labelText="Enabled"
@@ -340,7 +355,7 @@ export function SnapshotExpressionMappingsCard({
                           }))}
                         />
                       </div>
-                    </Tile>
+                    </section>
                   )
                 })}
               </div>
@@ -357,7 +372,7 @@ export function SnapshotExpressionMappingsCard({
                   </Button>
                 </div>
               </div>
-            </Tile>
+            </section>
           ))}
         </div>
       )}
@@ -385,7 +400,7 @@ export function SnapshotExpressionMappingsCard({
           align="left"
         />
       )}
-    </Tile>
+    </SnapshotSchematicPanel>
   )
 }
 

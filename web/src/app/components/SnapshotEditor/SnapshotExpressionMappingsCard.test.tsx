@@ -48,8 +48,10 @@ describe('SnapshotExpressionMappingsCard', () => {
     const { props } = renderCard()
 
     expect(screen.getByText('Snapshot expression mappings')).toBeInTheDocument()
+    expect(screen.getByLabelText('Status: 1 pedals')).toBeInTheDocument()
+    expect(screen.getByLabelText('Expression bus: 1 pedals / 1 targets')).toBeInTheDocument()
     expect(screen.getByText('EXP 1')).toBeInTheDocument()
-    expect(screen.getByText('1 pedals')).toBeInTheDocument()
+    expect(screen.getAllByText('1 pedals')).toHaveLength(2)
 
     fireEvent.change(screen.getByLabelText('Pedal label'), { target: { value: 'EXP Heel-Toe' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))

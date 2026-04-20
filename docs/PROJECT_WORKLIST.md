@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Built T2369 slice 1 schematic support surfaces.
+Last updated: 2026-04-20 - Completed T2369 slice 2 MIDI/control surfaces.
 
 ---
 
@@ -75,12 +75,17 @@ Description:
 - Estimated effort: Medium.
 - Required outputs: Seven surface-level redesigns, shared primitive reuse, updated tests, worklist reconciliation.
 Assigned to: Codex
-Last updated: 2026-04-20 11:11 EDT - Codex
+Last updated: 2026-04-20 11:17 EDT - Codex
 - In-progress notes:
   - Started after T2368 SHIP `4c1a7c96`: inventory the seven remaining Snapshot Editor modal and parameter surfaces, then land the first reusable schematic primitives and focused surface redesign slice with tests.
   - Slice 1 complete: added shared schematic panel/readout/LED primitives and applied them to `SnapshotAbSwitchMidiCard.tsx`, `SnapshotFootswitchLabelCard.tsx`, and `SnapshotVersionHistoryModal.tsx`.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotAbSwitchMidiCard.test.tsx src/app/components/SnapshotEditor/SnapshotFootswitchLabelCard.test.tsx src/app/components/SnapshotEditor/SnapshotVersionHistoryModal.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by slice 1; changed files are MAP2-owned AGPL scope.
+  - Slice 1 shipped: commit `a73a9085` pushed to `origin/master` and `gitlab/master`; production web restarted on port 3000 with live bundle `index-NgtuO8CE.js`.
+  - Slice 2 started: apply the shared schematic primitives to the expression mapping and selected-block MIDI surfaces, preserving existing Carbon controls and tests.
+  - Slice 2 complete: converted `SnapshotExpressionMappingsCard.tsx` to the shared schematic panel/readout/LED primitives without nested Carbon cards, added a schematic MIDI-map readout to `SnapshotEditorSelectedBlockMidiPanel.tsx`, and added focused selected-block MIDI coverage.
+  - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotExpressionMappingsCard.test.tsx src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by slice 2; changed files are MAP2-owned AGPL scope.
 
 ---
 

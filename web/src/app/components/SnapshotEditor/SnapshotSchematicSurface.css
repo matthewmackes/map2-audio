@@ -140,6 +140,44 @@
   gap: 0.75rem;
 }
 
+.snapshot-schematic-subpanel {
+  display: grid;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  border-inline-start: 2px solid var(--snapshot-schematic-accent, var(--cds-interactive));
+  background: color-mix(in srgb, var(--cds-layer) 86%, var(--cds-background));
+}
+
+.snapshot-schematic-subpanel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.snapshot-schematic-subpanel__copy {
+  display: grid;
+  gap: 0.25rem;
+  min-inline-size: 0;
+}
+
+.snapshot-schematic-subpanel__copy h4,
+.snapshot-schematic-subpanel__copy h5 {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-body-01-font-size, 1rem);
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.snapshot-schematic-subpanel__copy p {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
 .snapshot-schematic-revision-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

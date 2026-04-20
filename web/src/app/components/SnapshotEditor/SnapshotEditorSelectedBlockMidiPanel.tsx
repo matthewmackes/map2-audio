@@ -6,6 +6,7 @@ import { midiApiV2 } from '../../../map2/api'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import type { ChainPlugin, MIDICurveType, MIDILearnTarget, MIDIMappingV2, Plugin, PluginParameter } from '../../../map2/types'
 import { useToasts } from '../Toasts'
+import { SnapshotSchematicReadout } from './SnapshotSchematicSurface'
 
 type DraftScope = 'chain' | 'global'
 type TestRideMode = 'heel' | 'live' | 'toe'
@@ -323,6 +324,7 @@ export function JuceGridSelectedBlockMidiPanel({
 
   const selectedParamLabel = selectedRow?.parameter.name ?? 'Parameter'
   const selectedMapping = selectedRow?.mapping ?? null
+  const mappedParameterCount = rows.filter((row) => row.mapping).length
   const draftDirty = !draftsMatch(draft, draftBaseline)
   const currentValueLabel = selectedRow ? formatCurrentValue(selectedRow.parameter, selectedRow.currentValue) : ''
   const learningThisParameter = Boolean(
@@ -461,6 +463,11 @@ export function JuceGridSelectedBlockMidiPanel({
             {midiLearnInProgress ? 'Learn live' : 'Learn idle'}
           </Tag>
         </div>
+        <SnapshotSchematicReadout
+          label="MIDI map"
+          value={`${mappedParameterCount}/${rows.length} mapped`}
+          tone={mappedParameterCount > 0 ? 'active' : 'idle'}
+        />
       </header>
 
       <Layer className="juce-grid-page__selected-midi-shell">
