@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1188** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2434** total commits | **3** stars | **0** forks | **0** open issues
+**1185** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2436** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MIDI Route Surfaces](https://github.com/matthewmackes/map2-audio/blob/master/docs/MIDI_ROUTE_SURFACES.md) | 2026-04-20 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-20 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-20 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-19 |
 | [Maschine MK1 Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-18 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-04-17 |
-| [AGENTS.md](https://github.com/matthewmackes/map2-audio/blob/master/docs/AGENTS.md) | 2026-04-16 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cb858360`](https://github.com/matthewmackes/map2-audio/commit/cb858360a185f7b3d2748ddbe970ea52f042d8c8) | Retire legacy MIDI routes | Map2 Audio | 2026-04-20 |
+| [`2f778495`](https://github.com/matthewmackes/map2-audio/commit/2f7784957a632d412d36a64cb12bf488a4f30009) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`1e91bb5b`](https://github.com/matthewmackes/map2-audio/commit/1e91bb5b10ccc44e6100d5ac0132d58dc33202f3) | Bridge MIDI v2 port routes | Map2 Audio | 2026-04-20 |
 | [`75613035`](https://github.com/matthewmackes/map2-audio/commit/75613035594ed60fee3e219f2f25a94c87bbf8d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`7849ff92`](https://github.com/matthewmackes/map2-audio/commit/7849ff92ad1ff380c4dab85fecf10f55fd3b1e2d) | Bridge MIDI v2 clock controls | Map2 Audio | 2026-04-20 |
 | [`d9f0216c`](https://github.com/matthewmackes/map2-audio/commit/d9f0216c3582456bda9d088b18230bad7bf478dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`c059522b`](https://github.com/matthewmackes/map2-audio/commit/c059522b8691da2654e84a43d908fe7acf3f8695) | Backfill MIDI v2 lifecycle endpoints | Map2 Audio | 2026-04-20 |
 | [`42285c2b`](https://github.com/matthewmackes/map2-audio/commit/42285c2b9f63e2f897efcba65720e7d2f8d1bcbf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`0b372e7f`](https://github.com/matthewmackes/map2-audio/commit/0b372e7ffec26f40e06f1308159c0a6b616dd941) | Deprecate legacy MIDI route surface | Map2 Audio | 2026-04-20 |
-| [`4da109b3`](https://github.com/matthewmackes/map2-audio/commit/4da109b371b8a913dd7d18cf011fc74052e10a75) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
