@@ -29111,7 +29111,7 @@ Validation:
 - OpenAPI path-diff is empty for `/api/audio/*`.
 
 ID: T2365-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Unify the clock_sync / audio.sync_profile fallback into a single normalizer
 Description:
 - Goal / acceptance criteria: Extract the repeated fallback pattern `config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k"))` found in [app/routes/audio.py:306](app/routes/audio.py), [app/routes/avb.py:1337](app/routes/avb.py), and [app/routes/pipewire.py:173](app/routes/pipewire.py) into a single function `get_clock_sync_profile() -> ClockSyncProfile` in `app/services/clock_sync.py`. Replace all three call sites. Add a single warning log the first time the legacy `audio.sync_profile` key is read, so we can track when it's safe to remove the fallback.
@@ -29120,9 +29120,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: one normalizer function, three migrated call sites, one new test covering all three fallback branches.
 - Notes: Do NOT remove the `legacy_fixed_48k` default in this subtask; the default-refresh is tracked separately in T2365-subR.
+- Last updated: 2026-04-19 23:35 EDT - Codex
+- Completion notes:
+  - 2026-04-19 23:30 EDT - Codex: Began the independent clock-sync cleanup after shipping T2365-subB; `app/services/clock_sync.py` does not exist yet, and the duplicated fallback appears in audio source-of-truth, AVB status, and both PipeWire lockout responses.
+  - 2026-04-19 23:35 EDT - Codex: Added [app/services/clock_sync.py](app/services/clock_sync.py) with `ClockSyncProfile` and `get_clock_sync_profile()`, migrated the audio source-of-truth, AVB status, and PipeWire lockout responses to the normalizer, and added fallback-branch coverage in [tests/test_clock_sync.py](tests/test_clock_sync.py). The worklist's original `tests/test_audio_routes*.py` glob has no matching file in this checkout, so validation used the concrete audio route/source-of-truth files present under `tests/`.
 Validation:
-- `pytest tests/test_clock_sync*.py tests/test_audio_routes*.py tests/test_avb*.py -q` -> must PASS
-- `rg -n "clock_sync.selected_profile.*audio.sync_profile" app` -> no matches outside `clock_sync.py`
+- `pytest $(find tests -maxdepth 1 -type f \( -name 'test_clock_sync*.py' -o -name 'test_audio*routes*.py' -o -name 'test_audio_source_of_truth_routes.py' -o -name 'test_avb*.py' -o -name 'test_pipewire*.py' \) -print | sort) -q` -> PASS (`260 passed, 12 skipped in 73.08s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/clock_sync.py app/routes/audio.py app/routes/avb.py app/routes/pipewire.py tests/test_clock_sync.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `23.93s`; existing chunk-size warning only)
+- `rg -n "clock_sync\\.selected_profile.*audio\\.sync_profile" app` -> PASS (no matches)
 
 ID: T2365-subJ
 Status: [ ] Todo

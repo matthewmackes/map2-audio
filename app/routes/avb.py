@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 from app.config import config_get
 from app.services.avb import is_avb_available, get_avb_readiness
 from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+from app.services.clock_sync import get_clock_sync_profile
 from app.services.avb.ptp_monitor import get_ptp_monitor
 from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
 
@@ -1334,7 +1335,7 @@ async def get_avb_status() -> Dict[str, Any]:
                 "ptp_priority1": config_get("avb.ptp_priority1", 128),
                 "auto_connect": config_get("avb.auto_connect", True),
                 "max_streams": config_get("avb.max_streams", 8),
-                "clock_sync_profile": config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")),
+                "clock_sync_profile": str(get_clock_sync_profile()),
                 "clock_master": config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")),
                 "engine_rate_hz": config_get("clock_sync.engine_rate_hz", config_get("audio.sample_rate", 48000)),
                 "avb_stream_rate_hz": config_get("clock_sync.avb_stream_rate_hz", config_get("audio.sample_rate", 48000)),

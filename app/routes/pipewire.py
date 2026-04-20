@@ -11,6 +11,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
+from app.services.clock_sync import get_clock_sync_profile
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/pipewire", tags=["pipewire"])
 
@@ -170,7 +172,7 @@ async def set_pipewire_quantum(req: SetQuantumRequest):
     from app.config import config_get
     target_quantum = int(config_get("audio.buffer_size", 64))
     target_rate = int(config_get("audio.sample_rate", 48000))
-    profile = str(config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")))
+    profile = str(get_clock_sync_profile())
 
     raise HTTPException(
         status_code=403,
@@ -188,7 +190,7 @@ async def set_pipewire_rate(req: SetRateRequest):
     from app.config import config_get
     target_quantum = int(config_get("audio.buffer_size", 64))
     target_rate = int(config_get("audio.sample_rate", 48000))
-    profile = str(config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")))
+    profile = str(get_clock_sync_profile())
 
     raise HTTPException(
         status_code=403,

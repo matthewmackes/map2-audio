@@ -19,6 +19,7 @@ try:
     from fastapi import APIRouter, HTTPException, Query
     from typing import Dict, Any, Optional, List
     from app.services.api_readiness import ensure_audio_route_ready
+    from app.services.clock_sync import get_clock_sync_profile
     from app.services.engine_runtime_facade import get_engine_service
     from app.services.juce_engine_service import get_audio_engine as _get_audio_engine
     from app.utils.time import utc_now
@@ -302,9 +303,7 @@ try:
         service = get_engine_service()
         info = service.get_system_info() if service.is_available else {}
 
-        selected_profile = str(
-            config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k"))
-        )
+        selected_profile = str(get_clock_sync_profile())
         profile_version = str(config_get("clock_sync.profile_version", "") or "")
         clock_master = str(config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")) or "internal")
 
