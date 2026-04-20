@@ -1306,14 +1306,15 @@ class ServiceOrchestrator(Singleton):
     async def _start_midi_engine(self):
         """Start MIDI engine service."""
         from app.services.midi_engine import MIDIEngineService
-        engine = MIDIEngineService()
+        engine = MIDIEngineService.get_instance()
         await engine.start()
 
     async def _stop_midi_engine(self):
         """Stop MIDI engine service."""
         from app.services.midi_engine import MIDIEngineService
-        engine = MIDIEngineService()
-        await engine.stop()
+        engine = getattr(MIDIEngineService, "_instance", None)
+        if engine is not None:
+            await engine.stop()
 
     async def _check_midi_health(self) -> ServiceHealth:
         """Check MIDI engine health (lightweight check)."""

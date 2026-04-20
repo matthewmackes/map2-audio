@@ -15,7 +15,7 @@ class _CaptureBus:
 
 
 @pytest.mark.asyncio
-async def test_audio_event_producer_uses_juce_status_without_service_manager(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_audio_event_producer_uses_juce_status_directly(monkeypatch: pytest.MonkeyPatch) -> None:
     bus = _CaptureBus()
     producer = AudioEventProducer(bus, node_label="NODE-RUNTIME")
 
@@ -35,7 +35,6 @@ async def test_audio_event_producer_uses_juce_status_without_service_manager(mon
     fake_module = SimpleNamespace(get_audio_engine=lambda: fake_engine)
 
     monkeypatch.setitem(sys.modules, "app.services.juce_engine_service", fake_module)
-    monkeypatch.delitem(sys.modules, "app.services.service_manager", raising=False)
 
     status = await producer._get_audio_status()
 

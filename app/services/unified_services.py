@@ -5,7 +5,7 @@ Unified Services Facade for MAP2 Audio Platform
 This facade is deprecated. Use ServiceOrchestrator directly:
     from app.services.service_orchestrator import get_orchestrator
 This module provides a single, unified API for accessing all MAP2 services,
-consolidating the ServiceManager and ServiceOrchestrator patterns.
+delegating lifecycle and health to ServiceOrchestrator.
 
 Usage:
     from app.services.unified_services import services
@@ -25,7 +25,7 @@ Usage:
 """
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 from dataclasses import dataclass
 
 from app.utils.singleton import Singleton
@@ -57,25 +57,17 @@ class UnifiedServices(Singleton):
     - Health monitoring
     - Backwards compatibility with existing code
 
-    Delegates to ServiceOrchestrator for lifecycle and ServiceManager for instances.
+    Delegates lifecycle and health to ServiceOrchestrator.
     """
 
     def __init__(self):
         self._initialized = False
-        self._service_manager = None
         self._orchestrator = None
 
     def _ensure_initialized(self):
         """Lazy initialization of underlying services."""
         if self._initialized:
             return
-
-        # Get ServiceManager (for service instances)
-        try:
-            from app.services.service_manager import ServiceManager
-            self._service_manager = ServiceManager.get_instance()
-        except Exception as e:
-            logger.warning(f"ServiceManager not available: {e}")
 
         # Get ServiceOrchestrator (for lifecycle)
         try:
@@ -92,11 +84,13 @@ class UnifiedServices(Singleton):
 
     @property
     def audio_manager(self):
-        """Get audio I/O manager."""
-        self._ensure_initialized()
-        if self._service_manager:
-            return self._service_manager.audio_manager
-        return None
+        """Get canonical JUCE audio engine service."""
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+            return get_audio_engine()
+        except Exception:
+            logger.debug("JUCE audio engine service not available")
+            return None
 
     @property
     def plugin_loader(self):
@@ -106,8 +100,7 @@ class UnifiedServices(Singleton):
             from app.services.plugin_loader_unified import get_plugin_loader
             return get_plugin_loader()
         except ImportError:
-            if self._service_manager:
-                return self._service_manager.plugin_loader
+            logger.debug("Plugin loader module not available")
         return None
 
     @property
@@ -116,8 +109,9 @@ class UnifiedServices(Singleton):
         self._ensure_initialized()
         try:
             from app.services.midi_engine import MIDIEngineService
-            if hasattr(MIDIEngineService, '_instance'):
-                return MIDIEngineService._instance
+            instance = getattr(MIDIEngineService, '_instance', None)
+            if instance is not None:
+                return instance
             logger.debug("MIDI engine instance not initialized")
             return None
         except ImportError:
@@ -205,11 +199,6 @@ class UnifiedServices(Singleton):
         if self._orchestrator:
             return await self._orchestrator.start_all()
 
-        # Fallback to basic startup
-        if self._service_manager:
-            result = await self._service_manager.start_all_services()
-            return {k: v.get('success', False) for k, v in result.items()}
-
         return {}
 
     async def stop_all(self) -> Dict[str, bool]:
@@ -223,11 +212,6 @@ class UnifiedServices(Singleton):
 
         if self._orchestrator:
             return await self._orchestrator.stop_all()
-
-        # Fallback to basic shutdown
-        if self._service_manager:
-            result = await self._service_manager.stop_all_services()
-            return {k: v.get('success', False) for k, v in result.items()}
 
         return {}
 
@@ -340,24 +324,29 @@ class UnifiedServices(Singleton):
 
     def get_audio_status(self) -> Dict[str, Any]:
         """Get detailed audio status."""
-        self._ensure_initialized()
-        if self._service_manager:
-            return self._service_manager.get_audio_status()
-        return {'running': False, 'error': 'Audio not available'}
+        audio = self.audio_manager
+        if audio is None:
+            return {'running': False, 'error': 'Audio not available'}
+        try:
+            return audio.get_system_info()
+        except Exception as exc:
+            return {'running': False, 'error': str(exc)}
 
     async def start_audio(self) -> Dict[str, Any]:
         """Start audio engine."""
-        self._ensure_initialized()
-        if self._service_manager:
-            return await self._service_manager.start_audio()
-        return {'success': False, 'error': 'Audio not available'}
+        audio = self.audio_manager
+        if audio is None:
+            return {'success': False, 'error': 'Audio not available'}
+        success = await audio.start_audio()
+        return {'success': success, 'running': success}
 
     async def stop_audio(self) -> Dict[str, Any]:
         """Stop audio engine."""
-        self._ensure_initialized()
-        if self._service_manager:
-            return await self._service_manager.stop_audio()
-        return {'success': False, 'error': 'Audio not available'}
+        audio = self.audio_manager
+        if audio is None:
+            return {'success': False, 'error': 'Audio not available'}
+        success = await audio.stop_audio()
+        return {'success': success, 'running': False}
 
     # ========================================================================
     # Plugin Shortcuts

@@ -28932,7 +28932,7 @@ Description:
 ---
 
 ID: T2365
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Full-system code-beauty cleanup — retire shims, legacy facades, v1/v2 duplicates, god files, and duplicated patterns
 Description:
 - Goal / acceptance criteria: Execute a comprehensive "beautify the codebase" pass across the Python backend, C++ audio engine, and React frontend that removes 50+ identified sources of accumulated debt: deprecated facade modules, v1/v2 parallel implementations, 6k–9k-line god files, duplicated legacy-resolver and config-fallback patterns, lazy-import band-aids masking circular dependencies, dead C++ files left on disk but not in CMake, frontend `'legacy'` variant enums, schema-level deprecations, and stub/fallback paths. Acceptance requires every subtask below to land as its own revertable commit on `master` (pushed to both `origin` and `gitlab`), to pass `npm --prefix web run typecheck`, `npm --prefix web run build`, and `pytest tests/` (for touched Python paths), and to leave no new shims behind. All removals must be clean deletions — do NOT introduce `// removed` placeholders, `_unused_` renames, or re-exports for deleted symbols. The outcome is a codebase where (1) only one service orchestrator exists, (2) every v1/v2 pair is reconciled to a single implementation with a clear versioning story, (3) no production source file exceeds 3,000 lines without an approved exemption, (4) duplicated resolver/fallback code is collapsed into shared utilities, and (5) the C++ tree has no orphaned files.
@@ -28959,11 +28959,13 @@ Description:
   - Many subtasks depend on the completion of T2363 (so that the PlatformEvent story has stabilized before we touch `snapshot_service.py` or `juce_engine_service.py` in depth); mark cross-epic dependencies explicitly per subtask.
   - Each subtask ends with: `typecheck` + relevant `pytest` file + build, plus a targeted `rg` scan proving no remaining imports of the removed symbol/file.
   - Do not attempt multiple subtasks in one commit — the whole point of this epic is that each change is small, verifiable, and independently revertable.
-Assigned to: Unassigned
-Last updated: 2026-04-19 - Claude Code (audit authoring; no code changes yet)
+Assigned to: Codex
+Last updated: 2026-04-19 23:25 EDT - Codex
+- Progress notes:
+  - 2026-04-19 23:25 EDT - Codex: Began the first cleanup slice after completing T2363; starting with T2365-subA to delete the deprecated service manager facade and migrate remaining runtime/test references to ServiceOrchestrator-backed access.
 
 ID: T2365-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete app/services/service_manager.py and migrate remaining 2 callers to ServiceOrchestrator
 Description:
 - Goal / acceptance criteria: Remove [app/services/service_manager.py](app/services/service_manager.py) entirely. The module already emits a `DeprecationWarning` on import at [service_manager.py:38](app/services/service_manager.py). Migrate the two remaining callers — [app/services/midi_engine.py:1120](app/services/midi_engine.py) and [app/services/unified_services.py:75](app/services/unified_services.py) — to construct `ServiceOrchestrator` directly with the same service set. After migration, delete the file and ensure `rg -n "from app.services.service_manager|import service_manager" app tests` returns zero matches.
@@ -28972,9 +28974,16 @@ Description:
 - Estimated effort: Low
 - Required outputs: deleted `service_manager.py`, migrated `midi_engine.py` and `unified_services.py` call sites, updated tests that imported `ServiceManager`, and an `rg` scan proving zero remaining references.
 - Notes: `ServiceOrchestrator` already wraps the same service lifecycle; do not add a new alias or compatibility shim.
+- Last updated: 2026-04-19 23:25 EDT - Codex
+- Completion notes:
+  - 2026-04-19 23:25 EDT - Codex: Deleted [app/services/service_manager.py](app/services/service_manager.py), moved MIDI engine lifecycle to the `ServiceOrchestrator`-owned `MIDIEngineService.get_instance()` path, removed the deprecated service-manager dependency from [app/services/unified_services.py](app/services/unified_services.py), and updated singleton/runtime tests to validate the orchestrator path.
 Validation:
-- `pytest tests/test_service_orchestrator*.py tests/test_midi_engine*.py -q` -> must PASS
-- `rg -n "service_manager|ServiceManager" app tests` -> no matches outside historical docs
+- `pytest tests/test_service_orchestrator*.py tests/test_midi_engine*.py -q` -> PASS (`7 passed, 1 warning in 3.47s`)
+- `pytest tests/test_service_singletons.py tests/test_singleton_factory_consistency.py tests/test_event_producers_runtime.py -q` -> PASS (`5 passed in 3.33s`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/midi_engine.py app/services/service_orchestrator.py app/services/unified_services.py app/services/audio_io_v2.py tests/test_service_singletons.py tests/test_event_producers_runtime.py` -> PASS
+- `npm --prefix web run typecheck` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, built in `20.20s`; existing chunk-size warning only)
+- `rg -n "service_manager|ServiceManager" app tests` -> PASS (no matches)
 
 ID: T2365-subB
 Status: [ ] Todo

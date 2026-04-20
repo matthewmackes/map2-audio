@@ -115,6 +115,20 @@ class MIDIEngineService:
     and persistent mapping storage.
     """
 
+    _instance: Optional["MIDIEngineService"] = None
+
+    @classmethod
+    def get_instance(cls) -> "MIDIEngineService":
+        """Return the orchestrator-owned MIDI engine instance."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the shared MIDI engine instance for tests."""
+        cls._instance = None
+
     def __init__(self):
         self.input_devices: List[MIDIDevice] = []
         self.output_devices: List[MIDIDevice] = []
@@ -1117,13 +1131,13 @@ async def midi_learn(
     plugin_position: Optional[int] = None,
 ) -> bool:
     """Legacy wrapper for MIDI learn."""
-    from app.services import service_manager
-    midi = service_manager.get_midi_engine()
-    if midi:
-        return await midi.start_learn(
-            target_uri,
-            param_index,
-            target_plugin_position=plugin_position,
-            timeout=timeout,
-        )
-    return False
+    from app.services.service_orchestrator import get_orchestrator
+
+    get_orchestrator().get_service_status("midi_engine")
+    midi = MIDIEngineService.get_instance()
+    return await midi.start_learn(
+        target_uri,
+        param_index,
+        target_plugin_position=plugin_position,
+        timeout=timeout,
+    )

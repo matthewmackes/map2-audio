@@ -1,33 +1,21 @@
-import warnings
-
-warnings.filterwarnings(
-    "ignore",
-    message="ServiceManager is deprecated.*",
-    category=DeprecationWarning,
-)
-
 from app.services.nam_library import (
     NAMLibraryService,
     get_nam_library_service,
     initialize_nam_library,
     reset_nam_library_service,
 )
-from app.services.service_manager import (
-    ServiceManager,
-    get_service_manager,
-    reset_service_manager,
-)
+from app.services.service_orchestrator import ServiceOrchestrator, get_orchestrator
 
 
-def test_service_manager_singleton_reset():
-    reset_service_manager()
-    first = get_service_manager()
-    second = get_service_manager()
+def test_service_orchestrator_singleton_reset():
+    ServiceOrchestrator.reset_instance()
+    first = get_orchestrator()
+    second = get_orchestrator()
 
     assert first is second
 
-    reset_service_manager()
-    replacement = get_service_manager()
+    ServiceOrchestrator.reset_instance()
+    replacement = get_orchestrator()
     assert replacement is not first
 
 

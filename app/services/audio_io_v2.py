@@ -983,7 +983,7 @@ class AudioIOFactory:
         )
 
 
-# Global audio manager instance (set by ServiceManager)
+# Global audio manager instance for the Python audio-I/O fallback path.
 _audio_manager: Optional[RealAudioIOManager] = None
 
 
@@ -995,7 +995,6 @@ def get_audio_status() -> Dict[str, Any]:
     """
     global _audio_manager
 
-    # Direct access without ServiceManager (deprecated)
     if _audio_manager is None:
         return {
             "running": False,
