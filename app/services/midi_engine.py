@@ -485,49 +485,6 @@ class MIDIEngineService:
 
         logger.info("MIDI engine stopped")
 
-    async def add_cc_mapping(
-        self,
-        channel: int,
-        cc: int,
-        target_uri: str,
-        param_index: int,
-        plugin_position: Optional[int] = None,
-    ) -> bool:
-        """Compatibility wrapper used by legacy MIDI routes."""
-        mapping = await self.add_mapping(
-            channel=channel,
-            message_type="cc",
-            cc_number=cc,
-            target_plugin_uri=target_uri,
-            target_plugin_position=plugin_position,
-            target_param_index=param_index,
-            target_param_name="",
-        )
-        return mapping is not None
-
-    async def delete_mapping(self, mapping_id: int) -> bool:
-        """Compatibility wrapper used by legacy MIDI routes."""
-        removed = self.mappings.pop(int(mapping_id), None)
-        if removed is None:
-            return False
-        self._rebuild_lookup()
-        return True
-
-    async def midi_learn(
-        self,
-        target_uri: str,
-        param_index: int,
-        timeout: float = 10.0,
-        plugin_position: Optional[int] = None,
-    ) -> bool:
-        """Compatibility wrapper used by legacy MIDI routes."""
-        return await self.start_learn(
-            target_uri,
-            param_index,
-            target_plugin_position=plugin_position,
-            timeout=timeout,
-        )
-
     async def _process_loop(self) -> None:
         """Main MIDI processing loop."""
         while self._running:
@@ -1121,23 +1078,3 @@ class MIDIEngineService:
             "is_learning": self.is_learning(),
             "learn_target": self.get_learn_target(),
         }
-
-
-# Backwards compatibility alias
-async def midi_learn(
-    target_uri: str,
-    param_index: int,
-    timeout: float = 10.0,
-    plugin_position: Optional[int] = None,
-) -> bool:
-    """Legacy wrapper for MIDI learn."""
-    from app.services.service_orchestrator import get_orchestrator
-
-    get_orchestrator().get_service_status("midi_engine")
-    midi = MIDIEngineService.get_instance()
-    return await midi.start_learn(
-        target_uri,
-        param_index,
-        target_plugin_position=plugin_position,
-        timeout=timeout,
-    )

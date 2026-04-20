@@ -105,8 +105,15 @@ class TestMIDIAPI:
         """Test adding MIDI CC mapping."""
         from app.services.midi_engine import MIDIEngineService
         service = MIDIEngineService()
-        success = await service.add_cc_mapping(1, 7, "http://example.com/amp", 0)
-        assert success is True
+        mapping = await service.add_mapping(
+            channel=1,
+            message_type="cc",
+            cc_number=7,
+            target_plugin_uri="http://example.com/amp",
+            target_param_index=0,
+            target_param_name="Gain",
+        )
+        assert mapping is not None
 
 
 class TestChainAPI:
