@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1187** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2391** total commits | **3** stars | **0** forks | **0** open issues
+**1187** Python | **1147** TypeScript | **136** C++/H | **144** Docs | **2392** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3b3daa7b`](https://github.com/matthewmackes/map2-audio/commit/3b3daa7b5426ff99872fd140f798a03bf7e371fa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`4c3577c1`](https://github.com/matthewmackes/map2-audio/commit/4c3577c1b8038a9cfcf28a4bb416883ee9607c9c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
 | [`df9c6b1b`](https://github.com/matthewmackes/map2-audio/commit/df9c6b1b8abf7c479a183bcdce411ce055cf1cdb) | Split audio routes by responsibility | Map2 Audio | 2026-04-20 |
 | [`ebc64e86`](https://github.com/matthewmackes/map2-audio/commit/ebc64e8610fd10e479e63c5629c6a86221a1d734) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`021ce2ee`](https://github.com/matthewmackes/map2-audio/commit/021ce2eef414e0a0f4d96191e69d151c136d6f04) | Remove frontend legacy variants | Map2 Audio | 2026-04-20 |
 | [`7f3f6b99`](https://github.com/matthewmackes/map2-audio/commit/7f3f6b99ac01d8bba06d15f4d4d446831ce4494f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`807dc720`](https://github.com/matthewmackes/map2-audio/commit/807dc720af5f86ca2e7cf3a1c19492845b1b0bab) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-20 |
-| [`effa9864`](https://github.com/matthewmackes/map2-audio/commit/effa9864e69d0f6393e205b3d86226485bc16f3c) | Clean up stub preset and guitar routes | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
