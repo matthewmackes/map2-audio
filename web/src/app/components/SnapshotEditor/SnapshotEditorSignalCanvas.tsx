@@ -6,9 +6,11 @@ import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 import { pluginCategoryIcon } from '../shared/pluginCategoryIcon'
 import { getSystemBlockBadgeLabel } from '../../utils/snapshotSystemBlocks'
+import type { SnapshotEditorFlowAnimation, SnapshotEditorNodeShape } from '../../hooks/useSpecialSettings'
 import { ChainRow, type ChainRowPlugin } from './SignalCanvas/ChainRow'
 import { SignalCanvasIconSprite } from './SignalCanvas/icons'
 
+import '../shared/signalFlowAnimations.css'
 import './SignalCanvas/SignalCanvas.css'
 
 export interface JuceGridAudioInterfaceStatus {
@@ -68,6 +70,9 @@ export interface JuceGridSignalCanvasProps {
   onBranchPageChange?: (branchId: string, nextPage: number) => void
   onCanvasEmptyPress?: () => void
   readOnly?: boolean
+  flowAnimation?: SnapshotEditorFlowAnimation
+  gridBackdrop?: boolean
+  nodeShape?: SnapshotEditorNodeShape
 }
 
 export interface JuceGridSignalAutomationSummary {
@@ -159,6 +164,9 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   focusedBranchId = null,
   onCanvasEmptyPress,
   readOnly = false,
+  flowAnimation = 'cascade',
+  gridBackdrop = true,
+  nodeShape = 'square',
 }: JuceGridSignalCanvasProps) {
   const label = resolveChainLabel(branchId, chainLabel)
   const routingMode = audioStatus?.routingMode ?? audioOutputStatus?.routingMode ?? 'series'
@@ -172,7 +180,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
   if (!chain) {
     return (
-      <div className="snapshot-editor-signal-canvas" data-flow="cascade" data-grid-backdrop="true" data-node-shape="square">
+      <div className="snapshot-editor-signal-canvas" data-flow={flowAnimation} data-grid-backdrop={gridBackdrop ? 'true' : 'false'} data-node-shape={nodeShape}>
         <SignalCanvasIconSprite />
         <Tile className="snapshot-chain-row__empty" onClick={onCanvasEmptyPress}>
           <strong>Select a chain to view and edit</strong>
@@ -183,7 +191,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   }
 
   return (
-    <div className="snapshot-editor-signal-canvas" data-flow="cascade" data-grid-backdrop="true" data-node-shape="square">
+    <div className="snapshot-editor-signal-canvas" data-flow={flowAnimation} data-grid-backdrop={gridBackdrop ? 'true' : 'false'} data-node-shape={nodeShape}>
       <SignalCanvasIconSprite />
       <ChainRow
         chainLabel={label}
@@ -194,6 +202,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
         muted={chainMuted}
         soloed={chainSoloed}
         branchCount={Math.max(1, plugins.length > 2 ? 2 : 1)}
+        gridBackdrop={gridBackdrop}
         routingLabel={routingLabel}
         sendLabel={routingMode === 'sidechain' ? 'KEY SEND' : 'NO SEND'}
         plugins={plugins}

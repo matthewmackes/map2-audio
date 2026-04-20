@@ -21,6 +21,36 @@ import {
 const SPECIAL_SETTINGS_ENDPOINT = '/api/settings/special/'
 const SPECIAL_SETTINGS_SYNC_EVENT = 'map2:special-settings-sync'
 
+export const SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS = [
+  { id: 'cascade', label: 'LED cascade' },
+  { id: 'dashmarch', label: 'Dash march' },
+  { id: 'pulse', label: 'Pulse' },
+  { id: 'packet', label: 'Packet' },
+  { id: 'morse', label: 'Morse' },
+  { id: 'reverse', label: 'Reverse' },
+  { id: 'scan', label: 'Scan' },
+  { id: 'shimmer', label: 'Shimmer' },
+  { id: 'heartbeat', label: 'Heartbeat' },
+  { id: 'ants', label: 'Marching ants' },
+  { id: 'slow', label: 'Slow' },
+  { id: 'off', label: 'Off' },
+] as const
+
+export type SnapshotEditorFlowAnimation = typeof SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS[number]['id']
+export type SnapshotEditorNodeShape = 'square' | 'rounded' | 'hex'
+
+export interface SnapshotEditorSignalCanvasSettings {
+  flowAnimation: SnapshotEditorFlowAnimation
+  gridBackdrop: boolean
+  nodeShape: SnapshotEditorNodeShape
+}
+
+export const DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS: SnapshotEditorSignalCanvasSettings = {
+  flowAnimation: 'cascade',
+  gridBackdrop: true,
+  nodeShape: 'square',
+}
+
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
@@ -29,6 +59,9 @@ export interface SpecialSettings {
   landingTiles: LandingTilePlacement[]
   snapshotSetlistMode: boolean
   snapshotSetlistOrder: number[]
+  'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
+  'snapshot_editor.grid_backdrop': boolean
+  'snapshot_editor.node_shape': SnapshotEditorNodeShape
   lastActiveNode?: string | null
   version?: number
   lastUpdated?: string
@@ -94,6 +127,39 @@ function resolveSnapshotSetlistOrder(data: Record<string, unknown>): number[] {
   return normalized
 }
 
+function isSnapshotEditorFlowAnimation(value: unknown): value is SnapshotEditorFlowAnimation {
+  return typeof value === 'string' && SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS.some((option) => option.id === value)
+}
+
+function resolveSnapshotEditorFlowAnimation(data: Record<string, unknown>): SnapshotEditorFlowAnimation {
+  const value = data['snapshot_editor.flow_animation'] ?? data.snapshot_editor_flow_animation
+  return isSnapshotEditorFlowAnimation(value) ? value : DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.flowAnimation
+}
+
+function resolveSnapshotEditorGridBackdrop(data: Record<string, unknown>): boolean {
+  const value = data['snapshot_editor.grid_backdrop'] ?? data.snapshot_editor_grid_backdrop
+  return typeof value === 'boolean' ? value : DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.gridBackdrop
+}
+
+function isSnapshotEditorNodeShape(value: unknown): value is SnapshotEditorNodeShape {
+  return value === 'square' || value === 'rounded' || value === 'hex'
+}
+
+function resolveSnapshotEditorNodeShape(data: Record<string, unknown>): SnapshotEditorNodeShape {
+  const value = data['snapshot_editor.node_shape'] ?? data.snapshot_editor_node_shape
+  return isSnapshotEditorNodeShape(value) ? value : DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.nodeShape
+}
+
+export function resolveSnapshotEditorSignalCanvasSettings(
+  settings: SpecialSettings | null | undefined,
+): SnapshotEditorSignalCanvasSettings {
+  return {
+    flowAnimation: settings?.['snapshot_editor.flow_animation'] ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.flowAnimation,
+    gridBackdrop: settings?.['snapshot_editor.grid_backdrop'] ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.gridBackdrop,
+    nodeShape: settings?.['snapshot_editor.node_shape'] ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.nodeShape,
+  }
+}
+
 function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
   return {
     enabled: Boolean(data.enabled),
@@ -105,6 +171,9 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
     landingTiles: resolveLandingTiles(data),
     snapshotSetlistMode: resolveSnapshotSetlistMode(data),
     snapshotSetlistOrder: resolveSnapshotSetlistOrder(data),
+    'snapshot_editor.flow_animation': resolveSnapshotEditorFlowAnimation(data),
+    'snapshot_editor.grid_backdrop': resolveSnapshotEditorGridBackdrop(data),
+    'snapshot_editor.node_shape': resolveSnapshotEditorNodeShape(data),
     lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
     version: typeof data.version === 'number' ? data.version : undefined,
     lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
@@ -128,6 +197,15 @@ function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettin
     landing_tiles: landingTiles,
     snapshot_setlist_mode: newSettings.snapshotSetlistMode ?? currentSettings?.snapshotSetlistMode ?? false,
     snapshot_setlist_order: newSettings.snapshotSetlistOrder ?? currentSettings?.snapshotSetlistOrder ?? [],
+    'snapshot_editor.flow_animation': newSettings['snapshot_editor.flow_animation']
+      ?? currentSettings?.['snapshot_editor.flow_animation']
+      ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.flowAnimation,
+    'snapshot_editor.grid_backdrop': newSettings['snapshot_editor.grid_backdrop']
+      ?? currentSettings?.['snapshot_editor.grid_backdrop']
+      ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.gridBackdrop,
+    'snapshot_editor.node_shape': newSettings['snapshot_editor.node_shape']
+      ?? currentSettings?.['snapshot_editor.node_shape']
+      ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.nodeShape,
     promoted_advanced_routes: pinnedRoutes,
     last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,
   }

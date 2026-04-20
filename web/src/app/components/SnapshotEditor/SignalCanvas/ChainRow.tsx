@@ -32,6 +32,7 @@ export interface ChainRowProps {
   muted?: boolean
   soloed?: boolean
   branchCount?: number
+  gridBackdrop?: boolean
   routingLabel?: string
   sendLabel?: string
   plugins: ChainRowPlugin[]
@@ -63,6 +64,7 @@ export function ChainRow({
   muted = false,
   soloed = false,
   branchCount = 1,
+  gridBackdrop = true,
   routingLabel = 'SERIES',
   sendLabel = 'NO SEND',
   plugins,
@@ -106,7 +108,7 @@ export function ChainRow({
       <div className="snapshot-chain-row__body">
         <ChainTab label={chainLabel} active={active} muted={muted} />
         <div className="snapshot-chain-row__grid-shell">
-          <SignalGrid cols={13} rows={rowCount}>
+          <SignalGrid cols={13} rows={rowCount} gridBackdrop={gridBackdrop}>
             <div className="snapshot-chain-row__lane" data-testid="snapshot-signal-chain-lane">
               <Terminal role="input" active={active} />
               <div className="snapshot-chain-row__nodes">

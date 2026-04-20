@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Shipped T2368 phase 8 sidechain and readonly/offline states.
+Last updated: 2026-04-20 - Shipped T2368 phase 9 Signal Canvas settings wiring.
 
 ---
 
@@ -20,7 +20,7 @@ Description:
 - Estimated effort: Large (10 execution phases; ~16 new files; 4 retirements; tests rewritten for Canvas/Toolbar/Rail; settings wiring; integration test; conformance-docs addition).
 - Required outputs: redesigned `SnapshotEditorSignalCanvas.tsx` / `SnapshotEditorToolbar.tsx` / new `SnapshotEditorRail.tsx` with tests, ~10 new `SignalCanvas/*` subcomponents (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `SidechainConnector`) + `icons.tsx` + `tracePath.ts` + tests, `SignalCanvas.css`, shared `signalFlowAnimations.css`, shared `pluginCategoryIcon.ts`, three user-pref keys + Appearance/UI section UI, `@fontsource/jetbrains-mono` dep + `usePlatformFontPreference` exposure, global scrollbar styling, updated canvas/toolbar/rail tests plus new `SnapshotEditorPage.integration.test.tsx`, removal of `SnapshotEditorMenuRail.tsx` / `SnapshotEditorOptionsRail.tsx` / `SnapshotChainManagementCard.tsx` and their tests, moved `SidechainConnector.tsx`, `Signal Canvas Primitives` section added to `docs/design/CARBON_CONFORMANCE_STANDARD.md`, unused MUI/Phosphor imports stripped from touched files, 10 atomic build-verified commits on `master` pushed to both `origin` and `gitlab`, and reconciled worklist completion notes.
 Assigned to: Codex
-Last updated: 2026-04-20 10:34 EDT - Codex
+Last updated: 2026-04-20 10:49 EDT - Codex
 - In-progress notes:
   - Phase 1 started: add `@fontsource/jetbrains-mono`, shared signal-flow animation CSS, scoped Signal Canvas token stylesheet, plugin-category icon mapper, global scrollbar styling, and font preset exposure before phase 2 trace/icon work.
   - Phase 1 complete: installed `@fontsource/jetbrains-mono` 400/500/600, exposed the JetBrains Mono typography preset, added shared signal-flow animation CSS, added scoped Signal Canvas Carbon token primitives, added the plugin category icon mapper with focused tests, and applied global Carbon scrollbar styling.
@@ -54,6 +54,10 @@ Last updated: 2026-04-20 10:34 EDT - Codex
   - Phase 8 complete: moved `SidechainConnector` into `SignalCanvas`, updated the horizontal chain import, rendered sidechain connectors for sidechain Signal Canvas rows, added toolbar `READ ONLY` and amber `RECONNECTING` live-chip states, and added a Carbon inline snapshot-load failure panel with retry.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx src/app/components/SnapshotEditor/SnapshotEditorToolbar.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `rg -n "HorizontalSignalChain/SidechainConnector|SnapshotChainManagementCard|SnapshotEditorMenuRail|SnapshotEditorOptionsRail" web/src` -> no matches; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by phase 8; changed files remain MAP2-owned AGPL scope.
+  - Phase 9 started: add the three per-user Special Settings keys (`snapshot_editor.flow_animation`, `snapshot_editor.grid_backdrop`, `snapshot_editor.node_shape`), expose them in the Appearance/UI section, and consume them from the Signal Canvas root through `data-flow`, `data-grid-backdrop`, and `data-node-shape`.
+  - Phase 9 complete: persisted the three Snapshot Editor Signal Canvas preferences through the Special Settings API, SQLite schema upgrade path, and Raft replication payload; added Appearance/UI controls in `SpecialSettingsDialog`; and wired resolved settings into `SnapshotEditorSignalCanvas` root and per-chain grid attributes.
+  - Validation: `pytest tests/test_special_settings_routes.py tests/test_database_migrations.py -q` -> PASS; `npm --prefix web test -- --runInBand --runTestsByPath src/app/hooks/useSpecialSettings.test.tsx src/app/components/SpecialSettingsDialog.test.tsx src/app/components/SnapshotEditor/SnapshotEditorSignalCanvas.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `rg -n "HorizontalSignalChain/SidechainConnector|SnapshotChainManagementCard|SnapshotEditorMenuRail|SnapshotEditorOptionsRail" web/src` -> no matches; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, packages, services, installer scripts, runtime assumptions, or build requirements introduced by phase 9; the new database columns are covered by additive SQLite schema migration helpers, and changed files remain MAP2-owned AGPL scope.
 
 ---
 

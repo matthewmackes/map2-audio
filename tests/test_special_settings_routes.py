@@ -55,6 +55,15 @@ def test_normalize_snapshot_setlist_order_filters_invalid_values():
     assert normalized == [9, 7, 11]
 
 
+def test_normalize_snapshot_editor_signal_canvas_settings():
+    assert special_settings._normalize_snapshot_editor_flow_animation(" packet ") == "packet"
+    assert special_settings._normalize_snapshot_editor_flow_animation("bad") == "cascade"
+    assert special_settings._normalize_snapshot_editor_grid_backdrop("off") is False
+    assert special_settings._normalize_snapshot_editor_grid_backdrop("yes") is True
+    assert special_settings._normalize_snapshot_editor_node_shape(" hex ") == "hex"
+    assert special_settings._normalize_snapshot_editor_node_shape("circle") == "square"
+
+
 def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch):
     @asynccontextmanager
     async def _fake_session_ctx():
@@ -68,6 +77,9 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
         landing_tiles=[{"route": "/labs", "size": "medium"}],
         snapshot_setlist_mode=True,
         snapshot_setlist_order=[12, "15", 12, 0],
+        snapshot_editor_flow_animation="packet",
+        snapshot_editor_grid_backdrop=False,
+        snapshot_editor_node_shape="hex",
         promoted_advanced_routes=["/welcome", "/grid"],
         last_active_node="node-b",
         version=3,
@@ -87,6 +99,9 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
     assert [tile.model_dump() for tile in response.landing_tiles] == [{"route": "/labs", "size": "medium"}]
     assert response.snapshot_setlist_mode is True
     assert response.snapshot_setlist_order == [12, 15]
+    assert response.snapshot_editor_flow_animation == "packet"
+    assert response.snapshot_editor_grid_backdrop is False
+    assert response.snapshot_editor_node_shape == "hex"
     assert response.menu_location == "hidden"
     assert response.last_active_node == "node-b"
     assert response.version == 3
@@ -111,6 +126,9 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
         landing_tiles=[],
         snapshot_setlist_mode=False,
         snapshot_setlist_order=[],
+        snapshot_editor_flow_animation="cascade",
+        snapshot_editor_grid_backdrop=True,
+        snapshot_editor_node_shape="square",
         last_active_node=None,
         version=1,
         last_updated=datetime.now(timezone.utc),
@@ -139,6 +157,9 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
                 ],
                 snapshot_setlist_mode=True,
                 snapshot_setlist_order=[5, "7", 5, 0],
+                snapshot_editor_flow_animation="scan",
+                snapshot_editor_grid_backdrop=False,
+                snapshot_editor_node_shape="rounded",
                 last_active_node=" node-b ",
             )
         )
@@ -151,6 +172,9 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
     ]
     assert settings.snapshot_setlist_mode is True
     assert settings.snapshot_setlist_order == [5, 7]
+    assert settings.snapshot_editor_flow_animation == "scan"
+    assert settings.snapshot_editor_grid_backdrop is False
+    assert settings.snapshot_editor_node_shape == "rounded"
     assert settings.menu_location == "hidden"
     assert settings.last_active_node == "node-b"
     assert response.menu_location == "hidden"
@@ -161,6 +185,9 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
     ]
     assert response.snapshot_setlist_mode is True
     assert response.snapshot_setlist_order == [5, 7]
+    assert response.snapshot_editor_flow_animation == "scan"
+    assert response.snapshot_editor_grid_backdrop is False
+    assert response.snapshot_editor_node_shape == "rounded"
     assert response.last_active_node == "node-b"
     assert response.enabled is True
 
@@ -171,6 +198,14 @@ def test_update_request_accepts_legacy_promoted_routes_field():
         hidden_plugins=[],
         menu_location="top-nav",
         promoted_advanced_routes=["/welcome", "/grid", "bad"],
+        **{
+            "snapshot_editor.flow_animation": "pulse",
+            "snapshot_editor.grid_backdrop": False,
+            "snapshot_editor.node_shape": "hex",
+        },
     )
 
     assert request.pinned_routes == ["/welcome", "/grid", "bad"]
+    assert request.snapshot_editor_flow_animation == "pulse"
+    assert request.snapshot_editor_grid_backdrop is False
+    assert request.snapshot_editor_node_shape == "hex"

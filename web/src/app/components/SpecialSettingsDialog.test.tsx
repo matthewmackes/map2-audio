@@ -80,8 +80,43 @@ describe('SpecialSettingsDialog', () => {
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith({
         hiddenPlugins: expect.arrayContaining(['map2://juce/nam', 'map2://juce/drums']),
+        'snapshot_editor.flow_animation': 'cascade',
+        'snapshot_editor.grid_backdrop': true,
+        'snapshot_editor.node_shape': 'square',
       })
     })
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('saves snapshot editor signal canvas appearance settings', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined)
+
+    render(
+      <SpecialSettingsDialog
+        isOpen
+        onClose={jest.fn()}
+        currentHiddenPlugins={[]}
+        currentSnapshotEditorFlowAnimation="pulse"
+        currentSnapshotEditorGridBackdrop={false}
+        currentSnapshotEditorNodeShape="rounded"
+        onSave={onSave}
+      />,
+    )
+
+    fireEvent.change(await screen.findByLabelText('Signal flow animation'), {
+      target: { value: 'packet' },
+    })
+    fireEvent.click(screen.getByRole('switch', { name: 'Signal grid backdrop' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Hex' }))
+    fireEvent.click(screen.getByRole('button', { name: /save settings/i }))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith({
+        hiddenPlugins: [],
+        'snapshot_editor.flow_animation': 'packet',
+        'snapshot_editor.grid_backdrop': true,
+        'snapshot_editor.node_shape': 'hex',
+      })
+    })
   })
 })

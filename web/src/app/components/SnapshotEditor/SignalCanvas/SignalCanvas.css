@@ -35,6 +35,10 @@
   --snapshot-node-radius: 0;
 }
 
+.snapshot-editor-signal-canvas[data-node-shape='hex'] .snapshot-node {
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+}
+
 .snapshot-editor-signal-canvas .traces {
   position: absolute;
   inset: 0;

@@ -64,6 +64,30 @@ describe('SnapshotEditorSignalCanvas', () => {
     expect(screen.getByLabelText('Main Chain chain side panel')).toBeInTheDocument()
   })
 
+  it('applies signal canvas settings to root and per-chain grid attributes', () => {
+    const { container } = render(
+      <JuceGridSignalCanvas
+        chain={buildChain()}
+        chainLabel="A"
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        flowAnimation="packet"
+        gridBackdrop={false}
+        nodeShape="hex"
+      />,
+    )
+
+    const canvas = container.querySelector('.snapshot-editor-signal-canvas')
+    expect(canvas).toHaveAttribute('data-flow', 'packet')
+    expect(canvas).toHaveAttribute('data-grid-backdrop', 'false')
+    expect(canvas).toHaveAttribute('data-node-shape', 'hex')
+    expect(container.querySelector('.snapshot-signal-grid')).toHaveAttribute('data-grid-backdrop', 'false')
+  })
+
   it('routes plugin selection, bypass, and delete through live handlers', () => {
     const handleSelect = jest.fn()
     const handleBypass = jest.fn()

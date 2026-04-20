@@ -40,7 +40,12 @@ import {
 } from '../data/categoryStyles'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useFocusReturnTarget } from '../hooks/useFocusReturnTarget'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import {
+  resolveSnapshotEditorSignalCanvasSettings,
+  type SnapshotEditorFlowAnimation,
+  type SnapshotEditorNodeShape,
+  useSpecialSettings,
+} from '../hooks/useSpecialSettings'
 import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
@@ -499,6 +504,10 @@ export function ThemePage() {
     () => specialSettings?.hiddenPlugins ?? [],
     [specialSettings?.hiddenPlugins],
   )
+  const snapshotEditorSignalCanvasSettings = useMemo(
+    () => resolveSnapshotEditorSignalCanvasSettings(specialSettings),
+    [specialSettings],
+  )
   const hiddenPluginCount = specialSettingsHiddenPlugins.length
   const previewTheme = useMemo(() => resolvePreviewTheme(themeId, theme), [theme, themeId])
   const draftTheme = useMemo(
@@ -791,8 +800,13 @@ export function ThemePage() {
     setDraftDirty(false)
   }
 
-  const handleSpecialSettingsSave = async ({ hiddenPlugins }: { hiddenPlugins: string[] }) => {
-    await updateSpecialSettings({ hiddenPlugins })
+  const handleSpecialSettingsSave = async (settings: {
+    hiddenPlugins: string[]
+    'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
+    'snapshot_editor.grid_backdrop': boolean
+    'snapshot_editor.node_shape': SnapshotEditorNodeShape
+  }) => {
+    await updateSpecialSettings(settings)
     setShowSpecialSettings(false)
   }
 
@@ -973,6 +987,9 @@ export function ThemePage() {
         isOpen={showSpecialSettings}
         onClose={() => setShowSpecialSettings(false)}
         currentHiddenPlugins={specialSettingsHiddenPlugins}
+        currentSnapshotEditorFlowAnimation={snapshotEditorSignalCanvasSettings.flowAnimation}
+        currentSnapshotEditorGridBackdrop={snapshotEditorSignalCanvasSettings.gridBackdrop}
+        currentSnapshotEditorNodeShape={snapshotEditorSignalCanvasSettings.nodeShape}
         onSave={handleSpecialSettingsSave}
       />
 

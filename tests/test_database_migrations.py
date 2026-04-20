@@ -39,7 +39,11 @@ def test_sync_init_applies_tracked_schema_migrations_once(tmp_path):
 
     database_module.init_db(sqlite_url)
     try:
-        assert "pinned_routes" in _columns(db_path, "special_settings")
+        special_settings_columns = _columns(db_path, "special_settings")
+        assert "pinned_routes" in special_settings_columns
+        assert "snapshot_editor_flow_animation" in special_settings_columns
+        assert "snapshot_editor_grid_backdrop" in special_settings_columns
+        assert "snapshot_editor_node_shape" in special_settings_columns
         assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8]
 
         database_module.apply_pending_schema_migrations_sync()

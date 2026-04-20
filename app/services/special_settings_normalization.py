@@ -9,6 +9,24 @@ DEFAULT_LANDING_TILES: list[dict[str, str]] = []
 DEFAULT_MENU_LOCATION = "hidden"
 DEFAULT_SNAPSHOT_SETLIST_MODE = False
 DEFAULT_SNAPSHOT_SETLIST_ORDER: list[int] = []
+DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION = "cascade"
+DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP = True
+DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE = "square"
+SNAPSHOT_EDITOR_FLOW_ANIMATIONS = {
+    "off",
+    "dashmarch",
+    "pulse",
+    "packet",
+    "morse",
+    "reverse",
+    "scan",
+    "shimmer",
+    "heartbeat",
+    "ants",
+    "slow",
+    "cascade",
+}
+SNAPSHOT_EDITOR_NODE_SHAPES = {"square", "rounded", "hex"}
 LANDING_TILE_SIZES = {"small", "medium", "large"}
 
 
@@ -131,6 +149,62 @@ def resolve_snapshot_setlist_mode_from_settings(settings) -> bool:
 def resolve_snapshot_setlist_order_from_settings(settings) -> list[int]:
     return normalize_snapshot_setlist_order(
         getattr(settings, "snapshot_setlist_order", DEFAULT_SNAPSHOT_SETLIST_ORDER)
+    )
+
+
+def normalize_snapshot_editor_flow_animation(value: object) -> str:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in SNAPSHOT_EDITOR_FLOW_ANIMATIONS:
+            return normalized
+    return DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION
+
+
+def normalize_snapshot_editor_grid_backdrop(value: object) -> bool:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    return bool(value)
+
+
+def normalize_snapshot_editor_node_shape(value: object) -> str:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in SNAPSHOT_EDITOR_NODE_SHAPES:
+            return normalized
+    return DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE
+
+
+def resolve_snapshot_editor_flow_animation_from_settings(settings) -> str:
+    return normalize_snapshot_editor_flow_animation(
+        getattr(
+            settings,
+            "snapshot_editor_flow_animation",
+            DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION,
+        )
+    )
+
+
+def resolve_snapshot_editor_grid_backdrop_from_settings(settings) -> bool:
+    return normalize_snapshot_editor_grid_backdrop(
+        getattr(
+            settings,
+            "snapshot_editor_grid_backdrop",
+            DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP,
+        )
+    )
+
+
+def resolve_snapshot_editor_node_shape_from_settings(settings) -> str:
+    return normalize_snapshot_editor_node_shape(
+        getattr(
+            settings,
+            "snapshot_editor_node_shape",
+            DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
+        )
     )
 
 

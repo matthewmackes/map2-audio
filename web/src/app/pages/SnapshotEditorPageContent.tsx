@@ -74,7 +74,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useFocusReturnTarget } from '../hooks/useFocusReturnTarget'
 import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../hooks/usePendingLiveChangesNavigationGuard'
 import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { resolveSnapshotEditorSignalCanvasSettings, useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
@@ -1117,6 +1117,10 @@ export function SnapshotEditorPage() {
 
   // Special settings for plugin filtering and snapshot editor setlist mode
   const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
+  const signalCanvasSettings = useMemo(
+    () => resolveSnapshotEditorSignalCanvasSettings(specialSettings),
+    [specialSettings],
+  )
 
   // Category Filtering State
   const [selectedCategory, setSelectedCategory] = useState<string>(() => {
@@ -7510,6 +7514,9 @@ export function SnapshotEditorPage() {
         onBranchPageChange={handleTabletBranchPageChange}
         onCanvasEmptyPress={() => handleTabletCanvasEmptyPress(flow.id)}
         readOnly={snapshotEditingLocked}
+        flowAnimation={signalCanvasSettings.flowAnimation}
+        gridBackdrop={signalCanvasSettings.gridBackdrop}
+        nodeShape={signalCanvasSettings.nodeShape}
       />
     )
 

@@ -18,16 +18,25 @@ from app.services.special_settings_normalization import (
     DEFAULT_LANDING_TILES,
     DEFAULT_MENU_LOCATION,
     DEFAULT_PINNED_ROUTES,
+    DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION,
+    DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP,
+    DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
     DEFAULT_SNAPSHOT_SETLIST_MODE,
     DEFAULT_SNAPSHOT_SETLIST_ORDER,
     normalize_landing_tiles,
     normalize_last_active_node,
     normalize_menu_location,
     normalize_pinned_routes,
+    normalize_snapshot_editor_flow_animation,
+    normalize_snapshot_editor_grid_backdrop,
+    normalize_snapshot_editor_node_shape,
     normalize_snapshot_setlist_mode,
     normalize_snapshot_setlist_order,
     resolve_landing_tiles_from_settings,
     resolve_pinned_routes_from_settings,
+    resolve_snapshot_editor_flow_animation_from_settings,
+    resolve_snapshot_editor_grid_backdrop_from_settings,
+    resolve_snapshot_editor_node_shape_from_settings,
     resolve_snapshot_setlist_mode_from_settings,
     resolve_snapshot_setlist_order_from_settings,
 )
@@ -40,8 +49,14 @@ _resolve_pinned_routes = resolve_pinned_routes_from_settings
 _resolve_landing_tiles = resolve_landing_tiles_from_settings
 _normalize_last_active_node = normalize_last_active_node
 _normalize_menu_location = normalize_menu_location
+_normalize_snapshot_editor_flow_animation = normalize_snapshot_editor_flow_animation
+_normalize_snapshot_editor_grid_backdrop = normalize_snapshot_editor_grid_backdrop
+_normalize_snapshot_editor_node_shape = normalize_snapshot_editor_node_shape
 _normalize_snapshot_setlist_mode = normalize_snapshot_setlist_mode
 _normalize_snapshot_setlist_order = normalize_snapshot_setlist_order
+_resolve_snapshot_editor_flow_animation = resolve_snapshot_editor_flow_animation_from_settings
+_resolve_snapshot_editor_grid_backdrop = resolve_snapshot_editor_grid_backdrop_from_settings
+_resolve_snapshot_editor_node_shape = resolve_snapshot_editor_node_shape_from_settings
 _resolve_snapshot_setlist_mode = resolve_snapshot_setlist_mode_from_settings
 _resolve_snapshot_setlist_order = resolve_snapshot_setlist_order_from_settings
 
@@ -90,6 +105,9 @@ class SpecialSettingsStateManager:
                         landing_tiles=DEFAULT_LANDING_TILES.copy(),
                         snapshot_setlist_mode=DEFAULT_SNAPSHOT_SETLIST_MODE,
                         snapshot_setlist_order=DEFAULT_SNAPSHOT_SETLIST_ORDER.copy(),
+                        snapshot_editor_flow_animation=DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION,
+                        snapshot_editor_grid_backdrop=DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP,
+                        snapshot_editor_node_shape=DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
                         last_active_node=None,
                         version=1
                     )
@@ -117,6 +135,15 @@ class SpecialSettingsStateManager:
                 settings.snapshot_setlist_order = _normalize_snapshot_setlist_order(
                     entry_data.get("snapshot_setlist_order", _resolve_snapshot_setlist_order(settings))
                 )
+                settings.snapshot_editor_flow_animation = _normalize_snapshot_editor_flow_animation(
+                    entry_data.get("snapshot_editor.flow_animation", entry_data.get("snapshot_editor_flow_animation", _resolve_snapshot_editor_flow_animation(settings)))
+                )
+                settings.snapshot_editor_grid_backdrop = _normalize_snapshot_editor_grid_backdrop(
+                    entry_data.get("snapshot_editor.grid_backdrop", entry_data.get("snapshot_editor_grid_backdrop", _resolve_snapshot_editor_grid_backdrop(settings)))
+                )
+                settings.snapshot_editor_node_shape = _normalize_snapshot_editor_node_shape(
+                    entry_data.get("snapshot_editor.node_shape", entry_data.get("snapshot_editor_node_shape", _resolve_snapshot_editor_node_shape(settings)))
+                )
                 settings.last_active_node = _normalize_last_active_node(
                     entry_data.get("last_active_node")
                 )
@@ -134,6 +161,9 @@ class SpecialSettingsStateManager:
                     f"landing_tiles={len(settings.landing_tiles or [])}, "
                     f"snapshot_setlist_mode={settings.snapshot_setlist_mode}, "
                     f"snapshot_setlist_order={len(settings.snapshot_setlist_order or [])}, "
+                    f"snapshot_editor_flow_animation={settings.snapshot_editor_flow_animation}, "
+                    f"snapshot_editor_grid_backdrop={settings.snapshot_editor_grid_backdrop}, "
+                    f"snapshot_editor_node_shape={settings.snapshot_editor_node_shape}, "
                     f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
@@ -163,6 +193,9 @@ class SpecialSettingsStateManager:
                     "landing_tiles": _resolve_landing_tiles(settings),
                     "snapshot_setlist_mode": _resolve_snapshot_setlist_mode(settings),
                     "snapshot_setlist_order": _resolve_snapshot_setlist_order(settings),
+                    "snapshot_editor.flow_animation": _resolve_snapshot_editor_flow_animation(settings),
+                    "snapshot_editor.grid_backdrop": _resolve_snapshot_editor_grid_backdrop(settings),
+                    "snapshot_editor.node_shape": _resolve_snapshot_editor_node_shape(settings),
                     "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
@@ -183,6 +216,9 @@ async def replicate_special_settings_to_raft(
     landing_tiles: list,
     snapshot_setlist_mode: bool,
     snapshot_setlist_order: list,
+    snapshot_editor_flow_animation: str,
+    snapshot_editor_grid_backdrop: bool,
+    snapshot_editor_node_shape: str,
     last_active_node,
     node_id: str
 ) -> int:
@@ -214,6 +250,9 @@ async def replicate_special_settings_to_raft(
             "landing_tiles": _normalize_landing_tiles(landing_tiles),
             "snapshot_setlist_mode": _normalize_snapshot_setlist_mode(snapshot_setlist_mode),
             "snapshot_setlist_order": _normalize_snapshot_setlist_order(snapshot_setlist_order),
+            "snapshot_editor.flow_animation": _normalize_snapshot_editor_flow_animation(snapshot_editor_flow_animation),
+            "snapshot_editor.grid_backdrop": _normalize_snapshot_editor_grid_backdrop(snapshot_editor_grid_backdrop),
+            "snapshot_editor.node_shape": _normalize_snapshot_editor_node_shape(snapshot_editor_node_shape),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -234,6 +273,9 @@ async def replicate_special_settings_to_raft(
             f"landing_tiles={len(entry_data['landing_tiles'])}, "
             f"snapshot_setlist_mode={entry_data['snapshot_setlist_mode']}, "
             f"snapshot_setlist_order={len(entry_data['snapshot_setlist_order'])}, "
+            f"snapshot_editor_flow_animation={entry_data['snapshot_editor.flow_animation']}, "
+            f"snapshot_editor_grid_backdrop={entry_data['snapshot_editor.grid_backdrop']}, "
+            f"snapshot_editor_node_shape={entry_data['snapshot_editor.node_shape']}, "
             f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         

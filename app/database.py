@@ -433,6 +433,14 @@ def _special_settings_default_snapshot_setlist_order_json() -> str:
     return "[]"
 
 
+def _special_settings_default_snapshot_editor_flow_animation() -> str:
+    return "cascade"
+
+
+def _special_settings_default_snapshot_editor_node_shape() -> str:
+    return "square"
+
+
 def _ensure_special_settings_schema_sync() -> None:
     """Apply additive schema upgrades for special_settings in existing SQLite DBs."""
     if _engine is None or _engine.dialect.name != "sqlite":
@@ -502,6 +510,41 @@ def _ensure_special_settings_schema_sync() -> None:
                 {"setlist_order": _special_settings_default_snapshot_setlist_order_json()},
             )
             logger.info("Added special_settings.snapshot_setlist_order schema upgrade")
+
+        if columns and "snapshot_editor_flow_animation" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_flow_animation VARCHAR(32)"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_flow_animation = :flow_animation "
+                    "WHERE snapshot_editor_flow_animation IS NULL"
+                ),
+                {"flow_animation": _special_settings_default_snapshot_editor_flow_animation()},
+            )
+            logger.info("Added special_settings.snapshot_editor_flow_animation schema upgrade")
+
+        if columns and "snapshot_editor_grid_backdrop" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_grid_backdrop BOOLEAN"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_grid_backdrop = 1 "
+                    "WHERE snapshot_editor_grid_backdrop IS NULL"
+                )
+            )
+            logger.info("Added special_settings.snapshot_editor_grid_backdrop schema upgrade")
+
+        if columns and "snapshot_editor_node_shape" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_node_shape VARCHAR(16)"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_node_shape = :node_shape "
+                    "WHERE snapshot_editor_node_shape IS NULL"
+                ),
+                {"node_shape": _special_settings_default_snapshot_editor_node_shape()},
+            )
+            logger.info("Added special_settings.snapshot_editor_node_shape schema upgrade")
 
 
 def _sqlite_columns(conn, table_name: str) -> set[str]:
@@ -760,6 +803,41 @@ async def _ensure_special_settings_schema_async(conn) -> None:
             {"setlist_order": _special_settings_default_snapshot_setlist_order_json()},
         )
         logger.info("Added async special_settings.snapshot_setlist_order schema upgrade")
+
+    if columns and "snapshot_editor_flow_animation" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_flow_animation VARCHAR(32)"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_flow_animation = :flow_animation "
+                "WHERE snapshot_editor_flow_animation IS NULL"
+            ),
+            {"flow_animation": _special_settings_default_snapshot_editor_flow_animation()},
+        )
+        logger.info("Added async special_settings.snapshot_editor_flow_animation schema upgrade")
+
+    if columns and "snapshot_editor_grid_backdrop" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_grid_backdrop BOOLEAN"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_grid_backdrop = 1 "
+                "WHERE snapshot_editor_grid_backdrop IS NULL"
+            )
+        )
+        logger.info("Added async special_settings.snapshot_editor_grid_backdrop schema upgrade")
+
+    if columns and "snapshot_editor_node_shape" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN snapshot_editor_node_shape VARCHAR(16)"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_node_shape = :node_shape "
+                "WHERE snapshot_editor_node_shape IS NULL"
+            ),
+            {"node_shape": _special_settings_default_snapshot_editor_node_shape()},
+        )
+        logger.info("Added async special_settings.snapshot_editor_node_shape schema upgrade")
 
 
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
@@ -2641,6 +2719,9 @@ class SpecialSettings(Base):
     landing_tiles = Column(JSON, default=list)
     snapshot_setlist_mode = Column(Boolean, nullable=False, default=False)
     snapshot_setlist_order = Column(JSON, default=list)
+    snapshot_editor_flow_animation = Column(String(32), nullable=False, default="cascade")
+    snapshot_editor_grid_backdrop = Column(Boolean, nullable=False, default=True)
+    snapshot_editor_node_shape = Column(String(16), nullable=False, default="square")
     last_active_node = Column(String(128), nullable=True)
     
     # Cluster replication metadata

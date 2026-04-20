@@ -80,6 +80,25 @@ class SpecialSettingsResponse(BaseModel):
     landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
     snapshot_setlist_mode: bool = False
     snapshot_setlist_order: List[int] = Field(default_factory=list)
+    snapshot_editor_flow_animation: Literal[
+        "off",
+        "dashmarch",
+        "pulse",
+        "packet",
+        "morse",
+        "reverse",
+        "scan",
+        "shimmer",
+        "heartbeat",
+        "ants",
+        "slow",
+        "cascade",
+    ] = Field(default="cascade", alias="snapshot_editor.flow_animation")
+    snapshot_editor_grid_backdrop: bool = Field(default=True, alias="snapshot_editor.grid_backdrop")
+    snapshot_editor_node_shape: Literal["square", "rounded", "hex"] = Field(
+        default="square",
+        alias="snapshot_editor.node_shape",
+    )
     last_active_node: Optional[str] = None
     version: int = 1
     last_updated: Optional[str] = None
@@ -106,6 +125,25 @@ class SpecialSettingsUpdateRequest(BaseModel):
     landing_tiles: List[SpecialSettingsLandingTile] = Field(default_factory=list)
     snapshot_setlist_mode: bool = False
     snapshot_setlist_order: List[int] = Field(default_factory=list)
+    snapshot_editor_flow_animation: Literal[
+        "off",
+        "dashmarch",
+        "pulse",
+        "packet",
+        "morse",
+        "reverse",
+        "scan",
+        "shimmer",
+        "heartbeat",
+        "ants",
+        "slow",
+        "cascade",
+    ] = Field(default="cascade", alias="snapshot_editor.flow_animation")
+    snapshot_editor_grid_backdrop: bool = Field(default=True, alias="snapshot_editor.grid_backdrop")
+    snapshot_editor_node_shape: Literal["square", "rounded", "hex"] = Field(
+        default="square",
+        alias="snapshot_editor.node_shape",
+    )
     last_active_node: Optional[str] = None
 
     @model_validator(mode="before")

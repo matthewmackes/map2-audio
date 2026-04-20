@@ -3,8 +3,17 @@ import {
   Checkbox,
   InlineNotification,
   Modal,
+  Select,
+  SelectItem,
+  Toggle,
 } from '@carbon/react'
 import { apiUrl } from '../utils/apiTarget'
+import {
+  DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS,
+  SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS,
+  type SnapshotEditorFlowAnimation,
+  type SnapshotEditorNodeShape,
+} from '../hooks/useSpecialSettings'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { EmptyState } from './shared/EmptyState'
 import { LoadingState } from './shared/LoadingState'
@@ -20,12 +29,37 @@ interface SpecialSettingsDialogProps {
   isOpen: boolean
   onClose: () => void
   currentHiddenPlugins: string[]
-  onSave: (settings: { hiddenPlugins: string[] }) => Promise<void>
+  currentSnapshotEditorFlowAnimation?: SnapshotEditorFlowAnimation
+  currentSnapshotEditorGridBackdrop?: boolean
+  currentSnapshotEditorNodeShape?: SnapshotEditorNodeShape
+  onSave: (settings: {
+    hiddenPlugins: string[]
+    'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
+    'snapshot_editor.grid_backdrop': boolean
+    'snapshot_editor.node_shape': SnapshotEditorNodeShape
+  }) => Promise<void>
 }
 
-export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, onSave }: SpecialSettingsDialogProps) {
+const SNAPSHOT_EDITOR_NODE_SHAPE_OPTIONS: Array<{ id: SnapshotEditorNodeShape; label: string }> = [
+  { id: 'square', label: 'Square' },
+  { id: 'rounded', label: 'Rounded' },
+  { id: 'hex', label: 'Hex' },
+]
+
+export function SpecialSettingsDialog({
+  isOpen,
+  onClose,
+  currentHiddenPlugins,
+  currentSnapshotEditorFlowAnimation = DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.flowAnimation,
+  currentSnapshotEditorGridBackdrop = DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.gridBackdrop,
+  currentSnapshotEditorNodeShape = DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.nodeShape,
+  onSave,
+}: SpecialSettingsDialogProps) {
   const [nativePlugins, setNativePlugins] = useState<Plugin[]>([])
   const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(new Set())
+  const [snapshotEditorFlowAnimation, setSnapshotEditorFlowAnimation] = useState<SnapshotEditorFlowAnimation>(currentSnapshotEditorFlowAnimation)
+  const [snapshotEditorGridBackdrop, setSnapshotEditorGridBackdrop] = useState(currentSnapshotEditorGridBackdrop)
+  const [snapshotEditorNodeShape, setSnapshotEditorNodeShape] = useState<SnapshotEditorNodeShape>(currentSnapshotEditorNodeShape)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -35,9 +69,18 @@ export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, o
     if (isOpen) {
       setSaveError('')
       setHiddenPlugins(new Set(currentHiddenPlugins))
+      setSnapshotEditorFlowAnimation(currentSnapshotEditorFlowAnimation)
+      setSnapshotEditorGridBackdrop(currentSnapshotEditorGridBackdrop)
+      setSnapshotEditorNodeShape(currentSnapshotEditorNodeShape)
       void fetchNativePlugins()
     }
-  }, [currentHiddenPlugins, isOpen])
+  }, [
+    currentHiddenPlugins,
+    currentSnapshotEditorFlowAnimation,
+    currentSnapshotEditorGridBackdrop,
+    currentSnapshotEditorNodeShape,
+    isOpen,
+  ])
 
   const fetchNativePlugins = async () => {
     setIsLoading(true)
@@ -78,7 +121,12 @@ export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, o
     setSaveError('')
     
     try {
-      await onSave({ hiddenPlugins: Array.from(hiddenPlugins) })
+      await onSave({
+        hiddenPlugins: Array.from(hiddenPlugins),
+        'snapshot_editor.flow_animation': snapshotEditorFlowAnimation,
+        'snapshot_editor.grid_backdrop': snapshotEditorGridBackdrop,
+        'snapshot_editor.node_shape': snapshotEditorNodeShape,
+      })
       onClose()
     } catch (err) {
       setSaveError('Failed to save settings.')
@@ -123,6 +171,51 @@ export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, o
           />
         </div>
       ) : null}
+
+      <section className="special-settings-section">
+        <h3 className="special-settings-section-title">Appearance / UI</h3>
+        <div className="special-settings-control-grid">
+          <Select
+            id="snapshot-editor-flow-animation"
+            labelText="Signal flow animation"
+            value={snapshotEditorFlowAnimation}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              if (SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS.some((option) => option.id === nextValue)) {
+                setSnapshotEditorFlowAnimation(nextValue as SnapshotEditorFlowAnimation)
+              }
+            }}
+          >
+            {SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS.map((option) => (
+              <SelectItem key={option.id} value={option.id} text={option.label} />
+            ))}
+          </Select>
+
+          <Toggle
+            id="snapshot-editor-grid-backdrop"
+            labelText="Signal grid backdrop"
+            labelA="Off"
+            labelB="On"
+            toggled={snapshotEditorGridBackdrop}
+            onToggle={setSnapshotEditorGridBackdrop}
+          />
+        </div>
+
+        <div className="special-settings-segmented" role="radiogroup" aria-label="Signal node shape">
+          {SNAPSHOT_EDITOR_NODE_SHAPE_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={snapshotEditorNodeShape === option.id}
+              className={`special-settings-segment${snapshotEditorNodeShape === option.id ? ' is-selected' : ''}`}
+              onClick={() => setSnapshotEditorNodeShape(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="special-settings-section">
         <h3 className="special-settings-section-title">Native plugin visibility</h3>
