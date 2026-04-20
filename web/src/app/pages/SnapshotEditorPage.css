@@ -442,14 +442,77 @@
 .juce-grid-page__floating-actions {
   position: fixed;
   inset-inline-start: 0;
-  inset-block-start: 50%;
+  inset-block-start: 0;
+  inset-block-end: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   max-inline-size: none;
-  transform: translateY(-50%);
   z-index: 97; /* above footer (96) and automation panel (95) */
   pointer-events: none;
+}
+
+.snapshot-editor-rail {
+  inline-size: 48px;
+  min-inline-size: 48px;
+  block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-inline-end: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer-01, var(--cds-layer, #161616));
+  pointer-events: auto;
+}
+
+.snapshot-editor-rail__item {
+  position: relative;
+  inline-size: 48px;
+  block-size: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cds-text-placeholder, #8d8d8d);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.snapshot-editor-rail__item:hover:not(:disabled),
+.snapshot-editor-rail__item:focus-visible:not(:disabled) {
+  background: var(--cds-layer-hover, #262626);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.snapshot-editor-rail__item.is-active {
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.snapshot-editor-rail__item.is-active::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 6px;
+  inset-block-end: 6px;
+  inline-size: 2px;
+  background: var(--cds-interactive, #0f62fe);
+}
+
+.snapshot-editor-rail__item:disabled {
+  color: var(--cds-text-disabled, #525252);
+  cursor: not-allowed;
+}
+
+.snapshot-editor-rail__item svg {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.snapshot-editor-rail__spacer {
+  flex: 1;
 }
 
 .snapshot-menu-rail {
@@ -7844,12 +7907,14 @@
 
   .juce-grid-page__floating-actions {
     inset-inline-start: 0;
-    inset-block-start: 50%;
+    inset-block-start: 0;
+    inset-block-end: 0;
     max-inline-size: none;
   }
 
-  .snapshot-menu-rail {
-    gap: 0.5rem;
+  .snapshot-editor-rail {
+    inline-size: 48px;
+    min-inline-size: 48px;
   }
 
   .snapshot-menu-rail__panel {

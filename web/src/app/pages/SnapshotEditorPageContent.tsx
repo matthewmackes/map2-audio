@@ -221,7 +221,7 @@ import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotA
 import { SnapshotChainManagementCard } from '../components/SnapshotEditor/SnapshotChainManagementCard'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
-import { SnapshotEditorMenuRail } from '../components/SnapshotEditor/SnapshotEditorMenuRail'
+import { SnapshotEditorRail, type SnapshotEditorRailItemId } from '../components/SnapshotEditor/SnapshotEditorRail'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
@@ -1168,6 +1168,7 @@ export function SnapshotEditorPage() {
   const [flowOutputClipTimestamps, setFlowOutputClipTimestamps] = useState<Record<string, number>>({})
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const [routingLiveApplyState, setRoutingLiveApplyState] = useState<SnapshotRoutingLiveApplyState>('idle')
+  const signalFlowShellRef = useRef<HTMLElement | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
@@ -6363,6 +6364,19 @@ export function SnapshotEditorPage() {
   const openControlCenter = useCallback(() => {
     openSnapshotProgressModal('advanced', 'overview')
   }, [openSnapshotProgressModal])
+  const openSignalGridWorkspace = useCallback(() => {
+    signalFlowShellRef.current?.scrollIntoView({
+      block: 'start',
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    })
+    signalFlowShellRef.current?.focus({ preventScroll: true })
+  }, [prefersReducedMotion])
+  const openAutomationWorkspace = useCallback(() => {
+    setAutomationTimelineExpanded(true)
+  }, [])
+  const openKeyboardHelpWorkspace = useCallback(() => {
+    setShowKeyboardHelp(true)
+  }, [])
   const openGuidedProgress = useCallback(() => {
     openSnapshotProgressModal('wizard', 'overview')
   }, [openSnapshotProgressModal])
@@ -6431,40 +6445,35 @@ export function SnapshotEditorPage() {
   const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
   const midiMappingsTitle = midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`
 
-  const renderEditorMenuRail = () => (
-    <SnapshotEditorMenuRail
-      prefersReducedMotion={prefersReducedMotion}
-      onCreateSnapshot={() => createCapturedSnapshot()}
-      createSnapshotDisabled={createSnapshotFromEditorMutation.isPending}
-      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-      onPrevious={goToPreviousSnapshot}
-      previousDisabled={snapshotNavigationPending || Boolean(snapshotSwitchBlockedReason) || !previousEditorSnapshot}
-      previousTitle={previousSnapshotDisabledReason}
-      onNext={goToNextSnapshot}
-      nextDisabled={snapshotNavigationPending || Boolean(snapshotSwitchBlockedReason) || !nextEditorSnapshot}
-      nextTitle={nextSnapshotDisabledReason}
-      onUndo={() => undoMutation.mutate()}
-      undoDisabled={!snapshotUndoRedo.canUndo || undoMutation.isPending}
-      undoPending={undoMutation.isPending}
-      onRedo={() => redoMutation.mutate()}
-      redoDisabled={!snapshotUndoRedo.canRedo || redoMutation.isPending}
-      redoPending={redoMutation.isPending}
-      onOpenControlCenter={openControlCenter}
-      controlCenterDisabled={false}
-      onAddFlow={addFlow}
-      addFlowDisabled={addFlowDisabled}
-      onOpenMidi={openMidiMappingsWorkspace}
-      midiDisabled={snapshotEditingLocked}
-      midiTitle={midiMappingsTitle}
-      onOpenLiveRuntime={openLiveRuntimeWorkspace}
-      liveRuntimeLabel={
-        liveRuntimeDisplayState === 'live_warning'
-          ? 'View live state warning'
-          : liveRuntimeDisplayState === 'offline'
-            ? 'View offline live state'
-            : 'View live state'
-      }
-      onOpenPerform={openPerformWorkspace}
+  const editorRailActiveItemId = useMemo<SnapshotEditorRailItemId>(() => {
+    if (showVersionHistoryModal) {
+      return 'version-history'
+    }
+    if (automationTimelineExpanded) {
+      return 'automation'
+    }
+    if (effectModalOpen && selectedPlugin) {
+      return 'parameters'
+    }
+    if (showPluginBrowser) {
+      return 'directory'
+    }
+    return 'signal-grid'
+  }, [automationTimelineExpanded, effectModalOpen, selectedPlugin, showPluginBrowser, showVersionHistoryModal])
+
+  const renderEditorRail = () => (
+    <SnapshotEditorRail
+      activeItemId={editorRailActiveItemId}
+      onOpenSignalGrid={openSignalGridWorkspace}
+      onOpenDirectory={handleAddPlugin}
+      directoryDisabled={snapshotEditingLocked}
+      onOpenParameters={openSelectedBlockEditor}
+      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+      onOpenAutomation={openAutomationWorkspace}
+      automationActive={automationTimelineExpanded}
+      onOpenVersionHistory={openVersionHistoryWorkspace}
+      versionHistoryDisabled={!activeSnapshot}
+      onOpenHelp={openKeyboardHelpWorkspace}
     />
   )
   const tabletDetailsAction = isTabletTouchLayout ? (
@@ -8009,6 +8018,7 @@ export function SnapshotEditorPage() {
       )}
 
       <section
+        ref={signalFlowShellRef}
         className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--body"
         aria-label="Signal flow workspace"
         tabIndex={0}
@@ -8480,8 +8490,8 @@ export function SnapshotEditorPage() {
       )}
 
       {!isTabletTouchLayout && (
-        <div className="juce-grid-page__floating-actions" aria-label="Snapshot editor quick menu">
-          {renderEditorMenuRail()}
+        <div className="juce-grid-page__floating-actions" aria-label="Snapshot editor navigation rail">
+          {renderEditorRail()}
         </div>
       )}
 
