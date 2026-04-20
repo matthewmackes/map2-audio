@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1186** Python | **1150** TypeScript | **136** C++/H | **144** Docs | **2402** total commits | **3** stars | **0** forks | **0** open issues
+**1186** Python | **1157** TypeScript | **136** C++/H | **144** Docs | **2404** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a7d520e5`](https://github.com/matthewmackes/map2-audio/commit/a7d520e5679200eb82c21a5cf3072b245e7b87f9) | Add signal canvas chain primitives | Map2 Audio | 2026-04-20 |
+| [`a34c96fe`](https://github.com/matthewmackes/map2-audio/commit/a34c96fec06fb7df4cbb46c0b0506164dbb0c78f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`96d4431b`](https://github.com/matthewmackes/map2-audio/commit/96d4431b4f156d329b35ba8c9737707be5a5c5e0) | Rewrite snapshot editor toolbar shell | Map2 Audio | 2026-04-20 |
 | [`8d335ed7`](https://github.com/matthewmackes/map2-audio/commit/8d335ed714cf4d2a8748420fe4348813768a95cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`e71478a4`](https://github.com/matthewmackes/map2-audio/commit/e71478a43bb6b73b4d795b381f137af2fb66c7a4) | Collapse snapshot editor rails | Map2 Audio | 2026-04-20 |
 | [`a5f8c9eb`](https://github.com/matthewmackes/map2-audio/commit/a5f8c9ebf6b6c404fc45808acb3ad22efd2ef564) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`32c4e773`](https://github.com/matthewmackes/map2-audio/commit/32c4e773969421e7dfc51a1f73e7e5475d083793) | Add snapshot signal icons and trace paths | Map2 Audio | 2026-04-20 |
 | [`bf3cab30`](https://github.com/matthewmackes/map2-audio/commit/bf3cab30db64a5add30b85d8e05703e1edcacae6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`bc6ab31d`](https://github.com/matthewmackes/map2-audio/commit/bc6ab31d9fa648307ac6aaf6a4bf8ee09b454b12) | Start snapshot editor schematic tokens | Map2 Audio | 2026-04-20 |
-| [`aa7fec4b`](https://github.com/matthewmackes/map2-audio/commit/aa7fec4b73c99a3024c034d9897f085e99b374d7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
