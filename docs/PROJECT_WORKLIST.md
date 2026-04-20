@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - Shipped T2368 phase 1 Snapshot Editor schematic deps and tokens.
+Last updated: 2026-04-20 - Shipped T2368 phase 2 Snapshot Editor icons and trace path primitives.
 
 ---
 
@@ -20,12 +20,16 @@ Description:
 - Estimated effort: Large (10 execution phases; ~16 new files; 4 retirements; tests rewritten for Canvas/Toolbar/Rail; settings wiring; integration test; conformance-docs addition).
 - Required outputs: redesigned `SnapshotEditorSignalCanvas.tsx` / `SnapshotEditorToolbar.tsx` / new `SnapshotEditorRail.tsx` with tests, ~10 new `SignalCanvas/*` subcomponents (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `SidechainConnector`) + `icons.tsx` + `tracePath.ts` + tests, `SignalCanvas.css`, shared `signalFlowAnimations.css`, shared `pluginCategoryIcon.ts`, three user-pref keys + Appearance/UI section UI, `@fontsource/jetbrains-mono` dep + `usePlatformFontPreference` exposure, global scrollbar styling, updated canvas/toolbar/rail tests plus new `SnapshotEditorPage.integration.test.tsx`, removal of `SnapshotEditorMenuRail.tsx` / `SnapshotEditorOptionsRail.tsx` / `SnapshotChainManagementCard.tsx` and their tests, moved `SidechainConnector.tsx`, `Signal Canvas Primitives` section added to `docs/design/CARBON_CONFORMANCE_STANDARD.md`, unused MUI/Phosphor imports stripped from touched files, 10 atomic build-verified commits on `master` pushed to both `origin` and `gitlab`, and reconciled worklist completion notes.
 Assigned to: Codex
-Last updated: 2026-04-20 09:11 EDT - Codex
+Last updated: 2026-04-20 09:17 EDT - Codex
 - In-progress notes:
   - Phase 1 started: add `@fontsource/jetbrains-mono`, shared signal-flow animation CSS, scoped Signal Canvas token stylesheet, plugin-category icon mapper, global scrollbar styling, and font preset exposure before phase 2 trace/icon work.
   - Phase 1 complete: installed `@fontsource/jetbrains-mono` 400/500/600, exposed the JetBrains Mono typography preset, added shared signal-flow animation CSS, added scoped Signal Canvas Carbon token primitives, added the plugin category icon mapper with focused tests, and applied global Carbon scrollbar styling.
   - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/shared/pluginCategoryIcon.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
   - Licensing/platform: `@fontsource/jetbrains-mono` is recorded as `OFL-1.1` in `web/package-lock.json`; package manifest/lockfile updated, with no new services, installer scripts, or runtime platform assumptions required.
+  - Phase 2 started: add the inline schematic icon sprite and pure `tracePath` helper with coverage for series, 2-branch, 3-branch, sidechain, and empty-chain paths.
+  - Phase 2 complete: added `SignalCanvas/icons.tsx` with the required inline SVG sprite symbols and `SignalCanvas/tracePath.ts` with pure right-angle schematic path geometry for series, parallel split/merge, sidechain overlays, empty state, and bypass outlines.
+  - Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/SnapshotEditor/SignalCanvas/tracePath.test.ts` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only).
+  - Licensing/platform: no new dependencies, services, installer scripts, or runtime platform assumptions introduced by phase 2.
 
 ---
 
