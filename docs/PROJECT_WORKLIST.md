@@ -29314,12 +29314,13 @@ Description:
 - Estimated effort: High
 - Required outputs: parity report, v1 route deletion, wrapper deletion, all MIDI tests green.
 - Notes: Update the OpenAPI `deprecated: true` flag on v1 in an intermediate commit before deletion, so external integrators see one release of warning.
-Last updated: 2026-04-20 11:55 EDT - Codex
+Last updated: 2026-04-20 12:09 EDT - Codex
 - Progress notes:
   - 2026-04-20 11:55 EDT - Codex: Started the required intermediate phase after T2364-subB SHIP `d6a81929`; first slice is v1/v2 feature-delta evidence plus OpenAPI deprecation on the legacy `/api/midi` router before any deletion.
   - 2026-04-20 12:00 EDT - Codex: Produced [docs/audits/midi-v1-v2-parity-20260420.md](docs/audits/midi-v1-v2-parity-20260420.md), marked the legacy `/api/midi` router deprecated in OpenAPI, and added regression coverage proving every legacy operation advertises `deprecated: true`. Deletion remains blocked by identified gaps for start/stop/refresh, routing, filters, monitor clear, clock, and legacy bundled presets.
   - 2026-04-20 12:05 EDT - Codex: Closed the small v1 deletion blockers by adding v2 `/engine/start`, `/engine/stop`, `/devices/refresh`, and `/activity/clear`, with MIDI Hub ownership and JUCE engine fallback coverage. Remaining blockers are legacy routing, filters, clock, and bundled presets.
   - 2026-04-20 12:08 EDT - Codex: Closed the legacy clock blocker by adding v2 `/clock`, `/clock/tap`, `/clock/start`, `/clock/stop`, and `/clock/continue` over the existing MIDI Hub clock engine. Remaining blockers are legacy routing, filters, and bundled presets.
+  - 2026-04-20 12:09 EDT - Codex: Started and implemented the legacy routing bridge by adding v2 `/routes` over the durable MIDI Hub route service, with legacy `input_port`/`output_port` aliases for clients migrating off `/api/midi/routing`. Remaining blockers are filters and bundled presets.
 Validation:
 - `pytest tests/test_midi_legacy_deprecation.py tests/test_midi_v2_routes.py -q` -> PASS (`10 passed`)
 - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi.py app/routes/midi_v2.py tests/test_midi_legacy_deprecation.py` -> PASS
@@ -29336,6 +29337,12 @@ Validation:
 - `pytest tests/test_midi_v2_routes.py tests/test_midi_legacy_deprecation.py -q` -> PASS (`16 passed`)
 - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi_v2.py tests/test_midi_v2_routes.py` -> PASS
 - `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> PASS (`76 passed, 3 warnings`; warnings are existing `datetime.utcnow()` deprecations in MIDI tests)
+- `npm --prefix web run typecheck` -> PASS
+- `git diff --check` -> PASS
+- `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)
+- `pytest tests/test_midi_v2_routes.py tests/test_midi_legacy_deprecation.py -q` -> PASS (`18 passed`)
+- `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/routes/midi_v2.py tests/test_midi_v2_routes.py` -> PASS
+- `pytest tests/test_midi*.py tests/test_midi_hub*.py -q` -> PASS (`78 passed, 3 warnings`; warnings are existing `datetime.utcnow()` deprecations in MIDI tests)
 - `npm --prefix web run typecheck` -> PASS
 - `git diff --check` -> PASS
 - `npm --prefix web run build` -> PASS (`vite v6.4.2`, existing chunk-size warning only)

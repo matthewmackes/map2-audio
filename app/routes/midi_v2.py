@@ -34,11 +34,13 @@ from app.services.midi_device_profiles import device_profile_service
 try:
     from app.services.midi_hub.clock_engine import get_midi_clock_engine
     from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.router import get_midi_router
     from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
     MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration
     get_midi_clock_engine = None  # type: ignore[assignment]
     get_midi_hub = None  # type: ignore[assignment]
+    get_midi_router = None  # type: ignore[assignment]
     get_midi_traffic_monitor = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
 
@@ -151,6 +153,53 @@ class ClockConfigRequest(BaseModel):
     offset_ms: Optional[float] = Field(default=None, ge=-500.0, le=500.0)
     tap_note: Optional[int] = Field(default=None, ge=0, le=127)
     tap_cc: Optional[int] = Field(default=None, ge=0, le=127)
+
+
+class PortRouteFilterRequest(BaseModel):
+    message_types: List[str] = Field(default_factory=list)
+    channels: List[int] = Field(default_factory=list)
+    cc_range: Optional[List[int]] = Field(default=None, min_length=2, max_length=2)
+    note_range: Optional[List[int]] = Field(default=None, min_length=2, max_length=2)
+    velocity_range: Optional[List[int]] = Field(default=None, min_length=2, max_length=2)
+
+
+class PortRouteRequest(BaseModel):
+    """Request body for durable MIDI Hub port routes."""
+    route_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    source_port: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    destination_ports: Optional[List[str]] = Field(default=None, min_length=1)
+    input_port: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    output_port: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    enabled: bool = True
+    priority: int = Field(default=100, ge=0, le=10000)
+    route_type: str = Field(default="pass_through")
+    filter: PortRouteFilterRequest = Field(default_factory=PortRouteFilterRequest)
+    transform_chain: List[Dict[str, Any]] = Field(default_factory=list)
+    latency_compensation_enabled: bool = False
+    destination_latency_ms: Dict[str, float] = Field(default_factory=dict)
+
+    def router_payload(self, *, include_route_id: bool = True) -> Dict[str, Any]:
+        source_port = self.source_port or self.input_port
+        destination_ports = self.destination_ports or ([self.output_port] if self.output_port else [])
+        if not source_port:
+            raise ValueError("source_port is required")
+        if not destination_ports:
+            raise ValueError("destination_ports is required")
+
+        payload: Dict[str, Any] = {
+            "source_port": source_port,
+            "destination_ports": destination_ports,
+            "enabled": self.enabled,
+            "priority": self.priority,
+            "route_type": self.route_type,
+            "filter": self.filter.model_dump(),
+            "transform_chain": self.transform_chain,
+            "latency_compensation_enabled": self.latency_compensation_enabled,
+            "destination_latency_ms": self.destination_latency_ms,
+        }
+        if include_route_id and self.route_id:
+            payload["route_id"] = self.route_id
+        return payload
 
 
 # ==================== Mappings ====================
@@ -430,6 +479,77 @@ async def delete_routing_rule(rule_id: int):
         result = await session.execute(stmt)
         await session.commit()
         return {"success": result.rowcount > 0, "message": "Routing rule deleted" if result.rowcount else "Not found"}
+
+
+# ==================== Port Routes ====================
+
+def _midi_router_or_503():
+    if not MIDI_HUB_AVAILABLE or get_midi_router is None:
+        raise HTTPException(status_code=503, detail="MIDI route service not available")
+    return get_midi_router()
+
+
+@router.get("/routes")
+async def list_port_routes() -> Dict[str, Any]:
+    """List durable MIDI Hub port routes."""
+    route_service = _midi_router_or_503()
+    routes = route_service.list_routes()
+    return {
+        "routes": routes,
+        "count": len(routes),
+        "match_mode": route_service.get_match_mode(),
+    }
+
+
+@router.post("/routes")
+async def create_port_route(request: PortRouteRequest) -> Dict[str, Any]:
+    """Create a durable MIDI Hub port route."""
+    route_service = _midi_router_or_503()
+    try:
+        route = route_service.add_route(request.router_payload())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "created", "route": route}
+
+
+@router.put("/routes/{route_id}")
+async def update_port_route(route_id: str, request: PortRouteRequest) -> Dict[str, Any]:
+    """Update a durable MIDI Hub port route."""
+    route_service = _midi_router_or_503()
+    try:
+        route = route_service.update_route(route_id, request.router_payload(include_route_id=False))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if route is None:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"status": "updated", "route": route}
+
+
+@router.delete("/routes/{route_id}")
+async def delete_port_route(route_id: str) -> Dict[str, Any]:
+    """Delete a durable MIDI Hub port route."""
+    route_service = _midi_router_or_503()
+    if not route_service.delete_route(route_id):
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"status": "deleted", "route_id": route_id}
+
+
+@router.post("/routes/{route_id}/enable")
+async def enable_port_route(route_id: str) -> Dict[str, Any]:
+    """Enable a durable MIDI Hub port route."""
+    route = _midi_router_or_503().set_route_enabled(route_id, True)
+    if route is None:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"status": "enabled", "route": route}
+
+
+@router.post("/routes/{route_id}/disable")
+async def disable_port_route(route_id: str) -> Dict[str, Any]:
+    """Disable a durable MIDI Hub port route."""
+    route = _midi_router_or_503().set_route_enabled(route_id, False)
+    if route is None:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return {"status": "disabled", "route": route}
 
 
 # ==================== MIDI Output ====================

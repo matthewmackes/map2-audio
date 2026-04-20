@@ -338,6 +338,39 @@ class _FakeClockEngine:
         return {"bpm": 121.0, "running": self.running, "source_mode": "internal"}
 
 
+class _FakePortRouter:
+    def __init__(self) -> None:
+        self.routes: dict[str, dict] = {}
+        self.match_mode = "all_match"
+
+    def list_routes(self):
+        return list(self.routes.values())
+
+    def get_match_mode(self):
+        return self.match_mode
+
+    def add_route(self, payload):
+        route_id = payload.get("route_id") or f"route-{len(self.routes) + 1}"
+        route = {"route_id": route_id, **dict(payload)}
+        self.routes[route_id] = route
+        return route
+
+    def update_route(self, route_id, payload):
+        if route_id not in self.routes:
+            return None
+        self.routes[route_id] = {**self.routes[route_id], **dict(payload), "route_id": route_id}
+        return self.routes[route_id]
+
+    def delete_route(self, route_id):
+        return self.routes.pop(route_id, None) is not None
+
+    def set_route_enabled(self, route_id, enabled):
+        if route_id not in self.routes:
+            return None
+        self.routes[route_id] = {**self.routes[route_id], "enabled": bool(enabled)}
+        return self.routes[route_id]
+
+
 def test_engine_lifecycle_uses_midi_hub_when_available(monkeypatch):
     hub = _FakeHub()
     client, service = _build_client(monkeypatch)
@@ -434,6 +467,52 @@ def test_clock_facade_reports_unavailable_without_midi_hub(monkeypatch):
 
     assert response.status_code == 503
     assert response.json()["detail"] == "MIDI clock engine not available"
+
+
+def test_port_route_facade_uses_midi_hub_router_with_legacy_aliases(monkeypatch):
+    router = _FakePortRouter()
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_router", lambda: router)
+
+    created = client.post(
+        "/api/v2/midi/routes",
+        json={
+            "input_port": "Keys In",
+            "output_port": "Synth Out",
+            "filter": {"message_types": ["control_change"], "channels": [1]},
+        },
+    )
+    listed = client.get("/api/v2/midi/routes")
+    updated = client.put(
+        "/api/v2/midi/routes/route-1",
+        json={"source_port": "Keys In", "destination_ports": ["Rack Out"], "priority": 250},
+    )
+    disabled = client.post("/api/v2/midi/routes/route-1/disable")
+    enabled = client.post("/api/v2/midi/routes/route-1/enable")
+    deleted = client.delete("/api/v2/midi/routes/route-1")
+
+    assert created.status_code == 200
+    assert created.json()["route"]["source_port"] == "Keys In"
+    assert created.json()["route"]["destination_ports"] == ["Synth Out"]
+    assert created.json()["route"]["filter"]["message_types"] == ["control_change"]
+    assert listed.json()["count"] == 1
+    assert listed.json()["match_mode"] == "all_match"
+    assert updated.json()["route"]["destination_ports"] == ["Rack Out"]
+    assert updated.json()["route"]["priority"] == 250
+    assert disabled.json()["route"]["enabled"] is False
+    assert enabled.json()["route"]["enabled"] is True
+    assert deleted.json() == {"status": "deleted", "route_id": "route-1"}
+
+
+def test_port_route_facade_reports_unavailable_without_midi_hub(monkeypatch):
+    client, _service = _build_client(monkeypatch)
+    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+
+    response = client.get("/api/v2/midi/routes")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MIDI route service not available"
 
 
 def test_list_commands_includes_duplicate_safe_target_position(monkeypatch):
