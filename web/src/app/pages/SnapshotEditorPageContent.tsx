@@ -220,10 +220,13 @@ import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
-import { SnapshotEditorSnapshotStatusPanel } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
+import {
+  type SnapshotEditorWorkspaceActionId,
+  SnapshotEditorSnapshotInspectorControls,
+  SnapshotEditorSnapshotStatusPanel,
+} from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
-import { SnapshotEditorRail, type SnapshotEditorRailItemId } from '../components/SnapshotEditor/SnapshotEditorRail'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
@@ -6555,7 +6558,7 @@ export function SnapshotEditorPage() {
   const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
   const midiMappingsTitle = midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`
 
-  const editorRailActiveItemId = useMemo<SnapshotEditorRailItemId>(() => {
+  const snapshotInspectorWorkspaceActionId = useMemo<SnapshotEditorWorkspaceActionId>(() => {
     if (showVersionHistoryModal) {
       return 'version-history'
     }
@@ -6570,22 +6573,6 @@ export function SnapshotEditorPage() {
     }
     return 'signal-grid'
   }, [automationTimelineExpanded, effectModalOpen, selectedPlugin, showPluginBrowser, showVersionHistoryModal])
-
-  const renderEditorRail = () => (
-    <SnapshotEditorRail
-      activeItemId={editorRailActiveItemId}
-      onOpenSignalGrid={openSignalGridWorkspace}
-      onOpenDirectory={handleAddPlugin}
-      directoryDisabled={snapshotEditingLocked}
-      onOpenParameters={openSelectedBlockEditor}
-      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-      onOpenAutomation={openAutomationWorkspace}
-      automationActive={automationTimelineExpanded}
-      onOpenVersionHistory={openVersionHistoryWorkspace}
-      versionHistoryDisabled={!activeSnapshot}
-      onOpenHelp={openKeyboardHelpWorkspace}
-    />
-  )
   const tabletDetailsAction = isTabletTouchLayout ? (
     <Button
       size="sm"
@@ -7959,6 +7946,7 @@ export function SnapshotEditorPage() {
 
   const SelectedPluginHeroIcon = getSelectedPluginHeroIcon(selectedPluginMeta, selectedPlugin)
   const bottomEditorHasSelection = Boolean(selectedPlugin)
+  const bottomEditorShowsSnapshotInspector = !bottomEditorHasSelection
   const tabletEditorVisible = isTabletTouchLayout && tabletEditorOpen && bottomEditorHasSelection
   const bottomEditorOpen = !isTabletTouchLayout && effectModalOpen && bottomEditorHasSelection
   const bottomEditorAccentColor = getCategoryConfig(selectedPluginMeta?.category || 'Utility').color
@@ -8395,8 +8383,8 @@ export function SnapshotEditorPage() {
         <section
           ref={bottomEditorRef}
           className={`juce-grid-page__bottom-editor-shell ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
-          aria-label={bottomEditorOpen ? 'Block parameter editor' : undefined}
-          aria-hidden={bottomEditorOpen ? undefined : true}
+          aria-label={bottomEditorOpen ? 'Block parameter editor' : bottomEditorShowsSnapshotInspector ? 'Snapshot inspector' : undefined}
+          aria-hidden={bottomEditorOpen || bottomEditorShowsSnapshotInspector ? undefined : true}
         >
           <Layer className={`juce-grid-page__bottom-editor-panel ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}>
             <div className="juce-grid-page__bottom-editor-header">
@@ -8406,36 +8394,42 @@ export function SnapshotEditorPage() {
                   aria-hidden
                   style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
                 >
-                  {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <Edit size={32} />}
+                  {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <SettingsAdjust size={32} />}
                 </div>
                 <div className="juce-grid-page__bottom-editor-copy">
-                  <p className="juce-grid-page__bottom-editor-kicker">Selected block</p>
+                  <p className="juce-grid-page__bottom-editor-kicker">{bottomEditorShowsSnapshotInspector ? 'Snapshot' : 'Selected block'}</p>
                   <h2 className="juce-grid-page__bottom-editor-heading">
-                    {bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}
+                    {bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : bottomEditorShowsSnapshotInspector ? 'Snapshot settings' : 'Block editor'}
                   </h2>
                   <p className="juce-grid-page__bottom-editor-subtitle">
                     {bottomEditorOpen && selectedPlugin
                       ? selectedPluginMeta?.category || 'Processor'
+                      : bottomEditorShowsSnapshotInspector
+                      ? 'Publish, browse, or create snapshots from the editor inspector.'
                       : 'Open the pinned editor to work on the current block.'}
                   </p>
                 </div>
               </div>
               <div className="juce-grid-page__bottom-editor-actions">
-                {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen || snapshotEditingLocked })}
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  renderIcon={bottomEditorOpen ? Close : Launch}
-                  onClick={bottomEditorOpen ? handleCloseEffectModal : openSelectedBlockEditor}
-                  disabled={!selectedPlugin}
-                  aria-label={bottomEditorOpen ? 'Close editor' : 'Open editor'}
-                  aria-controls="juce-grid-bottom-editor-panel"
-                  aria-expanded={bottomEditorOpen}
-                  className={`juce-grid-page__bottom-editor-toggle ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
-                  style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
-                >
-                  {bottomEditorOpen ? 'Close editor' : 'Open editor'}
-                </Button>
+                {!bottomEditorShowsSnapshotInspector ? (
+                  <>
+                    {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen || snapshotEditingLocked })}
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      renderIcon={bottomEditorOpen ? Close : Launch}
+                      onClick={bottomEditorOpen ? handleCloseEffectModal : openSelectedBlockEditor}
+                      disabled={!selectedPlugin}
+                      aria-label={bottomEditorOpen ? 'Close editor' : 'Open editor'}
+                      aria-controls="juce-grid-bottom-editor-panel"
+                      aria-expanded={bottomEditorOpen}
+                      className={`juce-grid-page__bottom-editor-toggle ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
+                      style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
+                    >
+                      {bottomEditorOpen ? 'Close editor' : 'Open editor'}
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </div>
 
@@ -8463,6 +8457,28 @@ export function SnapshotEditorPage() {
                 ) : (
                   selectedPluginEditorContent
                 )
+              ) : bottomEditorShowsSnapshotInspector ? (
+                <SnapshotEditorSnapshotInspectorControls
+                  liveSnapshot={activeSnapshot}
+                  authoritativeAudioState={authoritativeAudioState}
+                  monitoringStatusLabel={monitoringStatusLabel}
+                  monitoringStatusWarning={monitoringStatusWarning}
+                  onOpenProgressModal={openGuidedProgress}
+                  onOpenSnapshots={() => navigate('/snapshots')}
+                  onCreateSnapshot={() => createCapturedSnapshot()}
+                  createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+                  activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
+                  onOpenSignalGrid={openSignalGridWorkspace}
+                  onOpenDirectory={handleAddPlugin}
+                  directoryDisabled={snapshotEditingLocked}
+                  onOpenParameters={openSelectedBlockEditor}
+                  parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+                  onOpenAutomation={openAutomationWorkspace}
+                  automationActive={automationTimelineExpanded}
+                  onOpenVersionHistory={openVersionHistoryWorkspace}
+                  versionHistoryDisabled={!activeSnapshot}
+                  onOpenHelp={openKeyboardHelpWorkspace}
+                />
               ) : (
                 <Tile className="juce-grid-page__bottom-editor-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
@@ -8637,12 +8653,6 @@ export function SnapshotEditorPage() {
             </>
           )}
         </>
-      )}
-
-      {!isTabletTouchLayout && (
-        <div className="juce-grid-page__floating-actions" aria-label="Snapshot editor navigation rail">
-          {renderEditorRail()}
-        </div>
       )}
 
       {pendingTabletDeletePlugin && (

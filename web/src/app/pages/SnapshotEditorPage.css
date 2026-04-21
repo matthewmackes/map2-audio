@@ -438,83 +438,6 @@
   justify-content: flex-start;
 }
 
-/* Floating snapshots toolbar — left-side rail */
-.juce-grid-page__floating-actions {
-  position: fixed;
-  inset-inline-start: 0;
-  inset-block-start: 0;
-  inset-block-end: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
-  max-inline-size: none;
-  z-index: 97; /* above footer (96) and automation panel (95) */
-  pointer-events: none;
-}
-
-.snapshot-editor-rail {
-  inline-size: 48px;
-  min-inline-size: 48px;
-  block-size: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 0;
-  border-inline-end: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-01, var(--cds-layer, #161616));
-  pointer-events: auto;
-}
-
-.snapshot-editor-rail__item {
-  position: relative;
-  inline-size: 48px;
-  block-size: 48px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--cds-text-placeholder, #8d8d8d);
-  cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
-}
-
-.snapshot-editor-rail__item:hover:not(:disabled),
-.snapshot-editor-rail__item:focus-visible:not(:disabled) {
-  background: var(--cds-layer-hover, #262626);
-  color: var(--cds-text-primary, #f4f4f4);
-}
-
-.snapshot-editor-rail__item.is-active {
-  color: var(--cds-text-primary, #f4f4f4);
-}
-
-.snapshot-editor-rail__item.is-active::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block-start: 6px;
-  inset-block-end: 6px;
-  inline-size: 2px;
-  background: var(--cds-interactive, #0f62fe);
-}
-
-.snapshot-editor-rail__item:disabled {
-  color: var(--cds-text-disabled, #525252);
-  cursor: not-allowed;
-}
-
-.snapshot-editor-rail__item svg {
-  inline-size: 18px;
-  block-size: 18px;
-}
-
-.snapshot-editor-rail__spacer {
-  flex: 1;
-}
-
 .snapshot-menu-rail {
   position: relative;
   display: flex;
@@ -4765,6 +4688,66 @@
   border: 1px dashed color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, var(--cds-link-primary, #0f62fe));
 }
 
+.juce-grid-page__snapshot-inspector-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-block-size: 6.5rem;
+  padding: 1rem;
+  border: 1px dashed color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, var(--cds-link-primary, #0f62fe));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, transparent), transparent 60%),
+    color-mix(in srgb, var(--cds-layer, #161616) 92%, #050505);
+}
+
+.juce-grid-page__snapshot-inspector-controls-copy {
+  display: flex;
+  flex: 1 1 28rem;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-inspector-controls-tags,
+.juce-grid-page__snapshot-inspector-controls-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__snapshot-inspector-controls-actions {
+  flex: 0 1 38rem;
+  justify-content: flex-end;
+}
+
+.juce-grid-page__snapshot-inspector-workspace-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+  border-radius: 4px;
+  background: var(--cds-layer, #161616);
+}
+
+.juce-grid-page__snapshot-inspector-workspace-actions .cds--btn--icon-only.cds--btn--sm {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  min-inline-size: 2.5rem;
+  min-block-size: 2.5rem;
+}
+
+.juce-grid-page__snapshot-inspector-live-tag.cds--tag {
+  min-block-size: 1.75rem;
+  padding-inline: 0.625rem;
+  font-size: var(--juce-grid-font-support-72);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .juce-grid-page__selected-midi-panel,
 .juce-grid-page__selected-midi-panel-copy,
 .juce-grid-page__selected-midi-panel-tags,
@@ -8106,18 +8089,6 @@
   .juce-grid-page__automation-floating-toggle.cds--btn {
     right: max(0.5rem, env(safe-area-inset-right));
     max-inline-size: calc(100vw - 1rem);
-  }
-
-  .juce-grid-page__floating-actions {
-    inset-inline-start: 0;
-    inset-block-start: 0;
-    inset-block-end: 0;
-    max-inline-size: none;
-  }
-
-  .snapshot-editor-rail {
-    inline-size: 48px;
-    min-inline-size: 48px;
   }
 
   .snapshot-menu-rail__panel {

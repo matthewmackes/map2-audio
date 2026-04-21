@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 
-import { SnapshotEditorRail } from '../components/SnapshotEditor/SnapshotEditorRail'
+import { SnapshotEditorSnapshotInspectorControls } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { JuceGridSignalCanvas } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
 
 jest.mock('../hooks/useVuMeters', () => ({
@@ -73,17 +73,15 @@ function SnapshotEditorPageIntegrationHarness() {
 
   return (
     <section aria-label="Snapshot editor integration harness">
-      <div className="juce-grid-page__floating-actions" aria-label="Snapshot editor navigation rail">
-        <SnapshotEditorRail
-          activeItemId="signal-grid"
-          onOpenSignalGrid={jest.fn()}
-          onOpenDirectory={jest.fn()}
-          onOpenParameters={jest.fn()}
-          onOpenAutomation={jest.fn()}
-          onOpenVersionHistory={jest.fn()}
-          onOpenHelp={jest.fn()}
-        />
-      </div>
+      <SnapshotEditorSnapshotInspectorControls
+        activeWorkspaceActionId="signal-grid"
+        onOpenSignalGrid={jest.fn()}
+        onOpenDirectory={jest.fn()}
+        onOpenParameters={jest.fn()}
+        onOpenAutomation={jest.fn()}
+        onOpenVersionHistory={jest.fn()}
+        onOpenHelp={jest.fn()}
+      />
 
       <main aria-label="Signal flow workspace">
         <JuceGridSignalCanvas
@@ -105,10 +103,11 @@ function SnapshotEditorPageIntegrationHarness() {
 }
 
 describe('SnapshotEditorPage integration', () => {
-  it('assembles the schematic rail and signal canvas with mocked Special Settings', () => {
+  it('assembles the snapshot inspector navigation and signal canvas with mocked Special Settings', () => {
     const { container } = render(<SnapshotEditorPageIntegrationHarness />)
 
-    expect(screen.getByRole('navigation', { name: 'Snapshot navigation' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Snapshot navigation' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Snapshot workspace destinations')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Signal Grid' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByLabelText('Signal flow workspace')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Drive' })).toBeInTheDocument()

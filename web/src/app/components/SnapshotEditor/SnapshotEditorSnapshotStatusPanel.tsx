@@ -1,5 +1,5 @@
-import { Add, Edit, Folder, SettingsAdjust } from '@carbon/icons-react'
-import { Button, Layer, Tag } from '@carbon/react'
+import { Add, ChartLine, Edit, Flow, Folder, Help, SettingsAdjust, Time } from '@carbon/icons-react'
+import { Button, Layer, Tag, Tile } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -84,6 +84,17 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   onOpenSnapshots?: () => void
   onCreateSnapshot?: () => void
   createSnapshotPending?: boolean
+  activeWorkspaceActionId?: SnapshotEditorWorkspaceActionId
+  onOpenSignalGrid?: () => void
+  onOpenDirectory?: () => void
+  directoryDisabled?: boolean
+  onOpenParameters?: () => void
+  parametersDisabled?: boolean
+  onOpenAutomation?: () => void
+  automationActive?: boolean
+  onOpenVersionHistory?: () => void
+  versionHistoryDisabled?: boolean
+  onOpenHelp?: () => void
 }
 
 interface SnapshotLiveHeadline {
@@ -98,6 +109,14 @@ interface SnapshotChannelActivityBadge {
   tagType: 'green' | 'warm-gray' | 'cool-gray'
   warning: boolean
 }
+
+export type SnapshotEditorWorkspaceActionId =
+  | 'signal-grid'
+  | 'directory'
+  | 'parameters'
+  | 'automation'
+  | 'version-history'
+  | 'help'
 
 function resolveLiveHeadline(
   snapshot: SnapshotDetail | null,
@@ -206,17 +225,9 @@ export function SnapshotEditorSnapshotStatusPanel({
   snapshotRenamePending = false,
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
-  onOpenProgressModal,
-  onOpenSnapshots,
-  onCreateSnapshot,
-  createSnapshotPending = false,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
-    [authoritativeAudioState, liveSnapshot],
-  )
-  const channelActivityBadge = useMemo(
-    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState),
     [authoritativeAudioState, liveSnapshot],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
@@ -286,18 +297,6 @@ export function SnapshotEditorSnapshotStatusPanel({
                   </div>
                 ) : (
                   <>
-                    {liveSnapshot && onOpenProgressModal ? (
-                      <Button
-                        size="sm"
-                        kind="secondary"
-                        renderIcon={SettingsAdjust}
-                        className="juce-grid-page__snapshot-status-config-button"
-                        onClick={onOpenProgressModal}
-                        title="Open publish to live workspace"
-                      >
-                        Publish to live
-                      </Button>
-                    ) : null}
                     <h2 className="juce-grid-page__snapshot-status-title">
                       {liveSnapshot && onRenameSnapshot ? (
                         <button
@@ -313,60 +312,17 @@ export function SnapshotEditorSnapshotStatusPanel({
                         </button>
                       ) : snapshotTitle}
                     </h2>
-                    {(onOpenSnapshots || onCreateSnapshot) ? (
-                      <div className="juce-grid-page__snapshot-status-entry-actions">
-                        {onOpenSnapshots ? (
-                          <Button
-                            size="sm"
-                            kind="secondary"
-                            renderIcon={Folder}
-                            onClick={onOpenSnapshots}
-                          >
-                            Open Snapshots
-                          </Button>
-                        ) : null}
-                        {onCreateSnapshot ? (
-                          <Button
-                            size="sm"
-                            kind="primary"
-                            renderIcon={Add}
-                            onClick={onCreateSnapshot}
-                            disabled={createSnapshotPending}
-                          >
-                            {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
-                          </Button>
-                        ) : null}
-                      </div>
-                    ) : null}
                   </>
                 )}
               </div>
-              {channelActivityBadge || monitoringStatusLabel ? (
+              {monitoringStatusLabel ? (
                 <div className="juce-grid-page__snapshot-status-pill-row">
-                  {channelActivityBadge ? (
-                    <button
-                      type="button"
-                      title={channelActivityBadge.tooltip}
-                      aria-label={channelActivityBadge.tooltip}
-                      className="juce-grid-page__snapshot-status-channel-badge-wrap juce-grid-page__snapshot-status-channel-badge-button"
-                      onClick={onOpenProgressModal}
-                    >
-                      <Tag
-                        type={channelActivityBadge.tagType}
-                        className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : channelActivityBadge.tagType === 'green' ? 'is-healthy' : 'is-saved'}`}
-                      >
-                        {channelActivityBadge.label}
-                      </Tag>
-                    </button>
-                  ) : null}
-                  {monitoringStatusLabel ? (
-                    <Tag
-                      type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
-                      className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
-                    >
-                      {monitoringStatusLabel}
-                    </Tag>
-                  ) : null}
+                  <Tag
+                    type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
+                    className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
+                  >
+                    {monitoringStatusLabel}
+                  </Tag>
                 </div>
               ) : null}
               {!liveSnapshot ? (
@@ -379,6 +335,200 @@ export function SnapshotEditorSnapshotStatusPanel({
         </div>
       </div>
     </Layer>
+  )
+}
+
+export function SnapshotEditorSnapshotInspectorControls({
+  liveSnapshot = null,
+  authoritativeAudioState = null,
+  monitoringStatusLabel = null,
+  monitoringStatusWarning = false,
+  onOpenProgressModal,
+  onOpenSnapshots,
+  onCreateSnapshot,
+  createSnapshotPending = false,
+  activeWorkspaceActionId = 'signal-grid',
+  onOpenSignalGrid,
+  onOpenDirectory,
+  directoryDisabled = false,
+  onOpenParameters,
+  parametersDisabled = false,
+  onOpenAutomation,
+  automationActive = false,
+  onOpenVersionHistory,
+  versionHistoryDisabled = false,
+  onOpenHelp,
+}: Pick<
+  SnapshotEditorSnapshotStatusPanelProps,
+  | 'liveSnapshot'
+  | 'authoritativeAudioState'
+  | 'monitoringStatusLabel'
+  | 'monitoringStatusWarning'
+  | 'onOpenProgressModal'
+  | 'onOpenSnapshots'
+  | 'onCreateSnapshot'
+  | 'createSnapshotPending'
+  | 'activeWorkspaceActionId'
+  | 'onOpenSignalGrid'
+  | 'onOpenDirectory'
+  | 'directoryDisabled'
+  | 'onOpenParameters'
+  | 'parametersDisabled'
+  | 'onOpenAutomation'
+  | 'automationActive'
+  | 'onOpenVersionHistory'
+  | 'versionHistoryDisabled'
+  | 'onOpenHelp'
+>) {
+  const liveHeadline = useMemo(
+    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
+    [authoritativeAudioState, liveSnapshot],
+  )
+  const channelActivityBadge = useMemo(
+    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState),
+    [authoritativeAudioState, liveSnapshot],
+  )
+  const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot loaded'
+  const workspaceActions = [
+    {
+      id: 'signal-grid' as const,
+      label: 'Signal Grid',
+      icon: Flow,
+      onClick: onOpenSignalGrid,
+    },
+    {
+      id: 'directory' as const,
+      label: 'Directory',
+      icon: Folder,
+      onClick: onOpenDirectory,
+      disabled: directoryDisabled,
+    },
+    {
+      id: 'parameters' as const,
+      label: 'Parameters',
+      icon: SettingsAdjust,
+      onClick: onOpenParameters,
+      disabled: parametersDisabled,
+    },
+    {
+      id: 'automation' as const,
+      label: 'Automation',
+      icon: ChartLine,
+      onClick: onOpenAutomation,
+      active: automationActive,
+    },
+    {
+      id: 'version-history' as const,
+      label: 'Version History',
+      icon: Time,
+      onClick: onOpenVersionHistory,
+      disabled: versionHistoryDisabled,
+    },
+    {
+      id: 'help' as const,
+      label: 'Help',
+      icon: Help,
+      onClick: onOpenHelp,
+    },
+  ].filter((action) => Boolean(action.onClick))
+
+  return (
+    <Tile className="juce-grid-page__snapshot-inspector-controls" aria-label="Snapshot settings">
+      <div className="juce-grid-page__snapshot-inspector-controls-copy">
+        <p className="juce-grid-page__dense-card-kicker">Snapshot settings</p>
+        <h3 className="juce-grid-page__selected-block-placeholder-heading">{snapshotTitle}</h3>
+        <div className="juce-grid-page__snapshot-inspector-controls-tags">
+          <Tag
+            type={liveHeadline.tone === 'current' ? 'green' : liveHeadline.tone === 'other' ? 'purple' : 'cool-gray'}
+            className={`juce-grid-page__snapshot-inspector-live-tag is-${liveHeadline.tone}`}
+          >
+            {liveHeadline.text}
+          </Tag>
+          {channelActivityBadge ? (
+            <button
+              type="button"
+              title={channelActivityBadge.tooltip}
+              aria-label={channelActivityBadge.tooltip}
+              className="juce-grid-page__snapshot-status-channel-badge-wrap juce-grid-page__snapshot-status-channel-badge-button"
+              onClick={onOpenProgressModal}
+              disabled={!onOpenProgressModal}
+            >
+              <Tag
+                type={channelActivityBadge.tagType}
+                className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : channelActivityBadge.tagType === 'green' ? 'is-healthy' : 'is-saved'}`}
+              >
+                {channelActivityBadge.label}
+              </Tag>
+            </button>
+          ) : null}
+          {monitoringStatusLabel ? (
+            <Tag
+              type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
+              className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
+            >
+              {monitoringStatusLabel}
+            </Tag>
+          ) : null}
+        </div>
+      </div>
+      <div className="juce-grid-page__snapshot-inspector-controls-actions">
+        {workspaceActions.length > 0 ? (
+          <div className="juce-grid-page__snapshot-inspector-workspace-actions" aria-label="Snapshot workspace destinations">
+            {workspaceActions.map((action) => {
+              const Icon = action.icon
+              const active = activeWorkspaceActionId === action.id || Boolean(action.active)
+              return (
+                <Button
+                  key={action.id}
+                  size="sm"
+                  kind={active ? 'secondary' : 'ghost'}
+                  renderIcon={Icon}
+                  iconDescription={action.label}
+                  hasIconOnly
+                  tooltipPosition="top"
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                  aria-current={active ? 'page' : undefined}
+                />
+              )
+            })}
+          </div>
+        ) : null}
+        {onOpenProgressModal ? (
+          <Button
+            size="sm"
+            kind="secondary"
+            renderIcon={SettingsAdjust}
+            className="juce-grid-page__snapshot-status-config-button"
+            onClick={onOpenProgressModal}
+            disabled={!liveSnapshot}
+          >
+            Publish to live
+          </Button>
+        ) : null}
+        {onOpenSnapshots ? (
+          <Button
+            size="sm"
+            kind="secondary"
+            renderIcon={Folder}
+            onClick={onOpenSnapshots}
+          >
+            Open Snapshots
+          </Button>
+        ) : null}
+        {onCreateSnapshot ? (
+          <Button
+            size="sm"
+            kind="primary"
+            renderIcon={Add}
+            onClick={onCreateSnapshot}
+            disabled={createSnapshotPending}
+          >
+            {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
+          </Button>
+        ) : null}
+      </div>
+    </Tile>
   )
 }
 
