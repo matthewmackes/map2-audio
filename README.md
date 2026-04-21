@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2464** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1167** TypeScript | **136** C++/H | **144** Docs | **2467** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`32084788`](https://github.com/matthewmackes/map2-audio/commit/32084788a8b428504e4b3d0591eb461f1afce654) | docs(T710): rewrite Unified Channel Grid epic as 28 atomi... | Map2 Audio | 2026-04-20 |
+| [`3524c696`](https://github.com/matthewmackes/map2-audio/commit/3524c69675a83d29def61955e00bf77a76fe2872) | docs: add Definition of Done gate to prevent premature ta... | Map2 Audio | 2026-04-20 |
+| [`bfb8cf26`](https://github.com/matthewmackes/map2-audio/commit/bfb8cf26f20fdb2a306b2b28571c286c6e8e323a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`d94f94de`](https://github.com/matthewmackes/map2-audio/commit/d94f94de21493a990a11cf83f9e108d9de181fc3) | docs: open T700 MK1 Headless epic; extend operation guide... | Map2 Audio | 2026-04-20 |
 | [`9fea90d5`](https://github.com/matthewmackes/map2-audio/commit/9fea90d5069f447cc1425bdf0e1c59fe2bfbe705) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`08aaffe1`](https://github.com/matthewmackes/map2-audio/commit/08aaffe178da473ca8c60e9eae9c998b7e73a61a) | docs: add JUCE random-fx soak evidence for 2026-04-20 | Map2 Audio | 2026-04-20 |
 | [`9bdfe0e5`](https://github.com/matthewmackes/map2-audio/commit/9bdfe0e5bc7d4b07d09f5a4620c6c758ee224dad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 | [`b012c59c`](https://github.com/matthewmackes/map2-audio/commit/b012c59cc48ca3b7f58a890b06f2bc18fb71db5b) | test: add worklist integrity validator | Map2 Audio | 2026-04-20 |
-| [`af9d5a7d`](https://github.com/matthewmackes/map2-audio/commit/af9d5a7d1e397ccff2f3235dc36c7746a6c36460) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`0e5c21fc`](https://github.com/matthewmackes/map2-audio/commit/0e5c21fc135d16c72a346c5bf378252bd82d6ab0) | docs: repair worklist duplicate ids | Map2 Audio | 2026-04-20 |
-| [`9046d460`](https://github.com/matthewmackes/map2-audio/commit/9046d4602876041e6537036443edbef9fd9625d0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
