@@ -114,7 +114,7 @@ function LogoMark({ pulse }: { pulse: boolean }) {
       animate={pulse ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
       transition={pulse ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } : {}}
     >
-      <span className="reboot-overlay__logo-text">MAP2</span>
+      <span className="reboot-overlay__logo-text">MAP</span>
       <span className="reboot-overlay__logo-sub">PLATFORM REBOOT</span>
     </motion.div>
   )

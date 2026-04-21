@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "mackes-audio-platform",
+  "productName": "Mackes Audio Platform",
+  "shortName": "MAP",
+  "tagline": "MACKES AUDIO PLATFORM",
+  "vendor": "Mackes",
+  "homepage": "https://github.com/matthewmackes/map2-audio",
+  "assets": {
+    "wordmark":     "branding/assets/map-wordmark.svg",
+    "icon":         "branding/assets/map-icon.svg",
+    "lockup":       "branding/assets/map-lockup.svg",
+    "favicon":      "web/public/favicon.ico",
+    "pwa192":       "web/public/logo192.png",
+    "pwa512":       "web/public/logo512.png",
+    "brandMarkSvg": "web/public/map-brand-mark.svg"
+  },
+  "palette": {
+    "primary":    "#4DA6FF",
+    "primarySoft":"#A6C8FF",
+    "onPrimary":  "#000000",
+    "background": "#000000",
+    "surface":    "#0E0E0E",
+    "accent":     "#A6C8FF"
+  },
+  "copy": {
+    "welcomeHeadline": "Mackes Audio Platform",
+    "welcomeSubline":  "Professional real-time audio processing",
+    "loginBanner":     "Mackes Audio Platform — {hostname}",
+    "systemdPrefix":   "MAP — "
+  }
+}

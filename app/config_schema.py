@@ -67,7 +67,7 @@ APPLICATION_SCHEMA: dict[str, ConfigOption] = {
     # Application settings
     "app.name": ConfigOption(
         key="app.name",
-        default="Mackes Audio Platform V2",
+        default="Mackes Audio Platform",
         description="Application display name",
         value_type=str,
     ),

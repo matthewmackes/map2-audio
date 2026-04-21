@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-label="MAP wordmark">
+  <title>MAP</title>
+  <defs>
+    <mask id="map-stripes" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="260">
+      <rect x="0" y="0" width="900" height="260" fill="#000"/>
+      <g fill="#fff">
+        <rect x="0" y="0"   width="900" height="14"/>
+        <rect x="0" y="24"  width="900" height="14"/>
+        <rect x="0" y="48"  width="900" height="14"/>
+        <rect x="0" y="72"  width="900" height="14"/>
+        <rect x="0" y="96"  width="900" height="14"/>
+        <rect x="0" y="120" width="900" height="14"/>
+        <rect x="0" y="144" width="900" height="14"/>
+        <rect x="0" y="168" width="900" height="14"/>
+        <rect x="0" y="192" width="900" height="14"/>
+        <rect x="0" y="216" width="900" height="14"/>
+        <rect x="0" y="240" width="900" height="14"/>
+      </g>
+    </mask>
+  </defs>
+  <g mask="url(#map-stripes)">
+    <text x="450" y="220"
+          text-anchor="middle"
+          font-family="'Impact', 'Haettenschweiler', 'Arial Black', 'Helvetica Neue', sans-serif"
+          font-weight="900"
+          font-stretch="condensed"
+          font-size="280"
+          letter-spacing="-4"
+          fill="var(--map-brand-primary, #4DA6FF)">MAP</text>
+  </g>
+</svg>

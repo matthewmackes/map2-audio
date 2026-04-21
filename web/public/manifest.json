@@ -1,15 +1,26 @@
 {
-  "short_name": "PiPedal",
-  "name": "PiPedal",
+  "short_name": "MAP",
+  "name": "Mackes Audio Platform",
+  "description": "Mackes Audio Platform — professional audio control and routing workspace",
   "icons": [
     {
-      "src": "map2-brand-mark.svg",
+      "src": "map-brand-mark.svg",
       "sizes": "any",
       "type": "image/svg+xml"
+    },
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#4DA6FF",
+  "background_color": "#000000"
 }

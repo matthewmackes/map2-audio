@@ -6,7 +6,53 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T712 closed: Toasts.test.tsx steady-state palette test realigned to assert --cds-* Carbon tokens (--cds-layer-01/--cds-layer-02/--cds-background/--cds-text-primary/--cds-text-secondary) matching T711 port; added negative assertions to lock absence of retired MAP2 aliases (--surface, --bg). 20/20 Toasts tests PASS from repo root (root babel.config.js required). Typecheck PASS.
+Last updated: 2026-04-21 - T2414 epic opened: Centralized branding system — new logo adoption, brand manifest, ThemePage Branding tab, Apply-to-OS pipeline. Phase A in progress.
+
+---
+
+ID: T2414
+Status: [>] In Progress
+Title: Centralized branding system — new logo adoption + ThemePage Branding tab + Apply-to-OS
+Description:
+- Goal / acceptance criteria: Adopt the user-provided new MAP logo (blue 2×2 grid icon over striped "MAP" wordmark with "MACKES AUDIO PLATFORM" tagline) as the canonical brand mark. Consolidate all branding under a single `branding/brand.manifest.json` source of truth. Add a Branding tab to ThemePage for full runtime editing (productName, tagline, logos, palette, copy). Extend `Apply to OS` pipeline to regenerate Plymouth boot splash, login banner, terminal welcome, and systemd unit Descriptions from the manifest. Fix stale `web/public/manifest.json` PiPedal leak. Drop "V2" suffix from user-facing product name everywhere (`Mackes Audio Platform`, short name `MAP`). Plan: `/home/mm/.claude/plans/make-this-the-new-lively-wigderson.md`.
+- Why it matters: Branding today is scattered across ~20 hardcoded locations (React, HTML, PWA manifest, RPM specs, 13 systemd units, Plymouth, login banner, welcome script). PWA manifest still says "PiPedal" (legacy upstream name). New logo adoption is blocked without a consolidated system. Industry-standard rebranding requires a single manifest the rest of the system reads.
+- Dependencies: None.
+- Estimated effort: Large — 5 phases, each restartable.
+- Required outputs:
+  - T2414-subA: Vectorize new logo (wordmark + icon + lockup SVGs) at `branding/assets/`
+  - T2414-subB: Write `branding/brand.manifest.json` (schema v1)
+  - T2414-subC: Replace favicon + PWA icons from new brand
+  - T2414-subD: Fix `web/public/manifest.json` PiPedal leak
+  - T2414-subE: Update `map2Branding.tsx` to use new icon (Phase A shim)
+  - T2414-subF: `web/src/app/branding/BrandingContext.tsx` + `useBranding()` hook (Phase B)
+  - T2414-subG: `app/services/branding_service.py` + `app/routes/branding.py` (Phase B)
+  - T2414-subH: ThemePage tab strip + BrandingTab UI (Phase C)
+  - T2414-subI: Runtime brand editing: PATCH/POST endpoints + override layer (Phase C)
+  - T2414-subJ: Templates for Plymouth/login/welcome (Phase D)
+  - T2414-subK: `scripts/apply_branding_systemd.py` — rewrite 13 service Descriptions (Phase D)
+  - T2414-subL: RPM spec manifest integration (Phase E)
+  - Atomic commits on master + `git push origin master && git push gitlab master` per phase
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (opened; Phase A subA in progress)
+
+---
+
+ID: T2413
+Status: [✓] Done
+Title: Move Snapshot Editor controls into the bottom snapshot inspector
+Description:
+- Goal / acceptance criteria: Remove snapshot-level controls from the Snapshot Editor hero/header area and surface them in the editor inspector interface when no block is selected. Publish/status/open/new controls must remain accessible, use existing Carbon components/tokens, avoid overlapping the app/workspace navigation bars, and keep focused Snapshot Editor tests plus typecheck passing.
+- Why it matters: The current hero-level control cluster visually collides with the app/workspace navigation bars in the Snapshot Editor. Moving those controls into the inspector keeps global navigation distinct from snapshot editing actions.
+- Dependencies: None.
+- Estimated effort: Low.
+- Required outputs:
+  - Snapshot status hero reduced to title/live identity only
+  - Snapshot inspector controls rendered in the bottom editor interface
+  - Focused component tests updated/added
+  - `npm --prefix web run typecheck` PASS
+Assigned to: Codex
+Last updated: 2026-04-21 09:15 - Codex
+Completion note: 2026-04-21 - Codex: Added `SnapshotEditorSnapshotInspectorControls` in `web/src/app/components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel.tsx`; removed hero-level `Publish to live`, channel activity, Open Snapshots, and New Snapshot controls from the status hero; rendered the snapshot controls in the bottom editor interface when no block is selected via `web/src/app/pages/SnapshotEditorPageContent.tsx`; added inspector styling in `web/src/app/pages/SnapshotEditorPage.css`; updated focused tests. Validation: `npx jest --testPathPatterns=SnapshotEditorSnapshotStatusPanel --runInBand --no-coverage` PASS (4/4); `npm --prefix web run typecheck` PASS; `npm --prefix web run build` PASS (21.36s).
 
 ---
 

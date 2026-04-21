@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="MAP — Mackes Audio Platform icon">
+  <title>MAP — Mackes Audio Platform</title>
+  <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill="var(--map-brand-primary, #4DA6FF)"/>
+  <rect x="22" y="22" width="95" height="95" rx="14" ry="14" fill="var(--map-brand-background, #000000)"/>
+  <rect x="139" y="22" width="95" height="95" rx="14" ry="14" fill="var(--map-brand-background, #000000)"/>
+  <rect x="22" y="139" width="95" height="95" rx="14" ry="14" fill="var(--map-brand-background, #000000)"/>
+  <rect x="139" y="139" width="95" height="95" rx="14" ry="14" fill="var(--map-brand-background, #000000)"/>
+</svg>

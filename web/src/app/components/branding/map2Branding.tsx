@@ -1,7 +1,8 @@
 import type { SVGProps } from 'react'
 
-export const MAP2_PRIMARY_LABEL = 'MAP2'
+export const MAP2_PRIMARY_LABEL = 'MAP'
 export const MAP2_PLATFORM_NAME = 'Mackes Audio Platform'
+export const MAP2_PLATFORM_TAGLINE = 'MACKES AUDIO PLATFORM'
 export const MAP2_PLATFORM_VERSION =
   typeof __MAP2_PLATFORM_VERSION__ !== 'undefined' ? __MAP2_PLATFORM_VERSION__ : '0000000000000001'
 export const MAP2_PLATFORM_BUILD_DATE =
@@ -14,10 +15,8 @@ export const MAP2_PLATFORM_BUILD_TIMESTAMP =
   typeof __MAP2_PLATFORM_BUILD_TIMESTAMP__ !== 'undefined' ? __MAP2_PLATFORM_BUILD_TIMESTAMP__ : ''
 export const MAP2_PLATFORM_META = `${MAP2_PLATFORM_NAME} · ${MAP2_PLATFORM_VERSION}`
 
-const BRAND_FRAME_COLOR = '#4589FF'
-const BRAND_FRAME_HIGHLIGHT = '#A6C8FF'
-const BRAND_BACKGROUND_COLOR = '#13171B'
-const BRAND_PANEL_COLOR = '#1A1E23'
+const BRAND_PRIMARY = '#4DA6FF'
+const BRAND_BACKGROUND = '#000000'
 
 type Map2BrandMarkProps = SVGProps<SVGSVGElement> & {
   decorative?: boolean
@@ -27,25 +26,11 @@ type Map2BrandMarkProps = SVGProps<SVGSVGElement> & {
 function BrandMarkArtwork() {
   return (
     <>
-      <rect x="12" y="12" width="168" height="168" rx="34" fill={BRAND_FRAME_COLOR} />
-      <rect
-        x="15"
-        y="15"
-        width="162"
-        height="162"
-        rx="31"
-        fill="none"
-        stroke={BRAND_FRAME_HIGHLIGHT}
-        strokeOpacity="0.45"
-        strokeWidth="2"
-      />
-      <rect x="28" y="28" width="136" height="136" rx="24" fill={BRAND_BACKGROUND_COLOR} />
-      <rect x="83" y="28" width="26" height="136" rx="13" fill={BRAND_FRAME_COLOR} />
-      <rect x="28" y="83" width="136" height="26" rx="13" fill={BRAND_FRAME_COLOR} />
-      <rect x="34" y="34" width="43" height="43" rx="8" fill={BRAND_PANEL_COLOR} />
-      <rect x="115" y="34" width="43" height="43" rx="8" fill={BRAND_PANEL_COLOR} />
-      <rect x="34" y="115" width="43" height="43" rx="8" fill={BRAND_PANEL_COLOR} />
-      <rect x="115" y="115" width="43" height="43" rx="8" fill={BRAND_PANEL_COLOR} />
+      <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill={BRAND_PRIMARY} />
+      <rect x="22" y="22" width="95" height="95" rx="14" ry="14" fill={BRAND_BACKGROUND} />
+      <rect x="139" y="22" width="95" height="95" rx="14" ry="14" fill={BRAND_BACKGROUND} />
+      <rect x="22" y="139" width="95" height="95" rx="14" ry="14" fill={BRAND_BACKGROUND} />
+      <rect x="139" y="139" width="95" height="95" rx="14" ry="14" fill={BRAND_BACKGROUND} />
     </>
   )
 }
@@ -57,14 +42,14 @@ export function Map2BrandMark({
 }: Map2BrandMarkProps) {
   if (decorative) {
     return (
-      <svg viewBox="0 0 192 192" aria-hidden="true" focusable="false" {...props}>
+      <svg viewBox="0 0 256 256" aria-hidden="true" focusable="false" {...props}>
         <BrandMarkArtwork />
       </svg>
     )
   }
 
   return (
-    <svg viewBox="0 0 192 192" role="img" aria-label={label} focusable="false" {...props}>
+    <svg viewBox="0 0 256 256" role="img" aria-label={label} focusable="false" {...props}>
       <BrandMarkArtwork />
     </svg>
   )
