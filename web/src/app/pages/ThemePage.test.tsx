@@ -205,6 +205,10 @@ describe('ThemePage', () => {
     expect(screen.getByRole('heading', { name: 'Fonts and Objects' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Objects' })).toBeTruthy()
 
+    openThemeTab('Palette Mapper')
+    expect(screen.getByRole('heading', { name: 'Palette Mapper' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Automatic Carbon Mapping' })).toBeTruthy()
+
     openThemeTab('Background')
     expect(screen.getByRole('heading', { name: 'Background' })).toBeTruthy()
 
@@ -360,6 +364,22 @@ describe('ThemePage', () => {
     await waitFor(() => {
       expect(window.localStorage.getItem('custom-themes')).toContain('Ops Deck')
       expect(window.localStorage.getItem('theme')).toContain('custom-')
+    })
+  })
+
+  it('saves and applies a generated public palette Carbon target', async () => {
+    renderThemePage()
+    openThemeTab('Palette Mapper')
+
+    expect(screen.getByText('Pantone library boundary')).toBeTruthy()
+    expect(screen.getByText('--cds-button-primary')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /save and apply generated theme/i }))
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('custom-themes')).toContain('public-palette')
+      expect(window.localStorage.getItem('theme')).toContain('custom-public-palette')
+      expect(document.documentElement.style.getPropertyValue('--cds-button-primary')).toMatch(/^#[0-9a-f]{6}$/)
     })
   })
 

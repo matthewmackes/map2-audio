@@ -7,6 +7,70 @@ const CUSTOM_THEMES_STORAGE_KEY = 'custom-themes';
 const DEFAULT_THEME_ID = 'gray-10';
 const CARBON_THEME_EVENT = 'map2:theme-change';
 const CARBON_THEME_CLASSES = ['cds--white', 'cds--g10', 'cds--g90', 'cds--g100', 'cds--blueprint'] as const;
+const CUSTOM_CARBON_COLOR_TOKEN_MAP = {
+  '--cds-background': 'bg',
+  '--cds-background-hover': 'surface-2',
+  '--cds-background-active': 'surface-3',
+  '--cds-background-selected': 'surface-3',
+  '--cds-background-selected-hover': 'surface-2',
+  '--cds-background-inverse': 'text-primary',
+  '--cds-background-brand': 'primary',
+  '--cds-layer': 'surface',
+  '--cds-layer-01': 'surface',
+  '--cds-layer-02': 'surface-2',
+  '--cds-layer-03': 'surface-3',
+  '--cds-layer-hover': 'surface-2',
+  '--cds-layer-active': 'surface-3',
+  '--cds-layer-selected': 'surface-3',
+  '--cds-layer-selected-hover': 'surface-2',
+  '--cds-layer-accent': 'surface-3',
+  '--cds-layer-accent-01': 'surface-3',
+  '--cds-field': 'surface',
+  '--cds-field-01': 'surface',
+  '--cds-field-02': 'surface-2',
+  '--cds-border-subtle': 'border',
+  '--cds-border-subtle-00': 'border',
+  '--cds-border-subtle-01': 'border',
+  '--cds-border-subtle-02': 'border',
+  '--cds-border-subtle-03': 'border',
+  '--cds-border-strong': 'border-strong',
+  '--cds-border-strong-01': 'border-strong',
+  '--cds-border-strong-02': 'border-strong',
+  '--cds-border-strong-03': 'border-strong',
+  '--cds-border-interactive': 'interactive',
+  '--cds-border-inverse': 'text-primary',
+  '--cds-text-primary': 'text-primary',
+  '--cds-text-secondary': 'text-secondary',
+  '--cds-text-helper': 'text-tertiary',
+  '--cds-text-placeholder': 'text-tertiary',
+  '--cds-text-inverse': 'text-inverse',
+  '--cds-text-on-color': 'text-inverse',
+  '--cds-text-on-color-disabled': 'muted-2',
+  '--cds-icon-primary': 'text-primary',
+  '--cds-icon-secondary': 'text-secondary',
+  '--cds-icon-on-color': 'text-inverse',
+  '--cds-icon-on-color-disabled': 'muted-2',
+  '--cds-link-primary': 'accent',
+  '--cds-link-primary-hover': 'primary-strong',
+  '--cds-link-secondary': 'accent',
+  '--cds-link-visited': 'accent',
+  '--cds-interactive': 'interactive',
+  '--cds-button-primary': 'interactive',
+  '--cds-button-primary-hover': 'interactive-hover',
+  '--cds-button-primary-active': 'interactive-active',
+  '--cds-button-secondary': 'primary-strong',
+  '--cds-button-secondary-hover': 'interactive-hover',
+  '--cds-button-secondary-active': 'interactive-active',
+  '--cds-button-tertiary': 'interactive',
+  '--cds-button-tertiary-hover': 'interactive-hover',
+  '--cds-button-tertiary-active': 'interactive-active',
+  '--cds-button-disabled': 'interactive-disabled',
+  '--cds-support-success': 'support-success',
+  '--cds-support-warning': 'support-warning',
+  '--cds-support-error': 'support-danger',
+  '--cds-support-info': 'support-info',
+  '--cds-focus': 'focus-ring',
+} as const;
 
 const LEGACY_THEME_ALIASES: Record<string, string> = {
   g100: 'default',
@@ -80,6 +144,31 @@ function emitThemeChange(themeId: string, carbonTheme: CarbonThemeId): void {
       },
     }),
   );
+}
+
+function hasConcreteColorTokenOverrides(theme: Theme): boolean {
+  return Object.values(theme.colors).some((value) => (
+    typeof value === 'string'
+    && value.startsWith('#')
+    && !value.includes('var(')
+  ));
+}
+
+function applyCustomCarbonColorTokens(root: HTMLElement, theme: Theme): void {
+  Object.keys(CUSTOM_CARBON_COLOR_TOKEN_MAP).forEach((token) => {
+    root.style.removeProperty(token);
+  });
+
+  if (!hasConcreteColorTokenOverrides(theme)) {
+    return;
+  }
+
+  Object.entries(CUSTOM_CARBON_COLOR_TOKEN_MAP).forEach(([token, colorKey]) => {
+    const value = theme.colors[colorKey as keyof Theme['colors']];
+    if (typeof value === 'string' && !value.includes('var(')) {
+      root.style.setProperty(token, value);
+    }
+  });
 }
 
 /**
@@ -157,6 +246,7 @@ export function applyTheme(themeId: string): void {
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
     applyCarbonThemeClass(theme.carbonTheme ?? 'g100');
+    applyCustomCarbonColorTokens(root, theme);
 
     Object.entries(theme.colors).forEach(([key, value]) => {
       if (key === 'color-scheme') {

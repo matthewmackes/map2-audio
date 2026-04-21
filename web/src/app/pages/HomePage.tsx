@@ -1,5 +1,5 @@
-import { useQueries } from '@tanstack/react-query'
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import { useQueries, useQuery } from '@tanstack/react-query'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Column,
@@ -26,8 +26,8 @@ import {
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
 import map2Logo from '../../assets/MAP2-LOGO.png'
-import defaultWallpaperImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
-import landingHeroBrandImage from '../../../../branding/MAP2-LOGO-CROPPED.png'
+import mapGridHorizonImage from '../../../../branding/MAP-GRID-HORIZON-2026.png'
+import landingHeroBrandImage from '../../../../branding/MAP-LOGO-2026.png'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences } from './homeLandingPreferences'
@@ -43,11 +43,20 @@ import { readPorts } from '../components/MidiHub/portUtils'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { computeLatencyPressure } from '../utils/latencyPressure'
 import {
+  irApi,
   latencyV2Api,
   midiHubApi,
+  pluginsApi,
+  pluginPresetsApi,
   type LatencyJitterStats,
   type MidiHubRoute,
 } from '../../map2/api'
+import {
+  WelcomeHero,
+  type WelcomeHeroArtifact,
+  type WelcomeHeroHardwareDevice,
+  type WelcomeHeroRibbonItem,
+} from '../components/landing/WelcomeHero'
 import './HomePage.boot.css'
 import './HomePage.landing.css'
 
@@ -309,6 +318,33 @@ export function HomePage() {
       staleTime: 500,
       refetchInterval: 1_000,
     })),
+  })
+
+  const pluginListQuery = useQuery({
+    queryKey: ['home', 'welcome', 'plugin-list'],
+    queryFn: () => pluginsApi.list(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+  const pluginDiscoverQuery = useQuery({
+    queryKey: ['home', 'welcome', 'plugin-discover'],
+    queryFn: () => pluginsApi.discover(false),
+    staleTime: 60_000,
+  })
+  const cabinetIrQuery = useQuery({
+    queryKey: ['home', 'welcome', 'ir-cabinets'],
+    queryFn: () => irApi.listCabinets(),
+    staleTime: 60_000,
+  })
+  const reverbIrQuery = useQuery({
+    queryKey: ['home', 'welcome', 'ir-reverbs'],
+    queryFn: () => irApi.listReverbs(),
+    staleTime: 60_000,
+  })
+  const pluginPresetsQuery = useQuery({
+    queryKey: ['home', 'welcome', 'plugin-presets'],
+    queryFn: () => pluginPresetsApi.list(),
+    staleTime: 60_000,
   })
 
   const midiDeviceRows = useMemo<HomeTelemetryRow[]>(() => {
@@ -705,6 +741,223 @@ export function HomePage() {
     [tableRows],
   )
 
+  // ---------- Welcome Hero props ----------
+  const welcomeArtifacts = useMemo<WelcomeHeroArtifact[]>(() => {
+    const pluginCount = (
+      pluginDiscoverQuery.data?.count
+      ?? pluginDiscoverQuery.data?.plugins?.length
+      ?? pluginListQuery.data?.count
+      ?? pluginListQuery.data?.loaded?.length
+      ?? 0
+    )
+    const cabinetCount = cabinetIrQuery.data?.count ?? cabinetIrQuery.data?.irs?.length ?? 0
+    const reverbCount = reverbIrQuery.data?.count ?? reverbIrQuery.data?.irs?.length ?? 0
+    const irCount = cabinetCount + reverbCount
+    const presetCount = pluginPresetsQuery.data?.count ?? pluginPresetsQuery.data?.presets?.length ?? 0
+    const snapshotCount = snapshotRows.length
+    const graphCount = midiMappingRows.length
+
+    return [
+      {
+        key: 'presets',
+        count: presetCount,
+        label: 'Presets',
+        sub: 'Plugin presets across the library',
+        accent: 'var(--wh-primary)',
+        route: '/workspace/artifacts?category=plugin-presets',
+      },
+      {
+        key: 'irs',
+        count: irCount,
+        label: 'Impulse Responses',
+        sub: `${cabinetCount} cabinets · ${reverbCount} reverbs`,
+        accent: 'var(--wh-accent-teal)',
+        route: '/workspace/artifacts?category=cabinet-irs',
+      },
+      {
+        key: 'plugins',
+        count: pluginCount,
+        label: 'LV2 & CLAP Plugins',
+        sub: 'Indexed & parameter-mapped',
+        accent: 'var(--wh-accent-green)',
+        route: '/workspace/artifacts?category=plugin-packs',
+      },
+      {
+        key: 'snapshots',
+        count: snapshotCount,
+        label: 'Snapshot Groups',
+        sub: 'Live runtime states',
+        accent: 'var(--wh-accent-amber)',
+        route: '/snapshot-editor',
+      },
+      {
+        key: 'graphs',
+        count: graphCount,
+        label: 'Routing Graphs',
+        sub: 'Enabled MIDI transforms & filters',
+        accent: 'var(--wh-accent-magenta)',
+        route: '/midi-hub/processing',
+      },
+      {
+        key: 'samples',
+        count: 0,
+        unit: 'clips',
+        label: 'Sample Pool',
+        sub: 'Drum hits, loops, one-shots',
+        accent: 'var(--wh-primary-soft)',
+        route: '/workspace/artifacts?category=soundfonts',
+      },
+    ]
+  }, [
+    pluginDiscoverQuery.data,
+    pluginListQuery.data,
+    cabinetIrQuery.data,
+    reverbIrQuery.data,
+    pluginPresetsQuery.data,
+    snapshotRows.length,
+    midiMappingRows.length,
+  ])
+
+  const welcomeMidiDevices = useMemo<WelcomeHeroHardwareDevice[]>(() => (
+    midiDeviceRows.map((row) => ({
+      id: row.id,
+      name: row.signal,
+      port: `${row.scope} · ${row.detail}`,
+      status: row.tone === 'critical' ? 'standby' : 'live',
+      kind: 'midi',
+      route: row.route,
+    }))
+  ), [midiDeviceRows])
+
+  const welcomeAudioDevices = useMemo<WelcomeHeroHardwareDevice[]>(() => (
+    audioInterfaceRows.map((row) => ({
+      id: row.id,
+      name: row.signal,
+      port: `${row.scope} · ${row.detail}`,
+      status: row.tone === 'critical' ? 'standby' : 'live',
+      kind: 'audio',
+      route: row.route,
+    }))
+  ), [audioInterfaceRows])
+
+  const hardwareCounts = useMemo(() => {
+    const midiTotal = welcomeMidiDevices.length
+    const midiLive = welcomeMidiDevices.filter((d) => d.status === 'live').length
+    const cardsTotal = welcomeAudioDevices.length
+    const cardsLive = welcomeAudioDevices.filter((d) => d.status === 'live').length
+    return { midiLive, midiTotal, cardsLive, cardsTotal, aggregateIoChannels: 0 }
+  }, [welcomeMidiDevices, welcomeAudioDevices])
+
+  const welcomeRibbon = useMemo<WelcomeHeroRibbonItem[]>(() => {
+    const avbState = shellSummaryData.platformStatus.avb.state
+    const avdeccMatch = shellSummaryData.platformStatus.avdecc.label.match(/\d+/)?.[0] ?? '0'
+    const nodes = shellSummaryData.platformStatus.nodes.label.replace(/^Nodes:\s*/i, '')
+    return [
+      {
+        id: 'avb',
+        label: 'AVB',
+        value: avbState === 'ok' ? 'operational' : avbState === 'warn' ? 'degraded' : avbState === 'off' ? 'disabled' : '…',
+        tone: avbState === 'ok' ? 'ok' : avbState === 'warn' ? 'warn' : 'neutral',
+        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+      },
+      {
+        id: 'avdecc',
+        label: 'AVDECC',
+        value: `${avdeccMatch} entities`,
+        tone: shellSummaryData.platformStatus.avdecc.state === 'ok' ? 'ok' : 'neutral',
+        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+      },
+      {
+        id: 'cluster',
+        label: 'Cluster',
+        value: nodes,
+        tone: shellSummaryData.platformStatus.nodes.state === 'ok' ? 'ok' : 'neutral',
+        route: buildPlatformNodeWorkspaceHref('audio-engine'),
+      },
+      {
+        id: 'clock',
+        label: 'Clock',
+        value: 'internal 96 kHz',
+        tone: 'ok',
+      },
+      {
+        id: 'storage',
+        label: 'Storage',
+        value: 'session ready',
+        tone: 'ok',
+      },
+    ]
+  }, [
+    shellSummaryData.platformStatus.avb.state,
+    shellSummaryData.platformStatus.avdecc.label,
+    shellSummaryData.platformStatus.avdecc.state,
+    shellSummaryData.platformStatus.nodes.label,
+    shellSummaryData.platformStatus.nodes.state,
+  ])
+
+  const welcomeTopbar = useMemo(() => ({
+    nodeLabel: shellSummaryData.hostInfo?.hostname ?? (onlineNodes[0]?.hostname ?? 'local'),
+    versionLabel: '2026.4.2',
+    sampleRateLabel: '96 kHz',
+    bufferLabel: '64 / 0.67 ms',
+    cpuLabel: '—',
+  }), [shellSummaryData.hostInfo?.hostname, onlineNodes])
+
+  const welcomeSession = useMemo(() => {
+    const liveSnapshotCount = snapshotRows.length
+    return {
+      lastSessionLabel: liveSnapshotCount > 0
+        ? `${liveSnapshotCount} snapshot group${liveSnapshotCount === 1 ? '' : 's'} live`
+        : 'No live snapshot',
+      openPatchLabel: `${onlineNodes.length} node${onlineNodes.length === 1 ? '' : 's'} online`,
+      uptimeLabel: 'live',
+    }
+  }, [snapshotRows, onlineNodes.length])
+
+  const librarianScanLabel = useMemo(() => {
+    const anyLoading = (
+      pluginListQuery.isFetching
+      || cabinetIrQuery.isFetching
+      || reverbIrQuery.isFetching
+      || pluginPresetsQuery.isFetching
+    )
+    return anyLoading ? 'scanning…' : 'last scan just now'
+  }, [
+    pluginListQuery.isFetching,
+    cabinetIrQuery.isFetching,
+    reverbIrQuery.isFetching,
+    pluginPresetsQuery.isFetching,
+  ])
+
+  const handleEnterLiveSurface = useCallback(() => {
+    navigateHomeShellRoute(navigate, buildPlatformNodeWorkspaceHref('audio-engine'))
+  }, [navigate])
+  const handleBrowseLibrary = useCallback(() => {
+    navigateHomeShellRoute(navigate, '/workspace/artifacts')
+  }, [navigate])
+  const handleArtifactClick = useCallback((artifact: WelcomeHeroArtifact) => {
+    if (artifact.route) {
+      navigateHomeShellRoute(navigate, artifact.route)
+    }
+  }, [navigate])
+  const handleHardwareClick = useCallback((device: WelcomeHeroHardwareDevice) => {
+    if (device.route) {
+      navigateHomeShellRoute(navigate, device.route)
+    }
+  }, [navigate])
+  const handleHardwareSummaryClick = useCallback((kind: 'midi' | 'audio') => {
+    if (kind === 'midi') {
+      navigateHomeShellRoute(navigate, '/midi-hub/connections')
+    } else {
+      navigateHomeShellRoute(navigate, buildPlatformNodeWorkspaceHref('audio-engine'))
+    }
+  }, [navigate])
+  const handleRibbonClick = useCallback((item: WelcomeHeroRibbonItem) => {
+    if (item.route) {
+      navigateHomeShellRoute(navigate, item.route)
+    }
+  }, [navigate])
+
   useEffect(() => {
     if (!landingPreferences.bootSplashEnabled && shouldShowHomeBootSplash()) {
       completeHomeDesktopBoot()
@@ -778,7 +1031,7 @@ export function HomePage() {
       ) : null}
       {landingPreferences.cinematicBackdropEnabled && wallpaper.mode === 'default-image' ? (
         <img
-          src={defaultWallpaperImage}
+          src={mapGridHorizonImage}
           alt=""
           className="hp2-root__default-wallpaper"
           data-testid="home-desktop-default-wallpaper-image"
@@ -791,54 +1044,57 @@ export function HomePage() {
         <Grid className="hp2-home-shell__grid" condensed>
           <Column lg={16} md={8} sm={4}>
             <section className="hp2-home-shell__operations-shell" aria-label="MAP2 home telemetry">
-              <header className="hp2-home-shell__operations-hero">
-                <div className="hp2-home-shell__operations-copy">
-                  <div className="hp2-home-shell__operations-kicker-row">
-                    <p className="hp2-home-shell__hero-kicker">Live operations surface</p>
-                    <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
-                      <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
-                      <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
-                    </OverflowMenu>
-                  </div>
+              <WelcomeHero
+                topbar={welcomeTopbar}
+                artifacts={welcomeArtifacts}
+                midiDevices={welcomeMidiDevices}
+                audioDevices={welcomeAudioDevices}
+                hardwareCounts={hardwareCounts}
+                session={welcomeSession}
+                ribbon={welcomeRibbon}
+                librarianScanLabel={librarianScanLabel}
+                onEnterLiveSurface={handleEnterLiveSurface}
+                onBrowseLibrary={handleBrowseLibrary}
+                onArtifactClick={handleArtifactClick}
+                onHardwareClick={handleHardwareClick}
+                onHardwareSummaryClick={handleHardwareSummaryClick}
+                onRibbonClick={handleRibbonClick}
+              />
 
-                  <h1 className="hp2-home-shell__operations-title">
-                    <img
-                      src={landingHeroBrandImage}
-                      alt="MAP: Mackes Audio Platform"
-                      className="hp2-home-shell__title-brand-image"
-                    />
-                  </h1>
+              <div className="hp2-home-shell__landing-actions">
+                <p className="hp2-home-shell__hero-kicker">Live operations surface</p>
+                <div className="hp2-home-shell__landing-actions-spacer" aria-hidden="true" />
+                <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
+                  <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
+                  <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
+                </OverflowMenu>
+              </div>
 
-                  <p className="hp2-home-shell__operations-lede">
-                    The MAP2 (MACKES Audio Platform) is a high-performance, professional-grade system designed
-                    to turn a standard computer into a powerful audio processor and routing hub.
-                  </p>
-                  <p className="hp2-home-shell__operations-lede">
-                    An open-source alternative, It combines the
-                    flexibility of modern software with the speed and reliability of a dedicated guitar
-                    processor, giving artists a world-class tool for creating and routing sound.
-                  </p>
+              <h1 className="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden">
+                <img
+                  src={landingHeroBrandImage}
+                  alt="MAP: Mackes Audio Platform"
+                  className="hp2-home-shell__title-brand-image"
+                />
+              </h1>
 
-                </div>
-
-                <aside className="hp2-home-shell__summary-rail" aria-label="Telemetry overview">
-                  {summaryMetrics.map((metric) => (
-                    <button
-                      type="button"
-                      key={metric.id}
-                      className="hp2-home-shell__summary-metric"
-                      data-tone={metric.tone}
-                      onMouseEnter={() => prefetchHomeShellRoute(metric.route)}
-                      onFocus={() => prefetchHomeShellRoute(metric.route)}
-                      onClick={() => navigateHomeShellRoute(navigate, metric.route)}
-                    >
-                      <span className="hp2-home-shell__summary-value">{metric.value}</span>
-                      <span className="hp2-home-shell__summary-label">{metric.label}</span>
-                      <span className="hp2-home-shell__summary-helper">{metric.helper}</span>
-                    </button>
-                  ))}
-                </aside>
-              </header>
+              <aside className="hp2-home-shell__summary-rail" aria-label="Telemetry overview">
+                {summaryMetrics.map((metric) => (
+                  <button
+                    type="button"
+                    key={metric.id}
+                    className="hp2-home-shell__summary-metric"
+                    data-tone={metric.tone}
+                    onMouseEnter={() => prefetchHomeShellRoute(metric.route)}
+                    onFocus={() => prefetchHomeShellRoute(metric.route)}
+                    onClick={() => navigateHomeShellRoute(navigate, metric.route)}
+                  >
+                    <span className="hp2-home-shell__summary-value">{metric.value}</span>
+                    <span className="hp2-home-shell__summary-label">{metric.label}</span>
+                    <span className="hp2-home-shell__summary-helper">{metric.helper}</span>
+                  </button>
+                ))}
+              </aside>
 
               <div className="hp2-home-shell__operations-table-shell">
                 <DataTable

@@ -30,7 +30,8 @@ const mockSpecialSettingsState = {
 }
 
 jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
-jest.mock('../../../../branding/MAP2-LOGO-CROPPED.png', () => 'MAP2-LOGO-CROPPED.png')
+jest.mock('../../../../branding/MAP-GRID-HORIZON-2026.png', () => 'MAP-GRID-HORIZON-2026.png')
+jest.mock('../../../../branding/MAP-LOGO-2026.png', () => 'MAP-LOGO-2026.png')
 
 class ResizeObserverMock {
   observe() {}
@@ -474,13 +475,17 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'MAP: Mackes Audio Platform' })).toHaveAttribute(
+      'src',
+      'MAP-LOGO-2026.png',
+    )
     expect(screen.queryByText('Operator telemetry')).toBeNull()
     expect(screen.getByText('live nodes')).toBeInTheDocument()
     expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
     expect(screen.getByText('Live operations surface')).toBeInTheDocument()
     expect(screen.getByText('Operations table')).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
-    expect(screen.getByText('Roland Edirol UA-1000')).toBeInTheDocument()
+    expect(screen.getAllByText('Roland Edirol UA-1000').length).toBeGreaterThan(0)
     expect(screen.getByText('Main Show Snapshot')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
@@ -608,7 +613,7 @@ describe('HomePage landing', () => {
     expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
     expect(screen.getByText('Surface')).toBeInTheDocument()
     expect(screen.getByText('Workspace')).toBeInTheDocument()
-    expect(screen.getByText('Express 128')).toBeInTheDocument()
+    expect(screen.getAllByText('Express 128').length).toBeGreaterThan(0)
     expect(screen.getByText('Main Show Snapshot')).toBeInTheDocument()
     expect(screen.getByText('Fabric state')).toBeInTheDocument()
     expect(screen.getByText('MIDI connections')).toBeInTheDocument()
@@ -670,8 +675,8 @@ describe('HomePage landing', () => {
     expect(await screen.findByText('Operations table')).toBeInTheDocument()
     expect(screen.getAllByText('AVB: operational').length).toBeGreaterThan(0)
     expect(screen.getByText('live nodes')).toBeInTheDocument()
-    expect(screen.getByText('RME Fireface UFX')).toBeInTheDocument()
-    expect(screen.getByText('Express 128')).toBeInTheDocument()
+    expect(screen.getAllByText('RME Fireface UFX').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Express 128').length).toBeGreaterThan(0)
     expect(screen.queryByLabelText('System summary')).toBeNull()
   })
 })

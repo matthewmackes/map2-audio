@@ -3479,257 +3479,806 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 aria-label="MAP2 home telemetry"
                 class="hp2-home-shell__operations-shell"
               >
-                <header
-                  class="hp2-home-shell__operations-hero"
+                <section
+                  aria-label="MAP2 welcome hero"
+                  class="wh-shell"
+                  data-testid="welcome-hero"
                 >
                   <div
-                    class="hp2-home-shell__operations-copy"
+                    class="wh-topbar"
                   >
                     <div
-                      class="hp2-home-shell__operations-kicker-row"
+                      class="wh-topbar__left"
                     >
-                      <p
-                        class="hp2-home-shell__hero-kicker"
-                      >
-                        Live operations surface
-                      </p>
                       <span
-                        class="cds--overflow-menu__wrapper"
+                        aria-hidden="true"
+                        class="wh-topbar__dot"
+                      />
+                      <span>
+                        MAP2 · Live Operations Surface
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        class="wh-topbar__sep"
                       >
-                        <span
-                          class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
-                        >
-                          <div
-                            class="cds--tooltip-trigger__wrapper"
-                          >
-                            <button
-                              aria-expanded="false"
-                              aria-haspopup="true"
-                              aria-labelledby="tooltip-_r_e_"
-                              class="cds--overflow-menu cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
-                              type="button"
-                            >
-                              <svg
-                                aria-label="Options"
-                                class="cds--overflow-menu__icon"
-                                fill="currentColor"
-                                focusable="false"
-                                height="16"
-                                preserveAspectRatio="xMidYMid meet"
-                                role="img"
-                                viewBox="0 0 32 32"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <circle
-                                  cx="16"
-                                  cy="8"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="16"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="24"
-                                  r="2"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <span
-                            aria-hidden="true"
-                            class="cds--popover"
-                            id="tooltip-_r_e_"
-                            role="tooltip"
-                          >
-                            <span
-                              class="cds--popover-content cds--tooltip-content"
-                            >
-                              Options
-                            </span>
-                            <span
-                              class="cds--popover-caret"
-                            />
-                          </span>
-                        </span>
+                        ·
+                      </span>
+                      <span>
+                        node · 
+                        local
                       </span>
                     </div>
-                    <h1
-                      class="hp2-home-shell__operations-title"
+                    <div
+                      class="wh-topbar__right"
+                    >
+                      <span>
+                        v 
+                        <b>
+                          2026.4.2
+                        </b>
+                      </span>
+                      <span>
+                        sr 
+                        <b>
+                          96 kHz
+                        </b>
+                      </span>
+                      <span>
+                        buf 
+                        <b>
+                          64 / 0.67 ms
+                        </b>
+                      </span>
+                      <span>
+                        cpu 
+                        <b>
+                          —
+                        </b>
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="wh-hero"
+                  >
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__grid"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__glow"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__wordmark"
                     >
                       <img
-                        alt="MAP: Mackes Audio Platform"
-                        class="hp2-home-shell__title-brand-image"
+                        alt=""
                         src="MAP2-LOGO.png"
                       />
-                    </h1>
-                    <p
-                      class="hp2-home-shell__operations-lede"
+                    </div>
+                    <div
+                      class="wh-hero__content"
                     >
-                      The MAP2 (MACKES Audio Platform) is a high-performance, professional-grade system designed to turn a standard computer into a powerful audio processor and routing hub.
-                    </p>
-                    <p
-                      class="hp2-home-shell__operations-lede"
-                    >
-                      An open-source alternative, It combines the flexibility of modern software with the speed and reliability of a dedicated guitar processor, giving artists a world-class tool for creating and routing sound.
-                    </p>
+                      <div
+                        class="wh-hero__eyebrow"
+                      >
+                        WELCOME TO MAP2 · MACKES AUDIO PLATFORM
+                      </div>
+                      <h1
+                        class="wh-hero__title"
+                      >
+                        <span>
+                          System nominal.
+                        </span>
+                         
+                        <span
+                          class="wh-accent"
+                        >
+                          Welcome to MAP2.
+                        </span>
+                      </h1>
+                      <p
+                        class="wh-hero__lede"
+                      >
+                        Your studio is warmed up and every device is reporting in.
+                         
+                        <b>
+                          0
+                        </b>
+                         artifacts are loaded in the library,
+                         
+                        <b>
+                          0
+                           MIDI 
+                          controllers
+                        </b>
+                         
+                        and
+                         
+                        <b>
+                          0
+                           audio 
+                          interfaces
+                        </b>
+                         
+                        are live on the bus, and the routing matrix is holding steady at sub‑millisecond latency. Pick up where you left off, or start something new — the whole rig is yours.
+                      </p>
+                      <div
+                        class="wh-hero__cta-row"
+                      >
+                        <button
+                          class="wh-btn wh-btn--primary"
+                          data-testid="welcome-hero-cta-enter"
+                          type="button"
+                        >
+                          Enter Live Surface 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M5 12h14"
+                            />
+                            <path
+                              d="M13 6l6 6-6 6"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          class="wh-btn wh-btn--ghost"
+                          data-testid="welcome-hero-cta-library"
+                          type="button"
+                        >
+                          Browse Library 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M4 4h10a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"
+                            />
+                            <path
+                              d="M4 4v12a4 4 0 004 4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hero__session"
+                      >
+                        <div>
+                          <label>
+                            Last Session
+                          </label>
+                          <strong>
+                            No live snapshot
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Open Patch
+                          </label>
+                          <strong>
+                            0 nodes online
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Uptime
+                          </label>
+                          <strong>
+                            live
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <aside
-                    aria-label="Telemetry overview"
-                    class="hp2-home-shell__summary-rail"
+                  <div
+                    class="wh-stats"
+                  >
+                    <section
+                      aria-label="Artifact library"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Artifact Library · 
+                          0
+                           total
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● indexed
+                          </b>
+                           · 
+                          scanning…
+                        </div>
+                      </header>
+                      <div
+                        class="wh-artifacts"
+                      >
+                        <button
+                          class="wh-artifact"
+                          data-artifact="presets"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Presets
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Plugin presets across the library
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="irs"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Impulse Responses
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            0 cabinets · 0 reverbs
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="plugins"
+                          style="--wh-accent: var(--wh-accent-green);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            LV2 & CLAP Plugins
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Indexed & parameter-mapped
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="snapshots"
+                          style="--wh-accent: var(--wh-accent-amber);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Snapshot Groups
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Live runtime states
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="graphs"
+                          style="--wh-accent: var(--wh-accent-magenta);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Routing Graphs
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Enabled MIDI transforms & filters
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="samples"
+                          style="--wh-accent: var(--wh-primary-soft);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                            <small>
+                              clips
+                            </small>
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Sample Pool
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Drum hits, loops, one-shots
+                          </div>
+                        </button>
+                      </div>
+                    </section>
+                    <section
+                      aria-label="Hardware ready"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Hardware · Ready to Play
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● 
+                            0
+                             live
+                          </b>
+                        </div>
+                      </header>
+                      <div
+                        class="wh-hw-summary"
+                      >
+                        <button
+                          aria-label="MIDI devices summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            MIDI Devices
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            controllers · foot · sequencers
+                          </div>
+                        </button>
+                        <button
+                          aria-label="Audio interfaces summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            Audio Interfaces
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            connected interface inventory
+                          </div>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hw-list"
+                      >
+                        <div
+                          aria-live="polite"
+                          class="wh-hw-row"
+                        >
+                          <div
+                            class="wh-hw-row__icon"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="square"
+                              stroke-width="1.6"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M3 12h3l3-7 3 14 3-10 3 5h3"
+                              />
+                            </svg>
+                          </div>
+                          <div
+                            class="wh-hw-row__body"
+                          >
+                            <strong>
+                              No hardware reporting
+                            </strong>
+                            <span>
+                              Connect a MIDI or audio device to light this up
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-row__status wh-standby"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="wh-dot"
+                            />
+                            Standby
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <div
+                    aria-label="Platform status ribbon"
+                    class="wh-ribbon"
+                    role="group"
                   >
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
+                      data-ribbon="avb"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVB
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        live nodes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        Nodes: 1 active
-                      </span>
+                        operational
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="avdecc"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVDECC
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        MIDI devices
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        physical ports reporting into the cluster
-                      </span>
+                        1 entities
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="cluster"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Cluster
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        mapped routes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        enabled transforms and routing filters
-                      </span>
+                        1 active
+                      </b>
                     </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                    <div
+                      data-ribbon="clock"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Clock
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        audio interfaces
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        connected interface inventory across nodes
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        internal 96 kHz
+                      </b>
+                    </div>
+                    <div
+                      data-ribbon="storage"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Storage
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        AVB endpoints
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVB: operational
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        session ready
+                      </b>
+                    </div>
+                  </div>
+                </section>
+                <div
+                  class="hp2-home-shell__landing-actions"
+                >
+                  <p
+                    class="hp2-home-shell__hero-kicker"
+                  >
+                    Live operations surface
+                  </p>
+                  <div
+                    aria-hidden="true"
+                    class="hp2-home-shell__landing-actions-spacer"
+                  />
+                  <span
+                    class="cds--overflow-menu__wrapper"
+                  >
+                    <span
+                      class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      <div
+                        class="cds--tooltip-trigger__wrapper"
                       >
-                        1
-                      </span>
+                        <button
+                          aria-expanded="false"
+                          aria-haspopup="true"
+                          aria-labelledby="tooltip-_r_e_"
+                          class="cds--overflow-menu cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
+                          type="button"
+                        >
+                          <svg
+                            aria-label="Options"
+                            class="cds--overflow-menu__icon"
+                            fill="currentColor"
+                            focusable="false"
+                            height="16"
+                            preserveAspectRatio="xMidYMid meet"
+                            role="img"
+                            viewBox="0 0 32 32"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle
+                              cx="16"
+                              cy="8"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="16"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="24"
+                              r="2"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <span
-                        class="hp2-home-shell__summary-label"
+                        aria-hidden="true"
+                        class="cds--popover"
+                        id="tooltip-_r_e_"
+                        role="tooltip"
                       >
-                        AVDECC entities
+                        <span
+                          class="cds--popover-content cds--tooltip-content"
+                        >
+                          Options
+                        </span>
+                        <span
+                          class="cds--popover-caret"
+                        />
                       </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVDECC: 1 entity
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
-                      type="button"
+                    </span>
+                  </span>
+                </div>
+                <h1
+                  class="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden"
+                >
+                  <img
+                    alt="MAP: Mackes Audio Platform"
+                    class="hp2-home-shell__title-brand-image"
+                    src="MAP2-LOGO.png"
+                  />
+                </h1>
+                <aside
+                  aria-label="Telemetry overview"
+                  class="hp2-home-shell__summary-rail"
+                >
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
-                      >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        snapshot groups
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        live runtime snapshot states
-                      </span>
-                    </button>
-                  </aside>
-                </header>
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      live nodes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      Nodes: 1 active
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      MIDI devices
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      physical ports reporting into the cluster
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      mapped routes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      enabled transforms and routing filters
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      audio interfaces
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      connected interface inventory across nodes
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVB endpoints
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVB: operational
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      1
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVDECC entities
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVDECC: 1 entity
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      snapshot groups
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      live runtime snapshot states
+                    </span>
+                  </button>
+                </aside>
                 <div
                   class="hp2-home-shell__operations-table-shell"
                 >
@@ -8106,257 +8655,806 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 aria-label="MAP2 home telemetry"
                 class="hp2-home-shell__operations-shell"
               >
-                <header
-                  class="hp2-home-shell__operations-hero"
+                <section
+                  aria-label="MAP2 welcome hero"
+                  class="wh-shell"
+                  data-testid="welcome-hero"
                 >
                   <div
-                    class="hp2-home-shell__operations-copy"
+                    class="wh-topbar"
                   >
                     <div
-                      class="hp2-home-shell__operations-kicker-row"
+                      class="wh-topbar__left"
                     >
-                      <p
-                        class="hp2-home-shell__hero-kicker"
-                      >
-                        Live operations surface
-                      </p>
                       <span
-                        class="cds--overflow-menu__wrapper"
+                        aria-hidden="true"
+                        class="wh-topbar__dot"
+                      />
+                      <span>
+                        MAP2 · Live Operations Surface
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        class="wh-topbar__sep"
                       >
-                        <span
-                          class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
-                        >
-                          <div
-                            class="cds--tooltip-trigger__wrapper"
-                          >
-                            <button
-                              aria-expanded="false"
-                              aria-haspopup="true"
-                              aria-labelledby="tooltip-_r_1s_"
-                              class="cds--overflow-menu cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
-                              type="button"
-                            >
-                              <svg
-                                aria-label="Options"
-                                class="cds--overflow-menu__icon"
-                                fill="currentColor"
-                                focusable="false"
-                                height="16"
-                                preserveAspectRatio="xMidYMid meet"
-                                role="img"
-                                viewBox="0 0 32 32"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <circle
-                                  cx="16"
-                                  cy="8"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="16"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="24"
-                                  r="2"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <span
-                            aria-hidden="true"
-                            class="cds--popover"
-                            id="tooltip-_r_1s_"
-                            role="tooltip"
-                          >
-                            <span
-                              class="cds--popover-content cds--tooltip-content"
-                            >
-                              Options
-                            </span>
-                            <span
-                              class="cds--popover-caret"
-                            />
-                          </span>
-                        </span>
+                        ·
+                      </span>
+                      <span>
+                        node · 
+                        local
                       </span>
                     </div>
-                    <h1
-                      class="hp2-home-shell__operations-title"
+                    <div
+                      class="wh-topbar__right"
+                    >
+                      <span>
+                        v 
+                        <b>
+                          2026.4.2
+                        </b>
+                      </span>
+                      <span>
+                        sr 
+                        <b>
+                          96 kHz
+                        </b>
+                      </span>
+                      <span>
+                        buf 
+                        <b>
+                          64 / 0.67 ms
+                        </b>
+                      </span>
+                      <span>
+                        cpu 
+                        <b>
+                          —
+                        </b>
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="wh-hero"
+                  >
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__grid"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__glow"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__wordmark"
                     >
                       <img
-                        alt="MAP: Mackes Audio Platform"
-                        class="hp2-home-shell__title-brand-image"
+                        alt=""
                         src="MAP2-LOGO.png"
                       />
-                    </h1>
-                    <p
-                      class="hp2-home-shell__operations-lede"
+                    </div>
+                    <div
+                      class="wh-hero__content"
                     >
-                      The MAP2 (MACKES Audio Platform) is a high-performance, professional-grade system designed to turn a standard computer into a powerful audio processor and routing hub.
-                    </p>
-                    <p
-                      class="hp2-home-shell__operations-lede"
-                    >
-                      An open-source alternative, It combines the flexibility of modern software with the speed and reliability of a dedicated guitar processor, giving artists a world-class tool for creating and routing sound.
-                    </p>
+                      <div
+                        class="wh-hero__eyebrow"
+                      >
+                        WELCOME TO MAP2 · MACKES AUDIO PLATFORM
+                      </div>
+                      <h1
+                        class="wh-hero__title"
+                      >
+                        <span>
+                          System nominal.
+                        </span>
+                         
+                        <span
+                          class="wh-accent"
+                        >
+                          Welcome to MAP2.
+                        </span>
+                      </h1>
+                      <p
+                        class="wh-hero__lede"
+                      >
+                        Your studio is warmed up and every device is reporting in.
+                         
+                        <b>
+                          0
+                        </b>
+                         artifacts are loaded in the library,
+                         
+                        <b>
+                          0
+                           MIDI 
+                          controllers
+                        </b>
+                         
+                        and
+                         
+                        <b>
+                          0
+                           audio 
+                          interfaces
+                        </b>
+                         
+                        are live on the bus, and the routing matrix is holding steady at sub‑millisecond latency. Pick up where you left off, or start something new — the whole rig is yours.
+                      </p>
+                      <div
+                        class="wh-hero__cta-row"
+                      >
+                        <button
+                          class="wh-btn wh-btn--primary"
+                          data-testid="welcome-hero-cta-enter"
+                          type="button"
+                        >
+                          Enter Live Surface 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M5 12h14"
+                            />
+                            <path
+                              d="M13 6l6 6-6 6"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          class="wh-btn wh-btn--ghost"
+                          data-testid="welcome-hero-cta-library"
+                          type="button"
+                        >
+                          Browse Library 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M4 4h10a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"
+                            />
+                            <path
+                              d="M4 4v12a4 4 0 004 4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hero__session"
+                      >
+                        <div>
+                          <label>
+                            Last Session
+                          </label>
+                          <strong>
+                            No live snapshot
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Open Patch
+                          </label>
+                          <strong>
+                            0 nodes online
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Uptime
+                          </label>
+                          <strong>
+                            live
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <aside
-                    aria-label="Telemetry overview"
-                    class="hp2-home-shell__summary-rail"
+                  <div
+                    class="wh-stats"
+                  >
+                    <section
+                      aria-label="Artifact library"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Artifact Library · 
+                          0
+                           total
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● indexed
+                          </b>
+                           · 
+                          last scan just now
+                        </div>
+                      </header>
+                      <div
+                        class="wh-artifacts"
+                      >
+                        <button
+                          class="wh-artifact"
+                          data-artifact="presets"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Presets
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Plugin presets across the library
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="irs"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Impulse Responses
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            0 cabinets · 0 reverbs
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="plugins"
+                          style="--wh-accent: var(--wh-accent-green);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            LV2 & CLAP Plugins
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Indexed & parameter-mapped
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="snapshots"
+                          style="--wh-accent: var(--wh-accent-amber);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Snapshot Groups
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Live runtime states
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="graphs"
+                          style="--wh-accent: var(--wh-accent-magenta);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Routing Graphs
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Enabled MIDI transforms & filters
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="samples"
+                          style="--wh-accent: var(--wh-primary-soft);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                            <small>
+                              clips
+                            </small>
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Sample Pool
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Drum hits, loops, one-shots
+                          </div>
+                        </button>
+                      </div>
+                    </section>
+                    <section
+                      aria-label="Hardware ready"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Hardware · Ready to Play
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● 
+                            0
+                             live
+                          </b>
+                        </div>
+                      </header>
+                      <div
+                        class="wh-hw-summary"
+                      >
+                        <button
+                          aria-label="MIDI devices summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            MIDI Devices
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            controllers · foot · sequencers
+                          </div>
+                        </button>
+                        <button
+                          aria-label="Audio interfaces summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            Audio Interfaces
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            connected interface inventory
+                          </div>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hw-list"
+                      >
+                        <div
+                          aria-live="polite"
+                          class="wh-hw-row"
+                        >
+                          <div
+                            class="wh-hw-row__icon"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="square"
+                              stroke-width="1.6"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M3 12h3l3-7 3 14 3-10 3 5h3"
+                              />
+                            </svg>
+                          </div>
+                          <div
+                            class="wh-hw-row__body"
+                          >
+                            <strong>
+                              No hardware reporting
+                            </strong>
+                            <span>
+                              Connect a MIDI or audio device to light this up
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-row__status wh-standby"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="wh-dot"
+                            />
+                            Standby
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <div
+                    aria-label="Platform status ribbon"
+                    class="wh-ribbon"
+                    role="group"
                   >
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
+                      data-ribbon="avb"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVB
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        live nodes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        Nodes: 1 active
-                      </span>
+                        operational
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="avdecc"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVDECC
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        MIDI devices
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        physical ports reporting into the cluster
-                      </span>
+                        1 entities
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="cluster"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Cluster
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        mapped routes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        enabled transforms and routing filters
-                      </span>
+                        1 active
+                      </b>
                     </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                    <div
+                      data-ribbon="clock"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Clock
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        audio interfaces
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        connected interface inventory across nodes
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        internal 96 kHz
+                      </b>
+                    </div>
+                    <div
+                      data-ribbon="storage"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Storage
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        AVB endpoints
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVB: operational
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        session ready
+                      </b>
+                    </div>
+                  </div>
+                </section>
+                <div
+                  class="hp2-home-shell__landing-actions"
+                >
+                  <p
+                    class="hp2-home-shell__hero-kicker"
+                  >
+                    Live operations surface
+                  </p>
+                  <div
+                    aria-hidden="true"
+                    class="hp2-home-shell__landing-actions-spacer"
+                  />
+                  <span
+                    class="cds--overflow-menu__wrapper"
+                  >
+                    <span
+                      class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      <div
+                        class="cds--tooltip-trigger__wrapper"
                       >
-                        1
-                      </span>
+                        <button
+                          aria-expanded="false"
+                          aria-haspopup="true"
+                          aria-labelledby="tooltip-_r_1s_"
+                          class="cds--overflow-menu cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
+                          type="button"
+                        >
+                          <svg
+                            aria-label="Options"
+                            class="cds--overflow-menu__icon"
+                            fill="currentColor"
+                            focusable="false"
+                            height="16"
+                            preserveAspectRatio="xMidYMid meet"
+                            role="img"
+                            viewBox="0 0 32 32"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle
+                              cx="16"
+                              cy="8"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="16"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="24"
+                              r="2"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <span
-                        class="hp2-home-shell__summary-label"
+                        aria-hidden="true"
+                        class="cds--popover"
+                        id="tooltip-_r_1s_"
+                        role="tooltip"
                       >
-                        AVDECC entities
+                        <span
+                          class="cds--popover-content cds--tooltip-content"
+                        >
+                          Options
+                        </span>
+                        <span
+                          class="cds--popover-caret"
+                        />
                       </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVDECC: 1 entity
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
-                      type="button"
+                    </span>
+                  </span>
+                </div>
+                <h1
+                  class="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden"
+                >
+                  <img
+                    alt="MAP: Mackes Audio Platform"
+                    class="hp2-home-shell__title-brand-image"
+                    src="MAP2-LOGO.png"
+                  />
+                </h1>
+                <aside
+                  aria-label="Telemetry overview"
+                  class="hp2-home-shell__summary-rail"
+                >
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
-                      >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        snapshot groups
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        live runtime snapshot states
-                      </span>
-                    </button>
-                  </aside>
-                </header>
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      live nodes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      Nodes: 1 active
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      MIDI devices
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      physical ports reporting into the cluster
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      mapped routes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      enabled transforms and routing filters
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      audio interfaces
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      connected interface inventory across nodes
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVB endpoints
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVB: operational
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      1
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVDECC entities
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVDECC: 1 entity
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      snapshot groups
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      live runtime snapshot states
+                    </span>
+                  </button>
+                </aside>
                 <div
                   class="hp2-home-shell__operations-table-shell"
                 >
@@ -16466,259 +17564,808 @@ exports[`Desktop experience visual snapshots matches the landing actions menu 1`
                 aria-label="MAP2 home telemetry"
                 class="hp2-home-shell__operations-shell"
               >
-                <header
-                  class="hp2-home-shell__operations-hero"
+                <section
+                  aria-label="MAP2 welcome hero"
+                  class="wh-shell"
+                  data-testid="welcome-hero"
                 >
                   <div
-                    class="hp2-home-shell__operations-copy"
+                    class="wh-topbar"
                   >
                     <div
-                      class="hp2-home-shell__operations-kicker-row"
+                      class="wh-topbar__left"
                     >
-                      <p
-                        class="hp2-home-shell__hero-kicker"
-                      >
-                        Live operations surface
-                      </p>
                       <span
-                        aria-owns="overflow-menu-8__menu-body"
-                        class="cds--overflow-menu__wrapper"
+                        aria-hidden="true"
+                        class="wh-topbar__dot"
+                      />
+                      <span>
+                        MAP2 · Live Operations Surface
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        class="wh-topbar__sep"
                       >
-                        <span
-                          class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
-                        >
-                          <div
-                            class="cds--tooltip-trigger__wrapper"
-                          >
-                            <button
-                              aria-controls="overflow-menu-8__menu-body"
-                              aria-expanded="true"
-                              aria-haspopup="true"
-                              aria-labelledby="tooltip-_r_3a_"
-                              class="cds--overflow-menu cds--overflow-menu--open cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
-                              type="button"
-                            >
-                              <svg
-                                aria-label="Options"
-                                class="cds--overflow-menu__icon"
-                                fill="currentColor"
-                                focusable="false"
-                                height="16"
-                                preserveAspectRatio="xMidYMid meet"
-                                role="img"
-                                viewBox="0 0 32 32"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <circle
-                                  cx="16"
-                                  cy="8"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="16"
-                                  r="2"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="24"
-                                  r="2"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                          <span
-                            aria-hidden="true"
-                            class="cds--popover"
-                            id="tooltip-_r_3a_"
-                            role="tooltip"
-                          >
-                            <span
-                              class="cds--popover-content cds--tooltip-content"
-                            >
-                              Options
-                            </span>
-                            <span
-                              class="cds--popover-caret"
-                            />
-                          </span>
-                        </span>
+                        ·
+                      </span>
+                      <span>
+                        node · 
+                        local
                       </span>
                     </div>
-                    <h1
-                      class="hp2-home-shell__operations-title"
+                    <div
+                      class="wh-topbar__right"
+                    >
+                      <span>
+                        v 
+                        <b>
+                          2026.4.2
+                        </b>
+                      </span>
+                      <span>
+                        sr 
+                        <b>
+                          96 kHz
+                        </b>
+                      </span>
+                      <span>
+                        buf 
+                        <b>
+                          64 / 0.67 ms
+                        </b>
+                      </span>
+                      <span>
+                        cpu 
+                        <b>
+                          —
+                        </b>
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="wh-hero"
+                  >
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__grid"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__glow"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="wh-hero__wordmark"
                     >
                       <img
-                        alt="MAP: Mackes Audio Platform"
-                        class="hp2-home-shell__title-brand-image"
+                        alt=""
                         src="MAP2-LOGO.png"
                       />
-                    </h1>
-                    <p
-                      class="hp2-home-shell__operations-lede"
+                    </div>
+                    <div
+                      class="wh-hero__content"
                     >
-                      The MAP2 (MACKES Audio Platform) is a high-performance, professional-grade system designed to turn a standard computer into a powerful audio processor and routing hub.
-                    </p>
-                    <p
-                      class="hp2-home-shell__operations-lede"
-                    >
-                      An open-source alternative, It combines the flexibility of modern software with the speed and reliability of a dedicated guitar processor, giving artists a world-class tool for creating and routing sound.
-                    </p>
+                      <div
+                        class="wh-hero__eyebrow"
+                      >
+                        WELCOME TO MAP2 · MACKES AUDIO PLATFORM
+                      </div>
+                      <h1
+                        class="wh-hero__title"
+                      >
+                        <span>
+                          System nominal.
+                        </span>
+                         
+                        <span
+                          class="wh-accent"
+                        >
+                          Welcome to MAP2.
+                        </span>
+                      </h1>
+                      <p
+                        class="wh-hero__lede"
+                      >
+                        Your studio is warmed up and every device is reporting in.
+                         
+                        <b>
+                          0
+                        </b>
+                         artifacts are loaded in the library,
+                         
+                        <b>
+                          0
+                           MIDI 
+                          controllers
+                        </b>
+                         
+                        and
+                         
+                        <b>
+                          0
+                           audio 
+                          interfaces
+                        </b>
+                         
+                        are live on the bus, and the routing matrix is holding steady at sub‑millisecond latency. Pick up where you left off, or start something new — the whole rig is yours.
+                      </p>
+                      <div
+                        class="wh-hero__cta-row"
+                      >
+                        <button
+                          class="wh-btn wh-btn--primary"
+                          data-testid="welcome-hero-cta-enter"
+                          type="button"
+                        >
+                          Enter Live Surface 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M5 12h14"
+                            />
+                            <path
+                              d="M13 6l6 6-6 6"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          class="wh-btn wh-btn--ghost"
+                          data-testid="welcome-hero-cta-library"
+                          type="button"
+                        >
+                          Browse Library 
+                          <svg
+                            aria-hidden="true"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="square"
+                            stroke-width="1.6"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M4 4h10a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"
+                            />
+                            <path
+                              d="M4 4v12a4 4 0 004 4"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hero__session"
+                      >
+                        <div>
+                          <label>
+                            Last Session
+                          </label>
+                          <strong>
+                            No live snapshot
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Open Patch
+                          </label>
+                          <strong>
+                            0 nodes online
+                          </strong>
+                        </div>
+                        <div>
+                          <label>
+                            Uptime
+                          </label>
+                          <strong>
+                            live
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <aside
-                    aria-label="Telemetry overview"
-                    class="hp2-home-shell__summary-rail"
+                  <div
+                    class="wh-stats"
+                  >
+                    <section
+                      aria-label="Artifact library"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Artifact Library · 
+                          0
+                           total
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● indexed
+                          </b>
+                           · 
+                          scanning…
+                        </div>
+                      </header>
+                      <div
+                        class="wh-artifacts"
+                      >
+                        <button
+                          class="wh-artifact"
+                          data-artifact="presets"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Presets
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Plugin presets across the library
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="irs"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Impulse Responses
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            0 cabinets · 0 reverbs
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="plugins"
+                          style="--wh-accent: var(--wh-accent-green);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            LV2 & CLAP Plugins
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Indexed & parameter-mapped
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="snapshots"
+                          style="--wh-accent: var(--wh-accent-amber);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Snapshot Groups
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Live runtime states
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="graphs"
+                          style="--wh-accent: var(--wh-accent-magenta);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Routing Graphs
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Enabled MIDI transforms & filters
+                          </div>
+                        </button>
+                        <button
+                          class="wh-artifact"
+                          data-artifact="samples"
+                          style="--wh-accent: var(--wh-primary-soft);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-artifact__count"
+                          >
+                            0
+                            <small>
+                              clips
+                            </small>
+                          </div>
+                          <div
+                            class="wh-artifact__label"
+                          >
+                            Sample Pool
+                          </div>
+                          <div
+                            class="wh-artifact__sub"
+                          >
+                            Drum hits, loops, one-shots
+                          </div>
+                        </button>
+                      </div>
+                    </section>
+                    <section
+                      aria-label="Hardware ready"
+                      class="wh-panel"
+                    >
+                      <header
+                        class="wh-panel__head"
+                      >
+                        <h2
+                          class="wh-panel__title"
+                        >
+                          Hardware · Ready to Play
+                        </h2>
+                        <div
+                          class="wh-panel__kicker"
+                        >
+                          <b>
+                            ● 
+                            0
+                             live
+                          </b>
+                        </div>
+                      </header>
+                      <div
+                        class="wh-hw-summary"
+                      >
+                        <button
+                          aria-label="MIDI devices summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-primary);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            MIDI Devices
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            controllers · foot · sequencers
+                          </div>
+                        </button>
+                        <button
+                          aria-label="Audio interfaces summary"
+                          class="wh-hw-summary__tile"
+                          style="--wh-accent: var(--wh-accent-teal);"
+                          type="button"
+                        >
+                          <div
+                            class="wh-hw-summary__count"
+                          >
+                            0
+                            <span
+                              class="wh-hw-summary__count-frac"
+                            >
+                              /
+                              0
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-summary__label"
+                          >
+                            Audio Interfaces
+                          </div>
+                          <div
+                            class="wh-hw-summary__sub"
+                          >
+                            connected interface inventory
+                          </div>
+                        </button>
+                      </div>
+                      <div
+                        class="wh-hw-list"
+                      >
+                        <div
+                          aria-live="polite"
+                          class="wh-hw-row"
+                        >
+                          <div
+                            class="wh-hw-row__icon"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-linecap="square"
+                              stroke-width="1.6"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M3 12h3l3-7 3 14 3-10 3 5h3"
+                              />
+                            </svg>
+                          </div>
+                          <div
+                            class="wh-hw-row__body"
+                          >
+                            <strong>
+                              No hardware reporting
+                            </strong>
+                            <span>
+                              Connect a MIDI or audio device to light this up
+                            </span>
+                          </div>
+                          <div
+                            class="wh-hw-row__status wh-standby"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="wh-dot"
+                            />
+                            Standby
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <div
+                    aria-label="Platform status ribbon"
+                    class="wh-ribbon"
+                    role="group"
                   >
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
+                      data-ribbon="avb"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVB
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        live nodes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        Nodes: 1 active
-                      </span>
+                        operational
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="avdecc"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      AVDECC
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        MIDI devices
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        physical ports reporting into the cluster
-                      </span>
+                        1 entities
+                      </b>
                     </button>
                     <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
+                      data-ribbon="cluster"
                       type="button"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Cluster
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        mapped routes
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        enabled transforms and routing filters
-                      </span>
+                        1 active
+                      </b>
                     </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                    <div
+                      data-ribbon="clock"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Clock
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        audio interfaces
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        connected interface inventory across nodes
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        internal 96 kHz
+                      </b>
+                    </div>
+                    <div
+                      data-ribbon="storage"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      Storage
+                       · 
+                      <b
+                        class="wh-ok"
                       >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        AVB endpoints
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVB: operational
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="healthy"
-                      type="button"
+                        session ready
+                      </b>
+                    </div>
+                  </div>
+                </section>
+                <div
+                  class="hp2-home-shell__landing-actions"
+                >
+                  <p
+                    class="hp2-home-shell__hero-kicker"
+                  >
+                    Live operations surface
+                  </p>
+                  <div
+                    aria-hidden="true"
+                    class="hp2-home-shell__landing-actions-spacer"
+                  />
+                  <span
+                    aria-owns="overflow-menu-8__menu-body"
+                    class="cds--overflow-menu__wrapper"
+                  >
+                    <span
+                      class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip cds--icon-tooltip"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
+                      <div
+                        class="cds--tooltip-trigger__wrapper"
                       >
-                        1
-                      </span>
+                        <button
+                          aria-controls="overflow-menu-8__menu-body"
+                          aria-expanded="true"
+                          aria-haspopup="true"
+                          aria-labelledby="tooltip-_r_3a_"
+                          class="cds--overflow-menu cds--overflow-menu--open cds--overflow-menu--lg cds--btn cds--btn--lg cds--layout--size-lg cds--btn--ghost cds--btn--icon-only"
+                          type="button"
+                        >
+                          <svg
+                            aria-label="Options"
+                            class="cds--overflow-menu__icon"
+                            fill="currentColor"
+                            focusable="false"
+                            height="16"
+                            preserveAspectRatio="xMidYMid meet"
+                            role="img"
+                            viewBox="0 0 32 32"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle
+                              cx="16"
+                              cy="8"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="16"
+                              r="2"
+                            />
+                            <circle
+                              cx="16"
+                              cy="24"
+                              r="2"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                       <span
-                        class="hp2-home-shell__summary-label"
+                        aria-hidden="true"
+                        class="cds--popover"
+                        id="tooltip-_r_3a_"
+                        role="tooltip"
                       >
-                        AVDECC entities
+                        <span
+                          class="cds--popover-content cds--tooltip-content"
+                        >
+                          Options
+                        </span>
+                        <span
+                          class="cds--popover-caret"
+                        />
                       </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        AVDECC: 1 entity
-                      </span>
-                    </button>
-                    <button
-                      class="hp2-home-shell__summary-metric"
-                      data-tone="neutral"
-                      type="button"
+                    </span>
+                  </span>
+                </div>
+                <h1
+                  class="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden"
+                >
+                  <img
+                    alt="MAP: Mackes Audio Platform"
+                    class="hp2-home-shell__title-brand-image"
+                    src="MAP2-LOGO.png"
+                  />
+                </h1>
+                <aside
+                  aria-label="Telemetry overview"
+                  class="hp2-home-shell__summary-rail"
+                >
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
                     >
-                      <span
-                        class="hp2-home-shell__summary-value"
-                      >
-                        0
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-label"
-                      >
-                        snapshot groups
-                      </span>
-                      <span
-                        class="hp2-home-shell__summary-helper"
-                      >
-                        live runtime snapshot states
-                      </span>
-                    </button>
-                  </aside>
-                </header>
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      live nodes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      Nodes: 1 active
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      MIDI devices
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      physical ports reporting into the cluster
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      mapped routes
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      enabled transforms and routing filters
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      audio interfaces
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      connected interface inventory across nodes
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVB endpoints
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVB: operational
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="healthy"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      1
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      AVDECC entities
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      AVDECC: 1 entity
+                    </span>
+                  </button>
+                  <button
+                    class="hp2-home-shell__summary-metric"
+                    data-tone="neutral"
+                    type="button"
+                  >
+                    <span
+                      class="hp2-home-shell__summary-value"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-label"
+                    >
+                      snapshot groups
+                    </span>
+                    <span
+                      class="hp2-home-shell__summary-helper"
+                    >
+                      live runtime snapshot states
+                    </span>
+                  </button>
+                </aside>
                 <div
                   class="hp2-home-shell__operations-table-shell"
                 >

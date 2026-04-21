@@ -1,4 +1,17 @@
-import { Accessibility, Checkmark, Loop, PaintBrush, Reset, Search, Settings } from '@carbon/icons-react'
+import {
+  Accessibility,
+  Checkmark,
+  ChevronLeft,
+  ChevronRight,
+  ColorPalette,
+  DocumentExport,
+  DocumentImport,
+  Loop,
+  PaintBrush,
+  Reset,
+  Search,
+  Settings,
+} from '@carbon/icons-react'
 import {
   Button,
   InlineNotification,
@@ -47,15 +60,22 @@ import {
 import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
+  PUBLIC_PANTONE_PALETTE_SETS,
   PICKER_SHADES,
+  buildCarbonSemanticTokenRows,
+  coercePaletteSetsFromManifest,
+  createPaletteThemeManifest,
   deleteCustomTheme,
   generateThemeFromPalette,
+  mapPublicPaletteToTheme,
   toCarbonBaseTheme,
   getCustomThemes,
   saveCustomTheme,
   themeOrder,
   themes as builtInThemes,
   type BaseShell,
+  type CarbonSemanticTokenRow,
+  type PublicPaletteSet,
   type PlatformFontPresetId,
   type Theme,
   type ThemeColors,
@@ -295,6 +315,7 @@ const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
 
 const THEME_PAGE_SECTION_IDS = {
   appearance: 'theme-appearance',
+  paletteMapper: 'theme-palette-mapper',
   fontsObjects: 'theme-fonts-objects',
   background: 'theme-background',
   behavior: 'theme-behavior',
@@ -304,6 +325,7 @@ const THEME_PAGE_SECTION_IDS = {
 
 const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
   { id: THEME_PAGE_SECTION_IDS.appearance, label: 'Appearance' },
+  { id: THEME_PAGE_SECTION_IDS.paletteMapper, label: 'Palette Mapper' },
   { id: THEME_PAGE_SECTION_IDS.fontsObjects, label: 'Fonts and Objects' },
   { id: THEME_PAGE_SECTION_IDS.background, label: 'Background' },
   { id: THEME_PAGE_SECTION_IDS.behavior, label: 'Behavior' },
@@ -430,6 +452,21 @@ function themeCatalogLabel(themeId: string, theme: Theme): string {
   return carbonThemeLabel(theme.carbonTheme)
 }
 
+function downloadPaletteManifest(palette: PublicPaletteSet, theme: Theme): void {
+  if (typeof document === 'undefined' || typeof URL === 'undefined') {
+    return
+  }
+
+  const manifest = createPaletteThemeManifest(palette, theme)
+  const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' })
+  const objectUrl = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = objectUrl
+  anchor.download = `${theme.id}.map2-theme.json`
+  anchor.click()
+  URL.revokeObjectURL(objectUrl)
+}
+
 export function ThemePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -473,7 +510,12 @@ export function ThemePage() {
   const [activeCategoryPicker, setActiveCategoryPicker] = useState<string | null>(null)
   const [showCustomizePanel, setShowCustomizePanel] = useState(false)
   const [activeTab, setActiveTab] = useState<string>(THEME_PAGE_SECTION_IDS.appearance)
+  const [importedPaletteSets, setImportedPaletteSets] = useState<PublicPaletteSet[]>([])
+  const [activePaletteSetId, setActivePaletteSetId] = useState(PUBLIC_PANTONE_PALETTE_SETS[0]?.id ?? '')
+  const [paletteBase, setPaletteBase] = useState<BaseShell>('g100')
+  const [paletteImportError, setPaletteImportError] = useState<string | null>(null)
   const wallpaperUploadInputRef = useRef<HTMLInputElement | null>(null)
+  const paletteImportInputRef = useRef<HTMLInputElement | null>(null)
   const activeSlotFocus = useFocusReturnTarget<HTMLButtonElement>()
   const activeCategoryFocus = useFocusReturnTarget<HTMLButtonElement>()
   const categoryOverrideSnapshot = useSyncExternalStore(
@@ -499,6 +541,10 @@ export function ThemePage() {
     [customThemes],
   )
   const catalogThemeIds = useMemo(() => dedupeThemeIds(themeOrder), [])
+  const paletteSets = useMemo(
+    () => [...PUBLIC_PANTONE_PALETTE_SETS, ...importedPaletteSets],
+    [importedPaletteSets],
+  )
   const specialSettingsHiddenPlugins = useMemo(
     () => specialSettings?.hiddenPlugins ?? [],
     [specialSettings?.hiddenPlugins],
@@ -524,6 +570,19 @@ export function ThemePage() {
   const draftOverrideCount = Object.keys(draftOverrides).length
   const pluginOverrideCount = Object.keys(appearances).length
   const editorPreviewTheme = draftDirty ? draftTheme : previewTheme
+  const activePaletteIndex = Math.max(
+    0,
+    paletteSets.findIndex((palette) => palette.id === activePaletteSetId),
+  )
+  const activePaletteSet = paletteSets[activePaletteIndex] ?? PUBLIC_PANTONE_PALETTE_SETS[0]
+  const paletteTheme = useMemo(
+    () => mapPublicPaletteToTheme(activePaletteSet, paletteBase),
+    [activePaletteSet, paletteBase],
+  )
+  const paletteTokenRows = useMemo<CarbonSemanticTokenRow[]>(
+    () => buildCarbonSemanticTokenRows(activePaletteSet, paletteTheme),
+    [activePaletteSet, paletteTheme],
+  )
 
   useEffect(() => {
     if (searchParams.get('themeModal') !== 'launchers') {
@@ -790,6 +849,72 @@ export function ThemePage() {
     setThemeLibraryVersion((value) => value + 1)
   }
 
+  const handlePaletteStep = (direction: -1 | 1) => {
+    const nextIndex = (activePaletteIndex + direction + paletteSets.length) % paletteSets.length
+    setActivePaletteSetId(paletteSets[nextIndex]?.id ?? activePaletteSetId)
+    setPaletteImportError(null)
+  }
+
+  const handleSavePaletteTheme = () => {
+    const nextThemeId = `custom-public-palette-${activePaletteSet.id}-${paletteBase}-${Date.now()}`
+    const savedTheme: Theme = {
+      ...paletteTheme,
+      id: nextThemeId,
+      name: paletteTheme.name,
+    }
+
+    saveCustomTheme(savedTheme)
+    setTheme(nextThemeId)
+    setThemeLibraryVersion((value) => value + 1)
+  }
+
+  const handlePaletteExport = () => {
+    downloadPaletteManifest(activePaletteSet, {
+      ...paletteTheme,
+      id: `custom-public-palette-${activePaletteSet.id}-${paletteBase}`,
+    })
+  }
+
+  const openPaletteImportPicker = () => {
+    paletteImportInputRef.current?.click()
+  }
+
+  const handlePaletteImport = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(typeof reader.result === 'string' ? reader.result : '{}')
+        const imported = coercePaletteSetsFromManifest(parsed)
+        if (imported.length === 0) {
+          setPaletteImportError('The selected file does not contain a MAP2 palette manifest.')
+          return
+        }
+
+        setImportedPaletteSets((current) => {
+          const byId = new Map(current.map((palette) => [palette.id, palette]))
+          imported.forEach((palette) => byId.set(palette.id, palette))
+          return [...byId.values()]
+        })
+        setActivePaletteSetId(imported[0].id)
+        setPaletteImportError(null)
+      } catch {
+        setPaletteImportError('The selected palette manifest is not valid JSON.')
+      } finally {
+        event.target.value = ''
+      }
+    }
+    reader.onerror = () => {
+      setPaletteImportError('Failed to read the selected palette manifest.')
+      event.target.value = ''
+    }
+    reader.readAsText(file)
+  }
+
   const handleResetDraft = () => {
     setDraftFamilyId(inferFamilyIdFromTheme(previewTheme))
     setDraftBase(toCarbonBaseTheme(theme.carbonTheme))
@@ -906,6 +1031,13 @@ export function ThemePage() {
             editableCategoryConfigs={editableCategoryConfigs}
             activeCategoryPicker={activeCategoryPicker}
             activeSlot={activeSlot}
+            paletteSets={paletteSets}
+            activePaletteIndex={activePaletteIndex}
+            activePaletteSet={activePaletteSet}
+            paletteBase={paletteBase}
+            paletteTheme={paletteTheme}
+            paletteTokenRows={paletteTokenRows}
+            paletteImportError={paletteImportError}
             desktopWallpaper={desktopWallpaper}
             wallpaperUploadError={wallpaperUploadError}
             pluginInventoryError={pluginInventoryError}
@@ -926,6 +1058,7 @@ export function ThemePage() {
             hiddenPluginCount={hiddenPluginCount}
             showCustomizePanel={showCustomizePanel}
             wallpaperUploadInputRef={wallpaperUploadInputRef}
+            paletteImportInputRef={paletteImportInputRef}
             activeSlotTriggerRef={activeSlotFocus.targetRef}
             activeCategoryTriggerRef={activeCategoryFocus.targetRef}
             onRequestThemeSelection={requestThemeSelection}
@@ -952,6 +1085,13 @@ export function ThemePage() {
             onSetActiveSlot={(slot) => setActiveSlot(slot)}
             onCloseActiveSlot={closeActiveSlot}
             onSetDraftOverrides={setDraftOverrides}
+            onSetActivePaletteSetId={setActivePaletteSetId}
+            onSetPaletteBase={setPaletteBase}
+            onPaletteStep={handlePaletteStep}
+            onSavePaletteTheme={handleSavePaletteTheme}
+            onPaletteExport={handlePaletteExport}
+            onOpenPaletteImportPicker={openPaletteImportPicker}
+            onHandlePaletteImport={handlePaletteImport}
             onSetCategoryEditorMode={setCategoryEditorMode}
             onSetActiveCategoryPicker={(key) => setActiveCategoryPicker(key)}
             onCloseActiveCategoryPicker={closeActiveCategoryPicker}
@@ -1060,6 +1200,13 @@ interface ThemeWorkspacePanelProps {
   editableCategoryConfigs: ReturnType<typeof getEditableCategoryConfigs>
   activeCategoryPicker: string | null
   activeSlot: keyof ThemeColors | null
+  paletteSets: PublicPaletteSet[]
+  activePaletteIndex: number
+  activePaletteSet: PublicPaletteSet
+  paletteBase: BaseShell
+  paletteTheme: Theme
+  paletteTokenRows: CarbonSemanticTokenRow[]
+  paletteImportError: string | null
   desktopWallpaper: DesktopWallpaperState
   wallpaperUploadError: string | null
   pluginInventoryError: string | null
@@ -1080,6 +1227,7 @@ interface ThemeWorkspacePanelProps {
   hiddenPluginCount: number
   showCustomizePanel: boolean
   wallpaperUploadInputRef: MutableRefObject<HTMLInputElement | null>
+  paletteImportInputRef: MutableRefObject<HTMLInputElement | null>
   activeSlotTriggerRef: MutableRefObject<HTMLButtonElement | null>
   activeCategoryTriggerRef: MutableRefObject<HTMLButtonElement | null>
   onRequestThemeSelection: (themeId: string) => void
@@ -1097,6 +1245,13 @@ interface ThemeWorkspacePanelProps {
   onSetActiveSlot: (slot: keyof ThemeColors | null) => void
   onCloseActiveSlot: () => void
   onSetDraftOverrides: Dispatch<SetStateAction<Partial<ThemeColors>>>
+  onSetActivePaletteSetId: (paletteId: string) => void
+  onSetPaletteBase: (base: BaseShell) => void
+  onPaletteStep: (direction: -1 | 1) => void
+  onSavePaletteTheme: () => void
+  onPaletteExport: () => void
+  onOpenPaletteImportPicker: () => void
+  onHandlePaletteImport: (event: ChangeEvent<HTMLInputElement>) => void
   onSetCategoryEditorMode: (mode: PluginAppearanceEditorMode) => void
   onSetActiveCategoryPicker: (key: string | null) => void
   onCloseActiveCategoryPicker: () => void
@@ -1146,6 +1301,13 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
     editableCategoryConfigs,
     activeCategoryPicker,
     activeSlot,
+    paletteSets,
+    activePaletteIndex,
+    activePaletteSet,
+    paletteBase,
+    paletteTheme,
+    paletteTokenRows,
+    paletteImportError,
     desktopWallpaper,
     wallpaperUploadError,
     pluginInventoryError,
@@ -1166,6 +1328,7 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
     hiddenPluginCount,
     showCustomizePanel,
     wallpaperUploadInputRef,
+    paletteImportInputRef,
     activeSlotTriggerRef,
     activeCategoryTriggerRef,
     onRequestThemeSelection,
@@ -1183,6 +1346,13 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
     onSetActiveSlot,
     onCloseActiveSlot,
     onSetDraftOverrides,
+    onSetActivePaletteSetId,
+    onSetPaletteBase,
+    onPaletteStep,
+    onSavePaletteTheme,
+    onPaletteExport,
+    onOpenPaletteImportPicker,
+    onHandlePaletteImport,
     onSetCategoryEditorMode,
     onSetActiveCategoryPicker,
     onCloseActiveCategoryPicker,
@@ -1556,6 +1726,194 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.paletteMapper) {
+    return (
+      <section id={`${THEME_PAGE_SECTION_IDS.paletteMapper}-panel`} aria-labelledby={`${THEME_PAGE_SECTION_IDS.paletteMapper}-tab`} role="tabpanel">
+        <div className="theme-page__panel-header">
+          <div>
+            <h2 className="theme-page__section-title">Palette Mapper</h2>
+            <p className="theme-page__section-copy">
+              Move through public palette manifests and automatically mate the selected colors to MAP2 Carbon token targets.
+            </p>
+          </div>
+          <div className="theme-page__section-tags">
+            <Tag type="purple" size="sm">{paletteSets.length} sets</Tag>
+            <Tag type="blue" size="sm">{carbonThemeLabel(paletteBase)}</Tag>
+          </div>
+        </div>
+
+        <div className="theme-page__palette-layout">
+          <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+            <div className="theme-page__palette-stage">
+              <div className="theme-page__palette-stage-head">
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  hasIconOnly
+                  iconDescription="Previous palette set"
+                  renderIcon={ChevronLeft}
+                  onClick={() => onPaletteStep(-1)}
+                />
+                <div className="theme-page__palette-title">
+                  <span className="theme-page__card-eyebrow">{activePaletteSet.collection}</span>
+                  <h3>{activePaletteSet.name}</h3>
+                  <p>{activePaletteSet.description}</p>
+                </div>
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  hasIconOnly
+                  iconDescription="Next palette set"
+                  renderIcon={ChevronRight}
+                  onClick={() => onPaletteStep(1)}
+                />
+              </div>
+
+              <div className="theme-page__palette-strip" aria-label={`${activePaletteSet.name} colors`}>
+                {activePaletteSet.colors.map((color, index) => (
+                  <button
+                    key={`${color.name}-${color.hex}-${index}`}
+                    type="button"
+                    className="theme-page__palette-color"
+                    style={{ background: color.hex }}
+                    aria-label={`${color.name} ${color.hex}`}
+                    title={`${color.name} ${color.hex}`}
+                  >
+                    <span>{color.name}</span>
+                    <code>{color.hex}</code>
+                  </button>
+                ))}
+              </div>
+
+              <div className="theme-page__palette-source">
+                <Tag type="cool-gray" size="sm">Public manifest</Tag>
+                <span>{activePaletteSet.sourceName}</span>
+                <a href={activePaletteSet.sourceUrl} target="_blank" rel="noreferrer">
+                  Source
+                </a>
+              </div>
+              <InlineNotification
+                lowContrast
+                hideCloseButton
+                kind="info"
+                title="Pantone library boundary"
+                subtitle={activePaletteSet.licenseNote}
+              />
+            </div>
+          </div>
+
+          <div className="theme-page__dialog-group">
+            <div className="theme-page__dialog-subhead">
+              <strong>Set navigation</strong>
+              <Tag type="cool-gray" size="sm">
+                {activePaletteIndex + 1} / {paletteSets.length}
+              </Tag>
+            </div>
+            <Select
+              id="theme-page-palette-set-select"
+              labelText="Palette set"
+              value={activePaletteSet.id}
+              onChange={(event) => onSetActivePaletteSetId(event.currentTarget.value)}
+            >
+              {paletteSets.map((palette) => (
+                <SelectItem key={palette.id} value={palette.id} text={`${palette.collection} - ${palette.name}`} />
+              ))}
+            </Select>
+            <Select
+              id="theme-page-palette-base-select"
+              labelText="Generated Carbon target"
+              value={paletteBase}
+              onChange={(event) => onSetPaletteBase(event.currentTarget.value as BaseShell)}
+            >
+              {BASE_SHELL_OPTIONS.map((base) => (
+                <SelectItem key={base} value={base} text={carbonThemeLabel(base)} />
+              ))}
+            </Select>
+            <div className="theme-page__dialog-actions">
+              <Button kind="tertiary" renderIcon={DocumentImport} onClick={onOpenPaletteImportPicker}>
+                Import manifest
+              </Button>
+              <input
+                ref={paletteImportInputRef}
+                className="theme-page__hidden-input"
+                type="file"
+                accept="application/json,.json"
+                aria-label="Import palette manifest"
+                onChange={onHandlePaletteImport}
+              />
+              <Button kind="secondary" renderIcon={DocumentExport} onClick={onPaletteExport}>
+                Export
+              </Button>
+            </div>
+            {paletteImportError ? (
+              <InlineNotification lowContrast hideCloseButton kind="error" title="Palette import failed." subtitle={paletteImportError} />
+            ) : null}
+          </div>
+        </div>
+
+        <div className="theme-page__palette-output">
+          <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+            <div className="theme-page__dialog-head">
+              <div>
+                <h2 className="theme-page__section-title">Automatic Carbon Mapping</h2>
+                <p className="theme-page__section-copy">
+                  Brand color is prioritized first; supporting colors are assigned by semantic fit and then adjusted for Carbon contrast roles.
+                </p>
+              </div>
+              <Tag type="green" size="sm">Platform theme</Tag>
+            </div>
+
+            <div className="theme-page__palette-token-grid">
+              {paletteTokenRows.map((row) => (
+                <div key={row.token} className="theme-page__palette-token-row">
+                  <span className="theme-page__palette-token-swatch" style={{ background: row.value }} aria-hidden="true" />
+                  <span className="theme-page__palette-token-copy">
+                    <strong>{row.token}</strong>
+                    <span>{row.role}</span>
+                  </span>
+                  <span className="theme-page__palette-token-meta">
+                    <code>{row.value}</code>
+                    <span>{row.sourceColor}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="theme-page__dialog-group">
+            <div className="theme-page__dialog-subhead">
+              <strong>Generated Target</strong>
+              <Tag type="cyan" size="sm">{paletteTheme.name}</Tag>
+            </div>
+            <ThemeDesktopPreview theme={paletteTheme} activeThemeLabel={paletteTheme.name} previewFocus="active-window" />
+            <ThemeSwatchStrip theme={paletteTheme} />
+            <div className="theme-page__dialog-facts">
+              <div>
+                <strong>Brand</strong>
+                <span>{paletteTheme.colors.primary}</span>
+              </div>
+              <div>
+                <strong>Accent</strong>
+                <span>{paletteTheme.colors.accent}</span>
+              </div>
+              <div>
+                <strong>Error</strong>
+                <span>{paletteTheme.colors['support-danger']}</span>
+              </div>
+              <div>
+                <strong>Background</strong>
+                <span>{paletteTheme.colors.bg}</span>
+              </div>
+            </div>
+            <Button kind="primary" renderIcon={ColorPalette} onClick={onSavePaletteTheme}>
+              Save and apply generated theme
+            </Button>
           </div>
         </div>
       </section>
@@ -2323,4 +2681,3 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
     </div>
   )
 }
-

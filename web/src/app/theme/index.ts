@@ -23,3 +23,16 @@ export {
   initializePlatformTypography,
   usePlatformFontPreference,
 } from './usePlatformTypography';
+export {
+  PUBLIC_PANTONE_PALETTE_SETS,
+  buildCarbonSemanticTokenRows,
+  coercePaletteSetsFromManifest,
+  createPaletteThemeManifest,
+  mapPublicPaletteToTheme,
+} from './pantonePaletteMapper';
+export type {
+  CarbonSemanticTokenRow,
+  PaletteThemeManifest,
+  PublicPaletteColor,
+  PublicPaletteSet,
+} from './pantonePaletteMapper';
