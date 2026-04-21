@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { MAP2_PLATFORM_META, MAP2_PRIMARY_LABEL, Map2BrandMark } from './branding/map2Branding'
+import { MAP2_PLATFORM_VERSION, Map2BrandMark } from './branding/map2Branding'
+import { useBranding } from '../branding/BrandingContext'
 import { ShellWindowTitleStrip } from './shared/ShellWindowTitleStrip'
 import './PageHeader.css'
 
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function PageHeader({ title, subtitle, actions, logo, icon }: Props) {
+  const { brand } = useBranding()
+  const brandMeta = `${brand.productName} · ${MAP2_PLATFORM_VERSION}`
   return (
     <>
       <ShellWindowTitleStrip />
@@ -50,8 +53,8 @@ export function PageHeader({ title, subtitle, actions, logo, icon }: Props) {
                 <Map2BrandMark className="page-header__brand-mark" />
               </span>
               <span className="page-header__brand-copy-block">
-                <span className="page-header__brand-primary">{MAP2_PRIMARY_LABEL}</span>
-                <span className="page-header__brand-secondary">{MAP2_PLATFORM_META}</span>
+                <span className="page-header__brand-primary">{brand.shortName}</span>
+                <span className="page-header__brand-secondary">{brandMeta}</span>
               </span>
             </div>
           ) : null}

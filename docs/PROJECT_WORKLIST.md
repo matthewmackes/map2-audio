@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2414 epic opened: Centralized branding system — new logo adoption, brand manifest, ThemePage Branding tab, Apply-to-OS pipeline. Phase A in progress.
+Last updated: 2026-04-21 - T2414 Phase A landed (commit b72cb065, dual-pushed): new MAP logo adopted, brand.manifest.json seeded, favicon + PWA icons regenerated, manifest.json PiPedal leak fixed, V2 suffix dropped. Phase B (BrandingContext + /api/branding runtime layer) starting.
 
 ---
 

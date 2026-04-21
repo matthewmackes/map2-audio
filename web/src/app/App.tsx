@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, unstable_HistoryRouter as HistoryRouter, useLocation, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrandingProvider } from './branding/BrandingContext'
 import { DataTableSkeleton, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
 import { appHistory } from './history'
@@ -338,6 +339,7 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <BrandingProvider>
       <ViewportPolicyGate>
     <HistoryRouter
       history={routerHistory}
@@ -508,6 +510,7 @@ export function App() {
           </ClusterProvider>
     </HistoryRouter>
       </ViewportPolicyGate>
+      </BrandingProvider>
       <Suspense fallback={null}>
         <ReactQueryDevtools initialIsOpen={false} />
       </Suspense>
