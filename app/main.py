@@ -892,6 +892,15 @@ def create_app():
                 logger.info("SSH trust routes registered")
         except Exception as e:
             logger.warning(f"Failed to load SSH trust routes: {e}")
+
+        # Register SSH bridge WebSocket route (T2419-B)
+        try:
+            from app.routes import ssh_bridge as ssh_bridge_routes
+            if ssh_bridge_routes.router:
+                app.include_router(ssh_bridge_routes.router)
+                logger.info("SSH bridge WS route registered at /ws/ssh")
+        except Exception as e:
+            logger.warning(f"Failed to load SSH bridge route: {e}")
         
         # Register peer discovery routes
         try:
