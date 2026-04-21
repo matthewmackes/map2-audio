@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 
 import { ChannelRow } from './ChannelRow'
 import { SlotRuler } from './SlotRuler'
+import { WireOverlay, type Wire } from './WireOverlay'
 import {
   COLUMN_WIDTHS,
   SLOT_COUNT,
@@ -18,19 +19,25 @@ export interface SelectedBlockCoord {
 export interface UnifiedChannelGridProps {
   rows: UnifiedChannelRow[]
   selectedBlock?: SelectedBlockCoord | null
+  wires?: Wire[]
+  activeWireId?: string | null
   onSelectBlock?: (rowId: string, slotIndex: number) => void
   onAddBlock?: (rowId: string, slotIndex: number) => void
   onToggleMute?: (rowId: string) => void
   onToggleSolo?: (rowId: string) => void
+  onHoverWire?: (wireId: string | null) => void
 }
 
 export function UnifiedChannelGrid({
   rows,
   selectedBlock = null,
+  wires,
+  activeWireId = null,
   onSelectBlock,
   onAddBlock,
   onToggleMute,
   onToggleSolo,
+  onHoverWire,
 }: UnifiedChannelGridProps) {
   const totalWidth = COLUMN_WIDTHS.channelHeader + COLUMN_WIDTHS.slot * SLOT_COUNT
   const style: CSSProperties = {
@@ -60,6 +67,14 @@ export function UnifiedChannelGrid({
           onToggleSolo={onToggleSolo}
         />
       ))}
+      {wires && wires.length > 0 ? (
+        <WireOverlay
+          rows={rows}
+          wires={wires}
+          activeWireId={activeWireId}
+          onHoverWire={onHoverWire}
+        />
+      ) : null}
     </div>
   )
 }
