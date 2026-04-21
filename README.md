@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1177** TypeScript | **136** C++/H | **144** Docs | **2493** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1180** TypeScript | **136** C++/H | **144** Docs | **2495** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c1ac7159`](https://github.com/matthewmackes/map2-audio/commit/c1ac715990436d3be16f4c8d5fcfbf55b762d752) | feat(T710-sub15): add EmptySlot.tsx + InsertGap.tsx + tests | Map2 Audio | 2026-04-20 |
+| [`8c5b037b`](https://github.com/matthewmackes/map2-audio/commit/8c5b037bb455f8564ab84100b4fc850c3227e81f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`182a33fc`](https://github.com/matthewmackes/map2-audio/commit/182a33fc7f196c49e5e7229e5ca28cc2da77c71c) | feat(T710-sub14): add Block.tsx + 3-variant test | Map2 Audio | 2026-04-20 |
 | [`16a6e7ce`](https://github.com/matthewmackes/map2-audio/commit/16a6e7cecf7a88e1d009a96ab05f35c63681a4f4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`8ad45bd2`](https://github.com/matthewmackes/map2-audio/commit/8ad45bd2bc6d43008effd61705e9302998425177) | feat(T710-sub13): create UnifiedChannelGrid/gridConstants.ts | Map2 Audio | 2026-04-20 |
 | [`f50fcc70`](https://github.com/matthewmackes/map2-audio/commit/f50fcc70935c88593e782d4e6dc91c9fa79cbc72) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`8c4d5096`](https://github.com/matthewmackes/map2-audio/commit/8c4d5096e6885b9fb0969cf3d4fbd36d79859ecb) | feat(T710-sub12): wire SnapshotEditorPageContent bucket A... | Map2 Audio | 2026-04-20 |
 | [`0354b8c7`](https://github.com/matthewmackes/map2-audio/commit/0354b8c7c028c57f76b008483afd7b44458532bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`bba35d27`](https://github.com/matthewmackes/map2-audio/commit/bba35d27ddcf2347e12edcb0726f36ce8b3b5bf6) | feat(T710-sub11): add snapshotEditorStore localStorage wr... | Map2 Audio | 2026-04-20 |
-| [`2cbc792b`](https://github.com/matthewmackes/map2-audio/commit/2cbc792b0a084a3b911fb9b5e461db011af237a3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
