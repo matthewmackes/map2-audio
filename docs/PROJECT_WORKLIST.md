@@ -6,7 +6,102 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 15:10 EDT - Closed T700 MK1 Headless epic (T2407-T2411 all Done). MASCHINE_MK1_OPERATION_GUIDE.md final Phase 5 deliverable shipped.
+Last updated: 2026-04-20 - T710 rewritten as atomic epic (28 restartable subtasks at 15-60 min each per worklist schema).
+
+---
+
+ID: T710
+Status: [>] In Progress
+Title: EPIC — Unified Channel Grid: supersede SnapshotEditor SignalCanvas with matrix-grid design (handoff `ZONGEWV9IQ1PjcKVH1PCkA`)
+Description:
+- Goal / acceptance criteria: Replace T2368's SignalCanvas with a unified matrix grid per the Claude Design handoff (`updated-flow-layout`). Rows = chains (UI label "channel"), columns = Slot 01..N (max 8, configurable constant), ordering flexible (any effect at any slot, types may repeat). Rail style alone encodes mono/stereo; routing wires overlay the routing lane; mono↔stereo conversions render as `node`-style M→ST / ST→M labels on wire midpoints. Block picker is category-filter-only from JUCE plugin registry. Reorder via arrows + keyboard (← / →). Sidechain surfaces both as `SC←X` block tag AND violet dashed wire. Focus persists to localStorage. Sparse nulls persist. Real VU/clip/live telemetry. Blueprint palette ports to Carbon theme variant `theme-blueprint`. ~40 fx_*.svg icons become MAP2 standard icon set. SnapshotEditor's `useState` hooks refactor to Zustand `snapshotEditorStore.ts`. Each subtask dual-pushes to origin + gitlab after atomic build.
+- Why it matters: Original user request — consolidate all flows/channels onto one visual grid, continue and expand the blueprint architecture, properly represent routing and mono/stereo. Superior information density; direct topology visibility; aligns with platform's schematic identity. Supersedes T2368's Carbon-schematic SignalCanvas.
+- Dependencies: None blocking. Reuses `@carbon/react`, JUCE plugin catalog (`app/deployment/juce_processors.json`, `default_lv2_effects.json`), existing meter pipeline.
+- Design handoff source: https://api.anthropic.com/v1/design/h/ZONGEWV9IQ1PjcKVH1PCkA (tarball extracted to `/tmp/design-fetch/extracted/updated-flow-layout/`). Chat transcript in `chats/chat1.md` captures iteration. README.md, index.html, styles.css, grid.jsx, channel-data.jsx, fx-icons.jsx, + ~40 fx_*.svg icons.
+- Locked decisions (25 Q&A):
+  Q1 Integrate into SnapshotEditor (not a new page). Q2 Replace mode — unified grid becomes the SignalCanvas. Q3 Dynamic rows from snapshot data. Q4 Fixed max 8 slots, configurable constant. Q5 UI label "channel", internal code stays "chain". Q6 fx_*.svg = new MAP2 standard icons. Q7 Destination `web/src/assets/fx-icons/` raw SVGs. Q8 Block picker derived from JUCE plugin registry. Q9 Keep MAP2's 15 engine categories; extend hue system. Q10 Routes derived from snapshot/chain graph. Q11 Rail-only mono/stereo. Q12 `node` style M↔ST conversion. Q13 All destinations as wires. Q14 Sidechain = block tag + routing wire. Q15 Arrows + keyboard shortcuts. Q16 Focus in localStorage. Q17 Category filter only. Q18 Refuse insert when full. Q19 Sparse storage, nulls persist. Q20 Refactor SnapshotEditor to Zustand store. Q21 Zustand at `web/src/app/stores/snapshotEditorStore.ts`. Q22 Immediate localStorage write-through. Q23 Real meter telemetry. Q24 `theme-blueprint` as new global theme option. Q25 One epic + numbered subtasks.
+- Conflict resolutions:
+  - Supersedes T2368 SignalCanvas primitives (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `SidechainConnector`, `icons.tsx`, `tracePath.ts`). T2368's shared `signalFlowAnimations.css` and `pluginCategoryIcon.ts` are preserved for MPX1/IntelFX/ChainBuilder.
+  - Carbon-first: blueprint CSS ports to `@carbon/react` primitives and Carbon tokens. `theme-blueprint` becomes a Carbon theme variant with scoped oklch palette.
+  - Icon replacement: T2368's `SignalCanvas/icons.tsx` retires; fx_*.svg becomes MAP2 standard via Vite imports from `web/src/assets/fx-icons/`.
+- Execution rules (every subtask):
+  1. Mark `[>] In Progress` before edits. 2. Atomic commit scope. 3. `npm --prefix web run typecheck` + `npm --prefix web run build` PASS. 4. Jest subset PASS for touched components. 5. `git push origin master && git push gitlab master`. 6. Mark `[✓] Done` with completion note (files changed, test results, commit SHA).
+- Subtasks (28 atomic units, 15-60 min each, restartable):
+
+  **Phase 1 — Scaffolding (complete)**
+  - T710-sub01 [✓] Open epic + copy 39 fx_*.svg icons to `web/src/assets/fx-icons/`. Delivered 2026-04-20; epic opened in worklist; icons copied from `/tmp/design-fetch/extracted/updated-flow-layout/project/fx-icons/`; no code changes yet.
+
+  **Phase 2 — Icon System (subtasks 02-05)**
+  - T710-sub02 [ ] Create `web/src/app/components/FxIcons/fxIconRegistry.ts`: typed map `Record<FxIconName, string>` with Vite `?url` imports for all 39 fx_*.svg files. Export `FxIconName` union type from directory scan. Acceptance: `npm run typecheck` PASS. Effort: 30 min.
+  - T710-sub03 [ ] Create `web/src/app/components/FxIcons/FxIcon.tsx`: React component `<FxIcon name={FxIconName} size={16|20|24} />` rendering `<img>` with `currentColor` fill via inline SVG fetch or `<svg>` with `<use href>`. Add `FxIcon.test.tsx` rendering 3 representative icons. Acceptance: jest PASS, typecheck PASS. Effort: 45 min.
+  - T710-sub04 [ ] Audit T2368 `SignalCanvas/icons.tsx` consumers: `grep -rn "from.*SignalCanvas/icons" web/src`. Document findings in subtask notes. No code changes yet. Effort: 15 min.
+  - T710-sub05 [ ] Replace T2368 icon usages (from sub04 audit) with `FxIcon`. Delete `web/src/app/components/SnapshotEditor/SignalCanvas/icons.tsx` only if zero remaining consumers. Acceptance: grep returns 0 matches for removed exports; typecheck + build PASS. Effort: 45 min.
+
+  **Phase 3 — Category Hues (subtask 06)**
+  - T710-sub06 [ ] Create `web/src/app/components/SnapshotEditor/categoryHues.ts`: map MAP2's 15 categories → oklch hues (Amplifier=amber, Cabinet=warm-neutral, EQ=blue, Dynamics=green, Modulation=violet, Delay=cyan, Reverb=cyan, Distortion=red, Utility=neutral, Instrument=green, Drums=red, Pitch=cyan, Multi-Effect=violet, Effects=neutral, AVB=blue). Export `getCategoryHue(category: string)` returning `{hue, chroma, fallback}`. Add unit test covering all 15. Acceptance: jest PASS, typecheck PASS. Effort: 30 min.
+
+  **Phase 4 — Theme Variant (subtasks 07-08)**
+  - T710-sub07 [ ] Add `theme-blueprint` CSS file `web/src/app/theme/themeBlueprint.css`: blueprint palette (`--ink-0: #eaf2f7`, `--ink-7: #0c2430`, etc.) mapped to Carbon tokens (`--cds-background`, `--cds-layer`, `--cds-text-primary`). Scope under `[data-carbon-theme="blueprint"]`. Acceptance: visual-only — file loads in build. Effort: 45 min.
+  - T710-sub08 [ ] Register `blueprint` in MAP2 theme-preset system. Locate current Carbon theme preset mechanism (likely `web/src/app/hooks/useTheme*.tsx` or similar) and add `blueprint` as selectable value. Add to `SpecialSettingsDialog` theme dropdown if present. Acceptance: theme switches live in-browser; typecheck + build PASS. Effort: 60 min.
+
+  **Phase 5 — Store Refactor (subtasks 09-12)**
+  - T710-sub09 [ ] Audit `SnapshotEditorPageContent.tsx` for all `useState`/`useReducer`/state-holding hooks. List each with type + consumer. No code changes. Deliverable: audit list in subtask completion note. Effort: 30 min.
+  - T710-sub10 [ ] Create `web/src/app/stores/snapshotEditorStore.ts` with Zustand + `shallow`: define types only (no logic yet) — `SnapshotEditorState` interface with all state fields from sub09 audit, action signatures. Stub action bodies with `// TODO`. Acceptance: typecheck PASS. Effort: 45 min.
+  - T710-sub11 [ ] Implement store actions in `snapshotEditorStore.ts`: localStorage write-through for `map2_juce_grid_flows_v2` (flowSlots) and `map2-focus` (focus state). Preserve sparse nulls. Add `snapshotEditorStore.test.ts` with 8+ unit tests (load, mutate, persist, rehydrate, sparse handling). Acceptance: jest PASS, typecheck PASS. Effort: 60 min.
+  - T710-sub12 [ ] Wire `SnapshotEditorPageContent.tsx` to consume store via `useSnapshotEditorStore(selector, shallow)`. Remove duplicated `useState` hooks. Keep `useSnapshotEditorUndoRedo` integration. Acceptance: existing `SnapshotEditorPage.integration.test.tsx` PASS; typecheck + build PASS. Effort: 60 min.
+
+  **Phase 6 — Grid Primitives (subtasks 13-19)**
+  - T710-sub13 [ ] Create `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/gridConstants.ts`: `SLOT_COUNT = 8`, column widths, row heights, category color tokens. Export TypeScript types `UnifiedChannelRow`, `UnifiedSlot`, `BlockKind`. Acceptance: typecheck PASS. Effort: 20 min.
+  - T710-sub14 [ ] Create `UnifiedChannelGrid/Block.tsx`: effect block card — category strip + `FxIcon` + label + optional `SC←X` tag. Use Carbon `Tag` for category. Add `Block.test.tsx` rendering 3 block variants. Acceptance: jest PASS. Effort: 45 min.
+  - T710-sub15 [ ] Create `UnifiedChannelGrid/EmptySlot.tsx` + `InsertGap.tsx`: empty slot placeholder with `+` affordance, insert-between-blocks affordance. Test basic click → `onAdd(slotIndex)` callback. Acceptance: jest PASS. Effort: 30 min.
+  - T710-sub16 [ ] Create `UnifiedChannelGrid/SlotRuler.tsx`: column header row rendering "Slot 01..08". Carbon typography tokens. Acceptance: jest PASS rendering 8 columns. Effort: 20 min.
+  - T710-sub17 [ ] Create `UnifiedChannelGrid/ChannelHeader.tsx`: channel row header — name + IO indicators + mute/solo + placeholder VU bar (no telemetry yet). Use Carbon `Button` for mute/solo. Acceptance: jest PASS. Effort: 45 min.
+  - T710-sub18 [ ] Create `UnifiedChannelGrid/ChannelRow.tsx`: composes `ChannelHeader` + 8 slot cells (Block or EmptySlot). Rail visual via CSS `::before`/`::after` pseudo-elements with `.mono` / `.stereo` classes. Acceptance: jest PASS rendering mixed block/empty row. Effort: 60 min.
+  - T710-sub19 [ ] Create `UnifiedChannelGrid/UnifiedChannelGrid.tsx`: composes `SlotRuler` + N `ChannelRow`s driven by store. Add `UnifiedChannelGrid.test.tsx` rendering 3-channel grid. Add scoped CSS `UnifiedChannelGrid.css` importing `theme-blueprint` tokens. Acceptance: jest PASS. Effort: 60 min.
+
+  **Phase 7 — Interactivity (subtasks 20-23)**
+  - T710-sub20 [ ] Block picker: `UnifiedChannelGrid/BlockPicker.tsx` — Carbon `Popover` with category filter row + 3-column icon grid. Data source: extract JUCE plugin catalog via existing `pluginCategoryIcon.ts` or new helper `getPluginCatalog()`. Acceptance: jest PASS (mocked catalog). Effort: 60 min.
+  - T710-sub21 [ ] Refuse-when-full: when all 8 slots occupied, picker `onAdd` fires Carbon `ActionableNotification` toast "Channel is full — remove a block first". Hook into existing toast surface (T2351). Acceptance: jest PASS refusal path. Effort: 30 min.
+  - T710-sub22 [ ] Routing wire overlay: `UnifiedChannelGrid/WireOverlay.tsx` — absolute-positioned SVG layer. Derive routes from chain graph (sends/parallel/sidechain). Render M↔ST node labels at midpoints. Hover/focus activates wires. Add `WireOverlay.test.tsx` with 2 fixture graphs. Acceptance: jest PASS. Effort: 60 min.
+  - T710-sub23 [ ] Keyboard handlers: in `UnifiedChannelGrid.tsx` attach `onKeyDown` — `ArrowLeft`/`ArrowRight` reorder selected block, `Delete` removes, `Escape` deselects. Wire to store selection action. Acceptance: jest PASS 4 shortcuts. Effort: 45 min.
+
+  **Phase 8 — Telemetry (subtask 24)**
+  - T710-sub24 [ ] Wire real VU + clip + live-status into `ChannelHeader`. Reuse existing `useChainMeter(chainId)` pipeline (30 fps). Replace placeholder VU bar with live bar + CLIP chip + live-marker dot. Acceptance: typecheck + build PASS; visual verify meter motion at port 3000. Effort: 45 min.
+
+  **Phase 9 — Swap-in (subtasks 25-26)**
+  - T710-sub25 [ ] Replace `SnapshotEditorSignalCanvas.tsx` body: render `<UnifiedChannelGrid />` from store, remove T2368 `ChainRow` / `ChainTab` / `ChainHead` / `ChainSide` / `SignalGrid` / `Node` / `Terminal` / `Joiner` / `Meter` / `SidechainConnector` / `tracePath.ts` + tests. Keep `signalFlowAnimations.css` and `pluginCategoryIcon.ts` (shared). Acceptance: `rg "from.*SignalCanvas/(ChainRow|ChainTab|ChainHead|ChainSide|SignalGrid|Node|Terminal|Joiner|Meter|SidechainConnector|tracePath)"` returns 0; typecheck + build PASS. Effort: 60 min.
+  - T710-sub26 [ ] Run full SnapshotEditor test suite: `npm --prefix web test -- --runInBand --testPathPatterns=SnapshotEditor --no-coverage`. Fix any failures introduced by store refactor + grid swap. Acceptance: all SnapshotEditor tests PASS. Effort: 45 min.
+
+  **Phase 10 — Verify + Ship (subtasks 27-28)**
+  - T710-sub27 [ ] Atomic build + visual verification: `npm --prefix web run typecheck` + `npm --prefix web run build`, restart `scripts/serve_web_dist.mjs` on port 3000, screenshot-verify grid at 1440px in Carbon g100/white + `theme-blueprint`. Commit + dual-push `git push origin master && git push gitlab master`. Effort: 45 min.
+  - T710-sub28 [ ] Documentation: add `Unified Channel Grid` section to `docs/design/CARBON_CONFORMANCE_STANDARD.md` documenting theme variant, fx-icon registry, category hue system, grid primitives. Update `docs/CLAUDE.md` Gotchas with any new patterns discovered. Commit + dual-push. Effort: 30 min.
+
+- Estimated effort: Very Large (28 atomic subtasks, ~17-22 hours cumulative).
+- Required outputs: `web/src/assets/fx-icons/*.svg` (39 icons — DONE), `web/src/app/components/FxIcons/` (registry + component + tests), `web/src/app/components/SnapshotEditor/categoryHues.ts` + test, `web/src/app/theme/themeBlueprint.css`, theme-preset wiring, `web/src/app/stores/snapshotEditorStore.ts` + test, `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/` (~8 files) + CSS + tests, updated `SnapshotEditorSignalCanvas.tsx`, T2368 deletions (~11 files + tests), `docs/design/CARBON_CONFORMANCE_STANDARD.md` addendum, 27+ atomic commits dual-pushed, visual verification at port 3000.
+Assigned to: Claude
+Last updated: 2026-04-20 - Claude (epic rewritten: 28 atomic 15-60 min subtasks per worklist schema; sub01 Done, sub02 next)
+
+---
+
+ID: T2412
+Status: [>] In Progress
+Title: Snapshot management entry points — `/snapshots` browser page + hero-row Open/New buttons
+Description:
+- Goal / acceptance criteria: Expose snapshot management from the Snapshot Editor. Add two Carbon `Button`s immediately to the right of the hero snapshot name in `SnapshotEditorSnapshotStatusPanel` — `Open Snapshots` (secondary, navigates to `/snapshots`) and `New Snapshot` (primary, calls existing `createCapturedSnapshot()`). Create a dedicated `/snapshots` browser page (`SnapshotsBrowserPage.tsx`) that lists every snapshot via `snapshotsApi.list()`, with inline-editable names (`snapshotsApi.update({ name })`), Open (navigates to `/snapshot-editor` after activation), Duplicate (`snapshotsApi.duplicate`), and Delete (`snapshotsApi.delete` with confirm modal) row actions. Include a top-right `New Snapshot` button on the browser page that creates a blank snapshot via `snapshotsApi.create()` and routes to the editor. Register `/snapshots` in `App.tsx` under the authenticated route tree. All new UI must use Carbon components (`DataTable`/`Button`/`Modal`/`TextInput`) and existing tokens per `CARBON_CONFORMANCE_STANDARD.md`. Query invalidation must keep editor and browser in sync.
+- Why it matters: The Snapshot Editor currently has no surfaced entry points for snapshot CRUD/browse; users cannot discover, rename, duplicate, or delete snapshots from the UI. This adds the minimum viable management surface without disturbing the editor's live/draft workflow.
+- Dependencies: None. Reuses `snapshotsApi` (`web/src/map2/clients/snapshots.ts`), existing `createCapturedSnapshot` handler in `SnapshotEditorPageContent.tsx`, TanStack Query cache keys already used by editor.
+- Estimated effort: Medium (1 new page + css + route + 2 new buttons + 2 new props on status panel + typecheck/build/test/dual-push).
+- Required outputs:
+  - `web/src/app/pages/SnapshotsBrowserPage.tsx` (new) with Carbon DataTable, inline rename, row actions
+  - `web/src/app/pages/SnapshotsBrowserPage.css` (new)
+  - Route registration in `web/src/app/App.tsx` (`<Route path="/snapshots" …>`)
+  - Updated `web/src/app/components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel.tsx` with `onOpenSnapshots` / `onCreateSnapshot` props and two new buttons in hero row
+  - Updated `web/src/app/pages/SnapshotEditorPageContent.tsx` wiring `useNavigate()` → `/snapshots` and `createCapturedSnapshot` to the new props
+  - `npm run typecheck` PASS, `npm run build` PASS
+  - `npx jest --testPathPattern=SnapshotEditorSnapshotStatusPanel --no-coverage` PASS
+  - Commit on master and dual-push to origin + gitlab
+Assigned to: Claude
+Last updated: 2026-04-20 15:30 EDT - Claude
 
 ---
 
