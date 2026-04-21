@@ -1,0 +1,81 @@
+/*
+ * MAP2 theme variant: blueprint
+ * Scoped under [data-carbon-theme="blueprint"] so it layers over Carbon
+ * tokens without affecting other themes. Used by the Unified Channel Grid
+ * (T710) and any surface that opts in.
+ *
+ * Palette: deep inky blue chrome with pale cool ink on dark. Values derived
+ * from the blueprint design spec.
+ */
+
+[data-carbon-theme="blueprint"] {
+  /* Ink ramp (pale → deep blue-black) */
+  --ink-0: #eaf2f7;
+  --ink-1: #cfdee7;
+  --ink-2: #a7bbc8;
+  --ink-3: #7891a3;
+  --ink-4: #4c6b80;
+  --ink-5: #2e4c60;
+  --ink-6: #183247;
+  --ink-7: #0c2430;
+
+  /* Accent ramp (cyan → steel) */
+  --accent-cyan: #4fc3f7;
+  --accent-cyan-dim: #2b8cba;
+  --accent-steel: #6f93a8;
+
+  /* Carbon token overrides (g100-derived, cooler + higher contrast) */
+  --cds-background: var(--ink-7);
+  --cds-background-hover: #14303e;
+  --cds-background-active: #1b3b4b;
+  --cds-background-selected: #1d4258;
+  --cds-background-selected-hover: #255479;
+  --cds-background-inverse: var(--ink-0);
+  --cds-background-brand: var(--accent-cyan-dim);
+
+  --cds-layer: var(--ink-6);
+  --cds-layer-01: var(--ink-6);
+  --cds-layer-02: var(--ink-5);
+  --cds-layer-03: var(--ink-4);
+  --cds-layer-hover: #1f3e53;
+  --cds-layer-active: #25495e;
+  --cds-layer-accent-01: var(--ink-5);
+
+  --cds-field: var(--ink-6);
+  --cds-field-01: var(--ink-6);
+  --cds-field-02: var(--ink-5);
+  --cds-field-hover: #1f3e53;
+
+  --cds-border-subtle: var(--ink-5);
+  --cds-border-subtle-01: var(--ink-5);
+  --cds-border-subtle-02: var(--ink-4);
+  --cds-border-strong: var(--ink-3);
+  --cds-border-strong-01: var(--ink-3);
+  --cds-border-interactive: var(--accent-cyan);
+
+  --cds-text-primary: var(--ink-0);
+  --cds-text-secondary: var(--ink-1);
+  --cds-text-placeholder: var(--ink-3);
+  --cds-text-on-color: var(--ink-7);
+  --cds-text-helper: var(--ink-2);
+  --cds-text-disabled: var(--ink-4);
+
+  --cds-icon-primary: var(--ink-0);
+  --cds-icon-secondary: var(--ink-2);
+  --cds-icon-on-color: var(--ink-7);
+  --cds-icon-disabled: var(--ink-4);
+
+  --cds-interactive: var(--accent-cyan);
+  --cds-focus: var(--accent-cyan);
+
+  --cds-support-info: var(--accent-cyan);
+  --cds-link-primary: var(--accent-cyan);
+  --cds-link-primary-hover: #82d3ff;
+
+  /* Grid-specific aliases consumed by UnifiedChannelGrid.css */
+  --map2-grid-rail-mono: var(--ink-3);
+  --map2-grid-rail-stereo: var(--accent-cyan-dim);
+  --map2-grid-slot-empty-bg: #102a38;
+  --map2-grid-slot-empty-border: var(--ink-5);
+  --map2-grid-divider: var(--ink-5);
+}
