@@ -76,6 +76,7 @@ import {
   writeDesktopWallpaperState,
   type DesktopWallpaperState,
 } from './desktopWallpaper'
+import { BrandingTab } from './ThemePage/BrandingTab'
 import './ThemePage.css'
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
@@ -298,6 +299,7 @@ const THEME_PAGE_SECTION_IDS = {
   background: 'theme-background',
   behavior: 'theme-behavior',
   guiOptions: 'theme-gui-options',
+  branding: 'theme-branding',
 } as const
 
 const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
@@ -306,6 +308,7 @@ const THEME_PAGE_SECTION_LINKS: Array<{ id: string; label: string }> = [
   { id: THEME_PAGE_SECTION_IDS.background, label: 'Background' },
   { id: THEME_PAGE_SECTION_IDS.behavior, label: 'Behavior' },
   { id: THEME_PAGE_SECTION_IDS.guiOptions, label: 'GUI Options' },
+  { id: THEME_PAGE_SECTION_IDS.branding, label: 'Branding' },
 ]
 
 const PREVIEW_FOCUS_OPTIONS = [
@@ -1934,6 +1937,20 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
       >
         <div className="theme-page__dialog-group theme-page__dialog-group--wide">
           <GuiOptionsShowcase />
+        </div>
+      </section>
+    )
+  }
+
+  if (activeTab === THEME_PAGE_SECTION_IDS.branding) {
+    return (
+      <section
+        id={`${THEME_PAGE_SECTION_IDS.branding}-panel`}
+        aria-labelledby={`${THEME_PAGE_SECTION_IDS.branding}-tab`}
+        role="tabpanel"
+      >
+        <div className="theme-page__dialog-group theme-page__dialog-group--wide">
+          <BrandingTab />
         </div>
       </section>
     )

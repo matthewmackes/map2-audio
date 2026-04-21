@@ -1,0 +1,186 @@
+.branding-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-06, 1.5rem);
+  padding: var(--cds-spacing-05, 1rem) 0;
+}
+
+.branding-tab__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.branding-tab__header h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.branding-tab__lede {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+.branding-tab__lede code {
+  font-family: var(--cds-code-02-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.85em;
+  padding: 0 0.25rem;
+  background: var(--cds-layer, #262626);
+  border-radius: 2px;
+}
+
+.branding-tab__header-actions {
+  display: flex;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.branding-tab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.branding-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.branding-card__header {
+  padding: var(--cds-spacing-05, 1rem);
+  border-bottom: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.branding-card__header h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: var(--cds-heading-02-font-size, 1rem);
+  font-weight: 600;
+}
+
+.branding-card__header p {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+.branding-card__body {
+  padding: var(--cds-spacing-05, 1rem);
+  flex: 1 1 auto;
+}
+
+.branding-card__body--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.branding-card__footer {
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.branding-card__palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.branding-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.branding-swatch__label {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.branding-swatch__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.branding-swatch__row input[type='color'] {
+  width: 40px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--cds-border-subtle, #393939);
+  background: transparent;
+  cursor: pointer;
+}
+
+.branding-swatch__desc {
+  font-size: var(--cds-caption-01-font-size, 0.75rem);
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.branding-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.branding-preview__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid;
+  border-radius: 2px;
+  width: fit-content;
+}
+
+.branding-preview__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.branding-preview__short {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.branding-preview__name {
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.branding-preview__tagline {
+  margin: 0;
+  font-family: var(--cds-code-02-font-family, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.15em;
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.branding-preview__meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+.branding-preview__meta dt {
+  color: var(--cds-text-helper, #8d8d8d);
+  font-variant: all-small-caps;
+  letter-spacing: 0.1em;
+}
+
+.branding-preview__meta dd {
+  margin: 0;
+  color: var(--cds-text-primary, #f4f4f4);
+  word-break: break-all;
+}
