@@ -1,0 +1,38 @@
+.map2-xterm {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  background: #161616;
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.map2-xterm__surface {
+  position: absolute;
+  inset: 0;
+  padding: 0.5rem;
+}
+
+.map2-xterm__surface .xterm {
+  width: 100%;
+  height: 100%;
+}
+
+.map2-xterm__overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.5rem 0.75rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  background: rgba(22, 22, 22, 0.85);
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.map2-xterm__overlay--error {
+  color: var(--cds-support-error, #fa4d56);
+}
+
+.map2-xterm__overlay--closed {
+  color: var(--cds-text-helper, #8d8d8d);
+}
