@@ -1016,8 +1016,6 @@ export function SnapshotEditorPage() {
     isTouchCapable,
     isTabletTouchRoute: isTabletTouchLayout,
   } = useTabletTouchRouteLayout(location.pathname)
-  const [compactTab, setCompactTab] = useState<CompactTabId>('grid')
-
   const isCompactLayout = isMobile || isTablet
   const showCompactWorkflowPanels = isCompactLayout && !isTabletTouchLayout
   const showViewportBlockScreen = isMobile
@@ -1030,59 +1028,135 @@ export function SnapshotEditorPage() {
   const initialPluginPersistence = initialPluginPersistenceRef.current
     ?? (initialPluginPersistenceRef.current = loadInitialPluginPersistence())
 
-  // Flow slots state (with migration support)
-  const [flowSlots, setFlowSlots] = useState<FlowSlot[]>(initialPersistedState.flowSlots)
+  // T710-sub29: All state below is sourced from the Zustand store. Initial
+  // persistence values (flows/routing/activeFlowIndex/pluginSelection/category/
+  // collapsedCategories) are hydrated once on first render via the
+  // `useSnapshotEditorHydration` ref below, before any effect runs.
+  const storeHydratedRef = useRef(false)
+  if (!storeHydratedRef.current) {
+    storeHydratedRef.current = true
+    useSnapshotEditorStore.setState({
+      flowSlots: initialPersistedState.flowSlots,
+      routing: initialPersistedState.routing,
+      activeFlowIndex: initialPersistedState.activeFlowIndex,
+      selectedPluginUri: initialPluginPersistence.selectedPluginUri,
+      selectedPluginPosition: initialPluginPersistence.selectedPluginPosition,
+      effectModalOpen: initialPluginPersistence.effectModalOpen,
+      selectedCategory: (() => {
+        try {
+          return localStorage.getItem('map2_juce_grid_plugin_category')
+            || localStorage.getItem('map2_grid_plugin_category')
+            || 'all'
+        } catch { return 'all' }
+      })(),
+      collapsedCategories: (() => {
+        try {
+          const val = localStorage.getItem('map2_juce_grid_collapsed_categories')
+            ?? localStorage.getItem('map2_grid_collapsed_categories')
+          return val ? new Set<string>(JSON.parse(val)) : new Set<string>()
+        } catch { return new Set<string>() }
+      })(),
+      footswitchLabelDrafts: createEmptyFootswitchLabelDrafts(),
+      snapshotIoModalState: buildSnapshotIoModalState(null, null),
+      noiseGateThresholdDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
+      noiseGateReleaseDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+    })
+  }
 
-  // Routing state
-  const [routing, setRouting] = useState<RoutingConfig>(initialPersistedState.routing)
-
-  // Active flow index
-  const [activeFlowIndex, setActiveFlowIndex] = useState(initialPersistedState.activeFlowIndex)
-
-  // UI State
-  const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
-  const [selectedPluginPosition, setSelectedPluginPosition] = useState<number | null>(initialPluginPersistence.selectedPluginPosition)
-  const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
-  const [showPluginBrowser, setShowPluginBrowser] = useState(false)
-  const [showPresetBrowser, setShowPresetBrowser] = useState(false)
-  const [showSavePresetModal, setShowSavePresetModal] = useState(false)
-  const [savePresetName, setSavePresetName] = useState('')
-  const [editingSnapshotName, setEditingSnapshotName] = useState(false)
-  const [renameSnapshotName, setRenameSnapshotName] = useState('')
-  const [showRenameChainModal, setShowRenameChainModal] = useState(false)
-  const [renameChainName, setRenameChainName] = useState('')
-  const [presetPendingDelete, setPresetPendingDelete] = useState<Snapshot | null>(null)
-  const [showClearFlowsModal, setShowClearFlowsModal] = useState(false)
-  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false)
-  const [selectedFlowForAssignment, setSelectedFlowForAssignment] = useState<FlowSlot | null>(null)
-  const [assignmentSelectedNodeId, setAssignmentSelectedNodeId] = useState('')
-  const [assignmentRedundancyEnabled, setAssignmentRedundancyEnabled] = useState(false)
-  const [isAssigningFlow, setIsAssigningFlow] = useState(false)
-  const [pluginSearchQuery, setPluginSearchQuery] = useState('')
-  const [midiLearnActive, setMidiLearnActive] = useState(false)
-  const [midiScope, setMidiScope] = useState<JuceGridMidiScope>('all')
-  const [midiRangeDrafts, setMidiRangeDrafts] = useState<Record<number, MidiRangeDraft>>({})
-  const [isRefreshingPlugins, setIsRefreshingPlugins] = useState(false)
-
-  // Enhanced UI State
-  const [detailsPlugin, setDetailsPlugin] = useState<Plugin | null>(null)
-  const [favoritePlugins, setFavoritePlugins] = useState<Set<string>>(new Set())
-  const [pluginLevels, setPluginLevels] = useState<Record<string, { in: number; out: number }>>({})
-  const [wetDryMixes, setWetDryMixes] = useState<Record<string, number>>({})
-  const [reorderPreview, setReorderPreview] = useState<ReorderPreviewState>(null)
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
-  const [showPerformModal, setShowPerformModal] = useState(false)
-  const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
-  const [showProgressModal, setShowProgressModal] = useState(false)
-  const [progressModalInitialTab, setProgressModalInitialTab] = useState<'wizard' | 'advanced'>('wizard')
-  const [progressModalInitialSection, setProgressModalInitialSection] = useState<'overview' | 'routing' | 'devices' | 'runtime' | 'cleanup'>('overview')
-  const [showLiveRuntimeModal, setShowLiveRuntimeModal] = useState(false)
-  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false)
-  const [focusedBranchId, setFocusedBranchId] = useState<string | null>(null)
-  const [expandedTabletBranchId, setExpandedTabletBranchId] = useState<string | null>(null)
-  const [branchPageByFlowId, setBranchPageByFlowId] = useState<Record<string, number>>({})
-  const [tabletEditorOpen, setTabletEditorOpen] = useState(false)
-  const [pendingTabletDeletePlugin, setPendingTabletDeletePlugin] = useState<PendingTabletDeletePluginState | null>(null)
+  const compactTab = useSnapshotEditorStore((s) => s.compactTab)
+  const setCompactTab = useSnapshotEditorStore((s) => s.setCompactTab)
+  const flowSlots = useSnapshotEditorStore((s) => s.flowSlots) as FlowSlot[]
+  const setFlowSlots = useSnapshotEditorStore((s) => s.setFlowSlots) as (
+    v: FlowSlot[] | ((prev: FlowSlot[]) => FlowSlot[]),
+  ) => void
+  const routing = useSnapshotEditorStore((s) => s.routing) as RoutingConfig
+  const setRouting = useSnapshotEditorStore((s) => s.setRouting) as (
+    v: RoutingConfig | ((prev: RoutingConfig) => RoutingConfig),
+  ) => void
+  const activeFlowIndex = useSnapshotEditorStore((s) => s.activeFlowIndex)
+  const setActiveFlowIndex = useSnapshotEditorStore((s) => s.setActiveFlowIndex)
+  const selectedPluginUri = useSnapshotEditorStore((s) => s.selectedPluginUri)
+  const setSelectedPluginUri = useSnapshotEditorStore((s) => s.setSelectedPluginUri)
+  const selectedPluginPosition = useSnapshotEditorStore((s) => s.selectedPluginPosition)
+  const setSelectedPluginPosition = useSnapshotEditorStore((s) => s.setSelectedPluginPosition)
+  const effectModalOpen = useSnapshotEditorStore((s) => s.effectModalOpen)
+  const setEffectModalOpen = useSnapshotEditorStore((s) => s.setEffectModalOpen)
+  const showPluginBrowser = useSnapshotEditorStore((s) => s.showPluginBrowser)
+  const setShowPluginBrowser = useSnapshotEditorStore((s) => s.setShowPluginBrowser)
+  const showPresetBrowser = useSnapshotEditorStore((s) => s.showPresetBrowser)
+  const setShowPresetBrowser = useSnapshotEditorStore((s) => s.setShowPresetBrowser)
+  const showSavePresetModal = useSnapshotEditorStore((s) => s.showSavePresetModal)
+  const setShowSavePresetModal = useSnapshotEditorStore((s) => s.setShowSavePresetModal)
+  const savePresetName = useSnapshotEditorStore((s) => s.savePresetName)
+  const setSavePresetName = useSnapshotEditorStore((s) => s.setSavePresetName)
+  const editingSnapshotName = useSnapshotEditorStore((s) => s.editingSnapshotName)
+  const setEditingSnapshotName = useSnapshotEditorStore((s) => s.setEditingSnapshotName)
+  const renameSnapshotName = useSnapshotEditorStore((s) => s.renameSnapshotName)
+  const setRenameSnapshotName = useSnapshotEditorStore((s) => s.setRenameSnapshotName)
+  const showRenameChainModal = useSnapshotEditorStore((s) => s.showRenameChainModal)
+  const setShowRenameChainModal = useSnapshotEditorStore((s) => s.setShowRenameChainModal)
+  const renameChainName = useSnapshotEditorStore((s) => s.renameChainName)
+  const setRenameChainName = useSnapshotEditorStore((s) => s.setRenameChainName)
+  const presetPendingDelete = useSnapshotEditorStore((s) => s.presetPendingDelete)
+  const setPresetPendingDelete = useSnapshotEditorStore((s) => s.setPresetPendingDelete)
+  const showClearFlowsModal = useSnapshotEditorStore((s) => s.showClearFlowsModal)
+  const setShowClearFlowsModal = useSnapshotEditorStore((s) => s.setShowClearFlowsModal)
+  const assignmentDialogOpen = useSnapshotEditorStore((s) => s.assignmentDialogOpen)
+  const setAssignmentDialogOpen = useSnapshotEditorStore((s) => s.setAssignmentDialogOpen)
+  const selectedFlowForAssignment = useSnapshotEditorStore((s) => s.selectedFlowForAssignment) as FlowSlot | null
+  const setSelectedFlowForAssignment = useSnapshotEditorStore((s) => s.setSelectedFlowForAssignment) as (v: FlowSlot | null) => void
+  const assignmentSelectedNodeId = useSnapshotEditorStore((s) => s.assignmentSelectedNodeId)
+  const setAssignmentSelectedNodeId = useSnapshotEditorStore((s) => s.setAssignmentSelectedNodeId)
+  const assignmentRedundancyEnabled = useSnapshotEditorStore((s) => s.assignmentRedundancyEnabled)
+  const setAssignmentRedundancyEnabled = useSnapshotEditorStore((s) => s.setAssignmentRedundancyEnabled)
+  const isAssigningFlow = useSnapshotEditorStore((s) => s.isAssigningFlow)
+  const setIsAssigningFlow = useSnapshotEditorStore((s) => s.setIsAssigningFlow)
+  const pluginSearchQuery = useSnapshotEditorStore((s) => s.pluginSearchQuery)
+  const setPluginSearchQuery = useSnapshotEditorStore((s) => s.setPluginSearchQuery)
+  const midiLearnActive = useSnapshotEditorStore((s) => s.midiLearnActive)
+  const setMidiLearnActive = useSnapshotEditorStore((s) => s.setMidiLearnActive)
+  const midiScope = useSnapshotEditorStore((s) => s.midiScope)
+  const setMidiScope = useSnapshotEditorStore((s) => s.setMidiScope)
+  const midiRangeDrafts = useSnapshotEditorStore((s) => s.midiRangeDrafts)
+  const setMidiRangeDrafts = useSnapshotEditorStore((s) => s.setMidiRangeDrafts)
+  const isRefreshingPlugins = useSnapshotEditorStore((s) => s.isRefreshingPlugins)
+  const setIsRefreshingPlugins = useSnapshotEditorStore((s) => s.setIsRefreshingPlugins)
+  const detailsPlugin = useSnapshotEditorStore((s) => s.detailsPlugin)
+  const setDetailsPlugin = useSnapshotEditorStore((s) => s.setDetailsPlugin)
+  const favoritePlugins = useSnapshotEditorStore((s) => s.favoritePlugins)
+  const setFavoritePlugins = useSnapshotEditorStore((s) => s.setFavoritePlugins)
+  const pluginLevels = useSnapshotEditorStore((s) => s.pluginLevels)
+  const setPluginLevels = useSnapshotEditorStore((s) => s.setPluginLevels)
+  const wetDryMixes = useSnapshotEditorStore((s) => s.wetDryMixes)
+  const setWetDryMixes = useSnapshotEditorStore((s) => s.setWetDryMixes)
+  const reorderPreview = useSnapshotEditorStore((s) => s.reorderPreview)
+  const setReorderPreview = useSnapshotEditorStore((s) => s.setReorderPreview)
+  const showKeyboardHelp = useSnapshotEditorStore((s) => s.showKeyboardHelp)
+  const setShowKeyboardHelp = useSnapshotEditorStore((s) => s.setShowKeyboardHelp)
+  const showPerformModal = useSnapshotEditorStore((s) => s.showPerformModal)
+  const setShowPerformModal = useSnapshotEditorStore((s) => s.setShowPerformModal)
+  const showAudioNodesModal = useSnapshotEditorStore((s) => s.showAudioNodesModal)
+  const setShowAudioNodesModal = useSnapshotEditorStore((s) => s.setShowAudioNodesModal)
+  const showProgressModal = useSnapshotEditorStore((s) => s.showProgressModal)
+  const setShowProgressModal = useSnapshotEditorStore((s) => s.setShowProgressModal)
+  const progressModalInitialTab = useSnapshotEditorStore((s) => s.progressModalInitialTab)
+  const setProgressModalInitialTab = useSnapshotEditorStore((s) => s.setProgressModalInitialTab)
+  const progressModalInitialSection = useSnapshotEditorStore((s) => s.progressModalInitialSection)
+  const setProgressModalInitialSection = useSnapshotEditorStore((s) => s.setProgressModalInitialSection)
+  const showLiveRuntimeModal = useSnapshotEditorStore((s) => s.showLiveRuntimeModal)
+  const setShowLiveRuntimeModal = useSnapshotEditorStore((s) => s.setShowLiveRuntimeModal)
+  const showVersionHistoryModal = useSnapshotEditorStore((s) => s.showVersionHistoryModal)
+  const setShowVersionHistoryModal = useSnapshotEditorStore((s) => s.setShowVersionHistoryModal)
+  const focusedBranchId = useSnapshotEditorStore((s) => s.focusedBranchId)
+  const setFocusedBranchId = useSnapshotEditorStore((s) => s.setFocusedBranchId)
+  const expandedTabletBranchId = useSnapshotEditorStore((s) => s.expandedTabletBranchId)
+  const setExpandedTabletBranchId = useSnapshotEditorStore((s) => s.setExpandedTabletBranchId)
+  const branchPageByFlowId = useSnapshotEditorStore((s) => s.branchPageByFlowId)
+  const setBranchPageByFlowId = useSnapshotEditorStore((s) => s.setBranchPageByFlowId)
+  const tabletEditorOpen = useSnapshotEditorStore((s) => s.tabletEditorOpen)
+  const setTabletEditorOpen = useSnapshotEditorStore((s) => s.setTabletEditorOpen)
+  const pendingTabletDeletePlugin = useSnapshotEditorStore((s) => s.pendingTabletDeletePlugin)
+  const setPendingTabletDeletePlugin = useSnapshotEditorStore((s) => s.setPendingTabletDeletePlugin)
   const {
     capture: captureWorkspaceModalLauncher,
     restore: restoreWorkspaceModalLauncher,
@@ -1123,76 +1197,101 @@ export function SnapshotEditorPage() {
     [specialSettings],
   )
 
-  // Category Filtering State
-  const [selectedCategory, setSelectedCategory] = useState<string>(() => {
-    try {
-      return localStorage.getItem('map2_juce_grid_plugin_category')
-        || localStorage.getItem('map2_grid_plugin_category')
-        || 'all'
-    } catch { return 'all' }
-  })
+  const selectedCategory = useSnapshotEditorStore((s) => s.selectedCategory)
+  const setSelectedCategory = useSnapshotEditorStore((s) => s.setSelectedCategory)
+  const collapsedCategories = useSnapshotEditorStore((s) => s.collapsedCategories)
+  const setCollapsedCategories = useSnapshotEditorStore((s) => s.setCollapsedCategories)
 
-  // Collapsible Categories State
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => {
-    try {
-      const val = localStorage.getItem('map2_juce_grid_collapsed_categories')
-        ?? localStorage.getItem('map2_grid_collapsed_categories')
-      return val ? new Set(JSON.parse(val)) : new Set()
-    } catch { return new Set() }
-  })
-
-  // Automation Timeline State
-  const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
-  const [automationPanelHeight, setAutomationPanelHeight] = useState(0)
+  const automationTimelineExpanded = useSnapshotEditorStore((s) => s.automationTimelineExpanded)
+  const setAutomationTimelineExpanded = useSnapshotEditorStore((s) => s.setAutomationTimelineExpanded)
+  const automationPanelHeight = useSnapshotEditorStore((s) => s.automationPanelHeight)
+  const setAutomationPanelHeight = useSnapshotEditorStore((s) => s.setAutomationPanelHeight)
   const automationPanelRef = useRef<HTMLDivElement | null>(null)
 
-  // Flow Snapshots Panel State
-  const [midiModalOpen, setMidiModalOpen] = useState(false)
-  const [snapshotIoModalState, setSnapshotIoModalState] = useState<SnapshotIoModalState>(() => (
-    buildSnapshotIoModalState(null, null)
-  ))
-  const [outputReferenceThresholdDraft, setOutputReferenceThresholdDraft] = useState(3)
-  const [noiseGateThresholdDraft, setNoiseGateThresholdDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb)
-  const [noiseGateReleaseDraft, setNoiseGateReleaseDraft] = useState(DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs)
-  const [snapshotsDirty, setSnapshotsDirty] = useState(false)
-  const [snapshotSetlistModePending, setSnapshotSetlistModePending] = useState(false)
-  const [editorSnapshotOverride, setEditorSnapshotOverride] = useState<SnapshotDetail | null>(null)
-  const [editorSnapshotContext, setEditorSnapshotContext] = useState<SnapshotDetail | null>(null)
-  const [pendingGoLiveSnapshotId, setPendingGoLiveSnapshotId] = useState<number | null>(null)
-  const [pendingGoLiveRequestedAt, setPendingGoLiveRequestedAt] = useState<number | null>(null)
-  const [confirmedGoLiveSnapshotId, setConfirmedGoLiveSnapshotId] = useState<number | null>(null)
-  const [failedGoLiveSnapshotId, setFailedGoLiveSnapshotId] = useState<number | null>(null)
-  const [goLiveFailureReason, setGoLiveFailureReason] = useState<string | null>(null)
+  const midiModalOpen = useSnapshotEditorStore((s) => s.midiModalOpen)
+  const setMidiModalOpen = useSnapshotEditorStore((s) => s.setMidiModalOpen)
+  const snapshotIoModalState = useSnapshotEditorStore((s) => s.snapshotIoModalState)
+  const setSnapshotIoModalState = useSnapshotEditorStore((s) => s.setSnapshotIoModalState)
+  const outputReferenceThresholdDraft = useSnapshotEditorStore((s) => s.outputReferenceThresholdDraft)
+  const setOutputReferenceThresholdDraft = useSnapshotEditorStore((s) => s.setOutputReferenceThresholdDraft)
+  const noiseGateThresholdDraft = useSnapshotEditorStore((s) => s.noiseGateThresholdDraft)
+  const setNoiseGateThresholdDraft = useSnapshotEditorStore((s) => s.setNoiseGateThresholdDraft)
+  const noiseGateReleaseDraft = useSnapshotEditorStore((s) => s.noiseGateReleaseDraft)
+  const setNoiseGateReleaseDraft = useSnapshotEditorStore((s) => s.setNoiseGateReleaseDraft)
+  const snapshotsDirty = useSnapshotEditorStore((s) => s.snapshotsDirty)
+  const setSnapshotsDirty = useSnapshotEditorStore((s) => s.setSnapshotsDirty)
+  const snapshotSetlistModePending = useSnapshotEditorStore((s) => s.snapshotSetlistModePending)
+  const setSnapshotSetlistModePending = useSnapshotEditorStore((s) => s.setSnapshotSetlistModePending)
+  const editorSnapshotOverride = useSnapshotEditorStore((s) => s.editorSnapshotOverride)
+  const setEditorSnapshotOverride = useSnapshotEditorStore((s) => s.setEditorSnapshotOverride)
+  const editorSnapshotContext = useSnapshotEditorStore((s) => s.editorSnapshotContext)
+  const setEditorSnapshotContext = useSnapshotEditorStore((s) => s.setEditorSnapshotContext)
+  const pendingGoLiveSnapshotId = useSnapshotEditorStore((s) => s.pendingGoLiveSnapshotId)
+  const setPendingGoLiveSnapshotId = useSnapshotEditorStore((s) => s.setPendingGoLiveSnapshotId)
+  const pendingGoLiveRequestedAt = useSnapshotEditorStore((s) => s.pendingGoLiveRequestedAt)
+  const setPendingGoLiveRequestedAt = useSnapshotEditorStore((s) => s.setPendingGoLiveRequestedAt)
+  const confirmedGoLiveSnapshotId = useSnapshotEditorStore((s) => s.confirmedGoLiveSnapshotId)
+  const setConfirmedGoLiveSnapshotId = useSnapshotEditorStore((s) => s.setConfirmedGoLiveSnapshotId)
+  const failedGoLiveSnapshotId = useSnapshotEditorStore((s) => s.failedGoLiveSnapshotId)
+  const setFailedGoLiveSnapshotId = useSnapshotEditorStore((s) => s.setFailedGoLiveSnapshotId)
+  const goLiveFailureReason = useSnapshotEditorStore((s) => s.goLiveFailureReason)
+  const setGoLiveFailureReason = useSnapshotEditorStore((s) => s.setGoLiveFailureReason)
   useRouteScrollRestoration({
     storageKey: JUCE_GRID_SCROLL_TOP_KEY,
   })
-  const [goLiveFailureDetail, setGoLiveFailureDetail] = useState<ReturnType<typeof extractSnapshotActivationFailureDetail> | null>(null)
-  const [goLiveDiffExpanded, setGoLiveDiffExpanded] = useState(false)
-  const [dismissedGoLiveDiffKey, setDismissedGoLiveDiffKey] = useState<string | null>(null)
-  const [flowClipTimestamps, setFlowClipTimestamps] = useState<Record<string, number>>({})
-  const [flowInputClipTimestamps, setFlowInputClipTimestamps] = useState<Record<string, number>>({})
-  const [flowOutputClipTimestamps, setFlowOutputClipTimestamps] = useState<Record<string, number>>({})
-  const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
-  const [routingLiveApplyState, setRoutingLiveApplyState] = useState<SnapshotRoutingLiveApplyState>('idle')
+  const goLiveFailureDetail = useSnapshotEditorStore(
+    (s) => s.goLiveFailureDetail,
+  ) as ReturnType<typeof extractSnapshotActivationFailureDetail> | null
+  const setGoLiveFailureDetail = useSnapshotEditorStore(
+    (s) => s.setGoLiveFailureDetail,
+  ) as (v: ReturnType<typeof extractSnapshotActivationFailureDetail> | null) => void
+  const goLiveDiffExpanded = useSnapshotEditorStore((s) => s.goLiveDiffExpanded)
+  const setGoLiveDiffExpanded = useSnapshotEditorStore((s) => s.setGoLiveDiffExpanded)
+  const dismissedGoLiveDiffKey = useSnapshotEditorStore((s) => s.dismissedGoLiveDiffKey)
+  const setDismissedGoLiveDiffKey = useSnapshotEditorStore((s) => s.setDismissedGoLiveDiffKey)
+  const flowClipTimestamps = useSnapshotEditorStore((s) => s.flowClipTimestamps)
+  const setFlowClipTimestamps = useSnapshotEditorStore((s) => s.setFlowClipTimestamps)
+  const flowInputClipTimestamps = useSnapshotEditorStore((s) => s.flowInputClipTimestamps)
+  const setFlowInputClipTimestamps = useSnapshotEditorStore((s) => s.setFlowInputClipTimestamps)
+  const flowOutputClipTimestamps = useSnapshotEditorStore((s) => s.flowOutputClipTimestamps)
+  const setFlowOutputClipTimestamps = useSnapshotEditorStore((s) => s.setFlowOutputClipTimestamps)
+  const routingInspectorId = useSnapshotEditorStore((s) => s.routingInspectorId)
+  const setRoutingInspectorId = useSnapshotEditorStore((s) => s.setRoutingInspectorId)
+  const routingLiveApplyState = useSnapshotEditorStore((s) => s.routingLiveApplyState)
+  const setRoutingLiveApplyState = useSnapshotEditorStore((s) => s.setRoutingLiveApplyState)
   const signalFlowShellRef = useRef<HTMLElement | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const lastHydratedLiveSnapshotFingerprintRef = useRef<string | null>(null)
   const perfSeqRef = useRef(0)
-  const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
-  const [abSwitchMidiMessageTypeDraft, setAbSwitchMidiMessageTypeDraft] = useState<SnapshotAbSwitchMidiMessageType>('cc_toggle')
-  const [abSwitchMidiChannelDraft, setAbSwitchMidiChannelDraft] = useState<string>('omni')
-  const [abSwitchMidiNumberDraft, setAbSwitchMidiNumberDraft] = useState<number>(80)
-  const [blockFocusMidiChannelDraft, setBlockFocusMidiChannelDraft] = useState<string>('omni')
-  const [blockFocusStartNoteDraft, setBlockFocusStartNoteDraft] = useState<number>(60)
-  const [footswitchLabelDrafts, setFootswitchLabelDrafts] = useState(createEmptyFootswitchLabelDrafts)
-  const [automationPlaying, setAutomationPlaying] = useState(false)
-  const [automationRecording, setAutomationRecording] = useState(false)
-  const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
-  const [automationCurrentTime, setAutomationCurrentTime] = useState(0)
-  const [automationDuration, setAutomationDuration] = useState(60)
-  const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
-  const [lanePickerOpen, setLanePickerOpen] = useState(false)
+  const lastMidiActivityWs = useSnapshotEditorStore((s) => s.lastMidiActivityWs)
+  const setLastMidiActivityWs = useSnapshotEditorStore((s) => s.setLastMidiActivityWs)
+  const abSwitchMidiMessageTypeDraft = useSnapshotEditorStore((s) => s.abSwitchMidiMessageTypeDraft)
+  const setAbSwitchMidiMessageTypeDraft = useSnapshotEditorStore((s) => s.setAbSwitchMidiMessageTypeDraft)
+  const abSwitchMidiChannelDraft = useSnapshotEditorStore((s) => s.abSwitchMidiChannelDraft)
+  const setAbSwitchMidiChannelDraft = useSnapshotEditorStore((s) => s.setAbSwitchMidiChannelDraft)
+  const abSwitchMidiNumberDraft = useSnapshotEditorStore((s) => s.abSwitchMidiNumberDraft)
+  const setAbSwitchMidiNumberDraft = useSnapshotEditorStore((s) => s.setAbSwitchMidiNumberDraft)
+  const blockFocusMidiChannelDraft = useSnapshotEditorStore((s) => s.blockFocusMidiChannelDraft)
+  const setBlockFocusMidiChannelDraft = useSnapshotEditorStore((s) => s.setBlockFocusMidiChannelDraft)
+  const blockFocusStartNoteDraft = useSnapshotEditorStore((s) => s.blockFocusStartNoteDraft)
+  const setBlockFocusStartNoteDraft = useSnapshotEditorStore((s) => s.setBlockFocusStartNoteDraft)
+  const footswitchLabelDrafts = useSnapshotEditorStore((s) => s.footswitchLabelDrafts)
+  const setFootswitchLabelDrafts = useSnapshotEditorStore((s) => s.setFootswitchLabelDrafts)
+  const automationPlaying = useSnapshotEditorStore((s) => s.automationPlaying)
+  const setAutomationPlaying = useSnapshotEditorStore((s) => s.setAutomationPlaying)
+  const automationRecording = useSnapshotEditorStore((s) => s.automationRecording)
+  const setAutomationRecording = useSnapshotEditorStore((s) => s.setAutomationRecording)
+  const automationLoopEnabled = useSnapshotEditorStore((s) => s.automationLoopEnabled)
+  const setAutomationLoopEnabled = useSnapshotEditorStore((s) => s.setAutomationLoopEnabled)
+  const automationCurrentTime = useSnapshotEditorStore((s) => s.automationCurrentTime)
+  const setAutomationCurrentTime = useSnapshotEditorStore((s) => s.setAutomationCurrentTime)
+  const automationDuration = useSnapshotEditorStore((s) => s.automationDuration)
+  const setAutomationDuration = useSnapshotEditorStore((s) => s.setAutomationDuration)
+  const automationLanes = useSnapshotEditorStore((s) => s.automationLanes)
+  const setAutomationLanes = useSnapshotEditorStore((s) => s.setAutomationLanes)
+  const lanePickerOpen = useSnapshotEditorStore((s) => s.lanePickerOpen)
+  const setLanePickerOpen = useSnapshotEditorStore((s) => s.setLanePickerOpen)
   const snapshotUndoRedo = useSnapshotEditorUndoRedo()
   const cleanSnapshotDraftRef = useRef<SnapshotDraftData | null>(null)
   const pendingParameterUndoStartRef = useRef<SnapshotDraftData | null>(null)
@@ -1227,11 +1326,11 @@ export function SnapshotEditorPage() {
     }
   }, [automationLanes, automationPlaying, automationRecording])
 
-  // Audio Port Selection State — unified per-flow selector
-  const [portSelectorFlowIndex, setPortSelectorFlowIndex] = useState<number | null>(null)
+  const portSelectorFlowIndex = useSnapshotEditorStore((s) => s.portSelectorFlowIndex)
+  const setPortSelectorFlowIndex = useSnapshotEditorStore((s) => s.setPortSelectorFlowIndex)
 
-  // Preset Import Dialog
-  const [showImportDialog, setShowImportDialog] = useState(false)
+  const showImportDialog = useSnapshotEditorStore((s) => s.showImportDialog)
+  const setShowImportDialog = useSnapshotEditorStore((s) => s.setShowImportDialog)
 
   // Persist state to localStorage
   useEffect(() => {
@@ -1786,21 +1885,6 @@ export function SnapshotEditorPage() {
   useEffect(() => {
     localStorage.setItem('map2_juce_grid_collapsed_categories', JSON.stringify([...collapsedCategories]))
   }, [collapsedCategories])
-
-  // T710-sub12: Mirror bucket A state into snapshotEditorStore for downstream
-  // consumers (UnifiedChannelGrid primitives in sub13-sub25). This is a
-  // one-way write: useState remains the source of truth for render semantics
-  // while the store exposes the current value via useSnapshotEditorStore.
-  // Full useState → store migration tracked in T710-sub29.
-  useEffect(() => {
-    useSnapshotEditorStore.setState({
-      flowSlots,
-      routing,
-      activeFlowIndex,
-      selectedCategory,
-      collapsedCategories,
-    })
-  }, [flowSlots, routing, activeFlowIndex, selectedCategory, collapsedCategories])
 
   // Update plugin levels from WebSocket data
   useEffect(() => {

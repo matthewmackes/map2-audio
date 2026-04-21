@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { Plugin, Snapshot, SnapshotDetail, AutomationLane } from '../../map2/types'
+import type { Plugin, Snapshot, SnapshotDetail } from '../../map2/types'
+import type { AutomationLane } from '../grid/shared'
 import {
   createDefaultJuceGridRouting,
   normalizeJuceGridStateSources,
@@ -203,111 +204,113 @@ export interface SnapshotEditorState {
   portSelectorFlowIndex: number | null
 }
 
+export type Updater<T> = T | ((prev: T) => T)
+
 export interface SnapshotEditorActions {
-  setFlowSlots: (flowSlots: JuceGridFlowSlotState[]) => void
-  setRouting: (routing: JuceGridRoutingState) => void
-  setActiveFlowIndex: (index: number) => void
-  setSelectedCategory: (category: string) => void
-  setCollapsedCategories: (categories: Set<string>) => void
+  setFlowSlots: (flowSlots: Updater<JuceGridFlowSlotState[]>) => void
+  setRouting: (routing: Updater<JuceGridRoutingState>) => void
+  setActiveFlowIndex: (index: Updater<number>) => void
+  setSelectedCategory: (category: Updater<string>) => void
+  setCollapsedCategories: (categories: Updater<Set<string>>) => void
 
-  setSelectedPluginUri: (uri: string | null) => void
-  setSelectedPluginPosition: (position: number | null) => void
+  setSelectedPluginUri: (uri: Updater<string | null>) => void
+  setSelectedPluginPosition: (position: Updater<number | null>) => void
   setSelectedPluginSelection: (uri: string | null, position?: number | null) => void
-  setEffectModalOpen: (open: boolean) => void
-  setShowPluginBrowser: (open: boolean) => void
-  setShowPresetBrowser: (open: boolean) => void
-  setPluginSearchQuery: (query: string) => void
-  setDetailsPlugin: (plugin: Plugin | null) => void
-  setIsRefreshingPlugins: (refreshing: boolean) => void
+  setEffectModalOpen: (open: Updater<boolean>) => void
+  setShowPluginBrowser: (open: Updater<boolean>) => void
+  setShowPresetBrowser: (open: Updater<boolean>) => void
+  setPluginSearchQuery: (query: Updater<string>) => void
+  setDetailsPlugin: (plugin: Updater<Plugin | null>) => void
+  setIsRefreshingPlugins: (refreshing: Updater<boolean>) => void
 
-  setShowSavePresetModal: (open: boolean) => void
-  setSavePresetName: (name: string) => void
-  setEditingSnapshotName: (editing: boolean) => void
-  setRenameSnapshotName: (name: string) => void
-  setShowRenameChainModal: (open: boolean) => void
-  setRenameChainName: (name: string) => void
+  setShowSavePresetModal: (open: Updater<boolean>) => void
+  setSavePresetName: (name: Updater<string>) => void
+  setEditingSnapshotName: (editing: Updater<boolean>) => void
+  setRenameSnapshotName: (name: Updater<string>) => void
+  setShowRenameChainModal: (open: Updater<boolean>) => void
+  setRenameChainName: (name: Updater<string>) => void
 
-  setPresetPendingDelete: (snapshot: Snapshot | null) => void
-  setShowClearFlowsModal: (open: boolean) => void
-  setPendingTabletDeletePlugin: (state: PendingTabletDeletePluginState | null) => void
+  setPresetPendingDelete: (snapshot: Updater<Snapshot | null>) => void
+  setShowClearFlowsModal: (open: Updater<boolean>) => void
+  setPendingTabletDeletePlugin: (state: Updater<PendingTabletDeletePluginState | null>) => void
 
-  setAssignmentDialogOpen: (open: boolean) => void
-  setSelectedFlowForAssignment: (flow: JuceGridFlowSlotState | null) => void
-  setAssignmentSelectedNodeId: (nodeId: string) => void
-  setAssignmentRedundancyEnabled: (enabled: boolean) => void
-  setIsAssigningFlow: (assigning: boolean) => void
+  setAssignmentDialogOpen: (open: Updater<boolean>) => void
+  setSelectedFlowForAssignment: (flow: Updater<JuceGridFlowSlotState | null>) => void
+  setAssignmentSelectedNodeId: (nodeId: Updater<string>) => void
+  setAssignmentRedundancyEnabled: (enabled: Updater<boolean>) => void
+  setIsAssigningFlow: (assigning: Updater<boolean>) => void
 
-  setMidiLearnActive: (active: boolean) => void
-  setMidiScope: (scope: JuceGridMidiScope) => void
-  setMidiRangeDrafts: (drafts: Record<number, MidiRangeDraft>) => void
-  setLastMidiActivityWs: (activity: MidiActivity | null) => void
-  setMidiModalOpen: (open: boolean) => void
-  setAbSwitchMidiMessageTypeDraft: (type: SnapshotAbSwitchMidiMessageType) => void
-  setAbSwitchMidiChannelDraft: (channel: string) => void
-  setAbSwitchMidiNumberDraft: (number: number) => void
-  setBlockFocusMidiChannelDraft: (channel: string) => void
-  setBlockFocusStartNoteDraft: (note: number) => void
+  setMidiLearnActive: (active: Updater<boolean>) => void
+  setMidiScope: (scope: Updater<JuceGridMidiScope>) => void
+  setMidiRangeDrafts: (drafts: Updater<Record<number, MidiRangeDraft>>) => void
+  setLastMidiActivityWs: (activity: Updater<MidiActivity | null>) => void
+  setMidiModalOpen: (open: Updater<boolean>) => void
+  setAbSwitchMidiMessageTypeDraft: (type: Updater<SnapshotAbSwitchMidiMessageType>) => void
+  setAbSwitchMidiChannelDraft: (channel: Updater<string>) => void
+  setAbSwitchMidiNumberDraft: (number: Updater<number>) => void
+  setBlockFocusMidiChannelDraft: (channel: Updater<string>) => void
+  setBlockFocusStartNoteDraft: (note: Updater<number>) => void
 
-  setFavoritePlugins: (favorites: Set<string>) => void
-  setPluginLevels: (levels: Record<string, PluginLevels>) => void
-  setWetDryMixes: (mixes: Record<string, number>) => void
+  setFavoritePlugins: (favorites: Updater<Set<string>>) => void
+  setPluginLevels: (levels: Updater<Record<string, PluginLevels>>) => void
+  setWetDryMixes: (mixes: Updater<Record<string, number>>) => void
 
-  setReorderPreview: (preview: ReorderPreviewState) => void
+  setReorderPreview: (preview: Updater<ReorderPreviewState>) => void
 
-  setShowKeyboardHelp: (open: boolean) => void
-  setShowPerformModal: (open: boolean) => void
-  setShowAudioNodesModal: (open: boolean) => void
-  setShowProgressModal: (open: boolean) => void
-  setProgressModalInitialTab: (tab: ProgressModalTab) => void
-  setProgressModalInitialSection: (section: ProgressModalSection) => void
-  setShowLiveRuntimeModal: (open: boolean) => void
-  setShowVersionHistoryModal: (open: boolean) => void
-  setShowImportDialog: (open: boolean) => void
+  setShowKeyboardHelp: (open: Updater<boolean>) => void
+  setShowPerformModal: (open: Updater<boolean>) => void
+  setShowAudioNodesModal: (open: Updater<boolean>) => void
+  setShowProgressModal: (open: Updater<boolean>) => void
+  setProgressModalInitialTab: (tab: Updater<ProgressModalTab>) => void
+  setProgressModalInitialSection: (section: Updater<ProgressModalSection>) => void
+  setShowLiveRuntimeModal: (open: Updater<boolean>) => void
+  setShowVersionHistoryModal: (open: Updater<boolean>) => void
+  setShowImportDialog: (open: Updater<boolean>) => void
 
-  setCompactTab: (tab: CompactTabId) => void
-  setFocusedBranchId: (id: string | null) => void
-  setExpandedTabletBranchId: (id: string | null) => void
-  setBranchPageByFlowId: (pages: Record<string, number>) => void
-  setTabletEditorOpen: (open: boolean) => void
+  setCompactTab: (tab: Updater<CompactTabId>) => void
+  setFocusedBranchId: (id: Updater<string | null>) => void
+  setExpandedTabletBranchId: (id: Updater<string | null>) => void
+  setBranchPageByFlowId: (pages: Updater<Record<string, number>>) => void
+  setTabletEditorOpen: (open: Updater<boolean>) => void
 
-  setAutomationTimelineExpanded: (expanded: boolean) => void
-  setAutomationPanelHeight: (height: number) => void
-  setAutomationPlaying: (playing: boolean) => void
-  setAutomationRecording: (recording: boolean) => void
-  setAutomationLoopEnabled: (enabled: boolean) => void
-  setAutomationCurrentTime: (time: number) => void
-  setAutomationDuration: (duration: number) => void
-  setAutomationLanes: (lanes: AutomationLane[]) => void
-  setLanePickerOpen: (open: boolean) => void
+  setAutomationTimelineExpanded: (expanded: Updater<boolean>) => void
+  setAutomationPanelHeight: (height: Updater<number>) => void
+  setAutomationPlaying: (playing: Updater<boolean>) => void
+  setAutomationRecording: (recording: Updater<boolean>) => void
+  setAutomationLoopEnabled: (enabled: Updater<boolean>) => void
+  setAutomationCurrentTime: (time: Updater<number>) => void
+  setAutomationDuration: (duration: Updater<number>) => void
+  setAutomationLanes: (lanes: Updater<AutomationLane[]>) => void
+  setLanePickerOpen: (open: Updater<boolean>) => void
 
-  setSnapshotIoModalState: (state: SnapshotIoModalState) => void
-  setOutputReferenceThresholdDraft: (value: number) => void
-  setNoiseGateThresholdDraft: (value: number) => void
-  setNoiseGateReleaseDraft: (value: number) => void
+  setSnapshotIoModalState: (state: Updater<SnapshotIoModalState>) => void
+  setOutputReferenceThresholdDraft: (value: Updater<number>) => void
+  setNoiseGateThresholdDraft: (value: Updater<number>) => void
+  setNoiseGateReleaseDraft: (value: Updater<number>) => void
 
-  setSnapshotsDirty: (dirty: boolean) => void
-  setSnapshotSetlistModePending: (pending: boolean) => void
-  setEditorSnapshotOverride: (snapshot: SnapshotDetail | null) => void
-  setEditorSnapshotContext: (snapshot: SnapshotDetail | null) => void
-  setPendingGoLiveSnapshotId: (id: number | null) => void
-  setPendingGoLiveRequestedAt: (timestamp: number | null) => void
-  setConfirmedGoLiveSnapshotId: (id: number | null) => void
-  setFailedGoLiveSnapshotId: (id: number | null) => void
-  setGoLiveFailureReason: (reason: string | null) => void
-  setGoLiveFailureDetail: (detail: GoLiveFailureDetail | null) => void
-  setGoLiveDiffExpanded: (expanded: boolean) => void
-  setDismissedGoLiveDiffKey: (key: string | null) => void
+  setSnapshotsDirty: (dirty: Updater<boolean>) => void
+  setSnapshotSetlistModePending: (pending: Updater<boolean>) => void
+  setEditorSnapshotOverride: (snapshot: Updater<SnapshotDetail | null>) => void
+  setEditorSnapshotContext: (snapshot: Updater<SnapshotDetail | null>) => void
+  setPendingGoLiveSnapshotId: (id: Updater<number | null>) => void
+  setPendingGoLiveRequestedAt: (timestamp: Updater<number | null>) => void
+  setConfirmedGoLiveSnapshotId: (id: Updater<number | null>) => void
+  setFailedGoLiveSnapshotId: (id: Updater<number | null>) => void
+  setGoLiveFailureReason: (reason: Updater<string | null>) => void
+  setGoLiveFailureDetail: (detail: Updater<GoLiveFailureDetail | null>) => void
+  setGoLiveDiffExpanded: (expanded: Updater<boolean>) => void
+  setDismissedGoLiveDiffKey: (key: Updater<string | null>) => void
 
-  setFlowClipTimestamps: (timestamps: Record<string, number>) => void
-  setFlowInputClipTimestamps: (timestamps: Record<string, number>) => void
-  setFlowOutputClipTimestamps: (timestamps: Record<string, number>) => void
+  setFlowClipTimestamps: (timestamps: Updater<Record<string, number>>) => void
+  setFlowInputClipTimestamps: (timestamps: Updater<Record<string, number>>) => void
+  setFlowOutputClipTimestamps: (timestamps: Updater<Record<string, number>>) => void
 
-  setRoutingInspectorId: (id: JuceGridRoutingMarkerId | null) => void
-  setRoutingLiveApplyState: (state: SnapshotRoutingLiveApplyState) => void
+  setRoutingInspectorId: (id: Updater<JuceGridRoutingMarkerId | null>) => void
+  setRoutingLiveApplyState: (state: Updater<SnapshotRoutingLiveApplyState>) => void
 
-  setFootswitchLabelDrafts: (drafts: FootswitchLabelDrafts) => void
+  setFootswitchLabelDrafts: (drafts: Updater<FootswitchLabelDrafts>) => void
 
-  setPortSelectorFlowIndex: (index: number | null) => void
+  setPortSelectorFlowIndex: (index: Updater<number | null>) => void
 
   hydrateBucketAFromLocalStorage: (options: JuceGridFlowNormalizationOptions) => void
   persistFlowSlots: () => void
@@ -489,154 +492,161 @@ const DEFAULT_STATE: SnapshotEditorState = {
   portSelectorFlowIndex: null,
 }
 
-export const useSnapshotEditorStore = create<SnapshotEditorStore>()((set) => ({
-  ...DEFAULT_STATE,
+function resolveUpdater<T>(prev: T, value: Updater<T>): T {
+  return typeof value === 'function' ? (value as (p: T) => T)(prev) : value
+}
 
-  setFlowSlots: (flowSlots) => set({ flowSlots }),
-  setRouting: (routing) => set({ routing }),
-  setActiveFlowIndex: (activeFlowIndex) => set({ activeFlowIndex }),
-  setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
-  setCollapsedCategories: (collapsedCategories) => set({ collapsedCategories }),
+export const useSnapshotEditorStore = create<SnapshotEditorStore>()((set) => {
+  const mk = <K extends keyof SnapshotEditorState>(key: K) =>
+    (value: Updater<SnapshotEditorState[K]>) =>
+      set((s) => ({ [key]: resolveUpdater(s[key], value) } as Pick<SnapshotEditorState, K>))
 
-  setSelectedPluginUri: (selectedPluginUri) => set({ selectedPluginUri }),
-  setSelectedPluginPosition: (selectedPluginPosition) => set({ selectedPluginPosition }),
-  setSelectedPluginSelection: (uri, position) =>
-    set({
-      selectedPluginUri: uri,
-      selectedPluginPosition:
-        uri && typeof position === 'number' && Number.isFinite(position) ? position : null,
-    }),
-  setEffectModalOpen: (effectModalOpen) => set({ effectModalOpen }),
-  setShowPluginBrowser: (showPluginBrowser) => set({ showPluginBrowser }),
-  setShowPresetBrowser: (showPresetBrowser) => set({ showPresetBrowser }),
-  setPluginSearchQuery: (pluginSearchQuery) => set({ pluginSearchQuery }),
-  setDetailsPlugin: (detailsPlugin) => set({ detailsPlugin }),
-  setIsRefreshingPlugins: (isRefreshingPlugins) => set({ isRefreshingPlugins }),
+  return {
+    ...DEFAULT_STATE,
 
-  setShowSavePresetModal: (showSavePresetModal) => set({ showSavePresetModal }),
-  setSavePresetName: (savePresetName) => set({ savePresetName }),
-  setEditingSnapshotName: (editingSnapshotName) => set({ editingSnapshotName }),
-  setRenameSnapshotName: (renameSnapshotName) => set({ renameSnapshotName }),
-  setShowRenameChainModal: (showRenameChainModal) => set({ showRenameChainModal }),
-  setRenameChainName: (renameChainName) => set({ renameChainName }),
+    setFlowSlots: mk('flowSlots'),
+    setRouting: mk('routing'),
+    setActiveFlowIndex: mk('activeFlowIndex'),
+    setSelectedCategory: mk('selectedCategory'),
+    setCollapsedCategories: mk('collapsedCategories'),
 
-  setPresetPendingDelete: (presetPendingDelete) => set({ presetPendingDelete }),
-  setShowClearFlowsModal: (showClearFlowsModal) => set({ showClearFlowsModal }),
-  setPendingTabletDeletePlugin: (pendingTabletDeletePlugin) => set({ pendingTabletDeletePlugin }),
+    setSelectedPluginUri: mk('selectedPluginUri'),
+    setSelectedPluginPosition: mk('selectedPluginPosition'),
+    setSelectedPluginSelection: (uri, position) =>
+      set({
+        selectedPluginUri: uri,
+        selectedPluginPosition:
+          uri && typeof position === 'number' && Number.isFinite(position) ? position : null,
+      }),
+    setEffectModalOpen: mk('effectModalOpen'),
+    setShowPluginBrowser: mk('showPluginBrowser'),
+    setShowPresetBrowser: mk('showPresetBrowser'),
+    setPluginSearchQuery: mk('pluginSearchQuery'),
+    setDetailsPlugin: mk('detailsPlugin'),
+    setIsRefreshingPlugins: mk('isRefreshingPlugins'),
 
-  setAssignmentDialogOpen: (assignmentDialogOpen) => set({ assignmentDialogOpen }),
-  setSelectedFlowForAssignment: (selectedFlowForAssignment) => set({ selectedFlowForAssignment }),
-  setAssignmentSelectedNodeId: (assignmentSelectedNodeId) => set({ assignmentSelectedNodeId }),
-  setAssignmentRedundancyEnabled: (assignmentRedundancyEnabled) => set({ assignmentRedundancyEnabled }),
-  setIsAssigningFlow: (isAssigningFlow) => set({ isAssigningFlow }),
+    setShowSavePresetModal: mk('showSavePresetModal'),
+    setSavePresetName: mk('savePresetName'),
+    setEditingSnapshotName: mk('editingSnapshotName'),
+    setRenameSnapshotName: mk('renameSnapshotName'),
+    setShowRenameChainModal: mk('showRenameChainModal'),
+    setRenameChainName: mk('renameChainName'),
 
-  setMidiLearnActive: (midiLearnActive) => set({ midiLearnActive }),
-  setMidiScope: (midiScope) => set({ midiScope }),
-  setMidiRangeDrafts: (midiRangeDrafts) => set({ midiRangeDrafts }),
-  setLastMidiActivityWs: (lastMidiActivityWs) => set({ lastMidiActivityWs }),
-  setMidiModalOpen: (midiModalOpen) => set({ midiModalOpen }),
-  setAbSwitchMidiMessageTypeDraft: (abSwitchMidiMessageTypeDraft) =>
-    set({ abSwitchMidiMessageTypeDraft }),
-  setAbSwitchMidiChannelDraft: (abSwitchMidiChannelDraft) => set({ abSwitchMidiChannelDraft }),
-  setAbSwitchMidiNumberDraft: (abSwitchMidiNumberDraft) => set({ abSwitchMidiNumberDraft }),
-  setBlockFocusMidiChannelDraft: (blockFocusMidiChannelDraft) => set({ blockFocusMidiChannelDraft }),
-  setBlockFocusStartNoteDraft: (blockFocusStartNoteDraft) => set({ blockFocusStartNoteDraft }),
+    setPresetPendingDelete: mk('presetPendingDelete'),
+    setShowClearFlowsModal: mk('showClearFlowsModal'),
+    setPendingTabletDeletePlugin: mk('pendingTabletDeletePlugin'),
 
-  setFavoritePlugins: (favoritePlugins) => set({ favoritePlugins }),
-  setPluginLevels: (pluginLevels) => set({ pluginLevels }),
-  setWetDryMixes: (wetDryMixes) => set({ wetDryMixes }),
+    setAssignmentDialogOpen: mk('assignmentDialogOpen'),
+    setSelectedFlowForAssignment: mk('selectedFlowForAssignment'),
+    setAssignmentSelectedNodeId: mk('assignmentSelectedNodeId'),
+    setAssignmentRedundancyEnabled: mk('assignmentRedundancyEnabled'),
+    setIsAssigningFlow: mk('isAssigningFlow'),
 
-  setReorderPreview: (reorderPreview) => set({ reorderPreview }),
+    setMidiLearnActive: mk('midiLearnActive'),
+    setMidiScope: mk('midiScope'),
+    setMidiRangeDrafts: mk('midiRangeDrafts'),
+    setLastMidiActivityWs: mk('lastMidiActivityWs'),
+    setMidiModalOpen: mk('midiModalOpen'),
+    setAbSwitchMidiMessageTypeDraft: mk('abSwitchMidiMessageTypeDraft'),
+    setAbSwitchMidiChannelDraft: mk('abSwitchMidiChannelDraft'),
+    setAbSwitchMidiNumberDraft: mk('abSwitchMidiNumberDraft'),
+    setBlockFocusMidiChannelDraft: mk('blockFocusMidiChannelDraft'),
+    setBlockFocusStartNoteDraft: mk('blockFocusStartNoteDraft'),
 
-  setShowKeyboardHelp: (showKeyboardHelp) => set({ showKeyboardHelp }),
-  setShowPerformModal: (showPerformModal) => set({ showPerformModal }),
-  setShowAudioNodesModal: (showAudioNodesModal) => set({ showAudioNodesModal }),
-  setShowProgressModal: (showProgressModal) => set({ showProgressModal }),
-  setProgressModalInitialTab: (progressModalInitialTab) => set({ progressModalInitialTab }),
-  setProgressModalInitialSection: (progressModalInitialSection) =>
-    set({ progressModalInitialSection }),
-  setShowLiveRuntimeModal: (showLiveRuntimeModal) => set({ showLiveRuntimeModal }),
-  setShowVersionHistoryModal: (showVersionHistoryModal) => set({ showVersionHistoryModal }),
-  setShowImportDialog: (showImportDialog) => set({ showImportDialog }),
+    setFavoritePlugins: mk('favoritePlugins'),
+    setPluginLevels: mk('pluginLevels'),
+    setWetDryMixes: mk('wetDryMixes'),
 
-  setCompactTab: (compactTab) => set({ compactTab }),
-  setFocusedBranchId: (focusedBranchId) => set({ focusedBranchId }),
-  setExpandedTabletBranchId: (expandedTabletBranchId) => set({ expandedTabletBranchId }),
-  setBranchPageByFlowId: (branchPageByFlowId) => set({ branchPageByFlowId }),
-  setTabletEditorOpen: (tabletEditorOpen) => set({ tabletEditorOpen }),
+    setReorderPreview: mk('reorderPreview'),
 
-  setAutomationTimelineExpanded: (automationTimelineExpanded) => set({ automationTimelineExpanded }),
-  setAutomationPanelHeight: (automationPanelHeight) => set({ automationPanelHeight }),
-  setAutomationPlaying: (automationPlaying) => set({ automationPlaying }),
-  setAutomationRecording: (automationRecording) => set({ automationRecording }),
-  setAutomationLoopEnabled: (automationLoopEnabled) => set({ automationLoopEnabled }),
-  setAutomationCurrentTime: (automationCurrentTime) => set({ automationCurrentTime }),
-  setAutomationDuration: (automationDuration) => set({ automationDuration }),
-  setAutomationLanes: (automationLanes) => set({ automationLanes }),
-  setLanePickerOpen: (lanePickerOpen) => set({ lanePickerOpen }),
+    setShowKeyboardHelp: mk('showKeyboardHelp'),
+    setShowPerformModal: mk('showPerformModal'),
+    setShowAudioNodesModal: mk('showAudioNodesModal'),
+    setShowProgressModal: mk('showProgressModal'),
+    setProgressModalInitialTab: mk('progressModalInitialTab'),
+    setProgressModalInitialSection: mk('progressModalInitialSection'),
+    setShowLiveRuntimeModal: mk('showLiveRuntimeModal'),
+    setShowVersionHistoryModal: mk('showVersionHistoryModal'),
+    setShowImportDialog: mk('showImportDialog'),
 
-  setSnapshotIoModalState: (snapshotIoModalState) => set({ snapshotIoModalState }),
-  setOutputReferenceThresholdDraft: (outputReferenceThresholdDraft) =>
-    set({ outputReferenceThresholdDraft }),
-  setNoiseGateThresholdDraft: (noiseGateThresholdDraft) => set({ noiseGateThresholdDraft }),
-  setNoiseGateReleaseDraft: (noiseGateReleaseDraft) => set({ noiseGateReleaseDraft }),
+    setCompactTab: mk('compactTab'),
+    setFocusedBranchId: mk('focusedBranchId'),
+    setExpandedTabletBranchId: mk('expandedTabletBranchId'),
+    setBranchPageByFlowId: mk('branchPageByFlowId'),
+    setTabletEditorOpen: mk('tabletEditorOpen'),
 
-  setSnapshotsDirty: (snapshotsDirty) => set({ snapshotsDirty }),
-  setSnapshotSetlistModePending: (snapshotSetlistModePending) => set({ snapshotSetlistModePending }),
-  setEditorSnapshotOverride: (editorSnapshotOverride) => set({ editorSnapshotOverride }),
-  setEditorSnapshotContext: (editorSnapshotContext) => set({ editorSnapshotContext }),
-  setPendingGoLiveSnapshotId: (pendingGoLiveSnapshotId) => set({ pendingGoLiveSnapshotId }),
-  setPendingGoLiveRequestedAt: (pendingGoLiveRequestedAt) => set({ pendingGoLiveRequestedAt }),
-  setConfirmedGoLiveSnapshotId: (confirmedGoLiveSnapshotId) => set({ confirmedGoLiveSnapshotId }),
-  setFailedGoLiveSnapshotId: (failedGoLiveSnapshotId) => set({ failedGoLiveSnapshotId }),
-  setGoLiveFailureReason: (goLiveFailureReason) => set({ goLiveFailureReason }),
-  setGoLiveFailureDetail: (goLiveFailureDetail) => set({ goLiveFailureDetail }),
-  setGoLiveDiffExpanded: (goLiveDiffExpanded) => set({ goLiveDiffExpanded }),
-  setDismissedGoLiveDiffKey: (dismissedGoLiveDiffKey) => set({ dismissedGoLiveDiffKey }),
+    setAutomationTimelineExpanded: mk('automationTimelineExpanded'),
+    setAutomationPanelHeight: mk('automationPanelHeight'),
+    setAutomationPlaying: mk('automationPlaying'),
+    setAutomationRecording: mk('automationRecording'),
+    setAutomationLoopEnabled: mk('automationLoopEnabled'),
+    setAutomationCurrentTime: mk('automationCurrentTime'),
+    setAutomationDuration: mk('automationDuration'),
+    setAutomationLanes: mk('automationLanes'),
+    setLanePickerOpen: mk('lanePickerOpen'),
 
-  setFlowClipTimestamps: (flowClipTimestamps) => set({ flowClipTimestamps }),
-  setFlowInputClipTimestamps: (flowInputClipTimestamps) => set({ flowInputClipTimestamps }),
-  setFlowOutputClipTimestamps: (flowOutputClipTimestamps) => set({ flowOutputClipTimestamps }),
+    setSnapshotIoModalState: mk('snapshotIoModalState'),
+    setOutputReferenceThresholdDraft: mk('outputReferenceThresholdDraft'),
+    setNoiseGateThresholdDraft: mk('noiseGateThresholdDraft'),
+    setNoiseGateReleaseDraft: mk('noiseGateReleaseDraft'),
 
-  setRoutingInspectorId: (routingInspectorId) => set({ routingInspectorId }),
-  setRoutingLiveApplyState: (routingLiveApplyState) => set({ routingLiveApplyState }),
+    setSnapshotsDirty: mk('snapshotsDirty'),
+    setSnapshotSetlistModePending: mk('snapshotSetlistModePending'),
+    setEditorSnapshotOverride: mk('editorSnapshotOverride'),
+    setEditorSnapshotContext: mk('editorSnapshotContext'),
+    setPendingGoLiveSnapshotId: mk('pendingGoLiveSnapshotId'),
+    setPendingGoLiveRequestedAt: mk('pendingGoLiveRequestedAt'),
+    setConfirmedGoLiveSnapshotId: mk('confirmedGoLiveSnapshotId'),
+    setFailedGoLiveSnapshotId: mk('failedGoLiveSnapshotId'),
+    setGoLiveFailureReason: mk('goLiveFailureReason'),
+    setGoLiveFailureDetail: mk('goLiveFailureDetail'),
+    setGoLiveDiffExpanded: mk('goLiveDiffExpanded'),
+    setDismissedGoLiveDiffKey: mk('dismissedGoLiveDiffKey'),
 
-  setFootswitchLabelDrafts: (footswitchLabelDrafts) => set({ footswitchLabelDrafts }),
+    setFlowClipTimestamps: mk('flowClipTimestamps'),
+    setFlowInputClipTimestamps: mk('flowInputClipTimestamps'),
+    setFlowOutputClipTimestamps: mk('flowOutputClipTimestamps'),
 
-  setPortSelectorFlowIndex: (portSelectorFlowIndex) => set({ portSelectorFlowIndex }),
+    setRoutingInspectorId: mk('routingInspectorId'),
+    setRoutingLiveApplyState: mk('routingLiveApplyState'),
 
-  hydrateBucketAFromLocalStorage: (options) => {
-    const { flowSlots, routing, activeFlowIndex } = readPersistedFlows(options)
-    set({
-      flowSlots,
-      routing,
-      activeFlowIndex,
-      selectedCategory: readPersistedSelectedCategory(),
-      collapsedCategories: readPersistedCollapsedCategories(),
-    })
-  },
+    setFootswitchLabelDrafts: mk('footswitchLabelDrafts'),
 
-  persistFlowSlots: () => {
-    const { flowSlots } = useSnapshotEditorStore.getState()
-    safeLocalStorageSet(SNAPSHOT_EDITOR_FLOWS_STORAGE_KEY, JSON.stringify(flowSlots))
-  },
-  persistRouting: () => {
-    const { routing } = useSnapshotEditorStore.getState()
-    safeLocalStorageSet(SNAPSHOT_EDITOR_ROUTING_STORAGE_KEY, JSON.stringify(routing))
-  },
-  persistActiveFlowIndex: () => {
-    const { activeFlowIndex } = useSnapshotEditorStore.getState()
-    safeLocalStorageSet(SNAPSHOT_EDITOR_ACTIVE_STORAGE_KEY, String(activeFlowIndex))
-  },
-  persistSelectedCategory: () => {
-    const { selectedCategory } = useSnapshotEditorStore.getState()
-    safeLocalStorageSet(SNAPSHOT_EDITOR_PLUGIN_CATEGORY_STORAGE_KEY, selectedCategory)
-  },
-  persistCollapsedCategories: () => {
-    const { collapsedCategories } = useSnapshotEditorStore.getState()
-    safeLocalStorageSet(
-      SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_STORAGE_KEY,
-      JSON.stringify([...collapsedCategories]),
-    )
-  },
-}))
+    setPortSelectorFlowIndex: mk('portSelectorFlowIndex'),
+
+    hydrateBucketAFromLocalStorage: (options) => {
+      const { flowSlots, routing, activeFlowIndex } = readPersistedFlows(options)
+      set({
+        flowSlots,
+        routing,
+        activeFlowIndex,
+        selectedCategory: readPersistedSelectedCategory(),
+        collapsedCategories: readPersistedCollapsedCategories(),
+      })
+    },
+
+    persistFlowSlots: () => {
+      const { flowSlots } = useSnapshotEditorStore.getState()
+      safeLocalStorageSet(SNAPSHOT_EDITOR_FLOWS_STORAGE_KEY, JSON.stringify(flowSlots))
+    },
+    persistRouting: () => {
+      const { routing } = useSnapshotEditorStore.getState()
+      safeLocalStorageSet(SNAPSHOT_EDITOR_ROUTING_STORAGE_KEY, JSON.stringify(routing))
+    },
+    persistActiveFlowIndex: () => {
+      const { activeFlowIndex } = useSnapshotEditorStore.getState()
+      safeLocalStorageSet(SNAPSHOT_EDITOR_ACTIVE_STORAGE_KEY, String(activeFlowIndex))
+    },
+    persistSelectedCategory: () => {
+      const { selectedCategory } = useSnapshotEditorStore.getState()
+      safeLocalStorageSet(SNAPSHOT_EDITOR_PLUGIN_CATEGORY_STORAGE_KEY, selectedCategory)
+    },
+    persistCollapsedCategories: () => {
+      const { collapsedCategories } = useSnapshotEditorStore.getState()
+      safeLocalStorageSet(
+        SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_STORAGE_KEY,
+        JSON.stringify([...collapsedCategories]),
+      )
+    },
+  }
+})
