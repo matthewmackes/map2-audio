@@ -49,6 +49,11 @@ jest.mock('../hooks/useSpecialSettings', () => ({
     updateSettings: mockUpdateSpecialSettings,
     reload: jest.fn(),
   }),
+  resolveSnapshotEditorSignalCanvasSettings: () => ({
+    flowAnimation: 'cascade',
+    gridBackdrop: true,
+    nodeShape: 'rounded',
+  }),
 }))
 
 jest.mock('../components/SpecialSettingsDialog', () => ({
