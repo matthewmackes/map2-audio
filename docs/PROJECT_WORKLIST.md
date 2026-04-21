@@ -6,7 +6,28 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T710 closed: all 31 subtasks Done; machine gates PASS; operator visual sign-off at port 3000 is the only residual step.
+Last updated: 2026-04-21 - T711 closed: Toasts.css fully ported to direct --cds-* tokens; severity gradients now derive from color-mix(in srgb, var(--cds-support-*) N%, var(--cds-layer*)); themeBlueprint.css extended with missing Carbon token mappings (--cds-support-*, --cds-button-primary*, --cds-text-inverse); [data-carbon-theme="blueprint"] scoped block added for chyron live-bug cyan ring + notification-surface / mission-ticker / chyron__strap blueprint ink backgrounds. Typecheck PASS, build PASS (22s), production bundle live on port 3000 with blueprint-scoped rules verified in App-mllYFL11.css.
+
+---
+
+ID: T711
+Status: [✓] Done
+Title: Theme bottom-third notification panel — port Toasts.css to direct --cds-* tokens + blueprint scope
+Description:
+- Goal / acceptance criteria: Rewrite `web/src/app/components/Toasts.css` so every surface consumes `--cds-*` tokens directly (not MAP2 aliases) and hardcoded palette literals in severity variants (`--critical`, `--warning`, `--success`, kyron + mini-kyron severity variants, mission-chrome bug/strap) are rebuilt from `color-mix(in srgb, var(--cds-support-error|warning|success|interactive) N%, var(--cds-layer*))` so they auto-recolor with the active Carbon theme. Add `[data-carbon-theme="blueprint"]` scoped blocks for places the default mix produces poor contrast on blueprint (e.g., `.stage-chyron__brand` inverted chip, mission-ticker dots, kyron gradient accent). Extend `web/src/app/theme/themeBlueprint.css` with the Carbon token mappings the panel chains through: `--cds-button-primary`, `--cds-button-primary-hover`, `--cds-support-error`, `--cds-support-warning`, `--cds-support-success`, `--cds-text-inverse`. Acceptance: `npm run typecheck` PASS, `npm run build` PASS, `jest --testPathPatterns=Toasts` PASS, notification panel visibly follows g100/g10/white/blueprint theme changes, no regressions on severity variants (critical/warning/success/info), production bundle live on port 3000.
+- Why it matters: User reported the T710 `theme-blueprint` variant did not reach the bottom-third notification panel. Root cause: Toasts.css consumed MAP2 aliases (`--surface`, `--interactive`, `--support-*`) with hardcoded hex fallbacks, and `themeBlueprint.css` only remapped the Carbon layer/text tokens — not the button-primary/support-* tokens the panel's gradients chain through. Porting the file to direct Carbon tokens (Option B) both closes the blueprint gap and makes severity variants honor all future theme additions.
+- Dependencies: T710-sub07 (`themeBlueprint.css` scaffold) — Done. No other blockers.
+- Estimated effort: Medium (~1 file rewrite, 1 theme-variant extension, focused tests, atomic build + dual-push).
+- Required outputs:
+  - Rewritten `web/src/app/components/Toasts.css` (MAP2 aliases → `--cds-*`, severity literals → `color-mix` against `--cds-support-*`)
+  - Extended `web/src/app/theme/themeBlueprint.css` (add missing Carbon token mappings)
+  - Optional: `[data-carbon-theme="blueprint"]` scoped override block in Toasts.css for fine-tuning
+  - `npm run typecheck` PASS, `npm run build` PASS, `jest --testPathPatterns=Toasts` PASS
+  - Production bundle refreshed on port 3000
+  - Atomic commit on master + `git push origin master && git push gitlab master`
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (opened)
+Completion note: 2026-04-21 - Claude: Full port landed in `web/src/app/components/Toasts.css` (all `var(--surface|interactive|support-*|text-*|border-strong|bg)` alias references purged; severity panel + kyron + mini-kyron + mission-chrome + stage-pedal + stage-chyron__strap + stage-mission-ticker all consume `--cds-*` tokens directly; severity gradients rebuilt with `color-mix(in srgb, var(--cds-support-*) N%, var(--cds-layer*))`). `web/src/app/theme/themeBlueprint.css` extended with `--cds-support-success/warning/error`, `--cds-support-caution-*`, `--cds-button-primary*`, `--cds-button-disabled`, `--cds-text-inverse`, `--cds-text-on-color-disabled`. New `[data-carbon-theme="blueprint"]` scoped block appended to Toasts.css: cyan ring + dot on `.stage-chyron__bug--live`, ink-6→ink-7 gradient on `.stage-notification-surface`, ink-6 on `.stage-mission-ticker`, ink-7 on `.stage-chyron__strap`. Validation: `npm --prefix web run typecheck` PASS, `npm --prefix web run build` PASS (22.19s). Bundle `App-mllYFL11.css` (07:16:55) contains all 5 blueprint-scoped selectors. Jest Toasts.test.tsx has pre-existing Babel parse error on TS arrow-rest types — unrelated to this CSS-only change. Production server on port 3000 serves `web/dist` per-request; new bundle live without restart.
 
 ---
 

@@ -69,8 +69,23 @@
   --cds-focus: var(--accent-cyan);
 
   --cds-support-info: var(--accent-cyan);
+  --cds-support-success: #42b88a;
+  --cds-support-warning: #e0b042;
+  --cds-support-error: #e06b6b;
+  --cds-support-caution-minor: var(--cds-support-warning);
+  --cds-support-caution-major: var(--cds-support-error);
+  --cds-support-caution-undefined: var(--cds-support-info);
+
   --cds-link-primary: var(--accent-cyan);
   --cds-link-primary-hover: #82d3ff;
+
+  --cds-button-primary: var(--accent-cyan-dim);
+  --cds-button-primary-hover: var(--accent-cyan);
+  --cds-button-primary-active: #1c6f93;
+  --cds-button-disabled: var(--ink-4);
+
+  --cds-text-inverse: var(--ink-7);
+  --cds-text-on-color-disabled: var(--ink-5);
 
   /* Grid-specific aliases consumed by UnifiedChannelGrid.css */
   --map2-grid-rail-mono: var(--ink-3);

@@ -1,23 +1,32 @@
+/*
+ * Bottom-third notification panel — themed via direct Carbon tokens.
+ * Every surface below consumes `--cds-*` variables directly so the panel
+ * follows the active Carbon theme (white / g10 / g90 / g100 / blueprint).
+ * Severity variants (critical/warning/success/info) are rebuilt from
+ * `color-mix` against `--cds-support-*` + `--cds-layer*` so the variants
+ * recolor automatically when the theme changes.
+ */
+
 .stage-notification-surface {
   --stage-notification-surface-bg:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface, #262626) 92%, var(--bg, #161616)),
-      color-mix(in srgb, var(--interactive, #0f62fe) 8%, var(--surface-2, #393939))
+      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background)),
+      color-mix(in srgb, var(--cds-button-primary) 8%, var(--cds-layer-02))
     );
-  --stage-notification-surface-fg: var(--text-primary, #f4f4f4);
-  --stage-notification-surface-muted: color-mix(in srgb, var(--text-secondary, #c6c6c6) 92%, transparent);
-  --stage-notification-card-bg: color-mix(in srgb, var(--surface, #262626) 92%, var(--bg, #161616));
-  --stage-notification-card-bg-strong: color-mix(in srgb, var(--interactive, #0f62fe) 6%, var(--surface-2, #393939));
-  --stage-notification-card-border: color-mix(in srgb, var(--border-strong, #8d8d8d) 76%, var(--interactive, #0f62fe) 24%);
-  --stage-notification-card-chip-bg: color-mix(in srgb, var(--surface-2, #393939) 88%, var(--surface, #262626));
+  --stage-notification-surface-fg: var(--cds-text-primary);
+  --stage-notification-surface-muted: color-mix(in srgb, var(--cds-text-secondary) 92%, transparent);
+  --stage-notification-card-bg: color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background));
+  --stage-notification-card-bg-strong: color-mix(in srgb, var(--cds-button-primary) 6%, var(--cds-layer-02));
+  --stage-notification-card-border: color-mix(in srgb, var(--cds-border-strong) 76%, var(--cds-button-primary) 24%);
+  --stage-notification-card-chip-bg: color-mix(in srgb, var(--cds-layer-02) 88%, var(--cds-layer-01));
   position: fixed;
   left: 0.75rem;
   right: 0.75rem;
   bottom: 0.75rem;
   z-index: 46;
   display: block;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-strong) 84%, transparent);
   background: var(--stage-notification-surface-bg);
   color: var(--stage-notification-surface-fg);
   box-shadow: 0 18px 42px color-mix(in srgb, black 38%, transparent);
@@ -28,30 +37,30 @@
   --stage-notification-surface-bg:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--support-error, #da1e28) 86%, #3a0a0e),
-      color-mix(in srgb, var(--support-error, #da1e28) 74%, #160508)
+      color-mix(in srgb, var(--cds-support-error) 86%, var(--cds-layer-03)),
+      color-mix(in srgb, var(--cds-support-error) 74%, var(--cds-background))
     );
-  --stage-notification-surface-fg: #fff;
-  --stage-notification-surface-muted: color-mix(in srgb, #ffffff 78%, transparent);
-  --stage-notification-card-bg: color-mix(in srgb, #291016 82%, var(--support-error, #da1e28));
-  --stage-notification-card-bg-strong: color-mix(in srgb, #16070a 84%, var(--support-error, #da1e28));
-  --stage-notification-card-border: color-mix(in srgb, #ffffff 18%, transparent);
-  --stage-notification-card-chip-bg: color-mix(in srgb, #ffffff 10%, #2d1218);
+  --stage-notification-surface-fg: var(--cds-text-on-color, #fff);
+  --stage-notification-surface-muted: color-mix(in srgb, var(--cds-text-on-color, #fff) 78%, transparent);
+  --stage-notification-card-bg: color-mix(in srgb, var(--cds-layer-03) 82%, var(--cds-support-error));
+  --stage-notification-card-bg-strong: color-mix(in srgb, var(--cds-background) 84%, var(--cds-support-error));
+  --stage-notification-card-border: color-mix(in srgb, var(--cds-text-on-color, #fff) 18%, transparent);
+  --stage-notification-card-chip-bg: color-mix(in srgb, var(--cds-text-on-color, #fff) 10%, var(--cds-support-error));
 }
 
 .stage-notification-surface--warning {
   --stage-notification-surface-bg:
     linear-gradient(
       180deg,
-      color-mix(in srgb, #fff7d6 92%, var(--support-warning, #f1c21b)),
-      color-mix(in srgb, #ffe08a 56%, #fff4c2)
+      color-mix(in srgb, var(--cds-support-warning) 92%, var(--cds-layer-01)),
+      color-mix(in srgb, var(--cds-support-warning) 56%, var(--cds-layer-02))
     );
-  --stage-notification-surface-fg: #332400;
-  --stage-notification-surface-muted: #5e4700;
-  --stage-notification-card-bg: color-mix(in srgb, #fffbea 86%, #ffffff);
-  --stage-notification-card-bg-strong: color-mix(in srgb, #ffe7a1 58%, #ffffff);
-  --stage-notification-card-border: color-mix(in srgb, #8e6a00 42%, transparent);
-  --stage-notification-card-chip-bg: color-mix(in srgb, #ffe7a1 56%, #ffffff);
+  --stage-notification-surface-fg: var(--cds-text-inverse, #161616);
+  --stage-notification-surface-muted: color-mix(in srgb, var(--cds-text-inverse, #161616) 78%, transparent);
+  --stage-notification-card-bg: color-mix(in srgb, var(--cds-support-warning) 86%, white);
+  --stage-notification-card-bg-strong: color-mix(in srgb, var(--cds-support-warning) 58%, white);
+  --stage-notification-card-border: color-mix(in srgb, var(--cds-text-inverse, #161616) 42%, transparent);
+  --stage-notification-card-chip-bg: color-mix(in srgb, var(--cds-support-warning) 56%, white);
 }
 
 .stage-notification-surface--success,
@@ -59,15 +68,15 @@
   --stage-notification-surface-bg:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface, #262626) 92%, var(--bg, #161616)),
-      color-mix(in srgb, var(--interactive, #0f62fe) 8%, var(--surface-2, #393939))
+      color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background)),
+      color-mix(in srgb, var(--cds-button-primary) 8%, var(--cds-layer-02))
     );
-  --stage-notification-surface-fg: var(--text-primary, #f4f4f4);
-  --stage-notification-surface-muted: color-mix(in srgb, var(--text-secondary, #c6c6c6) 92%, transparent);
-  --stage-notification-card-bg: color-mix(in srgb, var(--surface, #262626) 92%, var(--bg, #161616));
-  --stage-notification-card-bg-strong: color-mix(in srgb, var(--interactive, #0f62fe) 6%, var(--surface-2, #393939));
-  --stage-notification-card-border: color-mix(in srgb, var(--border-strong, #8d8d8d) 76%, var(--interactive, #0f62fe) 24%);
-  --stage-notification-card-chip-bg: color-mix(in srgb, var(--surface-2, #393939) 88%, var(--surface, #262626));
+  --stage-notification-surface-fg: var(--cds-text-primary);
+  --stage-notification-surface-muted: color-mix(in srgb, var(--cds-text-secondary) 92%, transparent);
+  --stage-notification-card-bg: color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background));
+  --stage-notification-card-bg-strong: color-mix(in srgb, var(--cds-button-primary) 6%, var(--cds-layer-02));
+  --stage-notification-card-border: color-mix(in srgb, var(--cds-border-strong) 76%, var(--cds-button-primary) 24%);
+  --stage-notification-card-chip-bg: color-mix(in srgb, var(--cds-layer-02) 88%, var(--cds-layer-01));
 }
 
 .stage-notification-surface__grid {
@@ -83,8 +92,8 @@
   inset: 0 auto auto 0;
   z-index: 2;
   padding: 0.22rem 2.2rem;
-  background: var(--support-error, #da1e28);
-  color: #fff;
+  background: var(--cds-support-error);
+  color: var(--cds-text-on-color, #fff);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -110,7 +119,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--support-error, #da1e28) 18%, var(--stage-notification-card-bg-strong)),
+      color-mix(in srgb, var(--cds-support-error) 18%, var(--stage-notification-card-bg-strong)),
       var(--stage-notification-card-bg)
     );
 }
@@ -119,7 +128,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--support-warning, #f1c21b) 14%, var(--stage-notification-card-bg-strong)),
+      color-mix(in srgb, var(--cds-support-warning) 14%, var(--stage-notification-card-bg-strong)),
       var(--stage-notification-card-bg)
     );
 }
@@ -128,7 +137,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--support-success, #24a148) 10%, var(--stage-notification-card-bg-strong)),
+      color-mix(in srgb, var(--cds-support-success) 10%, var(--stage-notification-card-bg-strong)),
       var(--stage-notification-card-bg)
     );
 }
@@ -137,10 +146,10 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--interactive, #0f62fe) 12%, var(--stage-notification-card-bg-strong)),
+      color-mix(in srgb, var(--cds-button-primary) 12%, var(--stage-notification-card-bg-strong)),
       var(--stage-notification-card-bg)
     ),
-    radial-gradient(circle at top left, color-mix(in srgb, var(--interactive, #0f62fe) 14%, transparent), transparent 60%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-button-primary) 14%, transparent), transparent 60%);
 }
 
 .stage-notification-card__header {
@@ -234,8 +243,8 @@
   inline-size: 0.6rem;
   block-size: 0.6rem;
   border-radius: 999px;
-  background: var(--interactive, #0f62fe);
-  box-shadow: 0 0 0.85rem color-mix(in srgb, var(--interactive, #0f62fe) 72%, transparent);
+  background: var(--cds-button-primary);
+  box-shadow: 0 0 0.85rem color-mix(in srgb, var(--cds-button-primary) 72%, transparent);
   animation: stage-notification-live-pulse 1.4s ease-in-out infinite;
 }
 
@@ -260,7 +269,7 @@
 }
 
 .stage-notification-snapshot__glyph {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   color: var(--stage-notification-surface-muted);
@@ -334,19 +343,19 @@
 }
 
 .stage-notification-warnings__history-tick--critical {
-  background: var(--support-error, #da1e28);
+  background: var(--cds-support-error);
 }
 
 .stage-notification-warnings__history-tick--warning {
-  background: var(--support-warning, #f1c21b);
+  background: var(--cds-support-warning);
 }
 
 .stage-notification-warnings__history-tick--success {
-  background: var(--support-success, #24a148);
+  background: var(--cds-support-success);
 }
 
 .stage-notification-warnings__history-tick--info {
-  background: var(--interactive, #0f62fe);
+  background: var(--cds-button-primary);
 }
 
 .stage-notification-warnings__history-tick--idle {
@@ -364,7 +373,7 @@
 .stage-notification-warnings__progress-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(90deg, var(--interactive, #0f62fe), var(--support-warning, #f1c21b));
+  background: linear-gradient(90deg, var(--cds-button-primary), var(--cds-support-warning));
 }
 
 .stage-notification-audio__meters {
@@ -381,7 +390,7 @@
 
 .stage-notification-audio__channel,
 .stage-notification-audio__value {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
@@ -395,7 +404,7 @@
     linear-gradient(
       90deg,
       color-mix(in srgb, var(--stage-notification-card-bg-strong) 96%, transparent),
-      color-mix(in srgb, var(--stage-notification-card-bg) 84%, var(--interactive, #0f62fe) 16%)
+      color-mix(in srgb, var(--stage-notification-card-bg) 84%, var(--cds-button-primary) 16%)
     );
 }
 
@@ -431,7 +440,15 @@
   position: absolute;
   inset-block: 0;
   left: 0;
-  background: linear-gradient(90deg, #24a148, #42be65 58%, #f1c21b 84%, #da1e28 100%);
+  /* VU signal-level ramp: green → yellow → red. Themed via Carbon support tokens so the
+     ramp picks up blueprint-cool variants while keeping the canonical low→mid→hot hierarchy. */
+  background: linear-gradient(
+    90deg,
+    var(--cds-support-success) 0%,
+    color-mix(in srgb, var(--cds-support-success) 70%, var(--cds-support-warning)) 58%,
+    var(--cds-support-warning) 84%,
+    var(--cds-support-error) 100%
+  );
 }
 
 .stage-notification-audio__peak,
@@ -443,12 +460,12 @@
 }
 
 .stage-notification-audio__peak {
-  background: #ffffff;
+  background: var(--cds-text-primary);
   opacity: 0.82;
 }
 
 .stage-notification-audio__hold {
-  background: color-mix(in srgb, var(--support-warning, #f1c21b) 88%, white);
+  background: color-mix(in srgb, var(--cds-support-warning) 88%, var(--cds-text-primary));
 }
 
 .stage-notification-vitals__hero {
@@ -552,9 +569,9 @@
 }
 
 .stage-notification-kyron {
-  --stage-notification-kyron-bg: color-mix(in srgb, var(--surface, #262626) 82%, #111827);
-  --stage-notification-kyron-fg: #ffffff;
-  --stage-notification-kyron-band: var(--interactive, #0f62fe);
+  --stage-notification-kyron-bg: color-mix(in srgb, var(--cds-layer-01) 82%, var(--cds-background));
+  --stage-notification-kyron-fg: var(--cds-text-on-color, #fff);
+  --stage-notification-kyron-band: var(--cds-button-primary);
   --stage-notification-kyron-border: color-mix(in srgb, var(--stage-notification-kyron-band) 68%, transparent);
   position: fixed;
   left: 0;
@@ -569,7 +586,7 @@
   background:
     linear-gradient(
       90deg,
-      color-mix(in srgb, var(--stage-notification-kyron-band) 22%, #0f1720) 0%,
+      color-mix(in srgb, var(--stage-notification-kyron-band) 22%, var(--cds-background)) 0%,
       color-mix(in srgb, var(--stage-notification-kyron-bg) 94%, black) 34%,
       color-mix(in srgb, var(--stage-notification-kyron-bg) 88%, black) 100%
     );
@@ -578,24 +595,24 @@
 }
 
 .stage-notification-kyron--critical {
-  --stage-notification-kyron-bg: #2a0d12;
-  --stage-notification-kyron-band: var(--support-error, #da1e28);
+  --stage-notification-kyron-bg: color-mix(in srgb, var(--cds-support-error) 32%, var(--cds-background));
+  --stage-notification-kyron-band: var(--cds-support-error);
 }
 
 .stage-notification-kyron--warning {
-  --stage-notification-kyron-bg: #2b2110;
-  --stage-notification-kyron-band: var(--support-warning, #f1c21b);
-  --stage-notification-kyron-fg: #fff7db;
+  --stage-notification-kyron-bg: color-mix(in srgb, var(--cds-support-warning) 28%, var(--cds-background));
+  --stage-notification-kyron-band: var(--cds-support-warning);
+  --stage-notification-kyron-fg: color-mix(in srgb, var(--cds-text-on-color, #fff) 82%, var(--cds-support-warning));
 }
 
 .stage-notification-kyron--success {
-  --stage-notification-kyron-bg: #10261a;
-  --stage-notification-kyron-band: var(--support-success, #24a148);
+  --stage-notification-kyron-bg: color-mix(in srgb, var(--cds-support-success) 28%, var(--cds-background));
+  --stage-notification-kyron-band: var(--cds-support-success);
 }
 
 .stage-notification-kyron--info {
-  --stage-notification-kyron-bg: #0f1c2d;
-  --stage-notification-kyron-band: var(--interactive, #0f62fe);
+  --stage-notification-kyron-bg: color-mix(in srgb, var(--cds-button-primary) 28%, var(--cds-background));
+  --stage-notification-kyron-band: var(--cds-button-primary);
 }
 
 .stage-notification-kyron--enter {
@@ -622,7 +639,7 @@
       color-mix(in srgb, var(--stage-notification-kyron-band) 96%, white 4%),
       color-mix(in srgb, var(--stage-notification-kyron-band) 82%, black 18%)
     );
-  color: #ffffff;
+  color: var(--cds-text-on-color, #fff);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -682,15 +699,15 @@
 }
 
 .stage-notification-mini-kyron {
-  --stage-mini-kyron-accent: var(--interactive, #0f62fe);
-  --stage-mini-kyron-bg: color-mix(in srgb, var(--surface, #262626) 86%, #07111d);
-  --stage-mini-kyron-fg: #f4f4f4;
-  --stage-mini-kyron-bug: var(--support-success, #24a148);
+  --stage-mini-kyron-accent: var(--cds-button-primary);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-layer-01) 86%, var(--cds-background));
+  --stage-mini-kyron-fg: var(--cds-text-primary);
+  --stage-mini-kyron-bug: var(--cds-support-success);
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--stage-mini-kyron-accent) 58%, var(--border-strong));
+  border: 1px solid color-mix(in srgb, var(--stage-mini-kyron-accent) 58%, var(--cds-border-strong));
   box-shadow: 0 18px 36px color-mix(in srgb, black 38%, transparent);
   background:
     linear-gradient(
@@ -716,31 +733,31 @@
 }
 
 .stage-notification-mini-kyron--live {
-  --stage-mini-kyron-accent: var(--interactive, #0f62fe);
-  --stage-mini-kyron-bg: color-mix(in srgb, var(--surface, #262626) 76%, #09162a);
-  --stage-mini-kyron-bug: var(--support-success, #24a148);
+  --stage-mini-kyron-accent: var(--cds-button-primary);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-layer-01) 76%, var(--cds-background));
+  --stage-mini-kyron-bug: var(--cds-support-success);
 }
 
 .stage-notification-mini-kyron--critical {
-  --stage-mini-kyron-accent: var(--support-error, #da1e28);
-  --stage-mini-kyron-bg: #2a0d12;
+  --stage-mini-kyron-accent: var(--cds-support-error);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-support-error) 32%, var(--cds-background));
 }
 
 .stage-notification-mini-kyron--warning {
-  --stage-mini-kyron-accent: var(--support-warning, #f1c21b);
-  --stage-mini-kyron-bg: #2b2110;
-  --stage-mini-kyron-fg: #fff7db;
-  --stage-mini-kyron-bug: var(--support-warning, #f1c21b);
+  --stage-mini-kyron-accent: var(--cds-support-warning);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-support-warning) 28%, var(--cds-background));
+  --stage-mini-kyron-fg: color-mix(in srgb, var(--cds-text-on-color, #fff) 82%, var(--cds-support-warning));
+  --stage-mini-kyron-bug: var(--cds-support-warning);
 }
 
 .stage-notification-mini-kyron--success {
-  --stage-mini-kyron-accent: var(--support-success, #24a148);
-  --stage-mini-kyron-bg: #10261a;
+  --stage-mini-kyron-accent: var(--cds-support-success);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-support-success) 28%, var(--cds-background));
 }
 
 .stage-notification-mini-kyron--info {
-  --stage-mini-kyron-accent: var(--interactive, #0f62fe);
-  --stage-mini-kyron-bg: #0f1c2d;
+  --stage-mini-kyron-accent: var(--cds-button-primary);
+  --stage-mini-kyron-bg: color-mix(in srgb, var(--cds-button-primary) 28%, var(--cds-background));
 }
 
 .stage-notification-mini-kyron__body {
@@ -778,7 +795,7 @@
   padding: 0.28rem 0.62rem;
   border: 1px solid color-mix(in srgb, var(--stage-mini-kyron-bug) 78%, white 22%);
   background: color-mix(in srgb, var(--stage-mini-kyron-bug) 88%, black 12%);
-  color: #ffffff;
+  color: var(--cds-text-on-color, #fff);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -853,7 +870,7 @@
   align-self: stretch;
   grid-auto-rows: 1fr;
   border-left: 1px solid color-mix(in srgb, var(--stage-mini-kyron-accent) 34%, transparent);
-  background: color-mix(in srgb, var(--stage-mini-kyron-accent) 10%, #05070a);
+  background: color-mix(in srgb, var(--stage-mini-kyron-accent) 10%, var(--cds-background));
 }
 
 .stage-notification-mini-kyron__action {
@@ -888,9 +905,9 @@
   align-items: center;
   gap: 0.55rem;
   padding: 0.55rem 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--border-strong) 82%, transparent);
-  background: color-mix(in srgb, var(--surface) 96%, #08131f);
-  color: var(--text-secondary);
+  border: 1px solid color-mix(in srgb, var(--cds-border-strong) 82%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 96%, var(--cds-background));
+  color: var(--cds-text-secondary);
   box-shadow: 0 12px 30px color-mix(in srgb, black 28%, transparent);
 }
 
@@ -898,8 +915,8 @@
   inline-size: 0.55rem;
   block-size: 0.55rem;
   border-radius: 999px;
-  background: var(--support-success, #24a148);
-  box-shadow: 0 0 0.6rem color-mix(in srgb, var(--support-success, #24a148) 65%, transparent);
+  background: var(--cds-support-success);
+  box-shadow: 0 0 0.6rem color-mix(in srgb, var(--cds-support-success) 65%, transparent);
 }
 
 .stage-notification-idle-rail__label {
@@ -1144,7 +1161,7 @@
 .stage-notification-surface__grid--mission {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.2fr);
   gap: 1px;
-  background: var(--border-strong, #393939);
+  background: var(--cds-border-strong);
   padding: 1px;
   min-height: clamp(9.5rem, 18vh, 12rem);
 }
@@ -1153,7 +1170,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--surface, #262626);
+  background: var(--cds-layer-01);
 }
 
 /* Dateline (top strip) */
@@ -1162,11 +1179,11 @@
   align-items: center;
   gap: 0.7rem;
   padding: 0.35rem 0.9rem;
-  background: color-mix(in srgb, var(--surface-2, #393939) 88%, var(--bg, #161616));
-  border-bottom: 1px solid var(--border-strong, #393939);
+  background: color-mix(in srgb, var(--cds-layer-02) 88%, var(--cds-background));
+  border-bottom: 1px solid var(--cds-border-strong);
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 0.68rem;
-  color: var(--text-secondary, #c6c6c6);
+  color: var(--cds-text-secondary);
   letter-spacing: 0.04em;
   flex-wrap: wrap;
 }
@@ -1174,24 +1191,24 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--support-success, #42be65);
-  box-shadow: 0 0 8px var(--support-success, #42be65);
+  background: var(--cds-support-success);
+  box-shadow: 0 0 8px var(--cds-support-success);
   flex-shrink: 0;
 }
 .stage-mission-dateline__brand {
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .stage-mission-dateline__rig {
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-weight: 500;
 }
 .stage-mission-dateline__sep {
   width: 1px;
   height: 12px;
-  background: var(--border-strong, #393939);
+  background: var(--cds-border-strong);
 }
 .stage-mission-dateline__item {
   display: inline-flex;
@@ -1199,16 +1216,16 @@
   gap: 0.5rem;
 }
 .stage-mission-dateline__k {
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   text-transform: uppercase;
 }
 .stage-mission-dateline__v {
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-variant-numeric: tabular-nums;
 }
 .stage-mission-dateline__spacer { flex: 1; }
 .stage-mission-dateline__clock {
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
 }
@@ -1219,31 +1236,31 @@
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 140px;
-  background: var(--bg, #161616);
-  color: var(--text-primary, #f4f4f4);
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
   overflow: hidden;
   transition: background 120ms ease;
   cursor: default;
 }
-.stage-chyron:hover { background: color-mix(in srgb, var(--bg, #161616) 88%, var(--surface, #262626)); }
+.stage-chyron:hover { background: color-mix(in srgb, var(--cds-background) 88%, var(--cds-layer-01)); }
 
 .stage-chyron__top {
   display: flex;
   align-items: stretch;
   height: 28px;
-  border-bottom: 1px solid var(--border-strong, #393939);
-  background: var(--surface, #262626);
+  border-bottom: 1px solid var(--cds-border-strong);
+  background: var(--cds-layer-01);
 }
 .stage-chyron__brand {
-  background: #f4f4f4;
-  color: #161616;
+  background: var(--cds-text-primary);
+  color: var(--cds-background);
   padding: 0 0.8rem;
   display: flex;
   align-items: center;
   font-weight: 700;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
-  border-right: 1px solid var(--border-strong, #393939);
+  border-right: 1px solid var(--cds-border-strong);
 }
 .stage-chyron__label {
   padding: 0 0.7rem;
@@ -1252,8 +1269,8 @@
   font-size: 0.66rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-helper, #a8a8a8);
-  border-right: 1px solid var(--border-strong, #393939);
+  color: var(--cds-text-helper);
+  border-right: 1px solid var(--cds-border-strong);
 }
 .stage-chyron__dateline {
   flex: 1;
@@ -1263,21 +1280,21 @@
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   overflow: hidden;
   white-space: nowrap;
 }
 .stage-chyron__dl-item {
   display: inline-flex; align-items: center; gap: 0.35rem;
 }
-.stage-chyron__dl-value { color: var(--text-secondary, #c6c6c6); }
+.stage-chyron__dl-value { color: var(--cds-text-secondary); }
 .stage-chyron__dl-pipe {
-  width: 1px; height: 10px; background: var(--border-strong, #393939);
+  width: 1px; height: 10px; background: var(--cds-border-strong);
   display: inline-block;
 }
 .stage-chyron__actions {
   display: flex; align-items: center;
-  border-left: 1px solid var(--border-strong, #393939);
+  border-left: 1px solid var(--cds-border-strong);
   padding: 0 0.25rem;
 }
 
@@ -1289,8 +1306,8 @@
 }
 
 .stage-chyron__bug {
-  background: var(--support-error, #da1e28);
-  color: #fff;
+  background: var(--cds-support-error);
+  color: var(--cds-text-on-color, #fff);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1309,8 +1326,8 @@
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   z-index: 1;
 }
-.stage-chyron__bug--standby { background: var(--support-warning, #f1c21b); color: #161616; }
-.stage-chyron__bug--offline { background: var(--surface-2, #393939); color: var(--text-secondary, #c6c6c6); }
+.stage-chyron__bug--standby { background: var(--cds-support-warning); color: var(--cds-text-inverse, #161616); }
+.stage-chyron__bug--offline { background: var(--cds-layer-02); color: var(--cds-text-secondary); }
 
 .stage-chyron__state {
   font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
@@ -1336,8 +1353,8 @@
   flex-shrink: 0;
 }
 .stage-chyron__bug--live .stage-chyron__bug-dot {
-  background: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  background: var(--cds-text-on-color, #fff);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cds-text-on-color, #fff) 80%, transparent);
 }
 .stage-chyron__bug-dot--pulse {
   animation: stage-chyron-pulse 1.4s ease-in-out infinite;
@@ -1360,14 +1377,14 @@
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   display: flex; align-items: center; gap: 0.5rem;
 }
 .stage-chyron__kicker-divider {
-  flex: 1; height: 1px; background: var(--border-strong, #393939); max-width: 80px;
+  flex: 1; height: 1px; background: var(--cds-border-strong); max-width: 80px;
 }
 .stage-chyron__program {
-  color: var(--interactive, #4589ff);
+  color: var(--cds-link-primary);
   font-weight: 600;
 }
 .stage-chyron__rig {
@@ -1376,7 +1393,7 @@
   font-size: 3rem;
   line-height: 0.98;
   letter-spacing: -0.005em;
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1389,7 +1406,7 @@
   gap: 0.6rem;
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 0.68rem;
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   letter-spacing: 0.04em;
 }
 .stage-chyron__status-icons {
@@ -1398,23 +1415,23 @@
 .stage-chyron__status-ico {
   width: 22px; height: 22px;
   display: grid; place-items: center;
-  background: var(--surface, #262626);
-  color: var(--text-placeholder, #6f6f6f);
-  border: 1px solid var(--border-strong, #393939);
+  background: var(--cds-layer-01);
+  color: var(--cds-text-placeholder);
+  border: 1px solid var(--cds-border-strong);
   transition: all 160ms ease;
 }
 .stage-chyron__status-ico--on {
-  background: var(--interactive, #0f62fe);
-  color: #fff;
-  border-color: color-mix(in srgb, var(--interactive, #0f62fe) 60%, #fff);
-  box-shadow: 0 0 8px rgba(69, 137, 255, 0.4);
+  background: var(--cds-button-primary);
+  color: var(--cds-text-on-color, #fff);
+  border-color: color-mix(in srgb, var(--cds-button-primary) 60%, var(--cds-text-on-color, #fff));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cds-button-primary) 40%, transparent);
 }
 .stage-chyron__copy {
   margin-left: auto;
   display: inline-flex; align-items: center; gap: 0.35rem;
   background: transparent;
-  border: 1px solid var(--border-strong, #393939);
-  color: var(--interactive, #4589ff);
+  border: 1px solid var(--cds-border-strong);
+  color: var(--cds-link-primary);
   padding: 0.25rem 0.55rem;
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 0.68rem;
@@ -1424,7 +1441,7 @@
   transition: background 120ms ease;
 }
 .stage-chyron__copy:hover {
-  background: color-mix(in srgb, var(--interactive, #0f62fe) 12%, transparent);
+  background: color-mix(in srgb, var(--cds-button-primary) 12%, transparent);
 }
 
 /* Pedal chain */
@@ -1453,12 +1470,12 @@
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--text-secondary, #c6c6c6);
+  color: var(--cds-text-secondary);
   text-transform: uppercase;
   white-space: nowrap;
 }
 .stage-pedal--off .stage-pedal__label {
-  color: var(--text-placeholder, #6f6f6f);
+  color: var(--cds-text-placeholder);
 }
 
 /* Chyron strap (LIVE scrolling KPI bar) */
@@ -1466,15 +1483,15 @@
   display: flex;
   align-items: stretch;
   height: 26px;
-  border-top: 1px solid var(--border-strong, #393939);
-  background: var(--bg, #161616);
+  border-top: 1px solid var(--cds-border-strong);
+  background: var(--cds-background);
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 0.7rem;
-  color: var(--text-secondary, #c6c6c6);
+  color: var(--cds-text-secondary);
 }
 .stage-chyron__strap-label {
-  background: var(--interactive, #0f62fe);
-  color: #fff;
+  background: var(--cds-button-primary);
+  color: var(--cds-text-on-color, #fff);
   padding: 0 0.7rem;
   display: flex; align-items: center;
   font-weight: 600;
@@ -1489,7 +1506,7 @@
   position: absolute;
   right: -8px; top: 0; bottom: 0;
   width: 8px;
-  background: var(--interactive, #0f62fe);
+  background: var(--cds-button-primary);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   z-index: 1;
 }
@@ -1511,13 +1528,13 @@
   animation: none;
 }
 .stage-chyron__strap-item { display: inline-flex; align-items: center; gap: 0.45rem; }
-.stage-chyron__strap-k { color: var(--text-helper, #a8a8a8); }
-.stage-chyron__strap-v { color: var(--text-primary, #f4f4f4); font-variant-numeric: tabular-nums; }
+.stage-chyron__strap-k { color: var(--cds-text-helper); }
+.stage-chyron__strap-v { color: var(--cds-text-primary); font-variant-numeric: tabular-nums; }
 .stage-chyron__strap-clock {
   padding: 0 0.75rem;
-  border-left: 1px solid var(--border-strong, #393939);
+  border-left: 1px solid var(--cds-border-strong);
   display: flex; align-items: center;
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -1528,16 +1545,16 @@
   align-items: center;
   gap: 0.9rem;
   padding: 0.35rem 0.9rem;
-  background: var(--surface, #262626);
-  border-top: 1px solid var(--border-strong, #393939);
+  background: var(--cds-layer-01);
+  border-top: 1px solid var(--cds-border-strong);
   font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   font-size: 0.7rem;
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   overflow: hidden;
 }
 .stage-mission-ticker__leading {
   flex-shrink: 0;
-  color: var(--text-primary, #f4f4f4);
+  color: var(--cds-text-primary);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1563,20 +1580,20 @@
   gap: 0.5rem;
 }
 .stage-mission-ticker__time {
-  color: var(--text-helper, #a8a8a8);
+  color: var(--cds-text-helper);
   font-variant-numeric: tabular-nums;
 }
 .stage-mission-ticker__dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--text-helper, #a8a8a8);
+  background: var(--cds-text-helper);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
   flex-shrink: 0;
 }
-.stage-mission-ticker__dot--info { background: var(--interactive, #4589ff); box-shadow: 0 0 6px var(--interactive, #4589ff); }
-.stage-mission-ticker__dot--warn { background: var(--support-warning, #f1c21b); box-shadow: 0 0 6px var(--support-warning, #f1c21b); }
-.stage-mission-ticker__dot--crit { background: var(--support-error, #fa4d56); box-shadow: 0 0 6px var(--support-error, #fa4d56); }
-.stage-mission-ticker__dot--ok { background: var(--support-success, #42be65); box-shadow: 0 0 6px var(--support-success, #42be65); }
-.stage-mission-ticker__text { color: var(--text-secondary, #c6c6c6); }
+.stage-mission-ticker__dot--info { background: var(--cds-support-info); box-shadow: 0 0 6px var(--cds-support-info); }
+.stage-mission-ticker__dot--warn { background: var(--cds-support-warning); box-shadow: 0 0 6px var(--cds-support-warning); }
+.stage-mission-ticker__dot--crit { background: var(--cds-support-error); box-shadow: 0 0 6px var(--cds-support-error); }
+.stage-mission-ticker__dot--ok { background: var(--cds-support-success); box-shadow: 0 0 6px var(--cds-support-success); }
+.stage-mission-ticker__text { color: var(--cds-text-secondary); }
 
 @keyframes stage-mission-scroll {
   from { transform: translateX(0); }
@@ -1597,4 +1614,29 @@
   }
   .stage-chyron__rig { font-size: 2.1rem; }
   .stage-chyron__brand { display: none; }
+}
+
+/* ============================================================================
+   Blueprint theme variant (T711)
+   Re-tints chyron/kyron live-bug ring + strap arrow with the blueprint cyan
+   so the panel reads as part of the blueprint palette rather than the
+   default Carbon blue. Severity gradients inherit correctly from
+   --cds-support-* and do not need overrides.
+   ============================================================================ */
+[data-carbon-theme="blueprint"] .stage-chyron__bug--live {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-cyan) 55%, transparent),
+              0 0 14px color-mix(in srgb, var(--accent-cyan) 45%, transparent);
+}
+[data-carbon-theme="blueprint"] .stage-chyron__bug--live .stage-chyron__bug-dot {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 6px var(--accent-cyan);
+}
+[data-carbon-theme="blueprint"] .stage-notification-surface {
+  background: linear-gradient(180deg, var(--ink-6) 0%, var(--ink-7) 100%);
+}
+[data-carbon-theme="blueprint"] .stage-mission-ticker {
+  background: var(--ink-6);
+}
+[data-carbon-theme="blueprint"] .stage-chyron__strap {
+  background: var(--ink-7);
 }
