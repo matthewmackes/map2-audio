@@ -22,9 +22,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
-import AutoSizer from 'react-virtualized-auto-sizer'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { FixedSizeList, type ListChildComponentProps } from 'react-window'
 
 import { pluginsApi } from '@/map2/api'
 import type { Plugin, PluginAppearanceOverride } from '@/map2/types'
@@ -293,9 +291,6 @@ const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
     description: 'Bring the next page in with a horizontal pager-style glide inspired by card-deck navigation.',
   },
 ]
-
-const PRESET_THEME_ROW_HEIGHT = 88
-const PRESET_THEME_LIST_MAX_HEIGHT = 352
 
 const THEME_PAGE_SECTION_IDS = {
   appearance: 'theme-appearance',
@@ -1420,10 +1415,12 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
           </div>
 
           <div className="theme-page__appearance-sidebar">
-            <div className="theme-page__dialog-group">
+            <div className="theme-page__dialog-group theme-page__dialog-group--stretch">
               <div className="theme-page__dialog-subhead">
-                <strong>Quick Starts</strong>
-                <Tag type="cyan" size="sm">Curated</Tag>
+                <strong>Themes</strong>
+                <Tag type="cool-gray" size="sm">
+                  {SUGGESTED_DIRECTIONS.length + catalogThemeIds.length + customThemeEntries.length} total
+                </Tag>
               </div>
               <div className="theme-page__catalog-list">
                 {SUGGESTED_DIRECTIONS.map((suggestion) => {
@@ -1436,7 +1433,7 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
 
                   return (
                     <button
-                      key={suggestion.id}
+                      key={`suggestion-${suggestion.id}`}
                       type="button"
                       className={`theme-page__catalog-item${selected ? ' theme-page__catalog-item--active' : ''}`}
                       onClick={() => onHandleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)}
@@ -1463,63 +1460,61 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
                     </button>
                   )
                 })}
-              </div>
-            </div>
+                {catalogThemeIds.map((presetThemeId) => {
+                  const presetTheme = builtInThemes[presetThemeId]
+                  const active = !draftDirty && themeId === presetThemeId
+                  const previewTheme = resolvePreviewTheme(presetThemeId, presetTheme)
 
-            <div className="theme-page__dialog-group theme-page__dialog-group--stretch">
-              <div className="theme-page__dialog-subhead">
-                <strong>Theme Library</strong>
-                <Tag type="cool-gray" size="sm">{catalogThemeIds.length} unique</Tag>
-              </div>
-              <ThemeCatalogVirtualList
-                ids={catalogThemeIds}
-                themeId={themeId}
-                draftDirty={draftDirty}
-                onSelect={onRequestThemeSelection}
-              />
-            </div>
+                  return (
+                    <button
+                      key={`catalog-${presetThemeId}`}
+                      type="button"
+                      className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+                      onClick={() => onRequestThemeSelection(presetThemeId)}
+                      aria-pressed={active}
+                    >
+                      <span className="theme-page__catalog-item-copy">
+                        <strong>{presetTheme.name}</strong>
+                        <span>{presetTheme.description}</span>
+                      </span>
+                      <span className="theme-page__catalog-item-meta">
+                        <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
+                          {active ? 'Active' : themeCatalogLabel(presetThemeId, presetTheme)}
+                        </Tag>
+                        <ThemeSwatchStrip theme={previewTheme} />
+                      </span>
+                    </button>
+                  )
+                })}
+                {customThemeEntries.map((customTheme) => {
+                  const active = !draftDirty && themeId === customTheme.id
 
-            <div className="theme-page__dialog-group">
-              <div className="theme-page__dialog-subhead">
-                <strong>Custom Themes</strong>
-                <Tag type={customThemeEntries.length > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                  {customThemeEntries.length > 0 ? `${customThemeEntries.length} saved` : 'None'}
-                </Tag>
+                  return (
+                    <div key={`custom-${customTheme.id}`} className="theme-page__catalog-row">
+                      <button
+                        type="button"
+                        className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
+                        onClick={() => onRequestThemeSelection(customTheme.id)}
+                        aria-pressed={active}
+                      >
+                        <span className="theme-page__catalog-item-copy">
+                          <strong>{customTheme.name}</strong>
+                          <span>{customTheme.description}</span>
+                        </span>
+                        <span className="theme-page__catalog-item-meta">
+                          <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
+                            {active ? 'Active' : 'Custom'}
+                          </Tag>
+                          <ThemeSwatchStrip theme={resolvePreviewTheme(customTheme.id, customTheme)} />
+                        </span>
+                      </button>
+                      <Button kind="ghost" size="sm" onClick={() => onDeleteCustomTheme(customTheme.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
-              {customThemeEntries.length === 0 ? (
-                <p className="theme-page__group-note">Save the current draft to build a reusable library entry.</p>
-              ) : (
-                <div className="theme-page__catalog-list">
-                  {customThemeEntries.map((customTheme) => {
-                    const active = !draftDirty && themeId === customTheme.id
-
-                    return (
-                      <div key={customTheme.id} className="theme-page__catalog-row">
-                        <button
-                          type="button"
-                          className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-                          onClick={() => onRequestThemeSelection(customTheme.id)}
-                          aria-pressed={active}
-                        >
-                          <span className="theme-page__catalog-item-copy">
-                            <strong>{customTheme.name}</strong>
-                            <span>{customTheme.description}</span>
-                          </span>
-                          <span className="theme-page__catalog-item-meta">
-                            <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
-                              {active ? 'Active' : 'Custom'}
-                            </Tag>
-                            <ThemeSwatchStrip theme={resolvePreviewTheme(customTheme.id, customTheme)} />
-                          </span>
-                        </button>
-                        <Button kind="ghost" size="sm" onClick={() => onDeleteCustomTheme(customTheme.id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
 
             <div className="theme-page__dialog-group">
@@ -2312,73 +2307,3 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
   )
 }
 
-function ThemeCatalogVirtualList({
-  ids,
-  themeId,
-  draftDirty,
-  onSelect,
-}: {
-  ids: string[]
-  themeId: string
-  draftDirty: boolean
-  onSelect: (themeId: string) => void
-}) {
-  const height = Math.min(ids.length * PRESET_THEME_ROW_HEIGHT, PRESET_THEME_LIST_MAX_HEIGHT)
-
-  return (
-    <div className="theme-page__catalog-list theme-page__catalog-list--virtualized" style={{ height }}>
-      <AutoSizer defaultWidth={320} defaultHeight={height}>
-        {({ width, height: autoHeight }) => (
-          <FixedSizeList
-            width={width || 320}
-            height={autoHeight || height}
-            itemCount={ids.length}
-            itemSize={PRESET_THEME_ROW_HEIGHT}
-            overscanCount={4}
-            itemData={{ ids, themeId, draftDirty, onSelect }}
-          >
-            {PresetThemeRow}
-          </FixedSizeList>
-        )}
-      </AutoSizer>
-    </div>
-  )
-}
-
-function PresetThemeRow({
-  index,
-  style,
-  data,
-}: ListChildComponentProps<{
-  ids: string[]
-  themeId: string
-  draftDirty: boolean
-  onSelect: (themeId: string) => void
-}>) {
-  const presetThemeId = data.ids[index]
-  const presetTheme = builtInThemes[presetThemeId]
-  const active = !data.draftDirty && data.themeId === presetThemeId
-  const previewTheme = resolvePreviewTheme(presetThemeId, presetTheme)
-
-  return (
-    <div style={style} className="theme-page__catalog-row-virtual">
-      <button
-        type="button"
-        className={`theme-page__catalog-item${active ? ' theme-page__catalog-item--active' : ''}`}
-        onClick={() => data.onSelect(presetThemeId)}
-        aria-pressed={active}
-      >
-        <span className="theme-page__catalog-item-copy">
-          <strong>{presetTheme.name}</strong>
-          <span>{presetTheme.description}</span>
-        </span>
-        <span className="theme-page__catalog-item-meta">
-          <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
-            {active ? 'Active' : themeCatalogLabel(presetThemeId, presetTheme)}
-          </Tag>
-          <ThemeSwatchStrip theme={previewTheme} />
-        </span>
-      </button>
-    </div>
-  )
-}

@@ -220,7 +220,7 @@ describe('ThemePage', () => {
     expect(screen.getByRole('combobox', { name: /^scheme$/i })).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /Carbon gray 10/i }).length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /Carbon white/i })).toBeTruthy()
-    expect(screen.getByText('Quick Starts')).toBeTruthy()
+    expect(screen.getByText('Themes')).toBeTruthy()
   })
 
   it('persists desktop wallpaper mode selections from the background section', () => {

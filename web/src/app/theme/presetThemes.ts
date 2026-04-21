@@ -41,6 +41,196 @@ function preset(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   0. CARBON GRAY SHELLS (g20–g80)
+   Intermediate stock themes filling the gap between the four core Carbon
+   base themes (white, g10, g90, g100). g20–g50 are light shells; g60–g80
+   are dark shells. Uses IBM Carbon v11 gray token hexes for bg/surface
+   layers and blue-60 (#0f62fe) / blue-50 (#4589ff) for interactive primary.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const carbonGray20 = preset(
+  'carbon-gray-20',
+  'Carbon gray 20',
+  'blue',
+  'g10',
+  {
+    bg: '#e0e0e0',
+    surface: '#f4f4f4',
+    'surface-2': '#e0e0e0',
+    'surface-3': '#c6c6c6',
+    interactive: '#0f62fe',
+    'interactive-hover': '#0050e6',
+    'interactive-active': '#0043ce',
+    primary: '#0f62fe',
+    'primary-strong': '#0043ce',
+    accent: '#0f62fe',
+    border: '#c6c6c6',
+    'border-strong': '#8d8d8d',
+    'text-primary': '#161616',
+    'text-secondary': '#525252',
+    'text-inverse': '#ffffff',
+    'focus-ring': '#0f62fe',
+  },
+  'Light-neutral operator shell one step darker than gray 10 for daytime editing with softer surface contrast.',
+);
+
+const carbonGray30 = preset(
+  'carbon-gray-30',
+  'Carbon gray 30',
+  'blue',
+  'g10',
+  {
+    bg: '#c6c6c6',
+    surface: '#e0e0e0',
+    'surface-2': '#c6c6c6',
+    'surface-3': '#a8a8a8',
+    interactive: '#0f62fe',
+    'interactive-hover': '#0050e6',
+    'interactive-active': '#0043ce',
+    primary: '#0f62fe',
+    'primary-strong': '#0043ce',
+    accent: '#0f62fe',
+    border: '#a8a8a8',
+    'border-strong': '#6f6f6f',
+    'text-primary': '#161616',
+    'text-secondary': '#525252',
+    'text-inverse': '#ffffff',
+    'focus-ring': '#0f62fe',
+  },
+  'Mid-light Carbon shell with gray 30 canvas for long sessions that want reduced glare from bright white layers.',
+);
+
+const carbonGray40 = preset(
+  'carbon-gray-40',
+  'Carbon gray 40',
+  'blue',
+  'g10',
+  {
+    bg: '#a8a8a8',
+    surface: '#c6c6c6',
+    'surface-2': '#a8a8a8',
+    'surface-3': '#8d8d8d',
+    interactive: '#0f62fe',
+    'interactive-hover': '#0050e6',
+    'interactive-active': '#0043ce',
+    primary: '#0f62fe',
+    'primary-strong': '#0043ce',
+    accent: '#0f62fe',
+    border: '#8d8d8d',
+    'border-strong': '#6f6f6f',
+    'text-primary': '#161616',
+    'text-secondary': '#393939',
+    'text-inverse': '#ffffff',
+    'focus-ring': '#0f62fe',
+  },
+  'Neutral-gray Carbon shell on gray 40 — the bridge shell between the light and dark Carbon families.',
+);
+
+const carbonGray50 = preset(
+  'carbon-gray-50',
+  'Carbon gray 50',
+  'blue',
+  'g10',
+  {
+    bg: '#8d8d8d',
+    surface: '#a8a8a8',
+    'surface-2': '#8d8d8d',
+    'surface-3': '#6f6f6f',
+    interactive: '#0f62fe',
+    'interactive-hover': '#4589ff',
+    'interactive-active': '#0043ce',
+    primary: '#0f62fe',
+    'primary-strong': '#0043ce',
+    accent: '#0f62fe',
+    border: '#6f6f6f',
+    'border-strong': '#525252',
+    'text-primary': '#161616',
+    'text-secondary': '#262626',
+    'text-inverse': '#ffffff',
+    'focus-ring': '#0f62fe',
+  },
+  'Deepest of the light Carbon shells — gray 50 canvas with still-dark text for high-ambient-light environments.',
+);
+
+const carbonGray60 = preset(
+  'carbon-gray-60',
+  'Carbon gray 60',
+  'blue',
+  'g100',
+  {
+    bg: '#6f6f6f',
+    surface: '#525252',
+    'surface-2': '#6f6f6f',
+    'surface-3': '#8d8d8d',
+    interactive: '#4589ff',
+    'interactive-hover': '#6ea6ff',
+    'interactive-active': '#0f62fe',
+    primary: '#4589ff',
+    'primary-strong': '#0f62fe',
+    accent: '#78a9ff',
+    border: '#525252',
+    'border-strong': '#8d8d8d',
+    'text-primary': '#f4f4f4',
+    'text-secondary': '#c6c6c6',
+    'text-inverse': '#161616',
+    'focus-ring': '#78a9ff',
+  },
+  'Shallowest of the dark Carbon shells — gray 60 canvas with light text for moderate dim-room studio work.',
+);
+
+const carbonGray70 = preset(
+  'carbon-gray-70',
+  'Carbon gray 70',
+  'blue',
+  'g100',
+  {
+    bg: '#525252',
+    surface: '#393939',
+    'surface-2': '#525252',
+    'surface-3': '#6f6f6f',
+    interactive: '#4589ff',
+    'interactive-hover': '#6ea6ff',
+    'interactive-active': '#0f62fe',
+    primary: '#4589ff',
+    'primary-strong': '#0f62fe',
+    accent: '#78a9ff',
+    border: '#6f6f6f',
+    'border-strong': '#8d8d8d',
+    'text-primary': '#f4f4f4',
+    'text-secondary': '#c6c6c6',
+    'text-inverse': '#161616',
+    'focus-ring': '#78a9ff',
+  },
+  'Mid-dark Carbon shell on gray 70 — softer than gray 90 while retaining a clear dark-mode feel.',
+);
+
+const carbonGray80 = preset(
+  'carbon-gray-80',
+  'Carbon gray 80',
+  'blue',
+  'g100',
+  {
+    bg: '#393939',
+    surface: '#262626',
+    'surface-2': '#393939',
+    'surface-3': '#525252',
+    interactive: '#4589ff',
+    'interactive-hover': '#6ea6ff',
+    'interactive-active': '#0f62fe',
+    primary: '#4589ff',
+    'primary-strong': '#0f62fe',
+    accent: '#78a9ff',
+    border: '#525252',
+    'border-strong': '#6f6f6f',
+    'text-primary': '#f4f4f4',
+    'text-secondary': '#c6c6c6',
+    'text-inverse': '#161616',
+    'focus-ring': '#78a9ff',
+  },
+  'Deep Carbon shell on gray 80 — sits between gray 90 and gray 100 for control-room dim lighting.',
+);
+
+/* ═══════════════════════════════════════════════════════════════════════════
    1. WINDOWS CLASSIC ERA
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -1522,6 +1712,14 @@ const cyberpunk2077 = preset(
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export const PRESET_THEMES: Theme[] = [
+  // Carbon Gray Shells
+  carbonGray20,
+  carbonGray30,
+  carbonGray40,
+  carbonGray50,
+  carbonGray60,
+  carbonGray70,
+  carbonGray80,
   // Windows Classic Era
   win31,
   win95,
