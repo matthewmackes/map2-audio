@@ -1,10 +1,27 @@
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
 
+class MockResizeObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+;(globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
+  MockResizeObserver
+
 import { ApiWebhooksPage } from './ApiWebhooksPage'
 
 describe('ApiWebhooksPage', () => {
   beforeEach(() => {
+    ;(globalThis as unknown as { fetch: typeof fetch }).fetch = jest
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ targets: [], count: 0, events: [], peers: [] }),
+        } as Response),
+      ) as unknown as typeof fetch
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: jest.fn().mockImplementation((query: string) => ({

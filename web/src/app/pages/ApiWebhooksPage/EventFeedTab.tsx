@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { PlatformEvent, PlatformEventSeverity } from '../../../map2/platformEvent'
 import { getPlatformEventTransport } from '../../services/platformEventTransport'
+import { WebhooksSection } from './WebhooksSection'
 import './EventFeedTab.css'
 
 const MAX_BUFFER = 2000
@@ -352,6 +353,8 @@ export function EventFeedTab() {
           )}
         </DataTable>
       </div>
+
+      <WebhooksSection />
     </div>
   )
 }

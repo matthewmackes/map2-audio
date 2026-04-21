@@ -479,7 +479,17 @@ async def lifespan(app):
         await safe_start_service(logger, "Network Event Producer", network_producer.start)
         await safe_start_service(logger, "Plugin Event Producer", plugin_producer.start)
         await safe_start_service(logger, "Database Event Producer", database_producer.start)
-        
+
+        try:
+            from app.services.webhook_dispatcher_service import get_webhook_dispatcher_service
+
+            webhook_dispatcher = get_webhook_dispatcher_service()
+            await safe_start_service(
+                logger, "Outbound Webhook Dispatcher", webhook_dispatcher.start
+            )
+        except Exception as e:
+            logger.warning(f"Failed to start outbound webhook dispatcher: {e}")
+
         # System startup event
         import time
         boot_time = time.time() - __import__('psutil').boot_time()
@@ -825,7 +835,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'midi_commander_surface', 'transport', 'brain', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'enriched_midi_physical_surfaces', 'nodes', 'branding']
+        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'webhooks', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'midi_commander_surface', 'transport', 'brain', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'enriched_midi_physical_surfaces', 'nodes', 'branding']
         route_load_failures = []
 
         for route_name in route_modules:
