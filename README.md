@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2521** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2523** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`abf24906`](https://github.com/matthewmackes/map2-audio/commit/abf24906cc6cbf61f3260439bedd7ff99699fcf7) | feat(T710-sub31): fix ThemePage.test.tsx mock drift (pre-... | Map2 Audio | 2026-04-21 |
+| [`4cefd95b`](https://github.com/matthewmackes/map2-audio/commit/4cefd95b8d8803f5dd915669e6b3c5e8421e49ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`80f81113`](https://github.com/matthewmackes/map2-audio/commit/80f81113a2147413f376b63db352d8a0347494fa) | feat(T710-sub28): document Unified Channel Grid + T710 go... | Map2 Audio | 2026-04-21 |
 | [`1c035fa0`](https://github.com/matthewmackes/map2-audio/commit/1c035fa05f104490592ac3ad07aaf7b4c26346d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`bd83a134`](https://github.com/matthewmackes/map2-audio/commit/bd83a134fb807431af31d5e9f62bc1572ce0bcd0) | feat(T710-sub27): atomic build + production server verifi... | Map2 Audio | 2026-04-21 |
 | [`0de71db6`](https://github.com/matthewmackes/map2-audio/commit/0de71db61691ddd1446fec715fb13fe77737f74e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`a4f2d9d6`](https://github.com/matthewmackes/map2-audio/commit/a4f2d9d640057338f8f36fd6f9b496e947795bb9) | feat(T710-sub26): verify SnapshotEditor test suite (145/1... | Map2 Audio | 2026-04-21 |
 | [`ad675188`](https://github.com/matthewmackes/map2-audio/commit/ad675188769b338d82eb3e8c4d72629f1b4e8ef7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`0c092af7`](https://github.com/matthewmackes/map2-audio/commit/0c092af7e19929954411363cb7865c795b0e76fd) | feat(T710-sub25): swap SignalCanvas body to UnifiedChanne... | Map2 Audio | 2026-04-21 |
-| [`3046e016`](https://github.com/matthewmackes/map2-audio/commit/3046e016e70a7a07e36e604cdf11f3cc6dbc6a23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
