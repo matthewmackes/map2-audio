@@ -2,61 +2,61 @@
  * Universal Effect Icon Provider
  *
  * Single source of truth for all effect category icons across the platform.
- * Replaces the fragmented PiPedal / MapAppIcons / Carbon icon lookups with
- * one API: `getEffectIcon(category)`.
- *
- * Icon assets now resolve from the staged MAP noun set where available,
- * with remaining legacy HorizontalSignalChain SVGs preserved until their
- * migration wave lands.
+ * Backed by the canonical fx_*.svg set at `web/src/assets/fx-icons/` (39
+ * icons, blueprint line-art aesthetic). Icons use `stroke="currentColor"`
+ * so Carbon theme tokens drive color.
  */
 
 import type { FC, SVGProps } from 'react'
 
-// ── SVG icon components (Vite ?react loader) ──────────────────────────
-import FxAmplifier from './noun/amplifier/fx-amplifier.svg?react'
-import FxAnalyzer from '../HorizontalSignalChain/icons/fx_analyzer.svg?react'
-import FxChorus from '../HorizontalSignalChain/icons/fx_chorus.svg?react'
-import FxCompressor from './noun/dynamics/fx-compressor.svg?react'
-import FxDelay from '../HorizontalSignalChain/icons/fx_delay.svg?react'
-import FxDistortion from './noun/distortion/fx-distortion.svg?react'
-import FxDrums from './noun/drums/fx-drums.svg?react'
-import FxExpression from './noun/expression/fx-expression.svg?react'
-import FxEq from '../HorizontalSignalChain/icons/fx_eq.svg?react'
-import FxFilter from '../HorizontalSignalChain/icons/fx_filter.svg?react'
-import FxGate from '../HorizontalSignalChain/icons/fx_gate.svg?react'
-import FxLimiter from '../HorizontalSignalChain/icons/fx_limiter.svg?react'
-import FxMixer from '../HorizontalSignalChain/icons/fx_mixer.svg?react'
-import FxModulator from './noun/modulation/fx-modulation.svg?react'
-import FxPhaser from '../HorizontalSignalChain/icons/fx_phaser.svg?react'
-import FxPitch from '../HorizontalSignalChain/icons/fx_pitch.svg?react'
-import FxPlugin from './noun/multi-effect/fx-plugin.svg?react'
-import FxRack from './noun/multi-effect/fx-rack.svg?react'
-import FxReverb from './noun/reverb/fx-reverb.svg?react'
-import FxSimulator from '../HorizontalSignalChain/icons/fx_simulator.svg?react'
-import FxUtility from './noun/utility/fx-utility.svg?react'
+// ── Handoff fx_*.svg icons (blueprint line-art) ───────────────────────
+import FxAmplifier from '../../../assets/fx-icons/fx_amplifier.svg?react'
+import FxAnalyzer from '../../../assets/fx-icons/fx_analyzer.svg?react'
+import FxChorus from '../../../assets/fx-icons/fx_chorus.svg?react'
+import FxCompressor from '../../../assets/fx-icons/fx_compressor.svg?react'
+import FxConstant from '../../../assets/fx-icons/fx_constant.svg?react'
+import FxConverter from '../../../assets/fx-icons/fx_converter.svg?react'
+import FxDelay from '../../../assets/fx-icons/fx_delay.svg?react'
+import FxDial from '../../../assets/fx-icons/fx_dial.svg?react'
+import FxDistortion from '../../../assets/fx-icons/fx_distortion.svg?react'
+import FxEmpty from '../../../assets/fx-icons/fx_empty.svg?react'
+import FxEq from '../../../assets/fx-icons/fx_eq.svg?react'
+import FxError from '../../../assets/fx-icons/fx_error.svg?react'
+import FxFilter from '../../../assets/fx-icons/fx_filter.svg?react'
+import FxFilterHp from '../../../assets/fx-icons/fx_filter_hp.svg?react'
+import FxFlanger from '../../../assets/fx-icons/fx_flanger.svg?react'
+import FxFlanger2 from '../../../assets/fx-icons/fx_flanger2.svg?react'
+import FxFunction from '../../../assets/fx-icons/fx_function.svg?react'
+import FxGate from '../../../assets/fx-icons/fx_gate.svg?react'
+import FxGenerator from '../../../assets/fx-icons/fx_generator.svg?react'
+import FxInstrument from '../../../assets/fx-icons/fx_instrument.svg?react'
+import FxLexicon from '../../../assets/fx-icons/fx_lexicon.svg?react'
+import FxLimiter from '../../../assets/fx-icons/fx_limiter.svg?react'
+import FxLr from '../../../assets/fx-icons/fx_lr.svg?react'
+import FxMixer from '../../../assets/fx-icons/fx_mixer.svg?react'
+import FxModulator from '../../../assets/fx-icons/fx_modulator.svg?react'
+import FxNam from '../../../assets/fx-icons/fx_nam.svg?react'
+import FxOscillator from '../../../assets/fx-icons/fx_oscillator.svg?react'
+import FxParametricEq from '../../../assets/fx-icons/fx_parametric_eq.svg?react'
+import FxPhaser from '../../../assets/fx-icons/fx_phaser.svg?react'
+import FxPitch from '../../../assets/fx-icons/fx_pitch.svg?react'
+import FxPlugin from '../../../assets/fx-icons/fx_plugin.svg?react'
+import FxReverb from '../../../assets/fx-icons/fx_reverb.svg?react'
+import FxSimulator from '../../../assets/fx-icons/fx_simulator.svg?react'
+import FxSpatial from '../../../assets/fx-icons/fx_spatial.svg?react'
+import FxSpectral from '../../../assets/fx-icons/fx_spectral.svg?react'
+import FxSplitA from '../../../assets/fx-icons/fx_split_a.svg?react'
+import FxSplitB from '../../../assets/fx-icons/fx_split_b.svg?react'
+import FxTerminal from '../../../assets/fx-icons/fx_terminal.svg?react'
+import FxUtility from '../../../assets/fx-icons/fx_utility.svg?react'
 
-// Also keep these PiPedal originals that have no branding replacement
-import FxConstant from '../HorizontalSignalChain/icons/fx_constant.svg?react'
-import FxConverter from '../HorizontalSignalChain/icons/fx_converter.svg?react'
-import FxDial from '../HorizontalSignalChain/icons/fx_dial.svg?react'
-import FxEmpty from '../HorizontalSignalChain/icons/fx_empty.svg?react'
-import FxError from '../HorizontalSignalChain/icons/fx_error.svg?react'
-import FxFilterHp from '../HorizontalSignalChain/icons/fx_filter_hp.svg?react'
-import FxFlanger from '../HorizontalSignalChain/icons/fx_flanger.svg?react'
-import FxFlanger2 from '../HorizontalSignalChain/icons/fx_flanger2.svg?react'
-import FxFunction from '../HorizontalSignalChain/icons/fx_function.svg?react'
-import FxGenerator from '../HorizontalSignalChain/icons/fx_generator.svg?react'
-import FxInstrument from '../HorizontalSignalChain/icons/fx_instrument.svg?react'
-import FxLexicon from './noun/reverb/fx-lexicon.svg?react'
-import FxLr from '../HorizontalSignalChain/icons/fx_lr.svg?react'
-import FxNam from '../HorizontalSignalChain/icons/fx_nam.svg?react'
-import FxOscillator from '../HorizontalSignalChain/icons/fx_oscillator.svg?react'
-import FxParametricEq from './noun/eq/fx-parametric-eq.svg?react'
-import FxSpatial from './noun/reverb/fx-spatial.svg?react'
-import FxSpectral from './noun/monitoring/fx-spectral.svg?react'
-import FxSplitA from './noun/routing/fx-split.svg?react'
-import FxSplitB from '../HorizontalSignalChain/icons/fx_split_b.svg?react'
-import FxTerminal from './noun/utility/fx-terminal.svg?react'
+// Aliases for removed noun/ icons (T710-sub03):
+//   FxDrums → FxInstrument (drum machines are instruments)
+//   FxExpression → FxDial (expression pedals are single-dial controllers)
+//   FxRack → FxPlugin (multi-effect rack is a plugin container)
+const FxDrums = FxInstrument
+const FxExpression = FxDial
+const FxRack = FxPlugin
 
 export type EffectIconComponent = FC<SVGProps<SVGSVGElement>>
 export type EffectIconTone = 'outline' | 'solid'
@@ -223,26 +223,9 @@ const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
   other: FxPlugin,
 }
 
-const OUTLINE_EFFECT_ICONS = new Set<EffectIconComponent>([
-  FxAmplifier,
-  FxCompressor,
-  FxDistortion,
-  FxDrums,
-  FxExpression,
-  FxLexicon,
-  FxModulator,
-  FxParametricEq,
-  FxRack,
-  FxReverb,
-  FxSpatial,
-  FxSpectral,
-  FxSplitA,
-  FxTerminal,
-  FxUtility,
-])
-
-function getEffectIconTone(component: EffectIconComponent): EffectIconTone {
-  return OUTLINE_EFFECT_ICONS.has(component) ? 'outline' : 'solid'
+// Handoff fx_*.svg set is uniform line-art; every icon is outline-toned.
+function getEffectIconTone(_component: EffectIconComponent): EffectIconTone {
+  return 'outline'
 }
 
 function resolveEffectIcon(category: string | undefined): { component: EffectIconComponent; matched: boolean } {
