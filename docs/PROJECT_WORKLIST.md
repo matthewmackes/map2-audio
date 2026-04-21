@@ -152,10 +152,10 @@ Description:
   - Atomic commits on master + `git push origin master && git push gitlab master` per phase
   - typecheck + build + focused Jest PASS per phase
 Assigned to: Claude
-Last updated: 2026-04-21 - Claude (Phase A — deviceRegistry foundation — shipped; 6 phases remain)
+Last updated: 2026-04-21 - Claude (Phases A & B — registry + DevicesShell shipped; 5 phases remain)
 Completion progress:
   - T2420-subA: [✓] Done 2026-04-21 — Phase 1 — Device Registry foundation. `web/src/app/data/deviceRegistry.ts` (288 lines) with 6 hardware (mpx1 8v, intelfx 7v, tesira 12v, edirol-ua1000 4v, hotone-jogg 1v, lcd 6v) + 6 control-surface entries (maschine-mk1, ableton-push, ground-control-pro, meloaudio-midi-commander, novation-launch-control, mackie-mcu-pro — all planned 1v each). Exports: `DeviceView`, `DeviceStatusKind`, `DeviceStatusSource` (tagged union), `DeviceRegistryEntry`, `DEVICE_REGISTRY`, `getDeviceEntry()`, `getDeviceView()`, `buildDeviceRoute()`. Icon fixes during typecheck: `Audio` → `Music` (5 uses), `Volume` → `VolumeUp`. Validation: `npm run typecheck` PASS, `npm run build` PASS in 24.11s. Non-breaking additive commit — registry exported but not yet wired into any shell.
-  - T2420-subB: Phase 2 — `DevicesShell` with `UnifiedWorkspaceSideNav` sidebar binding
+  - T2420-subB: [✓] Done 2026-04-21 — Phase 2 — `DevicesShell` with `UnifiedWorkspaceSideNav` sidebar binding. `web/src/app/components/Devices/DevicesShell.tsx` + `DevicesShell.css` (146 + 32 lines). Reads `deviceId`/`view` from `useParams`; renders one `UnifiedWorkspaceSideNavItem` per device, plus indented child rows for the active device's sub-views. Falls through to `EmptyState` for unknown/missing device. Mounts `<DeviceContextBanner>` when the entry has `deviceContextKey` (added as optional field on `DeviceRegistryEntry`; populated for 6 hardware devices — control surfaces remain undefined). Renders `<Outlet />` for the view-level component — consumed by the router rewrite in Phase 5 (subE). Validation: `npm run typecheck` PASS, `npm run build` PASS (24.17s). Non-breaking — shell not yet wired into any route.
   - T2420-subC: Phase 3 — `DevicesOverview` grid landing page at `/devices`
   - T2420-subD: Phase 4 — Move/rename `components/MPX1/`, `components/IntelFX/`, `components/Tesira/` into `components/Devices/`; extract `EdirolUA1000/`, `HoToneJoGG/`, `LCD/` from their page files
   - T2420-subE: Phase 5 — Router rewrite in `App.tsx` (replace 7 route blocks with 1 `/devices/:deviceId/:view`), add `DeviceContextBridge` + `DeviceViewRouter`

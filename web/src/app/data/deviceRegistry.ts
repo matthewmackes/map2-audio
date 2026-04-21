@@ -93,6 +93,12 @@ export interface DeviceRegistryEntry {
   kind: 'audio-interface' | 'processor' | 'console' | 'control-surface'
   /** Optional legacy route — used by `App.tsx` redirect shim during migration. */
   legacyRoute?: string
+  /**
+   * Key passed to `useDeviceNodeContext()` + `<DeviceContextBanner deviceKey={...} />`.
+   * Only set for devices that resolve through the node-scoped device context system
+   * (hardware interfaces and processors); control surfaces manage presence separately.
+   */
+  deviceContextKey?: string
 }
 
 // =============================================================================
@@ -181,6 +187,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     statusSource: { kind: 'device-location', deviceKey: 'lexicon-mpx1' },
     kind: 'processor',
     legacyRoute: '/mpx1',
+    deviceContextKey: 'lexicon-mpx1',
   },
   {
     id: 'intelfx',
@@ -194,6 +201,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     statusSource: { kind: 'device-location', deviceKey: 'rocktron-intelfx' },
     kind: 'processor',
     legacyRoute: '/intelfx',
+    deviceContextKey: 'rocktron-intelfx',
   },
   {
     id: 'tesira',
@@ -207,6 +215,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     statusSource: { kind: 'device-location', deviceKey: 'biamp-tesira' },
     kind: 'processor',
     legacyRoute: '/tesira',
+    deviceContextKey: 'biamp-tesira',
   },
   {
     id: 'edirol-ua1000',
@@ -220,6 +229,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     statusSource: { kind: 'device-location', deviceKey: 'edirol-ua1000' },
     kind: 'audio-interface',
     legacyRoute: '/edirol-ua1000',
+    deviceContextKey: 'edirol-ua1000',
   },
   {
     id: 'hotone-jogg',
@@ -233,6 +243,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     statusSource: { kind: 'device-location', deviceKey: 'hotone-jogg' },
     kind: 'audio-interface',
     legacyRoute: '/hotone-jogg',
+    deviceContextKey: 'hotone-jogg',
   },
   {
     id: 'lcd',
