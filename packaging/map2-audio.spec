@@ -1,7 +1,7 @@
 Name:           map2-audio
 Version:        1.0.0
 Release:        1%{?dist}
-Summary:        MAP2 Audio Platform - Distributed Audio Processing Cluster
+Summary:        Mackes Audio Platform - Professional real-time audio processing
 
 License:        MIT
 URL:            https://github.com/matthewmackes/map2-audio

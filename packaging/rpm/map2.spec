@@ -1,10 +1,10 @@
 Name:           map2
 Version:        0.1.0
 Release:        1%{?dist}
-Summary:        Mackes Audio Platform V2 - Professional audio processing
+Summary:        Mackes Audio Platform - Professional real-time audio processing
 
 License:        MIT
-URL:            https://example.com/map2
+URL:            https://github.com/matthewmackes/map2-audio
 Source0:        %{name}-%{version}.tar.gz
 
 BuildArch:      noarch
@@ -20,7 +20,7 @@ Requires:       python3-numpy >= 1.24.0
 Requires:       python3-textual >= 0.46.0
 
 %description
-MAP2 Audio Platform V2 - Professional real-time audio processing with
+Mackes Audio Platform - Professional real-time audio processing with
 LV2 plugin hosting, MIDI routing, and dual LCD monitoring.
 
 %prep
