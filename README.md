@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1192** TypeScript | **136** C++/H | **144** Docs | **2507** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1194** TypeScript | **136** C++/H | **144** Docs | **2509** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e643a116`](https://github.com/matthewmackes/map2-audio/commit/e643a1168f2c499c1718e1bebf795bb3fe218c7c) | feat(T710-sub22): add WireOverlay SVG layer with 3 wire k... | Map2 Audio | 2026-04-20 |
+| [`5eff6a2c`](https://github.com/matthewmackes/map2-audio/commit/5eff6a2caf3b4aab19ab0042f494e4e7a8ebf26b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`492a3352`](https://github.com/matthewmackes/map2-audio/commit/492a3352a2422dc3f59402ee6bfceedd627e6256) | feat(T710-sub21): add useRefuseWhenFull hook + isRowFull ... | Map2 Audio | 2026-04-20 |
 | [`b80b2ae4`](https://github.com/matthewmackes/map2-audio/commit/b80b2ae4c05b8963f6d66d2ab99834acc6e6043d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`da2e1ca3`](https://github.com/matthewmackes/map2-audio/commit/da2e1ca3a36eb00157bdc71a02cd06221343c845) | feat(T710-sub20): add BlockPicker.tsx with category filte... | Map2 Audio | 2026-04-20 |
 | [`f80d027b`](https://github.com/matthewmackes/map2-audio/commit/f80d027bb4fe54999f119b5bb03d4d7c959b0127) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`581c0573`](https://github.com/matthewmackes/map2-audio/commit/581c0573371c12fc337666ea15b4a13c7a5cab0b) | feat(T710-sub19): add UnifiedChannelGrid composition + sc... | Map2 Audio | 2026-04-20 |
 | [`ac1a28f5`](https://github.com/matthewmackes/map2-audio/commit/ac1a28f5428669796e8485f583efbdf3413e3e1b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`dd596758`](https://github.com/matthewmackes/map2-audio/commit/dd596758c8f8e1f51b4845e9d6dd597314341aa3) | feat(T710-sub18): add ChannelRow.tsx composing header + 8... | Map2 Audio | 2026-04-20 |
-| [`e94b5e07`](https://github.com/matthewmackes/map2-audio/commit/e94b5e07d8d4c75741823cbc06a60996e64bcb03) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
