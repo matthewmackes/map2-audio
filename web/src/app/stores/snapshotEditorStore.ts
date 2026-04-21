@@ -1,8 +1,11 @@
 import { create } from 'zustand'
 import type { Plugin, Snapshot, SnapshotDetail, AutomationLane } from '../../map2/types'
-import type {
-  JuceGridFlowSlotState,
-  JuceGridRoutingState,
+import {
+  createDefaultJuceGridRouting,
+  normalizeJuceGridStateSources,
+  type JuceGridFlowNormalizationOptions,
+  type JuceGridFlowSlotState,
+  type JuceGridRoutingState,
 } from '../components/SnapshotEditor/snapshotEditorFlowState'
 import { buildSnapshotIoModalState, type SnapshotIoModalState } from '../utils/snapshotIoBindings'
 import type { SnapshotRoutingLiveApplyState } from '../utils/snapshotRoutingLiveState'
@@ -10,9 +13,15 @@ import type { SnapshotAbSwitchMidiMessageType } from '../utils/snapshotAbSwitchM
 import type { JuceGridRoutingMarkerId } from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
 
 export const SNAPSHOT_EDITOR_FLOWS_STORAGE_KEY = 'map2_juce_grid_flows_v2'
-export const SNAPSHOT_EDITOR_FOCUS_STORAGE_KEY = 'map2-focus'
+export const SNAPSHOT_EDITOR_FLOWS_LEGACY_STORAGE_KEY = 'map2_grid_flows_v2'
+export const SNAPSHOT_EDITOR_ROUTING_STORAGE_KEY = 'map2_juce_grid_routing_v2'
+export const SNAPSHOT_EDITOR_ROUTING_LEGACY_STORAGE_KEY = 'map2_grid_routing_v2'
+export const SNAPSHOT_EDITOR_ACTIVE_STORAGE_KEY = 'map2_juce_grid_active_v2'
+export const SNAPSHOT_EDITOR_ACTIVE_LEGACY_STORAGE_KEY = 'map2_grid_active_v2'
 export const SNAPSHOT_EDITOR_PLUGIN_CATEGORY_STORAGE_KEY = 'map2_juce_grid_plugin_category'
+export const SNAPSHOT_EDITOR_PLUGIN_CATEGORY_LEGACY_STORAGE_KEY = 'map2_grid_plugin_category'
 export const SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_STORAGE_KEY = 'map2_juce_grid_collapsed_categories'
+export const SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_LEGACY_STORAGE_KEY = 'map2_grid_collapsed_categories'
 
 export type CompactTabId = 'grid' | 'editor' | 'routing' | 'presets'
 
@@ -299,18 +308,79 @@ export interface SnapshotEditorActions {
   setFootswitchLabelDrafts: (drafts: FootswitchLabelDrafts) => void
 
   setPortSelectorFlowIndex: (index: number | null) => void
+
+  hydrateBucketAFromLocalStorage: (options: JuceGridFlowNormalizationOptions) => void
+  persistFlowSlots: () => void
+  persistRouting: () => void
+  persistActiveFlowIndex: () => void
+  persistSelectedCategory: () => void
+  persistCollapsedCategories: () => void
 }
 
 export type SnapshotEditorStore = SnapshotEditorState & SnapshotEditorActions
 
-const DEFAULT_ROUTING: JuceGridRoutingState = {
-  mode: 'parallel_blend',
-  activeSlotId: null,
-  blendPositions: {},
-  morphProgress: 0,
-  morphSourceSlotId: null,
-  morphTargetSlotId: null,
-  seriesOrder: [],
+const DEFAULT_ROUTING: JuceGridRoutingState = createDefaultJuceGridRouting()
+
+function parseStoredJson(...keys: string[]): unknown {
+  if (typeof localStorage === 'undefined') return null
+  for (const key of keys) {
+    const storedValue = localStorage.getItem(key)
+    if (!storedValue) continue
+    try {
+      return JSON.parse(storedValue)
+    } catch {
+      // continue to next key
+    }
+  }
+  return null
+}
+
+function readStringValue(primaryKey: string, legacyKey: string): string | null {
+  if (typeof localStorage === 'undefined') return null
+  return localStorage.getItem(primaryKey) ?? localStorage.getItem(legacyKey)
+}
+
+function safeLocalStorageSet(key: string, value: string): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // storage full / private mode — swallow
+  }
+}
+
+export function readPersistedFlows(
+  options: JuceGridFlowNormalizationOptions,
+): { flowSlots: JuceGridFlowSlotState[]; routing: JuceGridRoutingState; activeFlowIndex: number } {
+  return normalizeJuceGridStateSources(
+    parseStoredJson(SNAPSHOT_EDITOR_FLOWS_STORAGE_KEY, SNAPSHOT_EDITOR_FLOWS_LEGACY_STORAGE_KEY),
+    parseStoredJson(SNAPSHOT_EDITOR_ROUTING_STORAGE_KEY, SNAPSHOT_EDITOR_ROUTING_LEGACY_STORAGE_KEY),
+    readStringValue(SNAPSHOT_EDITOR_ACTIVE_STORAGE_KEY, SNAPSHOT_EDITOR_ACTIVE_LEGACY_STORAGE_KEY),
+    options,
+  )
+}
+
+export function readPersistedSelectedCategory(): string {
+  return (
+    readStringValue(
+      SNAPSHOT_EDITOR_PLUGIN_CATEGORY_STORAGE_KEY,
+      SNAPSHOT_EDITOR_PLUGIN_CATEGORY_LEGACY_STORAGE_KEY,
+    ) || 'all'
+  )
+}
+
+export function readPersistedCollapsedCategories(): Set<string> {
+  const raw = readStringValue(
+    SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_STORAGE_KEY,
+    SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_LEGACY_STORAGE_KEY,
+  )
+  if (!raw) return new Set<string>()
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? new Set<string>(parsed.filter((v): v is string => typeof v === 'string')) : new Set()
+  } catch {
+    return new Set<string>()
+  }
 }
 
 const DEFAULT_STATE: SnapshotEditorState = {
@@ -535,7 +605,38 @@ export const useSnapshotEditorStore = create<SnapshotEditorStore>()((set) => ({
 
   setPortSelectorFlowIndex: (portSelectorFlowIndex) => set({ portSelectorFlowIndex }),
 
-  // TODO sub11: Replace naive setters with localStorage write-through for
-  // flowSlots, routing, activeFlowIndex, selectedCategory, collapsedCategories.
-  // TODO sub11: Add sparse-null preservation for flowSlots on rehydrate.
+  hydrateBucketAFromLocalStorage: (options) => {
+    const { flowSlots, routing, activeFlowIndex } = readPersistedFlows(options)
+    set({
+      flowSlots,
+      routing,
+      activeFlowIndex,
+      selectedCategory: readPersistedSelectedCategory(),
+      collapsedCategories: readPersistedCollapsedCategories(),
+    })
+  },
+
+  persistFlowSlots: () => {
+    const { flowSlots } = useSnapshotEditorStore.getState()
+    safeLocalStorageSet(SNAPSHOT_EDITOR_FLOWS_STORAGE_KEY, JSON.stringify(flowSlots))
+  },
+  persistRouting: () => {
+    const { routing } = useSnapshotEditorStore.getState()
+    safeLocalStorageSet(SNAPSHOT_EDITOR_ROUTING_STORAGE_KEY, JSON.stringify(routing))
+  },
+  persistActiveFlowIndex: () => {
+    const { activeFlowIndex } = useSnapshotEditorStore.getState()
+    safeLocalStorageSet(SNAPSHOT_EDITOR_ACTIVE_STORAGE_KEY, String(activeFlowIndex))
+  },
+  persistSelectedCategory: () => {
+    const { selectedCategory } = useSnapshotEditorStore.getState()
+    safeLocalStorageSet(SNAPSHOT_EDITOR_PLUGIN_CATEGORY_STORAGE_KEY, selectedCategory)
+  },
+  persistCollapsedCategories: () => {
+    const { collapsedCategories } = useSnapshotEditorStore.getState()
+    safeLocalStorageSet(
+      SNAPSHOT_EDITOR_COLLAPSED_CATEGORIES_STORAGE_KEY,
+      JSON.stringify([...collapsedCategories]),
+    )
+  },
 }))
