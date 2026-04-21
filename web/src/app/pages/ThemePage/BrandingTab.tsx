@@ -3,7 +3,15 @@ import { Button, InlineNotification, TextInput, TextArea } from '@carbon/react'
 import { Reset, Save } from '@carbon/icons-react'
 
 import { useBranding } from '../../branding/BrandingContext'
-import type { BrandManifest, BrandPalette, BrandCopy } from '../../branding/brandingApi'
+import {
+  applyBrandOs,
+  fetchBrandOsStatus,
+  type BrandManifest,
+  type BrandPalette,
+  type BrandCopy,
+  type BrandOsStatus,
+  type ApplyOsResult,
+} from '../../branding/brandingApi'
 import './BrandingTab.css'
 
 type IdentityDraft = {
@@ -48,6 +56,42 @@ export function BrandingTab() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
+  const [osStatus, setOsStatus] = useState<BrandOsStatus | null>(null)
+  const [osStatusError, setOsStatusError] = useState<string | null>(null)
+  const [applying, setApplying] = useState(false)
+  const [applyResult, setApplyResult] = useState<ApplyOsResult | null>(null)
+
+  const refreshOsStatus = useCallback(async () => {
+    setOsStatusError(null)
+    try {
+      setOsStatus(await fetchBrandOsStatus())
+    } catch (err) {
+      setOsStatusError(err instanceof Error ? err.message : String(err))
+    }
+  }, [])
+
+  useEffect(() => {
+    void refreshOsStatus()
+  }, [refreshOsStatus])
+
+  const handleApplyOs = useCallback(
+    async (dryRun: boolean) => {
+      setApplying(true)
+      setApplyResult(null)
+      setSaveError(null)
+      try {
+        const result = await applyBrandOs({ dryRun, applyTemplates: true, applySystemd: true })
+        setApplyResult(result)
+        await refreshOsStatus()
+        setSavedNotice(dryRun ? 'OS branding dry-run complete.' : 'OS branding applied.')
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : String(err))
+      } finally {
+        setApplying(false)
+      }
+    },
+    [refreshOsStatus],
+  )
 
   useEffect(() => {
     setIdentity(identityFromBrand(brand))
@@ -306,6 +350,43 @@ export function BrandingTab() {
               <dd>{brand.copy?.welcomeHeadline ?? '—'}</dd>
             </dl>
           </div>
+        </article>
+
+        <article className="branding-card branding-card--wide">
+          <header className="branding-card__header">
+            <h3>OS branding</h3>
+            <p>Render templates and rewrite systemd Description lines from the manifest. Privileged install steps (Plymouth, /etc/issue.d) still run via the installer script.</p>
+          </header>
+          <div className="branding-card__body">
+            {osStatusError ? (
+              <InlineNotification kind="error" lowContrast title="Failed to read OS status" subtitle={osStatusError} hideCloseButton />
+            ) : null}
+            <dl className="branding-os-status">
+              <dt>Plymouth theme</dt>
+              <dd>{osStatus?.plymouthInstalled ? 'installed' : 'not installed'}</dd>
+              <dt>Login banner</dt>
+              <dd>{osStatus?.loginBannerInstalled ? 'installed' : 'not installed'}</dd>
+              <dt>Terminal welcome</dt>
+              <dd>{osStatus?.welcomeInstalled ? 'installed' : 'not installed'}</dd>
+              <dt>Generated env file</dt>
+              <dd>{osStatus?.generatedEnvExists ? 'present' : 'missing'}</dd>
+            </dl>
+            {applyResult ? (
+              <pre className="branding-apply-output">
+                {applyResult.steps
+                  .map((s) => `# ${s.step} (rc=${s.returncode})\n${s.stdout}${s.stderr ? `\n[stderr] ${s.stderr}` : ''}`)
+                  .join('\n\n')}
+              </pre>
+            ) : null}
+          </div>
+          <footer className="branding-card__footer">
+            <Button kind="tertiary" size="sm" onClick={() => handleApplyOs(true)} disabled={applying}>
+              Dry-run apply
+            </Button>
+            <Button size="sm" onClick={() => handleApplyOs(false)} disabled={applying}>
+              Apply to OS
+            </Button>
+          </footer>
         </article>
       </div>
     </section>

@@ -87,3 +87,48 @@ export async function resetBrandManifest(): Promise<BrandManifest> {
   }
   return (await res.json()) as BrandManifest
 }
+
+export type BrandOsStatus = {
+  plymouthInstalled: boolean
+  loginBannerInstalled: boolean
+  welcomeInstalled: boolean
+  generatedEnvExists: boolean
+  renderScript: string
+  systemdScript: string
+}
+
+export async function fetchBrandOsStatus(): Promise<BrandOsStatus> {
+  const res = await fetch('/api/branding/os-status', { headers: { Accept: 'application/json' } })
+  if (!res.ok) {
+    throw new Error(`os-status failed: ${res.status}`)
+  }
+  return (await res.json()) as BrandOsStatus
+}
+
+export type ApplyOsStep = {
+  step: string
+  returncode: number
+  stdout: string
+  stderr: string
+}
+
+export type ApplyOsResult = {
+  dryRun: boolean
+  steps: ApplyOsStep[]
+}
+
+export async function applyBrandOs(options: {
+  dryRun: boolean
+  applySystemd: boolean
+  applyTemplates: boolean
+}): Promise<ApplyOsResult> {
+  const res = await fetch('/api/branding/apply-os', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(options),
+  })
+  if (!res.ok) {
+    throw new Error(`apply-os failed: ${res.status}`)
+  }
+  return (await res.json()) as ApplyOsResult
+}

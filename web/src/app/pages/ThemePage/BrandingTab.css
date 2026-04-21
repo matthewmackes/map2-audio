@@ -184,3 +184,40 @@
   color: var(--cds-text-primary, #f4f4f4);
   word-break: break-all;
 }
+
+.branding-card--wide {
+  grid-column: 1 / -1;
+}
+
+.branding-os-status {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0 0 var(--cds-spacing-05, 1rem) 0;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+.branding-os-status dt {
+  color: var(--cds-text-helper, #8d8d8d);
+  font-variant: all-small-caps;
+  letter-spacing: 0.1em;
+}
+
+.branding-os-status dd {
+  margin: 0;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.branding-apply-output {
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--cds-spacing-04, 0.75rem);
+  background: var(--cds-layer-accent, #393939);
+  border: 1px solid var(--cds-border-subtle, #525252);
+  border-radius: 2px;
+  font-family: var(--cds-code-02-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--cds-text-primary, #f4f4f4);
+  white-space: pre-wrap;
+}
