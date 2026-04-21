@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1199** TypeScript | **136** C++/H | **144** Docs | **2568** total commits | **3** stars | **0** forks | **0** open issues
+**1223** Python | **1199** TypeScript | **136** C++/H | **144** Docs | **2570** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b6309a93`](https://github.com/matthewmackes/map2-audio/commit/b6309a93de9f27b85703b5ee54114f03ceca80b0) | docs(T2418-E): mark T2418 epic Done — final validation ev... | Map2 Audio | 2026-04-21 |
+| [`c4c28734`](https://github.com/matthewmackes/map2-audio/commit/c4c2873484166caa0ba40ed734438ff5e3ddbc4f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`7b783a3f`](https://github.com/matthewmackes/map2-audio/commit/7b783a3f8639f548137b7c4360097b4c3db287ad) | feat(T2418-C): outbound webhook dispatcher — service + ro... | Map2 Audio | 2026-04-21 |
 | [`b6a0c800`](https://github.com/matthewmackes/map2-audio/commit/b6a0c800cd2ffc52609a371b28a34d049ed7c319) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`d622fb33`](https://github.com/matthewmackes/map2-audio/commit/d622fb33a089bd357220a94875885fc73aa8ebd9) | feat(T2418-B): Event Feed tab — live-scroll PlatformEvent... | Map2 Audio | 2026-04-21 |
 | [`d2f0d7bd`](https://github.com/matthewmackes/map2-audio/commit/d2f0d7bd31304659f997c6032f979b4786fcc629) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`118ca293`](https://github.com/matthewmackes/map2-audio/commit/118ca29304fabf8fc53ca1b40ed35c573efd4834) | feat(T2419-C): first-run SSH key + peer trust bootstrap | Map2 Audio | 2026-04-21 |
 | [`f8f46312`](https://github.com/matthewmackes/map2-audio/commit/f8f4631227b6154a6764db89d0e47fdd345526f4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`9fa417bd`](https://github.com/matthewmackes/map2-audio/commit/9fa417bda81ba342afac35b995c43bf616d6a77c) | feat(T2419-D/E/F): Web SSH tab UI + XTermTerminal + Advan... | Map2 Audio | 2026-04-21 |
-| [`17304965`](https://github.com/matthewmackes/map2-audio/commit/17304965c70dd1f900e6c4a371357ee45b1c1916) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
