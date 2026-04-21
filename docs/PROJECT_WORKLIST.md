@@ -32,7 +32,7 @@ Description:
   - T710-sub01 [✓] Open epic + copy 39 fx_*.svg icons to `web/src/assets/fx-icons/`. Delivered 2026-04-20; epic opened in worklist; icons copied from `/tmp/design-fetch/extracted/updated-flow-layout/project/fx-icons/`; no code changes yet.
 
   **Phase 2 — Icon System (subtasks 02-05)**
-  - T710-sub02 [ ] Create `web/src/app/components/FxIcons/fxIconRegistry.ts`: typed map `Record<FxIconName, string>` with Vite `?url` imports for all 39 fx_*.svg files. Export `FxIconName` union type from directory scan. Acceptance: `npm run typecheck` PASS. Effort: 30 min.
+  - T710-sub02 [✓] Create `web/src/app/components/FxIcons/fxIconRegistry.ts`: typed map `Record<FxIconName, string>` with Vite `?url` imports for all 39 fx_*.svg files. Export `FxIconName` union type. DONE 2026-04-20: 39 imports + `FX_ICONS` const + `FxIconName`/`FX_ICON_NAMES`/`getFxIconUrl`/`isFxIconName` exports; `npm --prefix web run typecheck` PASS.
   - T710-sub03 [ ] Create `web/src/app/components/FxIcons/FxIcon.tsx`: React component `<FxIcon name={FxIconName} size={16|20|24} />` rendering `<img>` with `currentColor` fill via inline SVG fetch or `<svg>` with `<use href>`. Add `FxIcon.test.tsx` rendering 3 representative icons. Acceptance: jest PASS, typecheck PASS. Effort: 45 min.
   - T710-sub04 [ ] Audit T2368 `SignalCanvas/icons.tsx` consumers: `grep -rn "from.*SignalCanvas/icons" web/src`. Document findings in subtask notes. No code changes yet. Effort: 15 min.
   - T710-sub05 [ ] Replace T2368 icon usages (from sub04 audit) with `FxIcon`. Delete `web/src/app/components/SnapshotEditor/SignalCanvas/icons.tsx` only if zero remaining consumers. Acceptance: grep returns 0 matches for removed exports; typecheck + build PASS. Effort: 45 min.
