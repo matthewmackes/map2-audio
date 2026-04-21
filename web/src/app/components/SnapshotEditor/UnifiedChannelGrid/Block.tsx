@@ -67,6 +67,7 @@ export function Block({ slot, selected = false, onClick }: BlockProps) {
       data-bypass={slot.bypass ? 'true' : 'false'}
       onClick={() => onClick?.(slot.index)}
       aria-label={slot.label ?? `Slot ${slot.index + 1}`}
+      aria-pressed={selected}
     >
       <span className="ucg-block__icon">
         <FxIcon name={iconName} size={20} />

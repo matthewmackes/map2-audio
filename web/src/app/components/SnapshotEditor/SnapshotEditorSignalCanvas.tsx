@@ -1,14 +1,13 @@
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { Tile } from '@carbon/react'
 
 import type { AudioRoutingSelectionBinding } from '../../../map2/api'
 import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
-import { getDisplayPluginName } from '../../../map2/displayNames'
-import { pluginCategoryIcon } from '../shared/pluginCategoryIcon'
-import { getSystemBlockBadgeLabel } from '../../utils/snapshotSystemBlocks'
 import type { SnapshotEditorFlowAnimation, SnapshotEditorNodeShape } from '../../hooks/useSpecialSettings'
-import { ChainRow, type ChainRowPlugin } from './SignalCanvas/ChainRow'
-import { SignalCanvasIconSprite } from './SignalCanvas/icons'
+
+import { UnifiedChannelGrid, type SelectedBlockCoord } from './UnifiedChannelGrid/UnifiedChannelGrid'
+import { chainToUnifiedRow } from './UnifiedChannelGrid/chainToUnifiedRow'
+import { useChainMeter } from './UnifiedChannelGrid/useChainMeter'
 
 import '../shared/signalFlowAnimations.css'
 import './SignalCanvas/SignalCanvas.css'
@@ -48,7 +47,7 @@ export interface JuceGridSignalCanvasProps {
   onToggleBypass: (uri: string, bypassed: boolean, position: number) => void
   onDeletePlugin?: (uri: string, position: number) => void
   onReorderPlugins: (pluginOrder: PluginOrderRef[]) => void
-  onAddPlugin?: () => void
+  onAddPlugin?: (position?: number) => void
   onRenameChain?: () => void
   onDuplicateChain?: () => void
   onToggleChainActive?: () => void
@@ -82,59 +81,10 @@ export interface JuceGridSignalAutomationSummary {
   recording: boolean
 }
 
-const ROUTING_MODE_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
-  parallel_blend: 'PARALLEL',
-  ab_switch: 'A/B',
-  series: 'SERIES',
-  parameter_morph: 'MORPH',
-  sidechain: 'SIDECHAIN',
-}
-
-function resolveChainLabel(branchId: string | null | undefined, explicitLabel: string | undefined): string {
-  if (explicitLabel?.trim()) {
-    return explicitLabel.trim().slice(0, 2).toUpperCase()
-  }
-
-  const match = String(branchId ?? '').match(/[a-z0-9]+$/i)?.[0]
-  return match ? match.slice(0, 1).toUpperCase() : 'A'
-}
-
-function resolvePluginCpu(plugin: Chain['plugins'][number]): number {
-  const raw = plugin.cpu_percent
-  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
-    return 0
-  }
-  return Math.max(0, Math.min(1, raw > 1 ? raw / 100 : raw))
-}
-
-function buildCanvasPlugins(
-  chain: Chain,
-  pluginMeta: Record<string, Plugin>,
-  pluginLevels: Record<string, { in: number; out: number }> | undefined,
-  selectedPluginUri: string | null,
-  selectedPluginPosition: number | null | undefined,
-): ChainRowPlugin[] {
-  return chain.plugins.map((plugin) => {
-    const meta = pluginMeta[plugin.uri]
-    const categoryLabel = meta?.category || meta?.class_label || plugin.plugin_display_type || 'Utility'
-    const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
-    const levels = pluginLevels?.[`${plugin.uri}:${plugin.position}`] ?? pluginLevels?.[plugin.uri]
-    const cpuLoad = Math.max(resolvePluginCpu(plugin), levels ? Math.max(levels.in, levels.out) * 0.15 : 0)
-    const selected = plugin.uri === selectedPluginUri
-      && (typeof selectedPluginPosition !== 'number' || plugin.position === selectedPluginPosition)
-
-    return {
-      uri: plugin.uri,
-      position: plugin.position,
-      label: displayName,
-      categoryLabel,
-      iconId: pluginCategoryIcon(`${categoryLabel} ${plugin.name} ${plugin.uri}`),
-      bypassed: plugin.bypassed,
-      selected,
-      cpuLoad,
-      systemBlockBadge: getSystemBlockBadgeLabel(plugin),
-    }
-  })
+function resolveRowId(branchId: string | null | undefined, chainId: number | string | undefined): string {
+  if (branchId) return String(branchId)
+  if (chainId !== undefined && chainId !== null) return String(chainId)
+  return 'chain'
 }
 
 export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
@@ -147,41 +97,108 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   selectedPluginUri,
   selectedPluginPosition = null,
   onPluginSelect,
-  onToggleBypass,
   onDeletePlugin,
+  onReorderPlugins,
   onAddPlugin,
-  onRenameChain,
-  onDuplicateChain,
-  onToggleChainActive,
-  onDeleteChain,
-  onAssignChain,
   onMuteToggle,
   onSoloToggle,
-  showAddPluginSlot,
   audioStatus,
   audioOutputStatus,
-  pluginLevels,
-  focusedBranchId = null,
   onCanvasEmptyPress,
   readOnly = false,
   flowAnimation = 'cascade',
   gridBackdrop = true,
   nodeShape = 'square',
 }: JuceGridSignalCanvasProps) {
-  const label = resolveChainLabel(branchId, chainLabel)
+  const rowId = resolveRowId(branchId, chain?.id)
   const routingMode = audioStatus?.routingMode ?? audioOutputStatus?.routingMode ?? 'series'
-  const routingLabel = ROUTING_MODE_LABELS[routingMode] ?? 'SERIES'
-  const outputLevels = audioOutputStatus?.meterLevels ?? audioStatus?.meterLevels ?? []
-  const active = Boolean(chain?.is_active || audioStatus?.chainActive || focusedBranchId === branchId)
-  const plugins = useMemo(
-    () => chain ? buildCanvasPlugins(chain, pluginMeta, pluginLevels, selectedPluginUri, selectedPluginPosition) : [],
-    [chain, pluginLevels, pluginMeta, selectedPluginPosition, selectedPluginUri],
+  const sidechainLabel = routingMode === 'sidechain' ? 'KEY SEND' : null
+
+  const row = useMemo(
+    () =>
+      chainToUnifiedRow(chain, pluginMeta, {
+        rowId,
+        rowName: chain?.name || (chainLabel ? `Chain ${chainLabel}` : 'Chain'),
+        muted: chainMuted,
+        solo: chainSoloed,
+        sidechainSourceLabel: sidechainLabel,
+      }),
+    [chain, chainLabel, chainMuted, chainSoloed, pluginMeta, rowId, sidechainLabel],
+  )
+
+  const rows = useMemo(() => (chain ? [row] : []), [chain, row])
+
+  const selectedBlock: SelectedBlockCoord | null = useMemo(() => {
+    if (!selectedPluginUri) return null
+    const matchIdx = row.slots.findIndex(
+      (slot) =>
+        slot.uri === selectedPluginUri &&
+        (typeof selectedPluginPosition !== 'number' || slot.index === selectedPluginPosition),
+    )
+    if (matchIdx < 0) return null
+    return { rowId: row.id, slotIndex: matchIdx }
+  }, [row, selectedPluginUri, selectedPluginPosition])
+
+  const meter = useChainMeter(chain ? rowId : null)
+  const meters = useMemo(() => ({ [rowId]: meter }), [rowId, meter])
+
+  const handleSelectBlock = useCallback(
+    (_rowId: string, slotIndex: number) => {
+      const slot = row.slots[slotIndex]
+      if (slot?.uri) onPluginSelect(slot.uri, slot.index)
+    },
+    [row, onPluginSelect],
+  )
+
+  const handleAddBlock = useCallback(
+    (_rowId: string, slotIndex: number) => {
+      if (readOnly) return
+      onAddPlugin?.(slotIndex)
+    },
+    [onAddPlugin, readOnly],
+  )
+
+  const handleRemoveBlock = useCallback(
+    (_rowId: string, slotIndex: number) => {
+      if (readOnly) return
+      const slot = row.slots[slotIndex]
+      if (slot?.uri && onDeletePlugin) onDeletePlugin(slot.uri, slot.index)
+    },
+    [row, onDeletePlugin, readOnly],
+  )
+
+  const handleToggleMute = useCallback(() => onMuteToggle?.(), [onMuteToggle])
+  const handleToggleSolo = useCallback(() => onSoloToggle?.(), [onSoloToggle])
+
+  const handleKeyboardReorder = useCallback(
+    (_rowId: string, fromIndex: number, toIndex: number) => {
+      if (readOnly || !chain) return
+      const fromSlot = row.slots[fromIndex]
+      const toSlot = row.slots[toIndex]
+      if (!fromSlot?.uri) return
+
+      const next: PluginOrderRef[] = chain.plugins.map((p) => {
+        if (p.uri === fromSlot.uri && p.position === fromSlot.index) {
+          return { uri: p.uri, position: toIndex }
+        }
+        if (toSlot?.uri && p.uri === toSlot.uri && p.position === toSlot.index) {
+          return { uri: p.uri, position: fromSlot.index }
+        }
+        return { uri: p.uri, position: p.position }
+      })
+      onReorderPlugins(next)
+    },
+    [chain, onReorderPlugins, readOnly, row],
   )
 
   if (!chain) {
     return (
-      <div className="snapshot-editor-signal-canvas" data-flow={flowAnimation} data-grid-backdrop={gridBackdrop ? 'true' : 'false'} data-node-shape={nodeShape}>
-        <SignalCanvasIconSprite />
+      <div
+        className="snapshot-editor-signal-canvas"
+        data-flow={flowAnimation}
+        data-grid-backdrop={gridBackdrop ? 'true' : 'false'}
+        data-node-shape={nodeShape}
+      >
         <Tile className="snapshot-chain-row__empty" onClick={onCanvasEmptyPress}>
           <strong>Select a chain to view and edit</strong>
           <span>Choose or assign a chain to populate the signal grid.</span>
@@ -191,36 +208,23 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   }
 
   return (
-    <div className="snapshot-editor-signal-canvas" data-flow={flowAnimation} data-grid-backdrop={gridBackdrop ? 'true' : 'false'} data-node-shape={nodeShape}>
-      <SignalCanvasIconSprite />
-      <ChainRow
-        chainLabel={label}
-        chainName={chain.name || `Chain ${label}`}
-        active={active}
-        assigned
-        readOnly={readOnly}
-        muted={chainMuted}
-        soloed={chainSoloed}
-        branchCount={Math.max(1, plugins.length > 2 ? 2 : 1)}
-        gridBackdrop={gridBackdrop}
-        routingLabel={routingLabel}
-        sendLabel={routingMode === 'sidechain' ? 'KEY SEND' : 'NO SEND'}
-        plugins={plugins}
-        addEnabled={(showAddPluginSlot ?? Boolean(onAddPlugin)) && !readOnly}
-        meterLeft={outputLevels[0] ?? 0}
-        meterRight={outputLevels[1] ?? outputLevels[0] ?? 0}
-        meterStale={!audioStatus?.isRunning && !audioOutputStatus?.isRunning}
-        onPluginSelect={(plugin) => onPluginSelect(plugin.uri, plugin.position)}
-        onToggleBypass={(plugin) => onToggleBypass(plugin.uri, !plugin.bypassed, plugin.position)}
-        onDeletePlugin={onDeletePlugin ? (plugin) => onDeletePlugin(plugin.uri, plugin.position) : undefined}
-        onAddPlugin={onAddPlugin}
-        onRenameChain={onRenameChain}
-        onDuplicateChain={onDuplicateChain}
-        onToggleChainActive={onToggleChainActive}
-        onDeleteChain={onDeleteChain}
-        onAssignChain={onAssignChain}
-        onMuteToggle={onMuteToggle}
-        onSoloToggle={onSoloToggle}
+    <div
+      className="snapshot-editor-signal-canvas"
+      data-flow={flowAnimation}
+      data-grid-backdrop={gridBackdrop ? 'true' : 'false'}
+      data-node-shape={nodeShape}
+      data-testid="snapshot-signal-canvas"
+    >
+      <UnifiedChannelGrid
+        rows={rows}
+        selectedBlock={selectedBlock}
+        meters={meters}
+        onSelectBlock={handleSelectBlock}
+        onAddBlock={handleAddBlock}
+        onRemoveBlock={handleRemoveBlock}
+        onReorderBlock={handleKeyboardReorder}
+        onToggleMute={handleToggleMute}
+        onToggleSolo={handleToggleSolo}
       />
     </div>
   )
