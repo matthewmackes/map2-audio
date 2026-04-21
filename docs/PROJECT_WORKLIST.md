@@ -6,7 +6,80 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2416 slices A–G + I–J landed: blueprint heartbeat lower-third panel shipped. 20/20 Toasts.test.tsx PASS, typecheck + build clean. T2416-H-FOLLOWUP opened for cluster mini-cards.
+Last updated: 2026-04-21 - T2418 + T2419 filed: /workspace/platforms/api-webhooks standalone panel with Event Feed + Web SSH tabs.
+
+---
+
+ID: T2419
+Status: [>] In Progress
+Title: EPIC — Web SSH Console (asyncssh WS bridge + xterm.js) with mDNS auto-discovery
+Description:
+- Goal / acceptance criteria: Deliver a browser-based SSH client mounted in the second tab of the new `/workspace/platforms/api-webhooks` panel (T2418-A scaffolding). The SSH bridge is implemented in the existing FastAPI backend (`map2-backend.service`, port 8080) using `asyncssh` + a FastAPI WebSocket route at `/ws/ssh` — NO separate Node sidecar, NO new long-lived process. The frontend uses `xterm` + `xterm-addon-fit` + `xterm-addon-web-links`. Default terminal session auto-connects to the node the UI is currently focused on (viewed node); other mDNS-discovered MAP2 peers from `GET /api/peers` appear in a dropdown for on-demand connection. Multiple sessions render in Carbon `Tabs`. First-run flow auto-generates an SSH key via `POST /api/ssh/keys/generate` and distributes it + adds trust via existing `/api/ssh/keys/distribute` and `/api/ssh/trust/add` endpoints, so subsequent connects use public-key auth only. Username defaults to `mm` (matches `peer_discovery.py:266` `ssh_url=ssh://mm@{host}`). An "Advanced" accordion exposes a full manual SSH form (host, port 22 default, username, auth mode [key | password], known_hosts policy [accept-new default | strict | auto-add], keepalive seconds, connect timeout, environment overrides) for connecting to non-MAP2 hosts. Carbon-only UI, Plex Sans + Plex Mono, uses `platform-shell__*` chrome from `PlatformModal.css`.
+- Why it matters: Operators need a single browser surface to shell into any node on the MAP2 cluster for troubleshooting, log inspection, and service restarts without maintaining a separate SSH client, known_hosts store, or credential set per workstation. Automating the key/trust bootstrap removes the friction that keeps operators from shelling remotely.
+- Dependencies: T2418-A (shared `api-webhooks` StandalonePanel scaffold and tab chrome). Existing `/api/peers` peer discovery (app/routes/peer_discovery.py). Existing `/api/ssh/*` trust endpoints (app/routes/ssh_trust.py). Existing mDNS discovery (app/services/mdns_discovery.py).
+- Estimated effort: Large — 6 restartable subtasks.
+- Required outputs:
+  - T2419-A: **Backend SSH bridge service** — `app/services/ssh_bridge_service.py` wrapping `asyncssh.connect()` per WebSocket session: interactive PTY (shell or command), window resize, keepalive, auth methods `publickey` and `password`, known_hosts policy `accept-new | strict | auto-add`, env overrides. Connection record lifecycle (connect → open session → stream bi-directional → close) with structured error envelopes matching `docs/api-contract-standards.md`. Hard session cap + per-session bandwidth cap + 15-minute idle timeout. Unit tests with mocked asyncssh transport.
+  - T2419-B: **FastAPI WebSocket route** — `app/routes/ssh_bridge.py` exposing `WS /ws/ssh` with frames `{type: 'open', host, port, user, auth, known_hosts}`, `{type: 'data', data}`, `{type: 'resize', cols, rows}`, `{type: 'close'}` and server frames `{type: 'open_ok' | 'open_error' | 'data' | 'closed' | 'error'}`. Registered in `app/main.py` after existing websocket routes. Integration tests for open/data/resize/close lifecycle and auth-failure surface.
+  - T2419-C: **First-run key/trust bootstrap** — idempotent helper invoked from the new Web SSH tab on mount: check `GET /api/ssh/trust/status`; if the local node has no key, call `POST /api/ssh/keys/generate`; for each visible mDNS peer without trust, call `POST /api/ssh/keys/distribute` then `POST /api/ssh/trust/add`. Status shown as a Carbon `InlineLoading` strip (one-shot, no re-mount churn). Tests for idempotent re-run.
+  - T2419-D: **Web SSH tab UI** — `web/src/app/pages/ApiWebhooksPage/WebSshTab.tsx`. Left rail: Carbon `Dropdown` of discovered peers (from `useQuery('/api/peers')`, sorted local-first), "New Session" button, advanced accordion. Right area: Carbon `Tabs` with one tab per session, each hosting an `<XTermTerminal>` component. Default behavior: on first mount, open a session to the focused (viewed) node. Session title = `user@hostname`. Close button per tab cleans up the WS and destroys the terminal.
+  - T2419-E: **Terminal component** — `web/src/app/components/WebSsh/XTermTerminal.tsx` wrapping `xterm.js` + `FitAddon` + `WebLinksAddon`, wired to the `/ws/ssh` WebSocket, theme matching Carbon Plex Mono on `var(--cds-layer)`. Resize observer fires `{type:'resize'}` on container change. Disconnection shows a Carbon `Tag type="red"` in the tab header.
+  - T2419-F: **Advanced manual form + tests** — Carbon `Accordion` with full SSH field set (host, port, user, auth mode, password if selected, private key text if pasted, known_hosts policy, keepalive_s, connect_timeout_s, env overrides). Jest test for validation + submit wiring; pytest for the WS route auth/error matrix. Add `xterm`, `xterm-addon-fit`, `xterm-addon-web-links` to `web/package.json`; add `asyncssh` to `requirements.txt`.
+  - Atomic commits on master + `git push origin master && git push gitlab master` per slice
+  - `cd web && npm run typecheck` PASS, `cd web && npm run build` PASS, focused `jest` PASS per slice
+  - `pytest tests/test_ssh_bridge_service.py tests/test_ssh_bridge_route.py` PASS
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (filed)
+
+---
+
+ID: T2418
+Status: [>] In Progress
+Title: EPIC — `/workspace/platforms/api-webhooks` Standalone Panel (Event Feed + Outbound Webhooks)
+Description:
+- Goal / acceptance criteria: Add a new Carbon-native StandalonePanel at `/workspace/platforms/api-webhooks` (Control Panel entry "API & Webhooks") with two Carbon `Tabs`: (1) **Event Feed** — live-scroll of canonical PlatformEvent envelopes with pause/resume, pin, filter (kind[], severity[], node[], surface[], min_priority), hydrate-on-mount from `GET /api/platform-events?limit=200`, live stream via `ws subscribe topic=platform:events` through the existing `platformEventTransport.ts` (session + cursor + ack already implemented); (2) **Web SSH** — hand-off to T2419 implementation. Panel chrome reuses the `platform-shell__*` pattern from existing StandalonePanels (host-machine, audio-engine, theme, about, adoption). Webhook *access* is exposed here as: a second section under the Event Feed tab that lists currently registered outbound webhook targets (URL, filter, last-delivery status), lets an operator register a new target, and has a "Fire Test Event" button that emits a synthetic `platform.test.ping` event onto the PlatformEventBus — the delivery log then shows both the event going onto the bus and any outbound webhook POSTs. This satisfies "access to Webhooks, access to PlatformEventBus" on the same surface.
+- Why it matters: Operators need a dedicated surface to (a) verify the canonical PlatformEvent control plane is healthy, (b) test inbound/outbound webhook integrations against it, and (c) shell into any cluster node from the same page, without leaving the Platforms workspace.
+- Dependencies: Existing PlatformEvent infrastructure (`app/services/platform_event/bus.py`, `app/routes/platform_events.py`, `web/src/app/services/platformEventTransport.ts`). Existing WS topics `platform:events`/`:critical`/`:error`/`:warning`/`:info`. Existing `StandalonePanel` pattern in `web/src/app/components/Platform/PlatformModal.tsx`. T2419 for the Web SSH tab body.
+- Estimated effort: Medium — 5 restartable subtasks.
+- Required outputs:
+  - T2418-A: **StandalonePanel scaffold** — add `'api-webhooks'` to `StandalonePanel` union in `web/src/app/data/platformMenuItems.ts` + `STANDALONE_PANEL_ITEMS` entry (label "API & Webhooks", shortLabel "Webhooks", icon `Flash` or `Notification` from @carbon/icons-react, color `var(--cds-link-primary)`, pinnable true); add entry to `platformPanelItems`. Add `STANDALONE_META` entry + lazy import + render branch in `web/src/app/components/Platform/PlatformModal.tsx`. Create `web/src/app/pages/ApiWebhooksPage/ApiWebhooksPage.tsx` with Carbon `Tabs` (Event Feed | Web SSH). Jest tests: renders, tab switching, deep-link to `/workspace/platforms/api-webhooks` works.
+  - T2418-B: **Event Feed tab** — `web/src/app/pages/ApiWebhooksPage/EventFeedTab.tsx`. Hydrate from `GET /api/platform-events?limit=200` via TanStack Query; subscribe via existing `platformEventTransport.ts` (session + cursor + ack). Carbon `DataTable` with columns `occurred_at | severity | kind | source_node | title | message`, sortable, `useZebraStyles`. Toolbar: `TableToolbarSearch`, `MultiSelect` for kinds/severities/nodes/surfaces, `NumberInput` for min_priority, `Button` Pause/Resume + Pin (retains pinned rows at top). Virtualized when count > 500 (use `react-window` already in package.json). New events slide in at top with Framer Motion (duration 0.18, matching `PlatformModal.tsx`).
+  - T2418-C: **Webhooks subsection + backend** — `app/services/webhook_dispatcher_service.py` + `app/routes/webhooks.py` with:
+    - `GET /api/webhooks` list registered targets
+    - `POST /api/webhooks` register `{url, filter: {kinds, severities, min_priority}, secret?, enabled}`
+    - `DELETE /api/webhooks/{id}`
+    - `GET /api/webhooks/{id}/deliveries?limit=100` delivery log
+    - Dispatcher subscribes to `PlatformEventBus` via `get_platform_event_bus().subscribe(...)`, matches filter, POSTs JSON with HMAC-SHA256 signature header `X-Map2-Signature` when `secret` is set; retries with exponential backoff (3 attempts) and records each attempt in the delivery log.
+    - Targets persisted under `/var/lib/map2` (durable service plane per Configuration Authority Model).
+    - Frontend subsection inside Event Feed tab: Carbon `Accordion` "Webhook Targets" — `DataTable` of targets, "Register target" modal, per-row "View deliveries" + "Delete", "Fire Test Event" button that POSTs a synthetic `platform.test.ping` PlatformEvent.
+  - T2418-D: **Test Event endpoint** — `POST /api/platform-events/test` emits a synthetic `platform.test.ping` event onto the bus (severity `info`, ttl 60s, source `source_service='api-webhooks-ui'`). Returns the envelope so the UI can highlight it in the feed.
+  - T2418-E: **Tests + build validation** — Jest: `ApiWebhooksPage.test.tsx`, `EventFeedTab.test.tsx`, `WebhooksSection.test.tsx` (mock transport, mock peers). Pytest: `test_webhook_dispatcher.py`, `test_platform_events_test_route.py`. Typecheck + build + verify in browser at `:3000`. Snapshot: `docs/fit-for-purpose-evidence/<YYYYMMDD>/api-webhooks-panel.png`.
+  - Atomic commits on master + `git push origin master && git push gitlab master` per slice
+  - `cd web && npm run typecheck` PASS, `cd web && npm run build` PASS, focused `jest` PASS per slice
+  - `pytest tests/test_webhook_dispatcher.py tests/test_platform_events_test_route.py` PASS
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (filed)
+
+---
+
+ID: T2417
+Status: [✓] Done
+Title: Integrated public palette mapper for Carbon-compliant brand themes
+Description:
+- Goal / acceptance criteria: Add an integrated Theme workspace method for graphically moving through publicly available palette sets, automatically mapping selected colors into MAP2 Carbon-compatible theme targets and persisting/exporting multiple mapped themes. The mapper must generate Carbon semantic tokens (`interactive`, support colors, text/background/layers/borders) from brand-prioritized palettes, preview the resulting theme, and avoid bundling a copied full proprietary Pantone library.
+- Why it matters: Operators need a visual brand-theme workflow that mates color sets with the platform Carbon token system without breaking Carbon conformance or introducing untracked licensing/platform assumptions.
+- Dependencies: T2414 Branding tab and existing ThemePage/theme registry.
+- Estimated effort: Medium.
+- Required outputs:
+  - Integrated Theme page palette-mapper UI
+  - Public/importable palette manifest model with source/license metadata
+  - Automatic brand-first Carbon token mapper with contrast-aware text/background/layer generation
+  - Local save/compare/export/import of generated MAP2 theme records
+  - Focused tests plus typecheck/build validation
+  - Installer/environment artifacts updated if dependencies or runtime assumptions change
+Assigned to: Codex
+Last updated: 2026-04-21 12:55 - Codex
+Completion note: Added a Palette Mapper tab in `web/src/app/pages/ThemePage.tsx` with public/importable palette manifests, carousel navigation, generated Carbon target selection, semantic token mapping table, save/apply/export/import controls, and source/license boundary messaging. Added `web/src/app/theme/pantonePaletteMapper.ts` for brand-priority automatic mapping into MAP2 `Theme` records and Carbon semantic token rows. Updated `web/src/app/theme/useTheme.ts` so concrete custom themes also set matching `--cds-*` variables used by Carbon-token components. No new dependencies or services were introduced; installer/package artifacts stay consistent. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new unresolved gap because full Pantone libraries are not bundled and imported manifests carry source/license notes. Validation: `npx jest --testPathPatterns='(pantonePaletteMapper|useTheme|ThemePage)' --runInBand --no-coverage` PASS 37/37; `npm --prefix web run typecheck` PASS; `npm --prefix web run build` PASS.
 
 ---
 

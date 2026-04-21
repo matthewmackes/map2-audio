@@ -8,6 +8,7 @@ import {
   Close,
   DataBase,
   Devices,
+  Flash,
   Information,
   Network_3,
   PaintBrush,
@@ -90,6 +91,7 @@ const AudioEnginePage = lazy(() => import('../../pages/AudioEnginePage').then(m 
 const ThemePage       = lazy(() => import('../../pages/ThemePage').then(m => ({ default: m.ThemePage })))
 const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const PlatformAdoptionPage = lazy(() => import('../../pages/PlatformAdoptionPage').then(m => ({ default: m.PlatformAdoptionPage })))
+const ApiWebhooksPage = lazy(() => import('../../pages/ApiWebhooksPage/ApiWebhooksPage').then(m => ({ default: m.ApiWebhooksPage })))
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -123,11 +125,12 @@ const LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
 const PLATFORM_CONTROL_PANEL_ITEMS = platformPanelItems
 
 const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: PlatformIcon }> = {
-  'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: MapOs2HomeIcon },
-  'audio-engine': { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
-  'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
-  'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
-  'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
+  'host-machine':  { label: 'Host Machine',   eyebrow: 'Hardware', icon: MapOs2HomeIcon },
+  'audio-engine':  { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
+  'theme':         { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
+  'about':         { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
+  'adoption':      { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
+  'api-webhooks':  { label: 'API & Webhooks', eyebrow: 'Platform', icon: Flash },
 }
 
 const OVERVIEW_AUTHORITY_PLANES: OverviewAuthorityPlane[] = [
@@ -666,11 +669,12 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
       </div>
       <div className="platform-shell__standalone-surface">
         <Suspense fallback={<div className="platform-shell__table-state"><LoadingState description="Loading platform workspace" /></div>}>
-          {panel === 'host-machine' && <HostMachinePage />}
-          {panel === 'audio-engine' && <AudioEnginePage />}
-          {panel === 'theme'        && <ThemePage />}
-          {panel === 'about'        && <AboutPage />}
-          {panel === 'adoption'     && <PlatformAdoptionPage />}
+          {panel === 'host-machine'  && <HostMachinePage />}
+          {panel === 'audio-engine'  && <AudioEnginePage />}
+          {panel === 'theme'         && <ThemePage />}
+          {panel === 'about'         && <AboutPage />}
+          {panel === 'adoption'      && <PlatformAdoptionPage />}
+          {panel === 'api-webhooks'  && <ApiWebhooksPage />}
         </Suspense>
       </div>
     </motion.section>

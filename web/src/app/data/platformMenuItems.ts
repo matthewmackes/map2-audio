@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import {
   DataBase,
   Devices,
+  Flash,
   Information,
   Network_3,
   PaintBrush,
@@ -15,7 +16,13 @@ import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
 type PlatformIcon = ComponentType<any>
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
+export type StandalonePanel =
+  | 'host-machine'
+  | 'audio-engine'
+  | 'theme'
+  | 'about'
+  | 'adoption'
+  | 'api-webhooks'
 export const PLATFORM_UTILITY_PANEL_IDS = ['host-machine', 'theme', 'about'] as const
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
@@ -24,6 +31,7 @@ export function isStandalonePanel(value: string | null | undefined): value is St
     || value === 'theme'
     || value === 'about'
     || value === 'adoption'
+    || value === 'api-webhooks'
 }
 
 export function isPlatformUtilityPanel(
@@ -70,6 +78,14 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
     description: 'Open the audio-engine workspace for runtime, latency, and engine-state inspection.',
     color: 'var(--cds-support-error)',
     icon: Terminal,
+    pinnable: true,
+  },
+  'api-webhooks': {
+    label: 'API & Webhooks',
+    shortLabel: 'Webhooks',
+    description: 'Open the platform event bus live feed, outbound webhook targets, and the web SSH console for discovered cluster nodes.',
+    color: 'var(--cds-link-primary)',
+    icon: Flash,
     pinnable: true,
   },
   'adoption': {
@@ -158,6 +174,7 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('avb-routing'),
   buildPlatformLayerNavItem('network-discovery'),
   buildPlatformLayerNavItem('cluster-dashboard'),
+  buildStandalonePanelNavItem('api-webhooks'),
   buildStandalonePanelNavItem('adoption'),
   buildStandalonePanelNavItem('host-machine'),
   buildStandalonePanelNavItem('theme'),
