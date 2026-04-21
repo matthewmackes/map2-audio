@@ -134,6 +134,70 @@ Completion note: 2026-04-21 - Claude: Replaced `StageClusterSummaryCard` with ne
 
 ---
 
+ID: T2420
+Status: [ ] Todo
+Title: Unified Devices view at `/devices` — consolidate 6 hardware + 6 control-surface pages into one shell
+Description:
+- Goal / acceptance criteria: Build `web/src/app/data/deviceRegistry.ts` + `web/src/app/components/Devices/DevicesShell.tsx` + `DevicesOverview.tsx` + `DeviceContextBridge.tsx` + `DeviceViewRouter.tsx`. Move `components/MPX1/`, `components/IntelFX/`, `components/Tesira/` into `components/Devices/`. Extract `EdirolUA1000/`, `HoToneJoGG/`, `LCD/` from their page files into `components/Devices/`. Register 6 hardware devices (mpx1, intelfx, tesira, edirol-ua1000, hotone-jogg, lcd) + 6 control surfaces (maschine-mk1, ableton-push, ground-control-pro, meloaudio-midi-commander, novation-launch-control, mackie-mcu-pro). Remove old routes `/mpx1/*`, `/intelfx/*`, `/tesira/*`, `/edirol-ua1000`, `/hotone-jogg`, `/lcd`, `/physical-surfaces/*`. Add single `/devices` top-nav entry via `advancedMenuItems.ts`. Devices grid at `/devices` renders each card with status badge (online/offline/detected/planned). Sidebar uses `UnifiedWorkspaceSideNav` with device→sub-views flattened two-level structure. Route shape: `/devices/:deviceId/:view`. Each device's page becomes a thin context wrapper providing `<Outlet />`.
+- Why it matters: 7 separate top-level routes for device panels don't scale. Plan `optimized-herding-whistle` locked all 15 design decisions and specified complete file structure. Without this consolidation, adding a new device (e.g., MOTU, QSC) would require yet another top-level route + shell + sidebar.
+- Dependencies: None (T719 NodeNavChip + DeviceContextBanner already in place).
+- Estimated effort: Large — 7 restartable phases (registry → shell → overview → moves → router → nav entry → cleanup).
+- Required outputs:
+  - New files per plan: `deviceRegistry.ts`, `DevicesShell.tsx`, `DevicesOverview.tsx`, `DeviceContextBridge.tsx`, `DeviceViewRouter.tsx`
+  - Moved directories: `components/MPX1/ → components/Devices/MPX1/`, `IntelFX/`, `Tesira/`, plus extractions for EdirolUA1000/HoToneJoGG/LCD
+  - Removed pages: `MPX1Page.tsx`, `IntelFXPage.tsx`, `TesiraPage.tsx`, `EdirolUA1000Page.tsx`, `HoToneJoGGPage.tsx`, `LCDPage.tsx`, `PhysicalSurfacesShell.tsx`, `PhysicalSurfacesOverviewPage.tsx`, `PhysicalSurfaceUnitPage.tsx`
+  - Grep sweep confirms zero dangling refs to old route patterns
+  - Each sub-view renders correctly for each device (spot-check MPX1 panel, Tesira mixer, LCD displays)
+  - Online badges via `useDeviceLocation` (audio interfaces) + `enrichedPhysicalSurfacesApi.getSummary()` (control surfaces)
+  - Atomic commits on master + `git push origin master && git push gitlab master` per phase
+  - typecheck + build + focused Jest PASS per phase
+Assigned to: unassigned
+Last updated: 2026-04-21 - Claude (created from plan audit — `optimized-herding-whistle` plan not yet absorbed; existing per-device routes still live)
+
+---
+
+ID: T2421
+Status: [ ] Todo
+Title: Notification panel 4-card row — meters + vitals + warnings + disconnected overlay
+Description:
+- Goal / acceptance criteria: Complete the `help-me-make-the-nested-duckling` plan beyond the already-shipped cluster-heartbeat row. Add three more cards to `.stage-notification-surface`: (1) Audio Meters — horizontal stereo bar (L/R) with peak dot + 1.5s peak-hold + soft 10s history strip, silence detection (flash amber <-60 dBFS for >3s live), latched red clip dot at ≥0 dBFS. Wire to existing metering endpoint at 20–30 Hz (fallback 10 Hz). (2) Vitals — CPU% (tabular-num + 60s sparkline + amber ≥70%, red ≥90% card tint), xrun counter since snapshot activation + tick sparkline, SR/buffer label (`48k / 64`), active channels/blocks mini counters. (3) Warnings — "All clear" green empty state; when warnings present, top-severity headline + "N more" count + severity sparkline; clip count badge; severity-driven edge-case states (activation in-progress/failed, driver lost takeover, AVB sync loss amber). Add idle bottom-right heartbeat rail when no live snapshot AND no warnings. Add red "DISCONNECTED" diagonal banner overlay when backend unreachable (freeze last-known state). Respect `prefers-reduced-motion` (freeze sparklines/pulse, keep meter motion — audio truth = functional). Collapsed rail redesign to card-aesthetic mini tile.
+- Why it matters: Plan locked 50 design decisions with operator-grade FOH glance-usage specification. Current `StageNotificationViewport` only renders snapshot identity + cluster heartbeat — zero audio-health signal, zero CPU/xrun visibility, no disconnected state. Plan says success = "glanceable <1s, legible from 6ft, polished like dribbble/medium refs."
+- Dependencies: T2416 (Done, blueprint tokens + cluster heartbeat row), existing `useSnapshotRuntimeState` hook, existing metering endpoint (investigate exact path during implementation).
+- Estimated effort: Large — 6 phases per plan (shell rewrite → snapshot card → meters → vitals → warnings+edge-cases → tests+polish).
+- Required outputs:
+  - `StageNotificationViewport` restructured to 4-card grid `grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.9fr)`, height 5–7rem
+  - New child components under `web/src/app/components/StageNotification/` if they grow beyond ~300 lines
+  - `<StereoMeter>` + `<Sparkline>` + `<StageMetersCard>` + `<StageVitalsCard>` + `<StageWarningsCard>` + idle heartbeat rail
+  - Xrun source investigation: extend `SnapshotRuntimeLiveState` payload if absent
+  - Silence detection + clip latch wired via local React context
+  - Disconnected overlay wired to `BackendConnectionMonitor` existing signal
+  - New Jest cases in `Toasts.test.tsx` — card rendering per severity, idle rail shown when no notifications, silence triggers warning, clip increments counter, reduced-motion freezes sparklines/pulse but not meters, disconnected overlay on backend-unreachable
+  - `npm run build` + typecheck + Jest PASS
+  - Atomic commits on master + `git push origin master && git push gitlab master` per phase
+Assigned to: unassigned
+Last updated: 2026-04-21 - Claude (created from plan audit — `help-me-make-the-nested-duckling` only partially absorbed; cluster-heartbeat shipped via T2416-H-FOLLOWUP, remaining 3 cards + idle rail + disconnected overlay not yet built)
+
+---
+
+ID: T2422
+Status: [ ] Todo
+Title: NAM Model Info Grid — 8-field structured metadata under MODEL section in NAMCard
+Description:
+- Goal / acceptance criteria: Expand the Neural Amp Modeler MODEL section in `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`. Add a `useQuery` keyed on `['nam', 'model-detail', status?.activeModel]` that calls `namApi.search({ query: activeModel })` and finds the exact match (`results.find(m => m.name === activeModel)`), `enabled: !!status?.activeModel && !status?.loading`, `staleTime: 60_000`. Replace the flat `modelSelector` block (lines 339-379) with a 2-column key-value grid rendering Architecture | Amp Type | Amp Name | Author | Sample Rate | File Size | License | Rating (read-only stars `★★★★☆` or `—`). Null fields show `—`. Optional full-width description row if `description` is non-empty. Optional tags row (dot-separated flat muted text) if tags array non-empty. Library + Upload buttons preserved from existing layout. Add helpers: `formatFileSize(bytes)` → `"2.4 MB"`, `formatSampleRate(hz)` → `"48 kHz"`, `renderRating(n)` → star string. Add CSS classes to `web/src/app/components/PluginCards/Base/carbonCardStyles.css`: `.carbon-nam-detail-grid` (2-col), `.carbon-nam-field-label` (10px uppercase Carbon helper), `.carbon-nam-field-value` (13px primary text, ellipsis), `.carbon-nam-field-value.empty`, `.carbon-nam-field--full`, `.carbon-nam-tags`.
+- Why it matters: Backend already stores `NAMModelDetail` with architecture, amp_type, amp_name, author, file_size, sample_rate, tags, rating, license (see `web/src/map2/api.ts:3799` + `namApi.search()` at line 3856) — none of it is surfaced to operators. Plan `zesty-dreaming-popcorn` specifies flat Carbon styling (no cards-within-cards), null-safe fallback, file-size humanization, rating as star-string.
+- Dependencies: None. Existing `NAMModelDetail` type + `namApi.search()` are production-ready.
+- Estimated effort: Small — single file refactor + CSS addition + 3 helper functions.
+- Required outputs:
+  - `NAMCard.tsx` with expanded MODEL section (metadata grid + optional description + optional tags + existing buttons/meta)
+  - New CSS classes in `carbonCardStyles.css`
+  - Null handling verified with no-model-loaded state
+  - `npm run build` + `npm run preview` manual verification: load a model, confirm all 8 fields populate; unload, confirm `—` fallbacks
+  - Atomic commit on master + `git push origin master && git push gitlab master`
+Assigned to: unassigned
+Last updated: 2026-04-21 - Claude (created from plan audit — `zesty-dreaming-popcorn` plan not yet executed; backend schema ready)
+
+---
+
 ID: T2415
 Status: [✓] Done
 Title: Move Snapshot Editor vertical rail actions into the bottom snapshot inspector
