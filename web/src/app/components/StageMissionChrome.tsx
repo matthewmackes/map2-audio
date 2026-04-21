@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import type { ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 
 function formatTimeMono(d: Date): string {
   const h = String(d.getHours()).padStart(2, '0')
@@ -130,5 +131,182 @@ export function StageEventTicker({ events, reducedMotion = false, leading }: Sta
         </div>
       </div>
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// StageMidiPanel — compact realtime MIDI IN feed
+// ─────────────────────────────────────────────
+
+export type MidiEventType = 'CC' | 'PC' | 'Note'
+
+export interface StageMidiEvent {
+  id: string
+  type: MidiEventType
+  ch: number
+  a: number
+  b: number | null
+  label: string
+  timestamp: number
+}
+
+interface StageMidiPanelProps {
+  events: StageMidiEvent[]
+  reducedMotion?: boolean
+}
+
+function midiTypeColor(type: MidiEventType): string {
+  if (type === 'CC') return '#78a9ff'
+  if (type === 'PC') return '#be95ff'
+  return '#42be65'
+}
+
+function midiAgo(timestamp: number): string {
+  const s = Math.max(0, Math.floor((Date.now() - timestamp) / 1000))
+  if (s < 1) return 'now'
+  if (s < 60) return `${s}s`
+  return `${Math.floor(s / 60)}m`
+}
+
+function MidiEventRow({ event, isFresh, reducedMotion }: { event: StageMidiEvent; isFresh: boolean; reducedMotion: boolean }) {
+  const color = midiTypeColor(event.type)
+  const [, tick] = useReducer((x: number) => x + 1, 0)
+
+  // tick every second to update ago label
+  useEffect(() => {
+    const iv = window.setInterval(tick, 1000)
+    return () => window.clearInterval(iv)
+  }, [])
+
+  return (
+    <motion.li
+      layout
+      className="stage-midi-panel__row"
+      initial={reducedMotion ? false : { opacity: 0, x: -12 }}
+      animate={{ opacity: isFresh ? 1 : 0.68, x: 0 }}
+      exit={reducedMotion ? undefined : { opacity: 0, x: 12, height: 0, paddingTop: 0, paddingBottom: 0 }}
+      transition={{ type: 'spring', stiffness: 80, damping: 24, mass: 1.4 }}
+    >
+      <motion.span
+        className={`stage-midi-panel__type stage-midi-panel__type--${event.type.toLowerCase()}`}
+        animate={isFresh && !reducedMotion ? {
+          backgroundColor: [`${color}44`, 'var(--cds-layer-03, #525252)'],
+        } : {}}
+        transition={{ duration: 2.2, ease: 'easeOut' }}
+        style={{ color }}
+      >
+        {event.type}
+      </motion.span>
+      <span className="stage-midi-panel__ch">CH{String(event.ch).padStart(2, '0')}</span>
+      <span className="stage-midi-panel__vals">
+        <b>{event.a}</b>
+        {event.b != null ? <>, <b>{event.b}</b></> : null}
+      </span>
+      <span className="stage-midi-panel__label">{event.label}</span>
+      <span className="stage-midi-panel__ago">{midiAgo(event.timestamp)}</span>
+    </motion.li>
+  )
+}
+
+function MidiHeroBlock({ event, rank, reducedMotion }: { event: StageMidiEvent; rank: 0 | 1 | 2; reducedMotion: boolean }) {
+  const color = midiTypeColor(event.type)
+  const [, tick] = useReducer((x: number) => x + 1, 0)
+  useEffect(() => {
+    const iv = window.setInterval(tick, 1000)
+    return () => window.clearInterval(iv)
+  }, [])
+
+  return (
+    <motion.li
+      layout
+      className={`stage-midi-hero stage-midi-hero--rank-${rank}`}
+      data-rank={rank}
+      initial={reducedMotion ? false : { opacity: 0, scale: 0.92, y: 8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={reducedMotion ? undefined : { opacity: 0, scale: 0.92 }}
+      transition={{ type: 'spring', stiffness: 90, damping: 22 }}
+    >
+      {/* Reference designator top-left, e.g., [CC][CH03] */}
+      <span className="stage-midi-hero__ref">
+        <span className={`stage-midi-hero__ref-type stage-midi-hero__ref-type--${event.type.toLowerCase()}`} style={{ color }}>
+          [{event.type}]
+        </span>
+        <span className="stage-midi-hero__ref-ch">[CH{String(event.ch).padStart(2, '0')}]</span>
+      </span>
+      {/* Pulse ring — newest green, 2nd cyan 50%, 3rd cyan 25% */}
+      <span className="stage-midi-hero__pulse" aria-hidden="true" />
+      {/* Component value — label is main, numeric values secondary */}
+      <span className="stage-midi-hero__value">
+        <span className="stage-midi-hero__label">{event.label || '—'}</span>
+        <span className="stage-midi-hero__nums">
+          <b>{event.a}</b>{event.b != null ? <>, <b>{event.b}</b></> : null}
+        </span>
+      </span>
+      {/* Tolerance (timestamp) bottom-right */}
+      <span className="stage-midi-hero__tolerance">± {midiAgo(event.timestamp)}</span>
+    </motion.li>
+  )
+}
+
+function MidiArchiveChip({ event }: { event: StageMidiEvent }) {
+  return (
+    <li className="stage-midi-archive__chip">
+      <span className={`stage-midi-archive__type stage-midi-archive__type--${event.type.toLowerCase()}`}>
+        {event.type}
+      </span>
+      <span className="stage-midi-archive__ch">{String(event.ch).padStart(2, '0')}</span>
+      <span className="stage-midi-archive__vals">
+        {event.a}{event.b != null ? `,${event.b}` : ''}
+      </span>
+      <span className="stage-midi-archive__label">{event.label || ''}</span>
+      <span className="stage-midi-archive__ago">{midiAgo(event.timestamp)}</span>
+    </li>
+  )
+}
+
+export function StageMidiPanel({ events, reducedMotion = false }: StageMidiPanelProps) {
+  const heroes = events.slice(0, 3)
+  const archive = events.slice(3, 10)
+  const hasHero = heroes.length > 0
+
+  return (
+    <motion.section
+      className="stage-midi-panel"
+      aria-label="MIDI IN feed"
+      data-cadence="midi-event"
+      data-event={hasHero ? 'true' : 'false'}
+      initial={reducedMotion ? false : { opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 1.4, delay: 1.2, ease: [0.2, 0.8, 0.2, 1] }}
+    >
+      <div className="stage-midi-panel__head">
+        <span className="stage-midi-panel__led" aria-hidden="true" />
+        <span className="stage-midi-panel__head-label">MIDI IN</span>
+        <span className="stage-midi-panel__spacer" />
+        <span className="stage-midi-panel__count">LAST {events.length}</span>
+      </div>
+
+      {/* Slice F — Hero 3 schematic component blocks */}
+      {heroes.length > 0 ? (
+        <ol className="stage-midi-hero-list" aria-label="Last 3 MIDI events">
+          <AnimatePresence initial={false}>
+            {heroes.map((ev, i) => (
+              <MidiHeroBlock key={ev.id} event={ev} rank={i as 0 | 1 | 2} reducedMotion={reducedMotion} />
+            ))}
+          </AnimatePresence>
+          {/* Dimension line connector between heroes */}
+          {heroes.length > 1 ? <li className="stage-midi-hero-list__dimension" aria-hidden="true" /> : null}
+        </ol>
+      ) : null}
+
+      {/* Slice F — Secondary 7 as schematic parts-list appendix */}
+      {archive.length > 0 ? (
+        <ol className="stage-midi-archive" aria-label="Prior MIDI events">
+          {archive.map((ev) => (
+            <MidiArchiveChip key={ev.id} event={ev} />
+          ))}
+        </ol>
+      ) : null}
+    </motion.section>
   )
 }

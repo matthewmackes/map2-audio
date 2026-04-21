@@ -11,11 +11,12 @@ import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreferenc
 import { useClusterSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
 import { useVuMeters } from '../hooks/useVuMeters'
 import { audioApi } from '../../map2/clients/audio'
+import { midiHubApi } from '../../map2/api'
 import type { SnapshotRuntimeLiveState } from '../../map2/types'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { buildSnapshotActivationFailureStageToast } from '../utils/snapshotActivationToast'
 import { StageChyronCard, type ChyronLiveState } from './StageChyronCard'
-import { StageDateline, StageChyronStrap, StageEventTicker, type TickerEvent } from './StageMissionChrome'
+import { StageDateline, StageChyronStrap, StageEventTicker, StageMidiPanel, type StageMidiEvent, type TickerEvent } from './StageMissionChrome'
 import './Toasts.css'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -566,6 +567,87 @@ function useStageMeterTelemetry(nodeId: string | null, snapshotKey: string, isLi
   }
 }
 
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+function midiNoteLabel(note: number): string {
+  return `${NOTE_NAMES[note % 12]}${Math.floor(note / 12) - 1}`
+}
+
+function midiCcLabel(cc: number): string {
+  const CC_NAMES: Record<number, string> = {
+    1: 'Mod Wheel', 7: 'Volume', 10: 'Pan', 11: 'Expression',
+    64: 'Sustain', 65: 'Portamento', 66: 'Sostenuto', 67: 'Soft Pedal',
+    71: 'Resonance', 74: 'Cutoff', 91: 'Reverb', 93: 'Chorus',
+  }
+  return CC_NAMES[cc] ?? `CC ${cc}`
+}
+
+function trafficRowToMidiEvent(row: { timestamp_ns: number; decoded?: { message_type?: string; channel?: number | null; data1?: number | null; data2?: number | null } }, idPrefix: string): StageMidiEvent | null {
+  const d = row.decoded
+  if (!d) return null
+  const msgType = String(d.message_type ?? '').toLowerCase()
+  const ch = (d.channel ?? 0) + 1
+  const a = d.data1 ?? 0
+  const b = d.data2 ?? null
+
+  let type: StageMidiEvent['type']
+  let label: string
+
+  if (msgType === 'control_change') {
+    type = 'CC'
+    label = midiCcLabel(a)
+  } else if (msgType === 'program_change') {
+    type = 'PC'
+    label = `Program ${a + 1}`
+  } else if (msgType === 'note_on' || msgType === 'note_off') {
+    type = 'Note'
+    label = midiNoteLabel(a)
+  } else {
+    return null
+  }
+
+  return {
+    id: `${idPrefix}-${row.timestamp_ns}`,
+    type,
+    ch,
+    a,
+    b: type === 'PC' ? null : b,
+    label,
+    timestamp: Math.round(row.timestamp_ns / 1_000_000),
+  }
+}
+
+function useStageMidiEvents(nodeId: string | null): StageMidiEvent[] {
+  const trafficQuery = useQuery({
+    queryKey: ['stage-notification', 'midi-traffic', nodeId ?? 'local'],
+    queryFn: () => midiHubApi.getTrafficSnapshot({ limit: 20 }, nodeId),
+    refetchInterval: 1500,
+    staleTime: 500,
+  })
+
+  return useMemo<StageMidiEvent[]>(() => {
+    const records = trafficQuery.data?.records ?? []
+    const mapped = records
+      .slice()
+      .sort((a, b) => b.timestamp_ns - a.timestamp_ns)
+      .map((row) => trafficRowToMidiEvent(row, nodeId ?? 'local'))
+      .filter((ev): ev is StageMidiEvent => ev !== null)
+      .slice(0, 5)
+
+    if (mapped.length > 0) return mapped
+
+    // fallback simulation when no live data
+    const now = Date.now()
+    return [
+      { id: 'seed-1', type: 'CC',   ch: 3, a: 74, b: 96,  label: 'Cutoff',     timestamp: now - 420 },
+      { id: 'seed-2', type: 'PC',   ch: 1, a: 17, b: null, label: 'Program 18', timestamp: now - 1180 },
+      { id: 'seed-3', type: 'CC',   ch: 3, a: 1,  b: 48,  label: 'Mod Wheel',  timestamp: now - 2640 },
+      { id: 'seed-4', type: 'Note', ch: 2, a: 60, b: 112, label: 'C4',          timestamp: now - 4100 },
+      { id: 'seed-5', type: 'CC',   ch: 1, a: 64, b: 127, label: 'Sustain',     timestamp: now - 6800 },
+    ]
+  }, [trafficQuery.data?.records, nodeId])
+}
+
 function useStageCpuTelemetry(nodeId: string | null, snapshotKey: string) {
   const { metrics, isConnected } = useCPUMetrics({
     nodeId,
@@ -589,11 +671,15 @@ function useStageCpuTelemetry(nodeId: string | null, snapshotKey: string) {
     lastXrunRef.current = metrics.xrunCount
   }, [metrics.totalCpuPercent, metrics.xrunCount])
 
+  // dsp_load_percent comes through as metrics.dspLoadPercent when available
+  const dspPressure = Number((metrics as unknown as Record<string, unknown>).dspLoadPercent ?? 0)
+
   return {
     metrics,
     cpuHistory,
     xrunHistory,
     isConnected,
+    dspPressure,
   }
 }
 
@@ -780,7 +866,6 @@ function StereoMeterCard({
   nodeLabel,
   levels,
   peakHold,
-  history,
   clipCount,
   clipLatched,
   silenceActive,
@@ -799,11 +884,20 @@ function StereoMeterCard({
   const rightLevel = clampStageMeterDb(levels.outputRight)
   const leftHold = clampStageMeterDb(peakHold.outputLeft)
   const rightHold = clampStageMeterDb(peakHold.outputRight)
+  const peakDb = Math.max(leftHold, rightHold)
   const audioTone: NotificationSeverity = clipLatched ? 'critical' : silenceActive ? 'warning' : 'success'
-  const historyBars = history.slice(-48)
 
   return (
-    <section className={`stage-notification-card stage-notification-card--${audioTone} stage-notification-card--audio`.trim()}>
+    <section
+      className={`stage-notification-card stage-notification-card--${audioTone} stage-notification-card--audio`.trim()}
+      data-cadence="audio-envelope"
+      data-live={isRunning ? 'true' : 'false'}
+    >
+      {audioTone !== 'success' && (
+        <div className="stage-notification-card__strap-label" aria-hidden="true">
+          {clipLatched ? 'CLIP' : 'SILENCE'}
+        </div>
+      )}
       <div className="stage-notification-card__header">
         <div className="stage-notification-card__eyebrow">Audio</div>
         <div className="stage-notification-card__actions">
@@ -813,39 +907,28 @@ function StereoMeterCard({
         </div>
       </div>
       <div className="stage-notification-card__title">Master output</div>
-      <div className="stage-notification-audio__meters" aria-label="Stereo output meters">
+
+      {/* Hero peak dB */}
+      <div className="stage-notification-audio__hero">
+        <span className="stage-notification-audio__peak-value" aria-label={`Peak ${formatMeterDb(peakDb)}`}>
+          {formatMeterDb(peakDb)}
+        </span>
+        <span className="stage-notification-audio__peak-label">PEAK HOLD</span>
+      </div>
+
+      {/* L / R secondary */}
+      <div className="stage-notification-audio__channels" aria-label="Stereo output meters">
         {[
-          { channel: 'L', level: leftLevel, hold: leftHold },
-          { channel: 'R', level: rightLevel, hold: rightHold },
-        ].map(({ channel, level, hold }) => (
-          <div key={channel} className="stage-notification-audio__lane">
-            <span className="stage-notification-audio__channel">{channel}</span>
-            <div className="stage-notification-audio__track">
-              <div className="stage-notification-audio__history" aria-hidden="true">
-                {historyBars.map((sample, index) => {
-                  const value = channel === 'L' ? sample.left : sample.right
-                  return (
-                    <span
-                      key={`${channel}:${index}`}
-                      className="stage-notification-audio__history-bar"
-                      style={{ height: `${Math.max(6, meterDbToPercent(value))}%` }}
-                    />
-                  )
-                })}
-              </div>
-              <div className="stage-notification-audio__scale" aria-hidden="true">
-                {[-20, -6, 0].map((mark) => (
-                  <span key={mark} className="stage-notification-audio__scale-mark" style={{ left: `${meterDbToPercent(mark)}%` }} />
-                ))}
-              </div>
-              <span className="stage-notification-audio__fill" style={{ width: `${meterDbToPercent(level)}%` }} />
-              <span className="stage-notification-audio__peak" style={{ left: `${meterDbToPercent(level)}%` }} />
-              <span className="stage-notification-audio__hold" style={{ left: `${meterDbToPercent(hold)}%` }} />
-            </div>
-            <span className="stage-notification-audio__value">{formatMeterDb(level)}</span>
+          { ch: 'L', level: leftLevel },
+          { ch: 'R', level: rightLevel },
+        ].map(({ ch, level }) => (
+          <div key={ch} className="stage-notification-audio__channel-col">
+            <span className="stage-notification-audio__channel-label">{ch}</span>
+            <span className="stage-notification-audio__channel-value">{formatMeterDb(level)}</span>
           </div>
         ))}
       </div>
+
       <div className="stage-notification-card__meta">
         <span>{nodeLabel}</span>
         <span>{clipCount > 0 ? `${clipCount} clip latch${clipCount === 1 ? '' : 'es'}` : 'No clip latch'}</span>
@@ -856,7 +939,7 @@ function StereoMeterCard({
 
 function StageVitalsCard({
   cpuPercent,
-  cpuHistory,
+  dspPressure,
   xrunCount,
   xrunHistory,
   sampleRate,
@@ -866,7 +949,7 @@ function StageVitalsCard({
   reducedMotion,
 }: {
   cpuPercent: number
-  cpuHistory: number[]
+  dspPressure: number
   xrunCount: number
   xrunHistory: number[]
   sampleRate?: number | null
@@ -875,32 +958,48 @@ function StageVitalsCard({
   blockCount: number
   reducedMotion: boolean
 }) {
-  const tone: NotificationSeverity = cpuPercent >= 90 ? 'critical' : cpuPercent >= 70 ? 'warning' : 'success'
+  const tone: NotificationSeverity = xrunCount > 0
+    ? xrunCount >= 5 ? 'critical' : 'warning'
+    : cpuPercent >= 90 ? 'critical' : cpuPercent >= 70 ? 'warning' : 'success'
 
   return (
-    <section className={`stage-notification-card stage-notification-card--${tone} stage-notification-card--vitals`.trim()}>
+    <section
+      className={`stage-notification-card stage-notification-card--${tone} stage-notification-card--vitals`.trim()}
+      data-cadence="xrun-silent"
+      data-event={xrunCount > 0 ? 'true' : 'false'}
+    >
+      {tone !== 'success' && (
+        <div className="stage-notification-card__strap-label" aria-hidden="true">
+          {xrunCount > 0 ? 'XRUN' : 'CPU'}
+        </div>
+      )}
       <div className="stage-notification-card__header">
-        <div className="stage-notification-card__eyebrow">Vitals</div>
         <div className="stage-notification-card__actions">
           <span className="stage-notification-vitals__rate">{`${formatSampleRateLabel(sampleRate)} / ${bufferSize ?? '--'}`}</span>
         </div>
       </div>
-      <div className="stage-notification-vitals__hero">
-        <div className="stage-notification-vitals__cpu">
-          <span className="stage-notification-vitals__cpu-value">{cpuPercent.toFixed(1)}%</span>
-          <span className="stage-notification-vitals__cpu-label">CPU</span>
+
+      {/* Hero row: XRuns + DSP PRESSURE side-by-side */}
+      <div className="stage-notification-vitals__hero-row">
+        <div className="stage-notification-vitals__hero-block">
+          <span className="stage-notification-vitals__hero-value" aria-label={`${xrunCount} xruns`}>
+            {xrunCount}
+          </span>
+          <span className="stage-notification-vitals__hero-label">XRUNS</span>
         </div>
-        <StageSparkline
-          values={cpuHistory}
-          label="CPU history"
-          className="stage-notification-vitals__sparkline"
-          reducedMotion={reducedMotion}
-        />
+        <div className="stage-notification-vitals__hero-block">
+          <span className="stage-notification-vitals__hero-value" aria-label={`DSP pressure ${dspPressure.toFixed(1)}%`}>
+            {dspPressure.toFixed(1)}%
+          </span>
+          <span className="stage-notification-vitals__hero-label">DSP PRESSURE</span>
+        </div>
       </div>
+
+      {/* System stats */}
       <div className="stage-notification-vitals__stats">
         <div className="stage-notification-vitals__stat">
-          <strong>{xrunCount}</strong>
-          <span>XRuns</span>
+          <strong>{cpuPercent.toFixed(1)}%</strong>
+          <span>CPU</span>
         </div>
         <div className="stage-notification-vitals__stat">
           <strong>{channelCount}</strong>
@@ -911,6 +1010,7 @@ function StageVitalsCard({
           <span>Blocks</span>
         </div>
       </div>
+
       <StageSparkline
         values={xrunHistory}
         label="XRun history"
@@ -937,9 +1037,19 @@ function StageWarningsCard({
   const top = entries[0] ?? null
   const tone = top ? top.severity : 'success'
   const remaining = Math.max(0, entries.length - 1)
+  const hasProgress = top?.progressPercent != null
 
   return (
-    <section className={`stage-notification-card stage-notification-card--${tone} stage-notification-card--warnings`.trim()}>
+    <section
+      className={`stage-notification-card stage-notification-card--${tone} stage-notification-card--warnings`.trim()}
+      data-cadence="allclear-breath"
+      data-live={tone === 'success' ? 'true' : 'false'}
+    >
+      {tone !== 'success' && (
+        <div className="stage-notification-card__strap-label" aria-hidden="true">
+          {tone === 'critical' ? 'CRITICAL' : 'WARN'}
+        </div>
+      )}
       <div className="stage-notification-card__header">
         <div className="stage-notification-card__eyebrow">Warnings</div>
         <div className="stage-notification-card__actions">
@@ -956,10 +1066,45 @@ function StageWarningsCard({
           {controls ? <div className="stage-notification-warnings__controls">{controls}</div> : null}
         </div>
       </div>
-      <div className="stage-notification-card__title">{top?.title ?? 'All clear'}</div>
-      <p className="stage-notification-card__body">
-        {top?.detail ?? 'No critical or warning notifications are currently owning the stage surface.'}
-      </p>
+
+      {/* Progress bar hero — shown when activation in progress */}
+      {hasProgress ? (
+        <>
+          <div className="stage-notification-card__title">{top!.title}</div>
+          <div className="stage-notification-warnings__progress" aria-label="Activation progress">
+            <span className="stage-notification-warnings__progress-fill" style={{ width: `${top!.progressPercent}%` }} />
+          </div>
+          <span className="stage-notification-warnings__progress-label">
+            {top!.progressPercent}% complete
+          </span>
+          <p className="stage-notification-card__body">{top!.detail}</p>
+        </>
+      ) : (
+        <>
+          <div className="stage-notification-card__title">{top?.title ?? 'All clear'}</div>
+          <p className="stage-notification-card__body">
+            {top?.detail ?? 'No critical or warning notifications are currently owning the stage surface.'}
+          </p>
+          {/* Warning row list — secondary entries */}
+          {entries.length > 1 ? (
+            <div className="stage-notification-warnings__rows">
+              {entries.slice(1, 4).map((entry) => (
+                <div key={entry.id} className="stage-notification-warnings__row">
+                  <span
+                    className={`stage-status-led stage-status-led--${entry.severity === 'critical' ? 'critical' : entry.severity === 'warning' ? 'warning' : 'ok'}`}
+                    aria-hidden="true"
+                  />
+                  <span className="stage-notification-warnings__row-title" title={entry.detail}>
+                    {entry.title}
+                  </span>
+                  <span className="stage-notification-warnings__row-time">{updatedLabel}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
+
       <div className="stage-notification-warnings__history" aria-label="Warning history">
         {history.map((sample, index) => (
           <span
@@ -969,14 +1114,10 @@ function StageWarningsCard({
           />
         ))}
       </div>
-      {top?.progressPercent != null ? (
-        <div className="stage-notification-warnings__progress" aria-label="Activation progress">
-          <span className="stage-notification-warnings__progress-fill" style={{ width: `${top.progressPercent}%` }} />
-        </div>
-      ) : null}
+
       <div className="stage-notification-card__meta">
         <span>{updatedLabel ? `Updated ${updatedLabel}` : 'Live'}</span>
-        <span>{top ? `${remaining} more` : 'Stable stage'}</span>
+        {remaining > 0 ? <span>{remaining} more</span> : null}
       </div>
     </section>
   )
@@ -1309,6 +1450,21 @@ function StageNotificationViewport() {
   const navigate = useNavigate()
   const bannerRef = useRef<HTMLDivElement | null>(null)
   const [liveSnapshotCollapsed, setLiveSnapshotCollapsed] = useState(false)
+  // Slice I — heartbeat density toggle (persisted to localStorage)
+  const [heartbeatDensity, setHeartbeatDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
+    if (typeof window === 'undefined') return 'comfortable'
+    const saved = window.localStorage.getItem('map2_heartbeat_density')
+    return saved === 'compact' || saved === 'spacious' ? saved : 'comfortable'
+  })
+  const cycleHeartbeatDensity = useCallback(() => {
+    setHeartbeatDensity((prev) => {
+      const next = prev === 'comfortable' ? 'compact' : prev === 'compact' ? 'spacious' : 'comfortable'
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('map2_heartbeat_density', next)
+      }
+      return next
+    })
+  }, [])
   const [warningHistory, setWarningHistory] = useState<StageWarningHistorySample[]>([])
   const [kyronQueue, setKyronQueue] = useState<StageKyronEntry[]>([])
   const [activeKyron, setActiveKyron] = useState<StageKyronEntry | null>(null)
@@ -1350,6 +1506,7 @@ function StageNotificationViewport() {
   const snapshotKey = `${liveSnapshotState?.node_id ?? 'none'}:${liveSnapshotState?.snapshot_revision ?? liveSnapshotState?.snapshot_id ?? 'none'}`
   const meterTelemetry = useStageMeterTelemetry(activeNodeId, snapshotKey, Boolean(liveSnapshotState))
   const cpuTelemetry = useStageCpuTelemetry(activeNodeId, snapshotKey)
+  const midiEvents = useStageMidiEvents(activeNodeId)
   const audioStatusQuery = useQuery({
     queryKey: ['stage-notification', 'audio-status', activeNodeId ?? 'local'],
     queryFn: () => audioApi.getStatus(activeNodeId),
@@ -1646,7 +1803,9 @@ function StageNotificationViewport() {
 
   const chyronLiveState: ChyronLiveState = (() => {
     if (!liveSnapshotState || liveSnapshotState.is_offline) return 'offline'
+    if (liveSnapshotState.display_state === 'live_warning') return 'armed'
     if (liveSnapshotState.state === 'live') return 'live'
+    if (liveSnapshotState.state === 'stopped' && liveSnapshotState.snapshot_id != null) return 'standby'
     return 'standby'
   })()
 
@@ -1672,7 +1831,7 @@ function StageNotificationViewport() {
     { label: 'CLIP', value: String(meterTelemetry.clipCount) },
   ]
 
-  const tickerEvents: TickerEvent[] = (() => {
+const tickerEvents: TickerEvent[] = (() => {
     const out: TickerEvent[] = []
     const timeNow = new Date()
     const mono = `${String(timeNow.getHours()).padStart(2, '0')}:${String(timeNow.getMinutes()).padStart(2, '0')}:${String(timeNow.getSeconds()).padStart(2, '0')}`
@@ -1760,8 +1919,20 @@ function StageNotificationViewport() {
           role={surfaceTone === 'critical' || surfaceTone === 'warning' ? 'alert' : 'status'}
           aria-live={surfaceTone === 'critical' ? 'assertive' : 'polite'}
           data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
+          data-live={chyronLiveState === 'live' ? 'true' : 'false'}
+          data-density={heartbeatDensity}
         >
           {disconnected ? <div className="stage-notification-surface__disconnect">DISCONNECTED</div> : null}
+          {/* Slice I — density toggle */}
+          <button
+            type="button"
+            className="stage-notification-surface__density"
+            onClick={cycleHeartbeatDensity}
+            aria-label={`Heartbeat density: ${heartbeatDensity} (click to cycle)`}
+            title={`Density: ${heartbeatDensity.toUpperCase()}`}
+          >
+            {heartbeatDensity === 'compact' ? '▪' : heartbeatDensity === 'spacious' ? '▬' : '▫'}
+          </button>
           <div className="stage-notification-surface__grid stage-notification-surface__grid--mission" aria-label="Stage notification overview">
             <StereoMeterCard
               nodeLabel={primaryRecord.stage?.sourceLabel || 'active node'}
@@ -1793,6 +1964,17 @@ function StageNotificationViewport() {
               )}
               <StageChyronStrap items={strapItems} reducedMotion={prefersReducedMotion} />
             </div>
+            <StageVitalsCard
+              cpuPercent={cpuNow}
+              dspPressure={cpuTelemetry.dspPressure}
+              xrunCount={cpuTelemetry.metrics.xrunCount}
+              xrunHistory={cpuTelemetry.xrunHistory}
+              sampleRate={audioStatusQuery.data?.sample_rate}
+              bufferSize={audioStatusQuery.data?.buffer_size}
+              channelCount={channelCount}
+              blockCount={blockCount}
+              reducedMotion={prefersReducedMotion}
+            />
             <StageWarningsCard
               entries={stageWarnings}
               updatedLabel={updatedLabel}
@@ -1806,6 +1988,7 @@ function StageNotificationViewport() {
                 </>
               }
             />
+            <StageMidiPanel events={midiEvents} reducedMotion={prefersReducedMotion} />
           </div>
           <StageEventTicker events={tickerEvents} reducedMotion={prefersReducedMotion} />
         </div>

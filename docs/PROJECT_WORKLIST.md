@@ -6,7 +6,83 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2414 EPIC CLOSED (all 5 phases landed, dual-pushed): Phase A b72cb065 (logo+manifest), Phase B 95cc1c50 (BrandingContext+/api/branding), Phase C 8bc0c754 (ThemePage Branding tab), Phase D c53f0e5b (OS renderer+systemd rewriter+/api/branding/os-status+apply-os), Phase E 94ef0843 (RPM spec rewriter). Manifest is now single source of truth for web UI, PWA, favicons, runtime context, OS artifacts, systemd Descriptions, and RPM specs. Verification: pytest 7/7, npx tsc --noEmit clean, npm run build clean (~22s).
+Last updated: 2026-04-21 - T2416 slices A–G + I–J landed: blueprint heartbeat lower-third panel shipped. 20/20 Toasts.test.tsx PASS, typecheck + build clean. T2416-H-FOLLOWUP opened for cluster mini-cards.
+
+---
+
+ID: T2416
+Status: [>] In Progress — slices A–G + I–J landed; H (cluster expansion) still gated to existing summary card
+Title: EPIC — Lower Third "Heartbeat" Panel Redesign (Architectural Blueprint + Tactical HUD)
+Description:
+- Goal / acceptance criteria: Redesign the bottom-third notification panel (stage-notification-surface) so it represents the "heartbeat" of live audio channels on the Node and across the Cluster. Aesthetic: Architectural Blueprint base (deep indigo #0B1A2E field, cyan #00B4D8 grid/schematic linework) with Tactical HUD energy (fast entrance, pulsing live indicators, green #42BE65 as unified heartbeat color). Match existing Carbon theming — Plex Sans + Plex Mono, existing tokens, no new font dependencies. All cards fly in and out on mount/unmount with the background sliding from the right. Last 3 MIDI events render as schematic component blocks with reference designators, dimension-line connectors, and decaying pulse rings; the 7 events after render as a compact 2-column parts-list appendix at 40% opacity. Layered cadence: STANDBY follows audio envelope, MAP2/Snapshot steady 60 BPM, XRUNS silent-except-on-event, All Clear 0.25Hz breath, MIDI IN per-event flash. Broadcasting hero: cyan "NOW BROADCASTING" eyebrow with 4s green shimmer sweep, snapshot name with 60 BPM green pulse-dot, active effect pedals glow soft green when signal flows. Cluster-aware: when multiple nodes broadcast, hero strip contracts and cluster mini-cards render for each peer node. Optional density toggle in top-right (Compact/Comfortable/Spacious). Carbon conformance per docs/design/CARBON_CONFORMANCE_STANDARD.md.
+- Why it matters: The lower-third panel is operators' at-a-glance view of live node health. User stated it needs to be "one of the best visual parts of the system, representing the heartbeat of the Audio channels that are live on the Node, and on the Cluster." Current T711 port landed Carbon-token theming — this epic builds the distinctive blueprint/heartbeat visual identity on that foundation.
+- Dependencies: T711 (Toasts.css Carbon-token port) — Done. T710 (blueprint theme scaffold) — Done.
+- Estimated effort: Large — 10 restartable subtasks.
+- Required outputs:
+  - T2416-A: Design tokens — blueprint palette (#0B1A2E, #00B4D8, #42BE65), motion tokens (hud-burst, heartbeat cadences), grid CSS vars (--bp-grid-fine, --bp-grid-coarse, --bp-grid-opacity)
+  - T2416-B: Blueprint grid background on .stage-notification-surface with 8px/40px dual-layer grid + reactive-cell "breathe" on live activity
+  - T2416-C: Card edge system — cyan hairline + corner brackets at rest; green glow pulse on live state; sharp 0px corners
+  - T2416-D: Tactical HUD Burst entrance/exit — bg slide 0-250ms, grid snap 150ms, cards fly-in 200-600ms (50ms stagger, multi-direction), synchronized green flash 500ms; exit mirrors at ~450ms
+  - T2416-E: Layered cadence hooks — per-card rhythm via CSS custom props or react hooks (audio-envelope, 60bpm, 0.25Hz, per-event, silent-trigger)
+  - T2416-F: MIDI Hero schematic components — last 3 events as bordered cards with [TYPE][CHxx] reference designator, label as value, timestamp as tolerance; pulse rings (green/cyan 50%/cyan 25%); connecting dimension lines; secondary 7 as 2-col 11px parts-list at 40% opacity
+  - T2416-G: Broadcasting hero — NOW BROADCASTING eyebrow 4s green shimmer sweep; snapshot name 60 BPM green pulse-dot; active pedals soft green outline glow
+  - T2416-H: Cluster expansion — when multiple nodes live, hero contracts to strip + row of per-node mini-cards with mini STANDBY/XRUN/MIDI indicators
+  - T2416-I: Density toggle — Compact / Comfortable / Spacious in top-right corner; persisted to localStorage (map2_heartbeat_density)
+  - T2416-J: Internal scroll for MIDI overflow — hero 3 never scroll; secondary 7+ scrollable with cyan hairline scrollbar
+  - Atomic commits on master + `git push origin master && git push gitlab master` per slice
+  - typecheck PASS, build PASS, focused Jest PASS per slice
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (slices A–G + I–J landed; 20/20 Toasts.test.tsx PASS, typecheck PASS, build PASS 22.74s; H deferred to follow-up)
+Completion progress:
+  - T2416-A Done: `Toasts.css` token block on `.stage-notification-surface` — `--bp-field`, `--bp-grid`, `--bp-heartbeat`, `--bp-card-fill`, `--bp-bracket-size`, `--hud-burst-*`, `--hb-snapshot-ms`, `--hb-allclear-ms`, `--hb-midi-flash-ms`, `--hb-shimmer-ms` plus `[data-carbon-theme="blueprint"]` scope overrides.
+  - T2416-B Done: Layered grid background (8px fine + 40px coarse cyan on indigo) + `[data-live="true"]` reactive-cell breathe.
+  - T2416-C Done: `stage-notification-card` cyan hairline + `::after` corner brackets (8 linear-gradients) + `[data-live="true"]` green glow.
+  - T2416-D Done: Entrance choreography — background slide-in + staggered card fly-in via `nth-child` staggers.
+  - T2416-E Done: `data-cadence` hooks on `StereoMeterCard` (audio-envelope/data-live), `StageVitalsCard` (xrun-silent/data-event), `StageWarningsCard` (allclear-breath/data-live), chyron wrap (`:has(--live)` cadence).
+  - T2416-F Done: `StageMidiPanel` split into `MidiHeroBlock` (last 3 with [TYPE][CHxx] ref designator + pulse ring + tolerance) and `MidiArchiveChip` (secondary 7 parts-list).
+  - T2416-G Done: Chyron NOW BROADCASTING shimmer on `.stage-chyron--live`, 60 BPM `.stage-chyron__rig-pulse` on live snapshot name; legacy bug-dot preserved for test contract.
+  - T2416-H Deferred: Multi-node mini-cards not yet — existing `StageClusterSummaryCard` gate remains; new follow-up task to scaffold per-node schematic chips.
+  - T2416-I Done: Density toggle button + `[data-density]` selector + `localStorage["map2_heartbeat_density"]` persistence.
+  - T2416-J Done: MIDI archive overflow contained by `max-height` + internal scroll.
+  Validation (2026-04-21): `npm run test -- src/app/components/Toasts.test.tsx` PASS 20/20 in 4.6s; `npx tsc -b` clean; `npm run build` PASS 22.74s.
+  Preserved test contract restored: `Master output` title + `aria-label="Stereo output meters"` + `stage-chyron__bug-dot` pulse class + steady-state `.stage-notification-surface--success,--info` palette block + `Warnings` eyebrow + `Clip x1` format + `StageChyronStrap` render with `strapItems`.
+
+---
+
+ID: T2416-H-FOLLOWUP
+Status: [ ] Todo
+Title: Cluster expansion layout — per-node schematic chips for heartbeat panel
+Description:
+- Goal / acceptance criteria: When multiple cluster nodes report a live snapshot, contract the `.stage-notification-surface__chyron-wrap` hero and render a horizontal row of per-node mini-cards. Each mini-card: status dot (ok/warn/crit), node short-name (≤10 chars), live snapshot abbreviation, miniature STANDBY/XRUN/MIDI indicators. Maintain current single-node behavior when only one node is live. Keep `StageClusterSummaryCard` available as the bridge component until the new mini-card row replaces it.
+- Why it matters: T2416 interview decision Q10 was "E — Fixed layout + cluster expansion + density toggle + internal scroll." Cluster expansion is the remaining gap: current code only routes through the generic `StageClusterSummaryCard` without the blueprint/heartbeat styling.
+- Dependencies: T2416 (Done, landed A–G + I–J).
+- Estimated effort: Medium (~1-2 components + CSS rows + focused test).
+- Required outputs:
+  - New `StageClusterHeartbeatRow` or embedded cluster-mode on `.stage-notification-surface__chyron-wrap`
+  - Blueprint-scoped mini-card CSS rows
+  - Focused Jest assertion: cluster summary still appears when `hasClusterSummary` is true
+  - Atomic commit on master + `git push origin master && git push gitlab master`
+Assigned to: —
+Last updated: 2026-04-21 - Claude (opened as follow-up from T2416 slice H deferral)
+
+---
+
+ID: T2415
+Status: [✓] Done
+Title: Move Snapshot Editor vertical rail actions into the bottom snapshot inspector
+Description:
+- Goal / acceptance criteria: Remove the fixed left-side Snapshot Editor rail and place its destinations (Signal Grid, Directory, Parameters, Automation, Version History, Help) in the bottom snapshot inspector alongside the moved snapshot controls. The old vertical bar must no longer render, actions must keep their existing handlers/disabled states, focused tests plus typecheck/build must pass, and no platform-layer artifacts should be required because no dependency/runtime assumption changes are introduced.
+- Why it matters: The fixed vertical rail occupies a separate navigation column and duplicates the collision problem. Moving its contents into the editor inspector keeps snapshot controls and workspace destinations in one local editing surface.
+- Dependencies: T2413.
+- Estimated effort: Low.
+- Required outputs:
+  - Removed fixed `.juce-grid-page__floating-actions` rail render and CSS
+  - Bottom snapshot inspector workspace destinations wired to existing handlers
+  - Dead `SnapshotEditorRail` component/test removed or no longer referenced
+  - Focused tests, typecheck, and build PASS
+Assigned to: Codex
+Last updated: 2026-04-21 11:41 - Codex
+Completion note: 2026-04-21 - Codex: Deleted `web/src/app/components/SnapshotEditor/SnapshotEditorRail.tsx` and its focused test; removed the fixed `.juce-grid-page__floating-actions` render from `web/src/app/pages/SnapshotEditorPageContent.tsx`; removed old rail CSS from `web/src/app/pages/SnapshotEditorPage.css`; added compact icon-only workspace destinations to `SnapshotEditorSnapshotInspectorControls` for Signal Grid, Directory, Parameters, Automation, Version History, and Help with existing active/disabled handlers preserved; updated `SnapshotEditorPage.integration.test.tsx` and `SnapshotEditorSnapshotStatusPanel.test.tsx`. Validation: `npx jest --testPathPatterns='SnapshotEditor(SnapshotStatusPanel|Page.integration)' --runInBand --no-coverage` PASS (5/5); `npm --prefix web run typecheck` PASS; `npm --prefix web run build` PASS (23.91s); `git diff --check` PASS.
 
 ---
 

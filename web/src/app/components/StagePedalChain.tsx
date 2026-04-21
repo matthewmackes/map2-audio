@@ -1,5 +1,6 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 export { getPedalKindIcon, getPedalKindIconSpec } from './icons/effectIcons'
+import { getPedalKindIcon } from './icons/effectIcons'
 
 export type PedalKind =
   | 'tuner' | 'comp' | 'overdrive' | 'distortion' | 'fuzz' | 'eq' | 'wah'
@@ -211,19 +212,61 @@ export function PatchArrow({ active = true }: { active?: boolean }) {
   )
 }
 
+function BlueprintChainTile({ kind, on, active }: { kind: PedalKind; on: boolean; active: boolean }) {
+  const spec = PEDAL_SPECS[kind]
+  const Icon = getPedalKindIcon(kind)
+  return (
+    <div
+      className={[
+        'stage-blueprint-tile',
+        on ? '' : 'stage-blueprint-tile--off',
+        active ? 'stage-blueprint-tile--active' : '',
+      ].filter(Boolean).join(' ')}
+      aria-label={`${spec.model} ${spec.name} ${on ? 'active' : 'bypassed'}`}
+    >
+      <span className="stage-blueprint-tile__icon">
+        <Icon width={22} height={22} aria-hidden="true" />
+      </span>
+      <span className="stage-blueprint-tile__label">{spec.model}</span>
+      <span className="stage-blueprint-tile__sub">{spec.name.split(' ')[0]}</span>
+    </div>
+  )
+}
+
 interface SignalChainProps {
   chain?: PedalStage[]
   pedalWidth?: number
   reducedMotion?: boolean
+  mode?: 'pedal' | 'blueprint'
 }
 
-export function StagePedalSignalChain({ chain = DEFAULT_PEDAL_CHAIN, pedalWidth = 46, reducedMotion = false }: SignalChainProps) {
+export function StagePedalSignalChain({ chain = DEFAULT_PEDAL_CHAIN, pedalWidth = 46, reducedMotion = false, mode = 'blueprint' }: SignalChainProps) {
+  const [pulseIdx, setPulseIdx] = useState(0)
+
+  useEffect(() => {
+    if (reducedMotion || chain.length === 0) return
+    const iv = window.setInterval(() => {
+      setPulseIdx((current) => (current + 1) % chain.length)
+    }, 2800)
+    return () => window.clearInterval(iv)
+  }, [chain.length, reducedMotion])
+
   return (
     <div className="stage-pedal-chain" aria-label="Signal chain">
       {chain.map((p, i) => (
         <Fragment key={`${p.kind}-${i}`}>
-          <Pedal kind={p.kind} on={p.on} width={pedalWidth} label={PEDAL_SPECS[p.kind].model} reducedMotion={reducedMotion} />
-          {i < chain.length - 1 ? <PatchArrow active={p.on && chain[i + 1].on} /> : null}
+          <div
+            className={`stage-pedal-chain__slot${pulseIdx === i && !reducedMotion ? ' stage-pedal-chain__slot--active' : ''}`}
+          >
+            {mode === 'blueprint' ? (
+              <BlueprintChainTile kind={p.kind} on={p.on} active={pulseIdx === i && !reducedMotion} />
+            ) : (
+              <Pedal kind={p.kind} on={p.on} width={pedalWidth} label={PEDAL_SPECS[p.kind].model} reducedMotion={reducedMotion} />
+            )}
+          </div>
+          {i < chain.length - 1 ? (
+            <PatchArrow active={(p.on && chain[i + 1].on) || pulseIdx === i} />
+          ) : null}
         </Fragment>
       ))}
     </div>
