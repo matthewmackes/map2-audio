@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1172** TypeScript | **136** C++/H | **144** Docs | **2483** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1173** TypeScript | **136** C++/H | **144** Docs | **2485** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`75156c75`](https://github.com/matthewmackes/map2-audio/commit/75156c75b2687fadb417391c3c686535aba516a6) | feat(T710-sub10): add snapshotEditorStore.ts Zustand type... | Map2 Audio | 2026-04-20 |
+| [`bb213313`](https://github.com/matthewmackes/map2-audio/commit/bb213313d0b1837d04eb16359d8d7027856ac868) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`6590b02f`](https://github.com/matthewmackes/map2-audio/commit/6590b02f3ff25835821848a7f7c0b7759e010949) | feat(T710-sub09): audit SnapshotEditorPageContent state h... | Map2 Audio | 2026-04-20 |
 | [`aaa807fc`](https://github.com/matthewmackes/map2-audio/commit/aaa807fcef519c0082a66797fa2c67f881316654) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`26598486`](https://github.com/matthewmackes/map2-audio/commit/26598486c3fc5c727db8e79d3953ed0955d9d734) | feat(T710-sub08): register blueprint in MAP2 theme-preset... | Map2 Audio | 2026-04-20 |
 | [`ea2072b5`](https://github.com/matthewmackes/map2-audio/commit/ea2072b5023918d98b7ead01dc7cbbda56075665) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`78ebc023`](https://github.com/matthewmackes/map2-audio/commit/78ebc023f186eb372aee277bbe920edee7e36ddd) | feat(T710-sub07): add themeBlueprint.css variant for Unif... | Map2 Audio | 2026-04-20 |
 | [`41636199`](https://github.com/matthewmackes/map2-audio/commit/41636199806231f2a1c53ab90ae0ff15f7a170d5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`83fe3af2`](https://github.com/matthewmackes/map2-audio/commit/83fe3af2f43f51f38a774d627cfb425f3e05817e) | feat(T710-sub06): add categoryHues.ts with 15-category ok... | Map2 Audio | 2026-04-20 |
-| [`2e871d0a`](https://github.com/matthewmackes/map2-audio/commit/2e871d0aa6fc0c800bc263584b0c6a36e2308a43) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
