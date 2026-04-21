@@ -1,16 +1,18 @@
 import type { CSSProperties } from 'react'
-import { Button } from '@carbon/react'
+import { Button, Tag } from '@carbon/react'
 import { VolumeMute, VolumeUp } from '@carbon/icons-react'
 
 import { COLUMN_WIDTHS, ROW_HEIGHTS, type UnifiedChannelRow } from './gridConstants'
+import type { ChainMeterReading } from './useChainMeter'
 
 export interface ChannelHeaderProps {
   row: UnifiedChannelRow
+  meter?: ChainMeterReading
   onToggleMute?: (rowId: string) => void
   onToggleSolo?: (rowId: string) => void
 }
 
-export function ChannelHeader({ row, onToggleMute, onToggleSolo }: ChannelHeaderProps) {
+export function ChannelHeader({ row, meter, onToggleMute, onToggleSolo }: ChannelHeaderProps) {
   const style: CSSProperties = {
     width: COLUMN_WIDTHS.channelHeader,
     height: ROW_HEIGHTS.channel,
@@ -61,12 +63,38 @@ export function ChannelHeader({ row, onToggleMute, onToggleSolo }: ChannelHeader
 
       <div
         className="ucg-channel-header__vu"
-        aria-hidden
-        data-placeholder="true"
+        data-live={meter?.isLive ? 'true' : 'false'}
+        data-clipped={meter?.clipped ? 'true' : 'false'}
         role="presentation"
       >
-        <span className="ucg-channel-header__vu-bar" />
-        {row.stereo ? <span className="ucg-channel-header__vu-bar" /> : null}
+        <span className="ucg-channel-header__vu-track">
+          <span
+            className="ucg-channel-header__vu-fill"
+            style={{ inlineSize: `${Math.round((meter?.left ?? 0) * 100)}%` }}
+            aria-hidden
+          />
+        </span>
+        {row.stereo ? (
+          <span className="ucg-channel-header__vu-track">
+            <span
+              className="ucg-channel-header__vu-fill"
+              style={{ inlineSize: `${Math.round((meter?.right ?? 0) * 100)}%` }}
+              aria-hidden
+            />
+          </span>
+        ) : null}
+        {meter?.clipped ? (
+          <Tag size="sm" type="red" className="ucg-channel-header__clip-tag">
+            CLIP
+          </Tag>
+        ) : null}
+        {meter?.isLive ? (
+          <span
+            className="ucg-channel-header__live-dot"
+            aria-label="Live"
+            title="Live — engine streaming meters"
+          />
+        ) : null}
       </div>
     </div>
   )

@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { ChannelRow } from './ChannelRow'
 import { SlotRuler } from './SlotRuler'
 import { useGridKeyboard } from './useGridKeyboard'
+import type { ChainMeterReading } from './useChainMeter'
 import { WireOverlay, type Wire } from './WireOverlay'
 import {
   COLUMN_WIDTHS,
@@ -22,6 +23,7 @@ export interface UnifiedChannelGridProps {
   selectedBlock?: SelectedBlockCoord | null
   wires?: Wire[]
   activeWireId?: string | null
+  meters?: Record<string, ChainMeterReading>
   onSelectBlock?: (rowId: string, slotIndex: number) => void
   onAddBlock?: (rowId: string, slotIndex: number) => void
   onToggleMute?: (rowId: string) => void
@@ -37,6 +39,7 @@ export function UnifiedChannelGrid({
   selectedBlock = null,
   wires,
   activeWireId = null,
+  meters,
   onSelectBlock,
   onAddBlock,
   onToggleMute,
@@ -75,6 +78,7 @@ export function UnifiedChannelGrid({
           selectedSlotIndex={
             selectedBlock?.rowId === row.id ? selectedBlock.slotIndex : null
           }
+          meter={meters?.[row.id]}
           onSelectBlock={onSelectBlock}
           onAddBlock={onAddBlock}
           onToggleMute={onToggleMute}
