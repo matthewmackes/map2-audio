@@ -5,15 +5,16 @@ export { PRESET_THEMES, PRESET_THEME_MAP, PRESET_THEME_ORDER } from './presetThe
 export { CARBON_COLOR_FAMILIES, CARBON_FAMILY_BY_ID, PICKER_SHADES } from './carbonPalette';
 export type { CarbonColorFamily, BaseShell, DarkBase, LightBase } from './carbonPalette';
 export type { PlatformFontPreset, PlatformFontPresetId } from './usePlatformTypography';
-export { 
-  applyTheme, 
-  getSavedThemeId, 
-  initializeTheme, 
+export {
+  applyTheme,
+  getSavedThemeId,
+  initializeTheme,
   useTheme,
   getCustomThemes,
   saveCustomTheme,
   deleteCustomTheme,
-  getAllThemes
+  getAllThemes,
+  toCarbonBaseTheme,
 } from './useTheme';
 export {
   PLATFORM_FONT_PRESETS,

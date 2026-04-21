@@ -10,7 +10,7 @@ import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
 import { MidiHubStatusBar } from '../components/MidiHub/MidiHubStatusBar'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
-import { useTheme } from '../theme'
+import { toCarbonBaseTheme, useTheme } from '../theme'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './MidiHubShell.css'
 
@@ -21,7 +21,7 @@ export function MidiHubShell() {
   const scopeKey = apiNodeId ?? 'local'
   const { theme } = useTheme()
   useMidiHubOverview(apiNodeId, scopeKey)
-  const resolvedTheme = theme.carbonTheme ?? 'g100'
+  const resolvedTheme = toCarbonBaseTheme(theme.carbonTheme)
 
   return (
     <MidiHubNodeScopeProvider nodeId={apiNodeId} scopeKey={scopeKey}>

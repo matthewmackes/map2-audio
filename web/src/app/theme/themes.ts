@@ -3,7 +3,8 @@ import { PRESET_THEME_MAP, PRESET_THEME_ORDER } from './presetThemes';
 import { baseWidgets } from './themeFactory';
 
 function createThemeColors(carbonTheme: CarbonThemeId): ThemeColors {
-  const colorScheme = carbonTheme === 'white' || carbonTheme === 'g10' ? 'light' : 'dark';
+  const colorScheme: 'light' | 'dark' =
+    carbonTheme === 'white' || carbonTheme === 'g10' ? 'light' : 'dark';
 
   return {
     bg: 'var(--cds-background)',
@@ -80,9 +81,15 @@ const coreThemes: Record<string, Theme> = {
     'Bright Carbon white theme for documentation-heavy work and daylight environments.',
     'white',
   ),
+  blueprint: createTheme(
+    'blueprint',
+    'Blueprint',
+    'Cool-neutral inky blue theme for the Unified Channel Grid and schematic surfaces.',
+    'blueprint',
+  ),
 };
 
-const coreThemeOrder = ['default', 'gray-90', 'gray-10', 'white'];
+const coreThemeOrder = ['default', 'gray-90', 'gray-10', 'white', 'blueprint'];
 
 /** All built-in themes: 4 core Carbon shells + 100 preset themes. */
 export const themes: Record<string, Theme> = {

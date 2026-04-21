@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 
-import { applyTheme, getSavedThemeId, initializeTheme } from './useTheme'
+import { applyTheme, getSavedThemeId, initializeTheme, toCarbonBaseTheme } from './useTheme'
 
 describe('theme defaults', () => {
   beforeEach(() => {
@@ -37,6 +37,7 @@ describe('theme defaults', () => {
     ['gray-90', 'g90', 'dark'],
     ['gray-10', 'g10', 'light'],
     ['white', 'white', 'light'],
+    ['blueprint', 'blueprint', 'dark'],
   ] as const)('applies built-in theme %s using Carbon shell %s', (themeId, carbonTheme, colorScheme) => {
     applyTheme(themeId)
 
@@ -47,5 +48,23 @@ describe('theme defaults', () => {
     expect(document.documentElement.style.getPropertyValue('--surface')).toBe('var(--cds-layer)')
     expect(document.documentElement.style.getPropertyValue('--interactive')).toBe('var(--cds-button-primary)')
     expect(document.documentElement.style.getPropertyValue('--focus-ring')).toBe('var(--cds-focus)')
+  })
+})
+
+describe('toCarbonBaseTheme', () => {
+  it('maps each Carbon base theme to itself', () => {
+    expect(toCarbonBaseTheme('g100')).toBe('g100')
+    expect(toCarbonBaseTheme('g90')).toBe('g90')
+    expect(toCarbonBaseTheme('g10')).toBe('g10')
+    expect(toCarbonBaseTheme('white')).toBe('white')
+  })
+
+  it('maps blueprint to g100 so @carbon/react Theme accepts the value', () => {
+    expect(toCarbonBaseTheme('blueprint')).toBe('g100')
+  })
+
+  it('defaults null/undefined to g100', () => {
+    expect(toCarbonBaseTheme(null)).toBe('g100')
+    expect(toCarbonBaseTheme(undefined)).toBe('g100')
   })
 })

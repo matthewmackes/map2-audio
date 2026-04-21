@@ -6,7 +6,7 @@ const THEME_STORAGE_KEY = 'theme';
 const CUSTOM_THEMES_STORAGE_KEY = 'custom-themes';
 const DEFAULT_THEME_ID = 'gray-10';
 const CARBON_THEME_EVENT = 'map2:theme-change';
-const CARBON_THEME_CLASSES = ['cds--white', 'cds--g10', 'cds--g90', 'cds--g100'] as const;
+const CARBON_THEME_CLASSES = ['cds--white', 'cds--g10', 'cds--g90', 'cds--g100', 'cds--blueprint'] as const;
 
 const LEGACY_THEME_ALIASES: Record<string, string> = {
   g100: 'default',
@@ -41,6 +41,19 @@ function resolveThemeId(themeId: string | null | undefined, availableThemes: Rec
   }
 
   return DEFAULT_THEME_ID;
+}
+
+type CarbonBaseThemeId = Exclude<CarbonThemeId, 'blueprint'>;
+
+/**
+ * Resolve a CarbonThemeId to a value accepted by @carbon/react's Theme /
+ * GlobalTheme components (which know only the 4 canonical shells). The
+ * `blueprint` variant piggybacks on g100 Carbon internals while a separate
+ * [data-carbon-theme="blueprint"] scope overrides --cds-* tokens.
+ */
+export function toCarbonBaseTheme(carbonTheme: CarbonThemeId | null | undefined): CarbonBaseThemeId {
+  if (carbonTheme === 'blueprint' || !carbonTheme) return 'g100';
+  return carbonTheme as CarbonBaseThemeId;
 }
 
 function applyCarbonThemeClass(carbonTheme: CarbonThemeId): void {

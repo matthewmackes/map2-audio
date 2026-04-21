@@ -13,7 +13,7 @@ import { OUTBOARD_HARDWARE_DEVICES } from './outboardHardwareShared'
 import { buildWorkspaceOutboardHardwarePath } from './outboardHardwareRoutes'
 import { FALLBACK_PHYSICAL_SURFACE_UNITS } from './physicalSurfacesShared'
 import { buildWorkspacePhysicalSurfacesPath } from './physicalSurfacesRoutes'
-import { useTheme } from '../theme'
+import { toCarbonBaseTheme, useTheme } from '../theme'
 import { buildWorkspaceHubPlatformPath } from '../platform/routes'
 import { useUnifiedWorkspaceData, type UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
 import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
@@ -135,7 +135,7 @@ export function WorkspaceHubIndexRedirect() {
 export function WorkspaceHubShell() {
   const location = useLocation()
   const { theme } = useTheme()
-  const resolvedTheme = theme.carbonTheme ?? 'g100'
+  const resolvedTheme = toCarbonBaseTheme(theme.carbonTheme)
   const workspaceData = useUnifiedWorkspaceData()
   useRouteScrollRestoration({
     storageKey: `map2.route-scroll.workspace:${location.pathname}${location.search}`,

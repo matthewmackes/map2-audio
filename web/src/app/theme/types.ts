@@ -1,4 +1,4 @@
-export type CarbonThemeId = 'white' | 'g10' | 'g90' | 'g100';
+export type CarbonThemeId = 'white' | 'g10' | 'g90' | 'g100' | 'blueprint';
 
 export interface ThemeColors {
   bg: string;

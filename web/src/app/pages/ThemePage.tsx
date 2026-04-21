@@ -52,6 +52,7 @@ import {
   PICKER_SHADES,
   deleteCustomTheme,
   generateThemeFromPalette,
+  toCarbonBaseTheme,
   getCustomThemes,
   saveCustomTheme,
   themeOrder,
@@ -129,7 +130,7 @@ function resolvePreviewTheme(themeId: string, theme: Theme): Theme {
   if (themeId in builtInThemes || usesCssVariables(theme)) {
     return generateThemeFromPalette(
       'blue',
-      (theme.carbonTheme ?? 'g100') as BaseShell,
+      toCarbonBaseTheme(theme.carbonTheme),
       {},
       theme.id,
       theme.name,
@@ -451,7 +452,7 @@ export function ThemePage() {
     setPageTransitionPreset,
   } = useReducedEffectsPreference()
   const [themeLibraryVersion, setThemeLibraryVersion] = useState(0)
-  const [draftBase, setDraftBase] = useState<BaseShell>(() => (theme.carbonTheme ?? 'g100') as BaseShell)
+  const [draftBase, setDraftBase] = useState<BaseShell>(() => toCarbonBaseTheme(theme.carbonTheme))
   const [draftFamilyId, setDraftFamilyId] = useState(() => inferFamilyIdFromTheme(resolvePreviewTheme(themeId, theme)))
   const [draftName, setDraftName] = useState('')
   const [draftOverrides, setDraftOverrides] = useState<Partial<ThemeColors>>({})
@@ -575,7 +576,7 @@ export function ThemePage() {
       return
     }
 
-    const nextBase = (theme.carbonTheme ?? 'g100') as BaseShell
+    const nextBase = toCarbonBaseTheme(theme.carbonTheme)
     const nextFamilyId = inferFamilyIdFromTheme(previewTheme)
 
     if (draftBase !== nextBase) {
@@ -793,7 +794,7 @@ export function ThemePage() {
 
   const handleResetDraft = () => {
     setDraftFamilyId(inferFamilyIdFromTheme(previewTheme))
-    setDraftBase((theme.carbonTheme ?? 'g100') as BaseShell)
+    setDraftBase(toCarbonBaseTheme(theme.carbonTheme))
     setDraftName('')
     setDraftOverrides({})
     setActiveSlot(null)
