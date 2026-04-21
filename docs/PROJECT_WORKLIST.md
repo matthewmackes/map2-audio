@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2419-B landed: FastAPI WS /ws/ssh route + 6/6 pytest PASS (21/21 combined with T2419-A service). Route registered in app/main.py. Next: T2419-C key/trust bootstrap + T2419-D/E/F frontend Web SSH tab.
+Last updated: 2026-04-21 - T2418-D landed: POST /api/platform-events/test synthetic ping endpoint, 6/6 platform_event_routes tests PASS, 29/29 related PASS. Kind taxonomy extended with `platform.test.ping`. Next: T2419-C key/trust bootstrap + T2419-D/E/F frontend Web SSH tab + T2418-B Event Feed tab + T2418-C outbound webhooks.
 
 ---
 
@@ -52,7 +52,7 @@ Description:
     - Dispatcher subscribes to `PlatformEventBus` via `get_platform_event_bus().subscribe(...)`, matches filter, POSTs JSON with HMAC-SHA256 signature header `X-Map2-Signature` when `secret` is set; retries with exponential backoff (3 attempts) and records each attempt in the delivery log.
     - Targets persisted under `/var/lib/map2` (durable service plane per Configuration Authority Model).
     - Frontend subsection inside Event Feed tab: Carbon `Accordion` "Webhook Targets" — `DataTable` of targets, "Register target" modal, per-row "View deliveries" + "Delete", "Fire Test Event" button that POSTs a synthetic `platform.test.ping` PlatformEvent.
-  - T2418-D: **Test Event endpoint** — `POST /api/platform-events/test` emits a synthetic `platform.test.ping` event onto the bus (severity `info`, ttl 60s, source `source_service='api-webhooks-ui'`). Returns the envelope so the UI can highlight it in the feed.
+  - T2418-D: **Test Event endpoint** — [✓] Done 2026-04-21. `POST /api/platform-events/test` emits a synthetic `platform.test.ping` event onto `PlatformEventBus`. Pydantic body `PlatformEventTestRequest` accepts optional `title`, `message`, `severity` (normalized against `Severity`, falls back to `info` on unknown), `source_service` (default `api-webhooks-ui`), `context`, `target_surfaces` (default `['workspace.platforms.api-webhooks']`). Returns 202 + `PlatformEventTestResponse` with the full envelope so the UI can highlight it. Registered `platform.test.ping` in `PLATFORM_EVENT_KINDS` tuple in `app/services/platform_event/kind.py`. Tests in `tests/test_platform_event_routes.py`: 3 new cases added — synthetic ping (default payload), custom payload with warning severity + extra target_surfaces + context, unknown severity normalization to `info`. All 6 tests in file PASS; 29/29 related platform_event tests still PASS (bus, store, mapping).
   - T2418-E: **Tests + build validation** — Jest: `ApiWebhooksPage.test.tsx`, `EventFeedTab.test.tsx`, `WebhooksSection.test.tsx` (mock transport, mock peers). Pytest: `test_webhook_dispatcher.py`, `test_platform_events_test_route.py`. Typecheck + build + verify in browser at `:3000`. Snapshot: `docs/fit-for-purpose-evidence/<YYYYMMDD>/api-webhooks-panel.png`.
   - Atomic commits on master + `git push origin master && git push gitlab master` per slice
   - `cd web && npm run typecheck` PASS, `cd web && npm run build` PASS, focused `jest` PASS per slice

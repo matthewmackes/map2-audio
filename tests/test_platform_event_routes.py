@@ -147,3 +147,54 @@ def test_platform_event_ack_route_returns_no_content(tmp_path: Path, monkeypatch
     assert response.status_code == 204
     assert response.content == b""
     assert store.is_acknowledged("session-ack", event.event_id) is True
+
+
+# T2418-D — POST /api/platform-events/test
+
+
+def test_platform_event_test_route_emits_synthetic_ping(tmp_path: Path, monkeypatch) -> None:
+    client, store, _bus = _build_client(tmp_path, monkeypatch)
+
+    response = client.post("/api/platform-events/test", json={})
+    assert response.status_code == 202
+    payload = response.json()
+    assert payload["event"]["kind"] == "platform.test.ping"
+    assert payload["event"]["severity"] == "info"
+    assert payload["event"]["source_service"] == "api-webhooks-ui"
+    assert "workspace.platforms.api-webhooks" in payload["event"]["target_surfaces"]
+    assert payload["event"]["context"]["origin"] == "api-webhooks-ui"
+
+    persisted = store.query_events(limit=None, hours=None, kinds=["platform.test.ping"])
+    assert len(persisted) == 1
+    assert persisted[0].event_id == payload["event"]["event_id"]
+
+
+def test_platform_event_test_route_accepts_custom_payload(tmp_path: Path, monkeypatch) -> None:
+    client, _store, _bus = _build_client(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/platform-events/test",
+        json={
+            "title": "Webhook drill",
+            "message": "Exercising outbound webhook target bank-a.",
+            "severity": "warning",
+            "source_service": "api-webhooks-drill",
+            "context": {"drill_id": "2026-04-21-a"},
+            "target_surfaces": ["workspace.platforms.api-webhooks", "ops.drill"],
+        },
+    )
+    assert response.status_code == 202
+    event = response.json()["event"]
+    assert event["title"] == "Webhook drill"
+    assert event["severity"] == "warning"
+    assert event["source_service"] == "api-webhooks-drill"
+    assert event["context"] == {"drill_id": "2026-04-21-a"}
+    assert set(event["target_surfaces"]) == {"workspace.platforms.api-webhooks", "ops.drill"}
+
+
+def test_platform_event_test_route_normalizes_unknown_severity(tmp_path: Path, monkeypatch) -> None:
+    client, _store, _bus = _build_client(tmp_path, monkeypatch)
+
+    response = client.post("/api/platform-events/test", json={"severity": "not-a-level"})
+    assert response.status_code == 202
+    assert response.json()["event"]["severity"] == "info"

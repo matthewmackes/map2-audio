@@ -115,6 +115,7 @@ PLATFORM_EVENT_KINDS: Final[tuple[str, ...]] = (
     "lcd.service",
     "lcd.user",
     "lcd.alert",
+    "platform.test.ping",
 )
 
 ALL_KINDS: Final[frozenset[str]] = frozenset(PLATFORM_EVENT_KINDS)
