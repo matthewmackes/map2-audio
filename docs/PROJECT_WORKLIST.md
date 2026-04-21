@@ -6,7 +6,26 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T711 closed: Toasts.css fully ported to direct --cds-* tokens; severity gradients now derive from color-mix(in srgb, var(--cds-support-*) N%, var(--cds-layer*)); themeBlueprint.css extended with missing Carbon token mappings (--cds-support-*, --cds-button-primary*, --cds-text-inverse); [data-carbon-theme="blueprint"] scoped block added for chyron live-bug cyan ring + notification-surface / mission-ticker / chyron__strap blueprint ink backgrounds. Typecheck PASS, build PASS (22s), production bundle live on port 3000 with blueprint-scoped rules verified in App-mllYFL11.css.
+Last updated: 2026-04-21 - T712 closed: Toasts.test.tsx steady-state palette test realigned to assert --cds-* Carbon tokens (--cds-layer-01/--cds-layer-02/--cds-background/--cds-text-primary/--cds-text-secondary) matching T711 port; added negative assertions to lock absence of retired MAP2 aliases (--surface, --bg). 20/20 Toasts tests PASS from repo root (root babel.config.js required). Typecheck PASS.
+
+---
+
+ID: T712
+Status: [✓] Done
+Title: Realign Toasts.test.tsx steady-state palette assertions to T711 Carbon-token vocabulary
+Description:
+- Goal / acceptance criteria: After T711 ported `web/src/app/components/Toasts.css` from MAP2 aliases to `--cds-*` Carbon tokens, `web/src/app/components/Toasts.test.tsx` line 716-722 still asserted the retired alias vocabulary (`var(--surface`, `var(--surface-2`, `var(--bg`, `var(--text-primary`, `var(--text-secondary`) against the steady-state `.stage-notification-surface--success, .stage-notification-surface--info` block. Update those five positive assertions to the Carbon tokens that actually appear (`var(--cds-layer-01`, `var(--cds-layer-02`, `var(--cds-background`, `var(--cds-text-primary`, `var(--cds-text-secondary`) and add two negative assertions locking the absence of the old aliases so regressions are caught. Acceptance: `jest --testPathPatterns='Toasts\.test'` PASS (20/20), `typecheck` PASS.
+- Why it matters: T711 closed with the note "Jest Toasts.test.tsx has pre-existing Babel parse error on TS arrow-rest types — unrelated to this CSS-only change." Diagnostic follow-up this session showed the parse error only occurs when jest is run from `web/` (no babel.config.js resolution); from repo root the test runs and was failing on the palette-theme assertion introduced to lock the MAP2 alias pattern. Updating the test to the new Carbon vocabulary both closes the T711 validation gap and preserves the intent of the original test (palette stays theme-driven, not hardcoded hex).
+- Dependencies: T711 (Done).
+- Estimated effort: Small (~1 file, 1-line repo discovery note).
+- Required outputs:
+  - Updated `web/src/app/components/Toasts.test.tsx` palette assertions
+  - `npx jest --testPathPatterns='Toasts\.test'` PASS from repo root
+  - `npm --prefix web run typecheck` PASS
+  - Atomic commit on master + `git push origin master && git push gitlab master`
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (opened + closed same-session)
+Completion note: 2026-04-21 - Claude: Updated 5 positive assertions + 2 negative assertions in `web/src/app/components/Toasts.test.tsx` lines 715-724. `jest --testPathPatterns='Toasts\.test'` → 20/20 PASS (3.9s). `npm --prefix web run typecheck` → PASS. Discovery note: jest must be run from repo root (`/home/mm/map2-audio`) not `web/` — `babel.config.js` lives at repo root and TS parser preset only loads when jest's CWD resolves it. Running `cd web && npx jest ...` silently fails with "Unexpected token" on every TS test. Future focused runs should use `npx jest --testPathPatterns=...` from `/home/mm/map2-audio`.
 
 ---
 

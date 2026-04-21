@@ -713,11 +713,13 @@ describe('ToastProvider stage notification surface', () => {
     )?.[0]
 
     expect(steadyStateBlock).toBeDefined()
-    expect(steadyStateBlock).toContain('var(--surface')
-    expect(steadyStateBlock).toContain('var(--surface-2')
-    expect(steadyStateBlock).toContain('var(--bg')
-    expect(steadyStateBlock).toContain('var(--text-primary')
-    expect(steadyStateBlock).toContain('var(--text-secondary')
+    expect(steadyStateBlock).toContain('var(--cds-layer-01')
+    expect(steadyStateBlock).toContain('var(--cds-layer-02')
+    expect(steadyStateBlock).toContain('var(--cds-background')
+    expect(steadyStateBlock).toContain('var(--cds-text-primary')
+    expect(steadyStateBlock).toContain('var(--cds-text-secondary')
+    expect(steadyStateBlock).not.toContain('var(--surface')
+    expect(steadyStateBlock).not.toContain('var(--bg')
     expect(steadyStateBlock).not.toContain('#ffffff 92%')
     expect(steadyStateBlock).not.toContain('#eef4ff')
   })
