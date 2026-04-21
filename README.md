@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2515** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2517** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a4f2d9d6`](https://github.com/matthewmackes/map2-audio/commit/a4f2d9d640057338f8f36fd6f9b496e947795bb9) | feat(T710-sub26): verify SnapshotEditor test suite (145/1... | Map2 Audio | 2026-04-21 |
+| [`ad675188`](https://github.com/matthewmackes/map2-audio/commit/ad675188769b338d82eb3e8c4d72629f1b4e8ef7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`0c092af7`](https://github.com/matthewmackes/map2-audio/commit/0c092af7e19929954411363cb7865c795b0e76fd) | feat(T710-sub25): swap SignalCanvas body to UnifiedChanne... | Map2 Audio | 2026-04-21 |
 | [`3046e016`](https://github.com/matthewmackes/map2-audio/commit/3046e016e70a7a07e36e604cdf11f3cc6dbc6a23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`38efc945`](https://github.com/matthewmackes/map2-audio/commit/38efc9452d971779deb9c149e005892f1a9368f7) | feat(T710-sub24): live VU + clip + live-dot on ChannelHeader | Map2 Audio | 2026-04-20 |
 | [`048b7abf`](https://github.com/matthewmackes/map2-audio/commit/048b7abfc708a8755e4d14a5c41c84b9524a2402) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`4cae4750`](https://github.com/matthewmackes/map2-audio/commit/4cae47502e3ec3125bdda0642eb4f51f80b7a715) | feat(T710-sub23): add useGridKeyboard hook for grid navig... | Map2 Audio | 2026-04-20 |
 | [`1b27d488`](https://github.com/matthewmackes/map2-audio/commit/1b27d488a4a0fe36ee200cdabe03235f23a0d9f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`e643a116`](https://github.com/matthewmackes/map2-audio/commit/e643a1168f2c499c1718e1bebf795bb3fe218c7c) | feat(T710-sub22): add WireOverlay SVG layer with 3 wire k... | Map2 Audio | 2026-04-20 |
-| [`5eff6a2c`](https://github.com/matthewmackes/map2-audio/commit/5eff6a2caf3b4aab19ab0042f494e4e7a8ebf26b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
