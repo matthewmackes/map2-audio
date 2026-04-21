@@ -6,12 +6,12 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2414 Phase A landed (commit b72cb065, dual-pushed): new MAP logo adopted, brand.manifest.json seeded, favicon + PWA icons regenerated, manifest.json PiPedal leak fixed, V2 suffix dropped. Phase B (BrandingContext + /api/branding runtime layer) starting.
+Last updated: 2026-04-21 - T2414 EPIC CLOSED (all 5 phases landed, dual-pushed): Phase A b72cb065 (logo+manifest), Phase B 95cc1c50 (BrandingContext+/api/branding), Phase C 8bc0c754 (ThemePage Branding tab), Phase D c53f0e5b (OS renderer+systemd rewriter+/api/branding/os-status+apply-os), Phase E 94ef0843 (RPM spec rewriter). Manifest is now single source of truth for web UI, PWA, favicons, runtime context, OS artifacts, systemd Descriptions, and RPM specs. Verification: pytest 7/7, npx tsc --noEmit clean, npm run build clean (~22s).
 
 ---
 
 ID: T2414
-Status: [>] In Progress
+Status: [✓] Done
 Title: Centralized branding system — new logo adoption + ThemePage Branding tab + Apply-to-OS
 Description:
 - Goal / acceptance criteria: Adopt the user-provided new MAP logo (blue 2×2 grid icon over striped "MAP" wordmark with "MACKES AUDIO PLATFORM" tagline) as the canonical brand mark. Consolidate all branding under a single `branding/brand.manifest.json` source of truth. Add a Branding tab to ThemePage for full runtime editing (productName, tagline, logos, palette, copy). Extend `Apply to OS` pipeline to regenerate Plymouth boot splash, login banner, terminal welcome, and systemd unit Descriptions from the manifest. Fix stale `web/public/manifest.json` PiPedal leak. Drop "V2" suffix from user-facing product name everywhere (`Mackes Audio Platform`, short name `MAP`). Plan: `/home/mm/.claude/plans/make-this-the-new-lively-wigderson.md`.
@@ -33,7 +33,7 @@ Description:
   - T2414-subL: RPM spec manifest integration (Phase E)
   - Atomic commits on master + `git push origin master && git push gitlab master` per phase
 Assigned to: Claude
-Last updated: 2026-04-21 - Claude (opened; Phase A subA in progress)
+Last updated: 2026-04-21 - Claude (EPIC CLOSED across 5 phases). Phase A b72cb065: Mackes Audio Platform logo adopted, brand.manifest.json seeded, favicon+PWA regenerated, PiPedal leak fixed, V2 suffix dropped. Phase B 95cc1c50: app/services/branding_service.py + app/routes/branding.py (GET/PATCH/POST /reset, /paths), web BrandingContext + useBranding() + runtime document.title, 7 pytest green. Phase C 8bc0c754: ThemePage Branding tab with Identity/Palette/Copy/Preview cards + Reset-to-factory, PATCH-per-card via useBranding(). Phase D c53f0e5b: scripts/render_branding_templates.py (writes branding/generated/branding.env), scripts/apply_branding_systemd.py (10 .service files, prefix rewrite), /api/branding/os-status + /api/branding/apply-os (dryRun default), BrandingTab OS-branding card with Dry-run and Apply buttons. Phase E 94ef0843: scripts/apply_branding_rpm.py + packaging/rpm/map2.spec and packaging/map2-audio.spec Summary/URL/description rewritten. All commits dual-pushed to origin+gitlab. Validation: pytest 7/7, typecheck clean, build clean (~22s).
 
 ---
 
