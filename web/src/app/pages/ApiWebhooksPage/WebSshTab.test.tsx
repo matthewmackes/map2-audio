@@ -16,6 +16,21 @@ jest.mock('../../components/WebSsh/XTermTerminal', () => ({
   ),
 }))
 
+jest.mock('../../components/WebSsh/sshTrustBootstrap', () => ({
+  runSshTrustBootstrap: jest.fn(() =>
+    Promise.resolve({
+      local_node_id: 'local-1',
+      local_fingerprint: 'fp',
+      generated_key: false,
+      already_trusted: [],
+      newly_trusted: [],
+      failed: [],
+      skipped_offline: [],
+      ok: true,
+    }),
+  ),
+}))
+
 import { WebSshTab } from './WebSshTab'
 
 function mockMatchMedia(): void {

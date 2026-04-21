@@ -27,6 +27,22 @@
   flex-wrap: wrap;
 }
 
+.web-ssh-tab__bootstrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.web-ssh-tab__bootstrap-summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .web-ssh-tab__advanced {
   padding: 0 0.5rem;
 }

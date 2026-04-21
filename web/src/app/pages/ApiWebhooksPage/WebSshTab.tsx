@@ -20,9 +20,14 @@ import {
   TextInput,
 } from '@carbon/react'
 import { Add, Close, Renew } from '@carbon/icons-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { XTermTerminal, type XTermConnection, type XTermStatus } from '../../components/WebSsh/XTermTerminal'
+import {
+  runSshTrustBootstrap,
+  type BootstrapPhaseProgress,
+  type BootstrapReport,
+} from '../../components/WebSsh/sshTrustBootstrap'
 import './WebSshTab.css'
 
 interface PeerSummary {
@@ -64,6 +69,11 @@ export function WebSshTab() {
   const [sessions, setSessions] = useState<SshSession[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
+  const [bootstrapRunning, setBootstrapRunning] = useState(false)
+  const [bootstrapMessage, setBootstrapMessage] = useState<string>('')
+  const [bootstrapReport, setBootstrapReport] = useState<BootstrapReport | null>(null)
+  const bootstrapOnceRef = useRef(false)
+
   const [manualHost, setManualHost] = useState('')
   const [manualPort, setManualPort] = useState<number>(SSH_PORT)
   const [manualUser, setManualUser] = useState(DEFAULT_USER)
@@ -98,6 +108,34 @@ export function WebSshTab() {
   useEffect(() => {
     loadPeers()
   }, [loadPeers])
+
+  useEffect(() => {
+    if (bootstrapOnceRef.current) return
+    if (peers.length === 0) return
+    bootstrapOnceRef.current = true
+    setBootstrapRunning(true)
+    setBootstrapMessage('Checking SSH trust…')
+    runSshTrustBootstrap(
+      peers.map((p) => ({
+        node_id: p.node_id,
+        host: p.host,
+        hostname: p.hostname,
+        port: p.port,
+        is_online: p.is_online,
+        ssh_trusted: p.ssh_trusted,
+      })),
+      (progress: BootstrapPhaseProgress) => setBootstrapMessage(progress.message),
+    )
+      .then((report) => {
+        setBootstrapReport(report)
+      })
+      .catch((err) => {
+        setBootstrapMessage(err instanceof Error ? err.message : 'bootstrap failed')
+      })
+      .finally(() => {
+        setBootstrapRunning(false)
+      })
+  }, [peers])
 
   const selectedPeer = useMemo(
     () => peers.find((p) => p.node_id === selectedPeerId) ?? null,
@@ -241,6 +279,38 @@ export function WebSshTab() {
                 <Tag type="warm-gray">SSH trust pending</Tag>
               )}
               {selectedPeer.is_online === false && <Tag type="red">offline</Tag>}
+            </div>
+          )}
+          {(bootstrapRunning || bootstrapReport) && (
+            <div className="web-ssh-tab__bootstrap" aria-label="SSH trust bootstrap status">
+              {bootstrapRunning ? (
+                <InlineLoading description={bootstrapMessage || 'Bootstrapping SSH trust…'} />
+              ) : bootstrapReport ? (
+                <div className="web-ssh-tab__bootstrap-summary">
+                  <Tag type={bootstrapReport.ok ? 'green' : 'red'}>
+                    {bootstrapReport.ok ? 'Trust bootstrap OK' : 'Trust bootstrap had failures'}
+                  </Tag>
+                  {bootstrapReport.generated_key && <Tag type="blue">Generated local key</Tag>}
+                  {bootstrapReport.newly_trusted.length > 0 && (
+                    <Tag type="teal">
+                      {bootstrapReport.newly_trusted.length} newly trusted
+                    </Tag>
+                  )}
+                  {bootstrapReport.already_trusted.length > 0 && (
+                    <Tag type="cool-gray">
+                      {bootstrapReport.already_trusted.length} already trusted
+                    </Tag>
+                  )}
+                  {bootstrapReport.skipped_offline.length > 0 && (
+                    <Tag type="warm-gray">
+                      {bootstrapReport.skipped_offline.length} offline skipped
+                    </Tag>
+                  )}
+                  {bootstrapReport.failed.length > 0 && (
+                    <Tag type="red">{bootstrapReport.failed.length} failed</Tag>
+                  )}
+                </div>
+              ) : null}
             </div>
           )}
         </Stack>
