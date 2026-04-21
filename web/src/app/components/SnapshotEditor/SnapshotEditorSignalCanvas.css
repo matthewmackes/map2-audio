@@ -1,0 +1,31 @@
+.snapshot-editor-signal-canvas {
+  --snapshot-focus-ring: var(--cds-focus);
+  --snapshot-grid-line: color-mix(in oklab, var(--cds-text-primary) 5%, transparent);
+  color: var(--cds-text-primary);
+  background: var(--cds-background);
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
+}
+
+.snapshot-editor-signal-canvas[data-grid-backdrop='false'] {
+  --snapshot-grid-line: transparent;
+}
+
+.snapshot-editor-signal-canvas :focus-visible {
+  outline: 2px solid var(--snapshot-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--cds-background), 0 0 0 3px var(--snapshot-focus-ring);
+}
+
+.snapshot-chain-row__empty {
+  min-block-size: 8rem;
+  display: grid;
+  align-content: center;
+  gap: 0.25rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer);
+  color: var(--cds-text-primary);
+}
+
+.snapshot-chain-row__empty span {
+  color: var(--cds-text-secondary);
+}

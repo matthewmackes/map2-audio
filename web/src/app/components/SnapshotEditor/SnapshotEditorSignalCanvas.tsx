@@ -10,7 +10,7 @@ import { chainToUnifiedRow } from './UnifiedChannelGrid/chainToUnifiedRow'
 import { useChainMeter } from './UnifiedChannelGrid/useChainMeter'
 
 import '../shared/signalFlowAnimations.css'
-import './SignalCanvas/SignalCanvas.css'
+import './SnapshotEditorSignalCanvas.css'
 
 export interface JuceGridAudioInterfaceStatus {
   deviceName?: string
