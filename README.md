@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1168** TypeScript | **136** C++/H | **144** Docs | **2469** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1170** TypeScript | **136** C++/H | **144** Docs | **2473** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`01e8a02b`](https://github.com/matthewmackes/map2-audio/commit/01e8a02b91113cc12606e6c11689989a6081d68c) | feat(T710-sub04): audit SignalCanvas/icons.tsx consumers;... | Map2 Audio | 2026-04-20 |
+| [`d7fca437`](https://github.com/matthewmackes/map2-audio/commit/d7fca437f6c421b24f3ae9d782506fe5160401f7) | feat(T710-sub03): add FxIcon.tsx component with 3-case test | Map2 Audio | 2026-04-20 |
+| [`bd11cdab`](https://github.com/matthewmackes/map2-audio/commit/bd11cdab6ee65689d981c2d15d8e02611d94b938) | feat(T710-sub02b): rewrite effectIcons.ts to use canonica... | Map2 Audio | 2026-04-20 |
+| [`b87c0cc2`](https://github.com/matthewmackes/map2-audio/commit/b87c0cc2be7080a8c78255f2d22e58fed6e2c7d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`8b301bf4`](https://github.com/matthewmackes/map2-audio/commit/8b301bf42d487e5e323d6ab9345efe01373f2863) | feat(T710-sub02): add fxIconRegistry.ts typed map (39 fx_... | Map2 Audio | 2026-04-20 |
 | [`82685fc0`](https://github.com/matthewmackes/map2-audio/commit/82685fc069dd4a27be194af23043a184e07db118) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`32084788`](https://github.com/matthewmackes/map2-audio/commit/32084788a8b428504e4b3d0591eb461f1afce654) | docs(T710): rewrite Unified Channel Grid epic as 28 atomi... | Map2 Audio | 2026-04-20 |
 | [`3524c696`](https://github.com/matthewmackes/map2-audio/commit/3524c69675a83d29def61955e00bf77a76fe2872) | docs: add Definition of Done gate to prevent premature ta... | Map2 Audio | 2026-04-20 |
-| [`bfb8cf26`](https://github.com/matthewmackes/map2-audio/commit/bfb8cf26f20fdb2a306b2b28571c286c6e8e323a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`d94f94de`](https://github.com/matthewmackes/map2-audio/commit/d94f94de21493a990a11cf83f9e108d9de181fc3) | docs: open T700 MK1 Headless epic; extend operation guide... | Map2 Audio | 2026-04-20 |
-| [`9fea90d5`](https://github.com/matthewmackes/map2-audio/commit/9fea90d5069f447cc1425bdf0e1c59fe2bfbe705) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-20 |
-| [`08aaffe1`](https://github.com/matthewmackes/map2-audio/commit/08aaffe178da473ca8c60e9eae9c998b7e73a61a) | docs: add JUCE random-fx soak evidence for 2026-04-20 | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
