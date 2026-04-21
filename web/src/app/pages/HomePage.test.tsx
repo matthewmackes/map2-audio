@@ -480,9 +480,8 @@ describe('HomePage landing', () => {
       'MAP-LOGO-2026.png',
     )
     expect(screen.queryByText('Operator telemetry')).toBeNull()
-    expect(screen.getByText('live nodes')).toBeInTheDocument()
-    expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
-    expect(screen.getByText('Live operations surface')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Telemetry overview')).toBeNull()
+    expect(screen.queryByText('Live operations surface')).toBeNull()
     expect(screen.getByText('Operations table')).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
     expect(screen.getAllByText('Roland Edirol UA-1000').length).toBeGreaterThan(0)
@@ -490,7 +489,7 @@ describe('HomePage landing', () => {
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
   })
 
-  it('navigates through live telemetry rows and summary metrics', async () => {
+  it('navigates through live telemetry rows', async () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
@@ -500,9 +499,6 @@ describe('HomePage landing', () => {
 
     fireEvent.click(await screen.findByRole('link', { name: /Snapshot Main Show Snapshot/i }))
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/snapshot-editor')
-
-    fireEvent.click(screen.getByRole('button', { name: /live nodes/i }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/audio-engine')
   })
 
   it('skips the opt-in boot splash when desktop session state already exists', async () => {
@@ -628,14 +624,6 @@ describe('HomePage landing', () => {
     expect(screen.getByTestId('location-probe').textContent).toBe('/mpx1/midi-map?node_id=STAGE-NODE-2')
   })
 
-  it('deep-links the landing actions menu into theme settings', async () => {
-    renderHome()
-
-    fireEvent.click(await screen.findByRole('button', { name: /Options/i }))
-    fireEvent.click(await screen.findByText('Display settings'))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/theme')
-  })
-
   it('does not render a recent-destinations strip from session-scoped route history', async () => {
     window.sessionStorage.setItem(
       'map2:home-shell-recent-routes',
@@ -674,7 +662,6 @@ describe('HomePage landing', () => {
 
     expect(await screen.findByText('Operations table')).toBeInTheDocument()
     expect(screen.getAllByText('AVB: operational').length).toBeGreaterThan(0)
-    expect(screen.getByText('live nodes')).toBeInTheDocument()
     expect(screen.getAllByText('RME Fireface UFX').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Express 128').length).toBeGreaterThan(0)
     expect(screen.queryByLabelText('System summary')).toBeNull()

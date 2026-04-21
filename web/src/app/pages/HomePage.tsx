@@ -7,8 +7,6 @@ import {
   DataTable,
   Grid,
   InlineLoading,
-  OverflowMenu,
-  OverflowMenuItem,
   Table,
   TableBody,
   TableCell,
@@ -89,15 +87,6 @@ type HomeTelemetryRow = {
   detail: string
   workspace: string
   route?: string
-  tone: HomeTelemetryTone
-}
-
-type SummaryMetric = {
-  id: string
-  value: string
-  label: string
-  helper: string
-  route: string
   tone: HomeTelemetryTone
 }
 
@@ -615,102 +604,6 @@ export function HomePage() {
     [allTelemetryRows],
   )
 
-  const summaryMetrics = useMemo<SummaryMetric[]>(() => {
-    const nodesState = shellSummaryData.platformStatus.nodes.state
-    const avbState = shellSummaryData.platformStatus.avb.state
-    const avdeccState = shellSummaryData.platformStatus.avdecc.state
-
-    const stateToTone = (state: 'ok' | 'warn' | 'off' | 'loading'): HomeTelemetryTone => {
-      if (state === 'warn') return 'warning'
-      if (state === 'off') return 'critical'
-      if (state === 'ok') return 'healthy'
-      return 'neutral'
-    }
-
-    const telemetryTone: HomeTelemetryTone = criticalRowCount > 0
-      ? 'critical'
-      : warningRowCount > 0
-        ? 'warning'
-        : 'healthy'
-
-    const avbDiscovered = avbDiscoveryQuery.data?.total_discovered ?? Math.max(avbEndpointRows.length - 1, 0)
-
-    return [
-      {
-        id: 'nodes',
-        value: String(onlineNodes.length),
-        label: 'live nodes',
-        helper: shellSummaryData.platformStatus.nodes.label,
-        route: buildPlatformNodeWorkspaceHref('audio-engine'),
-        tone: stateToTone(nodesState),
-      },
-      {
-        id: 'midi-devices',
-        value: String(midiDeviceRows.length),
-        label: 'MIDI devices',
-        helper: 'physical ports reporting into the cluster',
-        route: '/midi-hub/connections',
-        tone: midiDeviceRows.length > 0 ? 'healthy' : 'neutral',
-      },
-      {
-        id: 'midi-mappings',
-        value: String(midiMappingRows.length),
-        label: 'mapped routes',
-        helper: 'enabled transforms and routing filters',
-        route: '/midi-hub/processing',
-        tone: midiMappingRows.length > 0 ? 'healthy' : 'neutral',
-      },
-      {
-        id: 'audio-interfaces',
-        value: String(audioInterfaceRows.length),
-        label: 'audio interfaces',
-        helper: 'connected interface inventory across nodes',
-        route: buildPlatformNodeWorkspaceHref('audio-engine'),
-        tone: telemetryTone,
-      },
-      {
-        id: 'avb-endpoints',
-        value: String(avbDiscovered),
-        label: 'AVB endpoints',
-        helper: shellSummaryData.platformStatus.avb.label,
-        route: buildPlatformNodeWorkspaceHref('avb-routing'),
-        tone: stateToTone(avbState),
-      },
-      {
-        id: 'avdecc',
-        value: String(shellSummaryData.platformStatus.avdecc.label.match(/\d+/)?.[0] ?? 0),
-        label: 'AVDECC entities',
-        helper: shellSummaryData.platformStatus.avdecc.label,
-        route: buildPlatformNodeWorkspaceHref('avb-routing'),
-        tone: stateToTone(avdeccState),
-      },
-      {
-        id: 'snapshots',
-        value: String(snapshotRows.length),
-        label: 'snapshot groups',
-        helper: 'live runtime snapshot states',
-        route: '/snapshot-editor',
-        tone: snapshotRows.length > 0 ? 'healthy' : 'neutral',
-      },
-    ]
-  }, [
-    audioInterfaceRows.length,
-    avbDiscoveryQuery.data?.total_discovered,
-    avbEndpointRows.length,
-    criticalRowCount,
-    midiDeviceRows.length,
-    midiMappingRows.length,
-    onlineNodes.length,
-    shellSummaryData.platformStatus.avb.label,
-    shellSummaryData.platformStatus.avb.state,
-    shellSummaryData.platformStatus.avdecc.label,
-    shellSummaryData.platformStatus.avdecc.state,
-    shellSummaryData.platformStatus.nodes.label,
-    shellSummaryData.platformStatus.nodes.state,
-    snapshotRows.length,
-    warningRowCount,
-  ])
-
   const filteredTelemetryRows = useMemo(
     () => filterTelemetryRows(allTelemetryRows, searchValue),
     [allTelemetryRows, searchValue],
@@ -1061,15 +954,6 @@ export function HomePage() {
                 onRibbonClick={handleRibbonClick}
               />
 
-              <div className="hp2-home-shell__landing-actions">
-                <p className="hp2-home-shell__hero-kicker">Live operations surface</p>
-                <div className="hp2-home-shell__landing-actions-spacer" aria-hidden="true" />
-                <OverflowMenu ariaLabel="Landing actions" size="lg" flipped>
-                  <OverflowMenuItem itemText="Display settings" onClick={() => navigateHomeShellRoute(navigate, '/platforms/theme')} />
-                  <OverflowMenuItem itemText="About MAP2" onClick={() => navigateHomeShellRoute(navigate, '/platforms/about')} />
-                </OverflowMenu>
-              </div>
-
               <h1 className="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden">
                 <img
                   src={landingHeroBrandImage}
@@ -1077,24 +961,6 @@ export function HomePage() {
                   className="hp2-home-shell__title-brand-image"
                 />
               </h1>
-
-              <aside className="hp2-home-shell__summary-rail" aria-label="Telemetry overview">
-                {summaryMetrics.map((metric) => (
-                  <button
-                    type="button"
-                    key={metric.id}
-                    className="hp2-home-shell__summary-metric"
-                    data-tone={metric.tone}
-                    onMouseEnter={() => prefetchHomeShellRoute(metric.route)}
-                    onFocus={() => prefetchHomeShellRoute(metric.route)}
-                    onClick={() => navigateHomeShellRoute(navigate, metric.route)}
-                  >
-                    <span className="hp2-home-shell__summary-value">{metric.value}</span>
-                    <span className="hp2-home-shell__summary-label">{metric.label}</span>
-                    <span className="hp2-home-shell__summary-helper">{metric.helper}</span>
-                  </button>
-                ))}
-              </aside>
 
               <div className="hp2-home-shell__operations-table-shell">
                 <DataTable

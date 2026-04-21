@@ -72,17 +72,6 @@
   gap: var(--cds-spacing-06, 1.5rem);
 }
 
-.hp2-home-shell__landing-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cds-spacing-04, 0.75rem);
-  padding: 0 clamp(1rem, 2vw, 2rem);
-}
-
-.hp2-home-shell__landing-actions-spacer {
-  flex: 1;
-}
-
 .hp2-home-shell__operations-title--visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -132,29 +121,6 @@
   font-family: var(--hp2-plex-sans);
 }
 
-.hp2-home-shell__operations-kicker-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cds-spacing-04, 0.75rem);
-}
-
-.hp2-home-shell__hero-kicker {
-  margin: 0;
-  color: var(--cds-text-helper);
-  font-family: var(--hp2-plex-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.hp2-home-shell__operations-kicker-row .cds--overflow-menu {
-  border: 1px solid var(--cds-border-subtle);
-  border-radius: 0;
-  background: transparent;
-}
-
 .hp2-home-shell__operations-title {
   display: block;
   margin: 0;
@@ -179,96 +145,6 @@
   font-size: var(--cds-body-02-font-size, 1rem);
   font-weight: 300;
   line-height: 1.55;
-}
-
-.hp2-home-shell__summary-rail {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  align-self: stretch;
-  font-family: var(--hp2-plex-sans);
-  border: 1px solid var(--cds-border-subtle);
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.hp2-home-shell__summary-metric {
-  position: relative;
-  display: grid;
-  gap: var(--cds-spacing-03, 0.5rem);
-  align-content: start;
-  padding: clamp(0.875rem, 1.5vw, 1.25rem);
-  min-height: 6.5rem;
-  border-right: 1px solid var(--cds-border-subtle);
-  border-bottom: 1px solid var(--cds-border-subtle);
-  background: transparent;
-  color: var(--cds-text-primary);
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  appearance: none;
-  transition: background-color 120ms ease, color 120ms ease;
-}
-
-.hp2-home-shell__summary-metric::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: transparent;
-  transition: background-color 120ms ease;
-}
-
-.hp2-home-shell__summary-metric[data-tone='healthy']::before {
-  background: var(--cds-support-success, #198038);
-}
-
-.hp2-home-shell__summary-metric[data-tone='warning']::before {
-  background: var(--cds-support-warning, #f1c21b);
-}
-
-.hp2-home-shell__summary-metric[data-tone='critical']::before {
-  background: var(--cds-support-error, #da1e28);
-}
-
-.hp2-home-shell__summary-metric[data-tone='neutral']::before {
-  background: var(--cds-border-strong, var(--cds-border-subtle));
-}
-
-.hp2-home-shell__summary-metric:hover,
-.hp2-home-shell__summary-metric:focus-visible {
-  background: var(--cds-layer-hover);
-}
-
-.hp2-home-shell__summary-metric:focus-visible {
-  outline: 2px solid var(--cds-focus);
-  outline-offset: -2px;
-}
-
-.hp2-home-shell__summary-value {
-  font-family: var(--hp2-plex-sans);
-  font-size: clamp(2rem, 3.5vw, 2.75rem);
-  font-weight: 200;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: var(--cds-text-primary);
-}
-
-.hp2-home-shell__summary-label {
-  font-family: var(--hp2-plex-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cds-text-secondary);
-}
-
-.hp2-home-shell__summary-helper {
-  color: var(--cds-text-helper);
-  font-family: var(--hp2-plex-sans);
-  font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.4;
 }
 
 @media (max-width: 900px) {
@@ -425,22 +301,11 @@
     background: var(--surface);
     backdrop-filter: none;
   }
-
-  .hp2-home-shell__summary-rail,
-  .hp2-home-shell__summary-metric,
-  .hp2-home-shell__summary-metric:nth-child(2n) {
-    border-color: var(--border-strong);
-  }
 }
 
 @media (max-width: 66rem) {
   .hp2-home-shell__operations-hero {
     grid-template-columns: 1fr;
-  }
-
-  .hp2-home-shell__summary-rail {
-    border-left: 0;
-    border-top: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   }
 
   .hp2-home-shell__guitar-entry-steps {
@@ -464,23 +329,6 @@
   .hp2-home-shell__title-brand-image {
     max-width: 100%;
     max-height: clamp(3.25rem, 15vw, 4.5rem);
-  }
-
-  .hp2-home-shell__operations-kicker-row {
-    align-items: flex-start;
-  }
-
-  .hp2-home-shell__summary-rail {
-    grid-template-columns: 1fr;
-  }
-
-  .hp2-home-shell__summary-metric,
-  .hp2-home-shell__summary-metric:nth-child(2n) {
-    border-left: 0;
-  }
-
-  .hp2-home-shell__summary-metric:nth-child(2) {
-    border-top: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   }
 
   .hp2-home-shell__table-toolbar {

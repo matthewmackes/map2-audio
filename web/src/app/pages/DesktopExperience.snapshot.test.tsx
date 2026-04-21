@@ -311,24 +311,6 @@ describe('Desktop experience visual snapshots', () => {
     expect(container.firstChild).toMatchSnapshot()
   })
 
-  it('matches the landing actions menu', async () => {
-    window.localStorage.setItem(
-      HOME_DESKTOP_SESSION_STORAGE_KEY,
-      JSON.stringify({
-        version: 2,
-        bootCompletedAt: '2026-04-06T13:00:00.000Z',
-        runningRoutes: [],
-        currentRoute: '/',
-      }),
-    )
-
-    const { container } = renderSnapshotHarness(['/'])
-    fireEvent.click(screen.getAllByRole('button', { name: 'Options' }).at(-1)!)
-
-    expect(await screen.findByText('Display settings')).toBeInTheDocument()
-    expect(container.firstChild).toMatchSnapshot()
-  })
-
   it('matches the global navigation shell', () => {
     const { container } = renderSnapshotHarness(['/workspace/artifacts'])
 

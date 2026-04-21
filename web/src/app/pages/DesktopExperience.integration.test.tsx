@@ -368,10 +368,12 @@ describe('Desktop experience integration', () => {
     const { container } = renderDesktopExperience(['/'])
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    fireEvent.click(screen.getAllByRole('button', { name: 'Options' }).at(-1)!)
-    fireEvent.click(await screen.findByText('Display settings'))
+    const navTree = screen.getByLabelText('Global navigation tree')
+    fireEvent.click(within(navTree).getByText('Snapshot Editor'))
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/theme')
+    await waitFor(() => {
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
+    })
     expect(screen.getByRole('button', { name: /^Close / })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pinned taskbar app/i })).toBeNull()
 
@@ -402,11 +404,10 @@ describe('Desktop experience integration', () => {
     renderDesktopExperience(['/'])
 
     expect(await screen.findByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.getByText('Live operations surface')).toBeInTheDocument()
+    expect(screen.queryByText('Live operations surface')).toBeNull()
     expect(screen.getByText('Operations table')).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Telemetry overview')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /live nodes/i })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Telemetry overview')).toBeNull()
 
     for (const label of ['Device(s) Manager', 'Advanced MIDI', 'Drum-Machine', 'SynthForge', 'Program Manager', 'Desktop Objects']) {
       expect(screen.queryByText(label)).toBeNull()
