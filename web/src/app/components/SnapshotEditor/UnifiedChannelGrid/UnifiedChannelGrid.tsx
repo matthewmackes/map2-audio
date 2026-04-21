@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 
 import { ChannelRow } from './ChannelRow'
 import { SlotRuler } from './SlotRuler'
+import { useGridKeyboard } from './useGridKeyboard'
 import { WireOverlay, type Wire } from './WireOverlay'
 import {
   COLUMN_WIDTHS,
@@ -26,6 +27,9 @@ export interface UnifiedChannelGridProps {
   onToggleMute?: (rowId: string) => void
   onToggleSolo?: (rowId: string) => void
   onHoverWire?: (wireId: string | null) => void
+  onReorderBlock?: (rowId: string, fromIndex: number, toIndex: number) => void
+  onRemoveBlock?: (rowId: string, slotIndex: number) => void
+  onDeselect?: () => void
 }
 
 export function UnifiedChannelGrid({
@@ -38,7 +42,15 @@ export function UnifiedChannelGrid({
   onToggleMute,
   onToggleSolo,
   onHoverWire,
+  onReorderBlock,
+  onRemoveBlock,
+  onDeselect,
 }: UnifiedChannelGridProps) {
+  const handleKeyDown = useGridKeyboard(selectedBlock, {
+    onReorder: onReorderBlock,
+    onRemove: onRemoveBlock,
+    onDeselect,
+  })
   const totalWidth = COLUMN_WIDTHS.channelHeader + COLUMN_WIDTHS.slot * SLOT_COUNT
   const style: CSSProperties = {
     width: totalWidth,
@@ -52,6 +64,8 @@ export function UnifiedChannelGrid({
       aria-label={`Unified channel grid with ${rows.length} rows and ${SLOT_COUNT} slots`}
       aria-rowcount={rows.length + 1}
       aria-colcount={SLOT_COUNT + 1}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
       <SlotRuler slotCount={SLOT_COUNT} />
       {rows.map((row) => (
