@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2535** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2537** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a9661920`](https://github.com/matthewmackes/map2-audio/commit/a96619203ef15c0ec63ea4174f88c27a7adb9b58) | test(T712): realign Toasts.test.tsx palette assertions to... | Map2 Audio | 2026-04-21 |
+| [`56a713dd`](https://github.com/matthewmackes/map2-audio/commit/56a713ddda28ab0723bdc784328e96e2639f2117) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`cc77272c`](https://github.com/matthewmackes/map2-audio/commit/cc77272c59676d02f31604f5788808a9ac39418d) | feat(T711): retheme bottom-third notification panel — Toa... | Map2 Audio | 2026-04-21 |
 | [`f77bb8c4`](https://github.com/matthewmackes/map2-audio/commit/f77bb8c4c53a3fb70f16b892cb7464459f75ced3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`f5e6d075`](https://github.com/matthewmackes/map2-audio/commit/f5e6d0758f90b5678b73105983e1804399404f3e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`716acd70`](https://github.com/matthewmackes/map2-audio/commit/716acd704c3e07ed68093c0931e579a3655747ee) | chore(T710): close epic — Unified Channel Grid Done (31/3... | Map2 Audio | 2026-04-21 |
 | [`ed28e0cf`](https://github.com/matthewmackes/map2-audio/commit/ed28e0cfa785c6f22192c4306253bdab34b6fc80) | chore: bump platform version stamp to 2026042106321701 | Map2 Audio | 2026-04-21 |
 | [`a40bca9d`](https://github.com/matthewmackes/map2-audio/commit/a40bca9d245766d767af433cc91c7fa5b589ab05) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`e3b3e727`](https://github.com/matthewmackes/map2-audio/commit/e3b3e72784559c739bd224ab89d9e4e7a27f4967) | feat(T710-sub29): migrate SnapshotEditor buckets B-Q to Z... | Map2 Audio | 2026-04-21 |
-| [`edd384ee`](https://github.com/matthewmackes/map2-audio/commit/edd384ee10ed824e4165208df373ef5d4cea343b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
