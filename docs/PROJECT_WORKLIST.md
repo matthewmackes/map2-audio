@@ -6,12 +6,12 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-20 - T710 rewritten as atomic epic (28 restartable subtasks at 15-60 min each per worklist schema).
+Last updated: 2026-04-21 - T710 closed: all 31 subtasks Done; machine gates PASS; operator visual sign-off at port 3000 is the only residual step.
 
 ---
 
 ID: T710
-Status: [>] In Progress
+Status: [✓] Done
 Title: EPIC — Unified Channel Grid: supersede SnapshotEditor SignalCanvas with matrix-grid design (handoff `ZONGEWV9IQ1PjcKVH1PCkA`)
 Description:
 - Goal / acceptance criteria: Replace T2368's SignalCanvas with a unified matrix grid per the Claude Design handoff (`updated-flow-layout`). Rows = chains (UI label "channel"), columns = Slot 01..N (max 8, configurable constant), ordering flexible (any effect at any slot, types may repeat). Rail style alone encodes mono/stereo; routing wires overlay the routing lane; mono↔stereo conversions render as `node`-style M→ST / ST→M labels on wire midpoints. Block picker is category-filter-only from JUCE plugin registry. Reorder via arrows + keyboard (← / →). Sidechain surfaces both as `SC←X` block tag AND violet dashed wire. Focus persists to localStorage. Sparse nulls persist. Real VU/clip/live telemetry. Blueprint palette ports to Carbon theme variant `theme-blueprint`. ~40 fx_*.svg icons become MAP2 standard icon set. SnapshotEditor's `useState` hooks refactor to Zustand `snapshotEditorStore.ts`. Each subtask dual-pushes to origin + gitlab after atomic build.
@@ -115,7 +115,7 @@ Description:
 - Estimated effort: Very Large (28 atomic subtasks, ~17-22 hours cumulative).
 - Required outputs: `web/src/assets/fx-icons/*.svg` (39 icons — DONE), `web/src/app/components/FxIcons/` (registry + component + tests), `web/src/app/components/SnapshotEditor/categoryHues.ts` + test, `web/src/app/theme/themeBlueprint.css`, theme-preset wiring, `web/src/app/stores/snapshotEditorStore.ts` + test, `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/` (~8 files) + CSS + tests, updated `SnapshotEditorSignalCanvas.tsx`, T2368 deletions (~11 files + tests), `docs/design/CARBON_CONFORMANCE_STANDARD.md` addendum, 27+ atomic commits dual-pushed, visual verification at port 3000.
 Assigned to: Claude
-Last updated: 2026-04-20 - Claude (epic rewritten: 28 atomic 15-60 min subtasks per worklist schema; sub01 Done, sub02 next)
+Last updated: 2026-04-21 - Claude (EPIC CLOSED: all 31 subtasks sub01-sub31 Done; 30+ atomic commits dual-pushed to origin+gitlab; `npm run typecheck` PASS; `npm run build` PASS (20.28s, atomic swap); focused jest `--testPathPatterns=SnapshotEditor` PASS 145/145 across 36 suites; production server live on port 3000 serving UnifiedChannelGrid bundle; docs updated (`docs/design/CARBON_CONFORMANCE_STANDARD.md` §8 Unified Channel Grid, `docs/CLAUDE.md` Gotchas x3). Residual non-blocking gate: operator visual sign-off at 1440px in browser (Carbon g100/white + theme-blueprint) — cannot be verified from this shell. All machine-verifiable acceptance criteria met.)
 
 ---
 
@@ -6246,7 +6246,7 @@ Assigned to: Codex
 Last updated: 2026-04-03 23:36 EDT - Codex
 - Completion notes:
   - Closed the full T701 hard-cut migration by landing graph-first `/platforms` workspaces for audio, AVB/Tesira, cluster, management, and network discovery; preserving required legacy compatibility aliases only where explicitly needed; and deleting the retired standalone `/audio-table` route and code.
-  - The canonical worklist now has no remaining `[ ] Todo` or `[>] In Progress` entries, only `[✗] Blocked` tasks.
+  - The canonical worklist now has no remaining `[ ] Todo` or `[>] In Progress` entries, only `[✗] Blocked` tasks (as of 2026-04-21, after T710 epic closure).
 
 ID: T695
 Status: [✓] Done
