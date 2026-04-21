@@ -477,6 +477,101 @@
 }
 
 /* =========================================================================
+ * Cluster heartbeat row (T2416-H-FOLLOWUP) — per-node schematic chips
+ * ========================================================================= */
+
+.stage-cluster-heartbeat__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.3rem;
+  margin-top: auto;
+}
+
+.stage-cluster-heartbeat__overflow {
+  margin-top: 0.25rem;
+  font-size: 0.62rem;
+  line-height: 1.1;
+  color: var(--card-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stage-cluster-node {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.35rem;
+  row-gap: 0.1rem;
+  padding: 0.3rem 0.4rem;
+  background: var(--bp-field, var(--cds-layer-03, #525252));
+  border: 1px solid var(--bp-card-stroke, var(--cds-border-strong));
+  color: var(--card-fg);
+  min-width: 0;
+}
+
+.stage-cluster-node__dot {
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--cds-text-secondary, #c6c6c6);
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.stage-cluster-node__dot--ok {
+  color: var(--cds-support-success, #42be65);
+}
+
+.stage-cluster-node__dot--warning {
+  color: var(--cds-support-warning, #f1c21b);
+}
+
+.stage-cluster-node__dot--critical {
+  color: var(--cds-support-error, #da1e28);
+}
+
+.stage-cluster-node__name {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--card-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-cluster-node__snapshot {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.62rem;
+  line-height: 1.1;
+  color: var(--card-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-cluster-node--warning {
+  border-color: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 45%, var(--bp-card-stroke, var(--cds-border-strong)));
+}
+
+.stage-cluster-node--critical {
+  border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 55%, var(--bp-card-stroke, var(--cds-border-strong)));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage-cluster-node--live .stage-cluster-node__dot {
+    animation: stage-heartbeat-60bpm var(--hb-snapshot-ms, 1000ms) ease-in-out infinite;
+  }
+}
+
+/* =========================================================================
  * Ring-to-fill LED status indicator
  * ========================================================================= */
 

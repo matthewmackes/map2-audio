@@ -12,7 +12,7 @@ import { useClusterSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeS
 import { useVuMeters } from '../hooks/useVuMeters'
 import { audioApi } from '../../map2/clients/audio'
 import { midiHubApi } from '../../map2/api'
-import type { SnapshotRuntimeLiveState } from '../../map2/types'
+import type { SnapshotRuntimeDisplayState, SnapshotRuntimeLiveState } from '../../map2/types'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { buildSnapshotActivationFailureStageToast } from '../utils/snapshotActivationToast'
 import { StageChyronCard, type ChyronLiveState } from './StageChyronCard'
@@ -809,7 +809,26 @@ function StageSnapshotCard({
   )
 }
 
-function StageClusterSummaryCard({
+function clusterNodeTone(state: SnapshotRuntimeDisplayState): 'ok' | 'warning' | 'critical' {
+  if (state === 'offline') return 'critical'
+  if (state === 'live_warning' || state === 'stopped') return 'warning'
+  return 'ok'
+}
+
+function truncateShortName(name: string, max = 10): string {
+  if (name.length <= max) return name
+  return `${name.slice(0, max - 1)}…`
+}
+
+function abbreviateSnapshotName(name: string | null | undefined, fallback = 'LIVE'): string {
+  if (!name) return fallback
+  const trimmed = name.trim()
+  if (!trimmed) return fallback
+  if (trimmed.length <= 12) return trimmed
+  return `${trimmed.slice(0, 11)}…`
+}
+
+function StageClusterHeartbeatRow({
   liveNodes,
   routeAction,
 }: {
@@ -817,20 +836,46 @@ function StageClusterSummaryCard({
   routeAction?: ReactNode
 }) {
   return (
-    <section className="stage-notification-card stage-notification-card--warning stage-notification-card--snapshot">
+    <section
+      className="stage-notification-card stage-notification-card--warning stage-notification-card--snapshot stage-cluster-heartbeat"
+      aria-label="Cluster live heartbeat"
+    >
       <div className="stage-notification-card__header">
         <div className="stage-notification-card__eyebrow">Cluster</div>
         <div className="stage-notification-card__actions">{routeAction}</div>
       </div>
       <div className="stage-notification-card__title">{`${liveNodes.length} nodes live`}</div>
-      <p className="stage-notification-card__body">
-        Cluster-wide live state replaces the single-node snapshot card until one rig remains active.
-      </p>
-      <div className="stage-notification-card__meta">
-        {liveNodes.slice(0, 3).map((node) => (
-          <span key={node.node_id}>{`${node.node_id}: ${node.snapshot_name ?? 'Live snapshot'}`}</span>
-        ))}
+      <div
+        className="stage-cluster-heartbeat__row"
+        role="list"
+        aria-label="Per-node cluster heartbeat"
+      >
+        {liveNodes.slice(0, 6).map((node) => {
+          const tone = clusterNodeTone(node.display_state)
+          const shortName = truncateShortName(node.node_id)
+          const abbr = abbreviateSnapshotName(node.snapshot_name)
+          const isLive = node.display_state === 'live' && !node.is_offline
+          const card = `stage-cluster-node stage-cluster-node--${tone}${isLive ? ' stage-cluster-node--live' : ''}`
+          return (
+            <div
+              key={node.node_id}
+              role="listitem"
+              className={card}
+              aria-label={`${node.node_id} ${node.display_label}`}
+              title={`${node.node_id}: ${node.snapshot_name ?? 'Live snapshot'} (${node.display_label})`}
+            >
+              <span className={`stage-cluster-node__dot stage-cluster-node__dot--${tone}`} />
+              <span className="stage-cluster-node__name">{shortName}</span>
+              <span className="stage-cluster-node__snapshot">{abbr}</span>
+            </div>
+          )
+        })}
       </div>
+      {liveNodes.length > 6 ? (
+        <div className="stage-cluster-heartbeat__overflow">
+          {`+${liveNodes.length - 6} more`}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -1952,7 +1997,7 @@ const tickerEvents: TickerEvent[] = (() => {
             />
             <div className="stage-notification-surface__chyron-wrap">
               {hasClusterSummary ? (
-                <StageClusterSummaryCard liveNodes={liveNodes} routeAction={routeAction} />
+                <StageClusterHeartbeatRow liveNodes={liveNodes} routeAction={routeAction} />
               ) : (
                 <StageChyronCard
                   state={liveSnapshotState}

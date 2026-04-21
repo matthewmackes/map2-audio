@@ -601,8 +601,16 @@ describe('ToastProvider stage notification surface', () => {
     renderProvider()
 
     expect(screen.getByText('2 nodes live')).toBeInTheDocument()
-    expect(screen.getByText('node-local: Arena Intro')).toBeInTheDocument()
-    expect(screen.getByText('node-remote: Verse Lift')).toBeInTheDocument()
+    const heartbeat = screen.getByRole('list', { name: /per-node cluster heartbeat/i })
+    expect(heartbeat).toBeInTheDocument()
+    const localChip = screen.getByLabelText(/^node-local/)
+    expect(localChip).toHaveClass('stage-cluster-node--ok')
+    expect(localChip).toHaveClass('stage-cluster-node--live')
+    expect(localChip).toHaveTextContent('node-local')
+    expect(localChip).toHaveTextContent('Arena Intro')
+    const remoteChip = screen.getByLabelText(/^node-remote/)
+    expect(remoteChip.getAttribute('title')).toContain('node-remote: Verse Lift')
+    expect(remoteChip).toHaveTextContent('Verse Lift')
   })
 
   it('shows the disconnected takeover banner when audio status polling fails', async () => {

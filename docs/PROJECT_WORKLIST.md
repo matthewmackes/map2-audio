@@ -77,7 +77,7 @@ Completion note: Added a Palette Mapper tab in `web/src/app/pages/ThemePage.tsx`
 ---
 
 ID: T2416
-Status: [>] In Progress — slices A–G + I–J landed; H (cluster expansion) still gated to existing summary card
+Status: [✓] Done — slices A–J landed; cluster expansion shipped via T2416-H-FOLLOWUP
 Title: EPIC — Lower Third "Heartbeat" Panel Redesign (Architectural Blueprint + Tactical HUD)
 Description:
 - Goal / acceptance criteria: Redesign the bottom-third notification panel (stage-notification-surface) so it represents the "heartbeat" of live audio channels on the Node and across the Cluster. Aesthetic: Architectural Blueprint base (deep indigo #0B1A2E field, cyan #00B4D8 grid/schematic linework) with Tactical HUD energy (fast entrance, pulsing live indicators, green #42BE65 as unified heartbeat color). Match existing Carbon theming — Plex Sans + Plex Mono, existing tokens, no new font dependencies. All cards fly in and out on mount/unmount with the background sliding from the right. Last 3 MIDI events render as schematic component blocks with reference designators, dimension-line connectors, and decaying pulse rings; the 7 events after render as a compact 2-column parts-list appendix at 40% opacity. Layered cadence: STANDBY follows audio envelope, MAP2/Snapshot steady 60 BPM, XRUNS silent-except-on-event, All Clear 0.25Hz breath, MIDI IN per-event flash. Broadcasting hero: cyan "NOW BROADCASTING" eyebrow with 4s green shimmer sweep, snapshot name with 60 BPM green pulse-dot, active effect pedals glow soft green when signal flows. Cluster-aware: when multiple nodes broadcast, hero strip contracts and cluster mini-cards render for each peer node. Optional density toggle in top-right (Compact/Comfortable/Spacious). Carbon conformance per docs/design/CARBON_CONFORMANCE_STANDARD.md.
@@ -98,7 +98,7 @@ Description:
   - Atomic commits on master + `git push origin master && git push gitlab master` per slice
   - typecheck PASS, build PASS, focused Jest PASS per slice
 Assigned to: Claude
-Last updated: 2026-04-21 - Claude (slices A–G + I–J landed; 20/20 Toasts.test.tsx PASS, typecheck PASS, build PASS 22.74s; H deferred to follow-up)
+Last updated: 2026-04-21 - Claude (all slices A–J landed; 20/20 Toasts.test.tsx PASS, typecheck PASS, build PASS 24.01s; H shipped via T2416-H-FOLLOWUP)
 Completion progress:
   - T2416-A Done: `Toasts.css` token block on `.stage-notification-surface` — `--bp-field`, `--bp-grid`, `--bp-heartbeat`, `--bp-card-fill`, `--bp-bracket-size`, `--hud-burst-*`, `--hb-snapshot-ms`, `--hb-allclear-ms`, `--hb-midi-flash-ms`, `--hb-shimmer-ms` plus `[data-carbon-theme="blueprint"]` scope overrides.
   - T2416-B Done: Layered grid background (8px fine + 40px coarse cyan on indigo) + `[data-live="true"]` reactive-cell breathe.
@@ -107,7 +107,7 @@ Completion progress:
   - T2416-E Done: `data-cadence` hooks on `StereoMeterCard` (audio-envelope/data-live), `StageVitalsCard` (xrun-silent/data-event), `StageWarningsCard` (allclear-breath/data-live), chyron wrap (`:has(--live)` cadence).
   - T2416-F Done: `StageMidiPanel` split into `MidiHeroBlock` (last 3 with [TYPE][CHxx] ref designator + pulse ring + tolerance) and `MidiArchiveChip` (secondary 7 parts-list).
   - T2416-G Done: Chyron NOW BROADCASTING shimmer on `.stage-chyron--live`, 60 BPM `.stage-chyron__rig-pulse` on live snapshot name; legacy bug-dot preserved for test contract.
-  - T2416-H Deferred: Multi-node mini-cards not yet — existing `StageClusterSummaryCard` gate remains; new follow-up task to scaffold per-node schematic chips.
+  - T2416-H Done (via T2416-H-FOLLOWUP, 2026-04-21): New `StageClusterHeartbeatRow` replaces `StageClusterSummaryCard` when `hasClusterSummary` is true — per-node mini-cards (status dot, ≤10-char short-name, ≤12-char snapshot abbreviation), role=list/listitem a11y, 60 BPM heartbeat cadence on live dots gated by `prefers-reduced-motion`, blueprint-scoped schematic styling, `+N more` overflow for >6 nodes.
   - T2416-I Done: Density toggle button + `[data-density]` selector + `localStorage["map2_heartbeat_density"]` persistence.
   - T2416-J Done: MIDI archive overflow contained by `max-height` + internal scroll.
   Validation (2026-04-21): `npm run test -- src/app/components/Toasts.test.tsx` PASS 20/20 in 4.6s; `npx tsc -b` clean; `npm run build` PASS 22.74s.
@@ -116,7 +116,7 @@ Completion progress:
 ---
 
 ID: T2416-H-FOLLOWUP
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cluster expansion layout — per-node schematic chips for heartbeat panel
 Description:
 - Goal / acceptance criteria: When multiple cluster nodes report a live snapshot, contract the `.stage-notification-surface__chyron-wrap` hero and render a horizontal row of per-node mini-cards. Each mini-card: status dot (ok/warn/crit), node short-name (≤10 chars), live snapshot abbreviation, miniature STANDBY/XRUN/MIDI indicators. Maintain current single-node behavior when only one node is live. Keep `StageClusterSummaryCard` available as the bridge component until the new mini-card row replaces it.
@@ -128,8 +128,9 @@ Description:
   - Blueprint-scoped mini-card CSS rows
   - Focused Jest assertion: cluster summary still appears when `hasClusterSummary` is true
   - Atomic commit on master + `git push origin master && git push gitlab master`
-Assigned to: —
-Last updated: 2026-04-21 - Claude (opened as follow-up from T2416 slice H deferral)
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (shipped)
+Completion note: 2026-04-21 - Claude: Replaced `StageClusterSummaryCard` with new `StageClusterHeartbeatRow` in `web/src/app/components/Toasts.tsx`. Row renders up to 6 per-node mini-cards using `role=list` / `role=listitem`, each with a status dot (ok/warn/critical from `display_state`), truncated short-name (≤10 chars via `truncateShortName`), and abbreviated snapshot name (≤12 chars via `abbreviateSnapshotName`). Overflow count shown as `+N more` when >6 live nodes. Added blueprint-scoped CSS: `.stage-cluster-heartbeat__row` (auto-fit grid), `.stage-cluster-node` chip with schematic bracket border, status-dot tone classes, 60 BPM heartbeat cadence on `--live` dots gated by `prefers-reduced-motion`. Imported `SnapshotRuntimeDisplayState`. Updated focused test in `Toasts.test.tsx` to assert `role=list` aria-label, per-chip `aria-label`, `stage-cluster-node--ok` + `--live` classes, and title-attr preservation of `node-remote: Verse Lift` for truncated short-names. Validation: 20/20 Toasts.test.tsx PASS; `npm run typecheck` clean; `npm run build` PASS (24.01s); `stage-cluster-heartbeat` class confirmed in `dist/assets/App-*.css` + `App-*.js` bundles.
 
 ---
 
