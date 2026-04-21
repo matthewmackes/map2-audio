@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1184** TypeScript | **136** C++/H | **144** Docs | **2499** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1186** TypeScript | **136** C++/H | **144** Docs | **2501** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dd596758`](https://github.com/matthewmackes/map2-audio/commit/dd596758c8f8e1f51b4845e9d6dd597314341aa3) | feat(T710-sub18): add ChannelRow.tsx composing header + 8... | Map2 Audio | 2026-04-20 |
+| [`e94b5e07`](https://github.com/matthewmackes/map2-audio/commit/e94b5e07d8d4c75741823cbc06a60996e64bcb03) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`b6d71805`](https://github.com/matthewmackes/map2-audio/commit/b6d71805fefa306c070fd1871307278ed8208484) | feat(T710-sub17): add ChannelHeader.tsx + 4-test suite | Map2 Audio | 2026-04-20 |
 | [`98889977`](https://github.com/matthewmackes/map2-audio/commit/9888997784a01d0e49da08a77a43db588856daf7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`6d1d368f`](https://github.com/matthewmackes/map2-audio/commit/6d1d368f97fe0638b6b85b37d6c4854df2002a0f) | feat(T710-sub16): add SlotRuler.tsx column header + test | Map2 Audio | 2026-04-20 |
 | [`80496783`](https://github.com/matthewmackes/map2-audio/commit/80496783ee4d4f9837d38af211a65c12665b97c1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`c1ac7159`](https://github.com/matthewmackes/map2-audio/commit/c1ac715990436d3be16f4c8d5fcfbf55b762d752) | feat(T710-sub15): add EmptySlot.tsx + InsertGap.tsx + tests | Map2 Audio | 2026-04-20 |
 | [`8c5b037b`](https://github.com/matthewmackes/map2-audio/commit/8c5b037bb455f8564ab84100b4fc850c3227e81f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`182a33fc`](https://github.com/matthewmackes/map2-audio/commit/182a33fc7f196c49e5e7229e5ca28cc2da77c71c) | feat(T710-sub14): add Block.tsx + 3-variant test | Map2 Audio | 2026-04-20 |
-| [`16a6e7ce`](https://github.com/matthewmackes/map2-audio/commit/16a6e7cecf7a88e1d009a96ab05f35c63681a4f4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
