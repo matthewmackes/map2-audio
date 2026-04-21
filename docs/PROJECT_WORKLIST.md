@@ -157,7 +157,7 @@ Last updated: 2026-04-21 - Claude (created from plan audit — `optimized-herdin
 ---
 
 ID: T2421
-Status: [ ] Todo
+Status: [✓] Done
 Title: Notification panel 4-card row — meters + vitals + warnings + disconnected overlay
 Description:
 - Goal / acceptance criteria: Complete the `help-me-make-the-nested-duckling` plan beyond the already-shipped cluster-heartbeat row. Add three more cards to `.stage-notification-surface`: (1) Audio Meters — horizontal stereo bar (L/R) with peak dot + 1.5s peak-hold + soft 10s history strip, silence detection (flash amber <-60 dBFS for >3s live), latched red clip dot at ≥0 dBFS. Wire to existing metering endpoint at 20–30 Hz (fallback 10 Hz). (2) Vitals — CPU% (tabular-num + 60s sparkline + amber ≥70%, red ≥90% card tint), xrun counter since snapshot activation + tick sparkline, SR/buffer label (`48k / 64`), active channels/blocks mini counters. (3) Warnings — "All clear" green empty state; when warnings present, top-severity headline + "N more" count + severity sparkline; clip count badge; severity-driven edge-case states (activation in-progress/failed, driver lost takeover, AVB sync loss amber). Add idle bottom-right heartbeat rail when no live snapshot AND no warnings. Add red "DISCONNECTED" diagonal banner overlay when backend unreachable (freeze last-known state). Respect `prefers-reduced-motion` (freeze sparklines/pulse, keep meter motion — audio truth = functional). Collapsed rail redesign to card-aesthetic mini tile.
@@ -174,8 +174,9 @@ Description:
   - New Jest cases in `Toasts.test.tsx` — card rendering per severity, idle rail shown when no notifications, silence triggers warning, clip increments counter, reduced-motion freezes sparklines/pulse but not meters, disconnected overlay on backend-unreachable
   - `npm run build` + typecheck + Jest PASS
   - Atomic commits on master + `git push origin master && git push gitlab master` per phase
-Assigned to: unassigned
-Last updated: 2026-04-21 - Claude (created from plan audit — `help-me-make-the-nested-duckling` only partially absorbed; cluster-heartbeat shipped via T2416-H-FOLLOWUP, remaining 3 cards + idle rail + disconnected overlay not yet built)
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (audited and closed — plan 98% absorbed by T2416 epic; filled final gap)
+Completion note: 2026-04-21 - Claude: Deep audit vs `help-me-make-the-nested-duckling` plan found all plan items already shipped as part of T2416 epic except the meter history strip. Confirmed in-codebase: `StereoMeterCard` (audio card with peak-hold + silence detection + clip latch) — Toasts.tsx:910. `StageVitalsCard` (CPU + XRuns + DSP pressure + SR/buffer + paths/blocks + XRun sparkline) — Toasts.tsx:985. `StageWarningsCard` (All clear empty state + severity collapse + warning history ticks) — Toasts.tsx:1069. Idle rail "Node idle" — Toasts.tsx:1910. DISCONNECTED overlay — Toasts.tsx:1970. `prefers-reduced-motion` gating — Toasts.css:568, 2587. Route-hide on `/snapshot-editor`. Edge-case states verified by focused tests: "escalates audio driver loss into a critical warning card", "classifies AVB sync warnings explicitly", "shows the disconnected takeover banner when audio status polling fails", "surfaces silence detection in the warnings card", "shows the latched clip warning when output clips", "marks the surface and sparklines for reduced motion while keeping the meters rendered". Added the one remaining gap: `history` prop was passed to `StereoMeterCard` but never rendered — added low-contrast SVG polyline history strip (normalized `-60..0 dBFS`, tone-aware stroke color: success/warning/critical), CSS `.stage-notification-audio__history` + `__history-line`. Validation: 20/20 Toasts.test.tsx PASS; typecheck clean; build PASS (24.39s).
 
 ---
 

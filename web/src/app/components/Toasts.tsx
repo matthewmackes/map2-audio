@@ -911,6 +911,7 @@ function StereoMeterCard({
   nodeLabel,
   levels,
   peakHold,
+  history,
   clipCount,
   clipLatched,
   silenceActive,
@@ -973,6 +974,28 @@ function StereoMeterCard({
           </div>
         ))}
       </div>
+
+      {history.length > 1 ? (
+        <svg
+          className="stage-notification-audio__history"
+          viewBox="0 0 100 12"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polyline
+            points={history
+              .map((s, i) => {
+                const x = (i / Math.max(1, history.length - 1)) * 100
+                const maxDb = Math.max(s.left, s.right)
+                const norm = Math.max(0, Math.min(1, (maxDb + 60) / 60))
+                const y = 12 - norm * 11
+                return `${x.toFixed(2)},${y.toFixed(2)}`
+              })
+              .join(' ')}
+            className="stage-notification-audio__history-line"
+          />
+        </svg>
+      ) : null}
 
       <div className="stage-notification-card__meta">
         <span>{nodeLabel}</span>

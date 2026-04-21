@@ -885,6 +885,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+.stage-notification-audio__history {
+  display: block;
+  width: 100%;
+  height: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.stage-notification-audio__history-line {
+  fill: none;
+  stroke: var(--bp-heartbeat, var(--cds-support-success, #42be65));
+  stroke-width: 0.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.stage-notification-card--audio.stage-notification-card--critical .stage-notification-audio__history-line {
+  stroke: var(--cds-support-error, #da1e28);
+}
+
+.stage-notification-card--audio.stage-notification-card--warning .stage-notification-audio__history-line {
+  stroke: var(--cds-support-warning, #f1c21b);
+}
+
 /* =========================================================================
  * Vitals card — XRun hero + DSP PRESSURE
  * ========================================================================= */
