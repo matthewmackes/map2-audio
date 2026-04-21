@@ -22,6 +22,8 @@ httpx>=0.28.1,<0.29.0
 aiohttp>=3.13.3,<4.0.0
 # WebSocket client support used by hardware daemons such as Maschine MK1
 websockets>=16.0,<17.0.0
+# SSH transport for Tesira TTP fallback and the Web SSH bridge (T2419)
+asyncssh>=2.21.0,<3.0.0
 # YAML parsing and emitted configuration artifacts
 PyYAML>=6.0.2,<7.0.0
 # System/process telemetry
