@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1216** Python | **1190** TypeScript | **136** C++/H | **144** Docs | **2547** total commits | **3** stars | **0** forks | **0** open issues
+**1216** Python | **1188** TypeScript | **136** C++/H | **144** Docs | **2550** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`813e9e38`](https://github.com/matthewmackes/map2-audio/commit/813e9e38d851fd6a1b85de5a4d92bb42001dd698) | feat(T2416): lower-third blueprint heartbeat panel — slic... | Map2 Audio | 2026-04-21 |
+| [`4441d4e1`](https://github.com/matthewmackes/map2-audio/commit/4441d4e13092bb86d1de9f33d73d8bcd2dac1d0f) | feat(T2415): move Snapshot Editor rail into bottom inspector | Map2 Audio | 2026-04-21 |
+| [`a4f36758`](https://github.com/matthewmackes/map2-audio/commit/a4f36758e22fb19b78c9951d30b913772699d34c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`cd613451`](https://github.com/matthewmackes/map2-audio/commit/cd6134512aac72a7fa697fd0317e9a211531dc5a) | docs(T2414): mark epic Done; worklist terminal — 0 open, ... | Map2 Audio | 2026-04-21 |
 | [`94ef0843`](https://github.com/matthewmackes/map2-audio/commit/94ef084318c5f147f012d89a3bd27cd5805c50f2) | feat(T2414-Phase-E): RPM spec branding integration | Map2 Audio | 2026-04-21 |
 | [`c53f0e5b`](https://github.com/matthewmackes/map2-audio/commit/c53f0e5b9a752e41db6112ef347ff60d2ccc09e5) | feat(T2414-Phase-D): OS branding pipeline — renderer, sys... | Map2 Audio | 2026-04-21 |
 | [`8bc0c754`](https://github.com/matthewmackes/map2-audio/commit/8bc0c7549bb0460d44f248275944243e03da348f) | feat(T2414-Phase-C): Branding tab in ThemePage — live man... | Map2 Audio | 2026-04-21 |
 | [`84c61dae`](https://github.com/matthewmackes/map2-audio/commit/84c61dae719d9d03d5f1a4144da1984686ca1fb9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`95cc1c50`](https://github.com/matthewmackes/map2-audio/commit/95cc1c50fe12ef00f5efd4abde32a53bc7596b20) | feat(T2414-Phase-B): runtime branding layer — service, AP... | Map2 Audio | 2026-04-21 |
-| [`ae2fe005`](https://github.com/matthewmackes/map2-audio/commit/ae2fe005feb574b7744c18ea51c374ef92baa05c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`b72cb065`](https://github.com/matthewmackes/map2-audio/commit/b72cb065fabf66c6b276436692fad8171faef999) | feat(T2414): adopt new MAP logo + brand manifest foundati... | Map2 Audio | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
