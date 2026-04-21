@@ -120,7 +120,7 @@ Last updated: 2026-04-20 - Claude (epic rewritten: 28 atomic 15-60 min subtasks 
 ---
 
 ID: T2412
-Status: [>] In Progress
+Status: [✓] Done
 Title: Snapshot management entry points — `/snapshots` browser page + hero-row Open/New buttons
 Description:
 - Goal / acceptance criteria: Expose snapshot management from the Snapshot Editor. Add two Carbon `Button`s immediately to the right of the hero snapshot name in `SnapshotEditorSnapshotStatusPanel` — `Open Snapshots` (secondary, navigates to `/snapshots`) and `New Snapshot` (primary, calls existing `createCapturedSnapshot()`). Create a dedicated `/snapshots` browser page (`SnapshotsBrowserPage.tsx`) that lists every snapshot via `snapshotsApi.list()`, with inline-editable names (`snapshotsApi.update({ name })`), Open (navigates to `/snapshot-editor` after activation), Duplicate (`snapshotsApi.duplicate`), and Delete (`snapshotsApi.delete` with confirm modal) row actions. Include a top-right `New Snapshot` button on the browser page that creates a blank snapshot via `snapshotsApi.create()` and routes to the editor. Register `/snapshots` in `App.tsx` under the authenticated route tree. All new UI must use Carbon components (`DataTable`/`Button`/`Modal`/`TextInput`) and existing tokens per `CARBON_CONFORMANCE_STANDARD.md`. Query invalidation must keep editor and browser in sync.
@@ -137,7 +137,7 @@ Description:
   - `npx jest --testPathPattern=SnapshotEditorSnapshotStatusPanel --no-coverage` PASS
   - Commit on master and dual-push to origin + gitlab
 Assigned to: Claude
-Last updated: 2026-04-20 15:30 EDT - Claude
+Last updated: 2026-04-21 - Claude (Done: `SnapshotsBrowserPage.tsx`/`.css` shipped with Carbon DataTable + inline rename + Open/Duplicate/Delete row actions + confirm modal; `/snapshots` route registered in `App.tsx` with RouteBoundary; hero row `SnapshotEditorSnapshotStatusPanel` gained `onOpenSnapshots`/`onCreateSnapshot`/`createSnapshotPending` props wired in `SnapshotEditorPageContent.tsx` via `useNavigate()` + `createCapturedSnapshot`; fixed Carbon `TableToolbarSearchOnChangeEvent` type narrowing for string-or-event onChange; `tsc --noEmit` + `npm run build` (20.50s) + focused jest 3/3 PASS)
 
 ---
 

@@ -7983,6 +7983,9 @@ export function SnapshotEditorPage() {
       <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">
           <SnapshotEditorSnapshotStatusPanel
+            onOpenSnapshots={() => navigate('/snapshots')}
+            onCreateSnapshot={() => createCapturedSnapshot()}
+            createSnapshotPending={createSnapshotFromEditorMutation.isPending}
             selectedChainId={activeFlow?.chainId ?? null}
             onChainSelect={(chainId) => {
               if (!activeFlow) return

@@ -1,4 +1,4 @@
-import { Edit, SettingsAdjust } from '@carbon/icons-react'
+import { Add, Edit, Folder, SettingsAdjust } from '@carbon/icons-react'
 import { Button, Layer, Tag } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
@@ -81,6 +81,9 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   monitoringStatusWarning?: boolean
   outputLevelWarningMessage?: string | null
   onOpenProgressModal?: () => void
+  onOpenSnapshots?: () => void
+  onCreateSnapshot?: () => void
+  createSnapshotPending?: boolean
 }
 
 interface SnapshotLiveHeadline {
@@ -204,6 +207,9 @@ export function SnapshotEditorSnapshotStatusPanel({
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
   onOpenProgressModal,
+  onOpenSnapshots,
+  onCreateSnapshot,
+  createSnapshotPending = false,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
@@ -307,6 +313,31 @@ export function SnapshotEditorSnapshotStatusPanel({
                         </button>
                       ) : snapshotTitle}
                     </h2>
+                    {(onOpenSnapshots || onCreateSnapshot) ? (
+                      <div className="juce-grid-page__snapshot-status-entry-actions">
+                        {onOpenSnapshots ? (
+                          <Button
+                            size="sm"
+                            kind="secondary"
+                            renderIcon={Folder}
+                            onClick={onOpenSnapshots}
+                          >
+                            Open Snapshots
+                          </Button>
+                        ) : null}
+                        {onCreateSnapshot ? (
+                          <Button
+                            size="sm"
+                            kind="primary"
+                            renderIcon={Add}
+                            onClick={onCreateSnapshot}
+                            disabled={createSnapshotPending}
+                          >
+                            {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </>
                 )}
               </div>
