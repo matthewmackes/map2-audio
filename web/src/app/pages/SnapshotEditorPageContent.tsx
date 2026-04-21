@@ -74,6 +74,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useFocusReturnTarget } from '../hooks/useFocusReturnTarget'
 import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../hooks/usePendingLiveChangesNavigationGuard'
 import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
+import { useSnapshotEditorStore } from '../stores/snapshotEditorStore'
 import { resolveSnapshotEditorSignalCanvasSettings, useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
@@ -1785,6 +1786,21 @@ export function SnapshotEditorPage() {
   useEffect(() => {
     localStorage.setItem('map2_juce_grid_collapsed_categories', JSON.stringify([...collapsedCategories]))
   }, [collapsedCategories])
+
+  // T710-sub12: Mirror bucket A state into snapshotEditorStore for downstream
+  // consumers (UnifiedChannelGrid primitives in sub13-sub25). This is a
+  // one-way write: useState remains the source of truth for render semantics
+  // while the store exposes the current value via useSnapshotEditorStore.
+  // Full useState → store migration tracked in T710-sub29.
+  useEffect(() => {
+    useSnapshotEditorStore.setState({
+      flowSlots,
+      routing,
+      activeFlowIndex,
+      selectedCategory,
+      collapsedCategories,
+    })
+  }, [flowSlots, routing, activeFlowIndex, selectedCategory, collapsedCategories])
 
   // Update plugin levels from WebSocket data
   useEffect(() => {
