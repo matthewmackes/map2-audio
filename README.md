@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1202** TypeScript | **136** C++/H | **144** Docs | **2584** total commits | **3** stars | **0** forks | **0** open issues
+**1223** Python | **1203** TypeScript | **136** C++/H | **144** Docs | **2586** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a00e6b97`](https://github.com/matthewmackes/map2-audio/commit/a00e6b97d4329da723807658617a012a715b4f1d) | feat(T2420-subF): parallel /devices route live — unified ... | Map2 Audio | 2026-04-21 |
+| [`fe594dcd`](https://github.com/matthewmackes/map2-audio/commit/fe594dcd79120e6088b31a521b08b79a80af502f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`9ce29e4d`](https://github.com/matthewmackes/map2-audio/commit/9ce29e4d21092837af73a8babc02fb29dde10383) | feat(T2420-subC): DevicesOverview — Carbon grid landing f... | Map2 Audio | 2026-04-21 |
 | [`1218709e`](https://github.com/matthewmackes/map2-audio/commit/1218709eba417f015cd36cd208b23b35a83cd7b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`366f0722`](https://github.com/matthewmackes/map2-audio/commit/366f07229e980a93b7074460353eab410a0dc3e2) | feat(T2420-subB): DevicesShell — unified sidebar + outlet... | Map2 Audio | 2026-04-21 |
 | [`719dd21a`](https://github.com/matthewmackes/map2-audio/commit/719dd21a62f6ca4cdbb793f8b31beb2dc1f09506) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`2208cb36`](https://github.com/matthewmackes/map2-audio/commit/2208cb3694628ac635cdb38c3ce6290be5580cd8) | feat(T2420-subA): device registry foundation — 12 devices... | Map2 Audio | 2026-04-21 |
 | [`f4c6c310`](https://github.com/matthewmackes/map2-audio/commit/f4c6c310f72fb051f7e5a45cb067825c18042623) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`01d0deeb`](https://github.com/matthewmackes/map2-audio/commit/01d0deeb55fa85893dd2ca6845bf2b36c60cfed0) | feat(T2421): meter history strip — close final gap in not... | Map2 Audio | 2026-04-21 |
-| [`cc5f5ec3`](https://github.com/matthewmackes/map2-audio/commit/cc5f5ec35f0cf8b4429834a19bbb12782bd93dc0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
