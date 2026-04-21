@@ -135,7 +135,7 @@ Completion note: 2026-04-21 - Claude: Replaced `StageClusterSummaryCard` with ne
 ---
 
 ID: T2420
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Unified Devices view at `/devices` — consolidate 6 hardware + 6 control-surface pages into one shell
 Description:
 - Goal / acceptance criteria: Build `web/src/app/data/deviceRegistry.ts` + `web/src/app/components/Devices/DevicesShell.tsx` + `DevicesOverview.tsx` + `DeviceContextBridge.tsx` + `DeviceViewRouter.tsx`. Move `components/MPX1/`, `components/IntelFX/`, `components/Tesira/` into `components/Devices/`. Extract `EdirolUA1000/`, `HoToneJoGG/`, `LCD/` from their page files into `components/Devices/`. Register 6 hardware devices (mpx1, intelfx, tesira, edirol-ua1000, hotone-jogg, lcd) + 6 control surfaces (maschine-mk1, ableton-push, ground-control-pro, meloaudio-midi-commander, novation-launch-control, mackie-mcu-pro). Remove old routes `/mpx1/*`, `/intelfx/*`, `/tesira/*`, `/edirol-ua1000`, `/hotone-jogg`, `/lcd`, `/physical-surfaces/*`. Add single `/devices` top-nav entry via `advancedMenuItems.ts`. Devices grid at `/devices` renders each card with status badge (online/offline/detected/planned). Sidebar uses `UnifiedWorkspaceSideNav` with device→sub-views flattened two-level structure. Route shape: `/devices/:deviceId/:view`. Each device's page becomes a thin context wrapper providing `<Outlet />`.
@@ -151,8 +151,16 @@ Description:
   - Online badges via `useDeviceLocation` (audio interfaces) + `enrichedPhysicalSurfacesApi.getSummary()` (control surfaces)
   - Atomic commits on master + `git push origin master && git push gitlab master` per phase
   - typecheck + build + focused Jest PASS per phase
-Assigned to: unassigned
-Last updated: 2026-04-21 - Claude (created from plan audit — `optimized-herding-whistle` plan not yet absorbed; existing per-device routes still live)
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (Phase A — deviceRegistry foundation — shipped; 6 phases remain)
+Completion progress:
+  - T2420-subA: [✓] Done 2026-04-21 — Phase 1 — Device Registry foundation. `web/src/app/data/deviceRegistry.ts` (288 lines) with 6 hardware (mpx1 8v, intelfx 7v, tesira 12v, edirol-ua1000 4v, hotone-jogg 1v, lcd 6v) + 6 control-surface entries (maschine-mk1, ableton-push, ground-control-pro, meloaudio-midi-commander, novation-launch-control, mackie-mcu-pro — all planned 1v each). Exports: `DeviceView`, `DeviceStatusKind`, `DeviceStatusSource` (tagged union), `DeviceRegistryEntry`, `DEVICE_REGISTRY`, `getDeviceEntry()`, `getDeviceView()`, `buildDeviceRoute()`. Icon fixes during typecheck: `Audio` → `Music` (5 uses), `Volume` → `VolumeUp`. Validation: `npm run typecheck` PASS, `npm run build` PASS in 24.11s. Non-breaking additive commit — registry exported but not yet wired into any shell.
+  - T2420-subB: Phase 2 — `DevicesShell` with `UnifiedWorkspaceSideNav` sidebar binding
+  - T2420-subC: Phase 3 — `DevicesOverview` grid landing page at `/devices`
+  - T2420-subD: Phase 4 — Move/rename `components/MPX1/`, `components/IntelFX/`, `components/Tesira/` into `components/Devices/`; extract `EdirolUA1000/`, `HoToneJoGG/`, `LCD/` from their page files
+  - T2420-subE: Phase 5 — Router rewrite in `App.tsx` (replace 7 route blocks with 1 `/devices/:deviceId/:view`), add `DeviceContextBridge` + `DeviceViewRouter`
+  - T2420-subF: Phase 6 — Add `/devices` entry to `advancedMenuItems.ts`, remove individual device entries
+  - T2420-subG: Phase 7 — Cleanup (delete old page files, grep sweep for dangling route refs, launcher catalog update)
 
 ---
 
