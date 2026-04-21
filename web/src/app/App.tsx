@@ -64,6 +64,7 @@ const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
+const DevicesOverview       = lazy(() => import('./components/Devices/DevicesOverview').then(m => ({ default: m.DevicesOverview })))
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
@@ -447,6 +448,7 @@ export function App() {
                                 <Route path="/snapshots" element={<RouteBoundary title="Snapshots browser crashed" actionLabel="Reload snapshots browser"><SnapshotsBrowserPage /></RouteBoundary>} />
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
+                                <Route path="/devices" element={<RouteBoundary title="Devices overview crashed" actionLabel="Reload devices overview"><DevicesOverview /></RouteBoundary>} />
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />

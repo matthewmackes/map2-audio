@@ -198,7 +198,9 @@ export function DevicesOverview() {
                   <ClickableTile
                     key={entry.id}
                     className="devices-overview__tile"
-                    onClick={() => navigate(buildDeviceRoute(entry.id))}
+                    onClick={() =>
+                      navigate(entry.legacyRoute ?? buildDeviceRoute(entry.id))
+                    }
                   >
                     <div
                       className="devices-overview__tile-accent"
