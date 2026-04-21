@@ -92,7 +92,70 @@ Required primitive contracts:
 6. Plugin nodes use Carbon focus rings, tokenized color, 40px stable node height, and no drag-only affordances. Bypass state must be visible without relying on color alone.
 7. Signal Canvas components may use schematic CSS primitives, but command controls, modals, toggles, dropdowns, tags, notifications, and form inputs must remain Carbon components unless this document records an exception.
 
-## 8. Exceptions Process
+## 8. Unified Channel Grid (Snapshot Editor)
+
+Status: Added 2026-04-20 under T710. Location: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/`.
+
+The Unified Channel Grid (UCG) is the canonical Snapshot Editor signal-flow surface. It replaces the earlier chain-row primitives (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `tracePath`) with a single 8-slot channel grid that composes Carbon components and schematic CSS primitives.
+
+### 8.1. Composition
+
+- `UnifiedChannelGrid` is the top-level grid; it renders an ordered list of `ChannelRow`s with an optional `WireOverlay`.
+- `ChannelRow` composes `ChannelHeader` + 8 `Block` / `EmptySlot` cells in a flex row.
+- `ChannelHeader` is the chain identity/status column (name, I/O label, meter, mute/solo controls).
+- `Block` is the active plugin cell; `EmptySlot` is the click-to-add placeholder.
+- `BlockPicker` is the Carbon modal used to pick a plugin into an empty slot.
+
+### 8.2. Theme variant (`theme-blueprint`)
+
+- UCG reads the active Carbon theme (`white`, `g10`, `g90`, `g100`) via the standard `@carbon/react` ThemeProvider.
+- A named preset `theme-blueprint` (registered in `web/src/app/theme/themeBlueprint.css`) layers schematic blueprint hues on top of Carbon tokens for operator-facing live views; it is a preset, not a replacement theme.
+- Do not hard-code blueprint colors — they must come from `--cds-*` and `--map2-blueprint-*` CSS variables.
+
+### 8.3. Category hue system
+
+- Categories are enumerated in `categoryHues.ts` and mapped to Carbon support tokens in `gridConstants.ts::CATEGORY_COLOR_TOKENS`.
+- The category strip is applied as a left border on `Block` via `borderLeft: ${stripWidth}px solid ${stripColor}`.
+- Category tokens: Amplifier, Cabinet, EQ, Dynamics, Modulation, Delay, Reverb, Distortion, Utility, Instrument, Drums, Pitch, Multi-Effect, Effects, AVB.
+- Bypass state must remain readable at 0.5 opacity; bypass is also surfaced via `data-bypass="true"` on the Block button so assistive tech and CSS can both react.
+
+### 8.4. FX icon registry
+
+- Icon registry: `web/src/app/components/FxIcons/fxIconRegistry.ts` enumerates 39 canonical effect icons.
+- `FxIcon` is the sole component used to render effect-kind iconography inside the grid.
+- Blocks choose icon via `CATEGORY_ICON` (preferred) or fall back to `KIND_ICON` (plugin/nam/cabinet-ir/reverb-ir/eq/dynamics/utility).
+- Decorative icon usage must still respect Carbon Hard Rules 10-11 (AT-hidden unless the icon is the only carrier of meaning).
+
+### 8.5. Meter + live status
+
+- `useChainMeter(chainId)` wraps `useVuMeters` and returns a `ChainMeterReading` (`{ left, right, isLive, clipped }`).
+- dB→linear mapping: `-60 dB → 0`, `0 dB → 1`. Clip threshold: peak-hold ≥ −0.1 dBFS.
+- `ChannelHeader` renders two stacked VU tracks with inline `inlineSize: ${pct}%`, a pulsing live dot when `isLive`, and a Carbon `<Tag type="red" size="sm">CLIP</Tag>` when `clipped`.
+- `data-live` and `data-clipped` on `.ucg-channel-header` allow CSS to escalate visuals without JS re-renders.
+
+### 8.6. Adapter contract
+
+- `chainToUnifiedRow(chain, pluginMeta, options)` is the sole adapter from snapshot `Chain` → `UnifiedChannelRow`.
+- Plugins are placed into slots by `plugin.position`, clamped to `SLOT_COUNT - 1`. Duplicate positions keep the first occupant.
+- NAM URIs (`/nam/`, `*nam$`) map to `kind: 'nam'` regardless of category.
+- System-block badges (from `getSystemBlockBadgeLabel`) are prefixed to the slot label.
+
+### 8.7. Keyboard + interaction
+
+- `useGridKeyboard` owns arrow-key navigation (Up/Down moves across rows; Left/Right moves within a row), Enter/Space selects, Delete/Backspace removes, Ctrl+Arrow reorders.
+- `useRefuseWhenFull` + `isRowFull` block add attempts when all 8 slots are occupied.
+- Click-to-add fires `onAddPlugin(slotIndex)` on empty slots; click-to-select fires `onPluginSelect(uri, slotIndex)` on blocks.
+- `aria-pressed` on `Block` reflects the selected state so the grid is a proper toggle group.
+
+### 8.8. Rules
+
+1. New signal-flow views for the Snapshot Editor must compose `UnifiedChannelGrid` — do not resurrect the deleted `SignalCanvas/` primitives.
+2. Meter wiring must use `useChainMeter`. Direct consumption of `useVuMeters` inside a channel row is a regression.
+3. New categories must be added to `categoryHues.ts`, `CATEGORY_COLOR_TOKENS`, and `CATEGORY_ICON` together — partial additions cause silent gray blocks.
+4. The grid must remain deterministic at 8 slots per row. Features that need more slots must be filed as a new epic with a backend schema change, not as a UI-only expansion.
+5. Operator-facing blueprint theming is a named preset, not a theme override; the base Carbon theme must always remain selectable.
+
+## 9. Exceptions Process
 
 If a change cannot conform immediately:
 

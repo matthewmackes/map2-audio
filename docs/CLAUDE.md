@@ -812,6 +812,33 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Fix**: Use functional updater `setState(prev => sameRef ? prev : newVal)` to break the cycle
 - **Example**: `web/src/app/components/MPX1/MPX1SignalPathCanvas.tsx`
 
+### [MEDIUM] Snapshot Editor uses Unified Channel Grid (T710, 2026-04-20)
+
+- **Canonical surface**: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/` — an 8-slot channel grid that replaced `SignalCanvas/` primitives (`ChainRow`, `ChainTab`, `ChainHead`, `ChainSide`, `SignalGrid`, `Node`, `Terminal`, `Joiner`, `Meter`, `tracePath`).
+- **Composition**: `UnifiedChannelGrid → ChannelRow → ChannelHeader + 8 × (Block | EmptySlot)`; `WireOverlay` is the optional SVG layer on top.
+- **Single meter entry point**: use `useChainMeter(chainId)` from `UnifiedChannelGrid/useChainMeter.ts`. Do NOT consume `useVuMeters` directly inside a row — the chain-id-keyed wrapper is the seam for future per-chain metering.
+- **Adapter**: `chainToUnifiedRow(chain, pluginMeta, opts)` is the only permitted `Chain → UnifiedChannelRow` translation; slots are placed by `plugin.position` clamped to `SLOT_COUNT - 1`.
+- **Category + icon registry**: `categoryHues.ts`, `gridConstants.ts::CATEGORY_COLOR_TOKENS`, `Block.tsx::CATEGORY_ICON`, and `FxIcons/fxIconRegistry.ts` must be updated together when adding a new plugin category — partial additions silently render gray unlabeled blocks.
+- **Full spec**: `docs/design/CARBON_CONFORMANCE_STANDARD.md` §8.
+
+### [MEDIUM] Jest Integration Tests Need Explicit `useVuMeters` Mock (T710, 2026-04-20)
+
+- **Problem**: Any component that directly or transitively uses `useChainMeter` / `useVuMeters` pulls in TanStack Query and needs a `QueryClientProvider`; in integration tests without one, the hook throws.
+- **Fix**: Mock the default export so the hook is a plain function — example at `web/src/app/pages/SnapshotEditorPage.integration.test.tsx`:
+  ```ts
+  jest.mock('../hooks/useVuMeters', () => ({
+    __esModule: true,
+    default: () => ({ levels: {...}, peakHold: {...}, isConnected: false, isRunning: false, resetPeaks: () => {} }),
+  }))
+  ```
+- **Lesson**: When adding a TanStack-Query-backed hook to a frequently-mounted component, update the integration test mock list in the same commit.
+
+### [LOW] Jest Mock Drift on Module With New Export (T710 sub31 root cause)
+
+- **Problem**: `jest.mock('../hooks/useSpecialSettings', () => ({ useSpecialSettings: ... }))` in `ThemePage.test.tsx` does not auto-re-export new named exports. When commit `722cdd01` added `resolveSnapshotEditorSignalCanvasSettings` and `ThemePage.tsx` started importing it, the test mock silently became incomplete: `TypeError: (0, _useSpecialSettings2.resolveSnapshotEditorSignalCanvasSettings) is not a function`.
+- **Fix**: When adding a new named export to a module that is mocked in tests, audit all `jest.mock()` factories referencing that module path and add the new export to each one.
+- **Lesson**: Treat `jest.mock` factories as part of the module's public API contract.
+
 ---
 
 ## Common Pitfalls to Avoid
