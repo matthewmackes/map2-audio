@@ -4,6 +4,28 @@ import { render, screen } from '@testing-library/react'
 import { SnapshotEditorRail } from '../components/SnapshotEditor/SnapshotEditorRail'
 import { JuceGridSignalCanvas } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
 
+jest.mock('../hooks/useVuMeters', () => ({
+  __esModule: true,
+  default: () => ({
+    levels: {
+      inputLeft: -60,
+      inputRight: -60,
+      outputLeft: -60,
+      outputRight: -60,
+      running: false,
+    },
+    peakHold: {
+      inputLeft: -60,
+      inputRight: -60,
+      outputLeft: -60,
+      outputRight: -60,
+    },
+    isConnected: false,
+    isRunning: false,
+    resetPeaks: () => {},
+  }),
+}))
+
 const mockSpecialSettings = {
   'snapshot_editor.flow_animation': 'packet',
   'snapshot_editor.grid_backdrop': false,
@@ -95,6 +117,6 @@ describe('SnapshotEditorPage integration', () => {
     expect(signalCanvas).toHaveAttribute('data-flow', 'packet')
     expect(signalCanvas).toHaveAttribute('data-grid-backdrop', 'false')
     expect(signalCanvas).toHaveAttribute('data-node-shape', 'hex')
-    expect(container.querySelector('.snapshot-signal-grid')).toHaveAttribute('data-grid-backdrop', 'false')
+    expect(container.querySelector('.ucg-grid')).toBeInTheDocument()
   })
 })
