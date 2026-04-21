@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1203** TypeScript | **136** C++/H | **144** Docs | **2588** total commits | **3** stars | **0** forks | **0** open issues
+**1223** Python | **1206** TypeScript | **136** C++/H | **144** Docs | **2590** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`57e6be1e`](https://github.com/matthewmackes/map2-audio/commit/57e6be1e95904129a7bca5346028bce75e15b43e) | feat(branding+theme): WelcomeHero landing + Pantone palet... | Map2 Audio | 2026-04-21 |
+| [`77df5e15`](https://github.com/matthewmackes/map2-audio/commit/77df5e15096e891e0698f82837767f3f5c2fd5f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`1c79406f`](https://github.com/matthewmackes/map2-audio/commit/1c79406f45668626d8337b3a69f2b25299f8caf2) | docs(T2420): mark epic Done via parallel-mount; subD/E/G ... | Map2 Audio | 2026-04-21 |
 | [`fa4cbe29`](https://github.com/matthewmackes/map2-audio/commit/fa4cbe29e1f61c5056bd37ec91464bdfcdea8692) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`a00e6b97`](https://github.com/matthewmackes/map2-audio/commit/a00e6b97d4329da723807658617a012a715b4f1d) | feat(T2420-subF): parallel /devices route live — unified ... | Map2 Audio | 2026-04-21 |
 | [`fe594dcd`](https://github.com/matthewmackes/map2-audio/commit/fe594dcd79120e6088b31a521b08b79a80af502f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`9ce29e4d`](https://github.com/matthewmackes/map2-audio/commit/9ce29e4d21092837af73a8babc02fb29dde10383) | feat(T2420-subC): DevicesOverview — Carbon grid landing f... | Map2 Audio | 2026-04-21 |
 | [`1218709e`](https://github.com/matthewmackes/map2-audio/commit/1218709eba417f015cd36cd208b23b35a83cd7b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`366f0722`](https://github.com/matthewmackes/map2-audio/commit/366f07229e980a93b7074460353eab410a0dc3e2) | feat(T2420-subB): DevicesShell — unified sidebar + outlet... | Map2 Audio | 2026-04-21 |
-| [`719dd21a`](https://github.com/matthewmackes/map2-audio/commit/719dd21a62f6ca4cdbb793f8b31beb2dc1f09506) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
