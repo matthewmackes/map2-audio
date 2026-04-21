@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1216** Python | **1192** TypeScript | **136** C++/H | **144** Docs | **2554** total commits | **3** stars | **0** forks | **0** open issues
+**1218** Python | **1192** TypeScript | **136** C++/H | **144** Docs | **2556** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`23b73b8e`](https://github.com/matthewmackes/map2-audio/commit/23b73b8eae9dbc7febe41a8ba07ce5f444167652) | feat(T2419-A): asyncssh Web SSH bridge service + 15-test ... | Map2 Audio | 2026-04-21 |
+| [`f24c1053`](https://github.com/matthewmackes/map2-audio/commit/f24c1053ca8884d3b8f35daabc1a4e48fcb03f3f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`52743973`](https://github.com/matthewmackes/map2-audio/commit/5274397387775ee202c86aa5a324e3a6bcdd7c59) | docs(T2418-A/T2419-A): mark scaffold subtask Done in work... | Map2 Audio | 2026-04-21 |
 | [`6b7a29d4`](https://github.com/matthewmackes/map2-audio/commit/6b7a29d4b8e1bd3a097085349a418d736f24c228) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`4939f85e`](https://github.com/matthewmackes/map2-audio/commit/4939f85ef36d15a0a5f88ade17ea002212725fe4) | feat(T2418-A/T2419-A): /workspace/platforms/api-webhooks ... | Map2 Audio | 2026-04-21 |
 | [`9b7c5be1`](https://github.com/matthewmackes/map2-audio/commit/9b7c5be112c027bd94af3efed651f90490e4f4ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`813e9e38`](https://github.com/matthewmackes/map2-audio/commit/813e9e38d851fd6a1b85de5a4d92bb42001dd698) | feat(T2416): lower-third blueprint heartbeat panel — slic... | Map2 Audio | 2026-04-21 |
 | [`4441d4e1`](https://github.com/matthewmackes/map2-audio/commit/4441d4e13092bb86d1de9f33d73d8bcd2dac1d0f) | feat(T2415): move Snapshot Editor rail into bottom inspector | Map2 Audio | 2026-04-21 |
-| [`a4f36758`](https://github.com/matthewmackes/map2-audio/commit/a4f36758e22fb19b78c9951d30b913772699d34c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`cd613451`](https://github.com/matthewmackes/map2-audio/commit/cd6134512aac72a7fa697fd0317e9a211531dc5a) | docs(T2414): mark epic Done; worklist terminal — 0 open, ... | Map2 Audio | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -232,7 +232,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **35** more open-source packages from PyPI and npm.
+...and **36** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
