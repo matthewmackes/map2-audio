@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 - T2418 + T2419 filed: /workspace/platforms/api-webhooks standalone panel with Event Feed + Web SSH tabs.
+Last updated: 2026-04-21 - T2418-A/T2419-A scaffold landed on master (commit 4939f85e): /workspace/platforms/api-webhooks StandalonePanel with Carbon Tabs shell (Event Feed | Web SSH), persisted selection, Jest 2/2 PASS, typecheck + build clean. Next: T2419-A asyncssh bridge service.
 
 ---
 
@@ -42,7 +42,7 @@ Description:
 - Dependencies: Existing PlatformEvent infrastructure (`app/services/platform_event/bus.py`, `app/routes/platform_events.py`, `web/src/app/services/platformEventTransport.ts`). Existing WS topics `platform:events`/`:critical`/`:error`/`:warning`/`:info`. Existing `StandalonePanel` pattern in `web/src/app/components/Platform/PlatformModal.tsx`. T2419 for the Web SSH tab body.
 - Estimated effort: Medium — 5 restartable subtasks.
 - Required outputs:
-  - T2418-A: **StandalonePanel scaffold** — add `'api-webhooks'` to `StandalonePanel` union in `web/src/app/data/platformMenuItems.ts` + `STANDALONE_PANEL_ITEMS` entry (label "API & Webhooks", shortLabel "Webhooks", icon `Flash` or `Notification` from @carbon/icons-react, color `var(--cds-link-primary)`, pinnable true); add entry to `platformPanelItems`. Add `STANDALONE_META` entry + lazy import + render branch in `web/src/app/components/Platform/PlatformModal.tsx`. Create `web/src/app/pages/ApiWebhooksPage/ApiWebhooksPage.tsx` with Carbon `Tabs` (Event Feed | Web SSH). Jest tests: renders, tab switching, deep-link to `/workspace/platforms/api-webhooks` works.
+  - T2418-A: **StandalonePanel scaffold** — [✓] Done 2026-04-21 (commit 4939f85e). Added `'api-webhooks'` to `StandalonePanel` union in `web/src/app/data/platformMenuItems.ts` + `STANDALONE_PANEL_ITEMS` entry (label "API & Webhooks", shortLabel "Webhooks", `Flash` icon, `var(--cds-link-primary)`, pinnable true) + entry in `platformPanelItems`. `STANDALONE_META` entry + lazy import + render branch in `web/src/app/components/Platform/PlatformModal.tsx`. `web/src/app/pages/ApiWebhooksPage/ApiWebhooksPage.tsx` with Carbon `Tabs` (Event Feed | Web SSH) + placeholder tab bodies (`EventFeedTab.tsx`, `WebSshTab.tsx`) + localStorage persistence key `map2_api_webhooks_active_tab`. Jest `ApiWebhooksPage.test.tsx` 2/2 PASS (renders both tabs + defaults to Event Feed; switches to Web SSH + persists selection across unmount/remount). `npm run typecheck` PASS, `npm run build` PASS — `ApiWebhooksPage-71Zo9776.js` in bundle. Dual-pushed to origin + gitlab.
   - T2418-B: **Event Feed tab** — `web/src/app/pages/ApiWebhooksPage/EventFeedTab.tsx`. Hydrate from `GET /api/platform-events?limit=200` via TanStack Query; subscribe via existing `platformEventTransport.ts` (session + cursor + ack). Carbon `DataTable` with columns `occurred_at | severity | kind | source_node | title | message`, sortable, `useZebraStyles`. Toolbar: `TableToolbarSearch`, `MultiSelect` for kinds/severities/nodes/surfaces, `NumberInput` for min_priority, `Button` Pause/Resume + Pin (retains pinned rows at top). Virtualized when count > 500 (use `react-window` already in package.json). New events slide in at top with Framer Motion (duration 0.18, matching `PlatformModal.tsx`).
   - T2418-C: **Webhooks subsection + backend** — `app/services/webhook_dispatcher_service.py` + `app/routes/webhooks.py` with:
     - `GET /api/webhooks` list registered targets
