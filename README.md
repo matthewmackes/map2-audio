@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1172** TypeScript | **136** C++/H | **144** Docs | **2479** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1172** TypeScript | **136** C++/H | **144** Docs | **2481** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`26598486`](https://github.com/matthewmackes/map2-audio/commit/26598486c3fc5c727db8e79d3953ed0955d9d734) | feat(T710-sub08): register blueprint in MAP2 theme-preset... | Map2 Audio | 2026-04-20 |
+| [`ea2072b5`](https://github.com/matthewmackes/map2-audio/commit/ea2072b5023918d98b7ead01dc7cbbda56075665) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`78ebc023`](https://github.com/matthewmackes/map2-audio/commit/78ebc023f186eb372aee277bbe920edee7e36ddd) | feat(T710-sub07): add themeBlueprint.css variant for Unif... | Map2 Audio | 2026-04-20 |
 | [`41636199`](https://github.com/matthewmackes/map2-audio/commit/41636199806231f2a1c53ab90ae0ff15f7a170d5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`83fe3af2`](https://github.com/matthewmackes/map2-audio/commit/83fe3af2f43f51f38a774d627cfb425f3e05817e) | feat(T710-sub06): add categoryHues.ts with 15-category ok... | Map2 Audio | 2026-04-20 |
 | [`2e871d0a`](https://github.com/matthewmackes/map2-audio/commit/2e871d0aa6fc0c800bc263584b0c6a36e2308a43) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`9c987aa1`](https://github.com/matthewmackes/map2-audio/commit/9c987aa127569bd8f4bd935c89c7bb7373c33b1e) | feat(T710-sub05): defer icons.tsx removal to sub25 (docum... | Map2 Audio | 2026-04-20 |
 | [`fe56a680`](https://github.com/matthewmackes/map2-audio/commit/fe56a68050281b39d8d0ea57090a3b314ea46a86) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`01e8a02b`](https://github.com/matthewmackes/map2-audio/commit/01e8a02b91113cc12606e6c11689989a6081d68c) | feat(T710-sub04): audit SignalCanvas/icons.tsx consumers;... | Map2 Audio | 2026-04-20 |
-| [`d7fca437`](https://github.com/matthewmackes/map2-audio/commit/d7fca437f6c421b24f3ae9d782506fe5160401f7) | feat(T710-sub03): add FxIcon.tsx component with 3-case test | Map2 Audio | 2026-04-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
