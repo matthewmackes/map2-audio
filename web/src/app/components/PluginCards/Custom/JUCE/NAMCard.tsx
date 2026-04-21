@@ -13,7 +13,7 @@
  * - Model metadata display
  */
 
-import { useState, useCallback, useMemo, type ChangeEvent } from 'react'
+import { useState, useCallback, type ChangeEvent } from 'react'
 import { Tag } from '@carbon/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MachineLearningModel } from '@carbon/icons-react'
@@ -27,6 +27,7 @@ import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
 import { namApi } from '../../../../../map2/api'
 import type { NAMStatus as ApiNAMStatus } from '../../../../../map2/types'
+import type { NAMModelDetail } from '../../../../../map2/api'
 import { getPluginIdentityKeyFromParts } from '../../../../../map2/utils/pluginIdentity'
 import { getPluginAccentConfig } from '../../../../utils/pluginAccent'
 
@@ -83,6 +84,25 @@ function normalizeNAMStatus(status: ApiNAMStatus): NAMStatus {
 
 interface NAMCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
+}
+
+function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || !Number.isFinite(bytes)) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatSampleRate(hz: number | null | undefined): string {
+  if (hz === null || hz === undefined || !Number.isFinite(hz) || hz <= 0) return '—'
+  if (hz >= 1000) return `${(hz / 1000).toFixed(hz % 1000 === 0 ? 0 : 1)} kHz`
+  return `${hz} Hz`
+}
+
+function renderRating(rating: number | null | undefined): string {
+  if (rating === null || rating === undefined || !Number.isFinite(rating)) return '—'
+  const clamped = Math.max(0, Math.min(5, Math.round(rating)))
+  return '★'.repeat(clamped) + '☆'.repeat(5 - clamped)
 }
 
 function isDraftOnlyFallbackError(error: unknown): boolean {
@@ -187,6 +207,19 @@ function NAMCardBase({
   }, [instanceId, queryClient, resolvedPluginPosition, statusQueryKey])
 
   const status = statusQuery.data
+  const activeModelName = status?.activeModel ?? null
+  const modelDetailQuery = useQuery({
+    queryKey: ['nam', 'model-detail', activeModelName],
+    queryFn: async () => {
+      if (!activeModelName) return null
+      const response = await namApi.search({ query: activeModelName })
+      const exact = response.results.find((m: NAMModelDetail) => m.name === activeModelName)
+      return exact ?? null
+    },
+    enabled: Boolean(activeModelName) && !status?.loading,
+    staleTime: 60_000,
+  })
+  const modelDetail = modelDetailQuery.data ?? null
   const availableModelCount = status?.availableModels?.length ?? 0
   const draftConfiguredModel = plugin.loader_state?.selected_asset_name ?? plugin.loader_state?.selected_model ?? null
   const draftConfiguredPath = plugin.loader_state?.selected_asset_path ?? null
@@ -195,14 +228,6 @@ function NAMCardBase({
   const hasConfiguredModel = Boolean(configuredModel)
   const usingConfiguredFallback = Boolean(!status?.activeModel && configuredModel)
   const usingLiveModel = Boolean(status?.activeModel)
-  const currentModelDetails = useMemo(() => {
-    const models = modelsQuery.data?.models ?? []
-    if (!displayModel) {
-      return null
-    }
-    return models.find((model) => model.name === displayModel) ?? null
-  }, [displayModel, modelsQuery.data?.models])
-
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData()
@@ -429,34 +454,78 @@ function NAMCardBase({
               {usingConfiguredFallback ? <Tag size="sm" type="warm-gray">Stored only</Tag> : null}
               {status?.runtimeWarning ? <Tag size="sm" type="warm-gray">Runtime warning</Tag> : null}
             </div>
-            <div className="carbon-asset-selector-fact-grid">
-              <div className="carbon-asset-selector-fact">
-                <span className="carbon-asset-selector-fact-label">Live</span>
-                <span className="carbon-asset-selector-fact-value">{status?.activeModel ?? 'Not active'}</span>
+            <div className="carbon-nam-detail-grid" role="group" aria-label="Model metadata">
+              <div>
+                <div className="carbon-nam-field-label">Architecture</div>
+                <div className={`carbon-nam-field-value${modelDetail?.model_type ? '' : ' empty'}`}>
+                  {modelDetail?.model_type || '—'}
+                </div>
               </div>
-              <div className="carbon-asset-selector-fact">
-                <span className="carbon-asset-selector-fact-label">Configured</span>
-                <span className="carbon-asset-selector-fact-value">{configuredModel ?? 'None'}</span>
+              <div>
+                <div className="carbon-nam-field-label">Amp Type</div>
+                <div className={`carbon-nam-field-value${modelDetail?.amp_type ? '' : ' empty'}`}>
+                  {modelDetail?.amp_type || '—'}
+                </div>
               </div>
-              <div className="carbon-asset-selector-fact">
-                <span className="carbon-asset-selector-fact-label">Type</span>
-                <span className="carbon-asset-selector-fact-value">{currentModelDetails?.type || 'Unknown'}</span>
+              <div>
+                <div className="carbon-nam-field-label">Amp Name</div>
+                <div className={`carbon-nam-field-value${modelDetail?.amp_name ? '' : ' empty'}`}>
+                  {modelDetail?.amp_name || '—'}
+                </div>
               </div>
-              <div className="carbon-asset-selector-fact">
-                <span className="carbon-asset-selector-fact-label">Size</span>
-                <span className="carbon-asset-selector-fact-value">
-                  {typeof currentModelDetails?.size_mb === 'number' ? `${currentModelDetails.size_mb.toFixed(1)} MB` : 'Unknown'}
-                </span>
+              <div>
+                <div className="carbon-nam-field-label">Author</div>
+                <div className={`carbon-nam-field-value${modelDetail?.author ? '' : ' empty'}`}>
+                  {modelDetail?.author || '—'}
+                </div>
               </div>
-              <div className="carbon-asset-selector-fact">
-                <span className="carbon-asset-selector-fact-label">Library</span>
-                <span className="carbon-asset-selector-fact-value">
-                  {availableModelCount} model{availableModelCount === 1 ? '' : 's'}
-                </span>
+              <div>
+                <div className="carbon-nam-field-label">Sample Rate</div>
+                <div className={`carbon-nam-field-value${modelDetail?.sample_rate ? '' : ' empty'}`}>
+                  {formatSampleRate(modelDetail?.sample_rate)}
+                </div>
               </div>
+              <div>
+                <div className="carbon-nam-field-label">File Size</div>
+                <div className={`carbon-nam-field-value${modelDetail?.file_size ? '' : ' empty'}`}>
+                  {formatFileSize(modelDetail?.file_size)}
+                </div>
+              </div>
+              <div>
+                <div className="carbon-nam-field-label">License</div>
+                <div className={`carbon-nam-field-value${modelDetail?.license ? '' : ' empty'}`}>
+                  {modelDetail?.license || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="carbon-nam-field-label">Rating</div>
+                <div
+                  className={`carbon-nam-field-value${modelDetail?.rating ? '' : ' empty'}`}
+                  aria-label={modelDetail?.rating ? `${modelDetail.rating} out of 5` : 'No rating'}
+                >
+                  {renderRating(modelDetail?.rating)}
+                </div>
+              </div>
+              {modelDetail?.description ? (
+                <div className="carbon-nam-field--full">
+                  <div className="carbon-nam-field-label">Description</div>
+                  <div className="carbon-nam-field-value" style={{ whiteSpace: 'normal' }}>
+                    {modelDetail.description}
+                  </div>
+                </div>
+              ) : null}
             </div>
+            {modelDetail?.tags && modelDetail.tags.length > 0 ? (
+              <div className="carbon-nam-tags" aria-label="Model tags">
+                {modelDetail.tags.join(' · ')}
+              </div>
+            ) : null}
             <p className="carbon-asset-selector-support">
               {status?.runtimeWarning || 'Upload a local `.nam` file or open the model library.'}
+            </p>
+            <p className="carbon-asset-selector-meta">
+              Library: {availableModelCount} model{availableModelCount === 1 ? '' : 's'}
+              {configuredModel ? ` · Configured: ${configuredModel}` : ''}
             </p>
           </div>
           <div className="carbon-asset-selector-actions">

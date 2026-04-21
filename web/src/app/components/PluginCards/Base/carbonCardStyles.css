@@ -382,6 +382,47 @@
   white-space: nowrap;
 }
 
+.carbon-nam-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
+  padding: var(--cds-spacing-03, 0.5rem) 0;
+}
+
+.carbon-nam-field-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  color: var(--cds-text-helper, #8d8d8d);
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.carbon-nam-field-value {
+  font-size: var(--cds-body-compact-01-font-size, 0.8125rem);
+  color: var(--cds-text-primary, #f4f4f4);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.carbon-nam-field-value.empty {
+  color: var(--cds-text-helper, #8d8d8d);
+  font-weight: 400;
+}
+
+.carbon-nam-field--full {
+  grid-column: 1 / -1;
+}
+
+.carbon-nam-tags {
+  font-size: 0.6875rem;
+  color: var(--cds-text-helper, #8d8d8d);
+  padding: var(--cds-spacing-02, 0.25rem) 0;
+  letter-spacing: 0.16px;
+}
+
 .carbon-asset-selector-support,
 .carbon-asset-selector-meta {
   margin: 0;

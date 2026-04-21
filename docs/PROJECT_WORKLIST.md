@@ -180,7 +180,7 @@ Last updated: 2026-04-21 - Claude (created from plan audit — `help-me-make-the
 ---
 
 ID: T2422
-Status: [ ] Todo
+Status: [✓] Done
 Title: NAM Model Info Grid — 8-field structured metadata under MODEL section in NAMCard
 Description:
 - Goal / acceptance criteria: Expand the Neural Amp Modeler MODEL section in `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`. Add a `useQuery` keyed on `['nam', 'model-detail', status?.activeModel]` that calls `namApi.search({ query: activeModel })` and finds the exact match (`results.find(m => m.name === activeModel)`), `enabled: !!status?.activeModel && !status?.loading`, `staleTime: 60_000`. Replace the flat `modelSelector` block (lines 339-379) with a 2-column key-value grid rendering Architecture | Amp Type | Amp Name | Author | Sample Rate | File Size | License | Rating (read-only stars `★★★★☆` or `—`). Null fields show `—`. Optional full-width description row if `description` is non-empty. Optional tags row (dot-separated flat muted text) if tags array non-empty. Library + Upload buttons preserved from existing layout. Add helpers: `formatFileSize(bytes)` → `"2.4 MB"`, `formatSampleRate(hz)` → `"48 kHz"`, `renderRating(n)` → star string. Add CSS classes to `web/src/app/components/PluginCards/Base/carbonCardStyles.css`: `.carbon-nam-detail-grid` (2-col), `.carbon-nam-field-label` (10px uppercase Carbon helper), `.carbon-nam-field-value` (13px primary text, ellipsis), `.carbon-nam-field-value.empty`, `.carbon-nam-field--full`, `.carbon-nam-tags`.
@@ -193,8 +193,9 @@ Description:
   - Null handling verified with no-model-loaded state
   - `npm run build` + `npm run preview` manual verification: load a model, confirm all 8 fields populate; unload, confirm `—` fallbacks
   - Atomic commit on master + `git push origin master && git push gitlab master`
-Assigned to: unassigned
-Last updated: 2026-04-21 - Claude (created from plan audit — `zesty-dreaming-popcorn` plan not yet executed; backend schema ready)
+Assigned to: Claude
+Last updated: 2026-04-21 - Claude (shipped)
+Completion note: 2026-04-21 - Claude: Added `NAMModelDetail` type import + `modelDetailQuery` TanStack query (keyed on `['nam', 'model-detail', activeModelName]`, calls `namApi.search({ query: activeModelName })`, finds exact match, `enabled` only when `activeModel && !loading`, `staleTime: 60s`). Added helper functions `formatFileSize` (bytes → B/KB/MB), `formatSampleRate` (Hz → kHz/Hz), `renderRating` (0-5 → `★★★★☆`). Replaced 5-fact grid (Live/Configured/Type/Size/Library) with 8-field 2-column metadata grid: Architecture · Amp Type · Amp Name · Author · Sample Rate · File Size · License · Rating. Optional full-width description row (only when `modelDetail.description` non-empty). Optional tags row (dot-separated `·` format, only when tags array non-empty). Null-safe `—` fallback on every field via `.empty` class. Preserved existing Library/Upload buttons + runtime warning support text. Moved Library/Configured info into footer `.carbon-asset-selector-meta` line. Removed unused `currentModelDetails` useMemo + `useMemo` import. Added CSS to `carbonCardStyles.css`: `.carbon-nam-detail-grid` (2-col grid), `.carbon-nam-field-label` (10px uppercase Carbon helper), `.carbon-nam-field-value` + `.empty`, `.carbon-nam-field--full`, `.carbon-nam-tags`. Validation: `npm run typecheck` PASS; `npm run build` PASS (24.98s); `carbon-nam-detail-grid` class confirmed in `dist/assets/CarbonCardShell-*.css`.
 
 ---
 
