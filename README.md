@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1199** TypeScript | **136** C++/H | **144** Docs | **2574** total commits | **3** stars | **0** forks | **0** open issues
+**1223** Python | **1199** TypeScript | **136** C++/H | **144** Docs | **2576** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`16430022`](https://github.com/matthewmackes/map2-audio/commit/16430022e1a799ec5b17acc890e607ae479e45fb) | feat(T2422): NAM Model Info Grid — 8-field structured met... | Map2 Audio | 2026-04-21 |
+| [`326c97f8`](https://github.com/matthewmackes/map2-audio/commit/326c97f83487827b3ba20641876deb6d2aba6d19) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`64392a2a`](https://github.com/matthewmackes/map2-audio/commit/64392a2aef4eb7f60decc3bbc09c847326498b53) | docs(worklist): surface 3 unabsorbed plans as T2420/T2421... | Map2 Audio | 2026-04-21 |
 | [`4f352fba`](https://github.com/matthewmackes/map2-audio/commit/4f352fba269ab14034a234373e68ca7e8bb3294c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`5ac2c840`](https://github.com/matthewmackes/map2-audio/commit/5ac2c8405f4c972264382e179501d26b7c16043e) | feat(T2416-H-FOLLOWUP): cluster heartbeat row — per-node ... | Map2 Audio | 2026-04-21 |
 | [`650ecf01`](https://github.com/matthewmackes/map2-audio/commit/650ecf01fb3d7f611de6fdd880d75280ba57a1dd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`b6309a93`](https://github.com/matthewmackes/map2-audio/commit/b6309a93de9f27b85703b5ee54114f03ceca80b0) | docs(T2418-E): mark T2418 epic Done — final validation ev... | Map2 Audio | 2026-04-21 |
 | [`c4c28734`](https://github.com/matthewmackes/map2-audio/commit/c4c2873484166caa0ba40ed734438ff5e3ddbc4f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`7b783a3f`](https://github.com/matthewmackes/map2-audio/commit/7b783a3f8639f548137b7c4360097b4c3db287ad) | feat(T2418-C): outbound webhook dispatcher — service + ro... | Map2 Audio | 2026-04-21 |
-| [`b6a0c800`](https://github.com/matthewmackes/map2-audio/commit/b6a0c800cd2ffc52609a371b28a34d049ed7c319) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
