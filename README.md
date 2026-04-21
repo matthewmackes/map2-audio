@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1188** TypeScript | **136** C++/H | **144** Docs | **2503** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1190** TypeScript | **136** C++/H | **144** Docs | **2505** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`da2e1ca3`](https://github.com/matthewmackes/map2-audio/commit/da2e1ca3a36eb00157bdc71a02cd06221343c845) | feat(T710-sub20): add BlockPicker.tsx with category filte... | Map2 Audio | 2026-04-20 |
+| [`f80d027b`](https://github.com/matthewmackes/map2-audio/commit/f80d027bb4fe54999f119b5bb03d4d7c959b0127) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`581c0573`](https://github.com/matthewmackes/map2-audio/commit/581c0573371c12fc337666ea15b4a13c7a5cab0b) | feat(T710-sub19): add UnifiedChannelGrid composition + sc... | Map2 Audio | 2026-04-20 |
 | [`ac1a28f5`](https://github.com/matthewmackes/map2-audio/commit/ac1a28f5428669796e8485f583efbdf3413e3e1b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`dd596758`](https://github.com/matthewmackes/map2-audio/commit/dd596758c8f8e1f51b4845e9d6dd597314341aa3) | feat(T710-sub18): add ChannelRow.tsx composing header + 8... | Map2 Audio | 2026-04-20 |
 | [`e94b5e07`](https://github.com/matthewmackes/map2-audio/commit/e94b5e07d8d4c75741823cbc06a60996e64bcb03) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`b6d71805`](https://github.com/matthewmackes/map2-audio/commit/b6d71805fefa306c070fd1871307278ed8208484) | feat(T710-sub17): add ChannelHeader.tsx + 4-test suite | Map2 Audio | 2026-04-20 |
 | [`98889977`](https://github.com/matthewmackes/map2-audio/commit/9888997784a01d0e49da08a77a43db588856daf7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`6d1d368f`](https://github.com/matthewmackes/map2-audio/commit/6d1d368f97fe0638b6b85b37d6c4854df2002a0f) | feat(T710-sub16): add SlotRuler.tsx column header + test | Map2 Audio | 2026-04-20 |
-| [`80496783`](https://github.com/matthewmackes/map2-audio/commit/80496783ee4d4f9837d38af211a65c12665b97c1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
