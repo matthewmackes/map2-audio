@@ -1,0 +1,32 @@
+.event-feed-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.event-feed-tab__header {
+  padding: 0 0.5rem;
+}
+
+.event-feed-tab__status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.event-feed-tab__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.event-feed-tab__table {
+  padding: 0 0.5rem;
+}
+
+.event-feed-tab__table .cds--data-table-container {
+  width: 100%;
+}
