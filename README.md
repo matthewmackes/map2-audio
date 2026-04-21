@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2519** total commits | **3** stars | **0** forks | **0** open issues
+**1209** Python | **1187** TypeScript | **136** C++/H | **144** Docs | **2521** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,9 +175,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-21 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-20 |
 | [MAP2 Installation Guide (Created by AI. Not Yet Tested - Matt)](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Installation_Guide_2026-02-14.md) | 2026-04-20 |
 | [MAP2 + Maschine MK1 Headless Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-20 |
 | [MAP2 Memory Index](https://github.com/matthewmackes/map2-audio/blob/master/docs/MEMORY.md) | 2026-04-20 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`80f81113`](https://github.com/matthewmackes/map2-audio/commit/80f81113a2147413f376b63db352d8a0347494fa) | feat(T710-sub28): document Unified Channel Grid + T710 go... | Map2 Audio | 2026-04-21 |
+| [`1c035fa0`](https://github.com/matthewmackes/map2-audio/commit/1c035fa05f104490592ac3ad07aaf7b4c26346d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`bd83a134`](https://github.com/matthewmackes/map2-audio/commit/bd83a134fb807431af31d5e9f62bc1572ce0bcd0) | feat(T710-sub27): atomic build + production server verifi... | Map2 Audio | 2026-04-21 |
 | [`0de71db6`](https://github.com/matthewmackes/map2-audio/commit/0de71db61691ddd1446fec715fb13fe77737f74e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`a4f2d9d6`](https://github.com/matthewmackes/map2-audio/commit/a4f2d9d640057338f8f36fd6f9b496e947795bb9) | feat(T710-sub26): verify SnapshotEditor test suite (145/1... | Map2 Audio | 2026-04-21 |
 | [`ad675188`](https://github.com/matthewmackes/map2-audio/commit/ad675188769b338d82eb3e8c4d72629f1b4e8ef7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 | [`0c092af7`](https://github.com/matthewmackes/map2-audio/commit/0c092af7e19929954411363cb7865c795b0e76fd) | feat(T710-sub25): swap SignalCanvas body to UnifiedChanne... | Map2 Audio | 2026-04-21 |
 | [`3046e016`](https://github.com/matthewmackes/map2-audio/commit/3046e016e70a7a07e36e604cdf11f3cc6dbc6a23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
-| [`38efc945`](https://github.com/matthewmackes/map2-audio/commit/38efc9452d971779deb9c149e005892f1a9368f7) | feat(T710-sub24): live VU + clip + live-dot on ChannelHeader | Map2 Audio | 2026-04-20 |
-| [`048b7abf`](https://github.com/matthewmackes/map2-audio/commit/048b7abfc708a8755e4d14a5c41c84b9524a2402) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
