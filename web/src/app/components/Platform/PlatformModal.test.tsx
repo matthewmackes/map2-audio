@@ -329,7 +329,9 @@ jest.mock('../../../map2/api', () => ({
     restart: jest.fn().mockResolvedValue({ status: 'ok' }),
   },
   chainsApi: {
-    list: jest.fn().mockResolvedValue({ chains: [] }),
+    // Never resolves — keeps SignalPathSection in the loading state so it never
+    // calls setState after the test render completes, avoiding act() warnings.
+    list: jest.fn().mockImplementation(() => new Promise(() => {})),
   },
   diagnosticsApi: {
     runFullDiagnostic: jest.fn().mockResolvedValue({ status: 'ok', diagnostics: {} }),

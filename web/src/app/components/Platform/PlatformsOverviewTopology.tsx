@@ -20,10 +20,11 @@ import {
   Tag,
 } from '@carbon/react'
 
-import { audioApi, chainsApi, diagnosticsApi } from '../../../map2/api'
+import { audioApi, chainsApi, diagnosticsApi, patchNodeLabel } from '../../../map2/api'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import type {
   NodeAudioEdge,
+  NodeNetworkEdge,
   NodeStatus,
   NodeSummary,
 } from '../../types/node'
@@ -79,6 +80,19 @@ function strokeForStatus(status: NodeStatus): string {
     case 'offline': return 'var(--cds-border-subtle-02)'
     default: return 'var(--cds-support-success)'
   }
+}
+
+// Build a latency lookup keyed by canonical edge key (sorted node IDs joined).
+function latencyKey(a: string, b: string): string {
+  return [a, b].sort().join('::')
+}
+
+function buildLatencyMap(networkEdges: NodeNetworkEdge[]): Map<string, number | null> {
+  const m = new Map<string, number | null>()
+  for (const e of networkEdges) {
+    m.set(latencyKey(e.source_node_id, e.dest_node_id), e.latency_ms)
+  }
+  return m
 }
 
 // Count AVB streams touching each node (sum of in + out active audio_edges).
@@ -216,6 +230,7 @@ function RotatingAlert({ alerts, paused }: { alerts: PlatformAlert[]; paused: bo
 function TopologyCanvas({
   nodes,
   edges,
+  networkEdges,
   selectedId,
   onSelect,
   streamCounts,
@@ -224,6 +239,7 @@ function TopologyCanvas({
 }: {
   nodes: NodeSummary[]
   edges: NodeAudioEdge[]
+  networkEdges: NodeNetworkEdge[]
   selectedId: string
   onSelect: (id: string) => void
   streamCounts: Map<string, number>
@@ -231,6 +247,7 @@ function TopologyCanvas({
   alerts: PlatformAlert[]
 }) {
   const layout = useMemo(() => computeLayout(nodes), [nodes])
+  const latencyMap = useMemo(() => buildLatencyMap(networkEdges), [networkEdges])
 
   // Compose graph edges: audio edges from backend, plus a star to the mgmt/local
   // anchor so every node draws at least one control-plane tie.
@@ -243,20 +260,23 @@ function TopologyCanvas({
     dashed: boolean
     warn: boolean
     streamCount: number
+    latencyMs: number | null
   }> = []
 
-  // Control-plane star (dashed if peer offline).
+  // Control-plane star (dashed if peer offline). Annotate with measured latency.
   if (anchor && anchorPos) {
     nodes.forEach((n) => {
       if (n.node_id === anchor.node_id) return
       const bp = layout.get(n.node_id)
       if (!bp) return
+      const latencyMs = latencyMap.get(latencyKey(anchor.node_id, n.node_id)) ?? null
       renderedEdges.push({
         a: { ...anchorPos, id: anchor.node_id },
         b: { ...bp, id: n.node_id },
         dashed: n.status === 'offline',
         warn: false,
         streamCount: 0,
+        latencyMs,
       })
     })
   }
@@ -275,6 +295,7 @@ function TopologyCanvas({
       dashed: false,
       warn: srcStatus === 'warn' || dstStatus === 'warn',
       streamCount: 1,
+      latencyMs: null,
     })
   })
 
@@ -301,6 +322,30 @@ function TopologyCanvas({
             strokeDasharray={e.dashed ? '3 4' : undefined}
           />
         ))}
+
+        {/* Latency labels on control-plane ties */}
+        {renderedEdges
+          .filter((e) => e.latencyMs !== null && e.streamCount === 0)
+          .map((e, i) => {
+            const mx = (e.a.x + e.b.x) / 2
+            const my = (e.a.y + e.b.y) / 2
+            const latencyColor = (e.latencyMs ?? 0) > 20
+              ? 'var(--cds-support-warning)'
+              : 'var(--cds-text-helper)'
+            return (
+              <text
+                key={`lat-${i}`}
+                x={mx}
+                y={my - 5}
+                textAnchor="middle"
+                fontSize="7"
+                fontFamily="var(--font-mono, ui-monospace, monospace)"
+                fill={latencyColor}
+              >
+                {`${(e.latencyMs ?? 0).toFixed(1)}ms`}
+              </text>
+            )
+          })}
 
         {/* Animated AVB packets — density scales with stream count per edge */}
         {!paused && renderedEdges
@@ -595,6 +640,7 @@ function Sidebar({
   onOpenAvb,
   onRestart,
   onDownloadDiagnostics,
+  onNodeRenamed,
   isRestarting,
   isDownloading,
 }: {
@@ -605,9 +651,42 @@ function Sidebar({
   onOpenAvb: () => void
   onRestart: () => void
   onDownloadDiagnostics: () => void
+  onNodeRenamed: (nodeId: string, newLabel: string | null) => void
   isRestarting: boolean
   isDownloading: boolean
 }) {
+  const [editingLabel, setEditingLabel] = useState(false)
+  const [labelDraft, setLabelDraft] = useState('')
+  const [isSavingLabel, setIsSavingLabel] = useState(false)
+  const labelInputRef = useRef<HTMLInputElement>(null)
+
+  const startEdit = useCallback(() => {
+    if (!node) return
+    setLabelDraft(node.display_label ?? node.hostname)
+    setEditingLabel(true)
+    setTimeout(() => labelInputRef.current?.select(), 0)
+  }, [node])
+
+  const cancelEdit = useCallback(() => {
+    setEditingLabel(false)
+    setLabelDraft('')
+  }, [])
+
+  const commitEdit = useCallback(async () => {
+    if (!node) return
+    setIsSavingLabel(true)
+    try {
+      const trimmed = labelDraft.trim()
+      await patchNodeLabel(trimmed || node.hostname)
+      onNodeRenamed(node.node_id, trimmed || null)
+    } catch {
+      // Silently revert on failure — toast would require prop drilling.
+    } finally {
+      setIsSavingLabel(false)
+      setEditingLabel(false)
+    }
+  }, [node, labelDraft, onNodeRenamed])
+
   if (!node) {
     return (
       <aside className="ptop__sidebar">
@@ -625,7 +704,34 @@ function Sidebar({
         <div className="ptop__eyebrow">Selected node</div>
         <div className="ptop__sidebar-title">
           <span className={`ptop__dot ptop__dot--${statusDotClass(node.status)} ${paused ? '' : 'ptop__dot--pulse'}`} />
-          <span className="ptop__mono ptop__sidebar-node">{node.hostname}</span>
+          {editingLabel ? (
+            <span className="ptop__label-edit">
+              <input
+                ref={labelInputRef}
+                className="ptop__label-input"
+                value={labelDraft}
+                onChange={(e) => setLabelDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitEdit()
+                  if (e.key === 'Escape') cancelEdit()
+                }}
+                disabled={isSavingLabel}
+                autoFocus
+                aria-label="Node display label"
+              />
+              <button className="ptop__label-btn ptop__label-btn--save" onClick={commitEdit} disabled={isSavingLabel} title="Save">✓</button>
+              <button className="ptop__label-btn ptop__label-btn--cancel" onClick={cancelEdit} disabled={isSavingLabel} title="Cancel">✕</button>
+            </span>
+          ) : (
+            <button
+              className="ptop__sidebar-node-btn"
+              onClick={startEdit}
+              title="Click to rename this node"
+            >
+              <span className="ptop__mono ptop__sidebar-node">{node.display_label ?? node.hostname}</span>
+              <span className="ptop__label-edit-hint" aria-hidden>✎</span>
+            </button>
+          )}
         </div>
         <div className="ptop__muted ptop__tiny ptop__sidebar-meta">
           {node.role.replace(/_/g, ' ')} · {streams} streams · xruns {node.xrun_count}
@@ -801,16 +907,18 @@ export function PlatformsOverviewTopology({ layer }: Props) {
 
   // Last-known data fallback: when the fetch errors, keep the most recent
   // successful payload and surface a stale banner.
-  const lastGoodRef = useRef<{ nodes: NodeSummary[]; audio_edges: NodeAudioEdge[] } | null>(null)
+  const lastGoodRef = useRef<{ nodes: NodeSummary[]; audio_edges: NodeAudioEdge[]; network_edges: NodeNetworkEdge[] } | null>(null)
   if (topologyQuery.data?.nodes?.length) {
     lastGoodRef.current = {
       nodes: topologyQuery.data.nodes,
       audio_edges: topologyQuery.data.audio_edges,
+      network_edges: topologyQuery.data.network_edges,
     }
   }
 
   const nodes: NodeSummary[] = topologyQuery.data?.nodes ?? lastGoodRef.current?.nodes ?? []
   const edges: NodeAudioEdge[] = topologyQuery.data?.audio_edges ?? lastGoodRef.current?.audio_edges ?? []
+  const networkEdges: NodeNetworkEdge[] = topologyQuery.data?.network_edges ?? lastGoodRef.current?.network_edges ?? []
   const isStale = Boolean(topologyQuery.error) && Boolean(lastGoodRef.current?.nodes?.length)
   const lastUpdatedAt = topologyQuery.dataUpdatedAt
     ? new Date(topologyQuery.dataUpdatedAt).toLocaleTimeString()
@@ -874,6 +982,10 @@ export function PlatformsOverviewTopology({ layer }: Props) {
       setRestartOpen(false)
     }
   }, [selected, pushToast])
+
+  const handleNodeRenamed = useCallback((_nodeId: string, _newLabel: string | null) => {
+    topologyQuery.refetch()
+  }, [topologyQuery])
 
   const handleDownloadDiagnostics = useCallback(async () => {
     if (!selected) return
@@ -950,6 +1062,7 @@ export function PlatformsOverviewTopology({ layer }: Props) {
             <TopologyCanvas
               nodes={nodes}
               edges={edges}
+              networkEdges={networkEdges}
               selectedId={selected?.node_id ?? ''}
               onSelect={setSelectedId}
               streamCounts={streamCounts}
@@ -976,6 +1089,7 @@ export function PlatformsOverviewTopology({ layer }: Props) {
           onOpenAvb={handleOpenAvb}
           onRestart={() => setRestartOpen(true)}
           onDownloadDiagnostics={handleDownloadDiagnostics}
+          onNodeRenamed={handleNodeRenamed}
           isRestarting={isRestarting}
           isDownloading={isDownloadingDiag}
         />
