@@ -225,6 +225,7 @@ import {
   SnapshotEditorSnapshotInspectorControls,
   SnapshotEditorSnapshotStatusPanel,
 } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
+import { MorphPad } from '../components/StateAuthority/MorphPad'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
@@ -8459,27 +8460,35 @@ export function SnapshotEditorPage() {
                   selectedPluginEditorContent
                 )
               ) : bottomEditorShowsSnapshotInspector ? (
-                <SnapshotEditorSnapshotInspectorControls
-                  liveSnapshot={activeSnapshot}
-                  authoritativeAudioState={authoritativeAudioState}
-                  monitoringStatusLabel={monitoringStatusLabel}
-                  monitoringStatusWarning={monitoringStatusWarning}
-                  onOpenProgressModal={openGuidedProgress}
-                  onOpenSnapshots={() => navigate('/snapshots')}
-                  onCreateSnapshot={() => createCapturedSnapshot()}
-                  createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-                  activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
-                  onOpenSignalGrid={openSignalGridWorkspace}
-                  onOpenDirectory={handleAddPlugin}
-                  directoryDisabled={snapshotEditingLocked}
-                  onOpenParameters={openSelectedBlockEditor}
-                  parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-                  onOpenAutomation={openAutomationWorkspace}
-                  automationActive={automationTimelineExpanded}
-                  onOpenVersionHistory={openVersionHistoryWorkspace}
-                  versionHistoryDisabled={!activeSnapshot}
-                  onOpenHelp={openKeyboardHelpWorkspace}
-                />
+                <div className="juce-grid-page__snapshot-inspector-row">
+                  <SnapshotEditorSnapshotInspectorControls
+                    liveSnapshot={activeSnapshot}
+                    authoritativeAudioState={authoritativeAudioState}
+                    monitoringStatusLabel={monitoringStatusLabel}
+                    monitoringStatusWarning={monitoringStatusWarning}
+                    onOpenProgressModal={openGuidedProgress}
+                    onOpenSnapshots={() => navigate('/snapshots')}
+                    onCreateSnapshot={() => createCapturedSnapshot()}
+                    createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+                    activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
+                    onOpenSignalGrid={openSignalGridWorkspace}
+                    onOpenDirectory={handleAddPlugin}
+                    directoryDisabled={snapshotEditingLocked}
+                    onOpenParameters={openSelectedBlockEditor}
+                    parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+                    onOpenAutomation={openAutomationWorkspace}
+                    automationActive={automationTimelineExpanded}
+                    onOpenVersionHistory={openVersionHistoryWorkspace}
+                    versionHistoryDisabled={!activeSnapshot}
+                    onOpenHelp={openKeyboardHelpWorkspace}
+                  />
+                  {activeSnapshot ? (
+                    <div className="juce-grid-page__snapshot-inspector-morph" aria-label="A/B/C/D morph">
+                      <p className="juce-grid-page__dense-card-kicker">Morph</p>
+                      <MorphPad size={160} />
+                    </div>
+                  ) : null}
+                </div>
               ) : (
                 <Tile className="juce-grid-page__bottom-editor-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">

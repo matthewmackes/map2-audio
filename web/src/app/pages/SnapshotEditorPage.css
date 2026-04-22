@@ -4688,6 +4688,35 @@
   border: 1px dashed color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, var(--cds-link-primary, #0f62fe));
 }
 
+.juce-grid-page__snapshot-inspector-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.juce-grid-page__snapshot-inspector-row > .juce-grid-page__snapshot-inspector-controls {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.juce-grid-page__snapshot-inspector-morph {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem 1rem;
+  border: 1px solid var(--cds-border-subtle-01, var(--border));
+  background: var(--cds-layer-01, var(--surface));
+}
+
+.juce-grid-page__snapshot-inspector-morph .morph-pad {
+  /* MorphPad already has its own padding; let it breathe inside the card. */
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
 .juce-grid-page__snapshot-inspector-controls {
   display: flex;
   flex-wrap: wrap;

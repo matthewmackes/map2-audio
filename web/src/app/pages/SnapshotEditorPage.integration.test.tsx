@@ -26,6 +26,32 @@ jest.mock('../hooks/useVuMeters', () => ({
   }),
 }))
 
+jest.mock('../hooks/useCPUMetrics', () => {
+  const _metrics = {
+    totalCpuPercent: 0,
+    xrunCount: 0,
+    timestamp: 0,
+    perPluginPercent: {},
+  }
+  const _result = {
+    metrics: _metrics,
+    isConnected: false,
+    isLoading: false,
+    isError: false,
+    status: 'ok' as const,
+    hasXruns: false,
+    getPluginCpu: (_id: string | number) => 0,
+    getTopConsumers: () => [],
+    warningThreshold: 70,
+    criticalThreshold: 90,
+  }
+  return {
+    __esModule: true,
+    useCPUMetrics: () => _result,
+    default: () => _result,
+  }
+})
+
 const mockSpecialSettings = {
   'snapshot_editor.flow_animation': 'packet',
   'snapshot_editor.grid_backdrop': false,
