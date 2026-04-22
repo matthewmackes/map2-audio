@@ -47,6 +47,12 @@ export const PLATFORM_EVENT_KINDS = [
   'snapshot.activation.started',
   'snapshot.activation.ok',
   'snapshot.activation.failed',
+  'state_authority.reconciliation.healthy',
+  'state_authority.reconciliation.drift_detected',
+  'state_authority.reconciliation.self_healed',
+  'state_authority.reconciliation.reactivation_required',
+  'state_authority.reconciliation.cluster_drift',
+  'state_authority.reconciliation.error',
   'snapshot.live.pinned',
   'snapshot.runtime.progress',
   'node.online',
@@ -144,6 +150,7 @@ export const PLATFORM_EVENT_KINDS = [
   'lcd.service',
   'lcd.user',
   'lcd.alert',
+  'platform.test.ping',
 ] as const
 export type PlatformEventKind = (typeof PLATFORM_EVENT_KINDS)[number]
 

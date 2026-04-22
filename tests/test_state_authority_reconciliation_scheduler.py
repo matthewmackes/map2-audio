@@ -232,6 +232,222 @@ async def test_management_node_runs_both_loops_when_cluster_reconciler_is_set():
 
 
 @pytest.mark.asyncio
+async def test_local_tick_emits_healthy_event_on_healthy_status():
+    """Plan Q95 — runtime events only; reconciliation outcomes flow through
+    the canonical PlatformEventBus."""
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind: str, severity: str, context: dict):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        return {"chains": [{"plugins": []}]}
+
+    async def _healthy(payload, tolerance, apply):  # noqa: ARG001
+        return {
+            "status": "healthy",
+            "parameter_drift_count": 0,
+            "bypass_drift_count": 0,
+            "correction_count": 0,
+            "reactivation_required": False,
+        }
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_healthy,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_local_once()
+    assert len(emitted) == 1
+    kind, severity, context = emitted[0]
+    assert kind == "state_authority.reconciliation.healthy"
+    assert severity == "info"
+    assert context["layer"] == "local"
+    assert context["report"]["status"] == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_local_tick_emits_self_healed_when_drift_auto_corrected():
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        return {"chains": []}
+
+    async def _healed(payload, tolerance, apply):  # noqa: ARG001
+        return {
+            "status": "self_healed",
+            "parameter_drift_count": 2,
+            "bypass_drift_count": 0,
+            "correction_count": 2,
+            "reactivation_required": False,
+        }
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_healed,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_local_once()
+    assert emitted[0][0] == "state_authority.reconciliation.self_healed"
+    assert emitted[0][1] == "info"
+
+
+@pytest.mark.asyncio
+async def test_local_tick_emits_drift_detected_at_warning_severity():
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        return {"chains": []}
+
+    async def _drift(payload, tolerance, apply):  # noqa: ARG001
+        return {
+            "status": "drift_detected",
+            "parameter_drift_count": 3,
+            "bypass_drift_count": 1,
+            "correction_count": 0,
+            "reactivation_required": False,
+        }
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_drift,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_local_once()
+    assert emitted[0][0] == "state_authority.reconciliation.drift_detected"
+    assert emitted[0][1] == "warning"
+
+
+@pytest.mark.asyncio
+async def test_local_tick_emits_reactivation_required_when_topology_drift():
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        return {"chains": []}
+
+    async def _reactivate(payload, tolerance, apply):  # noqa: ARG001
+        return {
+            "status": "reactivation_required",
+            "reactivation_required": True,
+            "parameter_drift_count": 0,
+            "bypass_drift_count": 0,
+            "correction_count": 0,
+        }
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_reactivate,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_local_once()
+    assert emitted[0][0] == "state_authority.reconciliation.reactivation_required"
+    assert emitted[0][1] == "warning"
+
+
+@pytest.mark.asyncio
+async def test_local_tick_emits_error_event_when_producer_raises():
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        raise RuntimeError("etcd unreachable")
+
+    async def _noop(payload, tolerance, apply):  # noqa: ARG001
+        return {"status": "healthy"}
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_noop,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_local_once()
+    assert emitted[0][0] == "state_authority.reconciliation.error"
+    assert emitted[0][1] == "error"
+    assert "etcd unreachable" in emitted[0][2]["error"]
+
+
+@pytest.mark.asyncio
+async def test_cluster_tick_emits_cluster_drift_when_nodes_report_drift():
+    emitted: list[tuple[str, str, dict]] = []
+
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+
+    async def _payload():
+        return None
+
+    async def _noop(payload, tolerance, apply):  # noqa: ARG001
+        return {"status": "healthy"}
+
+    async def _cluster():
+        return {"status": "drift", "nodes_with_drift": 3, "checked_nodes": 10}
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_noop,
+        cluster_reconciler=_cluster,
+        event_emitter=_emitter,
+    )
+    await scheduler.run_cluster_once()
+    assert emitted[0][0] == "state_authority.reconciliation.cluster_drift"
+    assert emitted[0][1] == "warning"
+    assert emitted[0][2]["report"]["nodes_with_drift"] == 3
+
+
+@pytest.mark.asyncio
+async def test_emitter_failure_never_crashes_scheduler():
+    """If the PlatformEventBus is down or raising, the scheduler must log
+    and continue."""
+    async def _flaky_emitter(kind, severity, context):
+        raise RuntimeError("bus is on fire")
+
+    async def _payload():
+        return {"chains": []}
+
+    async def _healthy(payload, tolerance, apply):  # noqa: ARG001
+        return {"status": "healthy", "reactivation_required": False}
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_healthy,
+        event_emitter=_flaky_emitter,
+    )
+    # Must NOT raise
+    report = await scheduler.run_local_once()
+    assert report["status"] == "healthy"
+    assert scheduler.metrics.local_runs_total == 1
+
+
+@pytest.mark.asyncio
+async def test_scheduler_without_event_emitter_stays_silent():
+    """Default behavior — no emitter → no events, no errors."""
+    async def _payload():
+        return {"chains": []}
+
+    async def _healthy(payload, tolerance, apply):  # noqa: ARG001
+        return {"status": "healthy", "reactivation_required": False}
+
+    scheduler = StateAuthorityReconciliationScheduler(
+        live_payload_producer=_payload,
+        local_reconciler=_healthy,
+    )
+    await scheduler.run_local_once()
+    # Just confirm no crash and metrics still tick
+    assert scheduler.metrics.local_runs_total == 1
+
+
+@pytest.mark.asyncio
 async def test_worker_node_does_not_start_cluster_loop_even_if_reconciler_provided():
     async def payload_producer() -> dict | None:
         return None

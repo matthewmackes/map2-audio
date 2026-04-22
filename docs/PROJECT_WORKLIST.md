@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority + GraphDocumentInspector shipped — operators can now view the canonical JSONB State Authority document (plan Q1 source of truth) for any snapshot via GET /api/state-authority/live-document + snapshots/{id}/document routes and a 4th tab on /state-authority. 251 backend State Authority tests PASS, 146 Snapshot Editor tests PASS, 51 frontend State Authority tests PASS across 6 suites.
+Last updated: 2026-04-22 EDT - T2425 State Authority reconciliation now emits canonical PlatformEvents (plan Q95 — runtime events through the bus, not a parallel stream). 6 new event kinds registered (state_authority.reconciliation.{healthy,drift_detected,self_healed,reactivation_required,cluster_drift,error}); scheduler fires after each tick via injected emitter adapter wired to get_platform_event_bus() in app.main lifespan. 326 relevant tests PASS (platform_event + state_authority + snapshot suites). TS manifest parity restored (fixed pre-existing platform.test.ping drift).
 
 ---
 
@@ -33,6 +33,28 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-PLATFORM-EVENTS
+Status: [✓] Done
+Title: Post-epic — reconciliation emits canonical PlatformEvents (plan Q95)
+Description:
+- Goal / acceptance criteria: Route every reconciliation outcome (healthy / drift_detected / self_healed / reactivation_required / cluster_drift / error) through the canonical PlatformEventBus per plan Q95 ("runtime events only") and CLAUDE.md §Critical System Rules ("bus.emit() is the only permitted cross-system event entrypoint"). No parallel in-memory stream — events flow through the same fan-out pipeline that feeds toasts, persistence, WebSocket topics, and Raft replication.
+- Why it matters: Operators have four consumers of PlatformEvents today — the Stage Notification surface, the API & Webhooks feed, the event store, and future webhook integrations. Routing reconciliation through the bus means any surface that already renders PlatformEvents automatically shows drift/self-heal/reactivation without bespoke wiring per consumer. Also lets webhooks fire on drift (e.g. Slack on topology drift).
+- Shipped outputs:
+  - `app/services/platform_event/kind.py` — 6 new kinds registered: `state_authority.reconciliation.{healthy,drift_detected,self_healed,reactivation_required,cluster_drift,error}`.
+  - `app/services/state_authority_reconciliation_scheduler.py` — accepts optional `event_emitter: EventEmitter` callable (defaults None = silent). `run_local_once` / `run_cluster_once` call the emitter after metric update. Error path also emits an error event. `_safe_emit` swallows any emitter failure so scheduler never crashes on a bus outage. `_maybe_emit_local_event` + `_maybe_emit_cluster_event` map report status to canonical kind/severity pair.
+  - `app/main.py` lifespan — adapter closure `_emit_state_authority_event(kind, severity, context)` constructs a valid `PlatformEvent` envelope from the scheduler's outcome and calls `get_platform_event_bus().emit()`. Title truncated to 40 chars; priority 0.3 for info, 0.6 for warn/error.
+  - `web/src/map2/platformEvent.ts` — TS manifest extended with the 6 new kinds + pre-existing `platform.test.ping` drift restored (was missing from TS mirror since it was added server-side).
+- Tests:
+  - `tests/test_state_authority_reconciliation_scheduler.py` — 8 new emission tests (healthy→info/self_healed→info/drift→warn/reactivation→warn/error path/cluster-drift→warn, emitter-failure swallowed, silent-when-emitter-None). 21/21 pass.
+  - `tests/test_state_authority_platform_events.py` (new) — 7 tests locking kind registration, canonical normalization round-trip, envelope validation against each new kind, title-length enforcement, severity validity per kind. 7/7 pass.
+  - `tests/test_platform_event_envelope.py` — 7/7 pass (including previously-failing TS manifest parity test).
+- Validation: `npx tsc --noEmit` PASS. `npm run build` PASS (21.45s). 326 combined tests pass across platform_event + state_authority + snapshot_graph + snapshot_activation_fsm + juce_engine_{graph_document,morph_engine} suites.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Emitter is optional — scheduler stays pure and testable. Event emission silently tolerates bus outages (logs at debug level, returns to main loop). Because the PlatformEventBus has a feature flag (`PLATFORM_EVENT_BUS_ENABLED` env var) and defaults to disabled, the reconciliation events won't actually fan out in production until the operator enables the bus — this is the correct CLAUDE.md behavior for a cluster-wide event stream.
+
+---
 
 ID: T2425-POST-DOCUMENT-INSPECTOR
 Status: [✓] Done

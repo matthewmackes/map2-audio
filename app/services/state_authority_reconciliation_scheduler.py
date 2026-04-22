@@ -92,6 +92,10 @@ class ReconciliationSchedulerConfig:
 LiveSnapshotProducer = Callable[[], Awaitable[dict[str, Any] | None]]
 LocalReconciler = Callable[[dict[str, Any] | None, float, bool], Awaitable[dict[str, Any]]]
 ClusterReconciler = Callable[[], Awaitable[dict[str, Any]]]
+# Emits a reconciliation outcome as a canonical PlatformEvent. Injected so
+# the scheduler stays pure — the actual bus lookup + envelope construction
+# is a thin adapter in app.main lifespan.
+EventEmitter = Callable[[str, str, dict[str, Any]], Awaitable[None]]
 
 
 class StateAuthorityReconciliationScheduler:
@@ -106,6 +110,7 @@ class StateAuthorityReconciliationScheduler:
         cluster_reconciler: ClusterReconciler | None = None,
         metrics: ReconciliationMetrics | None = None,
         now_s: Callable[[], float] | None = None,
+        event_emitter: EventEmitter | None = None,
     ) -> None:
         self._config = config or ReconciliationSchedulerConfig()
         self._live_payload = live_payload_producer
@@ -116,6 +121,7 @@ class StateAuthorityReconciliationScheduler:
         self._local_task: asyncio.Task | None = None
         self._cluster_task: asyncio.Task | None = None
         self._started = False
+        self._emit_event = event_emitter
 
     @property
     def metrics(self) -> ReconciliationMetrics:
@@ -132,12 +138,18 @@ class StateAuthorityReconciliationScheduler:
                 self._config.apply_corrections,
             )
             self._apply_local_metrics(report)
+            await self._maybe_emit_local_event(report)
             return report
         except Exception as exc:  # noqa: BLE001 — scheduler must survive upstream errors
             logger.exception("Layer 1 reconciliation tick failed")
             self._metrics.last_local_status = "error"
             self._metrics.last_local_error = repr(exc)
             self._metrics.last_local_reconcile_unix_s = self._now_s()
+            await self._safe_emit(
+                "state_authority.reconciliation.error",
+                "error",
+                {"layer": "local", "error": repr(exc)},
+            )
             return {"status": "error", "error": repr(exc)}
 
     async def run_cluster_once(self) -> dict[str, Any]:
@@ -148,12 +160,18 @@ class StateAuthorityReconciliationScheduler:
         try:
             report = await self._cluster_reconciler()
             self._apply_cluster_metrics(report)
+            await self._maybe_emit_cluster_event(report)
             return report
         except Exception as exc:  # noqa: BLE001
             logger.exception("Layer 2 reconciliation tick failed")
             self._metrics.last_cluster_status = "error"
             self._metrics.last_cluster_error = repr(exc)
             self._metrics.last_cluster_reconcile_unix_s = self._now_s()
+            await self._safe_emit(
+                "state_authority.reconciliation.error",
+                "error",
+                {"layer": "cluster", "error": repr(exc)},
+            )
             return {"status": "error", "error": repr(exc)}
 
     async def start(self) -> None:
@@ -229,6 +247,84 @@ class StateAuthorityReconciliationScheduler:
         nodes_with_drift = int(report.get("nodes_with_drift", 0))
         if nodes_with_drift > 0:
             self._metrics.cluster_nodes_with_drift_total += nodes_with_drift
+
+    async def _safe_emit(self, kind: str, severity: str, context: dict[str, Any]) -> None:
+        """Fire a PlatformEvent through the injected emitter, swallowing any
+        failure so the scheduler never crashes on event-bus issues."""
+        if self._emit_event is None:
+            return
+        try:
+            await self._emit_event(kind, severity, context)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Reconciliation event emission failed: %s", exc)
+
+    async def _maybe_emit_local_event(self, report: dict[str, Any]) -> None:
+        """Map a Layer 1 report to a PlatformEvent kind and emit.
+
+        Healthy ticks emit at low severity so operators can see the
+        heartbeat; drift and reactivation emit at warn; every event has
+        the full report dict attached as context for deep inspection.
+        """
+        status = str(report.get("status") or "unknown")
+        base_context = {
+            "layer": "local",
+            "tolerance": self._config.tolerance,
+            "apply_corrections": self._config.apply_corrections,
+            "report": report,
+        }
+        if status == "healthy":
+            await self._safe_emit(
+                "state_authority.reconciliation.healthy",
+                "info",
+                base_context,
+            )
+        elif status == "self_healed":
+            await self._safe_emit(
+                "state_authority.reconciliation.self_healed",
+                "info",
+                base_context,
+            )
+        elif status == "drift_detected":
+            await self._safe_emit(
+                "state_authority.reconciliation.drift_detected",
+                "warning",
+                base_context,
+            )
+        elif status == "reactivation_required":
+            await self._safe_emit(
+                "state_authority.reconciliation.reactivation_required",
+                "warning",
+                base_context,
+            )
+        else:
+            # Unknown status — fall back to drift_detected at info severity so
+            # the event still flows but doesn't alarm operators.
+            await self._safe_emit(
+                "state_authority.reconciliation.drift_detected",
+                "info",
+                base_context,
+            )
+
+    async def _maybe_emit_cluster_event(self, report: dict[str, Any]) -> None:
+        """Map a Layer 2 report to a PlatformEvent kind and emit."""
+        nodes_with_drift = int(report.get("nodes_with_drift", 0) or 0)
+        base_context = {
+            "layer": "cluster",
+            "is_management_node": self._config.is_management_node,
+            "report": report,
+        }
+        if nodes_with_drift > 0:
+            await self._safe_emit(
+                "state_authority.reconciliation.cluster_drift",
+                "warning",
+                base_context,
+            )
+        else:
+            await self._safe_emit(
+                "state_authority.reconciliation.healthy",
+                "info",
+                base_context,
+            )
 
 
 # -----------------------------------------------------------------------------

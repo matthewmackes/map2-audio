@@ -779,11 +779,42 @@ async def lifespan(app):
                 except Exception as exc:
                     logger.debug("Cluster reconciler composition skipped: %s", exc)
 
+            # Platform event emitter adapter — flows reconciliation outcomes
+            # through the canonical PlatformEventBus per the CLAUDE.md rule
+            # ("bus.emit() is the only permitted cross-system event entrypoint").
+            async def _emit_state_authority_event(
+                kind: str, severity: str, context: dict
+            ) -> None:
+                try:
+                    from app.services.platform_event.bus import get_platform_event_bus
+                    from app.services.platform_event.envelope import PlatformEvent
+
+                    bus = get_platform_event_bus()
+                    layer = str(context.get("layer") or "local")
+                    title = f"Reconciliation {layer}"
+                    message = str(context.get("report", {}).get("status", kind))[:200]
+                    event = PlatformEvent(
+                        kind=kind,
+                        severity=severity,
+                        source_node=node_id or "local",
+                        source_service="state_authority_reconciliation_scheduler",
+                        title=title[:40],
+                        message=message or layer,
+                        context=dict(context),
+                        priority=0.3 if severity == "info" else 0.6,
+                    )
+                    await bus.emit(event)
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug(
+                        "State Authority reconciliation event emit skipped: %s", exc
+                    )
+
             state_authority_scheduler = StateAuthorityReconciliationScheduler(
                 config=ReconciliationSchedulerConfig(is_management_node=is_management),
                 live_payload_producer=_live_payload_producer,
                 local_reconciler=_local_reconcile,
                 cluster_reconciler=cluster_reconciler_callable,
+                event_emitter=_emit_state_authority_event,
             )
             app.state.state_authority_scheduler = state_authority_scheduler
             await safe_start_service(
