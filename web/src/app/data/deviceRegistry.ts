@@ -329,6 +329,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'Maschine daemon is registered and the enriched surface path is online through usb-bulk.',
     currentViewLabel: 'Primary Synth Parameters',
     defaultView: 'overview',
+    legacyRoute: '/maschine',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'physical-surface', surfaceId: 'maschine-mk1' },
     kind: 'control-surface',
@@ -349,6 +350,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'No Push-class device is currently active.',
     currentViewLabel: 'Synth Grid',
     defaultView: 'overview',
+    legacyRoute: '/labs/push-surface',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
@@ -368,6 +370,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'Ground Control Pro exposes 3 input(s) and 2 output(s) for the shared SysEx branch.',
     currentViewLabel: 'Snapshot Recall',
     defaultView: 'overview',
+    legacyRoute: '/ground-control-pro',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'physical-surface', surfaceId: 'ground-control-pro' },
     kind: 'control-surface',
@@ -387,6 +390,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'No matching hardware is currently visible on this host.',
     currentViewLabel: 'Synth Macros',
     defaultView: 'overview',
+    legacyRoute: '/midi-commander',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
@@ -405,6 +409,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'No matching hardware is currently visible on this host.',
     currentViewLabel: 'Synth Macros',
     defaultView: 'overview',
+    legacyRoute: '/launch-control',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
@@ -424,6 +429,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     description: 'No matching hardware is currently visible on this host.',
     currentViewLabel: 'Current View Mix',
     defaultView: 'overview',
+    legacyRoute: '/mcu',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
@@ -457,4 +463,24 @@ export function buildDeviceRoute(deviceId: string, viewId?: string | null): stri
   const device = getDeviceEntry(deviceId)
   const view = viewId ?? device?.defaultView ?? 'overview'
   return `/devices/${deviceId}/${view}`
+}
+
+/**
+ * Resolve the route that should open when a user clicks a device's hero tile.
+ *
+ * Devices that have a first-class unified Devices-shell route (the six hardware
+ * entries mounted under `/devices/*` in App.tsx) use `buildDeviceRoute` so they
+ * land in the shared shell. Devices that don't yet have a unified route — today
+ * that's every control-surface registry entry — fall back to their legacy
+ * standalone route (`/maschine`, `/labs/push-surface`, etc.). Without this
+ * fallback, clicking a control-surface hero resolves to an un-registered
+ * `/devices/<id>/<defaultView>` URL and nothing opens.
+ */
+export function resolveDeviceOpenRoute(deviceId: string): string {
+  const device = getDeviceEntry(deviceId)
+  if (!device) return buildDeviceRoute(deviceId)
+  if (device.kind === 'control-surface' && device.legacyRoute) {
+    return device.legacyRoute
+  }
+  return buildDeviceRoute(deviceId)
 }

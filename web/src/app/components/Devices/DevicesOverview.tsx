@@ -27,6 +27,7 @@ import {
 import {
   DEVICE_REGISTRY,
   buildDeviceRoute,
+  resolveDeviceOpenRoute,
   type DeviceRegistryEntry,
   type DeviceStatusKind,
   type DeviceTransportLayer,
@@ -204,7 +205,7 @@ function ProductCard({ entry, status, pinned, onTogglePin, onQuickview }: Produc
   const navigate = useNavigate()
   const hero = getDeviceHeroImage(entry.id)
 
-  const handleOpen = useCallback(() => navigate(buildDeviceRoute(entry.id)), [entry.id, navigate])
+  const handleOpen = useCallback(() => navigate(resolveDeviceOpenRoute(entry.id)), [entry.id, navigate])
   const handlePin = useCallback(() => onTogglePin(entry.id), [entry.id, onTogglePin])
   const handleQuickview = useCallback(() => onQuickview(entry.id), [entry.id, onQuickview])
 
@@ -401,7 +402,7 @@ function QuickviewModal({ entry, status, pinned, onClose, onTogglePin }: Quickvi
             <Button
               kind="secondary"
               renderIcon={Launch}
-              onClick={() => { navigate(buildDeviceRoute(entry.id)); onClose() }}
+              onClick={() => { navigate(resolveDeviceOpenRoute(entry.id)); onClose() }}
             >
               Open Surface Page
             </Button>

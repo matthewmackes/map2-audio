@@ -40,7 +40,12 @@ import {
   getLauncherCatalogTreeChildren,
   type LauncherCatalogTreeChild,
 } from '../../data/launcherCatalog'
-import { DEVICE_REGISTRY, buildDeviceRoute, type DeviceRegistryEntry } from '../../data/deviceRegistry'
+import {
+  DEVICE_REGISTRY,
+  buildDeviceRoute,
+  resolveDeviceOpenRoute,
+  type DeviceRegistryEntry,
+} from '../../data/deviceRegistry'
 import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/platformMenuItems'
 import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings'
 import { useToasts } from '../../components/Toasts'
@@ -238,9 +243,10 @@ export function buildDevicesSubtree(
 
   // The very first child must not carry a group boundary (nothing to separate from above).
   const nodes: TreeItemDefinition[] = grouped.map(({ entry, boundary }, index) => {
-    const route = buildDeviceRoute(entry.id)
+    const route = resolveDeviceOpenRoute(entry.id)
     const routePath = `/devices/${entry.id}`
     const isFirst = index === 0
+    const hasUnifiedRoute = entry.kind !== 'control-surface'
     return {
       id: `${HARDWARE_DEVICES_ID}::${routePath}`,
       label: entry.label,
@@ -251,12 +257,17 @@ export function buildDevicesSubtree(
         { label: 'Unpin', onClick: () => onRequestUnpin(entry) },
         { label: 'Open in store', onClick: () => navigateTo('/devices') },
       ],
-      children: entry.views.map((view) => ({
-        id: `${HARDWARE_DEVICES_ID}::${routePath}/${view.id}`,
-        label: view.label,
-        route: buildDeviceRoute(entry.id, view.id),
-        icon: view.icon,
-      })),
+      // Sub-views only expand for devices whose unified `/devices/<id>/<view>`
+      // routes are mounted in the router. Control-surface entries fall back to
+      // their `legacyRoute` and do not expose per-view children in the tree.
+      children: hasUnifiedRoute
+        ? entry.views.map((view) => ({
+            id: `${HARDWARE_DEVICES_ID}::${routePath}/${view.id}`,
+            label: view.label,
+            route: buildDeviceRoute(entry.id, view.id),
+            icon: view.icon,
+          }))
+        : [],
     }
   })
 

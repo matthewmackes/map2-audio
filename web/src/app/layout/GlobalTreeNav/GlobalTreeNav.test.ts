@@ -92,7 +92,7 @@ describe('GlobalTreeNav devices subtree', () => {
     expect(navigate).toHaveBeenCalledWith('/devices')
   })
 
-  it('exposes each device view as a child route under the pinned row', () => {
+  it('exposes each device view as a child route under a unified pinned row', () => {
     const mpx1 = DEVICE_REGISTRY.find((entry) => entry.id === 'mpx1')
     if (!mpx1) throw new Error('Fixture assumption broken: mpx1 missing from registry')
 
@@ -101,5 +101,17 @@ describe('GlobalTreeNav devices subtree', () => {
     for (const child of node?.children ?? []) {
       expect(child.route).toMatch(new RegExp(`^/devices/${mpx1.id}/`))
     }
+    // Unified route goes to /devices/mpx1/panel, not a legacy redirect.
+    expect(node?.route).toBe(`/devices/${mpx1.id}/${mpx1.defaultView}`)
+  })
+
+  it('routes control-surface pins to their legacyRoute instead of the unified /devices/<id> path', () => {
+    const mk1 = DEVICE_REGISTRY.find((entry) => entry.id === 'maschine-mk1')
+    if (!mk1 || !mk1.legacyRoute) throw new Error('Fixture assumption broken: maschine-mk1 needs a legacyRoute')
+
+    const [node] = buildDevicesSubtree([mk1.id], navigate, onRequestUnpin)
+    expect(node?.route).toBe(mk1.legacyRoute)
+    // Control surfaces have no unified route yet, so the tree must not expand fake sub-views.
+    expect(node?.children ?? []).toHaveLength(0)
   })
 })
