@@ -115,6 +115,11 @@ class ActivationHookConfig:
 
 ActivationPhaseHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 ProgressPublisher = Callable[[PhaseProgressEvent], Awaitable[None]]
+# Coarse-grained event emitter — maps activation outcome to the canonical
+# PlatformEventBus kinds (snapshot.activation.started / .ok / .failed).
+# Injected so the FSM stays transport-agnostic; the bus adapter lives in
+# app.main lifespan. Signature: (kind, severity, context) -> awaitable.
+ActivationEventEmitter = Callable[[str, str, dict[str, Any]], Awaitable[None]]
 
 
 class ActivationFailedError(Exception):
@@ -184,6 +189,7 @@ class SnapshotActivationFSM:
         now_ms: Callable[[], int] | None = None,
         phase_timeouts_ms: dict[ActivationPhase, int] | None = None,
         total_timeout_ms: int = TOTAL_ACTIVATION_TIMEOUT_MS,
+        event_emitter: ActivationEventEmitter | None = None,
     ) -> None:
         self._validator = validator
         self._stager = stager
@@ -197,6 +203,11 @@ class SnapshotActivationFSM:
         # Floor at 50ms so tests can exercise short-timeout paths; production
         # callers should pass at least 1000ms (Q24 total = 10s default).
         self._total_timeout_ms = max(total_timeout_ms, 50)
+        # Coarse-grained event emitter for the canonical PlatformEventBus.
+        # Optional: None = silent (preserves test harnesses that don't inject
+        # a bus). Errors during emit are swallowed so a dead bus never
+        # crashes the activation lifecycle (plan Q10 — best-effort).
+        self._emit_event = event_emitter
 
     async def activate(self, snapshot_id: str, context: dict[str, Any] | None = None) -> ActivationResult:
         """Run the full lifecycle, emitting one progress event per phase."""
@@ -206,6 +217,15 @@ class SnapshotActivationFSM:
 
         async def _elapsed() -> int:
             return self._now_ms() - start_ms
+
+        # Emit started event before the FSM runs any phase handler so
+        # downstream surfaces (Stage Notification, webhooks) know an
+        # activation is inflight from t=0.
+        await self._safe_emit_event(
+            "snapshot.activation.started",
+            "info",
+            {"snapshot_id": snapshot_id, "total_timeout_ms": self._total_timeout_ms},
+        )
 
         try:
             async with asyncio.timeout(self._total_timeout_ms / 1000):
@@ -251,6 +271,15 @@ class SnapshotActivationFSM:
                     elapsed_ms=elapsed,
                     detail={**verify_details, "hook_count": len(hook_results)},
                 ))
+                await self._safe_emit_event(
+                    "snapshot.activation.ok",
+                    "info",
+                    {
+                        "snapshot_id": snapshot_id,
+                        "elapsed_ms": elapsed,
+                        "hook_count": len(hook_results),
+                    },
+                )
                 return ActivationResult(
                     phase=ActivationPhase.LIVE,
                     snapshot_id=snapshot_id,
@@ -268,6 +297,17 @@ class SnapshotActivationFSM:
                 detail=exc.details,
                 error=exc.message,
             ))
+            await self._safe_emit_event(
+                "snapshot.activation.failed",
+                "error" if phase_is_past_apply_boundary(exc.phase) else "warning",
+                {
+                    "snapshot_id": snapshot_id,
+                    "elapsed_ms": elapsed,
+                    "failed_phase": exc.phase.value,
+                    "error": exc.message,
+                    "past_apply_boundary": phase_is_past_apply_boundary(exc.phase),
+                },
+            )
             return ActivationResult(
                 phase=ActivationPhase.FAILED,
                 snapshot_id=snapshot_id,
@@ -286,6 +326,16 @@ class SnapshotActivationFSM:
                 elapsed_ms=elapsed,
                 error=err,
             ))
+            await self._safe_emit_event(
+                "snapshot.activation.failed",
+                "error",
+                {
+                    "snapshot_id": snapshot_id,
+                    "elapsed_ms": elapsed,
+                    "error": err,
+                    "reason": "total_timeout",
+                },
+            )
             return ActivationResult(
                 phase=ActivationPhase.FAILED,
                 snapshot_id=snapshot_id,
@@ -346,6 +396,21 @@ class SnapshotActivationFSM:
                     details={"hook_result": result},
                 )
         return results
+
+    async def _safe_emit_event(
+        self, kind: str, severity: str, context: dict[str, Any]
+    ) -> None:
+        """Fire a PlatformEvent through the injected emitter.
+
+        Swallows any failure so a dead event bus cannot crash the
+        activation lifecycle (plan Q10 — best-effort error handling).
+        """
+        if self._emit_event is None:
+            return
+        try:
+            await self._emit_event(kind, severity, context)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Activation event emission failed: %s", exc)
 
 
 def load_activation_hooks_from_config(config: dict[str, Any]) -> tuple[ActivationHookConfig, ...]:

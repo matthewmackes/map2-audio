@@ -284,3 +284,139 @@ def test_result_carries_elapsed_ms_and_hook_results():
     assert isinstance(result, ActivationResult)
     assert result.elapsed_ms >= 0
     assert isinstance(result.hook_results, list)
+
+
+# ---------------------------------------------------------------------------
+# PlatformEvent emission — snapshot.activation.started / .ok / .failed
+# ---------------------------------------------------------------------------
+
+
+def _collect_emitted() -> tuple[list[tuple[str, str, dict]], callable]:
+    emitted: list[tuple[str, str, dict]] = []
+    async def _emitter(kind, severity, context):
+        emitted.append((kind, severity, context))
+    return emitted, _emitter
+
+
+def test_happy_path_emits_started_and_ok_events():
+    """Canonical started + ok events flow on successful activation."""
+    async def _ok(_ctx):
+        return {}
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(
+        validator=_ok, stager=_ok, applier=_ok, verifier=_ok,
+        event_emitter=emitter,
+    )
+    result = asyncio.run(fsm.activate("snap-happy"))
+    assert result.success
+    kinds = [event[0] for event in emitted]
+    assert "snapshot.activation.started" in kinds
+    assert "snapshot.activation.ok" in kinds
+    # Started emits before ok
+    assert kinds.index("snapshot.activation.started") < kinds.index("snapshot.activation.ok")
+
+
+def test_ok_event_carries_elapsed_and_hook_count():
+    async def _ok(_ctx):
+        return {}
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(
+        validator=_ok, stager=_ok, applier=_ok, verifier=_ok,
+        event_emitter=emitter,
+    )
+    asyncio.run(fsm.activate("snap-ctx"))
+    ok_event = next(event for event in emitted if event[0] == "snapshot.activation.ok")
+    _, severity, context = ok_event
+    assert severity == "info"
+    assert context["snapshot_id"] == "snap-ctx"
+    assert context["elapsed_ms"] >= 0
+    assert context["hook_count"] == 0
+
+
+def test_failure_before_apply_boundary_emits_warning_severity():
+    """Plan Q65 — pre-APPLYING failures keep old audio; emit as warning."""
+    async def _fail(_ctx):
+        raise RuntimeError("schema mismatch")
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(
+        validator=_fail,
+        event_emitter=emitter,
+    )
+    asyncio.run(fsm.activate("snap-fail-pre"))
+    failed_event = next(event for event in emitted if event[0] == "snapshot.activation.failed")
+    _, severity, context = failed_event
+    assert severity == "warning"
+    assert context["past_apply_boundary"] is False
+    assert context["failed_phase"] == "validating"
+
+
+def test_failure_after_apply_boundary_emits_error_severity():
+    """Plan Q65 — failures during/after APPLYING must stop audio; emit error."""
+    async def _ok(_ctx):
+        return {}
+    async def _fail(_ctx):
+        raise RuntimeError("engine rejected ValueTree")
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(
+        validator=_ok, stager=_ok, applier=_fail,
+        event_emitter=emitter,
+    )
+    asyncio.run(fsm.activate("snap-fail-post"))
+    failed_event = next(event for event in emitted if event[0] == "snapshot.activation.failed")
+    _, severity, context = failed_event
+    assert severity == "error"
+    assert context["past_apply_boundary"] is True
+    assert context["failed_phase"] == "applying"
+
+
+def test_total_timeout_emits_failed_with_total_timeout_reason():
+    async def _very_slow(_ctx):
+        await asyncio.sleep(5.0)
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(
+        validator=_very_slow,
+        total_timeout_ms=100,
+        phase_timeouts_ms={ActivationPhase.VALIDATING: 10_000},
+        event_emitter=emitter,
+    )
+    asyncio.run(fsm.activate("snap-timeout"))
+    failed_events = [event for event in emitted if event[0] == "snapshot.activation.failed"]
+    assert len(failed_events) == 1
+    _, severity, context = failed_events[0]
+    assert severity == "error"
+    assert context.get("reason") == "total_timeout"
+
+
+def test_emitter_failure_does_not_crash_activation():
+    """If the bus raises, the FSM must log at debug and continue normally."""
+    async def _ok(_ctx):
+        return {}
+    async def _broken_emitter(*args, **kwargs):
+        raise RuntimeError("bus is down")
+    fsm = SnapshotActivationFSM(
+        validator=_ok, stager=_ok, applier=_ok, verifier=_ok,
+        event_emitter=_broken_emitter,
+    )
+    result = asyncio.run(fsm.activate("snap-bus-down"))
+    assert result.success  # Activation succeeds despite emitter failure
+    assert result.phase == ActivationPhase.LIVE
+
+
+def test_fsm_without_emitter_is_silent():
+    """No emitter injected → no events, no errors, no behavior change."""
+    async def _ok(_ctx):
+        return {}
+    fsm = SnapshotActivationFSM(validator=_ok, stager=_ok, applier=_ok, verifier=_ok)
+    result = asyncio.run(fsm.activate("snap-silent"))
+    assert result.success
+    # Can't observe anything externally — just confirm no crash.
+
+
+def test_started_event_fires_even_when_every_phase_is_noop():
+    """Activation with no injected phase handlers still emits started/ok."""
+    emitted, emitter = _collect_emitted()
+    fsm = SnapshotActivationFSM(event_emitter=emitter)
+    asyncio.run(fsm.activate("snap-noop"))
+    kinds = [event[0] for event in emitted]
+    assert "snapshot.activation.started" in kinds
+    assert "snapshot.activation.ok" in kinds

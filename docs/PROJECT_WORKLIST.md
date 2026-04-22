@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority reconciliation now emits canonical PlatformEvents (plan Q95 — runtime events through the bus, not a parallel stream). 6 new event kinds registered (state_authority.reconciliation.{healthy,drift_detected,self_healed,reactivation_required,cluster_drift,error}); scheduler fires after each tick via injected emitter adapter wired to get_platform_event_bus() in app.main lifespan. 326 relevant tests PASS (platform_event + state_authority + snapshot suites). TS manifest parity restored (fixed pre-existing platform.test.ping drift).
+Last updated: 2026-04-22 EDT - T2425 State Authority activation FSM now emits canonical PlatformEvents (snapshot.activation.started / .ok / .failed) in parallel to the reconciliation emission shipped earlier. Phase-boundary-aware severity (plan Q65: pre-APPLYING failures = warning/keep audio, during/after = error/stop audio). 334 tests PASS including 8 new FSM emission tests.
 
 ---
 
@@ -33,6 +33,28 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-FSM-EVENTS
+Status: [✓] Done
+Title: Post-epic — SnapshotActivationFSM emits canonical PlatformEvents
+Description:
+- Goal / acceptance criteria: Route activation FSM outcomes (started/ok/failed) through the canonical PlatformEventBus, parallel to the reconciliation emission shipped in T2425-POST-PLATFORM-EVENTS. Emission is injected (optional) so the FSM stays transport-agnostic and testable, and so silent-by-default preserves every existing FSM test.
+- Why it matters: The FSM is the designed-for-future activation state machine (plan Q7 + §Activation State Machine). The three activation kinds (`snapshot.activation.started`, `.ok`, `.failed`) were registered in T2418 but nothing emits them. When the production activation path migrates from `state_authority_activation_service.py` to the FSM, emission is now wired — toasts + webhooks + event store + cluster replication all carry activation progress automatically.
+- Dependencies: Reconciliation emission (T2425-POST-PLATFORM-EVENTS) shipped the bus-adapter pattern. Activation kinds already registered.
+- Shipped outputs:
+  - `app/services/snapshot_activation_fsm.py` — constructor takes optional `event_emitter: ActivationEventEmitter` (defaults None = silent). `activate()` calls:
+    - `snapshot.activation.started` (severity info) at t=0 before any phase handler.
+    - `snapshot.activation.ok` (severity info) on LIVE success, carrying `elapsed_ms` + `hook_count`.
+    - `snapshot.activation.failed` (severity depends on Q65 boundary) on `ActivationFailedError` — severity `warning` when pre-APPLYING (audio stays live), `error` when during/after APPLYING (audio must stop). Context carries `failed_phase` + `past_apply_boundary` flag.
+    - `snapshot.activation.failed` (severity error, reason `total_timeout`) on `asyncio.TimeoutError`.
+  - `_safe_emit_event` helper swallows emitter failures (bus down → logs at debug, FSM continues).
+- Tests: 8 new emission tests in `test_snapshot_activation_fsm.py` covering happy path emits started+ok in order, ok context shape (elapsed + hook_count), pre-APPLY failure → warning, post-APPLY failure → error, total-timeout → error with reason, emitter-failure-doesn't-crash, silent-when-None, no-phase-handlers still emit started+ok. 25/25 total FSM tests pass.
+- Validation: 334 relevant tests pass across platform_event + state_authority + snapshot_graph + snapshot_activation_fsm + juce_engine suites. `npx tsc --noEmit` PASS.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: FSM module is architecturally complete and bus-integrated; production use is gated by the migration of activation flows from `state_authority_activation_service.py` to the FSM (tracked as a separate follow-up; out of scope for this slice). For now the reconciliation events are the production-active PlatformEvent producers; FSM emission activates when a caller instantiates `SnapshotActivationFSM(event_emitter=bus_adapter)`.
+
+---
 
 ID: T2425-POST-PLATFORM-EVENTS
 Status: [✓] Done
