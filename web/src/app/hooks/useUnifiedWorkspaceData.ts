@@ -2,17 +2,13 @@ import { useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
 
 import { pluginsApi, irApi, namApi, soundfontApi } from '../../map2/api'
-import { enrichedPhysicalSurfacesApi } from '../../map2/clients/enrichedPhysicalSurfaces'
-import type { EnrichedPhysicalSurfacesSummary, IRStatus, NAMModelsResponse, NAMStatus, PluginsResponse } from '../../map2/types'
+import type { IRStatus, NAMModelsResponse, NAMStatus, PluginsResponse } from '../../map2/types'
 import type { SoundFontListResponse } from '../types/library'
 import { usePlatformShellData } from './usePlatformShellData'
-import { OUTBOARD_HARDWARE_DEVICES } from '../pages/outboardHardwareShared'
 
 export type UnifiedWorkspaceSectionKey =
   | 'platforms'
-  | 'physical-surfaces'
   | 'artifacts'
-  | 'outboard-hardware'
 
 export type UnifiedWorkspaceSectionTone = 'info' | 'positive' | 'warning' | 'error'
 
@@ -29,11 +25,6 @@ export interface UnifiedWorkspaceSectionSummary {
 export interface UnifiedWorkspaceData {
   summaries: Record<UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary>
   orderedSummaries: UnifiedWorkspaceSectionSummary[]
-  physicalSurfaces: {
-    summary: EnrichedPhysicalSurfacesSummary | null
-    isLoading: boolean
-    isError: boolean
-  }
 }
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
@@ -68,56 +59,6 @@ function formatPlatformSummary(sectionData: ReturnType<typeof usePlatformShellDa
     label: 'Platforms',
     metric: pluralize(sectionData.summaryMetrics.length, 'metric'),
     detail: detailParts.join(' · '),
-    tone,
-    isLoading: false,
-    isError: false,
-  }
-}
-
-function formatPhysicalSurfacesSummary(
-  summary: EnrichedPhysicalSurfacesSummary | null,
-  isLoading: boolean,
-  isError: boolean,
-): UnifiedWorkspaceSectionSummary {
-  if (isError) {
-    return {
-      key: 'physical-surfaces',
-      label: 'Physical Surfaces',
-      metric: 'Summary unavailable',
-      detail: 'The physical-surface summary request failed.',
-      tone: 'error',
-      isLoading: false,
-      isError: true,
-    }
-  }
-
-  if (isLoading && !summary) {
-    return {
-      key: 'physical-surfaces',
-      label: 'Physical Surfaces',
-      metric: 'Loading summary',
-      detail: 'Collecting shared physical-surface status.',
-      tone: 'info',
-      isLoading: true,
-      isError: false,
-    }
-  }
-
-  const units = summary?.units ?? []
-  const notifications = summary?.notifications ?? []
-  const attentionCount = units.filter((unit) => unit.status === 'attention').length
-  const onlineCount = units.filter((unit) => unit.status === 'online').length
-  const tone: UnifiedWorkspaceSectionTone = attentionCount > 0
-    ? 'warning'
-    : onlineCount > 0
-      ? 'positive'
-      : 'info'
-
-  return {
-    key: 'physical-surfaces',
-    label: 'Physical Surfaces',
-    metric: pluralize(units.length, 'unit'),
-    detail: `${pluralize(notifications.length, 'notification')} · ${pluralize(onlineCount, 'online unit')}`,
     tone,
     isLoading: false,
     isError: false,
@@ -200,31 +141,10 @@ function formatArtifactsSummary(
   }
 }
 
-function formatOutboardHardwareSummary(): UnifiedWorkspaceSectionSummary {
-  const categoryCount = new Set(OUTBOARD_HARDWARE_DEVICES.map((device) => device.category)).size
-  const interfaceCount = OUTBOARD_HARDWARE_DEVICES.filter((device) => device.category === 'USB Audio Interface').length
-
-  return {
-    key: 'outboard-hardware',
-    label: 'Outboard Hardware',
-    metric: pluralize(OUTBOARD_HARDWARE_DEVICES.length, 'device'),
-    detail: `${pluralize(categoryCount, 'hardware class', 'hardware classes')} · ${pluralize(interfaceCount, 'audio interface')}`,
-    tone: 'info',
-    isLoading: false,
-    isError: false,
-  }
-}
-
 export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
   const platformData = usePlatformShellData()
   const queryResults = useQueries({
     queries: [
-      {
-        queryKey: ['workspace-hub', 'physical-surfaces', 'summary'],
-        queryFn: () => enrichedPhysicalSurfacesApi.getSummary(),
-        staleTime: 10_000,
-        refetchOnWindowFocus: false,
-      },
       {
         queryKey: ['workspace-hub', 'artifacts', 'plugins'],
         queryFn: () => pluginsApi.discover(false),
@@ -271,7 +191,6 @@ export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
   })
 
   const [
-    physicalSurfacesQuery,
     pluginsQuery,
     cabinetsQuery,
     reverbsQuery,
@@ -293,11 +212,6 @@ export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
   return useMemo(() => {
     const summaries: Record<UnifiedWorkspaceSectionKey, UnifiedWorkspaceSectionSummary> = {
       platforms: formatPlatformSummary(platformData),
-      'physical-surfaces': formatPhysicalSurfacesSummary(
-        physicalSurfacesQuery.data?.summary ?? null,
-        physicalSurfacesQuery.isLoading,
-        physicalSurfacesQuery.isError,
-      ),
       artifacts: formatArtifactsSummary(
         (pluginsQuery.data as PluginsResponse | PluginsResponse['plugins'] | null | undefined) ?? null,
         cabinetsQuery.data?.count ?? cabinetsQuery.data?.irs?.length ?? 0,
@@ -309,22 +223,14 @@ export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
         artifactQueries.some((result) => result.isLoading),
         artifactQueries.some((result) => result.isError),
       ),
-      'outboard-hardware': formatOutboardHardwareSummary(),
     }
 
     return {
       summaries,
       orderedSummaries: [
         summaries.platforms,
-        summaries['physical-surfaces'],
         summaries.artifacts,
-        summaries['outboard-hardware'],
       ],
-      physicalSurfaces: {
-        summary: physicalSurfacesQuery.data?.summary ?? null,
-        isLoading: physicalSurfacesQuery.isLoading,
-        isError: physicalSurfacesQuery.isError,
-      },
     }
   }, [
     cabinetsQuery.data,
@@ -336,9 +242,6 @@ export function useUnifiedWorkspaceData(): UnifiedWorkspaceData {
     namStatusQuery.data,
     namStatusQuery.isError,
     namStatusQuery.isLoading,
-    physicalSurfacesQuery.data,
-    physicalSurfacesQuery.isError,
-    physicalSurfacesQuery.isLoading,
     platformData,
     pluginsQuery.data,
     pluginsQuery.isError,

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Tesira AVB hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Biamp Tesira AVB rack unit.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#22010e" />
+      <stop offset="100%" stop-color="#520408" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="150" y="220" width="980" height="440" rx="26" fill="#131517" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(230 292)">
+    <rect width="820" height="296" rx="20" fill="#191b1f" />
+    <rect x="56" y="72" width="178" height="56" rx="12" fill="#24a148" />
+    <rect x="262" y="72" width="178" height="56" rx="12" fill="#0f62fe" />
+    <rect x="468" y="72" width="178" height="56" rx="12" fill="#fa4d56" />
+    <rect x="56" y="172" width="590" height="54" rx="12" fill="#393939" />
+    <circle cx="714" cy="198" r="42" fill="#f4f4f4" />
+  </g>
+  <text x="1190" y="300" fill="#ffd7d9" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">OUTBOARD HARDWARE</text>
+  <text x="1190" y="386" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="76" font-weight="700">TESIRA AVB</text>
+  <text x="1190" y="452" fill="#fff1f1" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">AVB DSP fleet control and rack routing visibility</text>
+</svg>

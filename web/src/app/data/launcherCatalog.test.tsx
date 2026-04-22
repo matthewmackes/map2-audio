@@ -38,14 +38,17 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ label: 'Launch path', value: '/brain' }),
       ]),
     })
-    expect(getLauncherCatalogItem('/outboard-hardware')).toMatchObject({
-      heroTitle: 'Outboard Hardware',
-      landingEligible: true,
-      navEligible: false,
-      technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/workspace/outboard-hardware' }),
-      ]),
-    })
+    for (const legacyDevicesRoute of [
+      '/outboard-hardware',
+      '/workspace/outboard-hardware',
+      '/physical-surfaces',
+      '/workspace/physical-surfaces',
+    ]) {
+      expect(getLauncherCatalogItem(legacyDevicesRoute)).toMatchObject({
+        heroTitle: 'Devices',
+        route: '/devices',
+      })
+    }
     expect(getLauncherCatalogItem('/audio-table')).toBeNull()
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
@@ -130,8 +133,6 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ route: '/workspace/artifacts', label: 'Audio Artifacts' }),
-        expect.objectContaining({ route: '/workspace/physical-surfaces', label: 'Physical Surfaces' }),
-        expect.objectContaining({ route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' }),
       ]),
     )
 
@@ -143,21 +144,8 @@ describe('launcherCatalog', () => {
       ]),
     )
 
-    expect(getLauncherCatalogTreeChildren('/workspace/physical-surfaces')).toEqual(
-      expect.arrayContaining([
-        { route: '/workspace/physical-surfaces', label: 'Overview' },
-        { route: '/workspace/physical-surfaces/ableton-push', label: 'Ableton Push' },
-        { route: '/workspace/physical-surfaces/mackie-mcu-pro', label: 'MCU Pro' },
-      ]),
-    )
-
-    expect(getLauncherCatalogTreeChildren('/workspace/outboard-hardware')).toEqual(
-      expect.arrayContaining([
-        { route: '/workspace/outboard-hardware', label: 'Overview' },
-        { route: '/workspace/outboard-hardware/tesira', label: 'Tesira AVB' },
-        { route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' },
-      ]),
-    )
+    expect(getLauncherCatalogTreeChildren('/workspace/physical-surfaces')).toEqual([])
+    expect(getLauncherCatalogTreeChildren('/workspace/outboard-hardware')).toEqual([])
 
     expect(getLauncherCatalogTreeChildren('/midi-hub')).toEqual([
       { route: '/midi-hub/connections', label: 'Connections' },

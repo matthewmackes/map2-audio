@@ -197,7 +197,7 @@ jest.mock('../../map2/mpx1Api', () => ({
   }),
 }))
 
-jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
+jest.mock('../components/Devices/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
 }))
 

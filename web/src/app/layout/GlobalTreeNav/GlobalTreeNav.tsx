@@ -30,6 +30,7 @@ import {
   getLauncherCatalogTreeChildren,
   type LauncherCatalogTreeChild,
 } from '../../data/launcherCatalog'
+import { DEVICE_REGISTRY, buildDeviceRoute } from '../../data/deviceRegistry'
 import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/platformMenuItems'
 import { useNodePageContext } from '../../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
@@ -77,8 +78,7 @@ const FLAT_TOP_LEVEL_ROUTES = new Set([
   '/platforms/about',
 ])
 const HARDWARE_TREE_ID = '/hardware'
-const HARDWARE_PHYSICAL_SURFACES_ID = '/hardware::physical-surfaces'
-const HARDWARE_OUTBOARD_GEAR_ID = '/hardware::outboard-gear'
+const HARDWARE_DEVICES_ID = '/hardware::devices'
 
 const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/': Home,
@@ -136,7 +136,7 @@ function routeMatchesLocation(target: string, pathname: string, search: string):
 }
 
 function readExpandedIds(): string[] {
-  const defaultExpandedIds = ['/workspace', '/midi-hub', HARDWARE_TREE_ID, HARDWARE_PHYSICAL_SURFACES_ID, HARDWARE_OUTBOARD_GEAR_ID]
+  const defaultExpandedIds = ['/workspace', '/midi-hub', HARDWARE_TREE_ID, HARDWARE_DEVICES_ID]
 
   if (typeof window === 'undefined') {
     return defaultExpandedIds
@@ -183,25 +183,20 @@ function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): 
 }
 
 function buildHardwareTree(): TreeItemDefinition {
-  const physicalSurfacesItem = getLauncherCatalogItem('/workspace/physical-surfaces')
-  const outboardHardwareItem = getLauncherCatalogItem('/workspace/outboard-hardware')
-  const physicalSurfacesChildren = getLauncherCatalogTreeChildren('/workspace/physical-surfaces')
-    .map((child) => buildChildTreeItem(HARDWARE_PHYSICAL_SURFACES_ID, child))
-  const outboardOverviewChildren = getLauncherCatalogTreeChildren('/workspace/outboard-hardware')
-  const outboardChildren = outboardOverviewChildren.map((child) => {
-    const normalizedRoute = normalizeTarget(child.route)
-    const routePath = normalizedRoute.split('?')[0]
-    const navigationItem = findNavigationItem(routePath)
-    const nestedChildren = getLauncherCatalogTreeChildren(routePath)
-      .filter((nestedChild) => normalizeTarget(nestedChild.route).split('?')[0] !== routePath)
-      .map((nestedChild) => buildChildTreeItem(normalizedRoute, nestedChild))
-
+  const deviceChildren: TreeItemDefinition[] = DEVICE_REGISTRY.map((entry) => {
+    const route = buildDeviceRoute(entry.id)
+    const routePath = `/devices/${entry.id}`
     return {
-      id: `${HARDWARE_OUTBOARD_GEAR_ID}::${normalizedRoute}`,
-      label: child.label,
-      route: normalizedRoute,
-      icon: TREE_ICON_OVERRIDES[routePath] ?? navigationItem?.icon,
-      children: nestedChildren,
+      id: `${HARDWARE_DEVICES_ID}::${routePath}`,
+      label: entry.label,
+      route,
+      icon: TREE_ICON_OVERRIDES[routePath] ?? entry.icon,
+      children: entry.views.map((view) => ({
+        id: `${HARDWARE_DEVICES_ID}::${routePath}/${view.id}`,
+        label: view.label,
+        route: buildDeviceRoute(entry.id, view.id),
+        icon: view.icon,
+      })),
     }
   })
 
@@ -211,18 +206,11 @@ function buildHardwareTree(): TreeItemDefinition {
     icon: Devices,
     children: [
       {
-        id: HARDWARE_PHYSICAL_SURFACES_ID,
-        label: 'Physical Surfaces',
-        route: '/workspace/physical-surfaces',
-        icon: TREE_ICON_OVERRIDES['/workspace/physical-surfaces'] ?? physicalSurfacesItem?.icon,
-        children: physicalSurfacesChildren,
-      },
-      {
-        id: HARDWARE_OUTBOARD_GEAR_ID,
-        label: 'Outboard Gear',
-        route: '/workspace/outboard-hardware',
-        icon: TREE_ICON_OVERRIDES['/workspace/outboard-hardware'] ?? outboardHardwareItem?.icon ?? MapRackDeviceIcon,
-        children: outboardChildren,
+        id: HARDWARE_DEVICES_ID,
+        label: 'Devices',
+        route: '/devices',
+        icon: Devices,
+        children: deviceChildren,
       },
     ],
   }

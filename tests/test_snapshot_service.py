@@ -1809,6 +1809,86 @@ def test_snapshot_service_auto_tags_filtering_and_plugin_mutations(tmp_path, mon
     asyncio.run(_run())
 
 
+def test_snapshot_detail_exposes_relational_plugin_ids_for_document_snapshots(tmp_path, monkeypatch):
+    _init_temp_db(tmp_path)
+    monkeypatch.setattr(snapshot_service_module, "get_plugin_loader", lambda: _FakeSnapshotPluginLoader())
+
+    async def _run():
+        async with database_module.get_session() as session:
+            service = SnapshotService(session)
+
+            created = await service.create_snapshot(
+                name="PluginIds",
+                detail_payload={
+                    "channels": [
+                        {
+                            "channel_key": "ch_a",
+                            "label": "A",
+                            "color": "#2563eb",
+                            "muted": False,
+                            "solo": False,
+                            "dry_wet_mix": 100.0,
+                            "chain_id": 1,
+                        }
+                    ],
+                    "chains": [
+                        {
+                            "id": 1,
+                            "name": "Chain A",
+                            "plugins": [
+                                {
+                                    "uri": "urn:test:drive",
+                                    "name": "Drive",
+                                    "position": 0,
+                                    "bypass": False,
+                                    "parameters": {},
+                                    "loader_state": {},
+                                }
+                            ],
+                        }
+                    ],
+                    "routing": {
+                        "mode": "series",
+                        "active_channel_key": "ch_a",
+                        "blend_positions": {"ch_a": 100.0},
+                        "series_order": ["ch_a"],
+                    },
+                    "midi_map": [],
+                },
+            )
+
+            chain_id = created["chains"][0]["id"]
+            chain = await service._get_chain(created["id"], chain_id)
+            assert chain is not None
+            relational_plugin_id = next(
+                plugin.id
+                for plugin in chain.plugins
+                if plugin.plugin_uri == "urn:test:drive"
+            )
+
+            reloaded = await service.get_snapshot(created["id"])
+            assert reloaded is not None
+            assert next(
+                plugin["id"]
+                for plugin in reloaded["chains"][0]["plugins"]
+                if plugin["uri"] == "urn:test:drive"
+            ) == relational_plugin_id
+            assert next(
+                plugin["id"]
+                for plugin in reloaded["paths"][0]["plugins"]
+                if plugin["uri"] == "urn:test:drive"
+            ) == relational_plugin_id
+
+            removed = await service.remove_plugin(created["id"], chain_id, relational_plugin_id)
+            assert removed is not None
+            assert all(
+                plugin["uri"] != "urn:test:drive"
+                for plugin in removed["chains"][0]["plugins"]
+            )
+
+    asyncio.run(_run())
+
+
 def test_deactivate_snapshot_runtime_chain_removes_live_path(tmp_path, monkeypatch):
     _init_temp_db(tmp_path)
 

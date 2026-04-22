@@ -4,6 +4,7 @@ import { Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../../map2/api'
 import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import type { SnapshotEditorFlowAnimation, SnapshotEditorNodeShape } from '../../hooks/useSpecialSettings'
+import useCPUMetrics from '../../hooks/useCPUMetrics'
 
 import { UnifiedChannelGrid, type SelectedBlockCoord } from './UnifiedChannelGrid/UnifiedChannelGrid'
 import { chainToUnifiedRow } from './UnifiedChannelGrid/chainToUnifiedRow'
@@ -113,6 +114,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   const rowId = resolveRowId(branchId, chain?.id)
   const routingMode = audioStatus?.routingMode ?? audioOutputStatus?.routingMode ?? 'series'
   const sidechainLabel = routingMode === 'sidechain' ? 'KEY SEND' : null
+  const cpuTelemetry = useCPUMetrics({ pollingInterval: 1000 })
 
   const row = useMemo(
     () =>
@@ -122,8 +124,9 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
         muted: chainMuted,
         solo: chainSoloed,
         sidechainSourceLabel: sidechainLabel,
+        pluginCpuPercentByKey: cpuTelemetry.metrics.perPluginPercent,
       }),
-    [chain, chainLabel, chainMuted, chainSoloed, pluginMeta, rowId, sidechainLabel],
+    [chain, chainLabel, chainMuted, chainSoloed, cpuTelemetry.metrics.perPluginPercent, pluginMeta, rowId, sidechainLabel],
   )
 
   const rows = useMemo(() => (chain ? [row] : []), [chain, row])
@@ -221,7 +224,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
         meters={meters}
         onSelectBlock={handleSelectBlock}
         onAddBlock={handleAddBlock}
-        onRemoveBlock={handleRemoveBlock}
+        onRemoveBlock={readOnly ? undefined : handleRemoveBlock}
         onReorderBlock={handleKeyboardReorder}
         onToggleMute={handleToggleMute}
         onToggleSolo={handleToggleSolo}

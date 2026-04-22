@@ -80,21 +80,21 @@ export function StageChyronStrap({ items, reducedMotion = false }: StageChyronSt
   const now = useClock()
   const loop = reducedMotion ? items : [...items, ...items]
   return (
-    <div className="stage-chyron__strap" aria-label="Live KPI strap">
-      <span className="stage-chyron__strap-label">Live</span>
-      <div className="stage-chyron__strap-content">
+    <div className="stage-mission-strap" aria-label="Live KPI strap">
+      <span className="stage-mission-strap__label">Live</span>
+      <div className="stage-mission-strap__content">
         <div
-          className={`stage-chyron__strap-scroll${reducedMotion ? ' stage-chyron__strap-scroll--static' : ''}`}
+          className={`stage-mission-strap__scroll${reducedMotion ? ' stage-mission-strap__scroll--static' : ''}`}
         >
           {loop.map((it, i) => (
-            <span key={`${it.label}-${i}`} className="stage-chyron__strap-item">
-              <span className="stage-chyron__strap-k">{it.label}</span>
-              <span className="stage-chyron__strap-v">{it.value}</span>
+            <span key={`${it.label}-${i}`} className="stage-mission-strap__item">
+              <span className="stage-mission-strap__k">{it.label}</span>
+              <span className="stage-mission-strap__v">{it.value}</span>
             </span>
           ))}
         </div>
       </div>
-      <span className="stage-chyron__strap-clock">{formatTimeMono(now)}</span>
+      <span className="stage-mission-strap__clock">{formatTimeMono(now)}</span>
     </div>
   )
 }

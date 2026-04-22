@@ -57,6 +57,7 @@ export interface UnifiedSlot {
   category: MAP2Category | null
   bypass: boolean
   sidechainSourceLabel: string | null
+  cpuPercent: number
 }
 
 export interface UnifiedChannelRow {
@@ -78,6 +79,7 @@ export function makeEmptySlot(index: number): UnifiedSlot {
     category: null,
     bypass: false,
     sidechainSourceLabel: null,
+    cpuPercent: 0,
   }
 }
 

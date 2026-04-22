@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Maschine MK1 hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Native Instruments Maschine MK1, redrawn from a controller diagram.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#050608" />
+      <stop offset="52%" stop-color="#20242b" />
+      <stop offset="100%" stop-color="#4d5968" />
+    </linearGradient>
+    <linearGradient id="panel" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fafafa" />
+      <stop offset="100%" stop-color="#d5d8dd" />
+    </linearGradient>
+    <linearGradient id="screen" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#eef2f6" />
+      <stop offset="100%" stop-color="#c2c9d3" />
+    </linearGradient>
+    <linearGradient id="padShade" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fcfcfd" />
+      <stop offset="100%" stop-color="#dfe3e8" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#040506" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <circle cx="1330" cy="136" r="220" fill="#ffffff" fill-opacity="0.06" />
+  <circle cx="1440" cy="98" r="120" fill="#d9e2ec" fill-opacity="0.08" />
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="114" width="988" height="640" rx="34" fill="url(#panel)" />
+    <rect x="72" y="114" width="988" height="640" rx="34" fill="none" stroke="#8e98a5" stroke-width="4" />
+    <rect x="72" y="114" width="988" height="64" rx="34" fill="#f7f8fa" />
+    <path d="M72 178h988" stroke="#9aa3af" stroke-width="3" />
+    <path d="M72 720h988" stroke="#9aa3af" stroke-width="3" />
+
+    <text x="132" y="157" fill="#0f1216" font-family="IBM Plex Sans, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="1.5">MASCHINE</text>
+    <circle cx="106" cy="146" r="18" fill="none" stroke="#0f1216" stroke-width="5" />
+    <circle cx="106" cy="146" r="8" fill="none" stroke="#0f1216" stroke-width="4" />
+    <rect x="992" y="126" width="36" height="28" rx="4" fill="none" stroke="#0f1216" stroke-width="4" />
+    <path d="M1002 130v20m16-20v20M996 140h28" stroke="#0f1216" stroke-width="3" />
+
+    <g fill="#f9fbfc" stroke="#5a6572" stroke-width="3">
+      <rect x="130" y="190" width="60" height="30" rx="6" />
+      <rect x="210" y="190" width="60" height="30" rx="6" />
+      <rect x="290" y="190" width="60" height="30" rx="6" />
+      <rect x="390" y="190" width="58" height="30" rx="6" />
+      <rect x="482" y="190" width="58" height="30" rx="6" />
+      <rect x="574" y="190" width="58" height="30" rx="6" />
+      <rect x="666" y="190" width="58" height="30" rx="6" />
+      <rect x="758" y="190" width="58" height="30" rx="6" />
+      <rect x="850" y="190" width="58" height="30" rx="6" />
+      <rect x="942" y="190" width="58" height="30" rx="6" />
+    </g>
+    <text x="160" y="184" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">CONTROL</text>
+    <text x="240" y="184" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">STEP</text>
+
+    <g fill="#f9fbfc" stroke="#5a6572" stroke-width="3">
+      <rect x="130" y="258" width="60" height="38" rx="7" />
+      <rect x="130" y="312" width="60" height="38" rx="7" />
+      <rect x="210" y="312" width="60" height="38" rx="7" />
+      <rect x="130" y="402" width="60" height="38" rx="7" />
+      <rect x="210" y="402" width="60" height="38" rx="7" />
+      <rect x="130" y="614" width="60" height="34" rx="7" />
+      <rect x="210" y="614" width="60" height="34" rx="7" />
+      <rect x="290" y="614" width="60" height="34" rx="7" />
+      <rect x="370" y="614" width="60" height="34" rx="7" />
+      <rect x="130" y="666" width="60" height="34" rx="7" />
+      <rect x="210" y="666" width="60" height="34" rx="7" />
+      <rect x="290" y="666" width="60" height="34" rx="7" />
+      <rect x="370" y="666" width="60" height="34" rx="7" />
+    </g>
+    <text x="160" y="281" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">BROWSE</text>
+    <text x="160" y="423" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">SNAP</text>
+    <text x="240" y="423" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">WRITE</text>
+
+    <rect x="312" y="260" width="322" height="92" rx="14" fill="url(#screen)" stroke="#5a6572" stroke-width="3" />
+    <rect x="324" y="270" width="74" height="16" rx="5" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <rect x="404" y="270" width="74" height="16" rx="5" fill="#10161d" />
+    <rect x="484" y="270" width="74" height="16" rx="5" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <rect x="564" y="270" width="58" height="16" rx="5" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <path d="M326 296h300M326 306h300" stroke="#6c7682" stroke-width="2" stroke-dasharray="2 3" />
+    <text x="336" y="283" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">RECORD</text>
+    <text x="431" y="283" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">EDIT</text>
+    <text x="510" y="283" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">SLICE</text>
+    <text x="583" y="283" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">MAP</text>
+    <text x="334" y="318" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700">DRUM LOOP</text>
+    <text x="334" y="334" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">START</text>
+    <text x="382" y="334" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">24765</text>
+    <text x="434" y="334" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">END</text>
+    <text x="470" y="334" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10">171069</text>
+    <text x="603" y="334" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">1/3</text>
+
+    <rect x="680" y="260" width="278" height="88" rx="12" fill="url(#screen)" stroke="#5a6572" stroke-width="3" />
+    <rect x="694" y="268" width="80" height="14" rx="4" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <rect x="860" y="268" width="56" height="14" rx="4" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <rect x="920" y="268" width="28" height="14" rx="4" fill="#fefefe" stroke="#5a6572" stroke-width="2" />
+    <text x="706" y="279" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">AUDIO</text>
+    <text x="873" y="279" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">PREV</text>
+    <text x="924" y="279" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">NEXT</text>
+    <path d="M694 296h250" stroke="#6c7682" stroke-width="2" stroke-dasharray="2 3" />
+    <path d="M706 318c10-20 10 20 20 0s10 20 20 0s10 20 20 0s10 20 20 0s10 20 20 0s10 20 20 0" fill="none" stroke="#444d57" stroke-width="3" />
+    <path d="M826 318c8-14 8 14 16 0s8 14 16 0s8 14 16 0" fill="none" stroke="#444d57" stroke-width="3" />
+    <path d="M886 304v32m24-32v32" stroke="#444d57" stroke-width="3" />
+
+    <g transform="translate(314 400)" fill="#f8fafb" stroke="#5a6572" stroke-width="3">
+      <g transform="translate(0 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(96 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(192 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(288 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(384 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(480 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(576 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+      <g transform="translate(672 0)">
+        <circle cx="0" cy="0" r="22" />
+        <circle cx="0" cy="0" r="11" fill="#d9e0e7" />
+        <path d="M-12 12a17 17 0 0 1 24-24" fill="none" />
+      </g>
+    </g>
+
+    <g transform="translate(148 504)" fill="#f8fafb" stroke="#5a6572" stroke-width="3">
+      <g transform="translate(0 0)">
+        <circle cx="0" cy="0" r="18" />
+        <circle cx="0" cy="0" r="9" fill="#d9e0e7" />
+        <path d="M-10 10a14 14 0 0 1 20-20" fill="none" />
+      </g>
+      <g transform="translate(86 0)">
+        <circle cx="0" cy="0" r="18" />
+        <circle cx="0" cy="0" r="9" fill="#d9e0e7" />
+        <path d="M-10 10a14 14 0 0 1 20-20" fill="none" />
+      </g>
+      <g transform="translate(172 0)">
+        <circle cx="0" cy="0" r="18" />
+        <circle cx="0" cy="0" r="9" fill="#d9e0e7" />
+        <path d="M-10 10a14 14 0 0 1 20-20" fill="none" />
+      </g>
+    </g>
+
+    <g fill="#f9fbfc" stroke="#5a6572" stroke-width="3">
+      <rect x="392" y="482" width="58" height="42" rx="7" />
+      <rect x="392" y="536" width="58" height="42" rx="7" />
+      <rect x="392" y="590" width="58" height="42" rx="7" />
+      <rect x="392" y="644" width="58" height="42" rx="7" />
+      <rect x="392" y="698" width="58" height="42" rx="7" />
+    </g>
+    <text x="421" y="508" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle">SCENE</text>
+    <text x="421" y="562" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle">PATTERN</text>
+    <text x="421" y="616" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle">NAV</text>
+    <text x="421" y="670" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle">DUP</text>
+    <text x="421" y="724" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700" text-anchor="middle">MUTE</text>
+
+    <text x="138" y="462" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="12" font-weight="700">MASTER</text>
+    <text x="392" y="462" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="12" font-weight="700">PADS</text>
+    <text x="138" y="590" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="12" font-weight="700">GROUPS</text>
+    <text x="138" y="642" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="12" font-weight="700">TRANSPORT</text>
+
+    <g transform="translate(496 490)" fill="url(#padShade)" stroke="#5a6572" stroke-width="3">
+      <rect x="0" y="0" width="92" height="92" rx="8" />
+      <rect x="112" y="0" width="92" height="92" rx="8" />
+      <rect x="224" y="0" width="92" height="92" rx="8" />
+      <rect x="336" y="0" width="92" height="92" rx="8" />
+      <rect x="0" y="112" width="92" height="92" rx="8" />
+      <rect x="112" y="112" width="92" height="92" rx="8" />
+      <rect x="224" y="112" width="92" height="92" rx="8" />
+      <rect x="336" y="112" width="92" height="92" rx="8" />
+      <rect x="0" y="224" width="92" height="92" rx="8" />
+      <rect x="112" y="224" width="92" height="92" rx="8" />
+      <rect x="224" y="224" width="92" height="92" rx="8" />
+      <rect x="336" y="224" width="92" height="92" rx="8" />
+      <rect x="0" y="336" width="92" height="92" rx="8" />
+      <rect x="112" y="336" width="92" height="92" rx="8" />
+      <rect x="224" y="336" width="92" height="92" rx="8" />
+      <rect x="336" y="336" width="92" height="92" rx="8" />
+    </g>
+    <text x="520" y="600" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">9 CLEAR</text>
+    <text x="632" y="600" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">10 AUTOM.</text>
+    <text x="744" y="600" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">11 COPY</text>
+    <text x="852" y="600" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">12 PASTE</text>
+    <text x="520" y="488" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">13 SEMI -</text>
+    <text x="632" y="488" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">14 SEMI +</text>
+    <text x="744" y="488" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">15 OCT -</text>
+    <text x="852" y="488" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="10" font-weight="700">16 OCT +</text>
+
+    <g fill="#f9fbfc" stroke="#5a6572" stroke-width="3">
+      <rect x="132" y="538" width="56" height="40" rx="7" />
+      <rect x="212" y="538" width="56" height="40" rx="7" />
+      <rect x="292" y="538" width="56" height="40" rx="7" />
+      <rect x="132" y="590" width="56" height="40" rx="7" />
+      <rect x="212" y="590" width="56" height="40" rx="7" />
+      <rect x="292" y="590" width="56" height="40" rx="7" />
+    </g>
+    <text x="160" y="563" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">A</text>
+    <text x="240" y="563" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">B</text>
+    <text x="320" y="563" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">C</text>
+    <text x="160" y="615" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">E</text>
+    <text x="240" y="615" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">F</text>
+    <text x="320" y="615" fill="#2b3138" font-family="IBM Plex Sans, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">G</text>
+
+    <path d="M140 698h220" stroke="#7f8894" stroke-width="3" />
+  </g>
+
+  <g>
+    <text x="1118" y="304" fill="#d0d7de" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+    <text x="1118" y="384" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="74" font-weight="700">MASCHINE MK1</text>
+    <text x="1118" y="454" fill="#dbe2ea" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">pads, scenes, and workstation-era tactile sequencing</text>
+
+    <rect x="1118" y="520" width="324" height="2" fill="#a8b3bf" fill-opacity="0.5" />
+    <text x="1118" y="566" fill="#eef2f6" font-family="IBM Plex Sans, Arial, sans-serif" font-size="22" font-weight="700">Diagram-led redraw</text>
+    <text x="1118" y="602" fill="#d0d7de" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">Native Instruments layout translated into the</text>
+    <text x="1118" y="632" fill="#d0d7de" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">same 16:9 MAP2 hero system used across</text>
+    <text x="1118" y="662" fill="#d0d7de" font-family="IBM Plex Sans, Arial, sans-serif" font-size="20">the physical-surface catalog.</text>
+  </g>
+</svg>

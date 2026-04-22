@@ -803,6 +803,7 @@ class SnapshotPersistenceMixin:
         from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
 
         normalized = await self._snapshot_to_normalized(snapshot)
+        normalized = self._attach_relational_snapshot_plugin_ids(normalized, snapshot)
         detail = self._normalized_to_detail(normalized, snapshot)
         latest_revision_result = await self.session.execute(
             select(SnapshotRevision.revision_number)
@@ -882,6 +883,81 @@ class SnapshotPersistenceMixin:
             detail["tempo_source"] = tempo_status["tempo_source"]
             detail["tempo_updated_at"] = tempo_status["updated_at"]
         return detail
+
+    def _attach_relational_snapshot_plugin_ids(
+        self,
+        normalized: dict[str, Any],
+        snapshot: Snapshot,
+    ) -> dict[str, Any]:
+        """Enrich document-backed snapshot payloads with relational plugin IDs.
+
+        Graph documents intentionally describe plugin identity by chain/position/URI,
+        while mutation endpoints target relational SnapshotChainPlugin rows. Attach
+        those row IDs at read time so clients can mutate the snapshot without
+        persisting database identifiers into the canonical graph document.
+        """
+        chains = normalized.get("chains")
+        if not isinstance(chains, list) or not snapshot.chains:
+            return normalized
+
+        enriched = copy.deepcopy(normalized)
+        ordered_relational_chains = sorted(snapshot.chains, key=lambda item: int(item.order_index))
+        chain_by_ref: dict[str, SnapshotChain] = {}
+        for index, chain in enumerate(ordered_relational_chains):
+            chain_by_ref[str(index)] = chain
+            if chain.id is not None:
+                chain_by_ref[str(chain.id)] = chain
+
+        for chain_index, chain_payload in enumerate(enriched.get("chains", [])):
+            if not isinstance(chain_payload, dict):
+                continue
+            source_key = str(chain_payload.get("source_key") or "").strip()
+            chain_id = chain_payload.get("id")
+            relational_chain = (
+                chain_by_ref.get(source_key)
+                or chain_by_ref.get(str(chain_id))
+                or (ordered_relational_chains[chain_index] if chain_index < len(ordered_relational_chains) else None)
+            )
+            if relational_chain is None:
+                continue
+
+            remaining_plugins = sorted(relational_chain.plugins, key=lambda item: int(item.position))
+            for plugin_payload in chain_payload.get("plugins", []):
+                if not isinstance(plugin_payload, dict):
+                    continue
+                if isinstance(plugin_payload.get("id"), int):
+                    continue
+
+                uri = str(plugin_payload.get("uri") or plugin_payload.get("plugin_uri") or "").strip()
+                try:
+                    position = int(plugin_payload.get("position", 0))
+                except (TypeError, ValueError):
+                    position = 0
+
+                match_index = next(
+                    (
+                        index
+                        for index, plugin in enumerate(remaining_plugins)
+                        if str(plugin.plugin_uri) == uri and int(plugin.position) == position
+                    ),
+                    -1,
+                )
+                if match_index < 0:
+                    match_index = next(
+                        (
+                            index
+                            for index, plugin in enumerate(remaining_plugins)
+                            if str(plugin.plugin_uri) == uri
+                        ),
+                        -1,
+                    )
+                if match_index < 0:
+                    continue
+
+                relational_plugin = remaining_plugins.pop(match_index)
+                plugin_payload["id"] = relational_plugin.id
+
+        return enriched
 
     async def _snapshot_name_exists(
         self,
@@ -1000,6 +1076,7 @@ class SnapshotPersistenceMixin:
                 metadata = self.chain_service._get_plugin_metadata(plugin.plugin_uri)
                 plugins.append(
                     {
+                        "id": plugin.id,
                         "uri": plugin.plugin_uri,
                         "name": plugin.plugin_name or metadata.get("name", plugin.plugin_uri),
                         "position": int(plugin.position),

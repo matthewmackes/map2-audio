@@ -684,7 +684,7 @@ describe('ToastProvider stage notification surface', () => {
     const overview = await screen.findByLabelText('Stage notification overview')
     expect(overview.closest('.stage-notification-surface')).toHaveAttribute('data-reduced-motion', 'true')
     expect(screen.getByLabelText('Live KPI strap')).toBeInTheDocument()
-    expect(document.querySelector('.stage-chyron__strap-scroll')).toHaveClass('stage-chyron__strap-scroll--static')
+    expect(document.querySelector('.stage-mission-strap__scroll')).toHaveClass('stage-mission-strap__scroll--static')
     expect(document.querySelector('.stage-mission-ticker__track')).toHaveClass('stage-mission-ticker__track--static')
     expect(document.querySelector('.stage-chyron__bug-dot')).not.toHaveClass('stage-chyron__bug-dot--pulse')
     expect(screen.getByLabelText('Stereo output meters')).toBeInTheDocument()

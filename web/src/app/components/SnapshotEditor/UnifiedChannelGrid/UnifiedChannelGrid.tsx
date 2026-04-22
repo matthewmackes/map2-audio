@@ -81,6 +81,7 @@ export function UnifiedChannelGrid({
           meter={meters?.[row.id]}
           onSelectBlock={onSelectBlock}
           onAddBlock={onAddBlock}
+          onRemoveBlock={onRemoveBlock}
           onToggleMute={onToggleMute}
           onToggleSolo={onToggleSolo}
         />

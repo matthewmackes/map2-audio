@@ -7,9 +7,6 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from '../layout/AppShell'
 import { HomePage } from './HomePage'
-import { OutboardHardwareDevicePage } from './OutboardHardwareDevicePage'
-import { OutboardHardwareOverviewPage } from './OutboardHardwareOverviewPage'
-import { WorkspaceOutboardHardwareOutlet } from './workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet'
 
 const mockUpdateSettings = jest.fn()
 const mockRestartBackend = jest.fn()
@@ -198,7 +195,7 @@ jest.mock('../../map2/intelfxApi', () => ({
   }),
 }))
 
-jest.mock('../components/Tesira/hooks/useTesiraApi', () => ({
+jest.mock('../components/Devices/Tesira/hooks/useTesiraApi', () => ({
   useTesiraDevices: () => ({
     data: [
       {
@@ -221,7 +218,7 @@ jest.mock('../components/Tesira/hooks/useTesiraApi', () => ({
   }),
 }))
 
-jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
+jest.mock('../components/Devices/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
 }))
 
@@ -293,10 +290,7 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/snapshot-editor" element={<ShellStubPage testId="snapshot-editor-page">Snapshot Editor</ShellStubPage>} />
             <Route path="/brain" element={<ShellStubPage testId="brain-page">Brain</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
-            <Route path="/workspace/outboard-hardware" element={<WorkspaceOutboardHardwareOutlet />}>
-              <Route index element={<OutboardHardwareOverviewPage />} />
-              <Route path=":deviceId" element={<OutboardHardwareDevicePage />} />
-            </Route>
+            <Route path="/devices" element={<ShellStubPage testId="devices-page">Devices Workspace</ShellStubPage>} />
             <Route path="/platforms/theme" element={<ShellStubPage testId="theme-page">Theme Settings</ShellStubPage>} />
           </Routes>
           <LocationProbe />

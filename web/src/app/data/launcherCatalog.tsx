@@ -169,17 +169,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/workspace/artifacts/discover', label: 'Discover' },
     ],
   },
-  '/workspace/physical-surfaces': {
-    treeChildren: [
-      { route: '/workspace/physical-surfaces', label: 'Overview' },
-      { route: '/workspace/physical-surfaces/maschine-mk1', label: 'Maschine MK1' },
-      { route: '/workspace/physical-surfaces/ableton-push', label: 'Ableton Push' },
-      { route: '/workspace/physical-surfaces/ground-control-pro', label: 'Ground Control Pro' },
-      { route: '/workspace/physical-surfaces/midi-commander', label: 'MIDI Commander' },
-      { route: '/workspace/physical-surfaces/novation-launch-control', label: 'Launch Control' },
-      { route: '/workspace/physical-surfaces/mackie-mcu-pro', label: 'MCU Pro' },
-    ],
-  },
   '/tesira': {
     storefrontCollections: ['featured'],
     featureBullets: [
@@ -198,32 +187,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
       { label: 'AVB capabilities and use cases', name: 'MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
-    ],
-  },
-  '/workspace/outboard-hardware': {
-    featureBullets: [
-      'Groups Tesira, Edirol, HoTone, MPX1, and IntelFX under one routed shell without deleting their specialized pages.',
-      'Reduces start-menu clutter by giving operators a single rack-and-interface entry point for outboard gear.',
-      'Keeps dedicated routes one click away for live status, deep editors, and device-family workflows.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary workflow', value: 'Grouped navigation for outboard DSP, interfaces, and rack processors' },
-      { label: 'Surface mode', value: 'Routed overview + per-device identity pages' },
-      { label: 'Launch path', value: '/workspace/outboard-hardware' },
-      { label: 'Home placement', value: 'Pinned hero tile' },
-    ],
-    availabilityNote: 'Always available as the grouped outboard entry point; live status continues to come from each dedicated hardware route.',
-    documentLinks: [
-      { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
-      { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
-    ],
-    treeChildren: [
-      { route: '/workspace/outboard-hardware', label: 'Overview' },
-      { route: '/workspace/outboard-hardware/tesira', label: 'Tesira AVB' },
-      { route: '/workspace/outboard-hardware/edirol-ua1000', label: 'Edirol UA-1000' },
-      { route: '/workspace/outboard-hardware/hotone-jogg', label: 'HoTone JoGG' },
-      { route: '/workspace/outboard-hardware/mpx1-rack', label: 'MPX-1 Rack' },
-      { route: '/workspace/outboard-hardware/intelfx-rack', label: 'IntelFX Rack' },
     ],
   },
   '/snapshot-editor': {

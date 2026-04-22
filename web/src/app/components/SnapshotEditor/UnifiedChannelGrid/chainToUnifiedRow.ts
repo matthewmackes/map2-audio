@@ -1,5 +1,6 @@
 import type { Chain, Plugin } from '../../../../map2/types'
 import { getDisplayPluginName } from '../../../../map2/displayNames'
+import { getPluginIdentityKeyFromParts } from '../../../../map2/utils/pluginIdentity'
 import { getSystemBlockBadgeLabel } from '../../../utils/snapshotSystemBlocks'
 import type { MAP2Category } from '../categoryHues'
 
@@ -39,6 +40,33 @@ function resolveKind(uri: string, category: MAP2Category | null): BlockKind {
   return 'plugin'
 }
 
+function normalizeCpuPercent(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  return Math.max(0, value)
+}
+
+function resolveCpuPercent(
+  plugin: Chain['plugins'][number],
+  pluginCpuPercentByKey: Record<string, number> | undefined,
+): number {
+  const instanceId = typeof plugin.instance_id === 'number' && Number.isFinite(plugin.instance_id)
+    ? plugin.instance_id
+    : null
+  const keys = [
+    instanceId != null ? String(instanceId) : null,
+    getPluginIdentityKeyFromParts(plugin.uri, plugin.position, instanceId),
+    getPluginIdentityKeyFromParts(plugin.uri, plugin.position, null),
+    plugin.uri,
+  ].filter((key): key is string => Boolean(key))
+
+  for (const key of keys) {
+    const cpu = normalizeCpuPercent(pluginCpuPercentByKey?.[key])
+    if (cpu != null) return cpu
+  }
+
+  return normalizeCpuPercent(plugin.cpu_percent) ?? 0
+}
+
 export interface ChainToUnifiedRowOptions {
   rowId?: string
   rowName?: string
@@ -47,6 +75,7 @@ export interface ChainToUnifiedRowOptions {
   solo?: boolean
   stereo?: boolean
   sidechainSourceLabel?: string | null
+  pluginCpuPercentByKey?: Record<string, number>
 }
 
 /**
@@ -85,6 +114,7 @@ export function chainToUnifiedRow(
         category,
         bypass: Boolean(plugin.bypassed),
         sidechainSourceLabel: options.sidechainSourceLabel ?? null,
+        cpuPercent: resolveCpuPercent(plugin, options.pluginCpuPercentByKey),
       }
     }
   }

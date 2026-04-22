@@ -141,8 +141,6 @@ describe('navigation catalog', () => {
     const advancedItems = advancedMenuItems
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
-      '/workspace/physical-surfaces',
-      '/workspace/outboard-hardware',
       '/devices',
       '/mcu',
       '/launch-control',

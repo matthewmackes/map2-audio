@@ -129,7 +129,10 @@ function ShellAwareContent() {
 }
 
 function expectInDocumentOrder(labels: string[]) {
-  const elements = labels.map((label) => screen.getByText(label))
+  const elements = labels.map((label) => {
+    const matches = screen.getAllByText(label)
+    return matches[0]
+  })
 
   for (let index = 0; index < elements.length - 1; index += 1) {
     const current = elements[index]
@@ -199,17 +202,16 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
-    expect(screen.getByText('Hardware')).toBeInTheDocument()
-    expect(screen.getByText('Physical Surfaces')).toBeInTheDocument()
-    expect(screen.getByText('Outboard Gear')).toBeInTheDocument()
+    expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
     expect(within(navTree).getByText('Connections')).toBeInTheDocument()
-    expect(within(navTree).getByText('Presets')).toBeInTheDocument()
+    expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Overview').length).toBeGreaterThan(1)
     expect(within(navTree).getByText('LV2 Plugins')).toBeInTheDocument()
     expect(within(navTree).getByText('NAM Models')).toBeInTheDocument()
     expect(within(navTree).getAllByText('Discover').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Tesira AVB').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('Biamp Tesira').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
     expect(screen.queryByText('Files')).toBeNull()
     expect(screen.queryByText('Brain')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
@@ -228,9 +230,9 @@ describe('AppShell global tree navigation', () => {
     expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
     const navTree = screen.getByLabelText('Global navigation tree')
     expect(navTree).toBeInTheDocument()
-    expect(within(navTree).getByText('Hardware')).toBeInTheDocument()
-    expect(within(navTree).getByText('Outboard Gear')).toBeInTheDocument()
-    expect(within(navTree).getAllByText('IntelFX Rack').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('Hardware').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('Devices').length).toBeGreaterThan(0)
+    expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
   })
 
   it('closes the current app back to the desktop route', async () => {

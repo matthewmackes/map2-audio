@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react'
 import { Tag } from '@carbon/react'
 
 import { FxIcon } from '../../FxIcons/FxIcon'
@@ -39,9 +39,16 @@ export interface BlockProps {
   slot: UnifiedSlot
   selected?: boolean
   onClick?: (slotIndex: number) => void
+  onRemove?: (slotIndex: number) => void
 }
 
-export function Block({ slot, selected = false, onClick }: BlockProps) {
+function formatCpuPercent(value: number): string {
+  const cpu = Number.isFinite(value) ? Math.max(0, value) : 0
+  if (cpu >= 10 || Number.isInteger(cpu)) return `${Math.round(cpu)}%`
+  return `${cpu.toFixed(1)}%`
+}
+
+export function Block({ slot, selected = false, onClick, onRemove }: BlockProps) {
   const category = slot.category ?? 'Unknown'
   const stripColor = CATEGORY_COLOR_TOKENS[category]
   const iconName: FxIconName = slot.category
@@ -57,15 +64,28 @@ export function Block({ slot, selected = false, onClick }: BlockProps) {
     opacity: slot.bypass ? 0.5 : 1,
   }
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onClick?.(slot.index)
+  }
+
+  const handleRemove = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onRemove?.(slot.index)
+  }
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={`ucg-block${selected ? ' ucg-block--selected' : ''}`}
       style={style}
       data-category={category}
       data-kind={slot.kind ?? 'none'}
       data-bypass={slot.bypass ? 'true' : 'false'}
       onClick={() => onClick?.(slot.index)}
+      onKeyDown={handleKeyDown}
       aria-label={slot.label ?? `Slot ${slot.index + 1}`}
       aria-pressed={selected}
     >
@@ -78,6 +98,19 @@ export function Block({ slot, selected = false, onClick }: BlockProps) {
           {`SC←${slot.sidechainSourceLabel}`}
         </Tag>
       ) : null}
-    </button>
+      <span className="ucg-block__lower-third" aria-label={`CPU ${formatCpuPercent(slot.cpuPercent)}`}>
+        <span className="ucg-block__cpu">{formatCpuPercent(slot.cpuPercent)}</span>
+        {onRemove ? (
+          <button
+            type="button"
+            className="ucg-block__remove"
+            aria-label={`Remove block from slot ${slot.index + 1}`}
+            onClick={handleRemove}
+          >
+            X
+          </button>
+        ) : null}
+      </span>
+    </div>
   )
 }

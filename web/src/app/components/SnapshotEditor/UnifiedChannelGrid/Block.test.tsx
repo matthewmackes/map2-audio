@@ -17,7 +17,7 @@ function pluginSlot(overrides: Partial<UnifiedSlot> = {}): UnifiedSlot {
 
 describe('Block', () => {
   it('renders a plugin block with label, category dataset, and fx icon', () => {
-    render(<Block slot={pluginSlot()} />)
+    render(<Block slot={pluginSlot({ cpuPercent: 3.4 })} />)
 
     const button = screen.getByRole('button', { name: 'Hall Reverb' })
     expect(button).toHaveAttribute('data-category', 'Reverb')
@@ -25,6 +25,7 @@ describe('Block', () => {
     expect(button).toHaveAttribute('data-bypass', 'false')
     expect(button.querySelector('svg')).not.toBeNull()
     expect(screen.getByText('Hall Reverb')).toBeInTheDocument()
+    expect(screen.getByText('3.4%')).toBeInTheDocument()
   })
 
   it('renders a bypassed dynamics block with SC tag when sidechain source is set', () => {
@@ -53,5 +54,16 @@ describe('Block', () => {
 
     fireEvent.click(screen.getByRole('button'))
     expect(onClick).toHaveBeenCalledWith(5)
+  })
+
+  it('renders the red X remove control without selecting the block', () => {
+    const onClick = jest.fn()
+    const onRemove = jest.fn()
+    render(<Block slot={pluginSlot({ index: 3 })} onClick={onClick} onRemove={onRemove} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove block from slot 4' }))
+
+    expect(onRemove).toHaveBeenCalledWith(3)
+    expect(onClick).not.toHaveBeenCalled()
   })
 })

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">IntelFX Rack hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the IntelFX rack processor.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#21173b" />
+      <stop offset="100%" stop-color="#6f3dff" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="140" y="240" width="1080" height="420" rx="24" fill="#101214" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(220 310)">
+    <rect width="920" height="280" rx="20" fill="#1a1d1f" />
+    <path d="M84 212 L206 84 L328 212" fill="none" stroke="#78a9ff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M328 212 L450 84 L572 212" fill="none" stroke="#be95ff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M572 212 L694 84 L816 212" fill="none" stroke="#3ddbd9" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="676" y="58" width="170" height="48" rx="12" fill="#f4f4f4" />
+    <rect x="676" y="174" width="170" height="48" rx="12" fill="#f4f4f4" />
+  </g>
+  <text x="1250" y="326" fill="#e8daff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">OUTBOARD HARDWARE</text>
+  <text x="1250" y="410" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="78" font-weight="700">INTELFX RACK</text>
+  <text x="1250" y="474" fill="#f6f2ff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">flow editing, scenes, and realtime rack control</text>
+</svg>

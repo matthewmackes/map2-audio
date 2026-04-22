@@ -14,6 +14,7 @@ jest.mock('../theme', () => ({
       carbonTheme: 'g100',
     },
   }),
+  toCarbonBaseTheme: (carbonTheme: string) => (carbonTheme === 'white' || carbonTheme === 'g10' ? 'white' : 'g100'),
 }))
 
 const mockUseUnifiedWorkspaceData = jest.fn<UnifiedWorkspaceData, []>()
@@ -34,15 +35,6 @@ function buildWorkspaceData(): UnifiedWorkspaceData {
         isLoading: false,
         isError: false,
       },
-      'physical-surfaces': {
-        key: 'physical-surfaces',
-        label: 'Physical Surfaces',
-        metric: '3 units',
-        detail: '1 notification · 2 online units',
-        tone: 'positive',
-        isLoading: false,
-        isError: false,
-      },
       artifacts: {
         key: 'artifacts',
         label: 'Audio Artifacts',
@@ -52,31 +44,15 @@ function buildWorkspaceData(): UnifiedWorkspaceData {
         isLoading: false,
         isError: false,
       },
-      'outboard-hardware': {
-        key: 'outboard-hardware',
-        label: 'Outboard Hardware',
-        metric: '5 devices',
-        detail: '3 hardware classes · 2 audio interfaces',
-        tone: 'info',
-        isLoading: false,
-        isError: false,
-      },
     },
     orderedSummaries: [],
-    physicalSurfaces: {
-      summary: null,
-      isLoading: false,
-      isError: false,
-    },
   }
 
   return {
     ...data,
     orderedSummaries: [
       data.summaries.platforms,
-      data.summaries['physical-surfaces'],
       data.summaries.artifacts,
-      data.summaries['outboard-hardware'],
     ],
   }
 }

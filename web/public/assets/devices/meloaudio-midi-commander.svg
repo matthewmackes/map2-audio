@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">MeloAudio MIDI Commander hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the MeloAudio MIDI Commander.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#161616" />
+      <stop offset="100%" stop-color="#004144" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="200" y="180" width="1200" height="520" rx="28" fill="#0f0f10" stroke="#5a5a5a" stroke-width="4" />
+  <g transform="translate(270 250)">
+    <rect width="1060" height="380" rx="24" fill="#1b1b1b" />
+    <g fill="#f4f4f4">
+      <circle cx="150" cy="236" r="64" />
+      <circle cx="330" cy="236" r="64" />
+      <circle cx="510" cy="236" r="64" />
+      <circle cx="690" cy="236" r="64" />
+      <circle cx="870" cy="236" r="64" />
+    </g>
+    <rect x="84" y="54" width="250" height="54" rx="14" fill="#42be65" />
+    <rect x="360" y="54" width="250" height="54" rx="14" fill="#3ddbd9" />
+    <rect x="636" y="54" width="250" height="54" rx="14" fill="#4589ff" />
+  </g>
+  <text x="210" y="120" fill="#f4f4f4" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">PHYSICAL SURFACES</text>
+  <text x="210" y="784" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="72" font-weight="700">MIDI COMMANDER</text>
+  <text x="210" y="844" fill="#d9fbfb" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">compact floor control for maps, snapshots, and bypass states</text>
+</svg>

@@ -25,6 +25,17 @@ jest.mock('../../hooks/useVuMeters', () => ({
   }),
 }))
 
+jest.mock('../../hooks/useCPUMetrics', () => ({
+  __esModule: true,
+  default: () => ({
+    metrics: {
+      perPluginPercent: {
+        'instance:77': 6.5,
+      },
+    },
+  }),
+}))
+
 const pluginMeta = {
   'plugin://drive': {
     uri: 'plugin://drive',
@@ -52,6 +63,7 @@ function buildChain(overrides: Record<string, unknown> = {}) {
         position: 0,
         bypassed: false,
         parameters: {},
+        instance_id: 77,
       },
     ],
     loop_insertions: [],
@@ -141,6 +153,30 @@ describe('SnapshotEditorSignalCanvas (UnifiedChannelGrid)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Drive/ }))
     expect(handleSelect).toHaveBeenCalledWith('plugin://drive', 0)
+  })
+
+  it('renders CPU lower-third and routes the red X to onDeletePlugin', () => {
+    const handleSelect = jest.fn()
+    const handleDelete = jest.fn()
+    render(
+      <JuceGridSignalCanvas
+        chain={buildChain()}
+        chainLabel="A"
+        pluginMeta={pluginMeta}
+        selectedPluginUri={null}
+        selectedPluginPosition={null}
+        onPluginSelect={handleSelect}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onDeletePlugin={handleDelete}
+      />,
+    )
+
+    expect(screen.getByText('6.5%')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove block from slot 1' }))
+
+    expect(handleDelete).toHaveBeenCalledWith('plugin://drive', 0)
+    expect(handleSelect).not.toHaveBeenCalled()
   })
 
   it('routes empty-slot click → onAddPlugin(position) when not read-only', () => {

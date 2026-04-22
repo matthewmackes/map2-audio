@@ -9,10 +9,6 @@ import {
   buildWorkspaceArtifactsDiscoverPath,
   buildWorkspaceArtifactsPath,
 } from './audioArtifactsRoutes'
-import { OUTBOARD_HARDWARE_DEVICES } from './outboardHardwareShared'
-import { buildWorkspaceOutboardHardwarePath } from './outboardHardwareRoutes'
-import { FALLBACK_PHYSICAL_SURFACE_UNITS } from './physicalSurfacesShared'
-import { buildWorkspacePhysicalSurfacesPath } from './physicalSurfacesRoutes'
 import { toCarbonBaseTheme, useTheme } from '../theme'
 import { buildWorkspaceHubPlatformPath } from '../platform/routes'
 import { useUnifiedWorkspaceData, type UnifiedWorkspaceSectionSummary } from '../hooks/useUnifiedWorkspaceData'
@@ -77,24 +73,6 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
       }),
     },
     {
-      key: 'physical-surfaces',
-      label: 'Surfaces',
-      items: [
-        {
-          key: 'physical-surfaces-overview',
-          label: 'Overview',
-          to: buildWorkspacePhysicalSurfacesPath(),
-          match: (location) => location.pathname === buildWorkspacePhysicalSurfacesPath(),
-        },
-        ...FALLBACK_PHYSICAL_SURFACE_UNITS.map((unit) => ({
-          key: `physical-surfaces-${unit.unit_id}`,
-          label: unit.display_name,
-          to: buildWorkspacePhysicalSurfacesPath(unit.unit_id),
-          match: (location) => location.pathname === buildWorkspacePhysicalSurfacesPath(unit.unit_id),
-        })),
-      ],
-    },
-    {
       key: 'artifacts',
       label: 'Audio Files',
       items: [
@@ -105,24 +83,6 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
           to: buildWorkspaceArtifactsDiscoverPath(),
           match: (location) => location.pathname === buildWorkspaceArtifactsDiscoverPath(),
         },
-      ],
-    },
-    {
-      key: 'outboard-hardware',
-      label: 'External Devices',
-      items: [
-        {
-          key: 'outboard-hardware-overview',
-          label: 'Overview',
-          to: buildWorkspaceOutboardHardwarePath(),
-          match: (location) => location.pathname === buildWorkspaceOutboardHardwarePath(),
-        },
-        ...OUTBOARD_HARDWARE_DEVICES.map((device) => ({
-          key: `outboard-hardware-${device.deviceId}`,
-          label: device.displayName,
-          to: buildWorkspaceOutboardHardwarePath(device.deviceId),
-          match: (location) => location.pathname === buildWorkspaceOutboardHardwarePath(device.deviceId),
-        })),
       ],
     },
   ]

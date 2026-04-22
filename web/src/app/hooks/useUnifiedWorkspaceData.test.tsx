@@ -5,7 +5,6 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { useUnifiedWorkspaceData } from './useUnifiedWorkspaceData'
 
 const mockUsePlatformShellData = jest.fn()
-const mockGetSummary = jest.fn()
 const mockDiscover = jest.fn()
 const mockListCabinets = jest.fn()
 const mockListReverbs = jest.fn()
@@ -16,12 +15,6 @@ const mockListSoundfonts = jest.fn()
 
 jest.mock('./usePlatformShellData', () => ({
   usePlatformShellData: () => mockUsePlatformShellData(),
-}))
-
-jest.mock('../../map2/clients/enrichedPhysicalSurfaces', () => ({
-  enrichedPhysicalSurfacesApi: {
-    getSummary: () => mockGetSummary(),
-  },
 }))
 
 jest.mock('../../map2/api', () => ({
@@ -65,12 +58,6 @@ describe('useUnifiedWorkspaceData', () => {
       alerts: [{ id: 'a1', severity: 'warning' }],
     })
 
-    mockGetSummary.mockResolvedValue({
-      summary: {
-        units: [{ unit_id: 'maschine-mk1', status: 'online' }, { unit_id: 'mackie-mcu-pro', status: 'attention' }],
-        notifications: [{ id: 'note-1' }],
-      },
-    })
     mockDiscover.mockResolvedValue({
       plugins: [
         { uri: 'map2://juce/brain', format: 'JUCE' },
@@ -89,7 +76,7 @@ describe('useUnifiedWorkspaceData', () => {
     jest.clearAllMocks()
   })
 
-  it('combines platform, surface, artifact, and outboard summaries into one shell contract', async () => {
+  it('combines platform and artifact summaries into one shell contract', async () => {
     const { result } = renderHook(() => useUnifiedWorkspaceData(), { wrapper: makeWrapper() })
 
     await waitFor(() => {
@@ -98,16 +85,11 @@ describe('useUnifiedWorkspaceData', () => {
 
     expect(result.current.orderedSummaries.map((summary) => summary.key)).toEqual([
       'platforms',
-      'physical-surfaces',
       'artifacts',
-      'outboard-hardware',
     ])
     expect(result.current.summaries.platforms.metric).toBe('1 metric')
-    expect(result.current.summaries['physical-surfaces'].detail).toBe('1 notification · 1 online unit')
     expect(result.current.summaries.artifacts.detail).toContain('1 native plugin')
     expect(result.current.summaries.artifacts.detail).toContain('NAM active')
-    expect(result.current.summaries['outboard-hardware'].metric).toBe('5 devices')
-    expect(result.current.physicalSurfaces.summary?.units).toHaveLength(2)
   })
 
   it('isolates failing artifact queries to the artifact summary', async () => {
@@ -121,7 +103,5 @@ describe('useUnifiedWorkspaceData', () => {
 
     expect(result.current.summaries.artifacts.metric).toBe('Inventory partial')
     expect(result.current.summaries.platforms.isError).toBe(false)
-    expect(result.current.summaries['physical-surfaces'].isError).toBe(false)
-    expect(result.current.summaries['outboard-hardware'].isError).toBe(false)
   })
 })

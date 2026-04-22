@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Edirol UA-1000 hero artwork</title>
+  <desc id="desc">Stylized product hero artwork for the Edirol UA-1000 audio interface.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#06203a" />
+      <stop offset="100%" stop-color="#0353e9" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <rect x="140" y="220" width="1040" height="460" rx="26" fill="#0f1214" stroke="#8d8d8d" stroke-width="4" />
+  <g transform="translate(210 294)">
+    <rect width="900" height="312" rx="22" fill="#181c1f" />
+    <g fill="#f4f4f4">
+      <circle cx="110" cy="158" r="58" />
+      <circle cx="270" cy="158" r="58" />
+      <circle cx="430" cy="158" r="58" />
+      <circle cx="590" cy="158" r="58" />
+      <rect x="700" y="88" width="126" height="140" rx="18" />
+    </g>
+    <rect x="706" y="108" width="114" height="34" rx="10" fill="#0f62fe" />
+    <rect x="706" y="156" width="114" height="34" rx="10" fill="#3ddbd9" />
+  </g>
+  <text x="1220" y="326" fill="#d0e2ff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="36" letter-spacing="5">OUTBOARD HARDWARE</text>
+  <text x="1220" y="410" fill="#ffffff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="72" font-weight="700">EDIROL UA-1000</text>
+  <text x="1220" y="474" fill="#edf5ff" font-family="IBM Plex Sans, Arial, sans-serif" font-size="30">USB interface monitoring and front-of-rig audio control</text>
+</svg>

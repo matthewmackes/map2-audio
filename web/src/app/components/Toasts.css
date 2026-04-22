@@ -1888,6 +1888,81 @@
 }
 
 /* =========================================================================
+ * Live KPI strap
+ * ========================================================================= */
+
+.stage-mission-strap {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  min-height: 2rem;
+  padding: 0.35rem 0.85rem;
+  border-top: 1px solid var(--cds-border-strong);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background));
+  color: var(--cds-text-secondary);
+  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  overflow: hidden;
+}
+
+.stage-mission-strap__label {
+  color: var(--cds-support-success);
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stage-mission-strap__content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stage-mission-strap__scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: max-content;
+  white-space: nowrap;
+  animation: stage-mission-scroll 24s linear infinite;
+}
+
+.stage-mission-strap__scroll--static {
+  animation: none;
+  min-width: 0;
+  white-space: normal;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+}
+
+.stage-mission-strap__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18rem;
+  min-width: max-content;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-mission-strap__k {
+  color: var(--cds-text-helper);
+  text-transform: uppercase;
+}
+
+.stage-mission-strap__v,
+.stage-mission-strap__clock {
+  color: var(--cds-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-mission-strap__clock {
+  white-space: nowrap;
+  letter-spacing: 0.06em;
+}
+
+/* =========================================================================
  * Event log ticker
  * ========================================================================= */
 
@@ -2593,6 +2668,12 @@
     justify-content: flex-start;
     padding: 0.45rem 0.7rem;
   }
+  .stage-mission-strap {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .stage-mission-strap__clock {
+    display: none;
+  }
 }
 
 @media (max-width: 540px) {
@@ -2608,6 +2689,13 @@
     left: 0.75rem;
     justify-content: center;
   }
+  .stage-mission-strap {
+    gap: 0.5rem;
+    padding-inline: 0.65rem;
+  }
+  .stage-mission-strap__scroll {
+    animation-duration: 18s;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2618,6 +2706,7 @@
   .stage-notification-kyron--exit,
   .stage-chyron__strap--live,
   .stage-chyron__strap--rec,
+  .stage-mission-strap__scroll,
   .stage-notification-mini-kyron__bug {
     animation: none;
   }

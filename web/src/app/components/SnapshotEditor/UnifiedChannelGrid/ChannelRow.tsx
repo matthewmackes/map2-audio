@@ -14,6 +14,7 @@ export interface ChannelRowProps {
   onToggleSolo?: (rowId: string) => void
   onSelectBlock?: (rowId: string, slotIndex: number) => void
   onAddBlock?: (rowId: string, slotIndex: number) => void
+  onRemoveBlock?: (rowId: string, slotIndex: number) => void
 }
 
 export function ChannelRow({
@@ -24,6 +25,7 @@ export function ChannelRow({
   onToggleSolo,
   onSelectBlock,
   onAddBlock,
+  onRemoveBlock,
 }: ChannelRowProps) {
   const rowStyle: CSSProperties = {
     height: ROW_HEIGHTS.channel,
@@ -58,6 +60,7 @@ export function ChannelRow({
               slot={slot}
               selected={selectedSlotIndex === slot.index}
               onClick={(idx) => onSelectBlock?.(row.id, idx)}
+              onRemove={(idx) => onRemoveBlock?.(row.id, idx)}
             />
           ) : (
             <EmptySlot

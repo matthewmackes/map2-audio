@@ -2528,6 +2528,7 @@ export function SnapshotEditorPage() {
                 }
                 : baseParameters
               return {
+                snapshot_plugin_id: p.snapshot_plugin_id ?? null,
                 uri: p.uri,
                 position: i,
                 bypass: p.bypassed || false,

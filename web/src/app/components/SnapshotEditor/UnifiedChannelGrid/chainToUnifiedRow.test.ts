@@ -94,4 +94,24 @@ describe('chainToUnifiedRow', () => {
     const row = chainToUnifiedRow(chain, pluginMeta)
     expect(row.slots[0].bypass).toBe(true)
   })
+
+  it('maps CPU utilization from runtime identity keys with plugin fallback', () => {
+    const pluginMeta: Record<string, Plugin> = {
+      'plugin://a': meta('plugin://a', 'EQ'),
+      'plugin://b': meta('plugin://b', 'Delay'),
+    }
+    const chain = chainFixture([
+      { uri: 'plugin://a', position: 0, instance_id: 101, cpu_percent: 1.2 },
+      { uri: 'plugin://b', position: 1, cpu_percent: 2.4 },
+    ])
+
+    const row = chainToUnifiedRow(chain, pluginMeta, {
+      pluginCpuPercentByKey: {
+        'instance:101': 7.5,
+      },
+    })
+
+    expect(row.slots[0].cpuPercent).toBe(7.5)
+    expect(row.slots[1].cpuPercent).toBe(2.4)
+  })
 })

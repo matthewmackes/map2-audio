@@ -70,6 +70,13 @@ export type DeviceStatusSource =
   /** Device is declared but no live detection is performed (planned/placeholder). */
   | { kind: 'planned' }
 
+export interface DeviceTransportLayer {
+  id: string
+  label: string
+  /** One-word status: 'online', 'detected', 'planned'. */
+  status: 'online' | 'detected' | 'planned' | 'offline'
+}
+
 export interface DeviceRegistryEntry {
   /** URL slug: `/devices/:deviceId`. */
   id: string
@@ -81,6 +88,8 @@ export interface DeviceRegistryEntry {
   icon: DeviceIcon
   /** Accent color for the device's card + sidebar row. */
   color: string
+  /** Short eyebrow (family / category) rendered above the card title. */
+  eyebrow: string
   /** One-sentence description for the card tile. */
   description: string
   /** Sub-view id to land on when navigating to `/devices/:deviceId`. */
@@ -99,6 +108,14 @@ export interface DeviceRegistryEntry {
    * (hardware interfaces and processors); control surfaces manage presence separately.
    */
   deviceContextKey?: string
+  /** Capability chips shown on the hero card. */
+  capabilities: string[]
+  /** Transport layers rendered beneath the capability row. */
+  transportLayers: DeviceTransportLayer[]
+  /** One line under the card title above the hero image. */
+  currentViewLabel: string
+  /** Optional host-observation note shown once per overview (first match wins). */
+  hostObservation?: string
 }
 
 // =============================================================================
@@ -181,13 +198,20 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'MPX1',
     icon: Waveform,
     color: '#a78bfa',
-    description: 'Lexicon MPX-1 rack multi-effects processor with 601-parameter registry.',
+    eyebrow: 'mpx1',
+    description: 'Lexicon MPX-1 rack multi-effects processor with 601-parameter registry, editor, library, MIDI mapping, and diagnostics.',
+    currentViewLabel: 'Panel',
     defaultView: 'panel',
     views: MPX1_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'lexicon-mpx1' },
     kind: 'processor',
     legacyRoute: '/mpx1',
     deviceContextKey: 'lexicon-mpx1',
+    capabilities: ['601-parameter editor', 'Scenes & morph', 'MIDI SysEx', 'Library & .syx import'],
+    transportLayers: [
+      { id: 'midi-sysex', label: 'MIDI SysEx', status: 'online' },
+      { id: 'realtime-params', label: 'Realtime parameter control', status: 'online' },
+    ],
   },
   {
     id: 'intelfx',
@@ -195,13 +219,20 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'IntelFX',
     icon: Waveform,
     color: '#f59e0b',
-    description: 'Rocktron IntelliFex rack-mount guitar multi-effects.',
+    eyebrow: 'intelfx',
+    description: 'Rocktron IntelliFex rack-mount guitar multi-effects — signal-flow editor, preset library, scenes, and realtime parameter work.',
+    currentViewLabel: 'Panel',
     defaultView: 'panel',
     views: INTELFX_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'rocktron-intelfx' },
     kind: 'processor',
     legacyRoute: '/intelfx',
     deviceContextKey: 'rocktron-intelfx',
+    capabilities: ['Signal-flow editor', 'Preset library', 'MIDI mapping', 'Monitor views'],
+    transportLayers: [
+      { id: 'midi-sysex', label: 'MIDI SysEx', status: 'online' },
+      { id: 'realtime-params', label: 'Realtime parameter control', status: 'online' },
+    ],
   },
   {
     id: 'tesira',
@@ -209,13 +240,21 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'Tesira',
     icon: Network_3,
     color: '#38bdf8',
-    description: 'Biamp Tesira AVB-Enterprise DSP — 12 managed views.',
+    eyebrow: 'biamp-tesira',
+    description: 'Biamp Tesira AVB-Enterprise DSP — fleet supervision, AVB topology, DSP blocks, presets, and deployment posture.',
+    currentViewLabel: 'Dashboard',
     defaultView: 'dashboard',
     views: TESIRA_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'biamp-tesira' },
     kind: 'processor',
     legacyRoute: '/tesira',
     deviceContextKey: 'biamp-tesira',
+    capabilities: ['Fleet health', 'DSP block editing', 'AVB topology', 'Preset workflows'],
+    transportLayers: [
+      { id: 'ttp-ssh', label: 'TTP / SSH control', status: 'online' },
+      { id: 'avb-transport', label: 'AVB transport', status: 'online' },
+      { id: 'preset-orch', label: 'Preset orchestration', status: 'detected' },
+    ],
   },
   {
     id: 'edirol-ua1000',
@@ -223,13 +262,20 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'UA-1000',
     icon: Music,
     color: '#14b8a6',
-    description: 'Roland/Edirol UA-1000 USB 2.0 10-in/10-out audio interface.',
+    eyebrow: 'edirol-ua1000',
+    description: 'Roland/Edirol UA-1000 USB 2.0 10-in/10-out audio interface — latency posture, clocking, routing, and diagnostics.',
+    currentViewLabel: 'Overview',
     defaultView: 'overview',
     views: EDIROL_UA1000_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'edirol-ua1000' },
     kind: 'audio-interface',
     legacyRoute: '/edirol-ua1000',
     deviceContextKey: 'edirol-ua1000',
+    capabilities: ['Runtime status', 'Latency posture', 'Clocking', 'Host visibility'],
+    transportLayers: [
+      { id: 'usb-audio', label: 'USB audio', status: 'online' },
+      { id: 'alsa-pipewire', label: 'ALSA / PipeWire', status: 'online' },
+    ],
   },
   {
     id: 'hotone-jogg',
@@ -237,13 +283,20 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'JoGG',
     icon: Music,
     color: '#818cf8',
-    description: 'HoTone JoGG portable USB audio interface.',
+    eyebrow: 'hotone-jogg',
+    description: 'HoTone JoGG portable USB audio interface — host detection, profile-aware status, and interface controls.',
+    currentViewLabel: 'Overview',
     defaultView: 'overview',
     views: HOTONE_JOGG_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'hotone-jogg' },
     kind: 'audio-interface',
     legacyRoute: '/hotone-jogg',
     deviceContextKey: 'hotone-jogg',
+    capabilities: ['Runtime detection', 'Profile-specific controls', 'Host status'],
+    transportLayers: [
+      { id: 'usb-audio', label: 'USB audio', status: 'online' },
+      { id: 'host-profile', label: 'Host profile detection', status: 'detected' },
+    ],
   },
   {
     id: 'lcd',
@@ -251,26 +304,40 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'LCD',
     icon: ScreenMap,
     color: '#22c55e',
-    description: 'MAP2 on-site LCD console — displays, events, nodes, alerts.',
+    eyebrow: 'lcd-console',
+    description: 'MAP2 on-site LCD console — displays, events, nodes, alerts, and hardware settings.',
+    currentViewLabel: 'Displays',
     defaultView: 'displays',
     views: LCD_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'lcd-console' },
     kind: 'console',
     legacyRoute: '/lcd',
+    capabilities: ['Display surfaces', 'Event feed', 'Node alerts', 'Hardware settings'],
+    transportLayers: [
+      { id: 'lcd-bridge', label: 'On-site LCD bridge', status: 'detected' },
+    ],
   },
 
   // --- Control surfaces (physical performers)
   {
     id: 'maschine-mk1',
-    label: 'NI Maschine MK1',
+    label: 'Native Instruments Maschine MK1',
     shortLabel: 'Maschine',
     icon: Terminal,
     color: '#ec4899',
-    description: 'Native Instruments Maschine MK1 — primary headless control surface.',
+    eyebrow: 'maschine',
+    description: 'Maschine daemon is registered and the enriched surface path is online through usb-bulk.',
+    currentViewLabel: 'Primary Synth Parameters',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'physical-surface', surfaceId: 'maschine-mk1' },
     kind: 'control-surface',
+    capabilities: ['pads', 'encoders', 'transport', 'group buttons'],
+    transportLayers: [
+      { id: 'alsa-midi', label: 'ALSA MIDI', status: 'online' },
+      { id: 'vendor-usb', label: 'Vendor USB feedback', status: 'online' },
+    ],
+    hostObservation: 'Current host sees Maschine as Native Instruments 17cc:0808 on snd-usb-caiaq with MIDI exposure but no PCM stream; existing MK1 daemon expects hidapi, so LCD/LED enrichment needs a shared vendor-transport path.',
   },
   {
     id: 'ableton-push',
@@ -278,11 +345,18 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'Push',
     icon: Terminal,
     color: '#8d8d8d',
-    description: 'Ableton Push — grid control surface (planned).',
+    eyebrow: 'push',
+    description: 'No Push-class device is currently active.',
+    currentViewLabel: 'Synth Grid',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
+    capabilities: ['pads', 'encoders', 'display feedback', 'button feedback'],
+    transportLayers: [
+      { id: 'midihub-bridge', label: 'MidiHub device bridge', status: 'planned' },
+      { id: 'display-light', label: 'Display and light renderer', status: 'planned' },
+    ],
   },
   {
     id: 'ground-control-pro',
@@ -290,11 +364,18 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'GCP',
     icon: Terminal,
     color: '#f97316',
-    description: 'Voodoo Lab Ground Control Pro MIDI foot controller.',
+    eyebrow: 'ground-control-pro',
+    description: 'Ground Control Pro exposes 3 input(s) and 2 output(s) for the shared SysEx branch.',
+    currentViewLabel: 'Snapshot Recall',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'physical-surface', surfaceId: 'ground-control-pro' },
     kind: 'control-surface',
+    capabilities: ['full-memory SysEx backup', 'structured validation', 'safe retransmit', 'transport selection'],
+    transportLayers: [
+      { id: 'sysex-imex', label: 'SysEx import/export', status: 'detected' },
+      { id: 'port-transport', label: 'Port transport', status: 'detected' },
+    ],
   },
   {
     id: 'meloaudio-midi-commander',
@@ -302,23 +383,36 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'MIDI Cmd',
     icon: Terminal,
     color: '#a78bfa',
-    description: 'MeloAudio MIDI Commander foot controller (planned).',
+    eyebrow: 'meloaudio',
+    description: 'No matching hardware is currently visible on this host.',
+    currentViewLabel: 'Synth Macros',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
+    capabilities: ['footswitches', 'expression pedals', 'profile-based mapping', 'calibration'],
+    transportLayers: [
+      { id: 'profile-midi', label: 'Profile-driven MIDI mapping', status: 'planned' },
+    ],
   },
   {
     id: 'novation-launch-control',
-    label: 'Novation Launch Control',
+    label: 'Novation Launch Control Family',
     shortLabel: 'Launch',
     icon: Terminal,
     color: '#22c55e',
-    description: 'Novation Launch Control MIDI surface (planned).',
+    eyebrow: 'launch-control',
+    description: 'No matching hardware is currently visible on this host.',
+    currentViewLabel: 'Synth Macros',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
+    capabilities: ['knobs', 'pads/buttons', 'LED feedback', 'template-driven MIDI control'],
+    transportLayers: [
+      { id: 'profile-midi', label: 'Profile-driven MIDI mapping', status: 'planned' },
+      { id: 'pad-feedback', label: 'Pad and button feedback', status: 'planned' },
+    ],
   },
   {
     id: 'mackie-mcu-pro',
@@ -326,11 +420,18 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     shortLabel: 'MCU',
     icon: Terminal,
     color: '#14b8a6',
-    description: 'Mackie Universal Control Pro motorized fader surface (planned).',
+    eyebrow: 'mcu-pro',
+    description: 'No matching hardware is currently visible on this host.',
+    currentViewLabel: 'Current View Mix',
     defaultView: 'overview',
     views: CONTROL_SURFACE_PLANNED_VIEWS,
     statusSource: { kind: 'planned' },
     kind: 'control-surface',
+    capabilities: ['motor faders', 'VPots', 'transport', 'scribble strips'],
+    transportLayers: [
+      { id: 'mcu-protocol', label: 'MCU protocol', status: 'planned' },
+      { id: 'motor-display', label: 'Motor and display feedback', status: 'planned' },
+    ],
   },
 ]
 

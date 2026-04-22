@@ -82,29 +82,6 @@ jest.mock('./pages/workspace-hub/platforms/PlatformWorkspaceSection', () => ({
   },
 }))
 
-jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOutlet', () => ({
-  WorkspacePhysicalSurfacesOutlet: () => {
-    const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    return <Outlet />
-  },
-}))
-
-jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage', () => ({
-  WorkspacePhysicalSurfacesOverviewPage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="workspace-physical-surfaces-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
-jest.mock('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitPage', () => ({
-  WorkspacePhysicalSurfaceUnitPage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="workspace-physical-surface-unit-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
 jest.mock('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage', () => ({
   WorkspaceArtifactsOverviewPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -118,29 +95,6 @@ jest.mock('./pages/workspace-hub/artifacts/WorkspaceArtifactsDiscoverPage', () =
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="workspace-artifacts-discover-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
-jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet', () => ({
-  WorkspaceOutboardHardwareOutlet: () => {
-    const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    return <Outlet />
-  },
-}))
-
-jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage', () => ({
-  WorkspaceOutboardHardwareOverviewPage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="workspace-outboard-hardware-route">{`${location.pathname}${location.search}`}</div>
-  },
-}))
-
-jest.mock('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage', () => ({
-  WorkspaceOutboardHardwareDevicePage: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
-    const location = mockUseLocation()
-    return <div data-testid="workspace-outboard-hardware-device-route">{`${location.pathname}${location.search}`}</div>
   },
 }))
 
@@ -202,6 +156,14 @@ jest.mock('./components/Devices/DevicesShell', () => ({
   DevicesShell: () => {
     const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     return <Outlet />
+  },
+}))
+
+jest.mock('./components/Devices/DevicesOverview', () => ({
+  DevicesOverview: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="devices-overview-route">{`${location.pathname}${location.search}`}</div>
   },
 }))
 
@@ -324,40 +286,38 @@ describe('App routing', () => {
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
-  it('keeps the new workspace hub outboard hardware scaffold route available inside AppShell', async () => {
+  it('redirects the retired /workspace/outboard-hardware route into the unified /devices workspace', async () => {
     navigateTo('/workspace/outboard-hardware')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-outboard-hardware-route')).toHaveTextContent('/workspace/outboard-hardware')
-    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
-  it('mounts the migrated outboard-hardware device route inside the workspace hub', async () => {
+  it('redirects retired /workspace/outboard-hardware/:deviceId paths into the unified /devices workspace', async () => {
     navigateTo('/workspace/outboard-hardware/lexicon-mpx1')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-outboard-hardware-device-route')).toHaveTextContent('/workspace/outboard-hardware/lexicon-mpx1')
-    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
   })
 
-  it('mounts the migrated physical-surfaces overview inside the workspace hub', async () => {
+  it('redirects the retired /workspace/physical-surfaces route into the unified /devices workspace', async () => {
     navigateTo('/workspace/physical-surfaces')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-physical-surfaces-route')).toHaveTextContent('/workspace/physical-surfaces')
-    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
-  it('redirects the legacy physical-surfaces overview into the workspace hub path', async () => {
+  it('redirects the legacy top-level /physical-surfaces path into the unified /devices workspace', async () => {
     navigateTo('/physical-surfaces')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-physical-surfaces-route')).toHaveTextContent('/workspace/physical-surfaces')
-    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
   })
 
   it('mounts the migrated audio-artifacts overview inside the workspace hub', async () => {
@@ -387,13 +347,12 @@ describe('App routing', () => {
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
-  it('redirects the legacy outboard-hardware device route into the workspace hub path', async () => {
+  it('redirects the legacy top-level /outboard-hardware/:deviceId path into the unified /devices workspace', async () => {
     navigateTo('/outboard-hardware/lexicon-mpx1')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-outboard-hardware-device-route')).toHaveTextContent('/workspace/outboard-hardware/lexicon-mpx1')
-    expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
+    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
   })
 
   it('redirects the retired Workspace Catalog route into the canonical workspace hub overview', async () => {

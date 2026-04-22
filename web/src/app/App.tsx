@@ -20,8 +20,7 @@ import {
 } from './platform/routes'
 import { LoadingState } from './components/shared/LoadingState'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
-import { buildWorkspacePhysicalSurfacesPath } from './pages/physicalSurfacesRoutes'
-import { buildWorkspaceOutboardHardwarePath } from './pages/outboardHardwareRoutes'
+import { buildDeviceRoute, getDeviceEntry } from './data/deviceRegistry'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -36,14 +35,8 @@ const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const PlatformWorkspaceSection = lazy(() => import('./pages/workspace-hub/platforms/PlatformWorkspaceSection').then(m => ({ default: m.PlatformWorkspaceSection })))
-const WorkspacePhysicalSurfacesOutlet = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOutlet').then(m => ({ default: m.WorkspacePhysicalSurfacesOutlet })))
-const WorkspacePhysicalSurfacesOverviewPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfacesOverviewPage').then(m => ({ default: m.WorkspacePhysicalSurfacesOverviewPage })))
-const WorkspacePhysicalSurfaceUnitPage = lazy(() => import('./pages/workspace-hub/physical-surfaces/WorkspacePhysicalSurfaceUnitPage').then(m => ({ default: m.WorkspacePhysicalSurfaceUnitPage })))
 const WorkspaceArtifactsOverviewPage = lazy(() => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage').then(m => ({ default: m.WorkspaceArtifactsOverviewPage })))
 const WorkspaceArtifactsDiscoverPage = lazy(() => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsDiscoverPage').then(m => ({ default: m.WorkspaceArtifactsDiscoverPage })))
-const WorkspaceOutboardHardwareOutlet = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOutlet').then(m => ({ default: m.WorkspaceOutboardHardwareOutlet })))
-const WorkspaceOutboardHardwareOverviewPage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareOverviewPage').then(m => ({ default: m.WorkspaceOutboardHardwareOverviewPage })))
-const WorkspaceOutboardHardwareDevicePage = lazy(() => import('./pages/workspace-hub/outboard-hardware/WorkspaceOutboardHardwareDevicePage').then(m => ({ default: m.WorkspaceOutboardHardwareDevicePage })))
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
@@ -245,13 +238,17 @@ function LegacyPlatformWorkspaceRedirect() {
 function LegacyPhysicalSurfacesRedirect() {
   const location = useLocation()
   const params = useParams<{ surfaceId?: string }>()
-  return <Navigate to={`${buildWorkspacePhysicalSurfacesPath(params.surfaceId)}${location.search || ''}`} replace />
+  const targetId = params.surfaceId && getDeviceEntry(params.surfaceId) ? params.surfaceId : null
+  const target = targetId ? buildDeviceRoute(targetId) : '/devices'
+  return <Navigate to={`${target}${location.search || ''}`} replace />
 }
 
 function LegacyOutboardHardwareRedirect() {
   const location = useLocation()
   const params = useParams<{ deviceId?: string }>()
-  return <Navigate to={`${buildWorkspaceOutboardHardwarePath(params.deviceId)}${location.search || ''}`} replace />
+  const targetId = params.deviceId && getDeviceEntry(params.deviceId) ? params.deviceId : null
+  const target = targetId ? buildDeviceRoute(targetId) : '/devices'
+  return <Navigate to={`${target}${location.search || ''}`} replace />
 }
 
 function MPX1LegacyRedirect() {
@@ -398,11 +395,12 @@ export function App() {
                                   />
                                   <Route
                                     path="physical-surfaces"
-                                    element={<WorkspacePhysicalSurfacesOutlet />}
-                                  >
-                                    <Route index element={<WorkspacePhysicalSurfacesOverviewPage />} />
-                                    <Route path=":surfaceId" element={<WorkspacePhysicalSurfaceUnitPage />} />
-                                  </Route>
+                                    element={<Navigate to="/devices" replace />}
+                                  />
+                                  <Route
+                                    path="physical-surfaces/:surfaceId"
+                                    element={<LegacyPhysicalSurfacesRedirect />}
+                                  />
                                   <Route
                                     path="artifacts"
                                     element={<WorkspaceArtifactsOverviewPage />}
@@ -413,11 +411,12 @@ export function App() {
                                   />
                                   <Route
                                     path="outboard-hardware"
-                                    element={<WorkspaceOutboardHardwareOutlet />}
-                                  >
-                                    <Route index element={<WorkspaceOutboardHardwareOverviewPage />} />
-                                    <Route path=":deviceId" element={<WorkspaceOutboardHardwareDevicePage />} />
-                                  </Route>
+                                    element={<Navigate to="/devices" replace />}
+                                  />
+                                  <Route
+                                    path="outboard-hardware/:deviceId"
+                                    element={<LegacyOutboardHardwareRedirect />}
+                                  />
                                 </Route>
                                 <Route path="/labs/push-surface" element={<PushSurfacePage />} />
                                 <Route path="/maschine" element={<MaschinePage />} />

@@ -71,36 +71,36 @@ function renderWithProviders(node: React.ReactNode) {
 }
 
 describe('DevicesOverview', () => {
-  it('renders each hardware + control-surface entry', async () => {
+  it('renders each hardware + control-surface entry as a hero card', async () => {
     renderWithProviders(<DevicesOverview />)
-    expect(screen.getByText('Devices')).toBeInTheDocument()
+    expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
     expect(screen.getByText('Lexicon MPX-1')).toBeInTheDocument()
     expect(screen.getByText('Rocktron IntelliFex')).toBeInTheDocument()
     expect(screen.getByText('Biamp Tesira')).toBeInTheDocument()
     expect(screen.getByText('Edirol UA-1000')).toBeInTheDocument()
     expect(screen.getByText('HoTone JoGG')).toBeInTheDocument()
     expect(screen.getByText('LCD Console')).toBeInTheDocument()
-    expect(screen.getByText('NI Maschine MK1')).toBeInTheDocument()
+    expect(screen.getByText('Native Instruments Maschine MK1')).toBeInTheDocument()
     expect(screen.getByText('Ableton Push')).toBeInTheDocument()
   })
 
-  it('groups tiles under kind headings', () => {
+  it('groups cards under kind section headings', () => {
     renderWithProviders(<DevicesOverview />)
     expect(screen.getByText('Audio interfaces')).toBeInTheDocument()
     expect(screen.getByText('Processors')).toBeInTheDocument()
     expect(screen.getByText('Consoles')).toBeInTheDocument()
-    expect(screen.getByText('Control surfaces')).toBeInTheDocument()
+    expect(screen.getByText('Physical Surfaces')).toBeInTheDocument()
   })
 
-  it('marks devices as Online when inventory matches', () => {
+  it('marks devices as online when inventory matches', () => {
     renderWithProviders(<DevicesOverview />)
-    const onlineTags = screen.getAllByText('Online')
+    const onlineTags = screen.getAllByText('online')
     expect(onlineTags.length).toBeGreaterThan(0)
   })
 
-  it('shows Planned for surfaces without a source', () => {
+  it('shows planned for surfaces without a data source', () => {
     renderWithProviders(<DevicesOverview />)
-    const plannedTags = screen.getAllByText('Planned')
+    const plannedTags = screen.getAllByText('planned')
     expect(plannedTags.length).toBeGreaterThan(0)
   })
 })
