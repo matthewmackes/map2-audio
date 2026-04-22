@@ -98,3 +98,35 @@ None of these alter locked plan decisions; they are validation + polish that bui
 | d760b521 | POST — MorphPad inline in Snapshot Editor |
 
 Every commit dual-pushed to origin (GitHub) + gitlab (GitLab) before moving to the next slice.
+
+---
+
+## 8. Second closure addendum — correction-receiving routes
+
+One final slice landed after the closure addendum above:
+
+| SHA | Slice |
+|-----|-------|
+| b02d45a8 | Correction-receiving routes — close the cluster loop |
+
+### What it adds
+
+Before this slice the cluster transport (`state_authority_cluster_transport.py`) POSTed to two endpoints — `/api/snapshots/{id}/apply-parameters` and `/api/assets/{hash}/deploy` — that did not exist in the route registry. Layer 2 could detect drift but corrections would receive 404 at the remote. This slice lands both routes:
+
+- **`POST /api/snapshots/{snapshot_id}/apply-parameters`** — walks `desired.chains[*].plugins[*].parameters` and calls `engine.set_parameter(uri, symbol, value, plugin_position=...)` for every numeric entry. Returns structured counts `{applied, skipped, total_observed}` so the reconciler reports partial-success. Skips plugins without URI, non-numeric values, and engine failures — never raises.
+- **`POST /api/assets/{asset_hash}/deploy`** — confirms a content-addressed asset is locally present at `~/.map2/assets/{sha256}/{file}`. Returns 400 for bad format, 404 with distinct `asset_not_local` / `asset_directory_empty` codes for the management node to escalate, and 200 + `{asset_hash, local_path, size_bytes}` on success.
+
+Both routes are registered in `app.main` alongside the catalog routes; they use the standard error envelope per `docs/api-contract-standards.md`.
+
+### Tests
+
+`tests/test_state_authority_corrections_route.py` — 10/10 PASS covering every path:
+
+- Apply-parameters: engine-missing 503, stale-engine 501, happy path with full counts, skips non-numeric values, skips plugins without URI, counts engine refusal as skipped, swallows exceptions and counts as skipped.
+- Asset-deploy: invalid-hash 400, directory-missing 404 with `asset_not_local`, directory-present-but-empty 404 with `asset_directory_empty`, success with path + size.
+
+### Final cumulative total
+
+**246 backend State Authority tests PASS** (up from 236, +10 correction route tests).
+
+With the correction routes live, the Layer 2 reconciler is now **end-to-end functional** on a management node: detect drift → push parameters → trigger reactivation → redeploy assets → all reach the remote worker and apply. The default `apply_cluster_corrections=False` config key still keeps the scheduler in observe-only mode so operators can watch metrics first; flipping the key fully enables the tiered response from plan Q55.
