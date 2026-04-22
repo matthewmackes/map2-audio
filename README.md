@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1238** Python | **1195** TypeScript | **136** C++/H | **144** Docs | **2632** total commits | **3** stars | **0** forks | **0** open issues
+**1242** Python | **1197** TypeScript | **136** C++/H | **144** Docs | **2636** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c82d915c`](https://github.com/matthewmackes/map2-audio/commit/c82d915ca3dea9b6e1584bc332fef15b2bf7cbcb) | feat(state-authority): T2425-POST — hook catalog + Layer ... | Map2 Audio | 2026-04-22 |
+| [`d7da2f80`](https://github.com/matthewmackes/map2-audio/commit/d7da2f80fe7cec4ee4b4460289a1fb2394a5e36c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
+| [`42e4d174`](https://github.com/matthewmackes/map2-audio/commit/42e4d174c077564b6c5a1d25c106d570037f336c) | feat(state-authority): T2425-UX — /state-authority worksp... | Map2 Audio | 2026-04-22 |
+| [`959d5ccf`](https://github.com/matthewmackes/map2-audio/commit/959d5ccff9074fea16d43c2c5f459a475a807108) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`39799be6`](https://github.com/matthewmackes/map2-audio/commit/39799be6e5c0f2eef32a0bb011270412e6908d01) | feat(state-authority): T2425 — app.main lifespan wiring +... | Map2 Audio | 2026-04-22 |
 | [`ab346404`](https://github.com/matthewmackes/map2-audio/commit/ab346404fa2203267cb1e422039f6fe202b7f8fe) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
 | [`1cd62e32`](https://github.com/matthewmackes/map2-audio/commit/1cd62e32fa876eee9a42cf9fcd72213789f54ec5) | feat(state-authority): T2425-UX — BlockPicker wired to to... | Map2 Audio | 2026-04-22 |
 | [`0f6b8a1c`](https://github.com/matthewmackes/map2-audio/commit/0f6b8a1c6b1ca5708c7e5241685f8593c193a996) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`8fe22f32`](https://github.com/matthewmackes/map2-audio/commit/8fe22f32352b413468d9f04c010f67db9cc000dd) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
-| [`f17d58e4`](https://github.com/matthewmackes/map2-audio/commit/f17d58e45c0140e86c13044fd557050ee06cd038) | feat(state-authority): T2425-UX — MorphPad + route extens... | Map2 Audio | 2026-04-22 |
-| [`0b53e7ab`](https://github.com/matthewmackes/map2-audio/commit/0b53e7ab4047db4ccc4c43de2634b69fca2da3a5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`1a64faee`](https://github.com/matthewmackes/map2-audio/commit/1a64faee215fafb9db43ec8acdd9f0bcaaca77af) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
