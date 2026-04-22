@@ -732,39 +732,50 @@ async def lifespan(app):
                     from app.services.state_authority_cluster_reconciler import (
                         ClusterReconciler,
                     )
+                    from app.services.state_authority_cluster_transport import (
+                        fetch_observed_snapshot,
+                        list_cluster_node_ids,
+                        push_node_parameters,
+                        redeploy_asset_to_node,
+                        trigger_node_reactivation,
+                    )
 
                     async def _cluster_desired_state():
                         try:
-                            live = await _live_payload_producer()
-                            return live
+                            return await _live_payload_producer()
                         except Exception:
                             return None
 
-                    async def _cluster_observed_state(node_id: str):
-                        # Follow-up will fetch via /api/node/{id}/proxy/api/snapshots/live.
-                        # For now the observed producer is a no-op returning None,
-                        # which reports the node as offline in the report. This
-                        # keeps the scheduler green until the proxy path is wired.
-                        return None
-
-                    async def _cluster_list_nodes():
-                        try:
-                            from app.services.peer_discovery import list_peer_node_ids  # type: ignore
-                            return await list_peer_node_ids()
-                        except Exception:
-                            return []
+                    # Apply corrections is gated on config so operators can
+                    # start in observe-only mode before enabling auto-fix.
+                    apply_cluster_corrections = bool(
+                        _cfg_get("state_authority.apply_cluster_corrections", False)
+                    )
+                    cluster_tolerance = float(
+                        _cfg_get("state_authority.cluster_tolerance", 0.01) or 0.01
+                    )
 
                     cluster_reconciler_obj = ClusterReconciler(
                         desired_state=_cluster_desired_state,
-                        observed_state=_cluster_observed_state,
-                        list_nodes=_cluster_list_nodes,
-                        apply_corrections=False,  # Follow-up wires correction handlers
+                        observed_state=fetch_observed_snapshot,
+                        list_nodes=list_cluster_node_ids,
+                        push_params=push_node_parameters,
+                        trigger_reactivation=trigger_node_reactivation,
+                        redeploy_asset=redeploy_asset_to_node,
+                        tolerance=cluster_tolerance,
+                        apply_corrections=apply_cluster_corrections,
                     )
 
                     async def _cluster_reconciler_callable():
                         return await cluster_reconciler_obj.reconcile()
 
                     cluster_reconciler_callable = _cluster_reconciler_callable
+                    logger.info(
+                        "State Authority cluster reconciler composed "
+                        "(apply_corrections=%s, tolerance=%s)",
+                        apply_cluster_corrections,
+                        cluster_tolerance,
+                    )
                 except Exception as exc:
                     logger.debug("Cluster reconciler composition skipped: %s", exc)
 

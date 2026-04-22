@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority epic COMPLETE + follow-ups shipped (dedicated /state-authority workspace page, activation hook catalog, Layer 2 cluster reconciler composition, cluster reconciler wired into app.main lifespan). 204 tests PASS, 93 pre-existing tests unchanged, 16 commits dual-pushed.
+Last updated: 2026-04-22 EDT - T2425 State Authority + POST-ALL follow-ups shipped including real HTTP cluster transport (observed-state + push_params + trigger_reactivation + redeploy_asset + peer enumeration). 230 backend State Authority tests PASS, 434 combined snapshot/chain/state-authority tests PASS, 17 commits dual-pushed.
 
 ---
 
@@ -33,6 +33,32 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-TRANSPORT
+Status: [✓] Done
+Title: Post-epic — real HTTP cluster transport for Layer 2 reconciler
+Description:
+- Goal / acceptance criteria: Replace the stub observed-state producer (returning None = treating every node as offline) with a concrete HTTP transport that reaches remote nodes through the existing `/api/node/{id}/proxy/...` middleware. Wire all four tier handlers (push_params, trigger_reactivation, redeploy_asset, failover) so the management node actually self-heals drift across the cluster instead of just reporting it.
+- Why it matters: The foundation was landed with a no-op observed producer so tests stayed green; this slice makes Layer 2 real. When the management node ticks Layer 2 every 5s, it now walks every peer, fetches `/api/snapshots/live` through the proxy, compares to desired-state, and dispatches the tiered response from plan Q55.
+- Dependencies: T2425 epic complete, cluster reconciler composition already in app.main.
+- Shipped outputs:
+  - `app/services/state_authority_cluster_transport.py` — httpx-backed producers + handlers:
+    - `fetch_observed_snapshot(node_id)` → GET /api/node/{id}/proxy/api/snapshots/live
+    - `push_node_parameters(node_id, desired)` → POST /api/node/{id}/proxy/api/snapshots/{sid}/apply-parameters
+    - `trigger_node_reactivation(node_id, snapshot_id)` → POST /api/node/{id}/proxy/api/snapshots/{sid}/activate
+    - `redeploy_asset_to_node(node_id, "sha256:…")` → POST /api/node/{id}/proxy/api/assets/{ref}/deploy
+    - `list_cluster_node_ids()` via `get_visible_remote_nodes()`
+    - All honor short default timeouts (3s) and degrade to None/False on any transport or status failure.
+  - `app/main.py` lifespan now wires the concrete transport into `ClusterReconciler` when the node is management. Behavior is gated by two config keys:
+    - `state_authority.apply_cluster_corrections` (default False — observe-only mode)
+    - `state_authority.cluster_tolerance` (default 0.01 = 1%, matches plan Q23)
+- Tests: `tests/test_state_authority_cluster_transport.py` 16/16 PASS covering every producer + handler path with httpx.MockTransport (happy path, 404, transport error, non-dict JSON, missing snapshot id, non-sha256 asset ref, timeout, peer-enumeration graceful degradation including ImportError + exception).
+- Validation: 230 backend State Authority tests PASS, 434 combined snapshot/chain/state-authority tests PASS. No regressions. `from app.main import app` PASS.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped real HTTP transport for Layer 2 cluster reconciler)
+Completion note: 2026-04-22 - Claude: Observed-state, correction handlers, and peer enumeration all real-HTTP-backed. Management-node default stays observe-only (apply_cluster_corrections=False) so operators can watch the metrics tick up without auto-fix surprises; flipping the config key enables tiered response (param push → full reactivation → asset redeploy).
+
+---
 
 ID: T2425-POST
 Status: [✓] Done
