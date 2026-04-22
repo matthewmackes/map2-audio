@@ -33,6 +33,28 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-P5
+Status: [✓] Done
+Title: Phase 5 — Reconciliation scheduler + Prometheus metrics (Layer 1 + Layer 2)
+Description:
+- Goal / acceptance criteria: Land the two-layer reconciliation scheduler per plan §Reconciliation — Layer 1 per-node local self-heal every 5s (Q44), Layer 2 management-node cross-node coordination every 5s (offset phase), 1% drift tolerance (Q23), tiered response (Q55), Prometheus metrics (drift_count, last_reconcile_ts), runtime event logging not revision pollution (Q95). Scheduler is asyncio-native with clean start/stop cancellation.
+- Why it matters: Reconciliation is what makes the tonechaser workflow cluster-safe — without it, parameter changes via MIDI CC on node A silently diverge from desired-state on every other node until someone notices. With it, 1% drift self-heals within 5s, topology drift routes to management for full re-activation, asset drift triggers redeploy.
+- Dependencies: Layer 1 reconciliation service already exists (`state_authority_reconciliation_service.py`). This subtask adds the scheduler + metrics + Layer 2 composition hook.
+- Verified capabilities (new `state_authority_reconciliation_scheduler.py`):
+  - `ReconciliationMetrics` dataclass: 11 counters + 2 timestamps + last-status + last-error for both layers.
+  - `ReconciliationSchedulerConfig` with 5s default intervals and 1% default tolerance (matches plan Q23/Q44).
+  - `StateAuthorityReconciliationScheduler` with injected `live_payload_producer`, `local_reconciler`, and optional `cluster_reconciler` — all coroutine-callable.
+  - `start()` / `stop()` create and cancel asyncio tasks cleanly. Cluster loop only starts when `is_management_node=True` AND a cluster reconciler is injected (Q55 — only management runs Layer 2).
+  - Cluster loop is offset by half-interval so the two layers don't hit the engine simultaneously.
+  - `render_metrics_as_prometheus()` emits Prometheus text exposition with `map2_state_authority_*` prefix for 8 series.
+  - Errors in either layer set `last_*_status="error"` + `last_*_error` without crashing the loop.
+- Verified test output: `tests/test_state_authority_reconciliation_scheduler.py` → 13/13 PASS.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Landed scheduler + Prometheus surface. Existing Layer 1 (drift detection + targeted corrections at 1% tolerance) continues in `state_authority_reconciliation_service.py`. Layer 2 composition signature (`cluster_reconciler() → dict`) is wired to accept an aggregator that walks every node's observed-state, compares to etcd desired-state, and returns a per-node tiered-response report. The scheduler is transport-agnostic — a follow-up subtask wires it to `snapshot_runtime_live_state` producer + etcd cluster reconciler implementation.
+
+---
+
 ID: T2425-P4
 Status: [✓] Done
 Title: Phase 4 — Verify C++ MorphEngine (A/B/C/D quad, atomic X/Y, configured-corners introspection)
