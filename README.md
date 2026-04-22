@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1189** TypeScript | **136** C++/H | **144** Docs | **2600** total commits | **3** stars | **0** forks | **0** open issues
+**1223** Python | **1189** TypeScript | **136** C++/H | **144** Docs | **2603** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ff2b82bc`](https://github.com/matthewmackes/map2-audio/commit/ff2b82bccc2d12a46254a154521bc087f84154fb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
+| [`135af5b7`](https://github.com/matthewmackes/map2-audio/commit/135af5b70a0d40b0c72c6614ddfb250cb6a8cef2) | chore(branding): wire MAP-LOGO-2026.jpg into WelcomeHero ... | Map2 Audio | 2026-04-22 |
+| [`0df92659`](https://github.com/matthewmackes/map2-audio/commit/0df926591de5404cf544c24ce47be2dc3be4e051) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`0fdb5a68`](https://github.com/matthewmackes/map2-audio/commit/0fdb5a68dbc2e786878821ddbc09eb9f24da827b) | chore(branding): update MAP2 logo and wire WelcomeHero to... | Map2 Audio | 2026-04-22 |
 | [`d1d757a5`](https://github.com/matthewmackes/map2-audio/commit/d1d757a57f115f4801fa6f61ebe5ac917aa7590b) | feat(platforms-overview): network latency overlays, inlin... | Map2 Audio | 2026-04-22 |
 | [`bea83ccd`](https://github.com/matthewmackes/map2-audio/commit/bea83ccdd291dbfa0817def659a2d310ec45d01a) | feat(devices): MAP2 Hardware Store — storefront redesign ... | Map2 Audio | 2026-04-22 |
 | [`cd9ad13c`](https://github.com/matthewmackes/map2-audio/commit/cd9ad13c07a5d79ccd98c4fd0350bed807ce422e) | feat(platforms-overview): replace Configuration Authority... | Map2 Audio | 2026-04-22 |
 | [`0c1192f5`](https://github.com/matthewmackes/map2-audio/commit/0c1192f5f2df390eeb662af843788acf20853b80) | refactor(devices): unify device interfaces under /devices... | Map2 Audio | 2026-04-22 |
-| [`e9750800`](https://github.com/matthewmackes/map2-audio/commit/e97508008013428da396a6cd6546e0c94dc356a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`f2e69681`](https://github.com/matthewmackes/map2-audio/commit/f2e696814c3f441f0f27b71837b88cb1925409a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`8e24c6eb`](https://github.com/matthewmackes/map2-audio/commit/8e24c6eb891d9675b04d90777c0d98fdd6b7cd86) | refactor(T2420-subD+E+G): collapse 7 device routes into u... | Map2 Audio | 2026-04-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
