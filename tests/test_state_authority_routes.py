@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -14,6 +16,21 @@ def _client() -> TestClient:
     app = FastAPI()
     app.include_router(router)
     return TestClient(app)
+
+
+class _FakeEngine:
+    def __init__(self, state: dict | None = None):
+        self._state = state or {"x": 0.5, "y": 0.5, "configured_corners": []}
+        self._last_position: tuple[float, float] | None = None
+
+    def set_morph_position_2d(self, x: float, y: float) -> bool:
+        self._last_position = (x, y)
+        self._state["x"] = max(0.0, min(1.0, x))
+        self._state["y"] = max(0.0, min(1.0, y))
+        return True
+
+    def get_morph_state(self) -> dict:
+        return dict(self._state)
 
 
 def test_get_uri_catalog_lists_every_canonical_entry():
@@ -104,3 +121,70 @@ def test_get_state_authority_schema_returns_monolithic_schema():
     assert "controls" in schema["properties"]
     assert "deployment" in schema["properties"]
     assert "templates" in schema["properties"]
+
+
+# ---------------------------------------------------------------------------
+# Morph pad — XY position setter and state getter.
+# ---------------------------------------------------------------------------
+
+
+def test_post_morph_position_updates_engine_and_returns_clamped_state():
+    fake = _FakeEngine()
+    with patch("app.routes.state_authority.get_audio_engine", return_value=fake):
+        client = _client()
+        response = client.post(
+            "/api/state-authority/morph/position",
+            json={"x": 0.25, "y": 0.75},
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["x"] == 0.25
+    assert body["y"] == 0.75
+    assert body["configured_corners"] == []
+
+
+def test_post_morph_position_returns_503_when_engine_missing():
+    with patch("app.routes.state_authority.get_audio_engine", return_value=None):
+        client = _client()
+        response = client.post(
+            "/api/state-authority/morph/position",
+            json={"x": 0.5, "y": 0.5},
+        )
+    assert response.status_code == 503
+    assert response.json()["detail"]["error"]["code"] == "engine_unavailable"
+
+
+def test_post_morph_position_returns_501_when_engine_lacks_morph_api():
+    class _StaleEngine:
+        pass
+    with patch("app.routes.state_authority.get_audio_engine", return_value=_StaleEngine()):
+        client = _client()
+        response = client.post(
+            "/api/state-authority/morph/position",
+            json={"x": 0.5, "y": 0.5},
+        )
+    assert response.status_code == 501
+    assert response.json()["detail"]["error"]["code"] == "morph_api_not_exposed"
+
+
+def test_get_morph_state_returns_current_engine_state():
+    fake = _FakeEngine(state={"x": 0.33, "y": 0.77, "configured_corners": ["A", "C"]})
+    with patch("app.routes.state_authority.get_audio_engine", return_value=fake):
+        client = _client()
+        response = client.get("/api/state-authority/morph/state")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["x"] == 0.33
+    assert body["y"] == 0.77
+    assert body["configured_corners"] == ["A", "C"]
+
+
+def test_get_reconciliation_metrics_returns_json_and_prometheus():
+    client = _client()
+    response = client.get("/api/state-authority/reconciliation/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert "metrics" in body
+    assert "prometheus" in body
+    assert "map2_state_authority_local_runs_total" in body["prometheus"]
+    assert body["metrics"]["local_runs_total"] == 0

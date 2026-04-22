@@ -1,0 +1,101 @@
+.morph-pad {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 2px;
+}
+
+.morph-pad__surface {
+  position: relative;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-strong-01);
+  border-radius: 2px;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.morph-pad__surface--dragging {
+  border-color: var(--cds-focus);
+  box-shadow: 0 0 0 2px var(--cds-focus-inset);
+}
+
+.morph-pad__axes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.morph-pad__axis-x,
+.morph-pad__axis-y {
+  position: absolute;
+  background: var(--cds-border-subtle-02);
+}
+
+.morph-pad__axis-x {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.morph-pad__axis-y {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.morph-pad__corner {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cds-layer-03);
+  border: 1px solid var(--cds-border-strong-01);
+  border-radius: 50%;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  pointer-events: none;
+}
+
+.morph-pad__corner--empty {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
+.morph-pad__corner--a { background: var(--cds-support-info); color: var(--cds-text-on-color); }
+.morph-pad__corner--b { background: var(--cds-support-warning); color: var(--cds-text-on-color); }
+.morph-pad__corner--c { background: var(--cds-support-success); color: var(--cds-text-on-color); }
+.morph-pad__corner--d { background: var(--cds-support-error); color: var(--cds-text-on-color); }
+
+.morph-pad__knob {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: var(--cds-link-primary);
+  border: 2px solid var(--cds-background);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--cds-link-primary);
+  transition: box-shadow 80ms ease-out;
+}
+
+.morph-pad__knob--inflight {
+  box-shadow: 0 0 0 4px var(--cds-focus-inset);
+}
+
+.morph-pad__status {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}

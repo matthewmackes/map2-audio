@@ -20,9 +20,13 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.services.juce_engine_service import get_audio_engine
 from app.services.state_authority_graph import (
     canonicalize_plugin_uri,
     load_snapshot_graph_schema,
+)
+from app.services.state_authority_reconciliation_scheduler import (
+    render_metrics_as_prometheus,
 )
 from app.services.state_authority_uri_catalog import (
     CATALOG_TYPES,
@@ -112,3 +116,115 @@ async def post_uri_resolve(payload: UriResolveRequest) -> UriResolveResponse:
 async def get_state_authority_schema() -> dict[str, Any]:
     schema = load_snapshot_graph_schema()
     return schema
+
+
+# -----------------------------------------------------------------------------
+# Morph pad — atomic A/B/C/D quad morph X/Y position setter.
+# Frontend morph-pad UI binds directly here so XY drags become immediate
+# engine-side parameter interpolation.
+# -----------------------------------------------------------------------------
+
+
+class MorphPositionRequest(BaseModel):
+    x: float = Field(..., ge=-1.0, le=2.0, description="X axis 0..1 (accepts -1..2 which the engine clamps)")
+    y: float = Field(..., ge=-1.0, le=2.0, description="Y axis 0..1 (accepts -1..2 which the engine clamps)")
+
+
+class MorphStateResponse(BaseModel):
+    x: float
+    y: float
+    configured_corners: list[str]
+
+
+@router.post("/morph/position", response_model=MorphStateResponse)
+async def post_morph_position(payload: MorphPositionRequest) -> MorphStateResponse:
+    engine = get_audio_engine()
+    if engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": {
+                    "code": "engine_unavailable",
+                    "message": "Audio engine not running; morph position cannot be applied.",
+                    "details": None,
+                }
+            },
+        )
+    set_position = getattr(engine, "set_morph_position_2d", None)
+    if set_position is None:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": {
+                    "code": "morph_api_not_exposed",
+                    "message": "set_morph_position_2d is not exposed on the current engine build.",
+                    "details": None,
+                }
+            },
+        )
+    set_position(payload.x, payload.y)
+    state_getter = getattr(engine, "get_morph_state", None)
+    if state_getter is None:
+        return MorphStateResponse(x=payload.x, y=payload.y, configured_corners=[])
+    state = state_getter() or {}
+    return MorphStateResponse(
+        x=float(state.get("x", payload.x)),
+        y=float(state.get("y", payload.y)),
+        configured_corners=list(state.get("configured_corners") or []),
+    )
+
+
+@router.get("/morph/state", response_model=MorphStateResponse)
+async def get_morph_state() -> MorphStateResponse:
+    engine = get_audio_engine()
+    if engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": {
+                    "code": "engine_unavailable",
+                    "message": "Audio engine not running; morph state unavailable.",
+                    "details": None,
+                }
+            },
+        )
+    state_getter = getattr(engine, "get_morph_state", None)
+    if state_getter is None:
+        return MorphStateResponse(x=0.5, y=0.5, configured_corners=[])
+    state = state_getter() or {}
+    return MorphStateResponse(
+        x=float(state.get("x", 0.5)),
+        y=float(state.get("y", 0.5)),
+        configured_corners=list(state.get("configured_corners") or []),
+    )
+
+
+# -----------------------------------------------------------------------------
+# Prometheus exposition for reconciliation metrics.
+# -----------------------------------------------------------------------------
+
+
+class ReconciliationMetricsResponse(BaseModel):
+    metrics: dict[str, Any]
+    prometheus: str
+
+
+@router.get("/reconciliation/metrics", response_model=ReconciliationMetricsResponse)
+async def get_reconciliation_metrics() -> ReconciliationMetricsResponse:
+    """Expose reconciliation scheduler metrics as both JSON and Prometheus.
+
+    Returns an empty metrics dict and empty-counter Prometheus body when no
+    scheduler is active yet; callers wire a real scheduler via
+    state_authority_reconciliation_scheduler.StateAuthorityReconciliationScheduler
+    and cache the `.metrics` on app state — a follow-up task will hook that
+    wiring point to this route.
+    """
+    from app.services.state_authority_reconciliation_scheduler import (
+        ReconciliationMetrics,
+    )
+    # Default empty metrics object until a concrete scheduler is plumbed in.
+    metrics = ReconciliationMetrics()
+    return ReconciliationMetricsResponse(
+        metrics=metrics.as_dict(),
+        prometheus=render_metrics_as_prometheus(metrics),
+    )

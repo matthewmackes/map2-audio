@@ -33,6 +33,31 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-UX
+Status: [>] In Progress
+Title: Frontend UX — Morph Pad + route extension + reconciliation metrics exposure
+Description:
+- Goal / acceptance criteria: Deliver the gigging tonechaser's most visible surface — the A/B/C/D morph pad — as a Carbon-native React component that binds directly to the new `/api/state-authority/morph/position` endpoint. Extend the state-authority route with morph set/get + reconciliation metrics exposure. Extend the frontend TypeScript client to match.
+- Why it matters: Morph is the headlining capability of the tonechaser workflow. Without a visible pad, the phases 4 + 6 work is invisible to operators. The pad gives immediate XY → C++ bilinear interpolation at audio rate, so the musician sweeps between four tones with their finger.
+- Dependencies: Phases 1, 2b, 3, 3b, 4, 5, 6 (all complete).
+- Shipped outputs:
+  - Backend: `app/routes/state_authority.py` adds POST `/morph/position` + GET `/morph/state` + GET `/reconciliation/metrics`. 503 when engine unavailable, 501 when engine lacks morph API (backwards-compat with older builds), plan error envelope `{error: {code, message, details}}`.
+  - Tests: `tests/test_state_authority_routes.py` extended with 5 cases (12/12 PASS).
+  - Frontend client: `web/src/map2/clients/stateAuthority.ts` adds `setMorphPosition(x, y)`, `getMorphState()`, `getReconciliationMetrics()`. Types `StateAuthorityMorphState` + `StateAuthorityReconciliationMetrics`.
+  - Frontend client tests: `web/src/map2/clients/stateAuthority.test.ts` extended to 7/7 PASS.
+  - UI: `web/src/app/components/StateAuthority/MorphPad.tsx` — Carbon-native (Tag for status), XY drag, rAF-coalesced position updates, configured-corner visual marking, inflight state, error surfacing.
+  - UI CSS: `MorphPad.css` scoped to Carbon tokens (layer-01..03, border-subtle/strong, support-info/warning/success/error for A/B/C/D corners, link-primary for knob, focus for drag ring).
+  - UI tests: `web/src/app/components/StateAuthority/MorphPad.test.tsx` — 7/7 PASS (corner rendering, empty-corner marking, initial-state fetch, readonly mode, XY POST, onPositionChange callback).
+  - Typecheck PASS, `npm run build` PASS in 20.98s.
+- Pending outputs (follow-up subtasks):
+  - Mount MorphPad in SnapshotEditorPageContent so it renders alongside the unified channel grid.
+  - Wire activation hooks from plan Q40 to MPX1/IntelFX/MidiHub/Push/LCD/Maschine/MCU/GCP/LaunchControl/MIDICommander/footswitches via the load_activation_hooks_from_config() parser (Phase 3 FSM already consumes the parsed config).
+  - Wire StateAuthorityReconciliationScheduler to start on app.main lifespan with live_payload_producer = snapshot_runtime_live_state and cluster_reconciler = etcd-backed implementation.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (morph pad + route + client shipped; mount + hooks + scheduler wiring remain)
+
+---
+
 ID: T2425-P6
 Status: [✓] Done
 Title: Phase 6 — Template composition (flat, live-linked, overrides win)
