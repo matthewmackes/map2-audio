@@ -6,7 +6,48 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-21 19:00 EDT - T2424 done; live snapshot plugin ids now propagate for lower-third delete.
+Last updated: 2026-04-22 EDT - T2425 State Authority epic opened (Tier-1 mission-critical; 6-phase rollout; tonechaser workflow).
+
+---
+
+ID: T2425
+Status: [>] In Progress
+Title: EPIC — MAP2 State Authority full rollout (graph-native snapshots, crossfade, morph, reconciliation, templates) — Tonechaser workflow
+Description:
+- Goal / acceptance criteria: Complete the MAP2 State Authority rollout specified in `.claude/plans/keen-growing-tome.md` (100 locked decisions). Replace the relational snapshot/chain monolith with a graph-native, reconciliation-driven state system whose single JSONB document (`snapshot(id UUID, document JSONB)`) is the canonical source of truth for every audio rig state, driving C++ engine via ValueTree, with equal-power crossfaded activations, A/B/C/D quad morph at audio rate, content-addressed assets, layered local+cluster reconciliation, live-linked flat templates, and config-file activation hooks wired to every operator interface (Snapshot Editor, MPX1, IntelFX, MidiHub, LCD cluster, Maschine MK1, Push Surface, footswitches, MCU, Launch Control, Ground Control Pro, MIDI Commander, OSC, GPIO). Target user: gigging musician tonechasing a tone live — recall a tone, morph between tones with no click/gap, dial-in via any surface, replay the exact tone anywhere in the cluster. Definition of Done: all 6 phases shipped with pytest + jest + typecheck + build + dual-push per slice; every pre-existing snapshot-consuming interface works unchanged against the new backend; crossfade measured audibly gapless; morph measured smooth at audio rate; reconciliation self-heals 1% drift within 5 s; template cascade verified.
+- Why it matters: The Snapshot Service (~10k lines across ~15 files) accumulated 8 overlapping relational tables (SnapshotChain, SnapshotChainPlugin, SnapshotChannel, SnapshotRouting, SnapshotMidiMap, SnapshotLoopInsertion, SnapshotDeployment, SnapshotDeploymentHistory) that together encode what the graph doc expresses in one place. Every new feature (morph, templates, cluster reconciliation, OSC+GPIO control, asset sharing) has been blocked or compromised by this fragmentation. The plan locks all 100 design decisions; this epic is the executor. The tonechaser workflow — gapless snapshot switching with perfect parameter fidelity and cross-device recall — becomes possible only after this lands.
+- Dependencies: None — plan `.claude/plans/keen-growing-tome.md` locks every design decision. Existing scaffolding (`app/services/state_authority_*.py`, `schemas/snapshot-graph-v1.schema.json`, C++ `loadGraphDocument`/`saveGraphDocument`/`setMorphPosition`) provides a partial foundation that this epic completes and unifies.
+- Estimated effort: Very Large — 6 phases, restartable per slice, ~30+ atomic commits.
+- Required outputs (6 phases per plan):
+  - T2425-P1: **Graph Document + Schema + URI + Assets + ValueTree bridge** — Full JSON Schema at `schemas/snapshot-graph-v1.schema.json` covering meta, graph (nodes/edges/groups/channels), routing, morph (A/B/C/D quad), effects_loops, controls (mappings + footswitch_labels + controller_display), io, tempo, output_safety, deployment, templates. Validator with auto-repair + categorized failure reporting. `map2:{type}:{name}` URI canonicalization wired across FX/IO/SYS/CTRL with tonechaser defaults for NAM, cabinet-ir, reverb-ir, delay, output-limiter, noise-gate. Content-addressed asset registry (sha256, `~/.map2/assets/{sha256}/{name}`, 24h GC, full-scan). C++ JSON↔ValueTree round-trip bridge verified (serialize → deserialize → byte-equal).
+  - T2425-P2: **Service decomposition into 7 day-1 sub-services** — `snapshot_crud_service`, `snapshot_activation_service`, `snapshot_topology_service`, `snapshot_portability_service`, `snapshot_revision_service`, `snapshot_control_map_service`, `snapshot_community_service`, plus supporting `snapshot_reconciliation_service`, `snapshot_template_service`, `snapshot_asset_service`, `snapshot_preload_service`, `snapshot_device_registry`. Direct route→sub-service wiring (no facade). Auto-generated categorized revision summaries ('Topology: +1 plugin. Parameters: 3 changed.').
+  - T2425-P3: **Activation State Machine + CrossfadeEngine** — FSM (IDLE→VALIDATING→STAGING→APPLYING→VERIFYING→LIVE) with 10 s timeout and phase-aware rollback (pre-APPLYING = keep old audio; during/after = stop). Activation hooks from `~/.map2/config.json` (midi_map_sync, expression_sync, footswitch_labels, controller_display, maschine_encoders, push_surface, ground_control_pro, mcu, launch_control, midi_commander). WS progress events on existing `snapshot_runtime_live_state` topic. Eager preload of top-3 snapshots by activation history. C++ `CrossfadeEngine` class — equal-power cos/sin, auto-duration from plugin tail lengths, max 500 ms cap, old+new graphs fully independent.
+  - T2425-P4: **MorphEngine (C++)** — Quad A/B/C/D at audio-block rate. Auto-detect continuous params vs discrete (snap at 50%). Bilinear interpolation `val = (1-x)(1-y)*A + x(1-y)*B + (1-x)y*C + xy*D`. Single atomic `set_morph_position(x, y)` API. Intra-snapshot (channels) and cross-snapshot (snapshot refs) modes. Full parameter maps per endpoint. Exposed via pybind11. Frontend morph pad UI + endpoint editor.
+  - T2425-P5: **Reconciliation** — Layer 1 local self-heal every 5 s (compare engine `saveGraphDocument()` vs local desired-state cache; >1 % parameter drift → `set_parameter()` correction; topology drift → report to mgmt-node). Layer 2 management-node coordination every 5 s (query observed-state from all nodes; compare against etcd `AuthoritativeAudioState`; tiered response: param fix → topology re-activation → asset redeploy → failover). Prometheus `map2_state_authority_drift_total` + `map2_state_authority_last_reconcile_ts` metrics. Runtime events logged to `activation_event` table, NOT revision history.
+  - T2425-P6: **Template composition** — Flat templates (no nesting). Live-linked cascade: template update triggers re-resolution on all referencing snapshots; snapshot overrides are sacred (override always wins). Template CRUD service. Resolve algorithm: base template → overlays (deep-merge in listed order) → snapshot graph (overrides win). WS event `template_updated: {template_id, affected_snapshot_count}`.
+  - T2425-UX: **Frontend rollout** — Snapshot Editor, Snapshots Browser, MPX1, IntelFX, MidiHub Tesira/GPIO/String, physical surfaces (Maschine MK1, Ableton Push, Ground Control Pro, MeloAudio MIDI Commander, Novation Launch Control, Mackie MCU), footswitch labels, controller display preview, LCD cluster. Morph pad UI (X/Y). Per-channel A/B/C/D endpoint editor. Content-addressed asset picker.
+  - T2425-TESTS: **Verification** — Per-phase pytest + jest + typecheck + build + dual-push + evidence in `docs/fit-for-purpose-evidence/{YYYYMMDD}/state-authority-phaseN.md`.
+  - `npm --prefix web run typecheck` PASS, `npm --prefix web run build` PASS, `pytest tests/test_state_authority*.py` PASS, `pytest tests/test_snapshot*.py` PASS, `npm --prefix web test -- --testPathPatterns=Snapshot --no-coverage` PASS per slice.
+  - Atomic commits on master + `git push origin master && git push gitlab master` per slice.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
+Subtasks:
+
+ID: T2425-P1a
+Status: [>] In Progress
+Title: Phase 1a — Full JSON Schema v2026.04 covering every graph-doc section
+Description:
+- Goal / acceptance criteria: Expand `schemas/snapshot-graph-v1.schema.json` from the current 114-line stub to a monolithic JSON Schema covering every section from the plan: meta (with community), graph (nodes with URI pattern, edges with port-to-port model, groups with parallel/series, channels with A–F keys), routing (parallel_blend|series, active_channel_key, blend_positions, series_order), morph (mode off|quad|intra|cross, endpoints {A,B,C,D} = parameter maps, position.x + position.y, source_mode), effects_loops (send_device/send_channel/return_device/return_channel/insertions with mode/blend/gain/crossfade), controls (mappings with unified source schema MIDI-CC/Expression/Maschine/OSC/GPIO, target as OSC path, range, curve; footswitch_labels; controller_display), io (input_device, output_device, monitoring_output_index), tempo (bpm), output_safety (reference_dbfs, warning_threshold_db), deployment (primary_node_id, standby_node_ids, status, strategy, redundancy_enabled, history[]), templates (base, overlays[], linked). Exact `map2:(fx|io|sys|ctrl):[a-z0-9-]+` URI regex. Explicit ports on edges (`nodeId:port_name`). Asset hash pattern sha256. Schema must reject docs missing required top-level keys + known bad patterns. Schema must accept the canonical example from the plan verbatim.
+- Why it matters: The schema is the contract — every validator, auto-repair, frontend form, OSC binding, and cluster message depends on it being complete and precise. The stub only covered ~30% of the graph doc.
+- Dependencies: `.claude/plans/keen-growing-tome.md` (schema spec locked).
+- Estimated effort: Medium.
+- Required outputs:
+  - Rewritten `schemas/snapshot-graph-v1.schema.json` (monolithic, no `$ref`, ~300+ lines)
+  - `tests/test_snapshot_graph_schema.py` with cases: canonical plan example validates, missing `version` rejects, missing `meta.name` rejects, invalid URI rejects, edge missing `:port` rejects, morph mode validates, control source types validate, asset hash pattern validates
+  - `pytest tests/test_snapshot_graph_schema.py -q` PASS
+  - Atomic commit on master + `git push origin master && git push gitlab master`
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (opened)
 
 ---
 
