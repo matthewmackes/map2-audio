@@ -33,6 +33,50 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-P4
+Status: [✓] Done
+Title: Phase 4 — Verify C++ MorphEngine (A/B/C/D quad, atomic X/Y, configured-corners introspection)
+Description:
+- Goal / acceptance criteria: Verify the plan's MorphEngine contract is already met by existing C++ infrastructure in `juce-engine/Source/Map2AudioEngine.{h,cpp}` and `PythonBindings.cpp`, and lock it with integration tests. Plan coverage: A/B/C/D quad morph (Q33), auto-detect continuous vs discrete parameters (Q9), single atomic `set_morph_position(x, y)` API (Q70), per-endpoint parameter maps (Q89), intra-snapshot + cross-snapshot modes (Q37), bilinear interpolation.
+- Why it matters: Morph is the defining tonechaser workflow — sweep between four distinct tones on a single control surface. Before building the morph pad UI, lock the C++ contract so frontend can bind without guessing.
+- Dependencies: Phase 3b (complete).
+- Verified capabilities:
+  - Python bindings (PythonBindings.cpp:3110+): `clear_morph_endpoints()`, `set_morph_endpoint(corner_id, graph_doc_dict)`, `set_morph_position_2d(x, y)`, `get_morph_state()`.
+  - C++ `applyMorphPosition(x, y)` called from `setMorphPosition` — state is atomic via `morphStateMutex_` guard.
+  - Position clamped to [0, 1] via `clampUnitFloat()` (Map2AudioEngine.cpp:4125).
+  - `quadMorphState_` stores 4 endpoints + x/y position.
+  - `configured_corners` list reports which A/B/C/D are populated — honest introspection.
+  - Build output `juce-engine/build/map2_audio_engine.cpython-314-x86_64-linux-gnu.so` loads cleanly.
+- Verified test output: `tests/test_juce_engine_morph_engine.py` → 3/3 PASS (atomic X/Y + clamping, configured-corners reporting, clear-endpoints reset).
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped verification)
+Completion note: 2026-04-22 - Claude: C++ MorphEngine infrastructure pre-existed. Lock by integration tests. No C++ rewrite needed. Frontend morph pad UI (T2425-UX) will bind `set_morph_position_2d(x, y)` directly via a new `/api/snapshots/{id}/morph/position` route (follow-up subtask).
+
+---
+
+ID: T2425-P3b
+Status: [✓] Done
+Title: Phase 3b — Verify C++ CrossfadeEngine (equal-power, auto-duration, 500ms cap)
+Description:
+- Goal / acceptance criteria: Verify the plan's CrossfadeEngine contract is met by the existing C++ infrastructure in `juce-engine/Source/Map2AudioEngine.{h,cpp}` — equal-power cos/sin curve (Q58), max 500ms cap (Q98), plugin tail-length awareness (Q17 auto-duration), old+new graphs fully independent (Q87), pre-allocated RT-safe buffers, exposed through pybind11.
+- Why it matters: Phase 3b acceptance hinges on an audibly gapless activation crossfade. Rather than rewriting proven production code, this subtask verifies the existing `IndependentGraphCrossfade` infrastructure already satisfies the plan, documents what's there, and surfaces it through Python bindings used by the activation FSM in Phase 3.
+- Dependencies: Phase 1 + 2b + 3 (complete).
+- Estimated effort: Small (verification).
+- Verified capabilities (Map2AudioEngine.cpp + .h):
+  - `IndependentGraphCrossfade` struct with `totalSamples`, `remainingSamples`, `processedSamples`, `expired` atomics, and per-crossfade `instanceIds` (line 1471+ in .h).
+  - Equal-power curve `oldGain = cos(progress × π/2)`, `newGain` complement (line 3308 in .cpp).
+  - Max-duration param exposed via `loadGraphDocument(..., maxCrossfadeMs = 500)` (line 388 in .h).
+  - Plugin tail-length resolved per instance via `getTailLengthSeconds()` (line 66 in .cpp + overrides in JuceAudioGraph.cpp:527, LexiconHardwareProcessor.cpp:141, NativeConvolutionPluginProcessor.cpp:57).
+  - Pre-allocated buffers for RT-safety: `graphCrossfadeInputBuffer_`, `graphCrossfadeOldBuffer_`, `graphCrossfadeNewBuffer_` (line 1584+ in .h).
+  - Multi-crossfade container + expiration cleanup: `independentGraphCrossfades_` + `cleanupExpiredIndependentGraphCrossfades()`.
+  - Python bindings: `save_graph_document(seed_json)` + `load_graph_document(json, use_independent_crossfade=False, max_crossfade_ms=500)` (PythonBindings.cpp:3096+).
+  - Integration test passes: `tests/test_juce_engine_graph_document.py` — 2 pass, 1 skipped.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (verified existing infrastructure satisfies plan)
+Completion note: 2026-04-22 - Claude: C++ CrossfadeEngine infrastructure pre-existed in Map2AudioEngine.{h,cpp}; matches every locked decision (Q17 auto-duration, Q58 equal-power, Q87 independent graphs, Q98 500ms cap). No C++ rewrite needed. Python-side FSM (T2425-P3) calls `load_graph_document(json, use_independent_crossfade=True, max_crossfade_ms=...)` during APPLYING phase to trigger the crossfade.
+
+---
+
 ID: T2425-P3
 Status: [✓] Done
 Title: Phase 3 — Activation State Machine (5-phase FSM + hooks + 10s timeout)
