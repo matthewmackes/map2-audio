@@ -33,6 +33,30 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-P6
+Status: [✓] Done
+Title: Phase 6 — Template composition (flat, live-linked, overrides win)
+Description:
+- Goal / acceptance criteria: Land the canonical template resolution algorithm per plan §Template System — flat templates only (Q59), live-linked cascade (Q14), snapshot overrides always win (Q18). Resolver is pure given a template-loader callback; cascade helper `find_snapshots_referencing_template()` emits the re-resolve queue when a template body changes.
+- Why it matters: Templates are what makes the tonechaser workflow scalable. "Deep Reverb" template → base this on → keep MY decay at 2.8s. When the template's IR is updated cluster-wide, every referencing snapshot picks up the new IR but preserves the operator's local tweaks.
+- Dependencies: Phase 1 (schema `templates` block). Existing template CRUD already lives in `snapshot/snapshot_editor.py` — this subtask provides the canonical resolver that the CRUD layer can adopt.
+- Verified capabilities (new `state_authority_templates.py`):
+  - `resolve_snapshot(snapshot_doc, load_template=...) → ResolvedSnapshot` — pure function, no DB.
+  - `ResolvedSnapshot(document, base_template_id, overlay_template_ids, linked, override_paths)` surfaces full provenance.
+  - Base → overlays (in order, later wins) → snapshot overrides (Q18 — always win).
+  - Lists in overlays REPLACE base lists (documented explicit semantics).
+  - `override_paths` tuple of JSON-pointer-ish strings for Snapshot Editor "reset to template" UX.
+  - Nested templates rejected with `ValueError` (Q59 — flat only).
+  - Missing template tolerated — snapshot's own fields still win; orphaned override doesn't lose work.
+  - `find_snapshots_referencing_template(template_id, snapshots)` cascade helper for Q14.
+  - `diff_resolved_vs_override(resolved, snapshot)` public API mirrors internal override-path logic.
+- Verified test output: `tests/test_state_authority_templates.py` → 15/15 PASS.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Pure resolver landed as a separate module so the plan's contract is self-contained and testable. The existing snapshot_editor.py template link metadata + cascade continue to manage persistence; a follow-up will migrate `_resolve_template_linked_normalized()` to delegate into `resolve_snapshot()` for consistency. Override-path reporting is the new primitive that unblocks the Snapshot Editor "reset this field back to template" affordance.
+
+---
+
 ID: T2425-P5
 Status: [✓] Done
 Title: Phase 5 — Reconciliation scheduler + Prometheus metrics (Layer 1 + Layer 2)
