@@ -171,6 +171,7 @@ describe('AppShell global tree navigation', () => {
     mockReloadHomeDesktopShell.mockReset()
     mockReturnHomeDesktopToBoot.mockReset()
     mockSetViewedNode.mockReset()
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -179,6 +180,12 @@ describe('AppShell global tree navigation', () => {
   })
 
   it('renders the persistent global tree rail on the landing route without a titlebar', () => {
+    // Pre-pin two devices so the nav tree exposes the pinned rows the assertions rely on.
+    window.localStorage.setItem(
+      'map2.ui.settings',
+      JSON.stringify({ version: 1, pinnedDevices: ['tesira', 'intelfx'] }),
+    )
+
     const { container } = renderInRouter(
       <AppShell>
         <ShellAwareContent />
@@ -218,6 +225,12 @@ describe('AppShell global tree navigation', () => {
   })
 
   it('renders non-landing routes with the title strip and the global tree rail', () => {
+    // Pre-pin the IntelFX device so the nav tree exposes a pinned device row under Devices.
+    window.localStorage.setItem(
+      'map2.ui.settings',
+      JSON.stringify({ version: 1, pinnedDevices: ['intelfx'] }),
+    )
+
     const { container } = renderInRouter(
       <AppShell>
         <ShellAwareContent />

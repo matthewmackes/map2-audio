@@ -1,7 +1,17 @@
-import { FeatureFlags, Layer, Popover, PopoverContent, Tooltip, TreeView } from '@carbon/react'
+import {
+  FeatureFlags,
+  Layer,
+  OverflowMenu,
+  OverflowMenuItem,
+  Popover,
+  PopoverContent,
+  Tooltip,
+  TreeView,
+} from '@carbon/react'
 import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
+  Add,
   ChartLine,
   Devices,
   Home,
@@ -30,8 +40,10 @@ import {
   getLauncherCatalogTreeChildren,
   type LauncherCatalogTreeChild,
 } from '../../data/launcherCatalog'
-import { DEVICE_REGISTRY, buildDeviceRoute } from '../../data/deviceRegistry'
+import { DEVICE_REGISTRY, buildDeviceRoute, type DeviceRegistryEntry } from '../../data/deviceRegistry'
 import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/platformMenuItems'
+import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings'
+import { useToasts } from '../../components/Toasts'
 import { useNodePageContext } from '../../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import {
@@ -53,13 +65,29 @@ type GlobalTreeNavProps = {
 
 type TreeIconComponent = NonNullable<ComponentProps<typeof TreeView.TreeNode>['renderIcon']>
 
-type TreeItemDefinition = {
+export type TreeNodeAction = {
+  label: string
+  onClick: () => void
+}
+
+export type TreeItemDefinition = {
   id: string
   label: string
   route?: string
   icon?: TreeIconComponent
   children?: TreeItemDefinition[]
+  actions?: TreeNodeAction[]
+  groupBoundary?: boolean
 }
+
+const DEVICE_KIND_ORDER: DeviceRegistryEntry['kind'][] = [
+  'processor',
+  'console',
+  'control-surface',
+  'audio-interface',
+]
+
+const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
 
 const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
 const TOP_LEVEL_ROUTE_ORDER = [
@@ -182,15 +210,47 @@ function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): 
   }
 }
 
-function buildHardwareTree(): TreeItemDefinition {
-  const deviceChildren: TreeItemDefinition[] = DEVICE_REGISTRY.map((entry) => {
+export function buildDevicesSubtree(
+  pinnedIds: string[],
+  navigateTo: (route: string) => void,
+  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+): TreeItemDefinition[] {
+  const pinnedSet = new Set(pinnedIds)
+  const pinnedEntries = DEVICE_REGISTRY.filter((entry) => pinnedSet.has(entry.id))
+
+  if (pinnedEntries.length === 0) {
+    return [
+      {
+        id: BROWSE_DEVICES_TREE_ID,
+        label: '➕ Browse devices…',
+        route: '/devices',
+        icon: Add,
+      },
+    ]
+  }
+
+  const grouped = DEVICE_KIND_ORDER.flatMap((kind) => {
+    const entries = pinnedEntries
+      .filter((entry) => entry.kind === kind)
+      .sort((left, right) => left.label.localeCompare(right.label))
+    return entries.map((entry, entryIndexWithinKind) => ({ entry, boundary: entryIndexWithinKind === 0 }))
+  })
+
+  // The very first child must not carry a group boundary (nothing to separate from above).
+  const nodes: TreeItemDefinition[] = grouped.map(({ entry, boundary }, index) => {
     const route = buildDeviceRoute(entry.id)
     const routePath = `/devices/${entry.id}`
+    const isFirst = index === 0
     return {
       id: `${HARDWARE_DEVICES_ID}::${routePath}`,
       label: entry.label,
       route,
       icon: TREE_ICON_OVERRIDES[routePath] ?? entry.icon,
+      groupBoundary: boundary && !isFirst,
+      actions: [
+        { label: 'Unpin', onClick: () => onRequestUnpin(entry) },
+        { label: 'Open in store', onClick: () => navigateTo('/devices') },
+      ],
       children: entry.views.map((view) => ({
         id: `${HARDWARE_DEVICES_ID}::${routePath}/${view.id}`,
         label: view.label,
@@ -200,6 +260,14 @@ function buildHardwareTree(): TreeItemDefinition {
     }
   })
 
+  return nodes
+}
+
+function buildHardwareTree(
+  pinnedIds: string[],
+  navigateTo: (route: string) => void,
+  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+): TreeItemDefinition {
   return {
     id: HARDWARE_TREE_ID,
     label: 'Hardware',
@@ -210,16 +278,20 @@ function buildHardwareTree(): TreeItemDefinition {
         label: 'Devices',
         route: '/devices',
         icon: Devices,
-        children: deviceChildren,
+        children: buildDevicesSubtree(pinnedIds, navigateTo, onRequestUnpin),
       },
     ],
   }
 }
 
-function buildTreeItems(): TreeItemDefinition[] {
+function buildTreeItems(
+  pinnedIds: string[],
+  navigateTo: (route: string) => void,
+  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+): TreeItemDefinition[] {
   return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
     if (route === HARDWARE_TREE_ID) {
-      return [buildHardwareTree()]
+      return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin)]
     }
 
     const launcherItem = getLauncherCatalogItem(route)
@@ -264,11 +336,38 @@ function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
 
-function TreeNodeLabel({ label, secondary, isBold = false }: { label: string; secondary?: ReactNode; isBold?: boolean }) {
+function TreeNodeLabel({
+  label,
+  secondary,
+  isBold = false,
+  actions,
+}: {
+  label: string
+  secondary?: ReactNode
+  isBold?: boolean
+  actions?: TreeNodeAction[]
+}) {
   return (
     <span className={`global-tree-nav__node-copy${isBold ? ' global-tree-nav__node-copy--bold' : ''}`}>
       <span className="global-tree-nav__node-label">{label}</span>
       {secondary ? <span className="global-tree-nav__node-secondary">{secondary}</span> : null}
+      {actions && actions.length > 0 ? (
+        <span
+          className="global-tree-nav__node-actions"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <OverflowMenu size="sm" flipped aria-label={`Actions for ${label}`} menuOptionsClass="global-tree-nav__node-actions-menu">
+            {actions.map((action) => (
+              <OverflowMenuItem
+                key={action.label}
+                itemText={action.label}
+                onClick={() => action.onClick()}
+              />
+            ))}
+          </OverflowMenu>
+        </span>
+      ) : null}
     </span>
   )
 }
@@ -305,15 +404,20 @@ function renderTreeItems(
   return items.map((item) => {
     const selected = item.id === activeNodeId
     const isBold = BOLD_TOP_LEVEL_ROUTES.has(item.id)
+    const nodeClass = joinClasses(
+      'global-tree-nav__tree-node',
+      selected && 'is-selected',
+      item.groupBoundary && 'is-group-boundary',
+    )
 
     if (item.children?.length) {
       return (
         <TreeView.TreeNode
           key={item.id}
           id={item.id}
-          className={joinClasses('global-tree-nav__tree-node', selected && 'is-selected')}
+          className={nodeClass}
           isExpanded={expandedIds.includes(item.id)}
-          label={<TreeNodeLabel label={item.label} isBold={isBold} />}
+          label={<TreeNodeLabel label={item.label} isBold={isBold} actions={item.actions} />}
           onSelect={(event) => {
             event.preventDefault()
             if (item.route) {
@@ -332,8 +436,8 @@ function renderTreeItems(
       <TreeView.TreeNode
         key={item.id}
         id={item.id}
-        className={joinClasses('global-tree-nav__tree-node', selected && 'is-selected')}
-        label={<TreeNodeLabel label={item.label} isBold={isBold} />}
+        className={nodeClass}
+        label={<TreeNodeLabel label={item.label} isBold={isBold} actions={item.actions} />}
         onSelect={(event) => {
           event.preventDefault()
           if (item.route) {
@@ -367,7 +471,28 @@ export function GlobalTreeNav({
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const [expandedIds, setExpandedIds] = useState<string[]>(() => readExpandedIds())
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
-  const treeItems = useMemo(() => buildTreeItems(), [])
+  const pinnedDeviceIds = usePinnedDevices()
+  const { pushToast } = useToasts()
+
+  const handleRequestUnpin = useMemo(() => {
+    return (entry: DeviceRegistryEntry) => {
+      unpinDevice(entry.id)
+      pushToast(`Unpinned ${entry.label} from Devices.`, 'info', {
+        durationMs: 5000,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            pinDevice(entry.id)
+          },
+        },
+      })
+    }
+  }, [pushToast])
+
+  const treeItems = useMemo(
+    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin),
+    [pinnedDeviceIds, navigate, handleRequestUnpin],
+  )
   const activeNodePath = useMemo(
     () => findActiveNodePath(treeItems, location.pathname, location.search),
     [location.pathname, location.search, treeItems],

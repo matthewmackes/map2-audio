@@ -6,7 +6,69 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority Reconciliation tab now has a live event feed — StateAuthorityEventFeed consumes usePlatformEvents with kindPrefixes=[state_authority., snapshot.activation.] to render the most recent drift/self-heal/activation events directly below the numeric counters. 59 frontend State Authority tests PASS (up from 51), 343 backend tests PASS.
+Last updated: 2026-04-22 EDT - T2426-A shipped — new `map2.ui.settings` shared bag with pinned-devices helper + React hook; `GlobalTreeNav` now renders pinned devices only (grouped by kind processor → console → control-surface → audio-interface, alphabetical within, thin divider lines between groups, kebab ⋮ with Unpin/Open-in-store per row); empty state shows a single "➕ Browse devices…" row that routes to /devices; unpin emits a 5 s Undo toast. 17 new Jest tests PASS (10 uiSettings + 7 GlobalTreeNav), AppShell suite updated and 6/6 PASS, typecheck + build green.
+
+---
+
+ID: T2426
+Status: [>] In Progress
+Title: EPIC — Devices store page + pinned-only global nav + per-device hero-image upload
+Description:
+- Goal / acceptance criteria: Rework the `/devices` surface so the Devices parent page is a "store" the operator browses to curate which devices appear in the global left-nav tree. Today the nav shows every registry entry; after this epic, only **pinned** devices appear under `Devices` (grouped by kind with thin-line dividers between groups), and the store page is the single discovery surface where the operator pins/unpins. Each store card supports uploading a custom hero image through a new backend endpoint modeled on the existing audio-artifact upload pattern (PNG only, 2 MB cap, 1:1 recommended 1024×1024, server auto-crops center and downscales to 1024×1024, shared globally per MAP2 install under `~/.map2/device-hero-overrides/<id>.png`). 25 design decisions locked with the user (see completion notes). No backend event-bus hooks — pin state is a pure client-side preference persisted under a shared `map2.ui.settings` localStorage bag. Definition of Done: three atomic subtasks (A/B/C) merged to master with dual-push, full test coverage (component + backend pytest + integration round-trip + Playwright e2e + visual-regression snapshots), typecheck + build green, store page, pinned-only nav, Pin-and-open dialog, hero-image upload/revert, and kebab ⋮ menu all reachable from a browser at http://localhost:3000/devices.
+- Why it matters: The global nav currently pre-lists every hardware and control-surface registry entry (12+ items), most of which any given operator never uses. Pinning concentrates the nav on the devices this operator actually cares about, while keeping the full catalog one click away. Hero-image overrides let operators personalize the store page to match their rack photography without waiting for a new SVG asset to land in `deviceHeroImages.ts`.
+- Dependencies: T2420 (DevicesShell + DEVICE_REGISTRY + DevicesOverview). None blocking — purely additive on top of the existing `/devices` route family.
+- Estimated effort: Medium — 3 restartable atomic subtasks, ≈ 1 day total. Locked design (25 decisions) recorded in conversation and summarized below. User confirmed split: subA storage + nav, subB store page + dialogs, subC hero-image backend + upload UI + e2e + visual regression.
+- Locked decisions (Q1 → Q25):
+  1. Store layout = large card grid ~3/row (hero + name + desc + footer buttons).
+  2. Nav empty state = single "➕ Browse devices…" child row under Devices.
+  3. Store card footer = two buttons "Open" + "Pin".
+  4. Pinned card visual state = dimmed/greyed with only "Unpin" button visible.
+  5. Clicking "Open" on an unpinned card = confirmation dialog "Pin and open?" / "Just open".
+  6. Pin persistence = localStorage only (per-browser).
+  7. Storage key = new shared `map2.ui.settings` JSON envelope (`{version, pinnedDevices, ...}`), co-located with future UI prefs.
+  8. First-run default = empty pin set.
+  9. Nav ordering = grouped by kind (processor → console → control-surface → audio-interface), alphabetical within each group.
+  10. Group headers = thin divider lines, no text labels.
+  11. Unpin = immediate + 5 s Undo toast.
+  12. Unpin from nav = kebab ⋮ per pinned row with "Unpin" + "Open in store".
+  13. Sub-view expansion = unchanged (only when that device is the active route).
+  14. Store search/filter = none.
+  15. Hero image source = `deviceHeroImages.ts` where available, fall back to enlarged icon; per-card Upload button.
+  16. Override storage = backend, audio-artifact pattern (`~/.map2/device-hero-overrides/<id>.png` + API endpoints).
+  17. Accepted types = PNG only.
+  18. Size cap = 2 MB.
+  19. Recommended dims = 1:1 square, 1024×1024.
+  20. Dim enforcement = server auto-crops center to 1:1, downscales to 1024×1024 via Pillow.
+  21. Revert = kebab ⋮ on the card.
+  22. Auth/visibility = single-user, shared globally per install.
+  23. Telemetry = none (pin state is UI-only, not on PlatformEvent bus).
+  24. Tests = full coverage (component + pytest + integration + e2e + visual regression).
+  25. Release = split into 3 atomic dual-pushed commits under this epic (subA/subB/subC), each passing its own DoD.
+- Required outputs:
+  - T2426-A: **Shared `map2.ui.settings` bag + pinned-only global nav + empty/unpin UX + tests** — [>] In Progress 2026-04-22.
+    - `web/src/app/state/uiSettings.ts` — new shared localStorage envelope `map2.ui.settings` with `getPinnedDeviceIds`, `isDevicePinned`, `pinDevice`, `unpinDevice`, `togglePinnedDevice`, `usePinnedDevices` hook; preserves unrelated keys in the bag; broadcasts `map2:ui-settings:changed` custom event so tree re-renders on every pin change in the same tab; also listens for cross-tab `storage` events.
+    - `web/src/app/state/uiSettings.test.ts` — 10 Jest tests covering defaults, malformed payloads, dedupe, order, unpin, toggle, shared-bag coexistence, and array sanitization.
+    - `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx` — rewritten devices subtree: `buildDevicesSubtree(pinnedIds, navigate, onRequestUnpin)` returns either a single `➕ Browse devices…` row when empty, or pinned entries grouped by kind in the locked order with `groupBoundary: true` on the first entry of every non-leading group, plus `actions: [Unpin, Open in store]` per row; `TreeNodeLabel` extended with an inline Carbon `OverflowMenu` whose events stop-propagate so the tree row's `onSelect` isn't triggered; `usePinnedDevices()` hook drives re-render; `pushToast('…', 'info', { durationMs: 5000, action: { label: 'Undo', onClick: () => pinDevice(id) } })` wires the Undo flow.
+    - `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.css` — added `is-group-boundary` border-top separator, a `.global-tree-nav__node-actions` wrapper that fades in on hover/focus-within via `:has()`, and `:has()`-scoped flex alignment so the actions dock to the end without disturbing existing grid-style labels.
+    - `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.test.ts` — 7 new Jest tests covering empty state, unknown-id filtering, kind ordering, intra-kind alphabetical sort, group-boundary flag placement, action wiring (Unpin callback, Open-in-store navigation), and sub-view child routes.
+    - `web/src/app/layout/AppShell.test.tsx` — updated to pre-pin `['tesira', 'intelfx']` (resp. `['intelfx']`) so existing navtree assertions continue to match the pinned-only world; added `window.localStorage.clear()` in `beforeEach` to avoid cross-test contamination.
+    - Validation: Jest 27 / 27 PASS across `src/app/state` + `src/app/layout`; `npm --prefix web run typecheck` PASS; `npm --prefix web run build` PASS (20.68s).
+    - Not in this slice: store-page UX, Pin-and-open dialog, hero-image upload/revert, Playwright e2e, visual-regression snapshots — those land in subB and subC.
+  - T2426-B: **Devices store page + Pin/Unpin/Open footer + Pin-and-open dialog + dimmed pinned state + tests** — [ ] pending.
+    - Replace `DevicesShell`'s no-device branch with a new `DevicesStorePage` component (card grid grouped by kind, hero area driven by `deviceHeroImages.ts` → enlarged icon fallback, footer `[Open][Pin]` / `[Unpin]` when pinned, kebab ⋮ with "Upload hero image…" (stub in this slice, wired in subC) and "Revert to default image" (also stub)).
+    - Clicking `Open` on an unpinned card shows a Carbon `Modal` confirmation: "Pin and open?" / "Just open".
+    - Clicking `Pin` pins without navigation; clicking `Unpin` unpins + Undo toast.
+    - Tests: `DevicesStorePage.test.tsx` — grid renders from registry, pin/unpin flips card state, Pin-and-open dialog behavior, kebab ⋮ is present.
+    - Validation target: typecheck + build + focused Jest PASS.
+  - T2426-C: **Hero-image backend + upload/revert UI + integration round-trip + Playwright e2e + visual regression** — [ ] pending.
+    - Backend: `app/services/device_hero_image_service.py` (Pillow center-crop + 1024×1024 downscale, stores under `~/.map2/device-hero-overrides/<id>.png` + a small JSON manifest with `{uploaded_at, original_size_bytes, original_mime}`), `app/routes/device_hero_images.py` (`POST /api/devices/hero-images/{id}`, `GET /api/devices/hero-images/{id}`, `DELETE /api/devices/hero-images/{id}`), wired in `app/main.py`; `Pillow` added to `requirements-backend-runtime.txt` if missing.
+    - Frontend: `web/src/app/api/deviceHeroImages.ts` thin client; `DevicesStorePage` card consumes the override URL first, falls back to packaged SVG then enlarged icon; kebab ⋮ wires "Upload hero image…" (file picker + `PUT` + toast "Uploaded") and "Revert to default image" (`DELETE` + toast "Reverted").
+    - Tests: `tests/test_device_hero_image_service.py` (happy, oversized, bad mime, non-square center-crop, downscale); `tests/test_device_hero_image_route.py` (upload → GET round-trip, 404 fallback, DELETE path); `web/src/app/api/deviceHeroImages.test.ts`; one Playwright flow in `scripts/run_devices_store_visual_smoke.mjs` that asserts default / pinned-dimmed / custom-hero card states, and a small e2e that pins a device → sees it in the nav → unpins → it disappears.
+    - Validation target: pytest + jest + typecheck + build + visual-smoke artifact green.
+  - Atomic commits on master + `git push origin master && git push gitlab master` per subtask.
+  - `cd web && npm run typecheck`, `cd web && npm run build`, and `pytest tests/test_device_hero_image*` PASS per applicable slice.
+Assigned to: Claude
+Last updated: 2026-04-22 EDT - Claude
 
 ---
 
