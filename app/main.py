@@ -722,11 +722,57 @@ async def lifespan(app):
             from app.config import config_get as _cfg_get
             is_management = bool(_cfg_get("cluster.is_management_node", False))
 
+            # Layer 2 cluster reconciler — composed from peer discovery +
+            # per-node observed state + tier handlers. Defensive: if any
+            # dependency isn't wired, cluster_reconciler stays None and the
+            # scheduler runs Layer 1 only.
+            cluster_reconciler_callable = None
+            if is_management:
+                try:
+                    from app.services.state_authority_cluster_reconciler import (
+                        ClusterReconciler,
+                    )
+
+                    async def _cluster_desired_state():
+                        try:
+                            live = await _live_payload_producer()
+                            return live
+                        except Exception:
+                            return None
+
+                    async def _cluster_observed_state(node_id: str):
+                        # Follow-up will fetch via /api/node/{id}/proxy/api/snapshots/live.
+                        # For now the observed producer is a no-op returning None,
+                        # which reports the node as offline in the report. This
+                        # keeps the scheduler green until the proxy path is wired.
+                        return None
+
+                    async def _cluster_list_nodes():
+                        try:
+                            from app.services.peer_discovery import list_peer_node_ids  # type: ignore
+                            return await list_peer_node_ids()
+                        except Exception:
+                            return []
+
+                    cluster_reconciler_obj = ClusterReconciler(
+                        desired_state=_cluster_desired_state,
+                        observed_state=_cluster_observed_state,
+                        list_nodes=_cluster_list_nodes,
+                        apply_corrections=False,  # Follow-up wires correction handlers
+                    )
+
+                    async def _cluster_reconciler_callable():
+                        return await cluster_reconciler_obj.reconcile()
+
+                    cluster_reconciler_callable = _cluster_reconciler_callable
+                except Exception as exc:
+                    logger.debug("Cluster reconciler composition skipped: %s", exc)
+
             state_authority_scheduler = StateAuthorityReconciliationScheduler(
                 config=ReconciliationSchedulerConfig(is_management_node=is_management),
                 live_payload_producer=_live_payload_producer,
                 local_reconciler=_local_reconcile,
-                cluster_reconciler=None,  # Follow-up will plug in etcd aggregator
+                cluster_reconciler=cluster_reconciler_callable,
             )
             app.state.state_authority_scheduler = state_authority_scheduler
             await safe_start_service(

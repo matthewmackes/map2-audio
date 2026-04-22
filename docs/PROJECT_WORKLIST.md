@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority epic COMPLETE across all 6 phases + UX + app.main wiring + evidence. 163 new tests PASS, 93 pre-existing tests unchanged, 13 commits dual-pushed.
+Last updated: 2026-04-22 EDT - T2425 State Authority epic COMPLETE + follow-ups shipped (dedicated /state-authority workspace page, activation hook catalog, Layer 2 cluster reconciler composition, cluster reconciler wired into app.main lifespan). 204 tests PASS, 93 pre-existing tests unchanged, 16 commits dual-pushed.
 
 ---
 
@@ -34,8 +34,26 @@ Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + ev
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
 
+ID: T2425-POST
+Status: [✓] Done
+Title: Post-epic follow-ups — /state-authority page + hook catalog + Layer 2 cluster reconciler composition
+Description:
+- Goal / acceptance criteria: Ship the remaining visible-UX and cluster-integration work on top of the completed 6-phase State Authority foundation.
+- Shipped outputs:
+  1. `web/src/app/pages/StateAuthorityPage.tsx` — dedicated workspace at `/state-authority` with 3 Carbon Tabs: Morph Pad, Block Picker, Reconciliation metrics (5s polling). Registered in App.tsx via lazy import + RouteBoundary; `StateAuthorityPage-*.js` confirmed in production bundle.
+  2. `app/services/state_authority_hook_catalog.py` — canonical registry of 11 activation hooks (5 plan-canonical + 6 MAP2 hardware surfaces). Exposes `canonical_activation_hook_names()`, `map2_activation_hook_names()`, `all_known_hook_names()`, `lookup_hook()`, `hook_configs_for(names)`, `default_hook_configs()`. Makes the existing DB-stored `state_authority.activation_hooks` config list actionable for the FSM from phase 3.
+  3. `app/services/state_authority_cluster_reconciler.py` — Layer 2 composition: `ClusterReconciler` class takes producers (desired state, observed state per node, node list) + tier handlers (push_params, trigger_reactivation, redeploy_asset, trigger_failover). Pure composition — no transport. Returns structured `ClusterReconciliationReport` with per-node drift/topology/missing_assets classification + actions_taken log.
+  4. `app/main.py` wires the cluster reconciler into the lifespan scheduler when `cluster.is_management_node=true`. Observed-state producer returns None for now (safe no-op = reports as offline); follow-up will plug in `/api/node/{id}/proxy/api/snapshots/live`.
+- Tests: 27 new tests — StateAuthorityPage.test.tsx (2), test_state_authority_hook_catalog.py (9), test_state_authority_cluster_reconciler.py (10), test_state_authority_routes.py (12 including extensions).
+- Validation: 177 backend tests pass, 7 frontend MorphPad + 7 BlockPicker + 7 stateAuthority client + 2 StateAuthorityPage tests pass, `npx tsc --noEmit` PASS, `npm run build` PASS (23.09s), `from app.main import app` PASS.
+- Remaining follow-up (not blocking T2425 close): Mount MorphPad + BlockPicker inline in SnapshotEditorPageContent. Wire etcd observed-state producer + HTTP correction handlers in the cluster reconciler.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+
+---
+
 ID: T2425-UX
-Status: [>] In Progress
+Status: [✓] Done
 Title: Frontend UX — Morph Pad + route extension + reconciliation metrics exposure
 Description:
 - Goal / acceptance criteria: Deliver the gigging tonechaser's most visible surface — the A/B/C/D morph pad — as a Carbon-native React component that binds directly to the new `/api/state-authority/morph/position` endpoint. Extend the state-authority route with morph set/get + reconciliation metrics exposure. Extend the frontend TypeScript client to match.
