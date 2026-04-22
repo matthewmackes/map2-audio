@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1234** Python | **1191** TypeScript | **136** C++/H | **144** Docs | **2619** total commits | **3** stars | **0** forks | **0** open issues
+**1236** Python | **1191** TypeScript | **136** C++/H | **144** Docs | **2622** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1460f2b9`](https://github.com/matthewmackes/map2-audio/commit/1460f2b978dcd44c8adc4a6dd51c4c0326c130ed) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
+| [`6a30d899`](https://github.com/matthewmackes/map2-audio/commit/6a30d899cf130b7223588e21e52841ed35a95518) | feat(state-authority): T2425-P5 — reconciliation schedule... | Map2 Audio | 2026-04-22 |
+| [`f7b496a9`](https://github.com/matthewmackes/map2-audio/commit/f7b496a9f73d8ac2de428148cc5b2fbaad745a0e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`a015809c`](https://github.com/matthewmackes/map2-audio/commit/a015809ce2eec6b356052bb62395bc049f9cc83f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
 | [`cdae21f8`](https://github.com/matthewmackes/map2-audio/commit/cdae21f82d0e6ecf459f2c77c153bdf6a3367199) | feat(state-authority): T2425-P3b+P4 — verify C++ crossfad... | Map2 Audio | 2026-04-22 |
 | [`7451e152`](https://github.com/matthewmackes/map2-audio/commit/7451e1529febd4238ee3e1831739ff965fb6fd5a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`0b5eca39`](https://github.com/matthewmackes/map2-audio/commit/0b5eca39f552a410ee7d31ff58d4267a0bd2629c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
 | [`aaee4a6a`](https://github.com/matthewmackes/map2-audio/commit/aaee4a6aa7604285e94a4c076befad48b9cbfc74) | feat(state-authority): T2425-P3 — activation state machine | Map2 Audio | 2026-04-22 |
-| [`a461e32a`](https://github.com/matthewmackes/map2-audio/commit/a461e32a40cabc87c3ba3aab9b96054cb6fcacc3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`012f7db1`](https://github.com/matthewmackes/map2-audio/commit/012f7db1e1e331c3f65fb81f1854363b56c7946b) | feat(state-authority): T2425-P2b — 7 day-1 sub-service fa... | Map2 Audio | 2026-04-22 |
-| [`7a18be4d`](https://github.com/matthewmackes/map2-audio/commit/7a18be4d2ecf86bb7299a1b02647112083484187) | feat(state-authority): T2425-P2a — frontend stateAuthorit... | Map2 Audio | 2026-04-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
