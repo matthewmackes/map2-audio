@@ -5495,7 +5495,7 @@ Last updated: 2026-04-05 00:39 EDT - Codex
   - `PYTHONPYCACHEPREFIX=/tmp/map2-pyc python3 -m py_compile app/services/snapshot_service.py app/services/chain_service.py tests/test_snapshot_service.py tests/test_chain_plugin_loader_state_persistence.py` -> PASS
 
 ID: T746
-Status: [��] Done
+Status: [✓] Done
 Title: Live MIDI map edit on active snapshot does not update MIDI engine
 Description:
 - Goal / acceptance criteria: When `replace_midi_map()` is called on the currently-live snapshot, the MIDI engine must be updated immediately so CC mappings take effect without requiring snapshot reactivation.
@@ -27223,7 +27223,7 @@ Last updated: 2026-04-11 11:29 EDT - Codex
   - Live restart verification: `journalctl -u map2-backend.service` no longer logs `sqlite3.OperationalError: no such column: plugins.tags` during startup
 
 ID: T971
-Status: [x] Done
+Status: [✓] Done
 Title: Restore backend request servicing so systemd readiness probes succeed after startup completes
 Description:
 - Goal / acceptance criteria: Explain and remediate why `map2-backend.service` reaches `Application startup complete` and binds `0.0.0.0:8080`, yet local HTTP requests such as `/api/live` and `/api/health` still hang long enough for the unit's `ExecStartPost` probe loop to time out and restart the service. Determine which startup service, background task, or runtime gate monopolizes request servicing after bind, then land the required fix with live verification.
