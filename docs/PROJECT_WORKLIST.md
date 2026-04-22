@@ -33,6 +33,24 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-P2b
+Status: [✓] Done
+Title: Phase 2b — 7 day-1 sub-service facades (crud, activation, topology, portability, revision, control_map, community)
+Description:
+- Goal / acceptance criteria: Land the 7 day-1 services specified in plan Q97 as thin, focused wrappers over the existing SnapshotService aggregator (Q50 — "no facade; routes call sub-services directly"). Each service exposes the methods for exactly one responsibility domain; implementation stays in the battle-tested SnapshotEditorMixin / SnapshotRuntimeMixin / SnapshotPersistenceMixin so Phase 2b can land without a risky rewrite. Routes import the sub-service they need and call its domain methods directly.
+- Why it matters: Route-level separation of concerns lets each domain evolve independently (e.g., community workflows changing without touching CRUD), makes the monolith inspectable through focused interfaces, and enables targeted testing of each responsibility.
+- Dependencies: Phase 1 (complete).
+- Estimated effort: Medium (facade-first, no rewrite).
+- Required outputs:
+  - `app/services/state_authority_services.py` with 7 service classes + `StateAuthorityServices` bundle + `build_state_authority_services()` factory
+  - `tests/test_state_authority_services.py` with per-service delegation coverage + fallback paths
+  - Atomic commit on master + dual-push
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Landed 7 services (SnapshotCrudService, SnapshotActivationService, SnapshotTopologyService, SnapshotPortabilityService, SnapshotRevisionService, SnapshotControlMapService, SnapshotCommunityService). Each delegates to the SnapshotService aggregator via direct method forwarding with graceful fallback (hasattr checks) for methods not yet wired on the current aggregator. Activation service also falls back from activate_snapshot → load_snapshot. Preload candidate planner, revision diff, community methods return sensible empty/None defaults when owner not wired, so routes can adopt the facade even while the underlying method is being migrated. Validation: pytest tests/test_state_authority_services.py → 15/15 PASS.
+
+---
+
 ID: T2425-P1a
 Status: [>] In Progress
 Title: Phase 1a — Full JSON Schema v2026.04 covering every graph-doc section
