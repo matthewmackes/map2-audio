@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1223** Python | **1189** TypeScript | **136** C++/H | **144** Docs | **2603** total commits | **3** stars | **0** forks | **0** open issues
+**1224** Python | **1189** TypeScript | **136** C++/H | **144** Docs | **2606** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-22 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-21 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
 | [MAP2 Installation Guide (Created by AI. Not Yet Tested - Matt)](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Installation_Guide_2026-02-14.md) | 2026-04-20 |
 | [MAP2 + Maschine MK1 Headless Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-20 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9b017dce`](https://github.com/matthewmackes/map2-audio/commit/9b017dcec14f8575e0d08dace8d7e713907de7e2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
+| [`10ec8c45`](https://github.com/matthewmackes/map2-audio/commit/10ec8c4503332c8b6c518a7e014c0243c0f21e0c) | feat(state-authority): T2425-P1a — full JSON Schema v2026... | Map2 Audio | 2026-04-22 |
+| [`fc7d45c0`](https://github.com/matthewmackes/map2-audio/commit/fc7d45c0f222e8508acb7bb1348b65e52e08c716) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`ff2b82bc`](https://github.com/matthewmackes/map2-audio/commit/ff2b82bccc2d12a46254a154521bc087f84154fb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
 | [`135af5b7`](https://github.com/matthewmackes/map2-audio/commit/135af5b70a0d40b0c72c6614ddfb250cb6a8cef2) | chore(branding): wire MAP-LOGO-2026.jpg into WelcomeHero ... | Map2 Audio | 2026-04-22 |
 | [`0df92659`](https://github.com/matthewmackes/map2-audio/commit/0df926591de5404cf544c24ce47be2dc3be4e051) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`0fdb5a68`](https://github.com/matthewmackes/map2-audio/commit/0fdb5a68dbc2e786878821ddbc09eb9f24da827b) | chore(branding): update MAP2 logo and wire WelcomeHero to... | Map2 Audio | 2026-04-22 |
 | [`d1d757a5`](https://github.com/matthewmackes/map2-audio/commit/d1d757a57f115f4801fa6f61ebe5ac917aa7590b) | feat(platforms-overview): network latency overlays, inlin... | Map2 Audio | 2026-04-22 |
-| [`bea83ccd`](https://github.com/matthewmackes/map2-audio/commit/bea83ccdd291dbfa0817def659a2d310ec45d01a) | feat(devices): MAP2 Hardware Store — storefront redesign ... | Map2 Audio | 2026-04-22 |
-| [`cd9ad13c`](https://github.com/matthewmackes/map2-audio/commit/cd9ad13c07a5d79ccd98c4fd0350bed807ce422e) | feat(platforms-overview): replace Configuration Authority... | Map2 Audio | 2026-04-22 |
-| [`0c1192f5`](https://github.com/matthewmackes/map2-audio/commit/0c1192f5f2df390eeb662af843788acf20853b80) | refactor(devices): unify device interfaces under /devices... | Map2 Audio | 2026-04-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
