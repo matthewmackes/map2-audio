@@ -128,3 +128,23 @@ These are visible-UX and cluster-integration tasks that build on the foundation 
 | 1cd62e32 | UX | BlockPicker wired to tonechaser URI catalog |
 
 Every commit dual-pushed via `git push origin master && git push gitlab master`. Both remotes verified in sync at each step.
+
+---
+
+## 9. Post-epic follow-ups shipped (same session)
+
+Three additional slices landed after the main epic closed, strengthening the operator-visible surface and the cluster path:
+
+| Slice | SHA | Summary |
+|-------|-----|---------|
+| UX workspace | 42e4d174 | `/state-authority` Carbon page with Morph Pad + Block Picker + live reconciliation metrics |
+| Hooks + cluster | c82d915c | Activation hook catalog (11 entries) + Layer 2 `ClusterReconciler` composition + app.main wiring |
+| Advanced menu | ad6f8166 | `/state-authority` surfaced in the Advanced nav under Audio Grid |
+
+**Post-epic totals:**
+
+- **214** backend State Authority tests pass (227 including pre-existing snapshot/chain suites).
+- **41** frontend State Authority tests pass across 6 suites (MorphPad, BlockPicker, stateAuthority client, StateAuthorityPage, unifiedChannelGrid BlockPicker, advancedMenuItems).
+- `npx tsc --noEmit` PASS; `npm run build` PASS (22.68s); `from app.main import app` PASS (7 state-authority routes registered).
+- 16 commits dual-pushed to both origin + gitlab.
+
