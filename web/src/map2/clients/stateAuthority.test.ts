@@ -124,6 +124,45 @@ describe('stateAuthorityApi', () => {
     expect(state.x).toBe(0.5)
   })
 
+  it('fetches the live State Authority graph document', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        snapshot_id: 42,
+        snapshot_name: 'Live Tone',
+        is_live: true,
+        document: { version: '2026.04', meta: { name: 'Live Tone', type: 'snapshot' } },
+      }),
+    })
+
+    const result = await stateAuthorityApi.getLiveDocument()
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/live-document`)
+    expect(result.snapshot_id).toBe(42)
+    expect(result.is_live).toBe(true)
+    expect((result.document as any).meta.name).toBe('Live Tone')
+  })
+
+  it('fetches a specific snapshot document by id', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        snapshot_id: 101,
+        snapshot_name: 'Archived',
+        is_live: false,
+        document: { version: '2026.04' },
+      }),
+    })
+
+    const result = await stateAuthorityApi.getSnapshotDocument(101)
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${API_BASE}/api/state-authority/snapshots/101/document`,
+    )
+    expect(result.snapshot_id).toBe(101)
+    expect(result.is_live).toBe(false)
+  })
+
   it('fetches reconciliation metrics in JSON + Prometheus format', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

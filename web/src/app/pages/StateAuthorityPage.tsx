@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Layer, Tag, Tile, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react'
 import { MorphPad } from '../components/StateAuthority/MorphPad'
 import { BlockPicker } from '../components/StateAuthority/BlockPicker'
+import { GraphDocumentInspector } from '../components/StateAuthority/GraphDocumentInspector'
 import {
   stateAuthorityApi,
   type StateAuthorityCatalogEntry,
@@ -53,6 +54,7 @@ export function StateAuthorityPage() {
         <TabList aria-label="State Authority workspaces">
           <Tab>Morph Pad</Tab>
           <Tab>Block Picker</Tab>
+          <Tab>Document</Tab>
           <Tab>Reconciliation</Tab>
         </TabList>
         <TabPanels>
@@ -95,6 +97,18 @@ export function StateAuthorityPage() {
                   </div>
                 </Tile>
               ) : null}
+            </div>
+          </TabPanel>
+
+          <TabPanel>
+            <div className="state-authority-page__section">
+              <h2>Canonical Graph Document</h2>
+              <p className="state-authority-page__help">
+                The live snapshot's JSONB State Authority document — the canonical source of truth
+                per plan Q1. Every projection (chains table, engine state, reconciliation report)
+                derives from this. Enter a snapshot id to inspect any archived snapshot's document.
+              </p>
+              <GraphDocumentInspector />
             </div>
           </TabPanel>
 

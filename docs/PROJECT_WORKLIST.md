@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority FULLY CLOSED end-to-end including BlockPicker inline in the Snapshot Editor's plugin browser modal (ContentSwitcher toggle between "Plugin directory" and "Tonechaser catalog" modes). 246 backend State Authority tests PASS, 146 Snapshot Editor tests PASS (35 suites), 41 frontend State Authority tests PASS. All 4 operator surfaces now reachable: /state-authority workspace + Advanced nav + Snapshot Editor inline MorphPad + Snapshot Editor inline BlockPicker.
+Last updated: 2026-04-22 EDT - T2425 State Authority + GraphDocumentInspector shipped — operators can now view the canonical JSONB State Authority document (plan Q1 source of truth) for any snapshot via GET /api/state-authority/live-document + snapshots/{id}/document routes and a 4th tab on /state-authority. 251 backend State Authority tests PASS, 146 Snapshot Editor tests PASS, 51 frontend State Authority tests PASS across 6 suites.
 
 ---
 
@@ -33,6 +33,34 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-DOCUMENT-INSPECTOR
+Status: [✓] Done
+Title: Post-epic — GraphDocumentInspector exposes canonical JSONB source-of-truth
+Description:
+- Goal / acceptance criteria: Give operators a direct view of the canonical State Authority JSONB document (plan Q1: "single JSONB column, drop relational tables") without SQL access. Add read-only routes for the live snapshot's document + any snapshot's document by id, a Carbon-native inspector component, and a 4th tab on the `/state-authority` workspace.
+- Why it matters: Every projection (chains table, engine state, reconciliation report, metrics) derives from this JSONB document — but until now operators had no visible surface to confirm what the canonical source is actually committed to. This closes the final observability gap in the State Authority rollout.
+- Dependencies: T2425 epic shipped (schema + validator + catalog).
+- Shipped outputs:
+  - `GET /api/state-authority/live-document` — raw document of the currently `is_active=True` snapshot. Returns 404 `no_live_snapshot` envelope when none.
+  - `GET /api/state-authority/snapshots/{id}/document` — raw document of any snapshot by id. Returns 404 `snapshot_not_found` envelope with `details.snapshot_id` when missing.
+  - `web/src/map2/clients/stateAuthority.ts`: added `getLiveDocument()` + `getSnapshotDocument(id)` + `StateAuthorityDocument` type.
+  - `web/src/app/components/StateAuthority/GraphDocumentInspector.tsx` + `.css`:
+    - Loads live doc on mount (or specific snapshot via `snapshotId` prop)
+    - Summary tile with LIVE/archived Tag + document version + counts (nodes/edges/channels/morph mode)
+    - Raw JSON body in a Plex Mono `<pre>` with focusable keyboard access
+    - Carbon `NumberInput` for snapshot id + Refresh + Copy JSON buttons
+    - Graceful degradation: InlineLoading, InlineNotification on error, clipboard-API failure silently ignored
+  - `web/src/app/pages/StateAuthorityPage.tsx`: 4th Carbon Tab "Document" between Block Picker and Reconciliation. Plan-Q1-language help text.
+- Tests:
+  - Backend: `test_state_authority_routes.py` extended with 5 inspector tests (live-document happy path, live-document 404, snapshot-by-id happy path, snapshot-by-id 404 with details, null-document defensive handling). 17/17 route tests pass.
+  - Frontend: `GraphDocumentInspector.test.tsx` 8 tests (live fetch on mount, LIVE Tag render, summary metrics scoped by metric label, raw JSON body assertion, snapshot-by-id prop routing, injected-document no-fetch mode, error surfacing, Refresh button re-fetches). `stateAuthority.test.ts` extended with 2 client tests. `StateAuthorityPage.test.tsx` extended to assert the 4th Document tab.
+- Validation: `npx tsc --noEmit` PASS, `npm run build` PASS (21.03s), 251 backend State Authority tests PASS (up from 246), 51 frontend State Authority tests PASS across 6 suites (up from 41).
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Read-only inspector — does not mutate the document. Since the route reads `Snapshot.document` directly, it reflects exactly what was last persisted (no projection drift). For a running-engine view, operators already have the existing `/api/snapshots/live` route returning the projected chain/plugin detail. This inspector complements that by surfacing the JSONB source of truth itself.
+
+---
 
 ID: T2425-POST-BLOCKPICKER-INLINE
 Status: [✓] Done

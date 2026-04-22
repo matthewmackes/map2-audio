@@ -209,6 +209,92 @@ class ReconciliationMetricsResponse(BaseModel):
     prometheus: str
 
 
+# -----------------------------------------------------------------------------
+# Graph document inspector — expose the canonical JSONB State Authority
+# document for the live snapshot or any snapshot by id. Plan Q1 locks the
+# single JSONB column as the source of truth; operators need a way to see
+# it without SQL access.
+# -----------------------------------------------------------------------------
+
+
+class StateAuthorityDocumentResponse(BaseModel):
+    snapshot_id: int | None
+    snapshot_name: str | None
+    is_live: bool
+    document: dict[str, Any]
+
+
+@router.get("/live-document", response_model=StateAuthorityDocumentResponse)
+async def get_live_document() -> StateAuthorityDocumentResponse:
+    """Return the raw graph document of the currently-live snapshot.
+
+    This is the canonical State Authority source of truth per plan Q1 — the
+    same JSONB value stored in `snapshots.document`. Operators use this to
+    verify what the node is actually committed to, regardless of any
+    projection-layer transformations.
+    """
+    from sqlalchemy import select as _select
+
+    from app.database import Snapshot, get_session
+
+    async with get_session() as session:
+        stmt = _select(Snapshot).where(Snapshot.is_active.is_(True)).limit(1)
+        result = await session.execute(stmt)
+        snapshot = result.scalars().first()
+        if snapshot is None:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": {
+                        "code": "no_live_snapshot",
+                        "message": "No snapshot is currently flagged is_active=True on this node.",
+                        "details": None,
+                    }
+                },
+            )
+        document = dict(snapshot.document or {})
+        return StateAuthorityDocumentResponse(
+            snapshot_id=snapshot.id,
+            snapshot_name=snapshot.name,
+            is_live=True,
+            document=document,
+        )
+
+
+@router.get(
+    "/snapshots/{snapshot_id}/document",
+    response_model=StateAuthorityDocumentResponse,
+)
+async def get_snapshot_document(snapshot_id: int) -> StateAuthorityDocumentResponse:
+    """Return the raw graph document for any snapshot by id (live or not)."""
+    from sqlalchemy import select as _select
+
+    from app.database import Snapshot, get_session
+
+    async with get_session() as session:
+        stmt = _select(Snapshot).where(Snapshot.id == snapshot_id).limit(1)
+        result = await session.execute(stmt)
+        snapshot = result.scalars().first()
+        if snapshot is None:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": {
+                        "code": "snapshot_not_found",
+                        "message": f"Snapshot id {snapshot_id} not found.",
+                        "details": {"snapshot_id": snapshot_id},
+                    }
+                },
+            )
+        document = dict(snapshot.document or {})
+        return StateAuthorityDocumentResponse(
+            snapshot_id=snapshot.id,
+            snapshot_name=snapshot.name,
+            is_live=bool(snapshot.is_active),
+            document=document,
+        )
+
+
 @router.get("/reconciliation/metrics", response_model=ReconciliationMetricsResponse)
 async def get_reconciliation_metrics(request: Request) -> ReconciliationMetricsResponse:
     """Expose reconciliation scheduler metrics as both JSON and Prometheus.

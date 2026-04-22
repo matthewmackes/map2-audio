@@ -26,6 +26,18 @@ jest.mock('../../map2/clients/stateAuthority', () => ({
       ],
       count: 1,
     })),
+    getLiveDocument: jest.fn(async () => ({
+      snapshot_id: 1,
+      snapshot_name: 'Live Tone',
+      is_live: true,
+      document: { version: '2026.04' },
+    })),
+    getSnapshotDocument: jest.fn(async () => ({
+      snapshot_id: 1,
+      snapshot_name: 'Archived',
+      is_live: false,
+      document: { version: '2026.04' },
+    })),
     getReconciliationMetrics: jest.fn(async () => ({
       metrics: {
         local_runs_total: 3,
@@ -68,12 +80,13 @@ describe('StateAuthorityPage', () => {
     jest.useRealTimers()
   })
 
-  it('renders the three workspace tabs', async () => {
+  it('renders the four workspace tabs', async () => {
     await act(async () => {
       render(<StateAuthorityPage />)
     })
     expect(screen.getByRole('tab', { name: /morph pad/i })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /block picker/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /document/i })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /reconciliation/i })).toBeTruthy()
   })
 

@@ -179,6 +179,117 @@ def test_get_morph_state_returns_current_engine_state():
     assert body["configured_corners"] == ["A", "C"]
 
 
+# ---------------------------------------------------------------------------
+# Graph document inspector routes — live-document + snapshots/{id}/document.
+# ---------------------------------------------------------------------------
+
+
+class _FakeSnapshot:
+    def __init__(self, id: int, name: str, document: dict, is_active: bool):
+        self.id = id
+        self.name = name
+        self.document = document
+        self.is_active = is_active
+
+
+class _FakeSession:
+    """Minimal async session double supporting `.execute(stmt).scalars().first()`."""
+
+    def __init__(self, result_snapshot):
+        self._result = result_snapshot
+
+    async def execute(self, _stmt):
+        class _ScalarsProxy:
+            def __init__(self, inner):
+                self._inner = inner
+            def first(self):
+                return self._inner
+        class _ResultProxy:
+            def __init__(self, inner):
+                self._inner = inner
+            def scalars(self):
+                return _ScalarsProxy(self._inner)
+        return _ResultProxy(self._result)
+
+
+def _session_ctx(snapshot):
+    """Build an async-context-manager that yields a _FakeSession."""
+    class _Ctx:
+        async def __aenter__(self_inner):
+            return _FakeSession(snapshot)
+        async def __aexit__(self_inner, *args):
+            return None
+    return _Ctx()
+
+
+def test_get_live_document_returns_active_snapshots_graph_doc():
+    doc = {
+        "version": "2026.04",
+        "meta": {"name": "Live Tone", "type": "snapshot"},
+        "graph": {"nodes": [{"id": "n1", "uri": "map2:fx:nam"}], "edges": []},
+    }
+    fake = _FakeSnapshot(id=42, name="Live Tone", document=doc, is_active=True)
+
+    with patch("app.database.get_session", return_value=_session_ctx(fake)):
+        client = _client()
+        response = client.get("/api/state-authority/live-document")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["snapshot_id"] == 42
+    assert body["snapshot_name"] == "Live Tone"
+    assert body["is_live"] is True
+    assert body["document"]["meta"]["name"] == "Live Tone"
+    assert body["document"]["graph"]["nodes"][0]["uri"] == "map2:fx:nam"
+
+
+def test_get_live_document_returns_404_when_no_snapshot_is_active():
+    with patch("app.database.get_session", return_value=_session_ctx(None)):
+        client = _client()
+        response = client.get("/api/state-authority/live-document")
+    assert response.status_code == 404
+    assert response.json()["detail"]["error"]["code"] == "no_live_snapshot"
+
+
+def test_get_snapshot_document_returns_document_for_any_snapshot_id():
+    doc = {
+        "version": "2026.04",
+        "meta": {"name": "Archived Tone", "type": "snapshot"},
+        "graph": {"nodes": [], "edges": []},
+    }
+    fake = _FakeSnapshot(id=101, name="Archived Tone", document=doc, is_active=False)
+
+    with patch("app.database.get_session", return_value=_session_ctx(fake)):
+        client = _client()
+        response = client.get("/api/state-authority/snapshots/101/document")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["snapshot_id"] == 101
+    assert body["is_live"] is False
+    assert body["document"]["meta"]["name"] == "Archived Tone"
+
+
+def test_get_snapshot_document_returns_404_when_id_missing():
+    with patch("app.database.get_session", return_value=_session_ctx(None)):
+        client = _client()
+        response = client.get("/api/state-authority/snapshots/999/document")
+    assert response.status_code == 404
+    error = response.json()["detail"]["error"]
+    assert error["code"] == "snapshot_not_found"
+    assert error["details"]["snapshot_id"] == 999
+
+
+def test_get_snapshot_document_returns_empty_dict_when_document_is_null():
+    """JSONB column defaults to {} via SQLAlchemy default=dict, but handle
+    None defensively in case of a legacy row."""
+    fake = _FakeSnapshot(id=50, name="Legacy", document=None, is_active=False)
+
+    with patch("app.database.get_session", return_value=_session_ctx(fake)):
+        client = _client()
+        response = client.get("/api/state-authority/snapshots/50/document")
+    assert response.status_code == 200
+    assert response.json()["document"] == {}
+
+
 def test_get_reconciliation_metrics_returns_json_and_prometheus():
     client = _client()
     response = client.get("/api/state-authority/reconciliation/metrics")

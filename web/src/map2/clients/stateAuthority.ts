@@ -37,6 +37,13 @@ export interface StateAuthorityMorphState {
   configured_corners: string[]
 }
 
+export interface StateAuthorityDocument {
+  snapshot_id: number | null
+  snapshot_name: string | null
+  is_live: boolean
+  document: Record<string, unknown>
+}
+
 export interface StateAuthorityReconciliationMetrics {
   metrics: {
     local_runs_total: number
@@ -90,5 +97,13 @@ export const stateAuthorityApi = {
   getReconciliationMetrics: async (): Promise<StateAuthorityReconciliationMetrics> =>
     fetchJson<StateAuthorityReconciliationMetrics>(
       `${API_BASE}/api/state-authority/reconciliation/metrics`,
+    ),
+
+  getLiveDocument: async (): Promise<StateAuthorityDocument> =>
+    fetchJson<StateAuthorityDocument>(`${API_BASE}/api/state-authority/live-document`),
+
+  getSnapshotDocument: async (snapshotId: number): Promise<StateAuthorityDocument> =>
+    fetchJson<StateAuthorityDocument>(
+      `${API_BASE}/api/state-authority/snapshots/${snapshotId}/document`,
     ),
 }
