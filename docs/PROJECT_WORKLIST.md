@@ -33,6 +33,24 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened; tier-1 mission-critical; tonechaser workflow)
 Subtasks:
 
+ID: T2425-P3
+Status: [✓] Done
+Title: Phase 3 — Activation State Machine (5-phase FSM + hooks + 10s timeout)
+Description:
+- Goal / acceptance criteria: Formalize the 5-phase activation lifecycle specified in the plan: VALIDATING → STAGING → APPLYING → VERIFYING → LIVE, with phase-aware rollback (Q64/Q65 — failure pre-APPLYING keeps old audio, during/after stops), 10-second total timeout (Q24), per-phase timeouts, config-file activation hooks (Q40/Q46/Q90) with best-effort error handling (Q10), WebSocket progress events on the existing `snapshot_runtime_live_state` topic (Q51). FSM is transport-agnostic via injected publisher so WS, Raft log entries, Prometheus, and tests can all subscribe.
+- Why it matters: The current activation is imperatively wired across multiple services without a formal lifecycle contract. The FSM gives operators a single model of "what phase is the activation in?" and enables uniform telemetry, timeout enforcement, and phase-aware audio-stop/audio-preserve policy.
+- Dependencies: Phase 1 + Phase 2b (complete).
+- Estimated effort: Medium.
+- Required outputs:
+  - `app/services/snapshot_activation_fsm.py` (ActivationPhase enum, PhaseProgressEvent, ActivationHookConfig, ActivationResult, SnapshotActivationFSM orchestrator, load_activation_hooks_from_config parser)
+  - `tests/test_snapshot_activation_fsm.py` — 17 tests covering happy path, per-phase failure, apply-boundary classification, phase + total timeouts, hooks (ok/error/timeout/skipped/disabled/abort-on-error), config parser
+  - Atomic commit on master + dual-push
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Landed `snapshot_activation_fsm.py` as a transport-agnostic orchestrator. 5 canonical phases plus terminal FAILED; `phase_is_past_apply_boundary()` exposes the Q65 audio-stop boundary. Per-phase handlers are optional (no-op if not wired), timeouts default to 1s/4.5s/1.5s/2.5s totaling 9.5s within the Q24 10s envelope, tunable per-call. Hooks from `activation_hooks` config list fire during VERIFYING with best-effort Q10 semantics — `warn` hooks record error status and activation still succeeds, `abort` hooks raise `ActivationFailedError` so the FSM transitions to FAILED. Progress events published through an injected coroutine publisher; tests use a list-collector publisher. Validation: pytest tests/test_snapshot_activation_fsm.py → 17/17 PASS.
+
+---
+
 ID: T2425-P2b
 Status: [✓] Done
 Title: Phase 2b — 7 day-1 sub-service facades (crud, activation, topology, portability, revision, control_map, community)
