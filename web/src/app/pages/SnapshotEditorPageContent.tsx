@@ -52,6 +52,7 @@ import {
   Button,
   Checkbox,
   Column,
+  ContentSwitcher,
   Grid,
   InlineNotification,
   InlineLoading,
@@ -62,6 +63,7 @@ import {
   Search,
   Select,
   SelectItem,
+  Switch,
   Tab,
   TabList,
   Tabs,
@@ -225,6 +227,7 @@ import {
   SnapshotEditorSnapshotInspectorControls,
   SnapshotEditorSnapshotStatusPanel,
 } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
+import { BlockPicker } from '../components/StateAuthority/BlockPicker'
 import { MorphPad } from '../components/StateAuthority/MorphPad'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
@@ -1087,6 +1090,11 @@ export function SnapshotEditorPage() {
   const setEffectModalOpen = useSnapshotEditorStore((s) => s.setEffectModalOpen)
   const showPluginBrowser = useSnapshotEditorStore((s) => s.showPluginBrowser)
   const setShowPluginBrowser = useSnapshotEditorStore((s) => s.setShowPluginBrowser)
+  // Plugin browser mode — 'catalog' = canonical tonechaser URI catalog from
+  // /api/state-authority/uri-catalog, 'plugins' = the full LV2+native plugin
+  // directory (default). Local state (not persisted) so it defaults back to
+  // 'plugins' each time the modal is reopened.
+  const [pluginBrowserMode, setPluginBrowserMode] = useState<'plugins' | 'catalog'>('plugins')
   const showPresetBrowser = useSnapshotEditorStore((s) => s.showPresetBrowser)
   const setShowPresetBrowser = useSnapshotEditorStore((s) => s.setShowPresetBrowser)
   const showSavePresetModal = useSnapshotEditorStore((s) => s.showSavePresetModal)
@@ -8859,6 +8867,30 @@ export function SnapshotEditorPage() {
           onRequestSubmit={() => setShowPluginBrowser(false)}
         >
           <div className="juce-grid-page__modal-stack juce-grid-page__browser-modal">
+            <div className="juce-grid-page__browser-mode-switch" role="group" aria-label="Plugin browser mode">
+              <ContentSwitcher
+                selectedIndex={pluginBrowserMode === 'plugins' ? 0 : 1}
+                onChange={(event: { index?: number }) => {
+                  const nextIndex = typeof event.index === 'number' ? event.index : 0
+                  setPluginBrowserMode(nextIndex === 0 ? 'plugins' : 'catalog')
+                }}
+                size="sm"
+              >
+                <Switch name="plugins" text="Plugin directory" />
+                <Switch name="catalog" text="Tonechaser catalog" />
+              </ContentSwitcher>
+            </div>
+            {pluginBrowserMode === 'catalog' ? (
+              <BlockPicker
+                hideSystemManaged
+                onPick={(entry) => {
+                  void handleAddPluginToCurrentChain(entry.uri)
+                  setShowPluginBrowser(false)
+                  setPluginBrowserMode('plugins')
+                }}
+              />
+            ) : (
+            <>
             <Search
               labelText="Search plugins"
               placeholder="Search plugins"
@@ -9124,6 +9156,8 @@ export function SnapshotEditorPage() {
                 />
               )}
             </div>
+            </>
+            )}
           </div>
         </Modal>
       )}

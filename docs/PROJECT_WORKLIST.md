@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority FULLY CLOSED end-to-end including correction-receiving routes (apply-parameters + asset deploy) that complete the Layer 2 cluster loop. 246 backend State Authority tests PASS, 146 Snapshot Editor tests PASS, 41 frontend State Authority tests PASS, 20 commits dual-pushed. Every cluster tier handler now reaches a real remote endpoint.
+Last updated: 2026-04-22 EDT - T2425 State Authority FULLY CLOSED end-to-end including BlockPicker inline in the Snapshot Editor's plugin browser modal (ContentSwitcher toggle between "Plugin directory" and "Tonechaser catalog" modes). 246 backend State Authority tests PASS, 146 Snapshot Editor tests PASS (35 suites), 41 frontend State Authority tests PASS. All 4 operator surfaces now reachable: /state-authority workspace + Advanced nav + Snapshot Editor inline MorphPad + Snapshot Editor inline BlockPicker.
 
 ---
 
@@ -33,6 +33,38 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-BLOCKPICKER-INLINE
+Status: [✓] Done
+Title: Post-epic — BlockPicker inline in Snapshot Editor plugin browser modal
+Description:
+- Goal / acceptance criteria: Expose the canonical tonechaser URI catalog alongside the existing plugin directory inside the Snapshot Editor's Add-plugin modal, so operators don't have to leave the editor to pick from the State Authority catalog. Zero-risk integration — no restructuring of the 200-line existing browser, no prop changes to sibling components, local `useState` toggle only.
+- Why it matters: Closes the last visible-UX gap in the State Authority rollout. Operators can now pick from `map2:fx:nam` / `map2:fx:delay` / `map2:fx:reverb-ir` / etc. with full descriptions, default parameters, and category grouping without navigating to `/state-authority`. The existing plugin directory stays the default mode so no existing workflow breaks.
+- Dependencies: T2425-POST (BlockPicker component landed in UX slice), existing `handleAddPluginToCurrentChain(uri)` handler in the editor.
+- Shipped outputs:
+  - `web/src/app/pages/SnapshotEditorPageContent.tsx`:
+    - Added `ContentSwitcher` + `Switch` to the Carbon imports.
+    - Added `BlockPicker` import alongside the existing `MorphPad`.
+    - Added local `pluginBrowserMode: 'plugins' | 'catalog'` state via `useState`; defaults back to `'plugins'` on each modal open (intentional: catalog is a discoverable alternative, not a sticky preference — sticky preference belongs in Special Settings).
+    - Added `.juce-grid-page__browser-mode-switch` ContentSwitcher at the top of the existing modal body with two `Switch` entries: "Plugin directory" (index 0) and "Tonechaser catalog" (index 1).
+    - Conditionally renders `<BlockPicker hideSystemManaged onPick={entry => { handleAddPluginToCurrentChain(entry.uri); setShowPluginBrowser(false); setPluginBrowserMode('plugins') }} />` when mode is `catalog`, otherwise renders the existing browser body unchanged (wrapped in a fragment).
+  - `web/src/app/pages/SnapshotEditorPage.css`: `.juce-grid-page__browser-mode-switch` flex row with `margin-block-end: 0.5rem`.
+- Validation:
+  - `npx tsc --noEmit` PASS.
+  - `npm run build` PASS in 21.05s.
+  - `npx jest --testPathPatterns=SnapshotEditor` — 146/146 PASS across 35 suites. No regressions.
+  - Focused sweep (SnapshotEditorPageContent + StateAuthority + BlockPicker + MorphPad + stateAuthority client + SnapshotEditorPage) — 25/25 PASS across 4 suites.
+  - `npx jest --testPathPatterns=SnapshotEditorPage` — 2/2 PASS (page + integration).
+- Result: operators can now reach the canonical tonechaser URI catalog from 4 surfaces:
+  1. `/state-authority` dedicated workspace (280px MorphPad + full catalog grid)
+  2. Advanced nav menu entry
+  3. Snapshot Editor bottom inspector inline MorphPad (160px compact)
+  4. Snapshot Editor Add-plugin modal "Tonechaser catalog" mode (new)
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Minimal-diff integration. Local `useState` only — did not touch the `snapshotEditorStore` Zustand store. Catalog mode reuses the existing `handleAddPluginToCurrentChain` handler so chain creation + draft mutation + persistence all flow through the same battle-tested path as the native directory's "Add" button. Default stays on "Plugin directory" so no existing operator workflow shifts.
+
+---
 
 ID: T2425-POST-TRANSPORT
 Status: [✓] Done
