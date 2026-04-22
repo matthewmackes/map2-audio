@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority activation FSM now emits canonical PlatformEvents (snapshot.activation.started / .ok / .failed) in parallel to the reconciliation emission shipped earlier. Phase-boundary-aware severity (plan Q65: pre-APPLYING failures = warning/keep audio, during/after = error/stop audio). 334 tests PASS including 8 new FSM emission tests.
+Last updated: 2026-04-22 EDT - T2425 State Authority production activation service now emits canonical PlatformEvents through module-level bridge helpers (_emit_activation_started_platform_event / _emit_activation_outcome_platform_event). Every operator-triggered activation on the real production path now fans out to toasts + event store + webhooks + cluster replication via the canonical bus. 343 tests PASS (9 new emission-helper tests).
 
 ---
 
@@ -33,6 +33,37 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-PRODUCTION-ACTIVATION-EVENTS
+Status: [✓] Done
+Title: Post-epic — production activation service emits canonical PlatformEvents
+Description:
+- Goal / acceptance criteria: Route outcomes from the production activation path (`state_authority_activation_service.py`, the 1,325-line service that actually fires when operators activate a snapshot) through the canonical PlatformEventBus. Previous slice wired the future-FSM; this slice wires the current-day path so real operator activations flow as events today.
+- Why it matters: The three activation kinds (`snapshot.activation.started`, `.ok`, `.failed`) were registered months ago but nothing emitted them until this slice. Now every operator-triggered activation surfaces in the Stage Notification panel, is persisted to the event store, fans out through webhooks, and replicates across the cluster — no bespoke wiring needed per consumer.
+- Dependencies: T2425-POST-FSM-EVENTS (landed the emission pattern), T2425-POST-PLATFORM-EVENTS (registered the kinds).
+- Shipped outputs:
+  - `app/services/state_authority_activation_service.py`:
+    - New module-level helpers `_emit_activation_started_platform_event` + `_emit_activation_outcome_platform_event` that construct a valid `PlatformEvent` envelope and schedule an async `bus.emit()` on the running loop.
+    - `_schedule_platform_event` bridges synchronous callers (the static-method outcome logger) to the async bus, swallowing any failure at debug-log level (plan Q10).
+    - `_log_activation_outcome` now emits the outcome event in addition to its existing log line. Success → `snapshot.activation.ok` at info severity. Degraded (authority confirmation failed) → `snapshot.activation.failed` at warning severity (audio is live but control plane is out of sync).
+    - `activate_snapshot` now fires `snapshot.activation.started` at info severity immediately after `create_activation_intent` succeeds. Uses `.get()` with safe defaults for `node_id` to tolerate legacy intent payloads.
+- Tests (9 new in `tests/test_state_authority_activation_platform_events.py`):
+  - started emits info severity with canonical kind + full context (snapshot_id, request_id, node_id, triggered_by, revision)
+  - started truncates title to the 40-char envelope cap
+  - started tolerates null snapshot_revision
+  - success outcome → `.ok` kind at info severity
+  - degraded outcome → `.failed` kind at warning severity
+  - unknown status defensive path → `.failed` at warning
+  - emitter-raises failure swallowed (plan Q10)
+  - no-running-loop path does not raise + declines to schedule
+  - bus module import failure tolerated
+- Regression: 5/5 pre-existing activation service tests still pass. Used `.get(key) or default` in started-emission to avoid hard-requiring `node_id` on fake intents.
+- Validation: 343 combined platform_event + state_authority + snapshot tests pass. `npx tsc --noEmit` PASS.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Production activation path now fires `snapshot.activation.started/.ok/.failed` at canonical kinds every time an operator activates a snapshot. This is the first slice where `PLATFORM_EVENT_BUS_ENABLED=true` actually produces visible operator value from State Authority — before this, only reconciliation ticks and the future FSM emitted anything. Degraded outcomes (audio live but control-plane authority confirmation missed) surface at warning severity per the plan's contract that "degraded" ≠ "failed" but does require operator attention.
+
+---
 
 ID: T2425-POST-FSM-EVENTS
 Status: [✓] Done

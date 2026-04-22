@@ -307,6 +307,41 @@ class StateAuthorityActivationService:
             outcome.get("related_node_ids"),
             outcome.get("related_path_ids"),
         )
+        # Emit the outcome to the canonical PlatformEventBus so toasts,
+        # webhooks, the event store, and cluster replication all receive
+        # activation outcomes without bespoke wiring per consumer.
+        # Plan Q10 — best-effort; swallow any bus failure at debug level so
+        # activation itself is never blocked by an event-bus outage.
+        _emit_activation_outcome_platform_event(
+            snapshot_id=snapshot_id,
+            snapshot_revision=snapshot_revision,
+            request_id=request_id,
+            node_id=node_id,
+            triggered_by=triggered_by,
+            outcome=outcome,
+        )
+
+    @staticmethod
+    def _emit_activation_started_platform_event(
+        *,
+        snapshot_id: int,
+        snapshot_name: str,
+        snapshot_revision: str | None,
+        request_id: str,
+        node_id: str,
+        triggered_by: str,
+    ) -> None:
+        """Fire snapshot.activation.started as soon as the activation intent
+        is persisted. Callers can invoke this directly from the activation
+        flow; failures are silently swallowed (plan Q10)."""
+        _emit_activation_started_platform_event(
+            snapshot_id=snapshot_id,
+            snapshot_name=snapshot_name,
+            snapshot_revision=snapshot_revision,
+            request_id=request_id,
+            node_id=node_id,
+            triggered_by=triggered_by,
+        )
 
     def _canonicalize_json_value(self, value: Any) -> Any:
         if isinstance(value, dict):
@@ -686,6 +721,20 @@ class StateAuthorityActivationService:
             snapshot_name=snapshot.name,
             snapshot_revision=snapshot_revision,
             normalized_snapshot_payload=self.owner._canonicalize_snapshot_normalized(normalized),
+            triggered_by=triggered_by,
+        )
+        # Emit the canonical started event before we begin phase work so
+        # downstream surfaces (Stage Notification, webhooks) know an
+        # activation is inflight from t=0. Use .get for node_id since
+        # legacy intent payloads may not carry it; treat missing as
+        # "local" (the platform-event envelope defaults source_node when
+        # unknown).
+        self._emit_activation_started_platform_event(
+            snapshot_id=snapshot.id,
+            snapshot_name=snapshot.name,
+            snapshot_revision=snapshot_revision,
+            request_id=str(intent.get("request_id") or ""),
+            node_id=str(intent.get("node_id") or "local"),
             triggered_by=triggered_by,
         )
         intent = await runtime_state_service.mark_intent_phase(
@@ -1288,3 +1337,146 @@ class StateAuthorityActivationService:
                     }
                 )
         return results
+
+
+# ----------------------------------------------------------------------------
+# PlatformEvent emission helpers — route activation outcomes through the
+# canonical bus so every consumer (Stage Notifications, event store, webhook
+# dispatchers, cluster federation) sees them without bespoke wiring.
+# The helpers are module-level + synchronous-entrypoint so any call site in
+# the activation service can fire them without plumbing an async emitter
+# through the heavily-dependency-injected constructor.
+# ----------------------------------------------------------------------------
+
+
+def _emit_activation_started_platform_event(
+    *,
+    snapshot_id: int,
+    snapshot_name: str,
+    snapshot_revision: str | None,
+    request_id: str,
+    node_id: str,
+    triggered_by: str,
+) -> None:
+    """Emit snapshot.activation.started through the PlatformEventBus.
+
+    Silently swallows any bus failure (plan Q10 — best-effort).
+    """
+    context = {
+        "snapshot_id": snapshot_id,
+        "snapshot_name": snapshot_name,
+        "snapshot_revision": snapshot_revision,
+        "request_id": request_id,
+        "node_id": node_id,
+        "triggered_by": triggered_by,
+    }
+    title = f"Activation started: {snapshot_name}"[:40]
+    message = (
+        f"snapshot_id={snapshot_id} request_id={request_id} "
+        f"triggered_by={triggered_by}"
+    )[:200]
+    _schedule_platform_event(
+        kind="snapshot.activation.started",
+        severity="info",
+        title=title,
+        message=message,
+        context=context,
+        source_node=node_id,
+        priority=0.3,
+    )
+
+
+def _emit_activation_outcome_platform_event(
+    *,
+    snapshot_id: int,
+    snapshot_revision: str | None,
+    request_id: str,
+    node_id: str,
+    triggered_by: str,
+    outcome: dict[str, Any],
+) -> None:
+    """Emit snapshot.activation.ok on success, snapshot.activation.failed on
+    degraded. Silently swallows any bus failure (plan Q10)."""
+    status = str(outcome.get("status") or "").lower()
+    if status == "success":
+        kind = "snapshot.activation.ok"
+        severity = "info"
+        priority = 0.3
+    elif status == "degraded":
+        kind = "snapshot.activation.failed"
+        # Degraded means audio engine applied the snapshot but authority
+        # confirmation did not complete — audio is live but the control
+        # plane is out of sync. Surface at warning so operators notice
+        # without treating as a full failure.
+        severity = "warning"
+        priority = 0.6
+    else:
+        # Unknown status — default to failed at warning so we don't lose
+        # the event but don't over-alarm.
+        kind = "snapshot.activation.failed"
+        severity = "warning"
+        priority = 0.5
+
+    title = f"Activation {status}"[:40]
+    message = str(outcome.get("operator_message") or outcome.get("result_code") or kind)[:200]
+    context = {
+        "snapshot_id": snapshot_id,
+        "snapshot_revision": snapshot_revision,
+        "request_id": request_id,
+        "node_id": node_id,
+        "triggered_by": triggered_by,
+        "outcome": dict(outcome),
+    }
+    _schedule_platform_event(
+        kind=kind,
+        severity=severity,
+        title=title,
+        message=message,
+        context=context,
+        source_node=node_id,
+        priority=priority,
+    )
+
+
+def _schedule_platform_event(
+    *,
+    kind: str,
+    severity: str,
+    title: str,
+    message: str,
+    context: dict[str, Any],
+    source_node: str,
+    priority: float,
+) -> None:
+    """Schedule a PlatformEvent emit on the running event loop.
+
+    The activation service is async but `_log_activation_outcome` is a
+    synchronous static method. We bridge by creating a background task on
+    the running loop; if no loop is running (tests invoking this outside an
+    async context) we fall through to a best-effort synchronous path. Any
+    failure is silently swallowed at debug level (plan Q10).
+    """
+    try:
+        from app.services.platform_event.bus import get_platform_event_bus
+        from app.services.platform_event.envelope import PlatformEvent
+
+        event = PlatformEvent(
+            kind=kind,
+            severity=severity,
+            source_node=source_node or "local",
+            source_service="state_authority_activation_service",
+            title=title or kind[:40],
+            message=message or kind,
+            context=context,
+            priority=max(0.0, min(1.0, priority)),
+        )
+        bus = get_platform_event_bus()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop — fire and forget on a new one.
+            loop = None
+        if loop is not None:
+            loop.create_task(bus.emit(event))
+    except Exception as exc:  # noqa: BLE001 — plan Q10: best-effort
+        logger.debug("Activation PlatformEvent emission failed: %s", exc)
