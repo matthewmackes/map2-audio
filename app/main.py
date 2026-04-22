@@ -679,6 +679,66 @@ async def lifespan(app):
         except Exception as e:
             logger.warning(f"Tesira fleet not started: {e}")
 
+        # ── State Authority reconciliation scheduler ────────────────────────
+        # Layer 1 local self-heal every 5s + optional Layer 2 cluster
+        # coordination when this node is management. Scheduler captured on
+        # app.state so /api/state-authority/reconciliation/metrics can read
+        # its live metrics.
+        state_authority_scheduler = None
+        try:
+            from app.services.state_authority_reconciliation_scheduler import (
+                ReconciliationSchedulerConfig,
+                StateAuthorityReconciliationScheduler,
+            )
+            from app.services.state_authority_reconciliation_service import (
+                StateAuthorityReconciliationService,
+            )
+
+            async def _live_payload_producer():
+                try:
+                    from app.services.snapshot_runtime_service import (
+                        get_authoritative_live_state,
+                    )
+                    producer = getattr(get_authoritative_live_state, "__call__", None)
+                    if producer is None:
+                        return None
+                    result = get_authoritative_live_state()
+                    if asyncio.iscoroutine(result):
+                        return await result
+                    return result
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("Reconciliation live-payload producer failed: %s", exc)
+                    return None
+
+            async def _local_reconcile(payload, tolerance, apply_corrections):
+                svc = StateAuthorityReconciliationService()
+                # Owner: no session binding is required by the service as implemented.
+                return await svc.reconcile_live_snapshot_payload(
+                    payload,
+                    tolerance=tolerance,
+                    apply_corrections=apply_corrections,
+                )
+
+            from app.config import config_get as _cfg_get
+            is_management = bool(_cfg_get("cluster.is_management_node", False))
+
+            state_authority_scheduler = StateAuthorityReconciliationScheduler(
+                config=ReconciliationSchedulerConfig(is_management_node=is_management),
+                live_payload_producer=_live_payload_producer,
+                local_reconciler=_local_reconcile,
+                cluster_reconciler=None,  # Follow-up will plug in etcd aggregator
+            )
+            app.state.state_authority_scheduler = state_authority_scheduler
+            await safe_start_service(
+                logger,
+                "State Authority reconciliation scheduler",
+                state_authority_scheduler.start,
+            )
+        except Exception as exc:
+            logger.warning(
+                "State Authority reconciliation scheduler not started: %s", exc
+            )
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info("Startup complete: %s/%s services running", running, total)
@@ -689,6 +749,13 @@ async def lifespan(app):
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
         await cancel_background_startup_tasks(background_start_tasks)
+
+        if state_authority_scheduler is not None:
+            await safe_stop_service(
+                logger,
+                "State Authority reconciliation scheduler",
+                state_authority_scheduler.stop,
+            )
 
         if tesira_ptp is not None:
             await safe_stop_service(logger, "Tesira PTP Coordinator", tesira_ptp.stop)

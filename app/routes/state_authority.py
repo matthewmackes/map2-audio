@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.services.juce_engine_service import get_audio_engine
@@ -210,20 +210,23 @@ class ReconciliationMetricsResponse(BaseModel):
 
 
 @router.get("/reconciliation/metrics", response_model=ReconciliationMetricsResponse)
-async def get_reconciliation_metrics() -> ReconciliationMetricsResponse:
+async def get_reconciliation_metrics(request: Request) -> ReconciliationMetricsResponse:
     """Expose reconciliation scheduler metrics as both JSON and Prometheus.
 
-    Returns an empty metrics dict and empty-counter Prometheus body when no
-    scheduler is active yet; callers wire a real scheduler via
-    state_authority_reconciliation_scheduler.StateAuthorityReconciliationScheduler
-    and cache the `.metrics` on app state — a follow-up task will hook that
-    wiring point to this route.
+    If a scheduler has been plumbed onto `app.state.state_authority_scheduler`
+    (by app.main lifespan), its live metrics are returned. Otherwise the
+    response carries an empty-counter body — this lets dashboards always
+    succeed even when reconciliation is disabled on the node.
     """
     from app.services.state_authority_reconciliation_scheduler import (
         ReconciliationMetrics,
     )
-    # Default empty metrics object until a concrete scheduler is plumbed in.
-    metrics = ReconciliationMetrics()
+    scheduler = getattr(request.app.state, "state_authority_scheduler", None)
+    metrics: ReconciliationMetrics
+    if scheduler is not None and hasattr(scheduler, "metrics"):
+        metrics = scheduler.metrics
+    else:
+        metrics = ReconciliationMetrics()
     return ReconciliationMetricsResponse(
         metrics=metrics.as_dict(),
         prometheus=render_metrics_as_prometheus(metrics),
