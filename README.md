@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1224** Python | **1189** TypeScript | **136** C++/H | **144** Docs | **2606** total commits | **3** stars | **0** forks | **0** open issues
+**1231** Python | **1191** TypeScript | **136** C++/H | **144** Docs | **2613** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`012f7db1`](https://github.com/matthewmackes/map2-audio/commit/012f7db1e1e331c3f65fb81f1854363b56c7946b) | feat(state-authority): T2425-P2b — 7 day-1 sub-service fa... | Map2 Audio | 2026-04-22 |
+| [`7a18be4d`](https://github.com/matthewmackes/map2-audio/commit/7a18be4d2ecf86bb7299a1b02647112083484187) | feat(state-authority): T2425-P2a — frontend stateAuthorit... | Map2 Audio | 2026-04-22 |
+| [`92e42ae4`](https://github.com/matthewmackes/map2-audio/commit/92e42ae4cc02509bbf9e52926fbee2db40e2e13d) | feat(state-authority): T2425-P2a — /api/state-authority p... | Map2 Audio | 2026-04-22 |
+| [`598bd11b`](https://github.com/matthewmackes/map2-audio/commit/598bd11ba2b8c33484dccac557e325d71fb64b14) | feat(state-authority): T2425-P1c — tonechaser URI catalog... | Map2 Audio | 2026-04-22 |
+| [`a3a6665f`](https://github.com/matthewmackes/map2-audio/commit/a3a6665fefb0e58b0bc32f7a6728317685d1154c) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
+| [`230b5bb9`](https://github.com/matthewmackes/map2-audio/commit/230b5bb9f2fd416024d905113ed356265cf24fc1) | feat(state-authority): T2425-P1b — validator covers full ... | Map2 Audio | 2026-04-22 |
+| [`956de98a`](https://github.com/matthewmackes/map2-audio/commit/956de98a27a96b76f3c1c01402494fbc1d0b5f7d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`9b017dce`](https://github.com/matthewmackes/map2-audio/commit/9b017dcec14f8575e0d08dace8d7e713907de7e2) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
-| [`10ec8c45`](https://github.com/matthewmackes/map2-audio/commit/10ec8c4503332c8b6c518a7e014c0243c0f21e0c) | feat(state-authority): T2425-P1a — full JSON Schema v2026... | Map2 Audio | 2026-04-22 |
-| [`fc7d45c0`](https://github.com/matthewmackes/map2-audio/commit/fc7d45c0f222e8508acb7bb1348b65e52e08c716) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`ff2b82bc`](https://github.com/matthewmackes/map2-audio/commit/ff2b82bccc2d12a46254a154521bc087f84154fb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
-| [`135af5b7`](https://github.com/matthewmackes/map2-audio/commit/135af5b70a0d40b0c72c6614ddfb250cb6a8cef2) | chore(branding): wire MAP-LOGO-2026.jpg into WelcomeHero ... | Map2 Audio | 2026-04-22 |
-| [`0df92659`](https://github.com/matthewmackes/map2-audio/commit/0df926591de5404cf544c24ce47be2dc3be4e051) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
-| [`0fdb5a68`](https://github.com/matthewmackes/map2-audio/commit/0fdb5a68dbc2e786878821ddbc09eb9f24da827b) | chore(branding): update MAP2 logo and wire WelcomeHero to... | Map2 Audio | 2026-04-22 |
-| [`d1d757a5`](https://github.com/matthewmackes/map2-audio/commit/d1d757a57f115f4801fa6f61ebe5ac917aa7590b) | feat(platforms-overview): network latency overlays, inlin... | Map2 Audio | 2026-04-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
