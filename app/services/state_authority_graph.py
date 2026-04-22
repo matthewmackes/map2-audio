@@ -69,8 +69,20 @@ def canonicalize_plugin_uri(uri: str) -> str:
     value = str(uri or "").strip()
     if not value:
         return value
+    # Tier 1: exact-match legacy pair-wise map (hand-curated historical URIs).
     if value in _EXACT_URI_MAP:
         return _EXACT_URI_MAP[value]
+    # Tier 2: URI catalog alias index (registered `aliases` on catalog entries).
+    # This lets the tonechaser catalog be the source of truth for new-vocabulary
+    # aliases without re-editing _EXACT_URI_MAP on every addition.
+    try:
+        from app.services.state_authority_uri_catalog import lookup_alias
+        aliased = lookup_alias(value)
+        if aliased:
+            return aliased
+    except ImportError:  # pragma: no cover — defensive; catalog module is in-tree
+        pass
+    # Tier 3: structural rewrite of the map2:// URL form.
     if value.startswith("map2://"):
         parsed = urlparse(value)
         path_parts = [part for part in parsed.path.split("/") if part]
@@ -82,6 +94,7 @@ def canonicalize_plugin_uri(uri: str) -> str:
             return f"map2:sys:{_slugify(path_parts[-1])}"
         if parsed.netloc in {"ctrl", "control"} and path_parts:
             return f"map2:ctrl:{_slugify(path_parts[-1])}"
+    # Tier 4: canonical form already — slugify the name portion for stable output.
     if value.startswith("map2:"):
         parts = value.split(":", 2)
         if len(parts) == 3:
