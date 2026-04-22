@@ -142,6 +142,7 @@ describe('navigation catalog', () => {
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
       '/devices',
+      '/state-authority',
       '/mcu',
       '/launch-control',
       '/midi-commander',
