@@ -1,5 +1,5 @@
 import { memo, useMemo, type CSSProperties, type MouseEvent, type ReactElement } from 'react'
-import mapWordmark from '../../../../../branding/MAP-LOGO-2026.png'
+import mapWordmark from '../../../../../branding/MAP-LOGO-2026.jpg'
 import './WelcomeHero.css'
 
 export type WelcomeHeroArtifact = {

@@ -31,7 +31,7 @@ const mockSpecialSettingsState = {
 
 jest.mock('../../assets/MAP2-LOGO.png', () => 'MAP2-LOGO.png')
 jest.mock('../../../../branding/MAP-GRID-HORIZON-2026.png', () => 'MAP-GRID-HORIZON-2026.png')
-jest.mock('../../../../branding/MAP-LOGO-2026.png', () => 'MAP-LOGO-2026.png')
+jest.mock('../../../../branding/MAP-LOGO-2026.jpg', () => 'MAP-LOGO-2026.jpg')
 
 class ResizeObserverMock {
   observe() {}
@@ -457,7 +457,7 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(screen.getByText('Mackes Audio Platform')).toBeTruthy()
-    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', expect.stringMatching(/\.png$/))
+    expect(screen.getByRole('img', { name: 'MAP2 logo' })).toHaveAttribute('src', expect.stringMatching(/\.(png|jpe?g)$/))
     expect(screen.getByRole('status')).toHaveTextContent('Restoring your desktop')
     expect(screen.queryByText('Desktop Control Panel')).toBeNull()
     expect(screen.queryByTestId('home-shell')).toBeNull()
@@ -477,7 +477,7 @@ describe('HomePage landing', () => {
     expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'MAP: Mackes Audio Platform' })).toHaveAttribute(
       'src',
-      'MAP-LOGO-2026.png',
+      'MAP-LOGO-2026.jpg',
     )
     expect(screen.queryByText('Operator telemetry')).toBeNull()
     expect(screen.queryByLabelText('Telemetry overview')).toBeNull()
