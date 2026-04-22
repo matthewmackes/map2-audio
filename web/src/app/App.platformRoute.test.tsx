@@ -198,8 +198,15 @@ jest.mock('./pages/MidiCommanderPage', () => ({
   },
 }))
 
-jest.mock('./pages/IntelFXPage', () => ({
-  IntelFXPage: () => {
+jest.mock('./components/Devices/DevicesShell', () => ({
+  DevicesShell: () => {
+    const { Outlet } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    return <Outlet />
+  },
+}))
+
+jest.mock('./components/Devices/IntelFX/IntelFXShell', () => ({
+  IntelFXShell: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="intelfx-route">{`${location.pathname}${location.search}`}</div>
@@ -426,7 +433,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('intelfx-route')).toHaveTextContent('/intelfx')
+    expect(await screen.findByTestId('intelfx-route')).toHaveTextContent('/devices/intelfx/panel')
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 })

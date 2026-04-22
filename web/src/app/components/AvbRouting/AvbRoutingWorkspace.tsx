@@ -27,8 +27,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useCluster } from '../../contexts/useCluster'
 import type { PlatformLayerData } from '../../platform/model'
-import type { TesiraDeviceDetail, TesiraDeviceSummary } from '../Tesira/types'
-import { useTesiraDevice, useTesiraDevices } from '../Tesira/hooks/useTesiraApi'
+import type { TesiraDeviceDetail, TesiraDeviceSummary } from '../Devices/Tesira/types'
+import { useTesiraDevice, useTesiraDevices } from '../Devices/Tesira/hooks/useTesiraApi'
 import {
   useAvbDevices,
   useAvbStreams,

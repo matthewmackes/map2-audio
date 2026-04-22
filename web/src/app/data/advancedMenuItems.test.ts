@@ -143,6 +143,7 @@ describe('navigation catalog', () => {
       '/midi-hub',
       '/workspace/physical-surfaces',
       '/workspace/outboard-hardware',
+      '/devices',
       '/mcu',
       '/launch-control',
       '/midi-commander',

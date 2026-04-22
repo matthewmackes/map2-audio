@@ -115,7 +115,7 @@ import type {
   TesiraSceneDetail,
   TesiraSceneListResponse,
   TesiraStreamInfo,
-} from '../app/components/Tesira/types';
+} from '../app/components/Devices/Tesira/types';
 import type {
   AvbAvdeccEntitiesResponse,
   AvbAvdeccEntity,

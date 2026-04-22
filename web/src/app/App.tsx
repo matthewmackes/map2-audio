@@ -62,33 +62,34 @@ const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
 const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').then(m => ({ default: m.SnapshotsBrowserPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
-const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
-const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
+const DevicesShell          = lazy(() => import('./components/Devices/DevicesShell').then(m => ({ default: m.DevicesShell })))
 const DevicesOverview       = lazy(() => import('./components/Devices/DevicesOverview').then(m => ({ default: m.DevicesOverview })))
+const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
+const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
+const LCDView               = lazy(() => import('./components/Devices/LCD/LCDView').then(m => ({ default: m.LCDView })))
+const TesiraView            = lazy(() => import('./components/Devices/Tesira/TesiraView').then(m => ({ default: m.TesiraView })))
+const MPX1Shell             = lazy(() => import('./components/Devices/MPX1/MPX1Shell').then(m => ({ default: m.MPX1Shell })))
+const MPX1PanelView         = lazy(() => import('./components/Devices/MPX1/views/MPX1PanelView').then(m => ({ default: m.MPX1PanelView })))
+const MPX1EditorView        = lazy(() => import('./components/Devices/MPX1/views/MPX1EditorView').then(m => ({ default: m.MPX1EditorView })))
+const MPX1MidiMapView       = lazy(() => import('./components/Devices/MPX1/views/MPX1MidiMapView').then(m => ({ default: m.MPX1MidiMapView })))
+const MPX1MatrixView        = lazy(() => import('./components/Devices/MPX1/views/MPX1MatrixView').then(m => ({ default: m.MPX1MatrixView })))
+const MPX1LibraryView       = lazy(() => import('./components/Devices/MPX1/views/MPX1LibraryView').then(m => ({ default: m.MPX1LibraryView })))
+const MPX1DiagView          = lazy(() => import('./components/Devices/MPX1/views/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
+const MPX1PerformView       = lazy(() => import('./components/Devices/MPX1/views/MPX1PerformView').then(m => ({ default: m.MPX1PerformView })))
+const MPX1FlowView          = lazy(() => import('./components/Devices/MPX1/views/MPX1FlowView').then(m => ({ default: m.MPX1FlowView })))
+const IntelFXShell          = lazy(() => import('./components/Devices/IntelFX/IntelFXShell').then(m => ({ default: m.IntelFXShell })))
+const IntelFXPanelView      = lazy(() => import('./components/Devices/IntelFX/views/IntelFXPanelView').then(m => ({ default: m.IntelFXPanelView })))
+const IntelFXEditorView     = lazy(() => import('./components/Devices/IntelFX/views/IntelFXEditorView').then(m => ({ default: m.IntelFXEditorView })))
+const IntelFXMidiMapView    = lazy(() => import('./components/Devices/IntelFX/views/IntelFXMidiMapView').then(m => ({ default: m.IntelFXMidiMapView })))
+const IntelFXLibraryView    = lazy(() => import('./components/Devices/IntelFX/views/IntelFXLibraryView').then(m => ({ default: m.IntelFXLibraryView })))
+const IntelFXPerformView    = lazy(() => import('./components/Devices/IntelFX/views/IntelFXPerformView').then(m => ({ default: m.IntelFXPerformView })))
+const IntelFXMonitorView    = lazy(() => import('./components/Devices/IntelFX/views/IntelFXMonitorView').then(m => ({ default: m.IntelFXMonitorView })))
+const IntelFXFlowView       = lazy(() => import('./components/Devices/IntelFX/views/IntelFXFlowView').then(m => ({ default: m.IntelFXFlowView })))
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
-const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
 const PerformanceBrainPage  = lazy(() => import('./pages/PerformanceBrainPage').then(m => ({ default: m.PerformanceBrainPage })))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
-const TesiraPage            = lazy(() => import('./pages/TesiraPage').then(m => ({ default: m.TesiraPage })))
-const MPX1Page              = lazy(() => import('./pages/MPX1Page').then(m => ({ default: m.MPX1Page })))
-const MPX1PanelView         = lazy(() => import('./pages/MPX1PanelView').then(m => ({ default: m.MPX1PanelView })))
-const MPX1EditorView        = lazy(() => import('./pages/MPX1EditorView').then(m => ({ default: m.MPX1EditorView })))
-const MPX1MidiMapView       = lazy(() => import('./pages/MPX1MidiMapView').then(m => ({ default: m.MPX1MidiMapView })))
-const MPX1MatrixView        = lazy(() => import('./pages/MPX1MatrixView').then(m => ({ default: m.MPX1MatrixView })))
-const MPX1LibraryView       = lazy(() => import('./pages/MPX1LibraryView').then(m => ({ default: m.MPX1LibraryView })))
-const MPX1DiagView          = lazy(() => import('./pages/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
-const MPX1PerformView       = lazy(() => import('./pages/MPX1PerformView').then(m => ({ default: m.MPX1PerformView })))
-const MPX1FlowView          = lazy(() => import('./pages/MPX1FlowView').then(m => ({ default: m.MPX1FlowView })))
-const IntelFXPage           = lazy(() => import('./pages/IntelFXPage').then(m => ({ default: m.IntelFXPage })))
-const IntelFXPanelView      = lazy(() => import('./pages/IntelFXPanelView').then(m => ({ default: m.IntelFXPanelView })))
-const IntelFXEditorView     = lazy(() => import('./pages/IntelFXEditorView').then(m => ({ default: m.IntelFXEditorView })))
-const IntelFXMidiMapView    = lazy(() => import('./pages/IntelFXMidiMapView').then(m => ({ default: m.IntelFXMidiMapView })))
-const IntelFXLibraryView    = lazy(() => import('./pages/IntelFXLibraryView').then(m => ({ default: m.IntelFXLibraryView })))
-const IntelFXPerformView    = lazy(() => import('./pages/IntelFXPerformView').then(m => ({ default: m.IntelFXPerformView })))
-const IntelFXMonitorView    = lazy(() => import('./pages/IntelFXMonitorView').then(m => ({ default: m.IntelFXMonitorView })))
-const IntelFXFlowView       = lazy(() => import('./pages/IntelFXFlowView').then(m => ({ default: m.IntelFXFlowView })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
 const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
 const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
@@ -251,6 +252,16 @@ function LegacyOutboardHardwareRedirect() {
   const location = useLocation()
   const params = useParams<{ deviceId?: string }>()
   return <Navigate to={`${buildWorkspaceOutboardHardwarePath(params.deviceId)}${location.search || ''}`} replace />
+}
+
+function MPX1LegacyRedirect() {
+  const params = useParams<{ view?: string }>()
+  return <Navigate to={`/devices/mpx1/${params.view ?? 'panel'}`} replace />
+}
+
+function IntelFXLegacyRedirect() {
+  const params = useParams<{ view?: string }>()
+  return <Navigate to={`/devices/intelfx/${params.view ?? 'panel'}`} replace />
 }
 
 const queryClient = new QueryClient({
@@ -448,55 +459,68 @@ export function App() {
                                 <Route path="/snapshots" element={<RouteBoundary title="Snapshots browser crashed" actionLabel="Reload snapshots browser"><SnapshotsBrowserPage /></RouteBoundary>} />
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
-                                <Route path="/devices" element={<RouteBoundary title="Devices overview crashed" actionLabel="Reload devices overview"><DevicesOverview /></RouteBoundary>} />
-                                <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
+                                <Route path="/devices" element={<RouteBoundary title="Devices workspace crashed" actionLabel="Reload devices"><DevicesShell /></RouteBoundary>}>
+                                  <Route index element={<DevicesOverview />} />
+                                  <Route path="edirol-ua1000" element={<EdirolUA1000View />} />
+                                  <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
+                                  <Route path="hotone-jogg" element={<HoToneJoGGView />} />
+                                  <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
+                                  <Route path="lcd" element={<LCDView />} />
+                                  <Route path="lcd/:view" element={<LCDView />} />
+                                  <Route path="tesira/*" element={<TesiraView />} />
+                                  <Route path="mpx1/*" element={<MPX1Shell />}>
+                                    <Route index element={<Navigate to="panel" replace />} />
+                                    <Route path="panel" element={<MPX1PanelView />} />
+                                    <Route path="editor" element={<MPX1EditorView />} />
+                                    <Route path="midi-map" element={<MPX1MidiMapView />} />
+                                    <Route path="matrix" element={<MPX1MatrixView />} />
+                                    <Route path="library" element={<MPX1LibraryView />} />
+                                    <Route path="perform" element={<MPX1PerformView />} />
+                                    <Route path="diag" element={<MPX1DiagView />} />
+                                    <Route
+                                      path="flow"
+                                      element={
+                                        <ErrorBoundary title="MPX1 signal path view crashed" actionLabel="Reload signal path">
+                                          <MPX1FlowView />
+                                        </ErrorBoundary>
+                                      }
+                                    />
+                                  </Route>
+                                  <Route path="intelfx/*" element={<IntelFXShell />}>
+                                    <Route index element={<Navigate to="panel" replace />} />
+                                    <Route path="panel" element={<IntelFXPanelView />} />
+                                    <Route path="editor" element={<IntelFXEditorView />} />
+                                    <Route path="midi-map" element={<IntelFXMidiMapView />} />
+                                    <Route path="library" element={<IntelFXLibraryView />} />
+                                    <Route path="perform" element={<IntelFXPerformView />} />
+                                    <Route path="diag" element={<IntelFXMonitorView />} />
+                                    <Route
+                                      path="flow"
+                                      element={
+                                        <ErrorBoundary title="IntelFX signal path view crashed" actionLabel="Reload signal path">
+                                          <IntelFXFlowView />
+                                        </ErrorBoundary>
+                                      }
+                                    />
+                                  </Route>
+                                </Route>
+                                <Route path="/edirol-ua1000" element={<Navigate to="/devices/edirol-ua1000" replace />} />
+                                <Route path="/hotone-jogg" element={<Navigate to="/devices/hotone-jogg" replace />} />
+                                <Route path="/lcd" element={<Navigate to="/devices/lcd" replace />} />
+                                <Route path="/tesira/*" element={<Navigate to="/devices/tesira" replace />} />
+                                <Route path="/mpx1" element={<Navigate to="/devices/mpx1/panel" replace />} />
+                                <Route path="/mpx1/:view" element={<MPX1LegacyRedirect />} />
+                                <Route path="/intelfx" element={<Navigate to="/devices/intelfx/panel" replace />} />
+                                <Route path="/intelfx/:view" element={<IntelFXLegacyRedirect />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
-                                <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
                                 <Route path="/host-machine" element={<LegacyStandalonePanelRedirect panel="host-machine" />} />
                                 <Route path="/engine" element={<LegacyStandalonePanelRedirect panel="audio-engine" />} />
                                 <Route path="/metering" element={<RouteBoundary title="Metering view crashed" actionLabel="Reload metering"><MeteringPage /></RouteBoundary>} />
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
-                                <Route path="/lcd" element={<LCDPage />} />
                                 <Route path="/brain" element={<PerformanceBrainPage />} />
                                 <Route path="/expression" element={<ExpressionPage />} />
                                 <Route path="/ground-control-pro" element={<GroundControlProPage />} />
-                                <Route path="/tesira/*" element={<TesiraPage />} />
-                                <Route path="/mpx1/*" element={<MPX1Page />}>
-                                  <Route index element={<Navigate to="panel" replace />} />
-                                  <Route path="panel" element={<MPX1PanelView />} />
-                                  <Route path="editor" element={<MPX1EditorView />} />
-                                  <Route path="midi-map" element={<MPX1MidiMapView />} />
-                                  <Route path="matrix" element={<MPX1MatrixView />} />
-                                  <Route path="library" element={<MPX1LibraryView />} />
-                                  <Route path="perform" element={<MPX1PerformView />} />
-                                  <Route path="diag" element={<MPX1DiagView />} />
-                                  <Route
-                                    path="flow"
-                                    element={
-                                      <ErrorBoundary title="MPX1 signal path view crashed" actionLabel="Reload signal path">
-                                        <MPX1FlowView />
-                                      </ErrorBoundary>
-                                    }
-                                  />
-                                </Route>
-                                <Route path="/intelfx/*" element={<IntelFXPage />}>
-                                  <Route index element={<Navigate to="panel" replace />} />
-                                  <Route path="panel" element={<IntelFXPanelView />} />
-                                  <Route path="editor" element={<IntelFXEditorView />} />
-                                  <Route path="midi-map" element={<IntelFXMidiMapView />} />
-                                  <Route path="library" element={<IntelFXLibraryView />} />
-                                  <Route path="perform" element={<IntelFXPerformView />} />
-                                  <Route path="diag" element={<IntelFXMonitorView />} />
-                                  <Route
-                                    path="flow"
-                                    element={
-                                      <ErrorBoundary title="IntelFX signal path view crashed" actionLabel="Reload signal path">
-                                        <IntelFXFlowView />
-                                      </ErrorBoundary>
-                                    }
-                                  />
-                                </Route>
                                 <Route path="*" element={<Navigate to="/" replace />} />
                             </Routes>
                           </Suspense>

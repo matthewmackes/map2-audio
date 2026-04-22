@@ -1,4 +1,4 @@
-import type { TesiraDeviceSummary } from '../Tesira/types'
+import type { TesiraDeviceSummary } from '../Devices/Tesira/types'
 import type { AvbNode } from './types'
 import { buildAvbRoutingWorkspaceGraphModel } from './avbRoutingWorkspaceGraph'
 

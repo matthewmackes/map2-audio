@@ -1,7 +1,7 @@
 import dagre from 'dagre'
 import { MarkerType, type Edge, type Node } from 'reactflow'
 
-import type { TesiraDeviceSummary } from '../Tesira/types'
+import type { TesiraDeviceSummary } from '../Devices/Tesira/types'
 import type { AvbNode } from './types'
 
 export type AvbRoutingWorkspaceAnchorId = 'avb-routing-nodes'

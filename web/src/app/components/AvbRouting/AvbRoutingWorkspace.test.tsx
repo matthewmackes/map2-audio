@@ -34,7 +34,7 @@ jest.mock('./hooks/useAvbApi', () => ({
   useAvdeccEntities: () => mockUseAvdeccEntities(),
 }))
 
-jest.mock('../Tesira/hooks/useTesiraApi', () => ({
+jest.mock('../Devices/Tesira/hooks/useTesiraApi', () => ({
   useTesiraDevices: () => mockUseTesiraDevices(),
   useTesiraDevice: (...args: unknown[]) => mockUseTesiraDevice(...args),
 }))

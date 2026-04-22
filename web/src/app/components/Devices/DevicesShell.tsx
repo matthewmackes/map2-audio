@@ -10,7 +10,7 @@
  * This shell is additive — no routes consume it yet.
  */
 import { useMemo } from 'react'
-import { Outlet, useNavigate, useParams } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   UnifiedWorkspaceSideNav,
   type UnifiedWorkspaceSideNavItem,
@@ -39,9 +39,20 @@ function activeViewForEntry(entry: DeviceRegistryEntry, requested: string | unde
   return entry.defaultView
 }
 
+function parseDevicePath(pathname: string): { deviceId?: string; view?: string } {
+  const match = pathname.match(/^\/devices\/([^/]+)(?:\/([^/]+))?/)
+  if (!match) return {}
+  return { deviceId: match[1], view: match[2] }
+}
+
 export function DevicesShell() {
-  const { deviceId, view } = useParams<DevicesShellParams>()
+  const routeParams = useParams<DevicesShellParams>()
+  const location = useLocation()
   const navigate = useNavigate()
+
+  const parsed = parseDevicePath(location.pathname)
+  const deviceId = routeParams.deviceId ?? parsed.deviceId
+  const view = routeParams.view ?? parsed.view
 
   const entry = deviceId ? getDeviceEntry(deviceId) : null
   const activeViewId = entry ? activeViewForEntry(entry, view) : null
@@ -92,11 +103,17 @@ export function DevicesShell() {
             storageKey="devices-shell"
           />
           <div className="devices-shell__main">
-            <EmptyState
-              title={deviceId ? `Unknown device: ${deviceId}` : 'Select a device'}
-              description="Choose a hardware unit or control surface from the sidebar."
-              align="left"
-            />
+            {deviceId ? (
+              <EmptyState
+                title={`Unknown device: ${deviceId}`}
+                description="Choose a hardware unit or control surface from the sidebar."
+                align="left"
+              />
+            ) : (
+              <div className="devices-shell__content">
+                <Outlet />
+              </div>
+            )}
           </div>
         </div>
       </>
