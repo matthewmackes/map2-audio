@@ -54,6 +54,7 @@ const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetwork
 const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
 const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').then(m => ({ default: m.SnapshotsBrowserPage })))
+const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').then(m => ({ default: m.StateAuthorityPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const DevicesShell          = lazy(() => import('./components/Devices/DevicesShell').then(m => ({ default: m.DevicesShell })))
 const DevicesOverview       = lazy(() => import('./components/Devices/DevicesOverview').then(m => ({ default: m.DevicesOverview })))
@@ -456,6 +457,7 @@ export function App() {
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />
                                 <Route path="/snapshots" element={<RouteBoundary title="Snapshots browser crashed" actionLabel="Reload snapshots browser"><SnapshotsBrowserPage /></RouteBoundary>} />
+                                <Route path="/state-authority" element={<RouteBoundary title="State Authority crashed" actionLabel="Reload state authority"><StateAuthorityPage /></RouteBoundary>} />
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/devices" element={<RouteBoundary title="Devices workspace crashed" actionLabel="Reload devices"><DevicesShell /></RouteBoundary>}>
