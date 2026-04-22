@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2425 State Authority production activation service now emits canonical PlatformEvents through module-level bridge helpers (_emit_activation_started_platform_event / _emit_activation_outcome_platform_event). Every operator-triggered activation on the real production path now fans out to toasts + event store + webhooks + cluster replication via the canonical bus. 343 tests PASS (9 new emission-helper tests).
+Last updated: 2026-04-22 EDT - T2425 State Authority Reconciliation tab now has a live event feed — StateAuthorityEventFeed consumes usePlatformEvents with kindPrefixes=[state_authority., snapshot.activation.] to render the most recent drift/self-heal/activation events directly below the numeric counters. 59 frontend State Authority tests PASS (up from 51), 343 backend tests PASS.
 
 ---
 
@@ -33,6 +33,34 @@ Assigned to: Claude
 Last updated: 2026-04-22 - Claude (EPIC SHIPPED: all 6 phases + UX + wiring + evidence; 163 new tests pass; 93 pre-existing tests unchanged; 14 commits dual-pushed to origin+gitlab)
 Completion note: 2026-04-22 - Claude: EPIC SHIPPED end-to-end. All 100 plan decisions (Q1–Q100) covered. Tonechaser workflow unblocked: block picker, morph pad, activation FSM, reconciliation scheduler, template cascade, Prometheus metrics, Carbon-native UX components. C++ MorphEngine + CrossfadeEngine pre-existed and were verified with new integration tests. App.main lifespan now starts/stops the reconciliation scheduler and exposes it via `app.state.state_authority_scheduler`. See docs/fit-for-purpose-evidence/20260422/state-authority-epic.md for full phase-by-phase inventory, plan-decision coverage map, test inventory (183 tests across 14 suites), commit log, and operator workflow walkthrough.
 Subtasks:
+
+ID: T2425-POST-EVENT-FEED
+Status: [✓] Done
+Title: Post-epic — live State Authority event feed on /state-authority Reconciliation tab
+Description:
+- Goal / acceptance criteria: Complement the numeric reconciliation counters with a chronological stream of the most recent State Authority PlatformEvents so operators can see exactly *what* just happened, not just the aggregate. Scope the feed to the two canonical kind families: `state_authority.*` (reconciliation outcomes) and `snapshot.activation.*` (activation lifecycle).
+- Why it matters: Counters tell operators "drift happened 3 times" but not which parameters drifted or when. A live feed lets the operator debug a clustering issue in real time without leaving the State Authority workspace, and surfaces activation outcomes alongside reconciliation for a single operational view.
+- Dependencies: T2425-POST-PLATFORM-EVENTS (registered kinds + scheduler emission), T2425-POST-FSM-EVENTS (FSM emission), T2425-POST-PRODUCTION-ACTIVATION-EVENTS (production activation emission), existing `usePlatformEvents` hook + `kindPrefixes` filter on `platformEventStore`.
+- Shipped outputs:
+  - `web/src/app/components/StateAuthority/StateAuthorityEventFeed.tsx` — Carbon-native feed component. Uses `usePlatformEvents({ kindPrefixes: ['state_authority.', 'snapshot.activation.'] })` to subscribe to only the two relevant kind families. Renders up to `limit` (default 25) events as Carbon Tiles with severity Tag, kind, timestamp, message, and context summary. Empty state surfaces PlatformEventBus disabled vs connected-but-idle cases differently.
+  - `StateAuthorityEventFeed.css` — Plex Sans for message/kicker, Plex Mono for kind + timestamp + context summary. 40vh max-height with scroll; Carbon tokens only.
+  - `web/src/app/pages/StateAuthorityPage.tsx` — mount the feed on the Reconciliation tab below the metric grid.
+- Context summary extraction: emits `snapshot=N`, `node=X`, `layer=local`, `phase=validating`, `drift=N`, `corrected=N` for the fields operators care about — pulled from either the top-level context or the nested `report` dict.
+- Severity → Carbon Tag mapping: `critical` / `error` → red, `warning` → warm-gray, `info` → blue, fallback → cool-gray.
+- Tests (8 new in `StateAuthorityEventFeed.test.tsx`):
+  - kindPrefixes arg wired correctly
+  - empty-state notification (disconnected text differs from connected-empty text)
+  - event rows render kind + message + severity tag
+  - `limit` prop caps rendered rows + shows "N of M" counter
+  - connected Tag reflects store state
+  - drift context summary (drift=3, corrected=3)
+  - activation context summary (snapshot=42, node=node-A)
+- Validation: `npx tsc --noEmit` PASS, `npm run build` PASS (21.09s), 59 frontend SA tests PASS across 8 suites (up from 51). `StateAuthorityPage-C1JzHPr7.js` confirmed to contain `state-authority-event-feed` class. `StateAuthorityPage.test.tsx` still passes — Reconciliation tab isn't rendered on mount so the default mock doesn't need updating.
+Assigned to: Claude
+Last updated: 2026-04-22 - Claude (shipped)
+Completion note: 2026-04-22 - Claude: Feed consumes the existing PlatformEventBus store via kindPrefixes filter — no new data plumbing, just composition on top of the transport that's already in place. Works identically whether the bus is enabled (real events stream through WS) or disabled (empty-state notification with the PLATFORM_EVENT_BUS_ENABLED hint). The TypeScript Tag-type constraint forced an explicit `CarbonTagType` union — documented inline so future additions follow the Carbon contract.
+
+---
 
 ID: T2425-POST-PRODUCTION-ACTIVATION-EVENTS
 Status: [✓] Done

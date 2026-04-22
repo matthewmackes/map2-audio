@@ -3,6 +3,7 @@ import { Layer, Tag, Tile, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carb
 import { MorphPad } from '../components/StateAuthority/MorphPad'
 import { BlockPicker } from '../components/StateAuthority/BlockPicker'
 import { GraphDocumentInspector } from '../components/StateAuthority/GraphDocumentInspector'
+import { StateAuthorityEventFeed } from '../components/StateAuthority/StateAuthorityEventFeed'
 import {
   stateAuthorityApi,
   type StateAuthorityCatalogEntry,
@@ -174,6 +175,7 @@ export function StateAuthorityPage() {
                   </div>
                 </div>
               ) : null}
+              <StateAuthorityEventFeed limit={25} />
             </div>
           </TabPanel>
         </TabPanels>
