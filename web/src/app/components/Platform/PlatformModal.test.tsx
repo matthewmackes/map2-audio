@@ -324,6 +324,22 @@ jest.mock('../NetworkDiscovery/NetworkDiscoveryWorkspace', () => ({
   NetworkDiscoveryWorkspace: () => <div data-testid="network-discovery-workspace">Network Discovery Workspace Mock</div>,
 }))
 
+jest.mock('../../../map2/api', () => ({
+  audioApi: {
+    restart: jest.fn().mockResolvedValue({ status: 'ok' }),
+  },
+  chainsApi: {
+    list: jest.fn().mockResolvedValue({ chains: [] }),
+  },
+  diagnosticsApi: {
+    runFullDiagnostic: jest.fn().mockResolvedValue({ status: 'ok', diagnostics: {} }),
+  },
+}))
+
+jest.mock('../Toasts', () => ({
+  useToasts: () => ({ pushToast: jest.fn() }),
+}))
+
 describe('PlatformModalContent', () => {
   beforeEach(() => {
     mockUpdateSettings.mockReset()
@@ -474,7 +490,7 @@ describe('PlatformModalContent', () => {
     expect(screen.queryByRole('treeitem', { name: 'Open Program Catalog' })).toBeNull()
   })
 
-  it('renders the overview authority model and audio artifact path map', () => {
+  it('renders the cluster topology overview with the four view toggles', () => {
     mockActiveLayerId = 'overview'
 
     render(
@@ -488,11 +504,13 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Configuration Authority Model' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '/etc/map2' })).toBeInTheDocument()
-    expect(screen.getByText('/workspace/artifacts')).toBeInTheDocument()
-    expect(screen.getAllByText('~/.local/share/map2/nam').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('/var/lib/map2/soundfonts').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Cluster topology' })).toBeInTheDocument()
+
+    const viewNav = screen.getByRole('navigation', { name: 'Overview view' })
+    expect(within(viewNav).getByRole('button', { name: 'Topology' })).toBeInTheDocument()
+    expect(within(viewNav).getByRole('button', { name: 'Heatmap' })).toBeInTheDocument()
+    expect(within(viewNav).getByRole('button', { name: 'Signal graph' })).toBeInTheDocument()
+    expect(within(viewNav).getByRole('button', { name: 'List' })).toBeInTheDocument()
   })
 
   it('opens the update progress modal and triggers the management update workflow', () => {
