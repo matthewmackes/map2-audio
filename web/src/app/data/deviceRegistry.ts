@@ -312,6 +312,7 @@ export const DEVICE_REGISTRY: DeviceRegistryEntry[] = [
     defaultView: 'displays',
     views: LCD_VIEWS,
     statusSource: { kind: 'device-location', deviceKey: 'lcd-console' },
+    deviceContextKey: 'lcd-console',
     kind: 'console',
     legacyRoute: '/lcd',
     capabilities: ['Display surfaces', 'Event feed', 'Node alerts', 'Hardware settings'],

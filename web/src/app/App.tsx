@@ -60,7 +60,8 @@ const DevicesShell          = lazy(() => import('./components/Devices/DevicesShe
 const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
-const LCDView               = lazy(() => import('./components/Devices/LCD/LCDView').then(m => ({ default: m.LCDView })))
+// Note: LCDView is no longer a route target (T2430-A split it into LCDShell + 8 sub-views).
+// It remains as a shared component module exporting LCDSimulator, InputController, etc.
 const LCDShell              = lazy(() => import('./components/Devices/LCD/LCDShell').then(m => ({ default: m.LCDShell })))
 const LCDDisplaysView       = lazy(() => import('./components/Devices/LCD/views/LCDDisplaysView').then(m => ({ default: m.LCDDisplaysView })))
 const LCDEventsView         = lazy(() => import('./components/Devices/LCD/views/LCDEventsView').then(m => ({ default: m.LCDEventsView })))

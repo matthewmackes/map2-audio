@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-23 EDT - T2430 epic opened — "LCD Displays — full parity + hardening" (17 subtasks A-Q). 10 design decisions locked with user (Q1-Q10). User authorized autonomous mode for the epic (B delivery model). MPX1-style shell with 8 sub-routes, Unified Node Pill integration, per-LCD config, multi-adapter drivers (native I²C + FT232H simultaneous), morph-aware State Authority hooks at 5 Hz, preset source-of-truth with snapshot references. Previously: T2426-C shipped — hero-image upload/revert is live end-to-end.
+Last updated: 2026-04-23 07:13 EDT - T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
 
 ---
 
@@ -64,6 +64,76 @@ Last updated: 2026-04-23 EDT - Claude
 - Execution status:
   - [>] T2430-A: Router + LCDShell + 8 sub-route skeleton (in progress)
   - [ ] T2430-B through T2430-Q: pending
+
+---
+
+ID: T2431
+Status: [ ] Todo
+Title: EPIC — Configuration and State Authority plane consolidation
+Description:
+- Goal / acceptance criteria: Consolidate MAP2 configuration and state authority around explicit planes instead of parallel implicit stores. Definition of Done: every config/state concept has exactly one declared authority plane; all projections are generated and header-stamped; host-critical config no longer depends on `~/.map2`; single-node operation works without etcd while clustered audio-state authority uses the control-plane backend; legacy `flow_snapshots` and generic `SystemConfig` authority paths are removed by hard cut; installers, RPM specs, systemd units, scripts, docs, and diagnostics all match the new platform layout.
+- Why it matters: MAP2 currently has the correct conceptual rule in `docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md`, but implementation still includes drift-prone mirrors: deployment mode spans multiple files/drop-ins, `ConfigManager` stores broad runtime config under `~/.map2`, `SystemConfig` is a loose key/value escape hatch, and legacy flow-snapshot/live-state surfaces overlap with State Authority. This epic turns the authority model into enforced code and installer behavior.
+- Dependencies: T778/T1006 State Authority foundation complete; T2430 should coordinate any LCD config schema changes; packaging/installer changes required for any path/service/env changes. Q1 remains a design dependency before deployment-mode implementation.
+- Estimated effort: High — 10 restartable phases, likely multi-day implementation with migration and installer parity. Each phase must ship with focused tests and platform-layer artifact updates in the same task.
+- Locked decisions from user, 2026-04-23:
+  - Q1: Pending. Proposed default remains `/etc/map2/mode.json` as deployment-mode authority, with `/etc/map2/environment` generated as a startup projection.
+  - Q2: Hard migration is allowed; compatibility shims may be removed and no existing users need to be preserved.
+  - Q3: Single-node MAP2 can run without etcd; etcd/control-plane authority is required only for clustered/multi-node authority behavior.
+  - Q4: Legacy `flow_snapshots` should be removed, not preserved indefinitely.
+  - Q5: User/operator preferences are per-node.
+  - Q6: Config changes follow the MAP2 platform standard rather than ad hoc direct writes.
+  - Q7: Generated projection files must carry machine-readable authority/source/timestamp/checksum headers.
+  - Q8: Rollback model is file backups only.
+  - Q9: Users may still manually pin/promote experimental features.
+  - Q10: `SystemConfig` retirement is a hard cut.
+- Subtasks:
+  - ID: T2431-A
+    Status: [ ] Todo
+    Title: Audit all configuration and state authority concepts
+    Description: Goal and acceptance criteria: create `docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md` inventorying every `/etc/map2`, `/var/lib/map2`, `~/.map2`, environment-variable, SQLite, etcd/Raft, PipeWire/JUCE observed-state, and `SystemConfig` concept with current stores, desired authority plane, projections, mutability, startup dependency, reconciliation path, installer artifacts, and drift risk. Why it matters: the hard-cut migration needs a complete map before deleting stores. Dependencies: None. Estimated effort: Medium. Required outputs/deliverables: audit doc, ranked risk list, and follow-up links to subtasks below. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-B
+    Status: [ ] Todo
+    Title: Extend `ConfigOption` with authority metadata and enforcement
+    Description: Goal and acceptance criteria: add authority-plane metadata to `app/config_schema.py`, expose it through config APIs, and fail tests for new config keys without plane/owner/runtime mutability/startup/projection metadata. Why it matters: the authority model must be enforceable in code, not only documented. Dependencies: T2431-A. Estimated effort: Medium. Required outputs/deliverables: schema fields, validation tests, route/API update, docs update. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-C
+    Status: [ ] Todo
+    Title: Replace path scattering with a full `Map2Paths` authority
+    Description: Goal and acceptance criteria: generalize `app/paths.py` from NAM/IR storage helpers into a full platform path authority for host config, durable state, logs, user preferences, generated projections, and asset roots; remove hardcoded `/etc/map2`, `/var/lib/map2`, and `~/.map2` paths from application code except tests/docs/installers. Why it matters: central paths are prerequisite to safe hard migration and installer parity. Dependencies: T2431-A. Estimated effort: Medium. Required outputs/deliverables: `Map2Paths`, migrated code paths, tests, installer/RPM directory parity. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-D
+    Status: [ ] Todo
+    Title: Build layered config loader with host/service/user/control boundaries
+    Description: Goal and acceptance criteria: replace broad `~/.map2/config.json` authority with a layered loader: schema defaults, `/etc/map2/config.d/*.json` host desired config, service projections where allowed, per-node user preferences, and declared environment overrides. User-plane files must not override host-critical keys. Why it matters: host-critical appliance behavior must not depend on a user-scoped file. Dependencies: T2431-B, T2431-C. Estimated effort: High. Required outputs/deliverables: loader service, migration/removal path, tests for precedence and forbidden overrides, installer/environment updates. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-E
+    Status: [ ] Todo
+    Title: Implement deployment-mode authority and remove mirror ownership
+    Description: Goal and acceptance criteria: after Q1 is locked, implement one deployment-mode authority and generate all projections with authority headers/checksums. Remove hand-maintained deployment-mode mirrors and make `map2-mode` a reconciler/doctor path. Why it matters: deployment mode is the highest-risk current mirror because systemd, env, UI, and service policy can disagree. Dependencies: Q1 answer, T2431-C, T2431-D. Estimated effort: High. Required outputs/deliverables: authority file/service, projection generator, verify/repair command, API update, systemd/installer/RPM parity, file-backup rollback. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-F
+    Status: [ ] Todo
+    Title: Add projection header and checksum standard
+    Description: Goal and acceptance criteria: define and implement machine-readable headers for generated files including authority source, source revision/checksum, generated timestamp, generator version, and manual-edit warning; apply to deployment projections and later config projections. Why it matters: generated compatibility artifacts must be inspectable and drift-detectable. Dependencies: T2431-E for first consumer. Estimated effort: Low. Required outputs/deliverables: header format spec, generator helper, tests, docs. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-G
+    Status: [ ] Todo
+    Title: Hard-cut `SystemConfig` into typed domain stores
+    Description: Goal and acceptance criteria: freeze `system_config` writes immediately with an allowlist during migration, move chain presets, touchscreen assignments, and command-queue metadata into typed domain tables or State Authority extensions, then remove generic write access. Why it matters: a generic key/value table defeats the one-concept-one-authority rule. Dependencies: T2431-A. Estimated effort: High. Required outputs/deliverables: typed models/migrations, migrated service code, tests, deprecation/removal docs. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-H
+    Status: [ ] Todo
+    Title: Remove legacy `flow_snapshots` authority paths
+    Description: Goal and acceptance criteria: migrate or delete `flow_snapshots` usage so authored rig state is owned by `snapshots.document` and State Authority services; remove routes/UI/service code that treat flow snapshots as live or preset authority. Why it matters: the user chose removal, so compatibility should not keep competing state alive. Dependencies: T778/T1006, T2431-A. Estimated effort: High. Required outputs/deliverables: deletion/migration plan, code removal, tests for State Authority-only flows, docs updates. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-I
+    Status: [ ] Todo
+    Title: Support no-etcd single-node audio-state authority
+    Description: Goal and acceptance criteria: add a single-node authority backend that preserves the committed/desired/observed contract without requiring etcd, while cluster mode continues to use the control-plane backend. Why it matters: single-node appliance operation must remain simple while preserving the State Authority contract. Dependencies: T2431-B, T2431-D. Estimated effort: Medium. Required outputs/deliverables: backend selection, durable local storage if needed, route/service tests, installer defaults. Last updated: 2026-04-23 07:13 - Codex.
+  - ID: T2431-J
+    Status: [ ] Todo
+    Title: Ship `map2 authority doctor` drift detection and file-backup rollback
+    Description: Goal and acceptance criteria: add CLI/API diagnostics that report config layer sources, forbidden user overrides, deployment projection drift, header checksum mismatches, State Authority projection drift, stale observations, and repair actions; repairs use file backups only per user decision. Why it matters: hard-cut migrations need a visible, repeatable operator path to diagnose and repair drift. Dependencies: T2431-E, T2431-F, T2431-G, T2431-H. Estimated effort: Medium. Required outputs/deliverables: CLI/API, repair routines, tests, docs/runbook. Last updated: 2026-04-23 07:13 - Codex.
+- Required outputs/deliverables:
+  - Architecture docs: audit, authority metadata spec, projection header spec, hard-cut migration runbook.
+  - Backend: authority-aware config schema, layered loader, `Map2Paths`, deployment authority service, no-etcd single-node authority backend, typed replacements for `SystemConfig`, flow-snapshot removal.
+  - Platform artifacts: installer, RPM spec, systemd units/drop-ins, shell scripts, environment files, and docs updated in the same subtasks that change platform assumptions.
+  - Verification: focused pytest coverage per phase, API/CLI doctor tests, migration tests, and `git diff --check`.
+Assigned to: Codex
+Last updated: 2026-04-23 07:13 - Codex
 
 ---
 
