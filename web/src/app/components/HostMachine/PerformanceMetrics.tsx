@@ -74,14 +74,14 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
 
   // Carbon-palette chart colors
   const chartColors = {
-    cpu: 'var(--cds-link-primary, #4589ff)',
-    memory: '#ee5396',
-    temp: '#f1c21b',
-    disk: '#8a3ffc',
+    cpu: 'var(--hm-chart-cpu)',
+    memory: 'var(--hm-chart-memory)',
+    temp: 'var(--hm-chart-temp)',
+    disk: 'var(--hm-chart-disk)',
   }
 
-  const chartGridColor = 'var(--border, #393939)'
-  const chartAxisColor = 'var(--text-tertiary, #8d8d8d)'
+  const chartGridColor = 'var(--cds-border-subtle-01)'
+  const chartAxisColor = 'var(--cds-text-helper)'
 
   return (
     <div className="hm-perf">
@@ -141,10 +141,10 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
               <XAxis dataKey="time" stroke={chartAxisColor} tick={{ fontSize: 11 }} />
               <YAxis stroke={chartAxisColor} tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
               <Tooltip
-                contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 0, fontSize: 12 }}
-                labelStyle={{ color: 'var(--text-secondary)' }}
+                contentStyle={{ background: 'var(--cds-layer)', border: '1px solid var(--cds-border-subtle-01)', borderRadius: 0, fontSize: 12 }}
+                labelStyle={{ color: 'var(--cds-text-secondary)' }}
               />
-              <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: 'var(--cds-text-secondary)' }} />
               <Line type="monotone" dataKey="cpu" stroke={chartColors.cpu} strokeWidth={2} dot={false} name="CPU %" />
               <Line type="monotone" dataKey="memory" stroke={chartColors.memory} strokeWidth={2} dot={false} name="Memory %" />
             </LineChart>
@@ -165,10 +165,10 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
               <YAxis yAxisId="left" stroke={chartAxisColor} tick={{ fontSize: 11 }} unit="°C" />
               <YAxis yAxisId="right" orientation="right" stroke={chartAxisColor} tick={{ fontSize: 11 }} unit="%" />
               <Tooltip
-                contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 0, fontSize: 12 }}
-                labelStyle={{ color: 'var(--text-secondary)' }}
+                contentStyle={{ background: 'var(--cds-layer)', border: '1px solid var(--cds-border-subtle-01)', borderRadius: 0, fontSize: 12 }}
+                labelStyle={{ color: 'var(--cds-text-secondary)' }}
               />
-              <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: 'var(--cds-text-secondary)' }} />
               <Line yAxisId="left" type="monotone" dataKey="temp" stroke={chartColors.temp} strokeWidth={2} dot={false} name="Temp °C" />
               <Line yAxisId="right" type="monotone" dataKey="disk" stroke={chartColors.disk} strokeWidth={2} dot={false} name="Disk %" />
             </LineChart>

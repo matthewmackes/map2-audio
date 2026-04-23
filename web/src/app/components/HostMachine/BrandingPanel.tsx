@@ -48,10 +48,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
 
       {/* Product copy */}
       <div className="hm-branding__copy">
-        <div
-          className="hm-branding__mfr"
-          style={{ color: branding.brand_color }}
-        >
+        <div className="hm-branding__mfr">
           {branding.manufacturer.toUpperCase()}
         </div>
         <div className="hm-branding__name">{branding.marketing_name}</div>
@@ -75,7 +72,6 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="hm-branding__support-link"
-            style={{ color: branding.brand_color }}
           >
             Official Support <ArrowSquareOut size={13} />
           </a>

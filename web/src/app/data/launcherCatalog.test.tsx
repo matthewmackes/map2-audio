@@ -6,6 +6,7 @@ import {
   normalizeLandingTiles,
   prioritizeRequiredHomeLauncher,
 } from './launcherCatalog'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 describe('launcherCatalog', () => {
   it('keeps standalone routed workspaces in the catalog and removes the migrated fixed Start Menu routes', () => {
@@ -56,6 +57,7 @@ describe('launcherCatalog', () => {
       '/juce-grid',
       '/midi-hub',
       '/hardware-interfaces',
+      HOST_MACHINE_ROUTE,
       '/labs/push-surface',
       '/ground-control-pro',
       '/maschine',
@@ -133,6 +135,11 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ route: '/workspace/artifacts', label: 'Audio Artifacts' }),
+      ]),
+    )
+    expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ route: '/workspace/platforms/host-machine', label: 'Host Machine' }),
       ]),
     )
 

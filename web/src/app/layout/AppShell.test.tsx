@@ -6,6 +6,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from './AppShell'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 const mockRestartBackend = jest.fn()
 const mockReloadHomeDesktopShell = jest.fn()
@@ -281,6 +282,21 @@ describe('AppShell global tree navigation', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
+    })
+  })
+
+  it('routes the Host Machine entry from the Hardware branch to the hardware-owned path', async () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/'],
+    )
+
+    fireEvent.click(screen.getByText('Host Machine'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('route-probe')).toHaveTextContent(HOST_MACHINE_ROUTE)
     })
   })
 

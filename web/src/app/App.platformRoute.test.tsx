@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 
 import { App } from './App'
 import { appHistory } from './history'
+import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 
 const mockUseHomePlatformStatus = jest.fn()
 
@@ -58,6 +59,14 @@ jest.mock('./pages/HomePage', () => ({
   HomePage: () => <div data-testid="home-route">Home Route</div>,
 }))
 
+jest.mock('./pages/HostMachinePage', () => ({
+  HostMachinePage: () => {
+    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="host-machine-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/PerformPage', () => ({
   PerformPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
@@ -76,8 +85,11 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
 
 jest.mock('./pages/workspace-hub/platforms/PlatformWorkspaceSection', () => ({
   PlatformWorkspaceSection: () => {
-    const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
+    const { Navigate, useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
+    if (location.pathname === '/workspace/platforms/host-machine') {
+      return <Navigate to="/hardware/host-machine" replace />
+    }
     return <div data-testid="workspace-platform-route">{`${location.pathname}${location.search}`}</div>
   },
 }))
@@ -275,6 +287,40 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/adoption?state=claimable')
+  })
+
+  it('mounts Host Machine on the hardware-owned route', async () => {
+    navigateTo(HOST_MACHINE_ROUTE)
+
+    render(<App />)
+
+    expect(await screen.findByTestId('host-machine-route')).toHaveTextContent(HOST_MACHINE_ROUTE)
+    expect(screen.getByTestId('app-shell')).toBeTruthy()
+  })
+
+  it('redirects the legacy top-level host-machine route into the hardware-owned route', async () => {
+    navigateTo('/host-machine')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('host-machine-route')).toHaveTextContent(HOST_MACHINE_ROUTE)
+  })
+
+  it('redirects the retired platform host-machine route into the hardware-owned route', async () => {
+    navigateTo('/platforms/host-machine')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('host-machine-route')).toHaveTextContent(HOST_MACHINE_ROUTE)
+  })
+
+  it('redirects the retired workspace host-machine route into the hardware-owned route', async () => {
+    navigateTo('/workspace/platforms/host-machine')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('host-machine-route')).toHaveTextContent(HOST_MACHINE_ROUTE)
+    expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
   it('redirects the bare /workspace route into the workspace hub platforms overview scaffold', async () => {

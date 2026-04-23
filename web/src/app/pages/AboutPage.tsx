@@ -50,6 +50,7 @@ import {
   MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
 import { PlatformInfoGuideSection } from '../components/Platform/PlatformInfoGuideSection'
+import { HOST_MACHINE_ROUTE } from './hostMachineRoutes'
 import './AboutPage.css'
 
 interface VersionInfo {
@@ -531,7 +532,7 @@ export function AboutPage() {
             <h2 id="hw-title" className="about-page__section-title">Explore the platform</h2>
           </div>
           <div className="about-page__hw-grid">
-            <NavLink to="/host-machine" className="about-page__hw-tile">
+            <NavLink to={HOST_MACHINE_ROUTE} className="about-page__hw-tile">
               <Chip size={24} />
               <span className="about-page__hw-title">Host Machine</span>
               <span className="about-page__hw-sub">Hardware &amp; OS details</span>

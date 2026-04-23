@@ -73,8 +73,10 @@ function SourceTruthNode({ data }: NodeProps<RenderNodeData>) {
         minHeight: 108,
         border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
         borderInlineStart: `5px solid ${data.accentColor}`,
-        background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
-        boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 10px 26px rgba(15, 98, 254, 0.08)',
+        background: data.selected ? 'var(--cds-layer-selected)' : 'var(--audio-engine-page-panel, var(--cds-layer))',
+        boxShadow: data.selected
+          ? `0 0 0 2px color-mix(in srgb, ${data.accentColor} 18%, transparent)`
+          : 'var(--audio-engine-graph-node-shadow-strong, 0 10px 26px color-mix(in srgb, var(--cds-layer-selected) 38%, transparent))',
       }}
       onClick={() => data.onSelectNode(data.nodeId)}
       aria-label={`Inspect ${data.label}`}

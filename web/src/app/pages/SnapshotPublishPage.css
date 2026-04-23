@@ -436,3 +436,13 @@
     grid-column: 2;
   }
 }
+
+.snapshot-publish-page__perf-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.75rem;
+  color: var(--pp-spotlight-muted, #c9c3b4);
+  font-size: 0.875rem;
+}
+.snapshot-publish-page__perf-body p { margin: 0; }

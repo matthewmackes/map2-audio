@@ -20,6 +20,7 @@ import {
 } from './platform/routes'
 import { LoadingState } from './components/shared/LoadingState'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
+import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 import { buildDeviceRoute, getDeviceEntry } from './data/deviceRegistry'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
@@ -39,6 +40,7 @@ const WorkspaceArtifactsOverviewPage = lazy(() => import('./pages/workspace-hub/
 const WorkspaceArtifactsDiscoverPage = lazy(() => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsDiscoverPage').then(m => ({ default: m.WorkspaceArtifactsDiscoverPage })))
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
+const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
 const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
@@ -463,6 +465,7 @@ export function App() {
                                   <Route path="network" element={<MidiHubNetworkPage />} />
                                   <Route path="lab" element={<MidiHubLabPage />} />
                                 </Route>
+                                <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />

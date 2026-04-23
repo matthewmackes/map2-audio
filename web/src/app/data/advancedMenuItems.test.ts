@@ -15,6 +15,7 @@ import {
   normalizePinnedRoutes,
   pinnableNavigationItems,
 } from './advancedMenuItems'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 describe('navigation catalog', () => {
   const appSource = fs.readFileSync(path.resolve(__dirname, '../App.tsx'), 'utf8')
@@ -96,8 +97,9 @@ describe('navigation catalog', () => {
   })
 
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
-    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about', '/platform'])).toEqual([
+    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/host-machine', '/about', '/platform'])).toEqual([
       '/platforms/about',
+      HOST_MACHINE_ROUTE,
     ])
   })
 

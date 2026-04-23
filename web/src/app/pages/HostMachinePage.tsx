@@ -218,7 +218,7 @@ export function HostMachinePage() {
         <PageHeader
           title={remoteSelected ? `Host Machine · ${selectedNode?.hostname ?? activeNodeId}` : 'Host Machine'}
           subtitle="Hardware Information & Real-Time Health Monitoring"
-          icon={<MapRackDeviceIcon size={28} style={{ color: brandingData.brand_color }} />}
+          icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--interactive" />}
         />
         <div className="hm-page__toolbar-actions">
           <button

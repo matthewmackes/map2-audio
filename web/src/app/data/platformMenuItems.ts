@@ -23,7 +23,7 @@ export type StandalonePanel =
   | 'about'
   | 'adoption'
   | 'api-webhooks'
-export const PLATFORM_UTILITY_PANEL_IDS = ['host-machine', 'theme', 'about'] as const
+export const PLATFORM_UTILITY_PANEL_IDS = ['theme', 'about'] as const
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
   return value === 'host-machine'
@@ -176,7 +176,6 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('cluster-dashboard'),
   buildStandalonePanelNavItem('api-webhooks'),
   buildStandalonePanelNavItem('adoption'),
-  buildStandalonePanelNavItem('host-machine'),
   buildStandalonePanelNavItem('theme'),
   buildStandalonePanelNavItem('about'),
 ]

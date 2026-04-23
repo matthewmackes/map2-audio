@@ -1,10 +1,14 @@
 .management-workspace {
-  --management-shell-surface: var(--platform-shell-surface, var(--cds-layer));
-  --management-shell-surface-strong: var(--platform-shell-surface-strong, color-mix(in srgb, var(--cds-layer-hover) 92%, var(--cds-layer)));
-  --management-shell-object-surface: var(--platform-shell-object-surface, color-mix(in srgb, var(--cds-layer) 88%, white 12%));
-  --management-shell-border-light: var(--platform-shell-border-light, color-mix(in srgb, white 76%, transparent));
-  --management-shell-border-strong: var(--platform-shell-border-strong, color-mix(in srgb, var(--cds-border-strong-01) 88%, transparent));
-  --management-shell-highlight: var(--platform-shell-highlight, color-mix(in srgb, white 72%, transparent));
+  --management-shell-surface: var(--cds-layer);
+  --management-shell-surface-strong: color-mix(in srgb, var(--cds-layer-hover) 68%, var(--cds-layer) 32%);
+  --management-shell-object-surface: color-mix(in srgb, var(--cds-layer-hover) 36%, var(--cds-layer) 64%);
+  --management-shell-border-light: var(--cds-border-subtle-01);
+  --management-shell-border-strong: var(--cds-border-strong-01);
+  --management-shell-highlight: color-mix(in srgb, var(--cds-layer-selected) 54%, transparent);
+  --management-shell-shadow: color-mix(in srgb, var(--cds-layer-selected) 16%, transparent);
+  --management-shell-shadow-strong: color-mix(in srgb, var(--cds-layer-selected) 24%, transparent);
+  --management-shell-toolbar-surface: color-mix(in srgb, var(--cds-layer-hover) 74%, var(--management-shell-surface) 26%);
+  --management-shell-row-surface: color-mix(in srgb, var(--management-shell-object-surface) 82%, var(--management-shell-surface) 18%);
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -20,16 +24,16 @@
   border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-surface));
+    linear-gradient(180deg, var(--management-shell-surface-strong), var(--management-shell-surface));
   box-shadow:
-    inset 1px 1px 0 var(--management-shell-highlight),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 10px 24px var(--management-shell-shadow);
 }
 
 .management-workspace__section.is-highlighted {
   box-shadow:
-    inset 1px 1px 0 var(--management-shell-highlight),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent),
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 10px 24px var(--management-shell-shadow),
     inset 0 0 0 1px color-mix(in srgb, var(--cds-support-success) 26%, transparent);
 }
 
@@ -88,10 +92,10 @@
   border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-object-surface));
+    linear-gradient(180deg, var(--management-shell-surface-strong), var(--management-shell-object-surface));
   box-shadow:
-    inset 1px 1px 0 var(--management-shell-highlight),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 10px 24px var(--management-shell-shadow);
 }
 
 .management-workspace__graph-toolbar {
@@ -102,7 +106,7 @@
   padding: 0.55rem 0.8rem;
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 76%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 96%, white 4%), var(--management-shell-surface));
+    linear-gradient(180deg, var(--management-shell-toolbar-surface), var(--management-shell-surface));
   color: var(--cds-text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   font-weight: 700;
@@ -122,7 +126,11 @@
 
 .management-workspace__graph-flow .react-flow__background {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 92%, white 8%), color-mix(in srgb, var(--management-shell-object-surface) 96%, white 4%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--management-shell-surface-strong) 78%, var(--management-shell-object-surface) 22%),
+      color-mix(in srgb, var(--management-shell-object-surface) 82%, var(--management-shell-surface) 18%)
+    );
 }
 
 .management-workspace__graph-flow .react-flow__controls {
@@ -133,13 +141,13 @@
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 92%, transparent);
   border-radius: 0;
   box-shadow:
-    inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 6px 18px var(--management-shell-shadow);
 }
 
 .management-workspace__graph-flow .react-flow__controls-button {
   border-bottom-color: color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%);
+  background: var(--management-shell-toolbar-surface);
   color: var(--cds-text-primary);
 }
 
@@ -165,10 +173,14 @@
   border-inline-start: 7px solid var(--management-graph-node-accent);
   border-radius: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 95%, white 5%), var(--management-shell-object-surface));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--management-shell-surface-strong) 72%, var(--management-shell-object-surface) 28%),
+      var(--management-shell-object-surface)
+    );
   box-shadow:
-    inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 8px 18px var(--management-shell-shadow);
   color: var(--cds-text-primary);
   text-align: left;
   cursor: pointer;
@@ -178,8 +190,8 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--management-graph-node-accent) 12%, var(--cds-layer-hover)), color-mix(in srgb, var(--management-graph-node-accent) 8%, var(--management-shell-object-surface)));
   box-shadow:
-    inset 1px 1px 0 color-mix(in srgb, white 72%, transparent),
-    inset -1px -1px 0 color-mix(in srgb, var(--management-graph-node-accent) 16%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 10px 22px color-mix(in srgb, var(--management-graph-node-accent) 16%, transparent);
 }
 
 .management-workspace__graph-node:focus-visible {
@@ -232,7 +244,7 @@
 .management-workspace__graph-handle {
   inline-size: 0.6rem;
   block-size: 0.6rem;
-  border: 1px solid color-mix(in srgb, white 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--management-shell-highlight) 60%, var(--management-shell-border-light));
   border-radius: 0;
 }
 
@@ -275,10 +287,14 @@
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
   border-radius: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-object-surface));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--management-shell-surface-strong) 72%, var(--management-shell-object-surface) 28%),
+      var(--management-shell-object-surface)
+    );
   box-shadow:
-    inset 1px 1px 0 var(--management-shell-highlight),
-    inset -1px -1px 0 color-mix(in srgb, black 8%, transparent);
+    inset 0 1px 0 0 var(--management-shell-highlight),
+    0 10px 24px var(--management-shell-shadow);
 }
 
 .management-workspace__hero {
@@ -331,7 +347,7 @@
 .management-workspace__table-container .cds--data-table-header {
   padding: 0.8rem 0.95rem 0.7rem;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-hover) 94%, white 6%), var(--management-shell-surface));
+    linear-gradient(180deg, var(--management-shell-toolbar-surface), var(--management-shell-surface));
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 74%, transparent);
 }
 
@@ -345,7 +361,7 @@
   min-height: 2.6rem;
   padding-inline: 0.95rem;
   border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--management-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--management-shell-toolbar-surface) 80%, var(--management-shell-object-surface) 20%);
 }
 
 .management-workspace__table-container .cds--search,
@@ -359,12 +375,12 @@
 }
 
 .management-workspace__table-container .cds--data-table td {
-  background: color-mix(in srgb, var(--cds-layer) 95%, white 5%);
+  background: var(--management-shell-row-surface);
 }
 
 .management-workspace__table-container .cds--pagination {
   border-top: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--cds-layer-hover) 92%, var(--management-shell-object-surface) 8%);
+  background: color-mix(in srgb, var(--management-shell-toolbar-surface) 80%, var(--management-shell-object-surface) 20%);
 }
 
 .management-workspace__table-row.is-highlighted > td {

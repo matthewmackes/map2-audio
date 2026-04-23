@@ -1213,73 +1213,6 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/workspace::/workspace/platforms/host-machine"
-                  role="treeitem"
-                  tabindex="-1"
-                >
-                  <div
-                    class="cds--tree-node__label"
-                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
-                  >
-                    <span
-                      class="cds--tree-node__label__details"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="cds--tree-node__icon"
-                        fill="currentColor"
-                        focusable="false"
-                        height="16"
-                        preserveAspectRatio="xMidYMid meet"
-                        viewBox="0 0 32 32"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="9"
-                          cy="6"
-                          r="1"
-                        />
-                        <path
-                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="16"
-                          r="1"
-                        />
-                        <path
-                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="26"
-                          r="1"
-                        />
-                        <path
-                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
-                        />
-                      </svg>
-                      <span
-                        class="cds--tree-node__label__text"
-                        id="/workspace::/workspace/platforms/host-machine__label"
-                      >
-                        <span
-                          class="global-tree-nav__node-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label"
-                          >
-                            Host Machine
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </li>
-                <li
-                  aria-selected="false"
-                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
                   id="/workspace::/workspace/platforms/theme"
                   role="treeitem"
                   tabindex="-1"
@@ -2926,6 +2859,73 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 id="/hardware-subtree"
                 role="group"
               >
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/hardware::host-machine"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="9"
+                          cy="6"
+                          r="1"
+                        />
+                        <path
+                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="16"
+                          r="1"
+                        />
+                        <path
+                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="26"
+                          r="1"
+                        />
+                        <path
+                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/hardware::host-machine__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label"
+                          >
+                            Host Machine
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
                 <li
                   aria-expanded="true"
                   aria-owns="/hardware::devices-subtree"
@@ -5815,73 +5815,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/workspace::/workspace/platforms/host-machine"
-                  role="treeitem"
-                  tabindex="-1"
-                >
-                  <div
-                    class="cds--tree-node__label"
-                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
-                  >
-                    <span
-                      class="cds--tree-node__label__details"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="cds--tree-node__icon"
-                        fill="currentColor"
-                        focusable="false"
-                        height="16"
-                        preserveAspectRatio="xMidYMid meet"
-                        viewBox="0 0 32 32"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="9"
-                          cy="6"
-                          r="1"
-                        />
-                        <path
-                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="16"
-                          r="1"
-                        />
-                        <path
-                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="26"
-                          r="1"
-                        />
-                        <path
-                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
-                        />
-                      </svg>
-                      <span
-                        class="cds--tree-node__label__text"
-                        id="/workspace::/workspace/platforms/host-machine__label"
-                      >
-                        <span
-                          class="global-tree-nav__node-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label"
-                          >
-                            Host Machine
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </li>
-                <li
-                  aria-selected="false"
-                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
                   id="/workspace::/workspace/platforms/theme"
                   role="treeitem"
                   tabindex="-1"
@@ -7528,6 +7461,73 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 id="/hardware-subtree"
                 role="group"
               >
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/hardware::host-machine"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="9"
+                          cy="6"
+                          r="1"
+                        />
+                        <path
+                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="16"
+                          r="1"
+                        />
+                        <path
+                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="26"
+                          r="1"
+                        />
+                        <path
+                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/hardware::host-machine__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label"
+                          >
+                            Host Machine
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
                 <li
                   aria-expanded="true"
                   aria-owns="/hardware::devices-subtree"
@@ -10416,73 +10416,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/workspace::/workspace/platforms/host-machine"
-                  role="treeitem"
-                  tabindex="-1"
-                >
-                  <div
-                    class="cds--tree-node__label"
-                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
-                  >
-                    <span
-                      class="cds--tree-node__label__details"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="cds--tree-node__icon"
-                        fill="currentColor"
-                        focusable="false"
-                        height="16"
-                        preserveAspectRatio="xMidYMid meet"
-                        viewBox="0 0 32 32"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          cx="9"
-                          cy="6"
-                          r="1"
-                        />
-                        <path
-                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="16"
-                          r="1"
-                        />
-                        <path
-                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
-                        />
-                        <circle
-                          cx="9"
-                          cy="26"
-                          r="1"
-                        />
-                        <path
-                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
-                        />
-                      </svg>
-                      <span
-                        class="cds--tree-node__label__text"
-                        id="/workspace::/workspace/platforms/host-machine__label"
-                      >
-                        <span
-                          class="global-tree-nav__node-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label"
-                          >
-                            Host Machine
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </li>
-                <li
-                  aria-selected="false"
-                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
                   id="/workspace::/workspace/platforms/theme"
                   role="treeitem"
                   tabindex="-1"
@@ -12130,6 +12063,73 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 id="/hardware-subtree"
                 role="group"
               >
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/hardware::host-machine"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="9"
+                          cy="6"
+                          r="1"
+                        />
+                        <path
+                          d="M26,10H6A2.0021,2.0021,0,0,1,4,8V4A2.0021,2.0021,0,0,1,6,2H26a2.0021,2.0021,0,0,1,2,2V8A2.0021,2.0021,0,0,1,26,10ZM6,4V8H26V4Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="16"
+                          r="1"
+                        />
+                        <path
+                          d="M26,20H6a2.0021,2.0021,0,0,1-2-2V14a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,20ZM6,14v4H26V14Z"
+                        />
+                        <circle
+                          cx="9"
+                          cy="26"
+                          r="1"
+                        />
+                        <path
+                          d="M26,30H6a2.0021,2.0021,0,0,1-2-2V24a2.0021,2.0021,0,0,1,2-2H26a2.0021,2.0021,0,0,1,2,2v4A2.0021,2.0021,0,0,1,26,30ZM6,24v4H26V24Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/hardware::host-machine__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label"
+                          >
+                            Host Machine
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
                 <li
                   aria-expanded="true"
                   aria-owns="/hardware::devices-subtree"

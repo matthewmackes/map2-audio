@@ -1,6 +1,9 @@
+import './ClusterEngineGrid.css'
+
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity as Pulse, Activity as Cpu, Flash as Lightning } from '@carbon/icons-react'
+
 import { useCluster } from '../../contexts/useCluster'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
@@ -25,17 +28,8 @@ type ClusterAudioResponse = {
   }>
 }
 
-const C = {
-  bg: '#0f1520',
-  panel: '#141c2b',
-  border: '#1e2a3d',
-  text: '#e2e8f0',
-  muted: '#64748b',
-  green: '#22c55e',
-  amber: '#f59e0b',
-  red: '#ef4444',
-  blue: '#3b82f6',
-}
+type ClusterTone = 'healthy' | 'warning' | 'critical'
+type MeterTone = 'info' | 'warning'
 
 function getHealthTone(status: ClusterAudioResponse['nodes'][string]['status']) {
   const running = status?.running !== false
@@ -44,12 +38,28 @@ function getHealthTone(status: ClusterAudioResponse['nodes'][string]['status']) 
   const threadState = String(status?.thread_state ?? '').toLowerCase()
 
   if (!running || threadState.includes('stall') || xrunRate > 5) {
-    return { label: 'Critical', color: C.red }
+    return { label: 'Critical', tone: 'critical' as ClusterTone }
   }
   if (xrunRate > 1 || cpu > 80) {
-    return { label: 'Warning', color: C.amber }
+    return { label: 'Warning', tone: 'warning' as ClusterTone }
   }
-  return { label: 'Healthy', color: C.green }
+  return { label: 'Healthy', tone: 'healthy' as ClusterTone }
+}
+
+function runtimeTone(running: boolean | undefined): ClusterTone {
+  return running === false ? 'critical' : 'healthy'
+}
+
+function signalTone(signalState: string | undefined): ClusterTone {
+  return signalState === 'present' ? 'healthy' : 'warning'
+}
+
+function bufferTone(bufferHealth: number): ClusterTone {
+  return bufferHealth < 90 ? 'warning' : 'healthy'
+}
+
+function cpuMeterTone(cpu: number): MeterTone {
+  return cpu > 80 ? 'warning' : 'info'
 }
 
 export function ClusterEngineGrid() {
@@ -91,13 +101,7 @@ export function ClusterEngineGrid() {
 
   if (audioQuery.isError) {
     return (
-      <div style={{
-        border: `1px solid ${C.red}35`,
-        background: `${C.red}10`,
-        color: C.red,
-        padding: 14,
-        fontSize: 13,
-      }}>
+      <div className="cluster-engine-grid__notice cluster-engine-grid__notice--error">
         {audioQuery.error instanceof Error ? audioQuery.error.message : 'Cluster audio health unavailable'}
       </div>
     )
@@ -113,129 +117,117 @@ export function ClusterEngineGrid() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ color: C.text, fontSize: 14, fontWeight: 700, letterSpacing: '0.02em' }}>
+    <div className="cluster-engine-grid">
+      <div className="cluster-engine-grid__header">
+        <div className="cluster-engine-grid__title">
           Cluster Engine Overview
         </div>
-        <div style={{ color: C.muted, fontSize: 12 }}>
+        <div className="cluster-engine-grid__subtitle">
           Select a node for detailed metering and routing panels
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+      <div className="cluster-engine-grid__cards">
         {cards.map((card) => {
           const cpu = Math.max(0, Math.min(100, Number(card.status.cpu_load ?? 0)))
           const bufferHealth = Number(card.status.buffer_health_pct ?? 0)
+          const engineStateTone = runtimeTone(card.status.running)
+          const signalStateTone = signalTone(card.status.signal_state)
+          const bufferStateTone = bufferTone(bufferHealth)
           return (
             <button
               key={card.nodeId}
+              type="button"
               onClick={() => setActiveNode(card.nodeId)}
-              style={{
-                background: C.panel,
-                border: `1px solid ${card.tone.color}33`,
-                padding: 16,
-                cursor: 'pointer',
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}
+              className="cluster-engine-grid__card"
+              data-tone={card.tone.tone}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+              <div className="cluster-engine-grid__card-header">
                 <div>
-                  <div style={{ color: C.text, fontSize: 16, fontWeight: 700 }}>{card.hostname}</div>
-                  <div style={{ color: C.muted, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+                  <div className="cluster-engine-grid__card-title">{card.hostname}</div>
+                  <div className="cluster-engine-grid__card-meta">
                     {card.nodeId} · {card.role}
                   </div>
                 </div>
-                <div style={{
-                  color: card.tone.color,
-                  border: `1px solid ${card.tone.color}35`,
-                  background: `${card.tone.color}12`,
-                  padding: '4px 8px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                }}>
+                <div className="cluster-engine-grid__tone-badge">
                   {card.tone.label}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Engine</div>
-                  <div style={{ color: card.status.running === false ? C.red : C.green, fontSize: 13, fontWeight: 700 }}>
+              <div className="cluster-engine-grid__pair-grid">
+                <div className="cluster-engine-grid__stat-card">
+                  <div className="cluster-engine-grid__eyebrow">Engine</div>
+                  <div className="cluster-engine-grid__status" data-tone={engineStateTone}>
                     {card.status.running === false ? 'Stopped' : 'Running'}
                   </div>
-                  <div style={{ color: C.muted, fontSize: 11 }}>
+                  <div className="cluster-engine-grid__stat-copy">
                     {card.status.sample_rate ?? '—'} Hz / {card.status.buffer_size ?? '—'} smp
                   </div>
                 </div>
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Latency</div>
-                  <div style={{ color: C.text, fontSize: 13, fontWeight: 700 }}>
+                <div className="cluster-engine-grid__stat-card">
+                  <div className="cluster-engine-grid__eyebrow">Latency</div>
+                  <div className="cluster-engine-grid__stat-value">
                     {Number(card.status.latency_ms ?? 0).toFixed(2)} ms
                   </div>
-                  <div style={{ color: C.muted, fontSize: 11 }}>
+                  <div className="cluster-engine-grid__stat-copy">
                     peer {card.latencyMs == null ? '—' : `${card.latencyMs.toFixed(1)} ms`}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.muted }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <div className="cluster-engine-grid__meter">
+                <div className="cluster-engine-grid__meter-header">
+                  <span className="cluster-engine-grid__meter-label">
                     <Cpu size={12} /> CPU
                   </span>
-                  <span style={{ color: cpu > 80 ? C.amber : C.text, fontFamily: 'var(--font-mono)' }}>{cpu.toFixed(1)}%</span>
+                  <span className="cluster-engine-grid__meter-value" data-tone={cpuMeterTone(cpu)}>
+                    {cpu.toFixed(1)}%
+                  </span>
                 </div>
-                <div style={{ height: 8, background: C.bg, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+                <div className="cluster-engine-grid__meter-track">
                   <div
-                    style={{
-                      width: `${cpu}%`,
-                      height: '100%',
-                      background: cpu > 80 ? C.amber : C.blue,
-                    }}
+                    className="cluster-engine-grid__meter-fill"
+                    data-fill-tone={cpuMeterTone(cpu)}
+                    style={{ width: `${cpu}%` }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Xruns</div>
-                  <div style={{ color: Number(card.status.total_xruns ?? 0) > 0 ? C.red : C.green, fontSize: 14, fontWeight: 700 }}>
+              <div className="cluster-engine-grid__triple-grid">
+                <div className="cluster-engine-grid__stat-card">
+                  <div className="cluster-engine-grid__eyebrow">Xruns</div>
+                  <div className="cluster-engine-grid__status" data-tone={Number(card.status.total_xruns ?? 0) > 0 ? 'critical' : 'healthy'}>
                     {card.status.total_xruns ?? 0}
                   </div>
-                  <div style={{ color: C.muted, fontSize: 11 }}>
+                  <div className="cluster-engine-grid__stat-copy">
                     {(card.status.xrun_rate_per_minute ?? 0).toFixed(2)}/min
                   </div>
                 </div>
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Signal</div>
-                  <div style={{ color: card.status.signal_state === 'present' ? C.green : C.amber, fontSize: 13, fontWeight: 700 }}>
+                <div className="cluster-engine-grid__stat-card">
+                  <div className="cluster-engine-grid__eyebrow">Signal</div>
+                  <div className="cluster-engine-grid__status" data-tone={signalStateTone}>
                     {card.status.signal_state ?? 'unknown'}
                   </div>
-                  <div style={{ color: C.muted, fontSize: 11 }}>
+                  <div className="cluster-engine-grid__stat-copy">
                     thread {card.status.thread_state ?? '—'}
                   </div>
                 </div>
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, padding: 10 }}>
-                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 4, letterSpacing: '0.02em' }}>Buffer</div>
-                  <div style={{ color: bufferHealth < 90 ? C.amber : C.green, fontSize: 14, fontWeight: 700 }}>
+                <div className="cluster-engine-grid__stat-card">
+                  <div className="cluster-engine-grid__eyebrow">Buffer</div>
+                  <div className="cluster-engine-grid__status" data-tone={bufferStateTone}>
                     {bufferHealth.toFixed(0)}%
                   </div>
-                  <div style={{ color: card.alertCount > 0 ? C.amber : C.muted, fontSize: 11 }}>
+                  <div className="cluster-engine-grid__stat-copy" data-tone={card.alertCount > 0 ? 'warning' : undefined}>
                     {card.alertCount} alert{card.alertCount === 1 ? '' : 's'}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: C.muted, fontSize: 11 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <div className="cluster-engine-grid__footer">
+                <span className="cluster-engine-grid__footer-copy">
                   <Pulse size={12} /> Click for detailed node view
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: card.tone.color }}>
+                <span className="cluster-engine-grid__footer-copy" data-tone={card.tone.tone}>
                   <Lightning size={12} />
                   {card.tone.label}
                 </span>
@@ -246,7 +238,7 @@ export function ClusterEngineGrid() {
       </div>
 
       {cards.length === 0 && (
-        <div style={{ color: C.muted, fontSize: 13 }}>
+        <div className="cluster-engine-grid__empty-copy">
           No cluster nodes are currently reporting audio engine status.
         </div>
       )}

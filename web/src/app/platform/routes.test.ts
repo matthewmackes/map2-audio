@@ -3,6 +3,7 @@ import {
   buildPlatformNodeWorkspaceHref,
   buildPlatformWorkspacePath,
 } from './routes'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 describe('platform routes', () => {
   it('builds node-aware workspace hrefs when a focus node is supplied', () => {
@@ -17,5 +18,12 @@ describe('platform routes', () => {
     const searchParams = new URLSearchParams('layer=single-node&focusNodeId=node-b')
 
     expect(buildLegacyPlatformRedirectPath(searchParams)).toBe('/platforms/management?focusNodeId=node-b')
+  })
+
+  it('resolves the retired host-machine platform panel to the hardware-owned route', () => {
+    expect(buildPlatformWorkspacePath('host-machine')).toBe(HOST_MACHINE_ROUTE)
+
+    const searchParams = new URLSearchParams('panel=host-machine')
+    expect(buildLegacyPlatformRedirectPath(searchParams)).toBe(HOST_MACHINE_ROUTE)
   })
 })

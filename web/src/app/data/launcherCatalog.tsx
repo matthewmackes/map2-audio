@@ -10,6 +10,7 @@ import {
   type NavigationRenderKind,
   type ShellNavigationItem,
 } from './advancedMenuItems'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 import { platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuItems'
 
 export type LandingTileSize = 'small' | 'medium' | 'large'
@@ -94,6 +95,7 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/platforms/cluster-dashboard',
   '/platforms/adoption',
   '/platforms/host-machine',
+  HOST_MACHINE_ROUTE,
   '/platforms/theme',
   '/platforms/about',
 ])
@@ -139,7 +141,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/workspace/platforms/network-discovery', label: 'Network Discovery' },
       { route: '/workspace/platforms/cluster-dashboard', label: 'Cluster Dashboard' },
       { route: '/workspace/platforms/adoption', label: 'Adoption' },
-      { route: '/workspace/platforms/host-machine', label: 'Host Machine' },
       { route: '/workspace/platforms/theme', label: 'Theme' },
       { route: '/workspace/platforms/about', label: 'About' },
     ],

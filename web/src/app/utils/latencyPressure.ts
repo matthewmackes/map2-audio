@@ -1,5 +1,5 @@
-export const LATENCY_PRESSURE_BLUE = '#78a9ff'
-export const LATENCY_PRESSURE_RED = '#fa4d56'
+export const LATENCY_PRESSURE_BLUE = 'var(--cds-support-info)'
+export const LATENCY_PRESSURE_RED = 'var(--cds-support-error)'
 
 export type LatencyPressureTone = 'blue' | 'red'
 export type LatencyPressureStatus = 'waiting' | 'offline' | 'stable' | 'watch' | 'critical'
@@ -188,7 +188,7 @@ export function computeLatencyPressure(inputs: LatencyPressureInputs): LatencyPr
       pressurePercent: null,
       tone: 'blue',
       toneColor: LATENCY_PRESSURE_BLUE,
-      fillColor: 'rgba(120, 169, 255, 0.18)',
+      fillColor: 'color-mix(in srgb, var(--cds-support-info) 18%, transparent)',
       status: waitingStatus.status,
       statusLabel: waitingStatus.statusLabel,
       inputs: {
@@ -225,7 +225,7 @@ export function computeLatencyPressure(inputs: LatencyPressureInputs): LatencyPr
       pressurePercent: 100,
       tone: 'red',
       toneColor: LATENCY_PRESSURE_RED,
-      fillColor: 'rgba(250, 77, 86, 0.18)',
+      fillColor: 'color-mix(in srgb, var(--cds-support-error) 18%, transparent)',
       status: offlineStatus.status,
       statusLabel: offlineStatus.statusLabel,
       inputs: {
@@ -282,7 +282,9 @@ export function computeLatencyPressure(inputs: LatencyPressureInputs): LatencyPr
     pressurePercent,
     tone,
     toneColor: tone === 'red' ? LATENCY_PRESSURE_RED : LATENCY_PRESSURE_BLUE,
-    fillColor: tone === 'red' ? 'rgba(250, 77, 86, 0.18)' : 'rgba(120, 169, 255, 0.18)',
+    fillColor: tone === 'red'
+      ? 'color-mix(in srgb, var(--cds-support-error) 18%, transparent)'
+      : 'color-mix(in srgb, var(--cds-support-info) 18%, transparent)',
     status: statusInfo.status,
     statusLabel: statusInfo.statusLabel,
     inputs: {

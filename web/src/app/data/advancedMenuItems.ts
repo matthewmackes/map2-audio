@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import {
+  BareMetalServer,
   Catalog,
   Dashboard,
   Devices as Monitor,
@@ -14,6 +15,7 @@ import {
   MapRackDeviceIcon,
   MapStagePerformanceIcon,
 } from '../components/icons/map'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 import { platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuItems'
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
@@ -212,6 +214,20 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     kind: 'link',
     showOnHome: false,
     deviceType: 'devices-overview',
+  },
+  {
+    to: HOST_MACHINE_ROUTE,
+    label: 'Host Machine',
+    shortLabel: 'Host',
+    icon: BareMetalServer,
+    description: 'Open hardware posture, storage health, services, and interface readiness for the active MAP2 host context.',
+    color: 'var(--cds-support-warning)',
+    homeSection: 'Hardware',
+    includeInAdvancedMenu: false,
+    pinnable: true,
+    maturity: 'beta',
+    kind: 'link',
+    showOnHome: false,
   },
   {
     to: '/state-authority',
@@ -536,7 +552,9 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/platforms/overview': '/workspace',
   '/about': '/platforms/about',
   '/theme': '/platforms/theme',
-  '/host-machine': '/platforms/host-machine',
+  '/host-machine': HOST_MACHINE_ROUTE,
+  '/platforms/host-machine': HOST_MACHINE_ROUTE,
+  '/workspace/platforms/host-machine': HOST_MACHINE_ROUTE,
   '/engine': '/platforms/audio-engine',
   '/avb-routing': '/platforms/avb-routing',
   '/midi-cluster': '/midi-hub/connections',
@@ -559,7 +577,7 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   'platform:layer:api-observatory': '/platforms/network-discovery',
   'platform:layer:network-discovery': '/platforms/network-discovery',
   'platform:layer:cluster-dashboard': '/platforms/cluster-dashboard',
-  'platform:panel:host-machine': '/platforms/host-machine',
+  'platform:panel:host-machine': HOST_MACHINE_ROUTE,
   'platform:panel:audio-engine': '/platforms/audio-engine',
   'platform:panel:theme': '/platforms/theme',
   'platform:panel:about': '/platforms/about',

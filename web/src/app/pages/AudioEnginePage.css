@@ -12,11 +12,21 @@
 /* ── Root ──────────────────────────────────────────────────────────────── */
 
 .audio-engine-page {
+  --audio-engine-page-bg: var(--cds-background);
+  --audio-engine-page-panel: var(--cds-layer);
+  --audio-engine-page-panel-raised: var(--cds-layer-hover);
+  --audio-engine-page-panel-contrast: var(--cds-layer-selected);
+  --audio-engine-page-border: var(--cds-border-subtle-01);
+  --audio-engine-page-border-strong: var(--cds-border-strong-01);
+  --audio-engine-graph-node-shadow: 0 8px 22px color-mix(in srgb, var(--cds-layer-selected) 34%, transparent);
+  --audio-engine-graph-node-shadow-strong: 0 10px 26px color-mix(in srgb, var(--cds-layer-selected) 38%, transparent);
+  --audio-engine-pressure-threshold: color-mix(in srgb, var(--cds-support-error) 28%, transparent);
+  --audio-engine-pressure-fill-fallback: color-mix(in srgb, var(--cds-support-info) 18%, transparent);
   display: flex;
   flex-direction: column;
   min-height: 100%;
   width: 100%;
-  background: var(--bg);
+  background: var(--audio-engine-page-bg);
 }
 
 .audio-engine-page__surface {
@@ -183,10 +193,10 @@
 .audio-engine-page__workspace-graph {
   height: min(42rem, 70vh);
   min-height: 30rem;
-  border: 1px solid var(--cds-border-subtle-01);
+  border: 1px solid var(--audio-engine-page-border);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary) 11%, transparent), transparent 40%),
-    linear-gradient(180deg, var(--cds-layer-hover), var(--cds-layer));
+    linear-gradient(180deg, var(--audio-engine-page-panel-raised), var(--audio-engine-page-panel));
 }
 
 .audio-engine-page__workspace-graph-empty {
@@ -195,8 +205,8 @@
   min-height: 20rem;
   padding: var(--cds-spacing-06);
   color: var(--cds-text-secondary);
-  border: 1px dashed var(--cds-border-subtle-01);
-  background: var(--cds-layer-hover);
+  border: 1px dashed var(--audio-engine-page-border);
+  background: var(--audio-engine-page-panel-raised);
 }
 
 .audio-engine-page__source-truth-card {
@@ -209,17 +219,17 @@
 }
 
 .audio-engine-page__source-truth-card-section--table {
-  border-top: 1px solid var(--cds-border-subtle-01);
-  background: linear-gradient(180deg, var(--cds-layer), var(--cds-layer-hover));
+  border-top: 1px solid var(--audio-engine-page-border);
+  background: linear-gradient(180deg, var(--audio-engine-page-panel), var(--audio-engine-page-panel-raised));
 }
 
 .audio-engine-page__source-truth-graph {
   height: min(36rem, 62vh);
   min-height: 24rem;
-  border: 1px solid var(--cds-border-subtle-01);
+  border: 1px solid var(--audio-engine-page-border);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--cds-support-info) 12%, transparent), transparent 42%),
-    linear-gradient(180deg, var(--cds-layer-hover), var(--cds-layer));
+    linear-gradient(180deg, var(--audio-engine-page-panel-raised), var(--audio-engine-page-panel));
 }
 
 .audio-engine-page__source-truth-node {
@@ -324,8 +334,8 @@
   gap: var(--cds-spacing-01);
   min-width: 0;
   padding: var(--cds-spacing-03);
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer);
+  border: 1px solid var(--audio-engine-page-border);
+  background: var(--audio-engine-page-panel);
 }
 
 .audio-engine-page__expanded-value {
@@ -377,8 +387,8 @@
   gap: var(--cds-spacing-03);
   min-height: 8rem;
   padding: var(--cds-spacing-04);
-  border: 1px solid var(--cds-border-subtle-01);
-  background: var(--cds-layer-hover);
+  border: 1px solid var(--audio-engine-page-border);
+  background: var(--audio-engine-page-panel-raised);
 }
 
 .audio-engine-page__latency-score-card {
@@ -423,14 +433,14 @@
 }
 
 .audio-engine-page__pressure-threshold {
-  stroke: rgba(250, 77, 86, 0.28);
+  stroke: var(--audio-engine-pressure-threshold);
   stroke-width: 1;
   stroke-dasharray: 4 3;
   vector-effect: non-scaling-stroke;
 }
 
 .audio-engine-page__pressure-area {
-  fill: var(--audio-engine-pressure-fill, rgba(120, 169, 255, 0.18));
+  fill: var(--audio-engine-pressure-fill, var(--audio-engine-pressure-fill-fallback));
 }
 
 .audio-engine-page__pressure-line {

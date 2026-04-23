@@ -28,18 +28,32 @@
 /* ── Page layout ─────────────────────────────────────────────── */
 
 .hm-page {
+  --surface: var(--cds-layer);
+  --surface-2: var(--cds-layer-hover);
+  --surface-3: var(--cds-layer-selected);
+  --border: var(--cds-border-subtle-01);
+  --border-strong: var(--cds-border-strong-01);
+  --bg: var(--cds-background);
+  --text-primary: var(--cds-text-primary);
+  --text-secondary: var(--cds-text-secondary);
+  --text-tertiary: var(--cds-text-helper);
+  --interactive: var(--cds-link-primary);
+  --interactive-hover: var(--cds-link-primary-hover);
+  --success: var(--cds-support-success);
+  --warning: var(--cds-support-warning);
+  --danger: var(--cds-support-error);
+  --font-mono: var(--cds-code-01-font-family, ui-monospace, monospace);
+  --hm-chart-cpu: var(--cds-link-primary);
+  --hm-chart-memory: var(--cds-support-info);
+  --hm-chart-temp: var(--cds-support-warning);
+  --hm-chart-disk: var(--cds-support-success);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   min-height: 100%;
   padding: 0 var(--cds-spacing-06, 1.5rem) var(--cds-spacing-08, 3rem);
-  color: var(--cds-text-primary, var(--text-primary));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, var(--cds-background, transparent) 8%) 0%,
-      color-mix(in srgb, var(--cds-layer, var(--surface)) 84%, var(--cds-background, transparent) 16%) 100%
-    );
+  color: var(--cds-text-primary);
+  background: var(--cds-background);
 }
 
 .hm-page--loading {
@@ -220,7 +234,7 @@
 .hm-btn--primary {
   background: var(--interactive);
   border-color: var(--interactive);
-  color: #fff;
+  color: var(--cds-text-on-color);
 }
 
 .hm-btn--primary:hover {
@@ -844,6 +858,7 @@
 .hm-branding__mfr {
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
+  color: var(--cds-link-primary);
   margin-bottom: 6px;
 }
 
@@ -878,6 +893,7 @@
   gap: 4px;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
+  color: var(--cds-link-primary);
   text-decoration: none;
   margin-top: 12px;
 }
@@ -1227,7 +1243,7 @@
 
 .hm-toggle-input:checked + .hm-toggle-track .hm-toggle-thumb {
   transform: translateX(16px);
-  background: #fff;
+  background: var(--cds-icon-on-color);
 }
 
 /* ── Tips ─────────────────────────────────────────────────────── */

@@ -65,6 +65,7 @@ import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/plat
 import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings'
 import { useToasts } from '../../components/Toasts'
 import { useNodePageContext } from '../../hooks/useNodePageContext'
+import { HOST_MACHINE_ROUTE } from '../../pages/hostMachineRoutes'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import {
   NODE_PAGE_KEYS,
@@ -128,6 +129,7 @@ const FLAT_TOP_LEVEL_ROUTES = new Set([
 ])
 const HARDWARE_TREE_ID = '/hardware'
 const HARDWARE_DEVICES_ID = '/hardware::devices'
+const HARDWARE_HOST_MACHINE_ID = '/hardware::host-machine'
 
 const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/': Home,
@@ -157,7 +159,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/workspace/platforms/network-discovery': ScanAlt,
   '/workspace/platforms/cluster-dashboard': Dashboard,
   '/workspace/platforms/adoption': AddAlt,
-  '/workspace/platforms/host-machine': BareMetalServer,
+  [HOST_MACHINE_ROUTE]: BareMetalServer,
   '/workspace/platforms/theme': ColorPalette,
   '/workspace/platforms/about': Information,
   // MIDI Advanced (/midi-hub) sub-items
@@ -320,6 +322,12 @@ function buildHardwareTree(
     label: 'Hardware',
     icon: Devices,
     children: [
+      {
+        id: HARDWARE_HOST_MACHINE_ID,
+        label: 'Host Machine',
+        route: HOST_MACHINE_ROUTE,
+        icon: TREE_ICON_OVERRIDES[HOST_MACHINE_ROUTE] ?? BareMetalServer,
+      },
       {
         id: HARDWARE_DEVICES_ID,
         label: 'Devices',

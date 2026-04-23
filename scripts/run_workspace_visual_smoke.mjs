@@ -26,7 +26,7 @@ const ROUTES = [
   '/workspace/platforms/network-discovery',
   '/workspace/platforms/cluster-dashboard',
   '/workspace/platforms/adoption',
-  '/workspace/platforms/host-machine',
+  '/hardware/host-machine',
   '/workspace/platforms/theme',
   '/workspace/platforms/about',
   '/workspace/physical-surfaces',

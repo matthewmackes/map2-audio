@@ -76,13 +76,13 @@ const NODE_SIZE: Record<JuceSourceTruthNodeId, JuceSourceTruthNodeSize> = {
 }
 
 const ACCENT: Record<JuceSourceTruthNodeId, string> = {
-  profile: '#0f62fe',
-  'configured-engine': '#4589ff',
-  'juce-runtime': '#1192e8',
-  'pipewire-runtime': '#009d9a',
-  'spdif-policy': '#8a3ffc',
-  'avb-policy': '#24a148',
-  'avb-runtime': '#198038',
+  profile: 'var(--cds-link-primary)',
+  'configured-engine': 'var(--cds-link-primary-hover)',
+  'juce-runtime': 'var(--cds-support-info)',
+  'pipewire-runtime': 'var(--cds-support-info)',
+  'spdif-policy': 'var(--cds-support-warning)',
+  'avb-policy': 'var(--cds-support-success)',
+  'avb-runtime': 'var(--cds-support-success)',
 }
 
 function toneToTagType(tone: JuceSourceTruthTone): JuceSourceTruthGraphTag['type'] {
@@ -188,14 +188,14 @@ function toneForSpdifPolicy(payload: AudioSourceTruthPayload): JuceSourceTruthTo
 function edgeStroke(tone: JuceSourceTruthTone) {
   switch (tone) {
     case 'aligned':
-      return '#24a148'
+      return 'var(--cds-support-success)'
     case 'warning':
-      return '#ff832b'
+      return 'var(--cds-support-warning)'
     case 'critical':
-      return '#da1e28'
+      return 'var(--cds-support-error)'
     case 'neutral':
     default:
-      return '#8d8d8d'
+      return 'var(--cds-icon-secondary)'
   }
 }
 

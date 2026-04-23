@@ -1,5 +1,6 @@
 import { canonicalizeNavigationRoute } from './advancedMenuItems'
 import type { HardwareInterfaceMenuItem, NavigationMaturityState, ShellNavigationItem } from './advancedMenuItems'
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 type HomeItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
@@ -63,6 +64,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     bestFor: 'Core audio runtime control',
   },
   '/host-machine': {
+    summary: 'System-level machine diagnostics focused on latency-sensitive reliability and host resource headroom.',
+    capabilities: [
+      'CPU and memory readiness visibility',
+      'Storage and machine health context',
+      'Low-latency risk signal detection',
+      'Host stability checks for realtime workloads',
+      'Node-level operating condition snapshots',
+      'Resource-pressure troubleshooting context',
+    ],
+    learnMore: 'Use Host Machine when audio symptoms may be caused by OS/resource pressure rather than plugin or routing changes.',
+    bestFor: 'Host-level performance triage',
+  },
+  [HOST_MACHINE_ROUTE]: {
     summary: 'System-level machine diagnostics focused on latency-sensitive reliability and host resource headroom.',
     capabilities: [
       'CPU and memory readiness visibility',
@@ -139,19 +153,6 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     ],
     learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
     bestFor: 'Platform appearance and operator comfort tuning',
-  },
-  '/platforms/host-machine': {
-    summary: 'System-level machine diagnostics focused on latency-sensitive reliability and host resource headroom.',
-    capabilities: [
-      'CPU and memory readiness visibility',
-      'Storage and machine health context',
-      'Low-latency risk signal detection',
-      'Host stability checks for realtime workloads',
-      'Node-level operating condition snapshots',
-      'Resource-pressure troubleshooting context',
-    ],
-    learnMore: 'Use Host Machine when audio symptoms may be caused by OS/resource pressure rather than plugin or routing changes.',
-    bestFor: 'Host-level performance triage',
   },
   '/platforms/audio-engine': {
     summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',

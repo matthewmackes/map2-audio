@@ -1,4 +1,5 @@
 import { isStandalonePanel, type StandalonePanel } from '../data/platformMenuItems'
+import { buildHostMachinePath } from '../pages/hostMachineRoutes'
 import { isPlatformLayerId, type PlatformLayerId } from './model'
 
 export type PlatformWorkspaceId = PlatformLayerId | StandalonePanel
@@ -18,6 +19,10 @@ function buildPlatformWorkspacePathForBase(
   basePath: string,
   workspace: PlatformWorkspaceId = 'overview',
 ): string {
+  if (workspace === 'host-machine') {
+    return buildHostMachinePath()
+  }
+
   return `${basePath}/${workspace}`
 }
 
@@ -83,6 +88,10 @@ export function buildLegacyPlatformWorkspaceRedirectPath(
 
   if (workspace === 'midi-cluster') {
     return '/midi-hub/connections'
+  }
+
+  if (workspace === 'host-machine') {
+    return buildHostMachinePath()
   }
 
   const redirectedLayer = LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]

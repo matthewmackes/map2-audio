@@ -56,8 +56,8 @@ interface BuildManagementWorkspaceGraphArgs {
 }
 
 const HUB_NODE_ID = 'management-workspace:hub'
-const HUB_ACCENT = '#24a148'
-const SERVICE_ACCENT = '#0f62fe'
+const HUB_ACCENT = 'var(--cds-support-success)'
+const SERVICE_ACCENT = 'var(--cds-link-primary)'
 
 function healthTone(value: string | number | boolean | null | undefined): ManagementWorkspaceTone {
   const normalized = String(value ?? '').toLowerCase()
@@ -105,14 +105,14 @@ function trafficStrokeWidth(level: ManagementWorkspaceTrafficLevel) {
 function trafficColor(level: ManagementWorkspaceTrafficLevel): string {
   switch (level) {
     case 'high':
-      return '#da1e28'
+      return 'var(--cds-support-error)'
     case 'medium':
-      return '#ff832b'
+      return 'var(--cds-support-warning)'
     case 'low':
-      return '#24a148'
+      return 'var(--cds-support-success)'
     case 'idle':
     default:
-      return '#8d8d8d'
+      return 'var(--cds-icon-secondary)'
   }
 }
 

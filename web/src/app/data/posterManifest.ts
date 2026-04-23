@@ -1,3 +1,5 @@
+import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
+
 export interface PosterManifestEntry {
   route: string
   label: string
@@ -8,7 +10,7 @@ export interface PosterManifestEntry {
 export const POSTER_MANIFEST: PosterManifestEntry[] = [
   { route: '/workspace', label: 'Workspaces', slug: 'workspaces', temperature: 'warm' },
   { route: '/platforms/audio-engine', label: 'Audio Engine', slug: 'audio-engine', temperature: 'cool' },
-  { route: '/platforms/host-machine', label: 'Host Machine', slug: 'host-machine', temperature: 'warm' },
+  { route: HOST_MACHINE_ROUTE, label: 'Host Machine', slug: 'host-machine', temperature: 'warm' },
   { route: '/perform', label: 'Stage Mode', slug: 'stage-mode', temperature: 'warm' },
   { route: '/platforms/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
   { route: '/expression', label: 'Expression', slug: 'expression', temperature: 'cool' },

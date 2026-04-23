@@ -61,10 +61,12 @@ function AudioEngineWorkspaceNodeCard({ data }: NodeProps<AudioEngineWorkspaceRe
     border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
     borderInlineStart: `6px solid ${data.accentColor}`,
     borderRadius: 10,
-    background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
+    background: data.selected ? 'var(--cds-layer-selected)' : 'var(--audio-engine-page-panel, var(--cds-layer))',
     color: 'var(--cds-text-primary)',
     padding: '0.9rem',
-    boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 8px 22px rgba(15, 98, 254, 0.08)',
+    boxShadow: data.selected
+      ? `0 0 0 2px color-mix(in srgb, ${data.accentColor} 18%, transparent)`
+      : 'var(--audio-engine-graph-node-shadow, 0 8px 22px color-mix(in srgb, var(--cds-layer-selected) 34%, transparent))',
     textAlign: 'left' as const,
     cursor: 'pointer',
   }

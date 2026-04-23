@@ -76,14 +76,14 @@ const PATCH_NODE_ID = 'audio-engine-workspace:patch'
 const CONTROL_NODE_ID = 'audio-engine-workspace:control'
 
 const ACCENT = {
-  authority: '#0f62fe',
-  device: '#009d9a',
-  source: '#ff832b',
-  engine: '#4589ff',
-  stream: '#1192e8',
-  patch: '#6f6f6f',
-  sink: '#24a148',
-  control: '#da1e28',
+  authority: 'var(--cds-link-primary)',
+  device: 'var(--cds-support-info)',
+  source: 'var(--cds-support-warning)',
+  engine: 'var(--cds-link-primary-hover)',
+  stream: 'var(--cds-link-primary)',
+  patch: 'var(--cds-icon-secondary)',
+  sink: 'var(--cds-support-success)',
+  control: 'var(--cds-support-error)',
 } as const
 
 function toneToTagType(tone: AudioEngineWorkspaceTone): AudioEngineWorkspaceGraphTag['type'] {
@@ -161,14 +161,14 @@ function trafficToStrokeWidth(level: AudioEngineWorkspaceTrafficLevel) {
 function trafficToColor(level: AudioEngineWorkspaceTrafficLevel) {
   switch (level) {
     case 'high':
-      return '#24a148'
+      return 'var(--cds-support-success)'
     case 'medium':
-      return '#ff832b'
+      return 'var(--cds-support-warning)'
     case 'low':
-      return '#0f62fe'
+      return 'var(--cds-link-primary)'
     case 'idle':
     default:
-      return '#8d8d8d'
+      return 'var(--cds-icon-secondary)'
   }
 }
 

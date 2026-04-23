@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-23 EDT - T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-23 EDT - T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
 
 ---
 
@@ -170,6 +170,66 @@ Description:
   - Verification: focused pytest coverage per phase, API/CLI doctor tests, migration tests, and `git diff --check`.
 Assigned to: Codex
 Last updated: 2026-04-23 07:13 - Codex
+
+---
+
+ID: T2432
+Status: [✓] Done
+Title: Move Host Machine into Hardware navigation with a new canonical route and theme-token parity
+Description:
+- Goal / acceptance criteria: Reparent Host Machine from the Control Panel / Platforms tree into the top-level Hardware tree as a direct child, change the canonical route from the legacy platform-workspace path to a hardware-owned path, preserve legacy redirects from old Host Machine URLs, update all affected nav/catalog/poster/smoke-test references, and refit the Host Machine page so its visuals use current theme tokens instead of page-specific static coloring. Focused route, component, and snapshot coverage must pass.
+- Why it matters: The current information architecture says Host Machine is a platform panel even though its content is hardware diagnostics. The route and tree disagree with the desired ownership, and the page styling still carries older static accent treatment that drifts from the current theme system.
+- Dependencies: None.
+- Estimated effort: Medium.
+- Required outputs/deliverables: updated global tree + route mappings, Host Machine page/theme styling updates, focused test/snapshot refresh, visual smoke route list update, and compliance note if any packaging/runtime assumptions change.
+Assigned to: Codex
+Last updated: 2026-04-23 12:22 - Codex
+Completion note: 2026-04-23 12:22 - Codex: Moved Host Machine into the Global Tree Hardware branch, introduced canonical route `/hardware/host-machine`, preserved redirects from `/host-machine`, `/platforms/host-machine`, `/workspace/platforms/host-machine`, and the legacy panel alias, updated affected nav/catalog/poster/smoke references, and replaced Host Machine page static accent usage with current theme tokens. Validation PASS: focused Jest suites, DesktopExperience snapshot refresh, `npm --prefix web run typecheck`, `npm --prefix web run build`, and `git diff --check`. No new dependency, installer, service, or environment changes were introduced.
+
+---
+
+ID: T2433
+Status: [✓] Done
+Title: Audit platform-route theme-token parity after Host Machine refit
+Description:
+- Goal / acceptance criteria: Evaluate `workspace/platforms/management`, `workspace/platforms/audio-engine`, `chains`, `workspace/platforms/adoption`, and `platforms/about` for the same theme-token migration applied to Host Machine, identify any remaining static neutral palettes or page-local fallback mixing that can drift from the active theme, and record which routes actually need follow-up implementation.
+- Why it matters: The route-level shells should not visually drift when the app theme changes. A narrow audit avoids spending time reworking pages that are already Carbon-token aligned while isolating the components that still own fixed neutrals or theme-fragile fallback surfaces.
+- Dependencies: None.
+- Estimated effort: Low.
+- Required outputs/deliverables: route-by-route audit result with concrete file ownership and implementation recommendation, plus compliance note if any runtime or packaging assumptions change.
+Assigned to: Codex
+Last updated: 2026-04-23 12:40 - Codex
+Completion note: 2026-04-23 12:40 - Codex: Audited the requested routes. Follow-up implementation is warranted for `workspace/platforms/management` (custom shell gradients and graph accents still depend on white/black mixing and fixed hex colors in `ManagementWorkspace.css` / `managementWorkspaceGraph.ts`) and `workspace/platforms/audio-engine` (hard-coded dark cluster overview palette in `ClusterEngineGrid.tsx`, plus a few fixed graph shadow/pressure rgba values in audio-engine graph surfaces). `chains`, `workspace/platforms/adoption`, and `platforms/about` are already primarily Carbon-token driven; only minor token-fallback cleanup remains on Platform Guide / About and does not match the Host Machine severity. No dependency, installer, service, or environment changes were introduced.
+
+---
+
+ID: T2434
+Status: [✓] Done
+Title: Refit Audio Engine route surfaces to current theme-token parity
+Description:
+- Goal / acceptance criteria: Remove the remaining hard-coded or theme-fragile neutral palette treatment from the Audio Engine route, especially the cluster overview cards and graph widgets, so `/workspace/platforms/audio-engine` follows the active Carbon theme in the same way Host Machine now does. Keep information hierarchy and status semantics intact. Focused tests, typecheck, build, and diff hygiene must pass.
+- Why it matters: Audio Engine still mixes a page-owned dark palette and fixed shadow/rgba values into a route that otherwise presents itself as a Carbon operator surface, so it can drift visually when the theme changes.
+- Dependencies: T2433.
+- Estimated effort: Medium.
+- Required outputs/deliverables: tokenized Audio Engine cluster overview + graph/widget surfaces, focused frontend coverage updates if needed, and compliance note if any runtime or packaging assumptions change.
+Assigned to: Codex
+Last updated: 2026-04-23 13:02 - Codex
+Completion note: 2026-04-23 13:02 - Codex: Replaced the Audio Engine cluster overview's hard-coded dark palette with theme-token CSS in `ClusterEngineGrid.tsx` + `ClusterEngineGrid.css`, moved graph widget shadows and panel surfaces onto Audio Engine page theme vars in `AudioEnginePage.css`, tokenized React Flow graph accents/edge colors in `audioEngineWorkspaceGraph.ts` and `juceSourceTruthGraph.ts`, and removed fixed latency-pressure fill/error rgba fallbacks in `latencyPressure.ts`. Validation PASS: `npm --prefix web test -- --runInBand src/app/pages/AudioEnginePage.test.tsx src/app/components/AudioEngine/audioEngineWorkspaceGraph.test.ts src/app/components/AudioEngine/juceSourceTruthGraph.test.ts src/app/utils/latencyPressure.test.ts src/app/components/ManagementWorkspace/ManagementWorkspace.test.tsx src/app/components/ManagementWorkspace/managementWorkspaceGraph.test.ts`, `npm --prefix web run typecheck`, `npm --prefix web run build`, `git diff --check`. No dependency, installer, service, or environment changes were introduced.
+
+---
+
+ID: T2435
+Status: [✓] Done
+Title: Refit Management workspace shell and graph surfaces to current theme-token parity
+Description:
+- Goal / acceptance criteria: Remove the remaining fixed neutral shell treatment and hard-coded graph accent values from `/workspace/platforms/management` so the workspace inherits the active theme without relying on page-local white/black mixing defaults. Preserve existing graph density, status tone meaning, and operator workflow. Focused tests, typecheck, build, and diff hygiene must pass.
+- Why it matters: Management currently owns its own shell aesthetic instead of cleanly inheriting Carbon/theme tokens, which causes visual mismatch next to the newly updated Host Machine and other platform routes.
+- Dependencies: T2433.
+- Estimated effort: Medium.
+- Required outputs/deliverables: tokenized Management workspace shell + graph surfaces, focused frontend coverage updates if needed, and compliance note if any runtime or packaging assumptions change.
+Assigned to: Codex
+Last updated: 2026-04-23 13:02 - Codex
+Completion note: 2026-04-23 13:02 - Codex: Replaced Management workspace white/black-mixed shell defaults with token-derived layer/border/shadow variables in `ManagementWorkspace.css` and moved graph accent/edge colors onto theme tokens in `managementWorkspaceGraph.ts`. The result keeps the existing management topology/table workflow while inheriting the active theme instead of a fixed neutral palette. Validation PASS: same focused Jest command as T2434, plus `npm --prefix web run typecheck`, `npm --prefix web run build`, and `git diff --check`. No dependency, installer, service, or environment changes were introduced.
 
 ---
 

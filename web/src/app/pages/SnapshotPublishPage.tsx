@@ -35,6 +35,7 @@ import {
   normalizeSelectDeviceValue,
 } from '../utils/snapshotIoBindings'
 import { SnapshotPublishAudioPortWorkspace } from '../components/snapshots/SnapshotPublishAudioPortWorkspace'
+import { PublishPerformanceShell } from '../components/snapshots/publish/PublishPerformanceShell'
 import { RoutingTopologyContent } from '../components/modals/RoutingTopologyContent'
 import { fingerprintSnapshotData } from '../components/SnapshotEditor/snapshotEditorComparison'
 import type { JuceGridRoutingFlowInfo } from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
@@ -55,7 +56,7 @@ import { buildWorkspaceArtifactsPath } from './audioArtifactsRoutes'
 import { buildSnapshotWorkflowStageToast } from '../utils/snapshotActivationToast'
 import './SnapshotPublishPage.css'
 
-type PublishMode = 'wizard' | 'advanced'
+type PublishMode = 'performance' | 'wizard' | 'advanced'
 type PublishSection = 'overview' | 'devices' | 'routing' | 'runtime' | 'cleanup'
 type WizardStepId = 'save' | 'host' | 'sound' | 'review'
 const LIVE_CHANGES_LEAVE_MESSAGE = 'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
@@ -81,6 +82,9 @@ type HostWorkflowCard = {
 function toPublishMode(value: string | null): PublishMode {
   if (value === 'wizard' || value === 'guided') {
     return 'wizard'
+  }
+  if (value === 'performance' || value === 'going-live' || value === 'going_live') {
+    return 'performance'
   }
   return 'advanced'
 }
@@ -1300,6 +1304,9 @@ export function SnapshotPublishPage() {
                 Back to editor
               </Button>
               <div className="snapshot-publish-page__mode-switch">
+                <Button size="sm" kind={mode === 'performance' ? 'primary' : 'ghost'} onClick={() => setMode('performance')}>
+                  Going Live
+                </Button>
                 <Button size="sm" kind={mode === 'wizard' ? 'primary' : 'ghost'} onClick={() => setMode('wizard')}>
                   Wizard
                 </Button>
@@ -1364,7 +1371,85 @@ export function SnapshotPublishPage() {
         </Column>
 
         <Column sm={4} md={8} lg={mode === 'wizard' ? 10 : 11}>
-          {mode === 'advanced' ? (
+          {mode === 'performance' ? (
+            <PublishPerformanceShell
+              snapshotName={snapshot.name}
+              hostId={selectedHostId}
+              revisionLabel={readiness?.draft_revision_id ? `rev ${readiness.draft_revision_id}` : 'draft'}
+              lastPublishAgo={readiness?.confirmed_revision_id ? `rev ${readiness.confirmed_revision_id} live` : null}
+              machineInput={{
+                readiness,
+                selectedHostId,
+                saveStepComplete,
+                hostStepComplete,
+                soundStepComplete,
+                isLive: Boolean(readiness?.confirmed_revision_id && !liveChangesPending),
+                isActivating: activateMutation.isPending,
+                publishDisabled,
+                channelsConfirmed: liveConfirmationRows.length > 0
+                  && liveConfirmationRows.every((row) => row.status === 'confirmed' || row.status === 'live_confirmed'),
+              }}
+              onGoLive={() => activateMutation.mutate()}
+              stageBodies={{
+                stage: (
+                  <div className="snapshot-publish-page__perf-body">
+                    <p>
+                      {saveStepComplete
+                        ? 'Draft saved. Pick a host below to bring on stage.'
+                        : editorWorkingDraftPending
+                          ? 'Save the editor’s live changes as the publish revision.'
+                          : 'Create the first saved revision before moving forward.'}
+                    </p>
+                    <Button kind="tertiary" size="sm" onClick={() => openAdvancedMode('overview')}>
+                      Open host picker in Advanced
+                    </Button>
+                  </div>
+                ),
+                instruments: (
+                  <div className="snapshot-publish-page__perf-body">
+                    <p>
+                      {soundStepComplete
+                        ? 'Input, output, and monitor devices are ready.'
+                        : 'Set session input, output, and monitor devices before signal check.'}
+                    </p>
+                    <Button kind="tertiary" size="sm" onClick={() => openAdvancedMode('devices')}>
+                      Open devices in Advanced
+                    </Button>
+                  </div>
+                ),
+                signal: (
+                  <div className="snapshot-publish-page__perf-body">
+                    <p>Verify local ports, AVB endpoints, and topology for each flow.</p>
+                    <Button kind="tertiary" size="sm" onClick={() => openAdvancedMode('routing')}>
+                      Open signal routing in Advanced
+                    </Button>
+                  </div>
+                ),
+                line: (
+                  <div className="snapshot-publish-page__perf-body">
+                    <p>
+                      {liveConfirmationRows.length > 0
+                        ? `Per-channel confirmation: ${liveConfirmationRows.filter((r) => r.status === 'confirmed' || r.status === 'live_confirmed').length} of ${liveConfirmationRows.length} channels live.`
+                        : 'No channel confirmations yet — runtime will report after publish.'}
+                    </p>
+                    <Button kind="tertiary" size="sm" onClick={() => openAdvancedMode('runtime')}>
+                      Open line check in Advanced
+                    </Button>
+                  </div>
+                ),
+                golive: (
+                  <div className="snapshot-publish-page__perf-body">
+                    <p>
+                      Press <strong>GO LIVE</strong> when armed to make this snapshot the live audio chain on {selectedHostId ?? 'the selected host'}.
+                    </p>
+                    {readiness?.confirmed_revision_id ? (
+                      <p>Revision {readiness.confirmed_revision_id} is confirmed live.</p>
+                    ) : null}
+                  </div>
+                ),
+              }}
+            />
+          ) : mode === 'advanced' ? (
             <section className="snapshot-publish-page__stack">
             <section ref={hostSectionRef}>
               <Tile className="snapshot-publish-page__panel">
@@ -2086,6 +2171,7 @@ export function SnapshotPublishPage() {
           )}
         </Column>
 
+        {mode !== 'performance' ? (
         <Column sm={4} md={8} lg={mode === 'wizard' ? 6 : 5}>
           <section className="snapshot-publish-page__stack">
             <Tile className="snapshot-publish-page__panel">
@@ -2238,6 +2324,7 @@ export function SnapshotPublishPage() {
             </Tile>
           </section>
         </Column>
+        ) : null}
       </Grid>
     </div>
   )

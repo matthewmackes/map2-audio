@@ -397,14 +397,16 @@ describe('Desktop experience integration', () => {
   it('renders the operations-first landing shell instead of the legacy launcher tile grid', async () => {
     renderDesktopExperience(['/'])
 
-    expect(await screen.findByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
-    expect(screen.queryByText('Live operations surface')).toBeNull()
-    expect(screen.getByText('Operations table')).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Telemetry overview')).toBeNull()
+    const homeShell = await screen.findByTestId('home-shell')
+
+    expect(within(homeShell).getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
+    expect(within(homeShell).queryByText('Live operations surface')).toBeNull()
+    expect(within(homeShell).getByText('Operations table')).toBeInTheDocument()
+    expect(within(homeShell).getByRole('table', { name: 'Operations table' })).toBeInTheDocument()
+    expect(within(homeShell).queryByLabelText('Telemetry overview')).toBeNull()
 
     for (const label of ['Device(s) Manager', 'Advanced MIDI', 'Drum-Machine', 'SynthForge', 'Program Manager', 'Desktop Objects']) {
-      expect(screen.queryByText(label)).toBeNull()
+      expect(within(homeShell).queryByText(label)).toBeNull()
     }
   })
 

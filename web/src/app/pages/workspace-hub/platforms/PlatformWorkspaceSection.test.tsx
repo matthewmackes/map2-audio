@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import { PlatformWorkspaceSection } from './PlatformWorkspaceSection'
+import { HOST_MACHINE_ROUTE } from '../../hostMachineRoutes'
 
 const mockPlatformModalContent = jest.fn()
 
@@ -81,5 +82,18 @@ describe('PlatformWorkspaceSection', () => {
     )
 
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/network-discovery')
+  })
+
+  it('hard-redirects the retired workspace host-machine route into Hardware', () => {
+    render(
+      <MemoryRouter initialEntries={['/workspace/platforms/host-machine']}>
+        <Routes>
+          <Route path="/workspace/platforms/:workspace" element={<PlatformWorkspaceSection />} />
+          <Route path={HOST_MACHINE_ROUTE} element={<RouteProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent(HOST_MACHINE_ROUTE)
   })
 })
