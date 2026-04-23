@@ -13,14 +13,14 @@ describe('theme defaults', () => {
     document.documentElement.style.colorScheme = ''
   })
 
-  it('defaults new users to the light gray-10 theme', () => {
-    expect(getSavedThemeId()).toBe('gray-10')
+  it('defaults new users to the MAIN-DEFAULT dark theme', () => {
+    expect(getSavedThemeId()).toBe('MAIN-DEFAULT')
 
     initializeTheme()
 
-    expect(window.localStorage.getItem('theme')).toBe('gray-10')
-    expect(document.documentElement).toHaveAttribute('data-carbon-theme', 'g10')
-    expect(document.documentElement.style.colorScheme).toBe('light')
+    expect(window.localStorage.getItem('theme')).toBe('MAIN-DEFAULT')
+    expect(document.documentElement).toHaveAttribute('data-carbon-theme', 'g100')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 
   it('preserves an existing user-selected theme override', () => {

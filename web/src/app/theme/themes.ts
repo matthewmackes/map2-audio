@@ -56,7 +56,53 @@ function createTheme(id: string, name: string, description: string, carbonTheme:
   };
 }
 
+const MAIN_DEFAULT_COLORS: ThemeColors = {
+  bg: '#161616',
+  surface: '#1c1c1c',
+  'surface-2': '#232323',
+  'surface-3': '#2d2d2d',
+  'surface-overlay': '#232323',
+  interactive: '#4589ff',
+  'interactive-hover': '#0f62fe',
+  'interactive-active': '#0043ce',
+  'interactive-disabled': '#525252',
+  primary: '#4589ff',
+  'primary-strong': '#0f62fe',
+  accent: '#78a9ff',
+  'text-primary': '#f4f4f4',
+  'text-secondary': '#c6c6c6',
+  'text-tertiary': '#8d8d8d',
+  'text-inverse': '#fddc69',
+  muted: '#c6c6c6',
+  'muted-2': '#8d8d8d',
+  border: '#393939',
+  'border-strong': '#f4f4f4',
+  'support-success': '#42be65',
+  'support-warning': '#f1c21b',
+  'support-danger': '#fa4d56',
+  'support-info': '#4589ff',
+  success: '#42be65',
+  warning: '#f1c21b',
+  danger: '#fa4d56',
+  'bg-empty': '#1c1c1c',
+  'bg-offline': '#6929c4',
+  'bg-fault': 'color-mix(in srgb, #fa4d56 24%, #161616)',
+  'bg-warning': 'color-mix(in srgb, #f1c21b 20%, #161616)',
+  'focus-ring': '#78a9ff',
+  'shadow-strong': 'rgba(0,0,0,0.6)',
+  'shadow-soft': 'rgba(0,0,0,0.3)',
+  'color-scheme': 'dark',
+};
+
 const coreThemes: Record<string, Theme> = {
+  'MAIN-DEFAULT': {
+    id: 'MAIN-DEFAULT',
+    name: 'MAIN-DEFAULT',
+    description: 'MAP2 canonical dark theme — the default GUI palette for all users unless explicitly changed.',
+    carbonTheme: 'g100',
+    colors: MAIN_DEFAULT_COLORS,
+    widgets: { ...baseWidgets },
+  },
   default: createTheme(
     'default',
     'Carbon gray 100',
@@ -89,7 +135,7 @@ const coreThemes: Record<string, Theme> = {
   ),
 };
 
-const coreThemeOrder = ['default', 'gray-90', 'gray-10', 'white', 'blueprint'];
+const coreThemeOrder = ['MAIN-DEFAULT', 'default', 'gray-90', 'gray-10', 'white', 'blueprint'];
 
 /** All built-in themes: 4 core Carbon shells + 100 preset themes. */
 export const themes: Record<string, Theme> = {

@@ -280,8 +280,9 @@ describe('ThemePage', () => {
 
     expect(activeWindowBar).not.toBeNull()
     expect(messageBoxBar).not.toBeNull()
-    expect(activeWindowBar).toHaveStyle('background: rgb(0, 67, 206); color: rgb(255, 255, 255);')
-    expect(messageBoxBar).toHaveStyle('background: rgb(0, 67, 206); color: rgb(255, 255, 255);')
+    // MAIN-DEFAULT (Carbon g100 base): primary-strong #0f62fe (blue-60), text-inverse #161616 (bg)
+    expect(activeWindowBar).toHaveStyle('background: rgb(15, 98, 254); color: rgb(22, 22, 22);')
+    expect(messageBoxBar).toHaveStyle('background: rgb(15, 98, 254); color: rgb(22, 22, 22);')
   })
 
   it('opens the special settings menu from the behavior section', () => {
@@ -396,7 +397,7 @@ describe('ThemePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByText('Draft preview active')).toBeTruthy()
-    expect(screen.getAllByText('Blue / Gray 10').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Blue / Gray 100').length).toBeGreaterThan(0)
   })
 
   it('discards token overrides only after explicit confirmation during theme switching', async () => {
