@@ -98,6 +98,7 @@ const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
   '/snapshot-editor',
+  '/brain',
   '/workspace',
   '/midi-hub',
   '/workspace/artifacts',
@@ -386,6 +387,7 @@ function TreeNodeLabel({
 const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
+  '/brain',
   '/workspace',
   '/midi-hub',
   '/workspace/artifacts',

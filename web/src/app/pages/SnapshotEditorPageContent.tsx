@@ -1105,6 +1105,7 @@ export function SnapshotEditorPage() {
   const setEditingSnapshotName = useSnapshotEditorStore((s) => s.setEditingSnapshotName)
   const renameSnapshotName = useSnapshotEditorStore((s) => s.renameSnapshotName)
   const setRenameSnapshotName = useSnapshotEditorStore((s) => s.setRenameSnapshotName)
+  const [snapshotProgramValue, setSnapshotProgramValue] = useState<string>('')
   const showRenameChainModal = useSnapshotEditorStore((s) => s.showRenameChainModal)
   const setShowRenameChainModal = useSnapshotEditorStore((s) => s.setShowRenameChainModal)
   const renameChainName = useSnapshotEditorStore((s) => s.renameChainName)
@@ -2622,9 +2623,14 @@ export function SnapshotEditorPage() {
   }, [activeSnapshot?.name, editingSnapshotName])
 
   useEffect(() => {
+    setSnapshotProgramValue(activeSnapshot?.program_number == null ? '' : String(activeSnapshot.program_number))
+  }, [activeSnapshot?.id, activeSnapshot?.program_number])
+
+  useEffect(() => {
     if (!activeSnapshot) {
       setEditingSnapshotName(false)
       setRenameSnapshotName('')
+      setSnapshotProgramValue('')
     }
   }, [activeSnapshot])
 
@@ -2843,6 +2849,24 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to rename snapshot', 'error')
+    },
+  })
+
+  const updateActiveSnapshotProgramMutation = useMutation({
+    mutationFn: async ({ snapshotId, programNumber }: { snapshotId: number; programNumber: number | null }) => {
+      const result = await snapshotsApi.setProgram(snapshotId, programNumber)
+      const snapshot = await snapshotsApi.get(snapshotId)
+      return { result, snapshot }
+    },
+    onSuccess: ({ result, snapshot }) => {
+      syncSnapshotDetailCaches(snapshot)
+      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
+      queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local'] })
+      setSnapshotProgramValue(result.program_number == null ? '' : String(result.program_number))
+      pushToast('MIDI program updated', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update MIDI program', 'error')
     },
   })
 
@@ -6187,6 +6211,31 @@ export function SnapshotEditorPage() {
     renameActiveSnapshotMutation.mutate({ snapshotId: activeSnapshot.id, name: normalizedName })
   }, [activeSnapshot, renameSnapshotError, renameSnapshotName, renameActiveSnapshotMutation])
 
+  const submitSnapshotProgram = useCallback(() => {
+    if (!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotProgramMutation.isPending) {
+      return
+    }
+    const trimmedValue = snapshotProgramValue.trim()
+    const programNumber = trimmedValue === '' ? null : Number(trimmedValue)
+    if (
+      programNumber !== null
+      && (!Number.isFinite(programNumber) || programNumber < 0 || programNumber > 127)
+    ) {
+      pushToast('MIDI program must be between 0 and 127', 'error')
+      return
+    }
+    updateActiveSnapshotProgramMutation.mutate({
+      snapshotId: activeSnapshot.id,
+      programNumber: programNumber === null ? null : Math.floor(programNumber),
+    })
+  }, [
+    activeSnapshot,
+    pushToast,
+    snapshotEditingLocked,
+    snapshotProgramValue,
+    updateActiveSnapshotProgramMutation,
+  ])
+
   const saveSnapshotBlockFocusRange = useCallback(() => {
     if (!activeSnapshot || blockFocusSaveDisabled) {
       return
@@ -8024,6 +8073,29 @@ export function SnapshotEditorPage() {
     authoritativeAudioState,
   })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
+  const snapshotInspectorControls = (
+    <SnapshotEditorSnapshotInspectorControls
+      liveSnapshot={activeSnapshot}
+      authoritativeAudioState={authoritativeAudioState}
+      monitoringStatusLabel={monitoringStatusLabel}
+      monitoringStatusWarning={monitoringStatusWarning}
+      onOpenProgressModal={openGuidedProgress}
+      onOpenSnapshots={() => navigate('/snapshots')}
+      onCreateSnapshot={() => createCapturedSnapshot()}
+      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+      activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
+      onOpenSignalGrid={openSignalGridWorkspace}
+      onOpenDirectory={handleAddPlugin}
+      directoryDisabled={snapshotEditingLocked}
+      onOpenParameters={openSelectedBlockEditor}
+      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+      onOpenAutomation={openAutomationWorkspace}
+      automationActive={automationTimelineExpanded}
+      onOpenVersionHistory={openVersionHistoryWorkspace}
+      versionHistoryDisabled={!activeSnapshot}
+      onOpenHelp={openKeyboardHelpWorkspace}
+    />
+  )
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page">
@@ -8100,6 +8172,11 @@ export function SnapshotEditorPage() {
             onSubmitSnapshotName={submitRenameSnapshot}
             onCancelSnapshotRename={cancelRenameSnapshot}
             snapshotRenamePending={renameActiveSnapshotMutation.isPending}
+            snapshotProgramValue={snapshotProgramValue}
+            onSnapshotProgramValueChange={setSnapshotProgramValue}
+            onSaveSnapshotProgram={submitSnapshotProgram}
+            snapshotProgramPending={updateActiveSnapshotProgramMutation.isPending}
+            snapshotProgramDisabled={!activeSnapshot || snapshotEditingLocked}
             onSaveDraft={handleSaveDraft}
             saveDraftPending={updateActiveSnapshotMutation.isPending}
             saveDraftDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending || !snapshotsDirty}
@@ -8448,48 +8525,33 @@ export function SnapshotEditorPage() {
               className={`juce-grid-page__bottom-editor-body ${selectedBlockMidiPanelEnabled ? 'has-desktop-midi-panel' : ''}`}
             >
               {bottomEditorOpen && selectedPlugin ? (
-                selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
-                  <div className="juce-grid-page__bottom-editor-desktop-layout">
-                    <div className="juce-grid-page__bottom-editor-main">
-                      {selectedPluginEditorContent}
-                    </div>
-                    <JuceGridSelectedBlockMidiPanel
-                      plugin={selectedPlugin}
-                      meta={selectedPluginMeta}
-                      chainId={currentChain?.id ?? null}
-                      lastMidiEvent={lastMidiEvent}
-                      midiLearnInProgress={midiLearnInProgress}
-                      midiLearnTarget={midiLearnStatus?.target ?? null}
-                      onStartLearn={handleStartSelectedBlockMidiLearn}
-                      onStopLearn={handleStopSelectedBlockMidiLearn}
-                    />
+                <div className="juce-grid-page__bottom-editor-parameter-stack">
+                  <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
+                    {snapshotInspectorControls}
                   </div>
-                ) : (
-                  selectedPluginEditorContent
-                )
+                  {selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
+                    <div className="juce-grid-page__bottom-editor-desktop-layout">
+                      <div className="juce-grid-page__bottom-editor-main">
+                        {selectedPluginEditorContent}
+                      </div>
+                      <JuceGridSelectedBlockMidiPanel
+                        plugin={selectedPlugin}
+                        meta={selectedPluginMeta}
+                        chainId={currentChain?.id ?? null}
+                        lastMidiEvent={lastMidiEvent}
+                        midiLearnInProgress={midiLearnInProgress}
+                        midiLearnTarget={midiLearnStatus?.target ?? null}
+                        onStartLearn={handleStartSelectedBlockMidiLearn}
+                        onStopLearn={handleStopSelectedBlockMidiLearn}
+                      />
+                    </div>
+                  ) : (
+                    selectedPluginEditorContent
+                  )}
+                </div>
               ) : bottomEditorShowsSnapshotInspector ? (
                 <div className="juce-grid-page__snapshot-inspector-row">
-                  <SnapshotEditorSnapshotInspectorControls
-                    liveSnapshot={activeSnapshot}
-                    authoritativeAudioState={authoritativeAudioState}
-                    monitoringStatusLabel={monitoringStatusLabel}
-                    monitoringStatusWarning={monitoringStatusWarning}
-                    onOpenProgressModal={openGuidedProgress}
-                    onOpenSnapshots={() => navigate('/snapshots')}
-                    onCreateSnapshot={() => createCapturedSnapshot()}
-                    createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-                    activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
-                    onOpenSignalGrid={openSignalGridWorkspace}
-                    onOpenDirectory={handleAddPlugin}
-                    directoryDisabled={snapshotEditingLocked}
-                    onOpenParameters={openSelectedBlockEditor}
-                    parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-                    onOpenAutomation={openAutomationWorkspace}
-                    automationActive={automationTimelineExpanded}
-                    onOpenVersionHistory={openVersionHistoryWorkspace}
-                    versionHistoryDisabled={!activeSnapshot}
-                    onOpenHelp={openKeyboardHelpWorkspace}
-                  />
+                  {snapshotInspectorControls}
                   {activeSnapshot ? (
                     <div className="juce-grid-page__snapshot-inspector-morph" aria-label="A/B/C/D morph">
                       <p className="juce-grid-page__dense-card-kicker">Morph</p>

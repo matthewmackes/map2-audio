@@ -199,6 +199,7 @@ describe('AppShell global tree navigation', () => {
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
+      'Brain',
       'Control Panel',
       'MIDI Advanced',
       'Audio Artifacts',
@@ -207,6 +208,7 @@ describe('AppShell global tree navigation', () => {
     ])
     expect(screen.getAllByText('Control Panel')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
+    expect(screen.getByText('Brain')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
@@ -220,7 +222,6 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getAllByText('Biamp Tesira').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
     expect(screen.queryByText('Files')).toBeNull()
-    expect(screen.queryByText('Brain')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
   })
 

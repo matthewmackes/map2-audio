@@ -1,5 +1,5 @@
-import { Add, ChartLine, Edit, Flow, Folder, Help, SettingsAdjust, Time } from '@carbon/icons-react'
-import { Button, Layer, Tag, Tile } from '@carbon/react'
+import { Add, ChartLine, Edit, Flow, Folder, Help, Launch, SettingsAdjust, Time } from '@carbon/icons-react'
+import { Button, Layer, NumberInput, Tag, Tile } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
@@ -35,6 +35,11 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   onSubmitSnapshotName?: () => void
   onCancelSnapshotRename?: () => void
   snapshotRenamePending?: boolean
+  snapshotProgramValue?: string
+  onSnapshotProgramValueChange?: (value: string) => void
+  onSaveSnapshotProgram?: () => void
+  snapshotProgramPending?: boolean
+  snapshotProgramDisabled?: boolean
   onSaveDraft?: () => void
   saveDraftPending?: boolean
   saveDraftDisabled?: boolean
@@ -223,6 +228,11 @@ export function SnapshotEditorSnapshotStatusPanel({
   onSubmitSnapshotName,
   onCancelSnapshotRename,
   snapshotRenamePending = false,
+  snapshotProgramValue = '',
+  onSnapshotProgramValueChange,
+  onSaveSnapshotProgram,
+  snapshotProgramPending = false,
+  snapshotProgramDisabled = false,
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
 }: SnapshotEditorSnapshotStatusPanelProps) {
@@ -231,6 +241,7 @@ export function SnapshotEditorSnapshotStatusPanel({
     [authoritativeAudioState, liveSnapshot],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
+  const snapshotProgramControlDisabled = snapshotProgramPending || snapshotProgramDisabled || !liveSnapshot
 
   const handleSnapshotNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -330,6 +341,27 @@ export function SnapshotEditorSnapshotStatusPanel({
                   Recall or create a snapshot to populate live snapshot status here.
                 </p>
               ) : null}
+            </div>
+            <div className="juce-grid-page__snapshot-status-program" role="form" aria-label="Snapshot MIDI program">
+              <NumberInput
+                id="snapshot-editor-midi-program"
+                label="MIDI program"
+                min={0}
+                max={127}
+                step={1}
+                value={snapshotProgramValue}
+                onChange={(_event, { value }) => onSnapshotProgramValueChange?.(String(value))}
+                disabled={snapshotProgramControlDisabled}
+              />
+              <Button
+                size="sm"
+                kind="secondary"
+                renderIcon={Launch}
+                onClick={onSaveSnapshotProgram}
+                disabled={!onSaveSnapshotProgram || snapshotProgramControlDisabled}
+              >
+                {snapshotProgramPending ? 'Saving…' : 'Save MIDI PC'}
+              </Button>
             </div>
           </div>
         </div>

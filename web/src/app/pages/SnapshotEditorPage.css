@@ -2058,6 +2058,35 @@
   gap: 0.5rem;
 }
 
+.juce-grid-page__snapshot-status-program {
+  display: flex;
+  flex: 0 1 29rem;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: min(100%, 18rem);
+  margin-inline-start: auto;
+}
+
+.juce-grid-page__snapshot-status-program .cds--form-item {
+  flex: 1 1 12rem;
+  min-width: 9rem;
+  max-width: 16rem;
+}
+
+.juce-grid-page__snapshot-status-program .cds--number {
+  width: 100%;
+}
+
+.juce-grid-page__snapshot-status-program .cds--number input {
+  min-inline-size: 0;
+}
+
+.juce-grid-page__snapshot-status-program .cds--btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .juce-grid-page__snapshot-status-top-tools,
 .juce-grid-page__snapshot-status-aside {
   flex: 0 1 44rem;
@@ -4641,6 +4670,17 @@
 
 .juce-grid-page__bottom-editor-body.has-desktop-midi-panel {
   overflow: visible;
+}
+
+.juce-grid-page__bottom-editor-parameter-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__snapshot-inspector-row--parameter-editor {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
 }
 
 .juce-grid-page__bottom-editor-desktop-layout {

@@ -317,4 +317,36 @@ describe('SnapshotEditorSnapshotStatusPanel', () => {
     expect(onSnapshotNameDraftChange).toHaveBeenCalled()
     expect(onSubmitSnapshotName).toHaveBeenCalledTimes(1)
   })
+
+  it('places the MIDI program control beside the snapshot title', () => {
+    const onSnapshotProgramValueChange = jest.fn()
+    const onSaveSnapshotProgram = jest.fn()
+
+    renderPanel({
+      snapshotProgramValue: '23',
+      onSnapshotProgramValueChange,
+      onSaveSnapshotProgram,
+    })
+
+    expect(screen.getByRole('form', { name: 'Snapshot MIDI program' })).toBeInTheDocument()
+    const input = screen.getByRole('spinbutton', { name: 'MIDI program' })
+    expect(input).toHaveValue(23)
+
+    fireEvent.change(input, { target: { value: '24' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save MIDI PC' }))
+
+    expect(onSnapshotProgramValueChange).toHaveBeenCalled()
+    expect(onSaveSnapshotProgram).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the MIDI program control visible but disabled without a live snapshot', () => {
+    renderPanel({
+      liveSnapshot: null,
+      authoritativeAudioState: null,
+    })
+
+    expect(screen.getByRole('heading', { name: 'No live snapshot' })).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: 'MIDI program' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Save MIDI PC' })).toBeDisabled()
+  })
 })
