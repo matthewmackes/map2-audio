@@ -106,13 +106,21 @@ async def set_lcd_page(request: LCDPageRequest):
             )
         
         _lcd_manager.set_page(page_type)
-        
+
+        # T2430-K: emit PlatformEvent for semantic action.
+        await _lcd_manager.emit_operator_action(
+            "page_changed",
+            title=f"LCD → {request.page}",
+            message=f"Cluster LCD page changed to {request.page}",
+            context={"page": request.page},
+        )
+
         return {
             "success": True,
             "page": request.page,
             "message": f"Changed to {request.page} page"
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -604,6 +612,14 @@ async def update_displays_config(request: LCDDisplaysConfigRequest):
                 except Exception as e:
                     logger.warning("LCD %d live brightness apply failed: %s", idx, e)
 
+        # T2430-K: emit PlatformEvent (semantic action — settings change).
+        await _lcd_manager.emit_operator_action(
+            "settings_changed",
+            title="LCD settings changed",
+            message=f"{len(displays_payload)} display(s) reconfigured",
+            context={"display_count": len(displays_payload)},
+        )
+
     return {"success": True, "displays": displays_payload}
 
 
@@ -637,6 +653,14 @@ async def display_custom_message(request: CustomMessageRequest):
         raise HTTPException(status_code=503, detail="LCD system not initialized")
 
     try:
+        # T2430-K: emit PlatformEvent (semantic action — custom message).
+        await _lcd_manager.emit_operator_action(
+            "custom_message",
+            title=f"LCD msg ({request.lcd_id})",
+            message=f"{request.line1} / {request.line2}"[:200],
+            context={"lcd_id": request.lcd_id, "duration": request.duration},
+        )
+
         # Try to use alert router if available
         try:
             from lcd.alert_router import get_alert_router
@@ -682,6 +706,14 @@ async def reset_display(lcd_id: int):
     try:
         from lcd.ui_engine import PageType
         _lcd_manager.set_page(PageType.STATUS)
+
+        # T2430-K: emit PlatformEvent (semantic action — reset).
+        await _lcd_manager.emit_operator_action(
+            "display_reset",
+            title=f"LCD {lcd_id} reset",
+            message=f"Display {lcd_id} reset to STATUS page",
+            context={"lcd_id": lcd_id},
+        )
 
         return {
             "success": True,
@@ -875,6 +907,15 @@ async def update_alert_config(request: AlertRoutingConfigRequest):
             config["pages"] = request.pages
 
         router.update_config(config)
+
+        # T2430-K: emit PlatformEvent (semantic action — alert config change).
+        if _lcd_manager is not None:
+            await _lcd_manager.emit_operator_action(
+                "alert_config_updated",
+                title="LCD alert routing updated",
+                message=f"Routing keys: {list((request.routing or {}).keys())}",
+                context={"routing_changes": len(request.routing or {}), "page_changes": len(request.pages or {})},
+            )
 
         return {
             "success": True,
@@ -1467,5 +1508,13 @@ async def apply_lcd_preset(name: str):
                         await drivers[idx].set_backlight(bl_percent)
                     except Exception as e:
                         logger.warning("Preset apply brightness failed LCD %d: %s", idx, e)
+
+            # T2430-K: emit PlatformEvent (semantic action — preset load).
+            await _lcd_manager.emit_operator_action(
+                "preset_loaded",
+                title=f"LCD preset '{name}'",
+                message=f"Applied preset '{name}' to {len(displays)} display(s)",
+                context={"preset_name": name, "display_count": len(displays)},
+            )
 
     return {"success": True, "name": name, "applied_displays": len(displays) if displays else 0}

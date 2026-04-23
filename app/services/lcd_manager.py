@@ -274,6 +274,49 @@ class LCDManager:
         lines = [line1, line2, line3, line4]
         await self.lcds[0].write_lines(lines)
 
+    # ---- T2430-K: operator-action PlatformEvent emission (audit trail) ----
+
+    async def emit_operator_action(
+        self,
+        action: str,
+        *,
+        title: str,
+        message: str = "",
+        context: Optional[dict] = None,
+        severity: str = "info",
+    ) -> None:
+        """Emit a PlatformEvent for a semantic operator action on the LCD surface.
+
+        Per Q5=B, semantic actions only: page changes, custom messages, preset
+        loads, alert config updates, settings changes, resets. Keystroke-level
+        D-pad presses are NOT emitted here. Brightness/contrast slider changes
+        should be debounced by the caller to the settled value.
+
+        Event shape: kind=``ui.<action>``, source_service=``lcd_manager``,
+        category=USER (lcd surface is monitoring-only, not a target).
+        """
+        from app.services.platform_event.envelope import PlatformEvent, Severity
+
+        ctx = {"operator_action": action, "node_id": self.node_id}
+        if context:
+            ctx.update(context)
+
+        event = PlatformEvent(
+            kind="lcd.user",  # canonical kind for LCD operator actions
+            severity=Severity(severity) if not isinstance(severity, Severity) else severity,
+            source_node=self.node_id,
+            source_service="lcd_manager",
+            title=title[:40],
+            message=(message or title)[:200],
+            context=ctx,
+            broadcast=False,  # audit-only; not targeted at any display surface
+            ttl_seconds=3600,
+        )
+        try:
+            await self.platform_event_bus.emit(event)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("LCD operator-action emit failed (%s): %s", action, e)
+
     async def _cleanup_loop(self) -> None:
         while True:
             try:
