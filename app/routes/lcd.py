@@ -1099,84 +1099,299 @@ async def update_lcd_page_config(lcd_id: int, request: PageConfigUpdateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ---- T2430-H: LCD Presets — full CRUD with 5 built-in read-only presets ----
+
+
+# Five built-in read-only presets. Per Q7b, operators may duplicate any of
+# these to create editable starting points; the originals cannot be modified
+# or deleted.
+_BUILTIN_LCD_PRESETS: dict[str, dict[str, Any]] = {
+    "factory-default": {
+        "description": "Factory defaults for every field",
+        "config": {
+            "displays": [
+                {"id": 0, "address": 0x27, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 200, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1000, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 300, "idle_dim_brightness": 50,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "status"},
+                {"id": 1, "address": 0x3F, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 200, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1000, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 300, "idle_dim_brightness": 50,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "status"},
+            ],
+        },
+    },
+    "performing": {
+        "description": "High-visibility stage mode: max brightness, VU landing, auto-cycle off",
+        "config": {
+            "displays": [
+                {"id": 0, "address": 0x27, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 255, "contrast": 50, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1200, "alert_sound_duration_ms": 80,
+                 "idle_dim_timeout_s": 0, "idle_dim_brightness": 255,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "vu"},
+                {"id": 1, "address": 0x3F, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 255, "contrast": 50, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1200, "alert_sound_duration_ms": 80,
+                 "idle_dim_timeout_s": 0, "idle_dim_brightness": 255,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "chain"},
+            ],
+        },
+    },
+    "rehearsal": {
+        "description": "Bandroom mode: medium brightness, chain + perf info cycling",
+        "config": {
+            "displays": [
+                {"id": 0, "address": 0x27, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 180, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 900, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 600, "idle_dim_brightness": 80,
+                 "auto_cycle_enabled": True, "auto_cycle_interval_s": 45, "default_page": "chain"},
+                {"id": 1, "address": 0x3F, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 180, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 900, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 600, "idle_dim_brightness": 80,
+                 "auto_cycle_enabled": True, "auto_cycle_interval_s": 45, "default_page": "perf"},
+            ],
+        },
+    },
+    "setup": {
+        "description": "Bench setup mode: MIDI + plugins visible, alerts loud",
+        "config": {
+            "displays": [
+                {"id": 0, "address": 0x27, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 200, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1500, "alert_sound_duration_ms": 200,
+                 "idle_dim_timeout_s": 300, "idle_dim_brightness": 50,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "midi"},
+                {"id": 1, "address": 0x3F, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 200, "contrast": 40, "auto_scroll": True, "scroll_delay_ms": 300,
+                 "alert_sound": True, "alert_sound_freq_hz": 1500, "alert_sound_duration_ms": 200,
+                 "idle_dim_timeout_s": 300, "idle_dim_brightness": 50,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "plugins"},
+            ],
+        },
+    },
+    "silent": {
+        "description": "Silent / monitor-only mode: alert sounds off, dimmed, status only",
+        "config": {
+            "displays": [
+                {"id": 0, "address": 0x27, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 80, "contrast": 40, "auto_scroll": False, "scroll_delay_ms": 300,
+                 "alert_sound": False, "alert_sound_freq_hz": 1000, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 60, "idle_dim_brightness": 30,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "status"},
+                {"id": 1, "address": 0x3F, "enabled": True, "adapter": "native-i2c",
+                 "brightness": 80, "contrast": 40, "auto_scroll": False, "scroll_delay_ms": 300,
+                 "alert_sound": False, "alert_sound_freq_hz": 1000, "alert_sound_duration_ms": 100,
+                 "idle_dim_timeout_s": 60, "idle_dim_brightness": 30,
+                 "auto_cycle_enabled": False, "auto_cycle_interval_s": 30, "default_page": "status"},
+            ],
+        },
+    },
+}
+
+
+def _presets_dir():
+    from pathlib import Path
+    d = Path.home() / ".config" / "map2" / "lcd_presets"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _sanitize_preset_name(name: str) -> str:
+    return name.strip().replace(" ", "_").lower()
+
+
+def _list_user_presets():
+    from pathlib import Path
+    import json
+    presets_dir = _presets_dir()
+    results = []
+    for preset_file in sorted(presets_dir.glob("*.json")):
+        try:
+            with open(preset_file) as f:
+                data = json.load(f)
+                results.append({
+                    "name": preset_file.stem,
+                    "description": data.get("description", ""),
+                    "created_at": data.get("created_at"),
+                    "builtin": False,
+                    "config": data.get("config", {}),
+                })
+        except Exception as e:
+            logger.warning("Preset load failed for %s: %s", preset_file.name, e)
+    return results
+
+
+def _list_builtin_presets():
+    return [
+        {
+            "name": name,
+            "description": spec["description"],
+            "created_at": None,
+            "builtin": True,
+            "config": spec["config"],
+        }
+        for name, spec in _BUILTIN_LCD_PRESETS.items()
+    ]
+
+
 @router.get("/presets")
 async def get_lcd_presets():
-    """
-    Get saved LCD configuration presets.
-    """
+    """List all LCD presets. Built-in (read-only) first, then user-saved."""
     try:
-        from pathlib import Path
-        import json
-        
-        presets_dir = Path.home() / ".config" / "map2" / "lcd_presets"
-        presets = []
-        
-        if presets_dir.exists():
-            for preset_file in presets_dir.glob("*.json"):
-                try:
-                    with open(preset_file) as f:
-                        preset_data = json.load(f)
-                        presets.append({
-                            "name": preset_file.stem,
-                            "description": preset_data.get("description", ""),
-                            "created_at": preset_data.get("created_at"),
-                        })
-                except Exception:
-                    pass
-        
         return {
-            "presets": presets,
-            "count": len(presets)
+            "presets": _list_builtin_presets() + _list_user_presets(),
         }
-        
     except Exception as e:
-        logger.error(f"Get presets error: {e}")
-        return {"presets": [], "count": 0}
+        logger.error("Get presets error: %s", e)
+        return {"presets": []}
 
 
 class LCDPresetRequest(BaseModel):
-    """Request to save LCD preset."""
+    """Create / update a user preset."""
     name: str
     description: Optional[str] = ""
+    config: Dict[str, Any] = {}
 
 
 @router.post("/presets")
 async def save_lcd_preset(request: LCDPresetRequest):
-    """
-    Save current LCD configuration as a preset.
-    """
-    try:
-        from pathlib import Path
-        import json
-        
-        presets_dir = Path.home() / ".config" / "map2" / "lcd_presets"
-        presets_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Get current config
-        try:
-            from lcd.alert_router import get_alert_router
-            router = get_alert_router()
-            config = router.get_config()
-        except ImportError:
-            config = {}
-        
-        preset_data = {
-            "name": request.name,
+    """Create or overwrite a user preset. Cannot collide with a built-in name."""
+    import json
+    name = _sanitize_preset_name(request.name)
+    if not name:
+        raise HTTPException(status_code=400, detail="Preset name required")
+    if name in _BUILTIN_LCD_PRESETS:
+        raise HTTPException(status_code=400, detail=f"'{name}' is a read-only built-in preset. Duplicate it to edit.")
+
+    # If no config provided, snapshot the current displays config.
+    config = request.config
+    if not config:
+        from app.config import get_config
+        cfg = get_config()
+        config = {"displays": cfg.get("lcd.displays", [])}
+
+    preset_file = _presets_dir() / f"{name}.json"
+    with open(preset_file, "w") as f:
+        json.dump({
+            "name": name,
             "description": request.description,
             "created_at": utc_now().isoformat(),
-            "config": config
-        }
-        
-        preset_file = presets_dir / f"{request.name.replace(' ', '_').lower()}.json"
-        with open(preset_file, 'w') as f:
-            json.dump(preset_data, f, indent=2)
-        
-        return {
-            "success": True,
-            "name": request.name,
-            "message": f"Preset '{request.name}' saved"
-        }
-        
-    except Exception as e:
-        logger.error(f"Save preset error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+            "config": config,
+        }, f, indent=2)
+    return {"success": True, "name": name}
+
+
+@router.delete("/presets/{name}")
+async def delete_lcd_preset(name: str):
+    """Delete a user preset. Built-ins are read-only."""
+    name = _sanitize_preset_name(name)
+    if name in _BUILTIN_LCD_PRESETS:
+        raise HTTPException(status_code=400, detail="Cannot delete built-in presets")
+    preset_file = _presets_dir() / f"{name}.json"
+    if not preset_file.exists():
+        raise HTTPException(status_code=404, detail=f"Preset '{name}' not found")
+    preset_file.unlink()
+    return {"success": True, "name": name}
+
+
+class LCDPresetRenameRequest(BaseModel):
+    new_name: str
+
+
+@router.post("/presets/{name}/rename")
+async def rename_lcd_preset(name: str, request: LCDPresetRenameRequest):
+    """Rename a user preset."""
+    old = _sanitize_preset_name(name)
+    new = _sanitize_preset_name(request.new_name)
+    if old in _BUILTIN_LCD_PRESETS:
+        raise HTTPException(status_code=400, detail="Cannot rename built-in presets")
+    if not new:
+        raise HTTPException(status_code=400, detail="New name required")
+    if new in _BUILTIN_LCD_PRESETS:
+        raise HTTPException(status_code=400, detail="Name collides with a built-in preset")
+    presets_dir = _presets_dir()
+    src = presets_dir / f"{old}.json"
+    dst = presets_dir / f"{new}.json"
+    if not src.exists():
+        raise HTTPException(status_code=404, detail=f"Preset '{old}' not found")
+    if dst.exists():
+        raise HTTPException(status_code=409, detail=f"Preset '{new}' already exists")
+    src.rename(dst)
+    return {"success": True, "old_name": old, "new_name": new}
+
+
+@router.post("/presets/{name}/duplicate")
+async def duplicate_lcd_preset(name: str, request: LCDPresetRenameRequest):
+    """Duplicate any preset (including built-ins) into an editable user preset."""
+    import json
+    source_name = _sanitize_preset_name(name)
+    new = _sanitize_preset_name(request.new_name)
+    if not new:
+        raise HTTPException(status_code=400, detail="new_name required")
+    if new in _BUILTIN_LCD_PRESETS:
+        raise HTTPException(status_code=400, detail="Name collides with a built-in preset")
+
+    # Source can be a built-in or a user preset.
+    if source_name in _BUILTIN_LCD_PRESETS:
+        spec = _BUILTIN_LCD_PRESETS[source_name]
+        source_config = spec["config"]
+        source_desc = spec["description"]
+    else:
+        src_file = _presets_dir() / f"{source_name}.json"
+        if not src_file.exists():
+            raise HTTPException(status_code=404, detail=f"Preset '{source_name}' not found")
+        with open(src_file) as f:
+            src_data = json.load(f)
+        source_config = src_data.get("config", {})
+        source_desc = src_data.get("description", "")
+
+    dst_file = _presets_dir() / f"{new}.json"
+    if dst_file.exists():
+        raise HTTPException(status_code=409, detail=f"Preset '{new}' already exists")
+    with open(dst_file, "w") as f:
+        json.dump({
+            "name": new,
+            "description": f"Copy of {source_name}: {source_desc}",
+            "created_at": utc_now().isoformat(),
+            "config": source_config,
+        }, f, indent=2)
+    return {"success": True, "name": new}
+
+
+@router.post("/presets/{name}/apply")
+async def apply_lcd_preset(name: str):
+    """Apply a preset (built-in or user) to the current lcd.displays config."""
+    from app.config import get_config
+    name = _sanitize_preset_name(name)
+    if name in _BUILTIN_LCD_PRESETS:
+        config = _BUILTIN_LCD_PRESETS[name]["config"]
+    else:
+        import json
+        preset_file = _presets_dir() / f"{name}.json"
+        if not preset_file.exists():
+            raise HTTPException(status_code=404, detail=f"Preset '{name}' not found")
+        with open(preset_file) as f:
+            config = json.load(f).get("config", {})
+
+    displays = config.get("displays")
+    if displays:
+        get_config().set("lcd.displays", displays)
+
+        # Best-effort live apply to drivers.
+        if _lcd_manager is not None:
+            drivers = getattr(_lcd_manager, "lcds", [])
+            for entry in displays:
+                idx = entry.get("id", 0)
+                if 0 <= idx < len(drivers):
+                    try:
+                        bl_percent = int(round((entry.get("brightness", 200) / 255) * 100))
+                        await drivers[idx].set_backlight(bl_percent)
+                    except Exception as e:
+                        logger.warning("Preset apply brightness failed LCD %d: %s", idx, e)
+
+    return {"success": True, "name": name, "applied_displays": len(displays) if displays else 0}

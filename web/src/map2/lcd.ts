@@ -319,16 +319,38 @@ export const lcdApi = {
       { method: 'PUT', body: JSON.stringify(config) }
     ),
   
-  // Presets
+  // Presets — T2430-H
   getPresets: () =>
-    fetchJson<{ presets: Array<{ name: string; description: string; created_at: string }>; count: number }>(
-      `${API_BASE}/lcd/presets`
-    ),
-  
-  savePreset: (name: string, description?: string) =>
-    fetchJson<{ success: boolean; name: string; message: string }>(
+    fetchJson<{ presets: LCDPreset[] }>(`${API_BASE}/lcd/presets`),
+
+  savePreset: (payload: { name: string; description?: string; config?: { displays?: LCDDisplayConfig[] } }) =>
+    fetchJson<{ success: boolean; name: string }>(
       `${API_BASE}/lcd/presets`,
-      { method: 'POST', body: JSON.stringify({ name, description: description || '' }) }
+      { method: 'POST', body: JSON.stringify(payload) },
+    ),
+
+  deletePreset: (name: string) =>
+    fetchJson<{ success: boolean; name: string }>(
+      `${API_BASE}/lcd/presets/${encodeURIComponent(name)}`,
+      { method: 'DELETE' },
+    ),
+
+  renamePreset: (name: string, newName: string) =>
+    fetchJson<{ success: boolean; old_name: string; new_name: string }>(
+      `${API_BASE}/lcd/presets/${encodeURIComponent(name)}/rename`,
+      { method: 'POST', body: JSON.stringify({ new_name: newName }) },
+    ),
+
+  duplicatePreset: (name: string, newName: string) =>
+    fetchJson<{ success: boolean; name: string }>(
+      `${API_BASE}/lcd/presets/${encodeURIComponent(name)}/duplicate`,
+      { method: 'POST', body: JSON.stringify({ new_name: newName }) },
+    ),
+
+  applyPreset: (name: string) =>
+    fetchJson<{ success: boolean; name: string; applied_displays: number }>(
+      `${API_BASE}/lcd/presets/${encodeURIComponent(name)}/apply`,
+      { method: 'POST' },
     ),
   
   // FT232H USB-to-I2C
@@ -373,6 +395,14 @@ export const lcdApi = {
       { method: 'POST', body: JSON.stringify(request) },
     ),
 };
+
+export interface LCDPreset {
+  name: string
+  description: string
+  created_at: string | null
+  builtin: boolean
+  config: { displays?: LCDDisplayConfig[] }
+}
 
 export interface LCDDisplayConfig {
   id: number
