@@ -124,7 +124,7 @@ interface LCDSimulatorProps {
   isPolling?: boolean
 }
 
-function LCDSimulator({ lcdId, lines, address, currentPage, onPageChange, connected = true, isPolling }: LCDSimulatorProps) {
+export function LCDSimulator({ lcdId, lines, address, currentPage, onPageChange, connected = true, isPolling }: LCDSimulatorProps) {
   const pages = ['status', 'vu', 'chain', 'plugins', 'midi', 'perf', 'settings', 'menu']
 
   return (
@@ -199,7 +199,7 @@ interface InputControllerProps {
   disabled?: boolean
 }
 
-function InputController({ onInput, disabled }: InputControllerProps) {
+export function InputController({ onInput, disabled }: InputControllerProps) {
   return (
     <div className="input-controller">
       <div className="input-title">
@@ -256,7 +256,7 @@ interface CustomMessageComposerProps {
   onSend: (lcdId: number, line1: string, line2: string, duration: number) => void
 }
 
-function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
+export function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
   const [targetLcd, setTargetLcd] = useState<number>(-1)
   const [line1, setLine1] = useState('')
   const [line2, setLine2] = useState('')
@@ -324,7 +324,7 @@ interface EventTriggersProps {
   onTrigger: (eventType: string, eventData: any) => void
 }
 
-function EventTriggers({ onTrigger }: EventTriggersProps) {
+export function EventTriggers({ onTrigger }: EventTriggersProps) {
   const events = [
     { type: 'chain_loaded', label: 'Chain Loaded', icon: <Branch size={14} />, data: { chain_name: 'Test Chain' } },
     { type: 'snapshot_loaded', label: 'Snapshot Loaded', icon: <Categories size={14} />, data: { snapshot_name: 'Clean Tone' } },
