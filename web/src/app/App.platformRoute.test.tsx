@@ -159,11 +159,11 @@ jest.mock('./components/Devices/DevicesShell', () => ({
   },
 }))
 
-jest.mock('./components/Devices/DevicesOverview', () => ({
-  DevicesOverview: () => {
+jest.mock('./components/Devices/DevicesStorePage', () => ({
+  DevicesStorePage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
-    return <div data-testid="devices-overview-route">{`${location.pathname}${location.search}`}</div>
+    return <div data-testid="devices-store-route">{`${location.pathname}${location.search}`}</div>
   },
 }))
 
@@ -291,7 +291,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
     expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
@@ -300,7 +300,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
   })
 
   it('redirects the retired /workspace/physical-surfaces route into the unified /devices workspace', async () => {
@@ -308,7 +308,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
     expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
@@ -317,7 +317,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
   })
 
   it('mounts the migrated audio-artifacts overview inside the workspace hub', async () => {
@@ -352,7 +352,7 @@ describe('App routing', () => {
 
     render(<App />)
 
-    expect(await screen.findByTestId('devices-overview-route')).toHaveTextContent('/devices')
+    expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
   })
 
   it('redirects the retired Workspace Catalog route into the canonical workspace hub overview', async () => {

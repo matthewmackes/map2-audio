@@ -57,7 +57,7 @@ const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').
 const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').then(m => ({ default: m.StateAuthorityPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const DevicesShell          = lazy(() => import('./components/Devices/DevicesShell').then(m => ({ default: m.DevicesShell })))
-const DevicesOverview       = lazy(() => import('./components/Devices/DevicesOverview').then(m => ({ default: m.DevicesOverview })))
+const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
 const LCDView               = lazy(() => import('./components/Devices/LCD/LCDView').then(m => ({ default: m.LCDView })))
@@ -461,7 +461,7 @@ export function App() {
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/devices" element={<RouteBoundary title="Devices workspace crashed" actionLabel="Reload devices"><DevicesShell /></RouteBoundary>}>
-                                  <Route index element={<DevicesOverview />} />
+                                  <Route index element={<DevicesStorePage />} />
                                   <Route path="edirol-ua1000" element={<EdirolUA1000View />} />
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />
