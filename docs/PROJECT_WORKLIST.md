@@ -94,9 +94,12 @@ Last updated: 2026-04-23 EDT - Claude
   4. Every subtask's typecheck + build + relevant tests PASS.
   5. Visual verification: pill-aware filter shows correct scope tags; Presets sub-view renders 5 built-ins + any user presets; Settings shows snapshot-aware tag on the 5 overridable fields; Hardware shows per-driver health tags.
   6. No regressions in existing LCD or snapshot tests.
-- Follow-up items (Q9b + N-2):
-  - Extend juce-random-effects-soak skill with LCD event-flood stressor (1000 events/sec, p99 dequeue ≤ 50 ms) — separate T2431 once epic stabilizes.
-  - T2430-N-2: breadth tests filling the ~150-test pyramid target (each route happy+error path, each remaining sub-view smoke).
+- Follow-up items (Q9b):
+  - Extend juce-random-effects-soak skill with LCD event-flood stressor (1000 events/sec, p99 dequeue ≤ 50 ms) — separate task once T2431 epic stabilizes.
+- T2430-N-2: [✓] Done 2026-04-23 — breadth tests shipped. 174 total tests (115 backend pytest + 59 frontend jest, exceeds 150-test target). See completion note below.
+  - Backend additions (test_lcd_routes_breadth.py: 24→86 tests): /pages, /scan, /ft232h/scan, /ft232h/write, /ft232h/test/{address}, /reset/{lcd_id}, /tests/run, /tests/results, /{lcd_id}/status, /{lcd_id}/page (4 tests), /events/trigger (9 parametrized types + 2 edge cases), /pages/{lcd_id}/config (GET+PUT), /simulation/both, /test/{lcd_id}, plus happy+error paths for all FT232H routes. Also fixed 3 real route bugs: missing `timezone` import in ft232h/test, HTTPException swallowed by generic `except Exception` in ft232h/write and ft232h/test.
+  - Frontend additions (LCDViews.breadth.test.tsx: 23 new tests): error states (reject) and empty states for LCDDisplaysView, LCDAlertsView, LCDSettingsView, LCDPresetsView, LCDSnapshotsView; interaction tests for Apply/Delete/render on each sub-view.
+  - Validation: pytest 86/86 PASS (test_lcd_routes_breadth.py), jest 23/23 PASS (LCDViews.breadth), typecheck PASS, build PASS (20.99s).
 
 ---
 

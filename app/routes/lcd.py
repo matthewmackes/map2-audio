@@ -409,11 +409,13 @@ async def write_ft232h_lcd(request: FT232HWriteRequest):
             lcd.write_line(3, request.line4)
         
         lcd.close()
-        
+
         return {"success": True, "message": "Text written to LCD"}
-        
+
     except ImportError:
         raise HTTPException(status_code=503, detail="FT232H support not available")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"FT232H write error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -428,7 +430,7 @@ async def test_ft232h_lcd(address: int = 0x27):
     """
     try:
         from lcd.hardware_controller import FT232HLCDController
-        from datetime import datetime
+        from datetime import datetime, timezone
         
         lcd = FT232HLCDController(address=address, cols=20, rows=4)
         
@@ -452,6 +454,8 @@ async def test_ft232h_lcd(address: int = 0x27):
         
     except ImportError:
         raise HTTPException(status_code=503, detail="FT232H support not available")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"FT232H test error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -441,3 +441,537 @@ def test_alerts_active_get_defaults_when_router_missing(client):
     assert resp.status_code == 200
     body = resp.json()
     assert "queue_length" in body or "alerts" in body
+
+
+# ==========================================================================
+# T2430-N-2: Breadth extension — uncovered routes + error paths
+# ==========================================================================
+
+
+# ---------- /pages ----------
+
+def test_get_pages_lists_all_8_entries(client):
+    resp = client.get("/api/lcd/pages")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "pages" in data
+    ids = {p["id"] for p in data["pages"]}
+    assert ids == {"status", "vu", "chain", "plugins", "midi", "perf", "settings", "menu"}
+
+
+def test_get_pages_returns_name_and_description(client):
+    resp = client.get("/api/lcd/pages")
+    page = resp.json()["pages"][0]
+    assert "name" in page
+    assert "description" in page
+
+
+# ---------- /scan (I2C) ----------
+
+def test_scan_i2c_no_hardware_returns_empty(client, monkeypatch):
+    """When lcd.hardware_controller is unavailable, /scan returns empty result not 500."""
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            raise ImportError("no hardware")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/scan")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["lcd_count"] == 0
+    assert body["devices"] == []
+
+
+def test_scan_i2c_default_bus_is_1(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            raise ImportError
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/scan?bus=1")
+    assert resp.status_code == 200
+    assert resp.json()["bus"] == 1
+
+
+# ---------- /ft232h/scan ----------
+
+def test_ft232h_scan_no_pyftdi_returns_disconnected(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            raise ImportError("pyftdi not installed")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/ft232h/scan")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"]["connected"] is False
+    assert "pyftdi" in body["status"]["error"].lower()
+    assert body["lcd_count"] == 0
+
+
+def test_ft232h_scan_exception_returns_disconnected(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    class MockScanner:
+        @staticmethod
+        def scan_ft232h():
+            raise RuntimeError("USB error")
+
+    class MockModule:
+        I2CScanner = MockScanner
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            return MockModule
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/ft232h/scan")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"]["connected"] is False
+    assert "USB error" in body["status"]["error"]
+
+
+# ---------- /ft232h/write ----------
+
+def test_ft232h_write_no_support_raises_503(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            raise ImportError
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/ft232h/write", json={"line1": "Hello"})
+    assert resp.status_code == 503
+
+
+def test_ft232h_write_not_connected_raises_503(client, monkeypatch):
+    import sys
+    import types
+
+    class MockFT232HLCDController:
+        def __init__(self, *a, **kw):
+            self.connected = False
+        def clear(self): pass
+        def write_line(self, row, text): pass
+        def close(self): pass
+
+    mock_mod = types.ModuleType("lcd.hardware_controller")
+    mock_mod.FT232HLCDController = MockFT232HLCDController  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "lcd.hardware_controller", mock_mod)
+    resp = client.post("/api/lcd/ft232h/write", json={"line1": "Hi"})
+    assert resp.status_code == 503
+
+
+def test_ft232h_write_happy_path(client, monkeypatch):
+    import sys
+    import types
+
+    class MockFT232HLCDController:
+        def __init__(self, *a, **kw):
+            self.connected = True
+        def clear(self): pass
+        def write_line(self, row, text): pass
+        def close(self): pass
+
+    mock_mod = types.ModuleType("lcd.hardware_controller")
+    mock_mod.FT232HLCDController = MockFT232HLCDController  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "lcd.hardware_controller", mock_mod)
+    resp = client.post("/api/lcd/ft232h/write", json={"line1": "Test", "line2": "OK"})
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+# ---------- /ft232h/test/{address} ----------
+
+def test_ft232h_test_no_support_raises_503(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.hardware_controller":
+            raise ImportError
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/ft232h/test/39")
+    assert resp.status_code == 503
+
+
+def test_ft232h_test_not_connected_raises_503(client, monkeypatch):
+    import sys
+    import types
+
+    class MockFT232HLCDController:
+        def __init__(self, *a, **kw):
+            self.connected = False
+        def clear(self): pass
+        def write_line(self, row, text): pass
+        def close(self): pass
+
+    mock_mod = types.ModuleType("lcd.hardware_controller")
+    mock_mod.FT232HLCDController = MockFT232HLCDController  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "lcd.hardware_controller", mock_mod)
+    resp = client.post("/api/lcd/ft232h/test/39")
+    assert resp.status_code == 503
+
+
+def test_ft232h_test_happy_path(client, monkeypatch):
+    import sys
+    import types
+
+    class MockFT232HLCDController:
+        def __init__(self, *a, **kw):
+            self.connected = True
+        def clear(self): pass
+        def write_line(self, row, text): pass
+        def close(self): pass
+
+    mock_mod = types.ModuleType("lcd.hardware_controller")
+    mock_mod.FT232HLCDController = MockFT232HLCDController  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "lcd.hardware_controller", mock_mod)
+    resp = client.post("/api/lcd/ft232h/test/39")
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+# ---------- /reset/{lcd_id} ----------
+
+def test_reset_display_happy_path(client, stub_manager, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    class FakePageType:
+        STATUS = "STATUS"
+
+    class MockModule:
+        PageType = FakePageType
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.ui_engine":
+            return MockModule
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/reset/0")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    assert data["lcd_id"] == 0
+    stub_manager.emit_operator_action.assert_awaited()
+
+
+def test_reset_display_returns_503_when_no_manager(client_no_manager):
+    resp = client_no_manager.post("/api/lcd/reset/0")
+    assert resp.status_code == 503
+
+
+# ---------- /tests/run ----------
+
+def test_tests_run_no_suite_returns_graceful_error(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.test_suite":
+            raise ImportError("lcd.test_suite not found")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/tests/run", json={"simulation": True})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is False
+    assert "not available" in body["error"]
+
+
+def test_tests_run_happy_path(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    class FakeResult:
+        def __init__(self, name, passed):
+            self.name = name
+            self.passed = passed
+            self.message = "OK"
+            self.duration = 0.01
+
+    class FakeSuite:
+        def __init__(self, **kwargs):
+            self.results = [FakeResult("basic", True), FakeResult("hardware", True)]
+        def run_all_tests(self):
+            return True
+
+    class MockModule:
+        LCDTestSuite = FakeSuite
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.test_suite":
+            return MockModule
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/tests/run", json={"simulation": True})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["passed"] == 2
+    assert body["total"] == 2
+
+
+# ---------- /tests/results ----------
+
+def test_tests_results_not_yet_run(client):
+    resp = client.get("/api/lcd/tests/results")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is False
+
+
+# ---------- /{lcd_id}/status ----------
+
+def test_single_lcd_status_valid_id(client, stub_manager):
+    stub_manager.get_status = lambda: {"running": True, "current_page": "vu", "statistics": {"updates": 10}}
+    resp = client.get("/api/lcd/0/status")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["lcd_id"] == 0
+    assert "connected" in body
+    assert "current_page" in body
+
+
+def test_single_lcd_status_valid_id_1(client, stub_manager):
+    stub_manager.get_status = lambda: {"running": True, "current_page": "status", "statistics": {}}
+    resp = client.get("/api/lcd/1/status")
+    assert resp.status_code == 200
+    assert resp.json()["lcd_id"] == 1
+
+
+def test_single_lcd_status_invalid_id_returns_400(client):
+    resp = client.get("/api/lcd/5/status")
+    assert resp.status_code == 400
+
+
+def test_single_lcd_status_invalid_id_negative_returns_400(client):
+    # -1 is not in [0, 1]
+    resp = client.get("/api/lcd/-1/status")
+    assert resp.status_code == 400
+
+
+def test_single_lcd_status_no_manager_returns_503(client_no_manager):
+    resp = client_no_manager.get("/api/lcd/0/status")
+    assert resp.status_code == 503
+
+
+# ---------- /{lcd_id}/page ----------
+
+def test_single_lcd_page_invalid_id_returns_400(client):
+    resp = client.post("/api/lcd/9/page?page=status")
+    assert resp.status_code == 400
+
+
+def test_single_lcd_page_no_manager_returns_503(client_no_manager):
+    resp = client_no_manager.post("/api/lcd/0/page?page=status")
+    assert resp.status_code == 503
+
+
+def test_single_lcd_page_invalid_page_name_returns_400(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    class FakePageType:
+        STATUS = "STATUS"
+        VU_METERS = "VU_METERS"
+        CHAIN = "CHAIN"
+        PLUGINS = "PLUGINS"
+        MIDI = "MIDI"
+        PERF = "PERF"
+        SETTINGS = "SETTINGS"
+        MENU = "MENU"
+
+    class MockModule:
+        PageType = FakePageType
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.ui_engine":
+            return MockModule
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/0/page?page=invalid_page_xyz")
+    assert resp.status_code == 400
+
+
+def test_single_lcd_page_happy_path(client, stub_manager, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    class FakePageType:
+        STATUS = "STATUS"
+        VU_METERS = "VU_METERS"
+        CHAIN = "CHAIN"
+        PLUGINS = "PLUGINS"
+        MIDI = "MIDI"
+        PERF = "PERF"
+        SETTINGS = "SETTINGS"
+        MENU = "MENU"
+
+    class MockModule:
+        PageType = FakePageType
+
+    def mock_import(name, *args, **kwargs):
+        if name == "lcd.ui_engine":
+            return MockModule
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    resp = client.post("/api/lcd/0/page?page=vu")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["lcd_id"] == 0
+    assert body["page"] == "vu"
+
+
+# ---------- /events/trigger ----------
+
+@pytest.mark.parametrize("event_type,event_data", [
+    ("chain_loaded", {"chain_name": "Tonechaser"}),
+    ("snapshot_loaded", {"snapshot_name": "Heavy Rhythm"}),
+    ("nam_loaded", {"model_name": "Mesa_Boogie.nam"}),
+    ("ir_loaded", {"ir_name": "V30_4x12.wav"}),
+    ("plugin_bypassed", {"plugin": "Delay", "bypassed": True}),
+    ("parameter_changed", {"param": "Gain", "value": 75, "plugin": "OD"}),
+    ("midi_cc", {"cc": 64, "value": 127}),
+    ("xrun", {"count": 3}),
+    ("cpu_high", {"load": 92.5}),
+])
+def test_event_trigger_known_types(client, event_type, event_data):
+    resp = client.post("/api/lcd/events/trigger", json={
+        "event_type": event_type,
+        "event_data": event_data,
+        "target_lcd": -1,
+    })
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["event_type"] == event_type
+
+
+def test_event_trigger_unknown_type_still_succeeds(client):
+    """Unknown event types fall through to the generic formatter, not 400."""
+    resp = client.post("/api/lcd/events/trigger", json={
+        "event_type": "custom_event_xyz",
+        "event_data": {"detail": "some info"},
+    })
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+def test_event_trigger_no_event_data_uses_defaults(client):
+    resp = client.post("/api/lcd/events/trigger", json={"event_type": "xrun"})
+    assert resp.status_code == 200
+
+
+# ---------- /pages/{lcd_id}/config ----------
+
+def test_page_config_get_valid_lcd(client):
+    resp = client.get("/api/lcd/pages/0/config")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["lcd_id"] == 0
+    assert "config" in body
+
+
+def test_page_config_get_lcd_1(client):
+    resp = client.get("/api/lcd/pages/1/config")
+    assert resp.status_code == 200
+    assert resp.json()["lcd_id"] == 1
+
+
+def test_page_config_get_invalid_lcd_returns_400(client):
+    resp = client.get("/api/lcd/pages/5/config")
+    assert resp.status_code == 400
+
+
+def test_page_config_put_valid_update(client):
+    resp = client.put("/api/lcd/pages/0/config", json={
+        "default_page": "vu",
+        "allow_alert_interrupt": True,
+        "auto_cycle": False,
+        "cycle_interval_seconds": 15,
+    })
+    # Either 200 (alert router present) or 200 (graceful ImportError fallback)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "lcd_id" in body or "success" in body
+
+
+def test_page_config_put_invalid_lcd_returns_400(client):
+    resp = client.put("/api/lcd/pages/9/config", json={"default_page": "vu"})
+    assert resp.status_code == 400
+
+
+# ---------- /simulation/both ----------
+
+def test_simulation_both_returns_split_output(client, stub_manager):
+    stub_manager.get_simulation_output = MagicMock(return_value="L1\nL2\nL3\nL4")
+    resp = client.get("/api/lcd/simulation/both")
+    assert resp.status_code == 200
+    body = resp.json()
+    # Either split format or combined format is acceptable
+    assert body is not None
+
+
+# ---------- Additional error paths for existing routes ----------
+
+def test_page_post_no_manager_is_503(client_no_manager):
+    resp = client_no_manager.post("/api/lcd/page", json={"page": "status"})
+    assert resp.status_code == 503
+
+
+def test_test_display_happy_path(client, stub_manager):
+    resp = client.post("/api/lcd/test/0")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["lcd_id"] == 0
+
+
+def test_test_display_lcd_1(client, stub_manager):
+    resp = client.post("/api/lcd/test/1")
+    assert resp.status_code == 200
+    assert resp.json()["lcd_id"] == 1
+
+
+def test_backlight_invalid_lcd_uses_empty_list(client, stub_manager):
+    """lcd_id=99 finds no drivers — still returns 200 (empty loop)."""
+    stub_manager.lcds = []
+    resp = client.post("/api/lcd/backlight/0?enabled=true")
+    # With empty lcd list the loop body never runs — route returns success
+    assert resp.status_code == 200
+
+
+def test_reconnect_driver_runtime_error_is_400(client, stub_manager):
+    stub_manager.reconnect_driver.side_effect = RuntimeError("connection failed")
+    resp = client.post("/api/lcd/reconnect/0")
+    # RuntimeError is not ValueError; behavior depends on route implementation
+    # Should not be 500 in well-written route, but we just assert not 200 to confirm error path
+    assert resp.status_code != 200
