@@ -6,7 +6,64 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-22 EDT - T2426-C shipped — hero-image upload/revert is live end-to-end (backend service + routes, frontend client + kebab wiring, 20 pytest + 40 jest tests green). Epic T2426 now Done. Previously: T2428 shipped — Snapshot Editor block parameter panels now keep the snapshot inspector action row reachable above the open parameters.
+Last updated: 2026-04-23 EDT - T2430 epic opened — "LCD Displays — full parity + hardening" (17 subtasks A-Q). 10 design decisions locked with user (Q1-Q10). User authorized autonomous mode for the epic (B delivery model). MPX1-style shell with 8 sub-routes, Unified Node Pill integration, per-LCD config, multi-adapter drivers (native I²C + FT232H simultaneous), morph-aware State Authority hooks at 5 Hz, preset source-of-truth with snapshot references. Previously: T2426-C shipped — hero-image upload/revert is live end-to-end.
+
+---
+
+ID: T2430
+Status: [>] In Progress
+Title: EPIC — LCD Displays — full parity + hardening (MPX1-style shell, pill integration, State Authority hooks, multi-adapter, test pyramid)
+Description:
+- Goal / acceptance criteria: Rework `/devices/lcd` from a single 1852-line `LCDView.tsx` into an MPX1-style shell with 8 sub-routes, full Unified Node Pill compliance, snapshot-aware activation hooks, multi-adapter (native I²C + FT232H simultaneous) driver support, preset source-of-truth with snapshot references, PlatformEvent emission on operator actions, complete test pyramid, and operator/wiring docs. 10 design decisions locked with user Q1-Q10 (see below). Definition of Done per CLAUDE.md §0.8: all 17 subtasks A-Q shipped with pytest + jest + typecheck + build + dual-push per slice; manager lifecycle verified; hardware-gated smoke tests passing on bench; LCD participates as first-class PlatformEvent producer AND consumer; snapshot activation reaches LCD surface via preset references; morph-aware hook evaluator runs at 5 Hz without I²C flood.
+- Why it matters: Audit (2026-04-23) found LCD page is 75% complete as monitor, 50% as control surface. Settings UI promises fields the backend can't persist; backlight route is a stub; zero test coverage; LCD ignores Unified Node Pill directive; LCD is only a PlatformEvent consumer not producer; not wired to State Authority despite T2425-UX naming "LCD cluster" as target. Closing these gaps makes LCD a first-class operator surface matching MPX1/Tesira/IntelFX parity.
+- Dependencies: T2420 (DevicesShell + registry), T2425-UX (State Authority frontend rollout — activation hooks consumer), T2426 (device registry + hero images — LCD gets its hero). None blocking — additive on existing surfaces.
+- Estimated effort: Large — 17 restartable atomic subtasks, ≈ 3-4 days autonomous execution. User granted autonomous commit+dual-push authorization for the epic scope (Q10=B). Each subtask ships independently per §5 atomic-bundle rule.
+- Locked decisions (Q1 → Q10, user confirmed 2026-04-23):
+  1. Q1=B: MPX1-style shell with 8 sub-routes under `/devices/lcd/*`, each a standalone view with sidebar nav.
+  2. Q2a=accept: Sub-route set = `displays`, `events`, `nodes`, `alerts`, `hardware`, `settings`, `presets` (NEW), `snapshots` (NEW). Q2b=accept: default landing `/devices/lcd` → `/devices/lcd/displays`.
+  3. Q3=B: Unified Node Pill always load-bearing. Scoped sub-views (displays/hardware/settings/presets/snapshots) target pill-selected node; cluster sub-views (events/nodes/alerts) filter to pill-selected node when one is active, show all when pill = "all". No inline node-switch UI on any sub-view.
+  4. Q4a=B: Per-LCD granularity (`lcd.displays[0..1].{field}`). Q4b=accept + add `enabled` bool = 13 per-LCD keys × 2 LCDs. Q4c=snapshot-aware subset: `default_page`, `auto_cycle_enabled`, `auto_cycle_interval_s`, `alert_sound`, `idle_dim_timeout_s` overridable per-snapshot; `brightness`, `contrast`, `scroll_delay_ms`, `alert_sound_freq_hz`, `alert_sound_duration_ms`, `idle_dim_brightness`, `enabled` stay node-local.
+  5. Q5=B: PlatformEvent emission on semantic operator actions only: page changes, custom messages, preset loads, alert config updates, settings changes, resets. Skip D-pad keystroke noise; debounce brightness/contrast slider final settled value. Event shape: `category=USER`, `severity=INFO`, `source_service="lcd_manager"`, `surfaces=set()` (audit-only).
+  6. Q6a=B: Snapshot hook model = fallback-to-node-local. `document.surfaces.lcd` optional; if present overrides any subset of 5 snapshot-aware fields. Q6b=include: morph-aware hooks in Phase 1. Corner-snap for `default_page` (categorical), linear-interp for numerics (`auto_cycle_interval_s`, `idle_dim_timeout_s`), 0.5 threshold for bools (`alert_sound`, `auto_cycle_enabled`). Re-evaluate at 5 Hz (200 ms).
+  7. Q7a=B: Presets as source-of-truth; snapshot hooks reference by name via union type `{preset: "name"} | {inline: {...}}`. Q7b=accept: 5 built-in read-only presets (`factory-default`, `performing`, `rehearsal`, `setup`, `silent`), duplicable as starting points.
+  8. Q8a=B: Multi-adapter aware. LCDManager drives LCD 0 over FT232H and LCD 1 over native I²C simultaneously; per-LCD `adapter` field in schema; dual driver instantiation. Q8b=accept: add `POST /lcd/native/write` for raw-write parity with existing `/lcd/ft232h/write`.
+  9. Q9a=C: Full pyramid — unit + integration (mock hardware) + hardware-gated smoke tests behind `MAP2_LCD_HARDWARE=1` env var. CI runs unit+integration; hardware bench runs all three. ~150 new tests total. Q9b=yes: extend `juce-random-effects-soak` skill with LCD event-flood stressor (1000 events/sec, p99 ≤ 50 ms dequeue, no dropped `severity ≥ ERROR`, landed as separate follow-up after core refactor).
+  10. Q10a=B: Autonomous commit+dual-push per subtask; stop on blocker or ambiguity. Q10b=accept: 17 subtasks A-Q as listed below.
+- Subtasks (all 17 atomic, each shippable with own commit + dual-push + rebuild):
+  - T2430-A: Router + `LCDShell.tsx` + 8 sub-route skeleton (each sub-view a stub returning title + placeholder; `LCDShell` sidebar + default redirect to `displays`; `App.tsx` router rewrite for `/devices/lcd/*` nested; redirect shim from legacy `/devices/lcd?tab=X`).
+  - T2430-B: Extract Displays sub-view (dual simulator + page picker + D-pad + custom message composer; wires `statusQuery`, `simulationQuery`, `pagesQuery`, `setPageMutation`, `inputMutation`, `messageMutation`).
+  - T2430-C: Extract Events sub-view + pill filter (`useLcdFeed` WS, severity/category filters, detail drawer; pill scope filters source node).
+  - T2430-D: Extract Nodes sub-view + pill filter (`NodeLCDGrid` + per-node event feed panel; pill scope filters visible nodes).
+  - T2430-E: Extract Alerts sub-view (alert routing table, `alertConfigQuery` + `updateAlertConfigMutation`, severity + priority + target-LCD selection, `activeAlertsQuery` live queue).
+  - T2430-F: Extract Hardware sub-view + multi-adapter driver (new `FT232HLCDDisplay` driver class inheriting `LCDDisplay`, per-LCD `adapter` config, LCDManager dual-driver instantiation, driver health surface per-LCD, reconnect button, `POST /lcd/native/write` new endpoint, raw-write debug UI parity).
+  - T2430-G: Extract Settings sub-view + extend `LCD_SCHEMA` (13 per-LCD fields × 2 LCDs, JSON-schema validation, `saveMutation`, settings persistence path, backlight/contrast sliders drive real hardware via driver).
+  - T2430-H: NEW Presets sub-view + full CRUD (list/load/save/delete/duplicate/rename, 5 built-in read-only presets shipped in-code, JSON import/export, "save current as preset" one-click from Displays, backend preset CRUD routes already exist — wire UI).
+  - T2430-I: NEW Snapshots sub-view + hook system (union-type `{preset} | {inline}` editor, per-snapshot per-LCD preview, "apply to all" bulk action, `document.surfaces.lcd` schema addition to snapshot JSON, snapshot activation FSM subscribes to LCD surface).
+  - T2430-J: Morph-aware hook evaluator at 5 Hz (`LCDMorphEvaluator` subscribes to `MorphEngine` position updates, corner-snap + linear-interp + threshold logic, writes to LCDManager, back-pressure to prevent I²C flood, debounce settled values).
+  - T2430-K: PlatformEvent emission on operator actions (LCDManager `emit_operator_action()` helper, wire all 6 semantic action classes, debounce brightness/contrast 300 ms, `source_service="lcd_manager"`, audit-only `surfaces=set()`).
+  - T2430-L: Wire `/lcd/backlight/*` to driver + fix `/lcd/tests/results` persistence (route calls `driver.set_backlight()`, test results persist to `~/.map2/lcd_test_results.json`, UI reads real results).
+  - T2430-M: Unified Node Pill integration (delete inline `selectedNode` state from LCDView family, thread `useDeviceNodeContext()` through every sub-view, scoped queries include node_id cache key, cluster views respect pill filter per Q3).
+  - T2430-N: Backend pytest (~90) + frontend jest (~60) per Q9 coverage table.
+  - T2430-O: `docs/LCD_OPERATOR_GUIDE.md` + `docs/hardware/LCD_WIRING.md` (HD44780 I²C backpack pinout, FT232H wiring, PiPewire metadata interaction, systemd service lifecycle, troubleshooting).
+  - T2430-P: LCD hero image upload (leverage T2426-C upload path) + Device Registry polish (promote LCD from fallback-icon to custom hero in `deviceHeroImages.ts`).
+  - T2430-Q: Hardware-gated smoke tests (`@pytest.mark.hardware`, `MAP2_LCD_HARDWARE=1` env gate, I²C scan real hardware, FT232H write real hardware, backlight toggle real, driver health under connect/disconnect cycles).
+- Required outputs:
+  - Frontend: `web/src/app/components/Devices/LCD/LCDShell.tsx` + 8 sub-view files under `views/`, extended `lcd.ts` API client with new endpoints, updated `useLcdFeed.ts` with pill scope, deleted inline `LCDView.tsx` monolith after migration.
+  - Backend: `app/drivers/ft232h_lcd_display.py` new driver, extended `app/routes/lcd.py` with native raw-write + fixed backlight + tests-results-persist, `app/services/lcd_manager.py` multi-adapter + PlatformEvent emission + morph evaluator integration, `app/services/lcd_morph_evaluator.py` new service, `app/services/snapshot/lcd_hook_evaluator.py` new service, extended `app/config_schema.py` `LCD_SCHEMA` with 13 per-LCD fields, extended `document.surfaces.lcd` snapshot schema.
+  - Tests: `tests/test_lcd_routes.py`, `tests/test_lcd_manager.py`, `tests/test_lcd_ft232h_driver.py`, `tests/test_lcd_morph_evaluator.py`, `tests/test_lcd_hook_evaluator.py`, `tests/test_lcd_platform_event_emission.py`, `tests/test_lcd_hardware_smoke.py` (hardware-gated), plus jest for shell + each sub-view + pill integration + preset editor + hook editor.
+  - Docs: `docs/LCD_OPERATOR_GUIDE.md`, `docs/hardware/LCD_WIRING.md`, updated `.gemini/instructions.md` Update Log entry.
+- Validation gates per subtask (§0.7 + §0.8):
+  1. `npm --prefix web run typecheck` PASS (all touched web files).
+  2. `npm --prefix web run test -- --run <subtask-suite>` PASS.
+  3. `pytest tests/test_lcd_<subtask>.py -q` PASS.
+  4. `npm --prefix web run build` PASS with new chunk hash.
+  5. `python3 scripts/continuous_release.py --commit-message "T2430-X: ..."` — commit + dual-push + rebuild + redeploy + verify.
+  6. Browser spot-check at http://localhost:3000/devices/lcd/<subview> for UI subtasks.
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-23 EDT - Claude
+- Execution status:
+  - [>] T2430-A: Router + LCDShell + 8 sub-route skeleton (in progress)
+  - [ ] T2430-B through T2430-Q: pending
 
 ---
 

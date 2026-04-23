@@ -176,6 +176,8 @@ const LCD_VIEWS: DeviceView[] = [
   { id: 'alerts', label: 'Alerts', color: '#da1e28', icon: WarningAlt },
   { id: 'hardware', label: 'Hardware', color: '#a78bfa', icon: DevicesIcon },
   { id: 'settings', label: 'Settings', color: '#8d8d8d', icon: Settings },
+  { id: 'presets', label: 'Presets', color: '#f97316', icon: Settings },
+  { id: 'snapshots', label: 'Snapshots', color: '#14b8a6', icon: Connect },
 ]
 
 // =============================================================================

@@ -61,6 +61,15 @@ const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesSto
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
 const LCDView               = lazy(() => import('./components/Devices/LCD/LCDView').then(m => ({ default: m.LCDView })))
+const LCDShell              = lazy(() => import('./components/Devices/LCD/LCDShell').then(m => ({ default: m.LCDShell })))
+const LCDDisplaysView       = lazy(() => import('./components/Devices/LCD/views/LCDDisplaysView').then(m => ({ default: m.LCDDisplaysView })))
+const LCDEventsView         = lazy(() => import('./components/Devices/LCD/views/LCDEventsView').then(m => ({ default: m.LCDEventsView })))
+const LCDNodesView          = lazy(() => import('./components/Devices/LCD/views/LCDNodesView').then(m => ({ default: m.LCDNodesView })))
+const LCDAlertsView         = lazy(() => import('./components/Devices/LCD/views/LCDAlertsView').then(m => ({ default: m.LCDAlertsView })))
+const LCDHardwareView       = lazy(() => import('./components/Devices/LCD/views/LCDHardwareView').then(m => ({ default: m.LCDHardwareView })))
+const LCDSettingsView       = lazy(() => import('./components/Devices/LCD/views/LCDSettingsView').then(m => ({ default: m.LCDSettingsView })))
+const LCDPresetsView        = lazy(() => import('./components/Devices/LCD/views/LCDPresetsView').then(m => ({ default: m.LCDPresetsView })))
+const LCDSnapshotsView      = lazy(() => import('./components/Devices/LCD/views/LCDSnapshotsView').then(m => ({ default: m.LCDSnapshotsView })))
 const TesiraView            = lazy(() => import('./components/Devices/Tesira/TesiraView').then(m => ({ default: m.TesiraView })))
 const MPX1Shell             = lazy(() => import('./components/Devices/MPX1/MPX1Shell').then(m => ({ default: m.MPX1Shell })))
 const MPX1PanelView         = lazy(() => import('./components/Devices/MPX1/views/MPX1PanelView').then(m => ({ default: m.MPX1PanelView })))
@@ -466,8 +475,17 @@ export function App() {
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />
                                   <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
-                                  <Route path="lcd" element={<LCDView />} />
-                                  <Route path="lcd/:view" element={<LCDView />} />
+                                  <Route path="lcd/*" element={<LCDShell />}>
+                                    <Route index element={<Navigate to="displays" replace />} />
+                                    <Route path="displays" element={<LCDDisplaysView />} />
+                                    <Route path="events" element={<LCDEventsView />} />
+                                    <Route path="nodes" element={<LCDNodesView />} />
+                                    <Route path="alerts" element={<LCDAlertsView />} />
+                                    <Route path="hardware" element={<LCDHardwareView />} />
+                                    <Route path="settings" element={<LCDSettingsView />} />
+                                    <Route path="presets" element={<LCDPresetsView />} />
+                                    <Route path="snapshots" element={<LCDSnapshotsView />} />
+                                  </Route>
                                   <Route path="tesira/*" element={<TesiraView />} />
                                   <Route path="mpx1/*" element={<MPX1Shell />}>
                                     <Route index element={<Navigate to="panel" replace />} />

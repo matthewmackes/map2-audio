@@ -850,10 +850,17 @@ interface LCDSettings {
 // Main Page Component
 // ════════════════════════════════════════════════════════════════════════════
 
-export function LCDView() {
+export interface LCDViewProps {
+  forcedSection?: TabId
+  hideChrome?: boolean
+}
+
+export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
-  const [activeTab, setActiveTab] = useState<TabId>('displays')
+  const [internalTab, setInternalTab] = useState<TabId>(forcedSection ?? 'displays')
+  const activeTab: TabId = forcedSection ?? internalTab
+  const setActiveTab = (id: TabId) => { if (!forcedSection) setInternalTab(id) }
   const [isPolling, setIsPolling] = useState(true)
 
   // ── LCD core queries ──────────────────────────────────────────────────
@@ -990,54 +997,59 @@ export function LCDView() {
     <section className="lcd-page-route">
       <Layer className="lcd-page-route__surface">
       <div className="lcd-page">
-      <PageHeader
-        title="LCD Management Console"
-        subtitle="Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration"
-        icon={<MapRackDeviceIcon size={32} style={{ color: '#22c55e' }} />}
-        actions={
-          <div className="flex" style={{ gap: 8 }}>
-            <LegacyButton variant={isPolling ? 'primary' : 'ghost'} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
-              {isPolling ? <Pause size={16} /> : <Play size={16} />}
-              {isPolling ? 'Live' : 'Paused'}
-            </LegacyButton>
-            <LegacyButton variant="ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
-              <Renew size={16} /> Refresh
-            </LegacyButton>
-          </div>
-        }
-      />
+      {!hideChrome && (
+        <PageHeader
+          title="LCD Management Console"
+          subtitle="Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration"
+          icon={<MapRackDeviceIcon size={32} style={{ color: '#22c55e' }} />}
+          actions={
+            <div className="flex" style={{ gap: 8 }}>
+              <LegacyButton variant={isPolling ? 'primary' : 'ghost'} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
+                {isPolling ? <Pause size={16} /> : <Play size={16} />}
+                {isPolling ? 'Live' : 'Paused'}
+              </LegacyButton>
+              <LegacyButton variant="ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
+                <Renew size={16} /> Refresh
+              </LegacyButton>
+            </div>
+          }
+        />
+      )}
 
-      {/* ── Overview Cards ──────────────────────────────────────────── */}
-      <div className="grid four">
-        <StatCard label="LCD Status" value={isRunning ? 'Running' : 'Stopped'} helper={isSimulation ? 'Simulation' : 'Hardware'} tone={isRunning ? 'success' : 'warn'} />
-        <StatCard label="Current Page" value={currentPage?.toUpperCase() || 'N/A'} helper="Active view" />
-        <StatCard label="Updates" value={sysStats.updates?.toLocaleString() || '0'} helper={`${sysStats.errors || 0} errors`} tone={sysStats.errors > 0 ? 'warn' : 'default'} />
-        <StatCard label="Alert Queue" value={queueLength} helper={queueLength > 0 ? 'Pending' : 'Empty'} tone={queueLength > 5 ? 'warn' : 'default'} />
-      </div>
-
-      {/* ── How It Works banner ─────────────────────────────────────── */}
-      <div className="lcd-edu-banner">
-        <Book size={16} style={{ flexShrink: 0 }} />
-        <div>
-          <strong>How It Works</strong> — MAP2 drives two I2C 4×20-character LCD screens via an FT232H USB-to-I2C adapter.
-          The backend streams real-time status (VU meters, chain info, performance) to each display.
-          Alerts from the audio engine are routed to the appropriate screen based on severity and type.
-          Use the tabs below to monitor, test, and configure every aspect of the LCD subsystem.
+      {!hideChrome && (
+        <div className="grid four">
+          <StatCard label="LCD Status" value={isRunning ? 'Running' : 'Stopped'} helper={isSimulation ? 'Simulation' : 'Hardware'} tone={isRunning ? 'success' : 'warn'} />
+          <StatCard label="Current Page" value={currentPage?.toUpperCase() || 'N/A'} helper="Active view" />
+          <StatCard label="Updates" value={sysStats.updates?.toLocaleString() || '0'} helper={`${sysStats.errors || 0} errors`} tone={sysStats.errors > 0 ? 'warn' : 'default'} />
+          <StatCard label="Alert Queue" value={queueLength} helper={queueLength > 0 ? 'Pending' : 'Empty'} tone={queueLength > 5 ? 'warn' : 'default'} />
         </div>
-      </div>
+      )}
 
-      {/* ── Tab Navigation ──────────────────────────────────────────── */}
-      <div className="lcd-tabs">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`lcd-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
-      </div>
+      {!hideChrome && (
+        <div className="lcd-edu-banner">
+          <Book size={16} style={{ flexShrink: 0 }} />
+          <div>
+            <strong>How It Works</strong> — MAP2 drives two I2C 4×20-character LCD screens via an FT232H USB-to-I2C adapter.
+            The backend streams real-time status (VU meters, chain info, performance) to each display.
+            Alerts from the audio engine are routed to the appropriate screen based on severity and type.
+            Use the tabs below to monitor, test, and configure every aspect of the LCD subsystem.
+          </div>
+        </div>
+      )}
+
+      {!hideChrome && (
+        <div className="lcd-tabs">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`lcd-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Tab Content ─────────────────────────────────────────────── */}
       <div className="lcd-content">
