@@ -6,7 +6,22 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-23 EDT - T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-23 EDT - T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+
+---
+
+ID: T2436
+Status: [✓] Done
+Title: Rename Global Navigation `Control Panel` to `Node Ops` and feature `Snapshot Editor` with live status + `Signal Editor` badge
+Description:
+- Goal / acceptance criteria: Update the Global Navigation tree so the top-level `/workspace` entry reads `Node Ops` instead of `Control Panel`, and make `Snapshot Editor` stand out in a professional way by combining stronger row emphasis, a right-aligned `Signal Editor` badge, and a real-time secondary live-status label sourced from the existing snapshot runtime live-state stream. The tree structure, routing, and existing child items must remain unchanged. Focused tests and snapshots must be refreshed.
+- Why it matters: The operator wants clearer terminology for the node-operations surface and wants the primary editing route to read as a featured live workspace instead of another flat destination in the rail.
+- Dependencies: None.
+- Estimated effort: Low.
+- Required outputs/deliverables: updated `GlobalTreeNav` data/model/CSS, real-time status wiring from the existing snapshot runtime hook, focused test/snapshot updates, and a compliance note if any runtime or packaging assumptions change.
+Assigned to: Codex
+Last updated: 2026-04-23 14:21 EDT - Codex
+Completion note: 2026-04-23 14:21 EDT - Codex: Updated `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx` so `/workspace` now renders as `Node Ops`, and `Snapshot Editor` now carries featured row metadata with a `Signal Editor` badge plus a real-time live-status label derived from `useClusterSnapshotRuntimeLiveState()` / the `snapshot_runtime_live_state` stream. Refined `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.css` for featured-row treatment, badge styling, and status-pill tones; added pure status-selection coverage in `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.test.ts`; refreshed `web/src/app/layout/AppShell.test.tsx` expectations and `web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap`. Validation PASS: focused Jest (`GlobalTreeNav`, `AppShell`, `DesktopExperience.integration`, `DesktopExperience.snapshot` with snapshot update), `npm --prefix web run typecheck`, `npm --prefix web run build`, and `git diff --check`. No new dependency, installer, service, or environment changes were introduced.
 
 ---
 
@@ -249,7 +264,7 @@ Completion note: 2026-04-22 20:32 - Codex: Shipped in `web/src/app/pages/Snapsho
 ---
 
 ID: T2429
-Status: [ ] Todo
+Status: [✓] Done
 Title: Redesign Snapshot Editor bottom actions into a wizard-style action flow
 Description:
 - Goal / acceptance criteria: After the 10 one-at-a-time multiple-choice design questions are answered, improve the corrected Snapshot Editor bottom action/inspector area into a clear set of actions with a wizard feel, preserving fast access to snapshot-level commands while guiding operators through the intended workflow.
@@ -257,8 +272,9 @@ Description:
 - Dependencies: T2428 complete; design answers Q1-Q10.
 - Estimated effort: Medium.
 - Required outputs/deliverables: Wizard-style bottom action view, responsive layout states, focused tests, typecheck/build pass, and any installer/environment updates if the implementation introduces new assumptions.
-Assigned to: Codex
-Last updated: 2026-04-22 20:32 - Codex
+Assigned to: Claude
+Last updated: 2026-04-23 - Claude
+Completion note: 2026-04-23 - Claude: Design answers locked Q1–Q4 (Q5=proceed): pedalboard-build metaphor · 5 stages (LAYOUT · WIRE · TUNE · SAVE · PUBLISH) · floating `?` Help badge · gated sequential navigation. Shipped `web/src/app/components/SnapshotEditor/BottomWizard/` (`PedalboardBuildWizard.tsx`, `useBuildStageMachine.ts`, `pedalboardBuildWizard.css`) and rendered the wizard above the existing `SnapshotEditorSnapshotInspectorControls` strip at both bottom-editor render sites in `SnapshotEditorPageContent.tsx` so T2428's action-continuity contract is preserved. Stage machine enforces gates: LAYOUT stays active until a block is placed, WIRE/TUNE/SAVE open once LAYOUT clears, PUBLISH locks while `snapshotsDirty`. Recommends WIRE when a block is selected, SAVE when unsaved. Validation PASS: `BottomWizard/useBuildStageMachine.test.ts` 5/5, `SnapshotEditorPage|SnapshotEditorSnapshotStatusPanel` 9/9, `npm --prefix web run typecheck` clean, `npm --prefix web run build` clean (21.4s). No dependency, service, installer, or environment changes.
 
 ---
 

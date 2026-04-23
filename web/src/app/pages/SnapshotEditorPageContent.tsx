@@ -221,6 +221,7 @@ import {
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
+import { PedalboardBuildWizard } from '../components/SnapshotEditor/BottomWizard/PedalboardBuildWizard'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
 import {
   type SnapshotEditorWorkspaceActionId,
@@ -8096,6 +8097,34 @@ export function SnapshotEditorPage() {
       onOpenHelp={openKeyboardHelpWorkspace}
     />
   )
+  const pedalboardBuildWizard = (
+    <PedalboardBuildWizard
+      hasSnapshot={Boolean(activeSnapshot)}
+      pluginCount={currentChain?.plugins.length ?? 0}
+      hasSelectedBlock={Boolean(selectedPlugin)}
+      hasUnsavedChanges={Boolean(snapshotsDirty)}
+      hasLiveSnapshot={Boolean(activeSnapshot)}
+      automationActive={automationTimelineExpanded}
+      activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
+      onOpenSignalGrid={openSignalGridWorkspace}
+      onOpenDirectory={handleAddPlugin}
+      directoryDisabled={snapshotEditingLocked}
+      onOpenParameters={openSelectedBlockEditor}
+      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+      onOpenAutomation={openAutomationWorkspace}
+      onOpenVersionHistory={openVersionHistoryWorkspace}
+      versionHistoryDisabled={!activeSnapshot}
+      onSaveDraft={handleSaveDraft}
+      saveDraftPending={updateActiveSnapshotMutation.isPending}
+      saveDraftDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending || !snapshotsDirty}
+      onOpenProgressModal={openGuidedProgress}
+      onOpenSnapshots={() => navigate('/snapshots')}
+      onCreateSnapshot={() => createCapturedSnapshot()}
+      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+      onOpenHelp={openKeyboardHelpWorkspace}
+      snapshotTitle={activeSnapshot?.name ?? 'No snapshot loaded'}
+    />
+  )
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page">
@@ -8527,6 +8556,7 @@ export function SnapshotEditorPage() {
               {bottomEditorOpen && selectedPlugin ? (
                 <div className="juce-grid-page__bottom-editor-parameter-stack">
                   <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
+                    {pedalboardBuildWizard}
                     {snapshotInspectorControls}
                   </div>
                   {selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
@@ -8551,6 +8581,7 @@ export function SnapshotEditorPage() {
                 </div>
               ) : bottomEditorShowsSnapshotInspector ? (
                 <div className="juce-grid-page__snapshot-inspector-row">
+                  {pedalboardBuildWizard}
                   {snapshotInspectorControls}
                   {activeSnapshot ? (
                     <div className="juce-grid-page__snapshot-inspector-morph" aria-label="A/B/C/D morph">

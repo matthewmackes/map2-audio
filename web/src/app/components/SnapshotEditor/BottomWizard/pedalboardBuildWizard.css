@@ -1,0 +1,181 @@
+/* MAP2 — Snapshot Editor "Pedalboard Build" bottom wizard */
+
+.pedalboard-wizard {
+  --pw-border: var(--cds-border-subtle-01, #333);
+  --pw-bg: var(--cds-layer, #1b1b1f);
+  --pw-accent: var(--cds-support-info, #4589ff);
+  --pw-accent-dim: var(--cds-support-info-inverse, #0043ce);
+  --pw-muted: var(--cds-text-secondary, #8d8d8d);
+  --pw-text: var(--cds-text-primary, #f4f4f4);
+  --pw-lock: var(--cds-button-disabled, #4a4a55);
+  --pw-complete: var(--cds-support-success, #42be65);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg);
+  color: var(--pw-text);
+}
+
+/* ---------- Header ---------- */
+.pedalboard-wizard__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pedalboard-wizard__title-col { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
+.pedalboard-wizard__kicker {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pw-muted);
+}
+.pedalboard-wizard__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pw-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Floating Help badge ---------- */
+.pedalboard-wizard__help-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg);
+  color: var(--pw-muted);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  flex-shrink: 0;
+}
+.pedalboard-wizard__help-badge:hover,
+.pedalboard-wizard__help-badge:focus-visible {
+  color: var(--pw-text);
+  border-color: var(--pw-accent);
+  background: rgba(69, 137, 255, 0.12);
+  outline: none;
+}
+
+/* ---------- Stepper ---------- */
+.pedalboard-wizard__stepper { width: 100%; }
+.pedalboard-wizard__stepper-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+.pedalboard-wizard__stepper-item {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+.pedalboard-wizard__stepper-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--pw-border);
+  border-right: 0;
+  color: var(--pw-muted);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  min-width: 0;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.pedalboard-wizard__stepper-item:first-child .pedalboard-wizard__stepper-button { border-radius: 4px 0 0 4px; }
+.pedalboard-wizard__stepper-item:last-child .pedalboard-wizard__stepper-button { border-radius: 0 4px 4px 0; border-right: 1px solid var(--pw-border); }
+
+.pedalboard-wizard__stepper-button:hover:not(:disabled) {
+  background: rgba(69, 137, 255, 0.08);
+  color: var(--pw-text);
+}
+.pedalboard-wizard__stepper-button:disabled { cursor: not-allowed; opacity: 0.5; }
+.pedalboard-wizard__stepper-button:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: -2px;
+}
+
+.pedalboard-wizard__stepper-item.is-active .pedalboard-wizard__stepper-button {
+  color: var(--pw-text);
+  background: rgba(69, 137, 255, 0.12);
+  border-color: var(--pw-accent);
+  box-shadow: inset 0 2px 0 var(--pw-accent);
+}
+
+.pedalboard-wizard__stepper-item--complete .pedalboard-wizard__stepper-glyph { color: var(--pw-complete); }
+.pedalboard-wizard__stepper-item--active .pedalboard-wizard__stepper-glyph { color: var(--pw-accent); }
+.pedalboard-wizard__stepper-item--ready .pedalboard-wizard__stepper-glyph { color: var(--pw-muted); }
+.pedalboard-wizard__stepper-item--locked .pedalboard-wizard__stepper-glyph { color: var(--pw-lock); }
+
+.pedalboard-wizard__stepper-glyph {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+.pedalboard-wizard__stepper-label {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: inherit;
+}
+.pedalboard-wizard__stepper-recap {
+  font-size: 0.75rem;
+  color: var(--pw-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Stage body ---------- */
+.pedalboard-wizard__stage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.pedalboard-wizard__stage-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pedalboard-wizard__stage-recap {
+  color: var(--pw-muted);
+  font-size: 0.8125rem;
+}
+.pedalboard-wizard__stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .pedalboard-wizard__stepper-list { flex-direction: column; }
+  .pedalboard-wizard__stepper-button {
+    border-right: 1px solid var(--pw-border);
+  }
+  .pedalboard-wizard__stepper-item:first-child .pedalboard-wizard__stepper-button { border-radius: 4px 4px 0 0; }
+  .pedalboard-wizard__stepper-item:last-child .pedalboard-wizard__stepper-button { border-radius: 0 0 4px 4px; }
+}
