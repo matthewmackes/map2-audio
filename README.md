@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1257** Python | **1221** TypeScript | **136** C++/H | **145** Docs | **2699** total commits | **3** stars | **0** forks | **0** open issues
+**1258** Python | **1221** TypeScript | **136** C++/H | **145** Docs | **2702** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`563173c7`](https://github.com/matthewmackes/map2-audio/commit/563173c71d511a7d978189825d82e38c196b6c3b) | test(lcd): T2430-Q — hardware-gated smoke tests + T2430 e... | Map2 Audio | 2026-04-23 |
+| [`4428f764`](https://github.com/matthewmackes/map2-audio/commit/4428f7649407fda807b57c49b896fdcde5bdcfa5) | feat(lcd): T2430-P — LCD hero image + Device Registry polish | Map2 Audio | 2026-04-23 |
+| [`0145e6f1`](https://github.com/matthewmackes/map2-audio/commit/0145e6f1a905f119e125b4a040287019a80f3de1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`41893fb8`](https://github.com/matthewmackes/map2-audio/commit/41893fb8122170f56454329bc5ded0d6c8429920) | docs(lcd): T2430-O — operator guide + hardware wiring doc | Map2 Audio | 2026-04-23 |
 | [`773efafb`](https://github.com/matthewmackes/map2-audio/commit/773efafb263a4d1191b1b8d0fbafcde1b332e5b9) | test(lcd): T2430-N — 38 new tests for T2430 LCD refactor | Map2 Audio | 2026-04-23 |
 | [`b8983237`](https://github.com/matthewmackes/map2-audio/commit/b8983237436a535d1c96355192426f347fe7daa4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`3496d560`](https://github.com/matthewmackes/map2-audio/commit/3496d5607bb7d9c912cc58ddcf3e2acdc8f1f769) | refactor(lcd): T2430-M — Unified Node Pill compliance for... | Map2 Audio | 2026-04-23 |
 | [`48e3edb4`](https://github.com/matthewmackes/map2-audio/commit/48e3edb46d16c3406fa5813b9d29ad61eec629f6) | feat(lcd): T2430-K — PlatformEvent emission on semantic o... | Map2 Audio | 2026-04-23 |
-| [`319d0752`](https://github.com/matthewmackes/map2-audio/commit/319d0752f164bae8de30e0ca1a0de1748f5d8d78) | feat(lcd): T2430-J — LCDMorphEvaluator at 5 Hz + back-pre... | Map2 Audio | 2026-04-23 |
-| [`6b44288d`](https://github.com/matthewmackes/map2-audio/commit/6b44288daeefc2409a2b85a8521533b7c260c444) | feat(lcd): T2430-I — Snapshots sub-view + hook system + m... | Map2 Audio | 2026-04-23 |
-| [`06fa2bce`](https://github.com/matthewmackes/map2-audio/commit/06fa2bcebdf3a5f81cb9928d694c78fa0ea843b9) | feat(lcd): T2430-H — Presets sub-view + full CRUD + 5 bui... | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
