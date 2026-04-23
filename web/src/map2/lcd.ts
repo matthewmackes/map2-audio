@@ -369,6 +369,29 @@ export const lcdApi = {
       { method: 'POST' }
     ),
 
+  // T2430-I: Snapshot LCD hooks
+  getSnapshotHook: (snapshotId: string) =>
+    fetchJson<{ snapshot_id: string; hook: LCDSnapshotHook | null }>(
+      `${API_BASE}/lcd/snapshot-hooks/${encodeURIComponent(snapshotId)}`,
+    ),
+
+  putSnapshotHook: (snapshotId: string, hook: LCDSnapshotHook) =>
+    fetchJson<{ success: boolean; snapshot_id?: string; hook?: LCDSnapshotHook; cleared?: boolean }>(
+      `${API_BASE}/lcd/snapshot-hooks/${encodeURIComponent(snapshotId)}`,
+      { method: 'PUT', body: JSON.stringify(hook) },
+    ),
+
+  deleteSnapshotHook: (snapshotId: string) =>
+    fetchJson<{ success: boolean }>(
+      `${API_BASE}/lcd/snapshot-hooks/${encodeURIComponent(snapshotId)}`,
+      { method: 'DELETE' },
+    ),
+
+  listSnapshotHooks: () =>
+    fetchJson<{ hooks: Array<{ snapshot_id: string; hook: LCDSnapshotHook }> }>(
+      `${API_BASE}/lcd/snapshot-hooks`,
+    ),
+
   // T2430-G: per-LCD config (Settings sub-view)
   getDisplaysConfig: () =>
     fetchJson<{ displays: LCDDisplayConfig[] }>(`${API_BASE}/lcd/displays-config`),
@@ -395,6 +418,8 @@ export const lcdApi = {
       { method: 'POST', body: JSON.stringify(request) },
     ),
 };
+
+export type LCDSnapshotHook = { preset: string } | { inline: { displays: Partial<LCDDisplayConfig>[] } }
 
 export interface LCDPreset {
   name: string

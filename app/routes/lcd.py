@@ -1099,6 +1099,63 @@ async def update_lcd_page_config(lcd_id: int, request: PageConfigUpdateRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ---- T2430-I: Snapshot LCD hooks ----
+
+
+class SnapshotLCDHook(BaseModel):
+    """Snapshot-activation LCD hook (union: preset reference | inline overrides)."""
+    preset: Optional[str] = None
+    inline: Optional[Dict[str, Any]] = None
+
+
+@router.get("/snapshot-hooks/{snapshot_id}")
+async def get_snapshot_lcd_hook(snapshot_id: str):
+    from app.services.snapshot.lcd_hook_evaluator import get_hook
+    hook = get_hook(snapshot_id)
+    return {"snapshot_id": snapshot_id, "hook": hook}
+
+
+@router.put("/snapshot-hooks/{snapshot_id}")
+async def put_snapshot_lcd_hook(snapshot_id: str, hook: SnapshotLCDHook):
+    """Set or clear the LCD hook for a given snapshot."""
+    from app.services.snapshot.lcd_hook_evaluator import set_hook
+    payload = hook.model_dump(exclude_none=True)
+    if not payload:
+        set_hook(snapshot_id, None)
+        return {"success": True, "cleared": True}
+    # Exactly one of {preset, inline} must be present.
+    if ("preset" in payload) == ("inline" in payload):
+        raise HTTPException(
+            status_code=400,
+            detail="Exactly one of {preset, inline} must be set; not both, not neither.",
+        )
+    set_hook(snapshot_id, payload)
+    return {"success": True, "snapshot_id": snapshot_id, "hook": payload}
+
+
+@router.delete("/snapshot-hooks/{snapshot_id}")
+async def delete_snapshot_lcd_hook(snapshot_id: str):
+    from app.services.snapshot.lcd_hook_evaluator import set_hook
+    set_hook(snapshot_id, None)
+    return {"success": True, "cleared": True}
+
+
+@router.get("/snapshot-hooks")
+async def list_snapshot_lcd_hooks():
+    """List every snapshot that has an LCD hook configured."""
+    from app.services.snapshot.lcd_hook_evaluator import hooks_dir
+    import json
+    d = hooks_dir()
+    hooks = []
+    for f in sorted(d.glob("*.json")):
+        try:
+            with open(f) as fp:
+                hooks.append({"snapshot_id": f.stem, "hook": json.load(fp)})
+        except Exception:
+            pass
+    return {"hooks": hooks}
+
+
 # ---- T2430-H: LCD Presets — full CRUD with 5 built-in read-only presets ----
 
 
