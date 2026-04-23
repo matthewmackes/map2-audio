@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1256** Python | **1219** TypeScript | **136** C++/H | **144** Docs | **2696** total commits | **3** stars | **0** forks | **0** open issues
+**1257** Python | **1221** TypeScript | **136** C++/H | **145** Docs | **2699** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,12 +175,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-23 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
 | [MAP2 Installation Guide (Created by AI. Not Yet Tested - Matt)](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Installation_Guide_2026-02-14.md) | 2026-04-20 |
 | [MAP2 + Maschine MK1 Headless Operation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/MASCHINE_MK1_OPERATION_GUIDE.md) | 2026-04-20 |
-| [MAP2 Memory Index](https://github.com/matthewmackes/map2-audio/blob/master/docs/MEMORY.md) | 2026-04-20 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`41893fb8`](https://github.com/matthewmackes/map2-audio/commit/41893fb8122170f56454329bc5ded0d6c8429920) | docs(lcd): T2430-O — operator guide + hardware wiring doc | Map2 Audio | 2026-04-23 |
+| [`773efafb`](https://github.com/matthewmackes/map2-audio/commit/773efafb263a4d1191b1b8d0fbafcde1b332e5b9) | test(lcd): T2430-N — 38 new tests for T2430 LCD refactor | Map2 Audio | 2026-04-23 |
+| [`b8983237`](https://github.com/matthewmackes/map2-audio/commit/b8983237436a535d1c96355192426f347fe7daa4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`3496d560`](https://github.com/matthewmackes/map2-audio/commit/3496d5607bb7d9c912cc58ddcf3e2acdc8f1f769) | refactor(lcd): T2430-M — Unified Node Pill compliance for... | Map2 Audio | 2026-04-23 |
 | [`48e3edb4`](https://github.com/matthewmackes/map2-audio/commit/48e3edb46d16c3406fa5813b9d29ad61eec629f6) | feat(lcd): T2430-K — PlatformEvent emission on semantic o... | Map2 Audio | 2026-04-23 |
 | [`319d0752`](https://github.com/matthewmackes/map2-audio/commit/319d0752f164bae8de30e0ca1a0de1748f5d8d78) | feat(lcd): T2430-J — LCDMorphEvaluator at 5 Hz + back-pre... | Map2 Audio | 2026-04-23 |
 | [`6b44288d`](https://github.com/matthewmackes/map2-audio/commit/6b44288daeefc2409a2b85a8521533b7c260c444) | feat(lcd): T2430-I — Snapshots sub-view + hook system + m... | Map2 Audio | 2026-04-23 |
 | [`06fa2bce`](https://github.com/matthewmackes/map2-audio/commit/06fa2bcebdf3a5f81cb9928d694c78fa0ea843b9) | feat(lcd): T2430-H — Presets sub-view + full CRUD + 5 bui... | Map2 Audio | 2026-04-23 |
-| [`ae9f5685`](https://github.com/matthewmackes/map2-audio/commit/ae9f568585ecdbc435a378f9d69a273fc1dcf3e4) | feat(lcd): T2430-G — extract Settings sub-view + extend L... | Map2 Audio | 2026-04-23 |
-| [`a09d3970`](https://github.com/matthewmackes/map2-audio/commit/a09d3970fad9ad2a0dc6ef73299512a81899933c) | feat(lcd): T2430-F + T2430-L — Hardware sub-view + multi-... | Map2 Audio | 2026-04-23 |
-| [`b00944c8`](https://github.com/matthewmackes/map2-audio/commit/b00944c8aa78f1708c3b7b310b72b96cd3ee4d3c) | feat(lcd): T2430-E — extract Alerts sub-view (standalone) | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
