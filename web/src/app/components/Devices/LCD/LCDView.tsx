@@ -365,7 +365,7 @@ interface AlertRouterConfigProps {
   onUpdate: (config: { routing?: Record<string, Partial<AlertRoutingConfig>>; pages?: Record<number, Partial<LCDPageConfig>> }) => void
 }
 
-function AlertRouterConfig({ config, onUpdate }: AlertRouterConfigProps) {
+export function AlertRouterConfig({ config, onUpdate }: AlertRouterConfigProps) {
   const [editingAlert, setEditingAlert] = useState<string | null>(null)
 
   const alertTypes = [
