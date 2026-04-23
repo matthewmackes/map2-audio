@@ -346,6 +346,34 @@ export const lcdApi = {
       `${API_BASE}/lcd/ft232h/test/${address}`,
       { method: 'POST' }
     ),
+
+  // T2430-F: driver health + reconnect + native raw write
+  getDriverHealth: () =>
+    fetchJson<{ drivers: DriverHealth[] }>(`${API_BASE}/lcd/health`),
+
+  reconnectDriver: (lcdId: number) =>
+    fetchJson<{ success: boolean; lcd_id: number }>(
+      `${API_BASE}/lcd/reconnect/${lcdId}`,
+      { method: 'POST' },
+    ),
+
+  writeNative: (request: { line1: string; line2?: string; line3?: string; line4?: string }) =>
+    fetchJson<{ success: boolean; lines: string[] }>(
+      `${API_BASE}/lcd/native/write`,
+      { method: 'POST', body: JSON.stringify(request) },
+    ),
 };
+
+export interface DriverHealth {
+  lcd_id: number;
+  driver_class: string;
+  connected: boolean;
+  adapter: 'native-i2c' | 'ft232h' | 'mock' | string;
+  address: number | null;
+  backlight_level: number | null;
+  last_write_ago_s: number | null;
+  write_error_count: number;
+  is_mock: boolean;
+}
 
 export default lcdApi;

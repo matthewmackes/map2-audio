@@ -56,7 +56,12 @@ class LCDManager:
         mdns_discovery=None,
         platform_event_bus: PlatformEventBus | None = None,
         platform_event_store: PlatformEventStore | None = None,
+        lcds: Optional[list[LCDDisplay]] = None,
     ) -> None:
+        """Construct manager. Multi-adapter (T2430-F): pass ``lcds=[d0, d1]`` for
+        heterogeneous transports (native I²C + FT232H). Legacy ``lcd_port`` +
+        ``use_mock_lcd`` kept for back-compat when a single driver is enough.
+        """
         self.node_id = node_id
         self.node_label = node_label
         self.mdns_discovery = mdns_discovery
@@ -66,10 +71,19 @@ class LCDManager:
         self._connected_peers: set[str] = set()
         self._event_subscription: Subscription | None = None
 
-        if use_mock_lcd:
-            self.lcd = MockLCDDisplay()
+        if lcds is not None:
+            self.lcds: list[LCDDisplay] = list(lcds)
+        elif use_mock_lcd:
+            self.lcds = [MockLCDDisplay()]
         else:
-            self.lcd = LCDDisplay(port=lcd_port)
+            self.lcds = [LCDDisplay(port=lcd_port)]
+
+        # Back-compat alias: older code paths use ``self.lcd`` for the primary.
+        self.lcd = self.lcds[0]
+
+        # Per-driver health counters (T2430-F driver health surface).
+        self._write_errors: dict[int, int] = {i: 0 for i in range(len(self.lcds))}
+        self._last_write_ts: dict[int, float] = {i: 0.0 for i in range(len(self.lcds))}
 
         self.display_queue: asyncio.Queue[LCDFeedEntry] = asyncio.Queue()
         self.current_event: Optional[LCDFeedEntry] = None
@@ -78,23 +92,26 @@ class LCDManager:
 
     async def start(self) -> None:
         """Start LCD runtime and subscribe to platform events."""
-        logger.info("Starting LCD Manager for %s", self.node_label)
+        logger.info("Starting LCD Manager for %s (%d driver(s))", self.node_label, len(self.lcds))
 
-        try:
-            await self.lcd.connect()
-            logger.info("LCD connected successfully")
-        except FileNotFoundError as e:
-            logger.warning("LCD device not found (%s), using mock display", e)
-            self.lcd = MockLCDDisplay()
-            await self.lcd.connect()
-        except PermissionError as e:
-            logger.warning("No permission to access LCD device (%s), using mock display", e)
-            self.lcd = MockLCDDisplay()
-            await self.lcd.connect()
-        except Exception as e:
-            logger.warning("Failed to connect LCD (%s: %s), using mock display", type(e).__name__, e)
-            self.lcd = MockLCDDisplay()
-            await self.lcd.connect()
+        for idx, driver in enumerate(list(self.lcds)):
+            try:
+                await driver.connect()
+                logger.info("LCD %d connected via %s", idx, type(driver).__name__)
+            except FileNotFoundError as e:
+                logger.warning("LCD %d device not found (%s), falling back to mock", idx, e)
+                self.lcds[idx] = MockLCDDisplay()
+                await self.lcds[idx].connect()
+            except PermissionError as e:
+                logger.warning("LCD %d permission denied (%s), falling back to mock", idx, e)
+                self.lcds[idx] = MockLCDDisplay()
+                await self.lcds[idx].connect()
+            except Exception as e:  # noqa: BLE001
+                logger.warning("LCD %d connect failed (%s: %s), falling back to mock", idx, type(e).__name__, e)
+                self.lcds[idx] = MockLCDDisplay()
+                await self.lcds[idx].connect()
+        # Refresh back-compat alias after any fallback swap.
+        self.lcd = self.lcds[0]
 
         self._event_subscription = await self.platform_event_bus.subscribe_callback(
             self._queue_platform_event,
@@ -133,16 +150,22 @@ class LCDManager:
         if self.mdns_discovery:
             await self.mdns_discovery.stop()
 
-        await self.lcd.disconnect()
+        for driver in self.lcds:
+            try:
+                await driver.disconnect()
+            except Exception as e:  # noqa: BLE001
+                logger.warning("LCD driver disconnect error: %s", e)
         logger.info("LCD Manager stopped")
 
     async def _show_welcome(self) -> None:
-        await self.lcd.write_lines([
+        welcome = [
             "MAP2 AUDIO PLATFORM",
             self.node_label,
             "",
             "Initializing...",
-        ])
+        ]
+        for driver in self.lcds:
+            await driver.write_lines(welcome)
         await asyncio.sleep(2)
 
     async def _queue_platform_event(self, event: PlatformEvent) -> None:
@@ -160,7 +183,11 @@ class LCDManager:
                 event = await self.display_queue.get()
                 await self._display_event(event)
                 if event.sound:
-                    await self.lcd.play_sound()
+                    for driver in self.lcds:
+                        try:
+                            await driver.play_sound()
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning("LCD play_sound error: %s", e)
                 self.current_event = event
                 await asyncio.sleep(5 if event.dismiss_auto else 15)
             except asyncio.CancelledError:
@@ -179,8 +206,73 @@ class LCDManager:
             timestamp = event.timestamp.strftime("%H:%M:%S")
             line3 = f"{event.source_node[:13]} {timestamp}"[:20]
 
-        await self.lcd.write_lines([header, line1, line2, line3])
+        lines = [header, line1, line2, line3]
+        import time
+        for idx, driver in enumerate(self.lcds):
+            try:
+                await driver.write_lines(lines)
+                self._last_write_ts[idx] = time.time()
+            except Exception as e:  # noqa: BLE001
+                self._write_errors[idx] = self._write_errors.get(idx, 0) + 1
+                logger.warning("LCD %d write failed: %s", idx, e)
         logger.info("Displayed LCD PlatformEvent: %s", event.title)
+
+    # ---- driver health + operator surface helpers (T2430-F) ----
+
+    def get_driver_health(self) -> list[dict[str, object]]:
+        """Return per-LCD driver health snapshot for the Hardware sub-view."""
+        import time
+        now = time.time()
+        report: list[dict[str, object]] = []
+        for idx, driver in enumerate(self.lcds):
+            last_ts = self._last_write_ts.get(idx, 0.0)
+            report.append({
+                "lcd_id": idx,
+                "driver_class": type(driver).__name__,
+                "connected": getattr(driver, "connected", False),
+                "adapter": self._adapter_name(driver),
+                "address": getattr(driver, "address", None),
+                "backlight_level": getattr(driver, "backlight_level", None),
+                "last_write_ago_s": None if last_ts == 0.0 else round(now - last_ts, 3),
+                "write_error_count": self._write_errors.get(idx, 0),
+                "is_mock": type(driver).__name__ == "MockLCDDisplay",
+            })
+        return report
+
+    @staticmethod
+    def _adapter_name(driver: LCDDisplay) -> str:
+        cls = type(driver).__name__
+        if cls == "FT232HLCDDisplay":
+            return "ft232h"
+        if cls == "MockLCDDisplay":
+            return "mock"
+        return "native-i2c"
+
+    async def reconnect_driver(self, lcd_id: int) -> None:
+        """Force disconnect + reconnect for a single driver (Hardware sub-view)."""
+        if not (0 <= lcd_id < len(self.lcds)):
+            raise ValueError(f"lcd_id {lcd_id} out of range")
+        driver = self.lcds[lcd_id]
+        try:
+            await driver.disconnect()
+        except Exception as e:  # noqa: BLE001
+            logger.warning("LCD %d disconnect during reconnect: %s", lcd_id, e)
+        try:
+            await driver.connect()
+            logger.info("LCD %d reconnect OK", lcd_id)
+        except Exception as e:  # noqa: BLE001
+            logger.error("LCD %d reconnect failed: %s", lcd_id, e)
+            self.lcds[lcd_id] = MockLCDDisplay()
+            await self.lcds[lcd_id].connect()
+            if lcd_id == 0:
+                self.lcd = self.lcds[0]
+
+    async def native_raw_write(self, line1: str, line2: str = "", line3: str = "", line4: str = "") -> None:
+        """Raw 4-line write to LCD 0 (primary native driver), for bench/bring-up."""
+        if not self.lcds:
+            raise RuntimeError("No LCD drivers registered")
+        lines = [line1, line2, line3, line4]
+        await self.lcds[0].write_lines(lines)
 
     async def _cleanup_loop(self) -> None:
         while True:

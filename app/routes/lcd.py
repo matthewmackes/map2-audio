@@ -484,21 +484,78 @@ async def toggle_backlight(lcd_id: int, enabled: bool = True):
     Args:
         lcd_id: 0, 1, or -1 for both displays
         enabled: True to turn on, False to turn off
+
+    T2430-L: now calls ``driver.set_backlight()`` on the real driver(s)
+    instead of returning a stub success response.
     """
     if not _lcd_manager:
         raise HTTPException(status_code=503, detail="LCD system not initialized")
 
     try:
-        # Would need backlight control in hardware controller
+        drivers = _lcd_manager.lcds
+        target_indices = range(len(drivers)) if lcd_id == -1 else [lcd_id]
+        for idx in target_indices:
+            if not (0 <= idx < len(drivers)):
+                continue
+            await drivers[idx].set_backlight(100 if enabled else 0)
         return {
             "success": True,
             "lcd_id": lcd_id,
             "backlight": enabled,
-            "message": f"Backlight {'on' if enabled else 'off'}"
+            "message": f"Backlight {'on' if enabled else 'off'}",
         }
 
     except Exception as e:
         logger.error(f"Backlight toggle error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---- T2430-F: driver health + reconnect + native raw-write ----
+
+
+class NativeWriteRequest(BaseModel):
+    """Raw 4-line write to the primary native I²C LCD driver."""
+    line1: str = ""
+    line2: str = ""
+    line3: str = ""
+    line4: str = ""
+
+
+@router.get("/health")
+async def get_driver_health():
+    """Return per-LCD driver health snapshot for the Hardware sub-view."""
+    if not _lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD system not initialized")
+    return {"drivers": _lcd_manager.get_driver_health()}
+
+
+@router.post("/reconnect/{lcd_id}")
+async def reconnect_driver(lcd_id: int):
+    """Force disconnect + reconnect for a single LCD driver."""
+    if not _lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD system not initialized")
+    try:
+        await _lcd_manager.reconnect_driver(lcd_id)
+        return {"success": True, "lcd_id": lcd_id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Reconnect error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/native/write")
+async def native_raw_write(request: NativeWriteRequest):
+    """Raw 4-line write to the primary native I²C LCD (T2430-F Q8b)."""
+    if not _lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD system not initialized")
+    try:
+        await _lcd_manager.native_raw_write(
+            request.line1, request.line2, request.line3, request.line4,
+        )
+        return {"success": True, "lines": [request.line1, request.line2, request.line3, request.line4]}
+    except Exception as e:
+        logger.error("Native raw write error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

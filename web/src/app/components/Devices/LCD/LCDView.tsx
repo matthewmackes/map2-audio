@@ -491,7 +491,7 @@ interface HardwareControlsProps {
   isScanning?: boolean
 }
 
-function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, isScanning }: HardwareControlsProps) {
+export function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, isScanning }: HardwareControlsProps) {
   return (
     <div className="hardware-controls">
       <div className="hardware-header">
@@ -546,7 +546,7 @@ interface FT232HConfigProps {
   deviceStatus?: { connected: boolean; url: string; frequency: number; devices: { address: number; type: string }[] }
 }
 
-function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, deviceStatus }: FT232HConfigProps) {
+export function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, deviceStatus }: FT232HConfigProps) {
   const [selectedPin, setSelectedPin] = useState<string | null>(null)
   const [testMessage, setTestMessage] = useState('Hello MAP2!')
   const [testAddress, setTestAddress] = useState(0x27)
