@@ -347,6 +347,16 @@ export const lcdApi = {
       { method: 'POST' }
     ),
 
+  // T2430-G: per-LCD config (Settings sub-view)
+  getDisplaysConfig: () =>
+    fetchJson<{ displays: LCDDisplayConfig[] }>(`${API_BASE}/lcd/displays-config`),
+
+  updateDisplaysConfig: (displays: LCDDisplayConfig[]) =>
+    fetchJson<{ success: boolean; displays: LCDDisplayConfig[] }>(
+      `${API_BASE}/lcd/displays-config`,
+      { method: 'PUT', body: JSON.stringify({ displays }) },
+    ),
+
   // T2430-F: driver health + reconnect + native raw write
   getDriverHealth: () =>
     fetchJson<{ drivers: DriverHealth[] }>(`${API_BASE}/lcd/health`),
@@ -363,6 +373,33 @@ export const lcdApi = {
       { method: 'POST', body: JSON.stringify(request) },
     ),
 };
+
+export interface LCDDisplayConfig {
+  id: number
+  address: number
+  enabled: boolean
+  adapter: 'native-i2c' | 'ft232h' | string
+  brightness: number            // 0-255
+  contrast: number              // 0-63
+  auto_scroll: boolean
+  scroll_delay_ms: number
+  alert_sound: boolean
+  alert_sound_freq_hz: number
+  alert_sound_duration_ms: number
+  idle_dim_timeout_s: number
+  idle_dim_brightness: number
+  auto_cycle_enabled: boolean
+  auto_cycle_interval_s: number
+  default_page: string
+}
+
+export const LCD_SNAPSHOT_AWARE_FIELDS: readonly (keyof LCDDisplayConfig)[] = [
+  'default_page',
+  'auto_cycle_enabled',
+  'auto_cycle_interval_s',
+  'alert_sound',
+  'idle_dim_timeout_s',
+] as const
 
 export interface DriverHealth {
   lcd_id: number;

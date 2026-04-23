@@ -571,6 +571,42 @@ PUSH_SURFACE_SCHEMA: dict[str, ConfigOption] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Per-LCD configuration defaults (T2430-G, Q4a=B per-LCD granularity, Q4b
+# accepted full field set + enabled bool = 13 per-LCD fields). Values here are
+# the DEFAULTS used when the active config has no explicit override. Per Q4c,
+# snapshot-aware fields = {default_page, auto_cycle_enabled,
+# auto_cycle_interval_s, alert_sound, idle_dim_timeout_s}.
+# ---------------------------------------------------------------------------
+
+_LCD_DISPLAY_DEFAULTS = {
+    "enabled": True,
+    "adapter": "native-i2c",          # "native-i2c" | "ft232h" (T2430-F multi-adapter)
+    "brightness": 200,                # 0-255, node-local (hardware preference)
+    "contrast": 40,                   # 0-63, node-local
+    "auto_scroll": True,
+    "scroll_delay_ms": 300,           # node-local
+    "alert_sound": True,              # snapshot-aware
+    "alert_sound_freq_hz": 1000,      # node-local (hardware/buzzer calibration)
+    "alert_sound_duration_ms": 100,   # node-local
+    "idle_dim_timeout_s": 300,        # snapshot-aware (0 = disabled)
+    "idle_dim_brightness": 50,        # node-local
+    "auto_cycle_enabled": False,      # snapshot-aware
+    "auto_cycle_interval_s": 30,      # snapshot-aware
+    "default_page": "status",         # snapshot-aware
+}
+
+
+# Fields that snapshot activation hooks may override (Q4c + Q6).
+LCD_SNAPSHOT_AWARE_FIELDS: frozenset[str] = frozenset({
+    "default_page",
+    "auto_cycle_enabled",
+    "auto_cycle_interval_s",
+    "alert_sound",
+    "idle_dim_timeout_s",
+})
+
+
 LCD_SCHEMA: dict[str, ConfigOption] = {
     # LCD settings
     "lcd.enabled": ConfigOption(
@@ -583,7 +619,7 @@ LCD_SCHEMA: dict[str, ConfigOption] = {
     "lcd.addresses": ConfigOption(
         key="lcd.addresses",
         default=[0x27, 0x3F],
-        description="I2C addresses for LCD displays",
+        description="I2C addresses for LCD displays (legacy; prefer lcd.displays per-LCD)",
         value_type=list,
         element_type=int,
     ),
@@ -594,7 +630,18 @@ LCD_SCHEMA: dict[str, ConfigOption] = {
         value_type=bool,
         env_var="MAP2_LCD_SIMULATION",
     ),
-
+    # T2430-G: per-LCD config block. Two-entry default matches the dual-LCD
+    # hardware reality; each entry carries all 14 per-LCD fields.
+    "lcd.displays": ConfigOption(
+        key="lcd.displays",
+        default=[
+            {**_LCD_DISPLAY_DEFAULTS, "id": 0, "address": 0x27},
+            {**_LCD_DISPLAY_DEFAULTS, "id": 1, "address": 0x3F},
+        ],
+        description="Per-LCD configuration: {id,address,enabled,adapter,brightness,contrast,auto_scroll,scroll_delay_ms,alert_sound,alert_sound_freq_hz,alert_sound_duration_ms,idle_dim_timeout_s,idle_dim_brightness,auto_cycle_enabled,auto_cycle_interval_s,default_page}",
+        value_type=list,
+        element_type=dict,
+    ),
 }
 
 

@@ -544,6 +544,69 @@ async def reconnect_driver(lcd_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ---- T2430-G: per-LCD config (Settings sub-view backing) ----
+
+
+class LCDDisplayConfig(BaseModel):
+    """Per-LCD configuration block (13 fields + id + address)."""
+    id: int
+    address: int = 0x27
+    enabled: bool = True
+    adapter: str = "native-i2c"
+    brightness: int = 200
+    contrast: int = 40
+    auto_scroll: bool = True
+    scroll_delay_ms: int = 300
+    alert_sound: bool = True
+    alert_sound_freq_hz: int = 1000
+    alert_sound_duration_ms: int = 100
+    idle_dim_timeout_s: int = 300
+    idle_dim_brightness: int = 50
+    auto_cycle_enabled: bool = False
+    auto_cycle_interval_s: int = 30
+    default_page: str = "status"
+
+
+class LCDDisplaysConfigRequest(BaseModel):
+    displays: List[LCDDisplayConfig]
+
+
+@router.get("/displays-config")
+async def get_displays_config():
+    """Return the current per-LCD config block from ConfigManager."""
+    from app.config import get_config
+    cfg = get_config()
+    displays = cfg.get("lcd.displays", [])
+    return {"displays": displays}
+
+
+@router.put("/displays-config")
+async def update_displays_config(request: LCDDisplaysConfigRequest):
+    """Write a full per-LCD config block. Applies brightness/contrast live
+    to the driver when the manager is running."""
+    from app.config import get_config
+    cfg = get_config()
+
+    displays_payload = [d.model_dump() for d in request.displays]
+    cfg.set("lcd.displays", displays_payload)
+
+    # Best-effort live application of hardware-calibration fields.
+    if _lcd_manager is not None:
+        drivers = getattr(_lcd_manager, "lcds", [])
+        for display in displays_payload:
+            idx = display["id"]
+            if 0 <= idx < len(drivers):
+                try:
+                    # set_backlight expects 0-100 but our stored brightness is 0-255.
+                    # Convert: 0-255 -> 0-100 percent.
+                    bl_percent = int(round((display["brightness"] / 255) * 100))
+                    await drivers[idx].set_backlight(bl_percent)
+                except Exception as e:
+                    logger.warning("LCD %d live brightness apply failed: %s", idx, e)
+
+    return {"success": True, "displays": displays_payload}
+
+
 @router.post("/native/write")
 async def native_raw_write(request: NativeWriteRequest):
     """Raw 4-line write to the primary native I²C LCD (T2430-F Q8b)."""
