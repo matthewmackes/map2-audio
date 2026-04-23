@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-23 07:13 EDT - T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-23 EDT - T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
 
 ---
 
@@ -121,9 +121,9 @@ Description:
   - Q10: `SystemConfig` retirement is a hard cut.
 - Subtasks:
   - ID: T2431-A
-    Status: [ ] Todo
+    Status: [✓] Done
     Title: Audit all configuration and state authority concepts
-    Description: Goal and acceptance criteria: create `docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md` inventorying every `/etc/map2`, `/var/lib/map2`, `~/.map2`, environment-variable, SQLite, etcd/Raft, PipeWire/JUCE observed-state, and `SystemConfig` concept with current stores, desired authority plane, projections, mutability, startup dependency, reconciliation path, installer artifacts, and drift risk. Why it matters: the hard-cut migration needs a complete map before deleting stores. Dependencies: None. Estimated effort: Medium. Required outputs/deliverables: audit doc, ranked risk list, and follow-up links to subtasks below. Last updated: 2026-04-23 07:13 - Codex.
+    Description: Goal and acceptance criteria: create `docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md` inventorying every `/etc/map2`, `/var/lib/map2`, `~/.map2`, environment-variable, SQLite, etcd/Raft, PipeWire/JUCE observed-state, and `SystemConfig` concept with current stores, desired authority plane, projections, mutability, startup dependency, reconciliation path, installer artifacts, and drift risk. Why it matters: the hard-cut migration needs a complete map before deleting stores. Dependencies: None. Estimated effort: Medium. Required outputs/deliverables: audit doc, ranked risk list, and follow-up links to subtasks below. Last updated: 2026-04-23 — Claude. Completion note: 2026-04-23 — Claude: Created `docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md` — 12-section audit covering all file-backed config (17 concepts), 50 MAP2_* env vars with plane classification, all 15 SQLAlchemy durable-state models, State Authority etcd keyspaces and routes, snapshot services, deployment mode multi-source problem, PipeWire/JUCE observed state, runtime in-memory state, 15 ranked drift risks (3 CRITICAL / 4 HIGH / 8 MEDIUM / 3 LOW), and 10 undeclared-plane concepts with subtask links T2431-B through T2431-J. Typecheck/build not applicable (docs-only). Dual-push after commit.
   - ID: T2431-B
     Status: [ ] Todo
     Title: Extend `ConfigOption` with authority metadata and enforcement
