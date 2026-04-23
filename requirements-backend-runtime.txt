@@ -47,6 +47,10 @@ hidapi>=0.14.0,<1.0.0
 # Serial-connected hardware workflows
 pyserial>=3.5,<4.0.0
 
+# Image processing — device hero-image uploads (T2426-C): PNG decode,
+# center-crop to 1:1, downscale to 1024x1024.
+Pillow>=11.0.0,<13.0.0
+
 # Content And Library Features
 # HTML parsing for library/discovery features
 beautifulsoup4>=4.14.3,<5.0.0

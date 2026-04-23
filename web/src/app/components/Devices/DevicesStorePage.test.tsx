@@ -12,6 +12,22 @@ jest.mock('../Toasts', () => ({
   useToasts: () => ({ pushToast: mockPushToast, dismissToast: mockDismissToast }),
 }))
 
+const mockHeroExists = jest.fn()
+const mockHeroUpload = jest.fn()
+const mockHeroRevert = jest.fn()
+
+jest.mock('../../../map2/clients/deviceHeroImages', () => ({
+  buildDeviceHeroImageUrl: (deviceId: string, version?: number | string) =>
+    version === undefined
+      ? `/api/devices/hero-images/${deviceId}`
+      : `/api/devices/hero-images/${deviceId}?v=${version}`,
+  deviceHeroImagesApi: {
+    exists: (...args: unknown[]) => mockHeroExists(...args),
+    upload: (...args: unknown[]) => mockHeroUpload(...args),
+    revert: (...args: unknown[]) => mockHeroRevert(...args),
+  },
+}))
+
 function renderWithRouter(initialEntry = '/devices') {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -59,6 +75,13 @@ describe('DevicesStorePage', () => {
     window.localStorage.clear()
     mockPushToast.mockReset()
     mockDismissToast.mockReset()
+    mockHeroExists.mockReset()
+    mockHeroUpload.mockReset()
+    mockHeroRevert.mockReset()
+    // Default: no overrides anywhere.
+    mockHeroExists.mockResolvedValue(false)
+    mockHeroUpload.mockResolvedValue({ status: 'ok', device_id: '', uploaded_at: 0, original_size_bytes: 0, original_mime: 'image/png' })
+    mockHeroRevert.mockResolvedValue({ status: 'ok', removed: true, device_id: '' })
   })
 
   it('renders every registry entry grouped under processor → console → control-surface → audio-interface', () => {
@@ -172,5 +195,78 @@ describe('DevicesStorePage', () => {
     // Carbon's OverflowMenu wires the trigger through a tooltip, so rather than
     // asserting a specific accessible name we verify the trigger is present.
     expect(card.querySelector('.cds--overflow-menu')).toBeInTheDocument()
+  })
+
+  it('uploading a PNG hero image calls the client, bumps the override version, and toasts success', async () => {
+    mockHeroUpload.mockResolvedValueOnce({
+      status: 'ok',
+      device_id: 'mpx1',
+      uploaded_at: 1,
+      original_size_bytes: 123,
+      original_mime: 'image/png',
+    })
+    renderWithRouter()
+    const card = getCard('mpx1')
+    const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement
+    expect(fileInput).toBeInTheDocument()
+
+    const pngFile = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'mpx1.png', { type: 'image/png' })
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [pngFile] } })
+    })
+
+    expect(mockHeroUpload).toHaveBeenCalledWith('mpx1', pngFile)
+    expect(mockPushToast).toHaveBeenCalledWith(
+      'Hero image updated for Lexicon MPX-1.',
+      'success',
+      expect.anything(),
+    )
+  })
+
+  it('rejects uploads that are not image/png before hitting the backend', async () => {
+    renderWithRouter()
+    const card = getCard('mpx1')
+    const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement
+    const jpegFile = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'mpx1.jpg', { type: 'image/jpeg' })
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [jpegFile] } })
+    })
+    expect(mockHeroUpload).not.toHaveBeenCalled()
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.stringContaining('PNG'),
+      'error',
+      expect.anything(),
+    )
+  })
+
+  it('rejects uploads larger than the 2 MB cap without hitting the backend', async () => {
+    renderWithRouter()
+    const card = getCard('mpx1')
+    const fileInput = card.querySelector('input[type="file"]') as HTMLInputElement
+    const hugeFile = new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'mpx1.png', { type: 'image/png' })
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [hugeFile] } })
+    })
+    expect(mockHeroUpload).not.toHaveBeenCalled()
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.stringContaining('2 MB'),
+      'error',
+      expect.anything(),
+    )
+  })
+
+  it('surfaces a backend upload failure as an error toast and does not bump the version', async () => {
+    mockHeroUpload.mockRejectedValueOnce(new Error('payload_too_large'))
+    renderWithRouter()
+    const fileInput = getCard('mpx1').querySelector('input[type="file"]') as HTMLInputElement
+    const pngFile = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'mpx1.png', { type: 'image/png' })
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [pngFile] } })
+    })
+    expect(mockPushToast).toHaveBeenCalledWith(
+      expect.stringMatching(/Couldn.t upload hero image for Lexicon MPX-1/),
+      'error',
+      expect.anything(),
+    )
   })
 })

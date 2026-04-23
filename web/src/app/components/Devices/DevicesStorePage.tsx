@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Button,
@@ -21,6 +21,10 @@ import {
   usePinnedDevices,
 } from '../../state/uiSettings'
 import { useToasts } from '../Toasts'
+import {
+  buildDeviceHeroImageUrl,
+  deviceHeroImagesApi,
+} from '../../../map2/clients/deviceHeroImages'
 
 import './DevicesStorePage.css'
 
@@ -44,18 +48,98 @@ interface PendingOpen {
   targetRoute: string
 }
 
+interface DeviceCardHeroProps {
+  entry: DeviceRegistryEntry
+  overrideVersion: number | null
+}
+
+function DeviceCardHero({ entry, overrideVersion }: DeviceCardHeroProps) {
+  const Icon = entry.icon
+  const packaged = getDeviceHeroImage(entry.id)
+  const hasOverride = overrideVersion !== null
+  // Three-step render chain: override → packaged → icon placeholder.
+  const [stage, setStage] = useState<'override' | 'packaged' | 'placeholder'>(
+    hasOverride ? 'override' : packaged ? 'packaged' : 'placeholder',
+  )
+
+  // When overrideVersion changes (upload/revert), restart the chain.
+  useEffect(() => {
+    if (hasOverride) {
+      setStage('override')
+    } else if (packaged) {
+      setStage('packaged')
+    } else {
+      setStage('placeholder')
+    }
+  }, [hasOverride, packaged])
+
+  if (stage === 'override') {
+    return (
+      <img
+        src={buildDeviceHeroImageUrl(entry.id, overrideVersion ?? undefined)}
+        alt={`${entry.label} custom hero`}
+        className="devices-store__card-hero-img"
+        loading="lazy"
+        onError={() => setStage(packaged ? 'packaged' : 'placeholder')}
+      />
+    )
+  }
+
+  if (stage === 'packaged' && packaged) {
+    return (
+      <img
+        src={packaged.imagePath}
+        alt={packaged.alt}
+        className="devices-store__card-hero-img"
+        loading="lazy"
+        onError={() => setStage('placeholder')}
+      />
+    )
+  }
+
+  return (
+    <div className="devices-store__card-hero-placeholder" aria-hidden>
+      <Icon size={64} />
+    </div>
+  )
+}
+
 interface DeviceCardProps {
   entry: DeviceRegistryEntry
   pinned: boolean
+  overrideVersion: number | null
   onOpen: (entry: DeviceRegistryEntry) => void
   onTogglePin: (entry: DeviceRegistryEntry) => void
-  onUploadHero: (entry: DeviceRegistryEntry) => void
+  onUploadHero: (entry: DeviceRegistryEntry, file: File) => void
   onRevertHero: (entry: DeviceRegistryEntry) => void
 }
 
-function DeviceCard({ entry, pinned, onOpen, onTogglePin, onUploadHero, onRevertHero }: DeviceCardProps) {
-  const hero = getDeviceHeroImage(entry.id)
-  const Icon = entry.icon
+function DeviceCard({
+  entry,
+  pinned,
+  overrideVersion,
+  onOpen,
+  onTogglePin,
+  onUploadHero,
+  onRevertHero,
+}: DeviceCardProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const triggerFilePicker = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        onUploadHero(entry, file)
+      }
+      // Reset so selecting the same file twice still triggers change.
+      if (event.target) event.target.value = ''
+    },
+    [entry, onUploadHero],
+  )
 
   return (
     <article
@@ -67,13 +151,15 @@ function DeviceCard({ entry, pinned, onOpen, onTogglePin, onUploadHero, onRevert
       aria-label={entry.label}
     >
       <div className="devices-store__card-hero">
-        {hero ? (
-          <img src={hero.imagePath} alt={hero.alt} className="devices-store__card-hero-img" loading="lazy" />
-        ) : (
-          <div className="devices-store__card-hero-placeholder" aria-hidden>
-            <Icon size={64} />
-          </div>
-        )}
+        <DeviceCardHero entry={entry} overrideVersion={overrideVersion} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png"
+          className="devices-store__card-file-input"
+          onChange={handleFileChange}
+          aria-label={`Upload hero image for ${entry.label}`}
+        />
         <div className="devices-store__card-kebab" onClick={(e) => e.stopPropagation()}>
           <OverflowMenu
             size="sm"
@@ -81,8 +167,8 @@ function DeviceCard({ entry, pinned, onOpen, onTogglePin, onUploadHero, onRevert
             aria-label={`More actions for ${entry.label}`}
           >
             <OverflowMenuItem
-              itemText="Upload hero image…"
-              onClick={() => onUploadHero(entry)}
+              itemText="Upload hero image… (PNG, max 2 MB, 1024×1024)"
+              onClick={triggerFilePicker}
             />
             <OverflowMenuItem
               itemText="Revert to default image"
@@ -148,6 +234,39 @@ export function DevicesStorePage() {
   const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds])
   const { pushToast } = useToasts()
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null)
+  // `overrideVersions` maps deviceId → non-negative integer used to cache-bust
+  // the override `<img>`. A value of `0` (and the absence of a key) both mean
+  // "no override known"; a probe on mount populates existing overrides so the
+  // correct image renders on first paint without a flash.
+  const [overrideVersions, setOverrideVersions] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    // Probe every registry entry once on mount to discover pre-existing overrides.
+    // The server responds with 404 when no override exists, so this is cheap.
+    Promise.all(
+      DEVICE_REGISTRY.map(async (entry) => {
+        try {
+          const exists = await deviceHeroImagesApi.exists(entry.id)
+          return exists ? entry.id : null
+        } catch {
+          return null
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return
+      const withOverrides = results.filter((id): id is string => id !== null)
+      if (withOverrides.length === 0) return
+      setOverrideVersions((prev) => {
+        const next = { ...prev }
+        for (const id of withOverrides) {
+          if (!next[id]) next[id] = Date.now()
+        }
+        return next
+      })
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const groupedEntries = useMemo(() => {
     return KIND_ORDER.map((kind) => ({
@@ -200,22 +319,46 @@ export function DevicesStorePage() {
     navigate(route)
   }, [pendingOpen, navigate])
 
-  // Hero-image upload/revert are stubbed until T2426-C lands the backend.
-  const handleUploadHero = useCallback((entry: DeviceRegistryEntry) => {
-    pushToast(
-      `Hero-image upload for ${entry.label} ships in the next slice (T2426-C).`,
-      'info',
-      { durationMs: 3500 },
-    )
-  }, [pushToast])
+  const handleUploadHero = useCallback(
+    async (entry: DeviceRegistryEntry, file: File) => {
+      if (file.type !== 'image/png') {
+        pushToast(`Hero image must be a PNG. Got ${file.type || 'unknown'}.`, 'error', { durationMs: 4500 })
+        return
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        pushToast(`Hero image exceeds the 2 MB cap (got ${Math.ceil(file.size / 1024)} KB).`, 'error', { durationMs: 4500 })
+        return
+      }
+      try {
+        await deviceHeroImagesApi.upload(entry.id, file)
+        setOverrideVersions((prev) => ({ ...prev, [entry.id]: Date.now() }))
+        pushToast(`Hero image updated for ${entry.label}.`, 'success', { durationMs: 3500 })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Upload failed'
+        pushToast(`Couldn't upload hero image for ${entry.label}: ${message}`, 'error', { durationMs: 5000 })
+      }
+    },
+    [pushToast],
+  )
 
-  const handleRevertHero = useCallback((entry: DeviceRegistryEntry) => {
-    pushToast(
-      `Hero-image revert for ${entry.label} ships in the next slice (T2426-C).`,
-      'info',
-      { durationMs: 3500 },
-    )
-  }, [pushToast])
+  const handleRevertHero = useCallback(
+    async (entry: DeviceRegistryEntry) => {
+      try {
+        await deviceHeroImagesApi.revert(entry.id)
+        setOverrideVersions((prev) => {
+          if (!(entry.id in prev)) return prev
+          const next = { ...prev }
+          delete next[entry.id]
+          return next
+        })
+        pushToast(`Reverted ${entry.label} to the packaged hero image.`, 'info', { durationMs: 3500 })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Revert failed'
+        pushToast(`Couldn't revert hero image for ${entry.label}: ${message}`, 'error', { durationMs: 5000 })
+      }
+    },
+    [pushToast],
+  )
 
   return (
     <div className="devices-store" data-testid="devices-store-page">
@@ -237,6 +380,7 @@ export function DevicesStorePage() {
                 <DeviceCard
                   entry={entry}
                   pinned={pinnedSet.has(entry.id)}
+                  overrideVersion={overrideVersions[entry.id] ?? null}
                   onOpen={handleOpen}
                   onTogglePin={handleTogglePin}
                   onUploadHero={handleUploadHero}
