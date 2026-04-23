@@ -38,6 +38,11 @@ export const DEVICE_HERO_IMAGES: Record<string, DeviceHeroImage> = {
     alt: 'HoTone JoGG USB interface hero artwork',
     attribution: 'MAP2 product hero artwork',
   },
+  'lcd': {
+    imagePath: '/assets/devices/lcd.svg',
+    alt: 'MAP2 dual 20×4 HD44780 LCD console hero artwork',
+    attribution: 'MAP2 product hero artwork',
+  },
   'maschine-mk1': {
     imagePath: '/assets/devices/maschine-mk1.svg',
     alt: 'Native Instruments Maschine MK1 hero artwork',
