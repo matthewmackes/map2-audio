@@ -505,7 +505,7 @@ Completion note: 2026-04-22 - Claude: Landed 7 services (SnapshotCrudService, Sn
 ---
 
 ID: T2425-P1a
-Status: [>] In Progress
+Status: [✓] Done
 Title: Phase 1a — Full JSON Schema v2026.04 covering every graph-doc section
 Description:
 - Goal / acceptance criteria: Expand `schemas/snapshot-graph-v1.schema.json` from the current 114-line stub to a monolithic JSON Schema covering every section from the plan: meta (with community), graph (nodes with URI pattern, edges with port-to-port model, groups with parallel/series, channels with A–F keys), routing (parallel_blend|series, active_channel_key, blend_positions, series_order), morph (mode off|quad|intra|cross, endpoints {A,B,C,D} = parameter maps, position.x + position.y, source_mode), effects_loops (send_device/send_channel/return_device/return_channel/insertions with mode/blend/gain/crossfade), controls (mappings with unified source schema MIDI-CC/Expression/Maschine/OSC/GPIO, target as OSC path, range, curve; footswitch_labels; controller_display), io (input_device, output_device, monitoring_output_index), tempo (bpm), output_safety (reference_dbfs, warning_threshold_db), deployment (primary_node_id, standby_node_ids, status, strategy, redundancy_enabled, history[]), templates (base, overlays[], linked). Exact `map2:(fx|io|sys|ctrl):[a-z0-9-]+` URI regex. Explicit ports on edges (`nodeId:port_name`). Asset hash pattern sha256. Schema must reject docs missing required top-level keys + known bad patterns. Schema must accept the canonical example from the plan verbatim.
@@ -519,6 +519,7 @@ Description:
   - Atomic commit on master + `git push origin master && git push gitlab master`
 Assigned to: Claude
 Last updated: 2026-04-22 - Claude (opened)
+Completion note: 2026-04-22 EDT - Claude: Audit (no code changes needed). The schema at `schemas/snapshot-graph-v1.schema.json` is already 407 lines and covers every required section — meta (with community envelope + identity/ordering), graph (nodes with map2:{type}:{name} URI pattern + third-party fallback; edges with port-to-port model + `audio|sidechain|control` port kinds; groups with parallel/series + branch arrays + blend on `[0,1]`; channels with A–F keys + uniqueness + dry/wet percentage), morph (mode `off|quad|intra|cross` with A/B/C/D endpoint parameter maps + scalar or `{x,y}` position), routing (modes `parallel|series|single`), effects_loops (id + insertion list), controls (mapping source covers MIDI-CC/Expression/Maschine/OSC/GPIO, target as OSC path, curve enum complete), io (input/output/monitoring), tempo (bounded to musical range), output_safety (non-negative reference_dbfs rejected), deployment (status lifecycle enum + history cap at 20), templates (base + overlays + linked), assets (sha256 hash pattern). Combined 63/63 pytest PASS: `tests/test_snapshot_graph_schema.py` (25/25) + `tests/test_state_authority_graph_full_schema.py` (38/38). The canonical plan example validates; every enumerated rejection case in the acceptance criteria has a corresponding test. Flipping to Done.
 
 ---
 
