@@ -1140,6 +1140,23 @@ async def delete_snapshot_lcd_hook(snapshot_id: str):
     return {"success": True, "cleared": True}
 
 
+# T2430-J: Morph evaluator status
+_morph_evaluator_ref: Any = None
+
+
+def set_morph_evaluator(evaluator):
+    global _morph_evaluator_ref
+    _morph_evaluator_ref = evaluator
+
+
+@router.get("/morph-stats")
+async def get_morph_stats():
+    """Return LCDMorphEvaluator runtime stats (evals / applies / suppressed)."""
+    if _morph_evaluator_ref is None:
+        return {"running": False, "stats": None}
+    return {"running": True, "stats": _morph_evaluator_ref.get_stats()}
+
+
 @router.get("/snapshot-hooks")
 async def list_snapshot_lcd_hooks():
     """List every snapshot that has an LCD hook configured."""
