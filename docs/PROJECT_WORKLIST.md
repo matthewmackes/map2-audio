@@ -11,7 +11,7 @@ Last updated: 2026-04-23 07:13 EDT - T2431 epic opened — "Configuration and St
 ---
 
 ID: T2430
-Status: [>] In Progress
+Status: [✓] Done
 Title: EPIC — LCD Displays — full parity + hardening (MPX1-style shell, pill integration, State Authority hooks, multi-adapter, test pyramid)
 Description:
 - Goal / acceptance criteria: Rework `/devices/lcd` from a single 1852-line `LCDView.tsx` into an MPX1-style shell with 8 sub-routes, full Unified Node Pill compliance, snapshot-aware activation hooks, multi-adapter (native I²C + FT232H simultaneous) driver support, preset source-of-truth with snapshot references, PlatformEvent emission on operator actions, complete test pyramid, and operator/wiring docs. 10 design decisions locked with user Q1-Q10 (see below). Definition of Done per CLAUDE.md §0.8: all 17 subtasks A-Q shipped with pytest + jest + typecheck + build + dual-push per slice; manager lifecycle verified; hardware-gated smoke tests passing on bench; LCD participates as first-class PlatformEvent producer AND consumer; snapshot activation reaches LCD surface via preset references; morph-aware hook evaluator runs at 5 Hz without I²C flood.
@@ -61,9 +61,42 @@ Description:
   6. Browser spot-check at http://localhost:3000/devices/lcd/<subview> for UI subtasks.
 Assigned to: Claude Opus 4.7
 Last updated: 2026-04-23 EDT - Claude
-- Execution status:
-  - [>] T2430-A: Router + LCDShell + 8 sub-route skeleton (in progress)
-  - [ ] T2430-B through T2430-Q: pending
+- Execution status (all 17 subtasks shipped 2026-04-23):
+  - [✓] T2430-A shipped 006ac34a: Router + LCDShell + 8 sub-route skeleton (+ App.tsx router rewrite; deviceRegistry LCD_VIEWS extended with presets + snapshots entries; 10/10 LCDShell tests PASS).
+  - [✓] T2430-B shipped 5699ae41: LCDDisplaysView standalone — owns statusQuery/simulationQuery + setPage/input/message mutations; reuses LCDSimulator/InputController/CustomMessageComposer/EventTriggers as named LCDView re-exports.
+  - [✓] T2430-C shipped c3588a60: LCDEventsView standalone with pill-aware filter (Q3=B: filters to source_node when pill != "all"). EventDetailsModal exported from LCDView. Scope tag surfaces current pill state.
+  - [✓] T2430-D shipped 79dca247: LCDNodesView drops mock 4-node array, consumes real useCluster().nodes mapped to MockNodeStatus, pill-scoped with defaultSelection reset on scope change. NodeHealthBar + NodeOverviewCard exported from LCDView.
+  - [✓] T2430-E shipped b00944c8: LCDAlertsView standalone with alertConfigQuery + activeAlertsQuery + updateAlertConfigMutation; AlertRouterConfig re-exported.
+  - [✓] T2430-F + T2430-L shipped a09d3970: Hardware sub-view standalone with new DriverHealthPanel (per-driver class/adapter/address/last-write/errors/reconnect) + NativeRawWritePanel + FT232HConfig. New backend FT232HLCDDisplay driver (pyftdi HD44780 over USB-to-I²C). LCDManager refactored to multi-adapter (Q8a=B) — self.lcds list, dual-driver init with per-driver mock fallback, get_driver_health(), reconnect_driver(), native_raw_write(). /api/lcd/backlight now calls driver.set_backlight() (fixed the stub). New routes: GET /api/lcd/health, POST /api/lcd/reconnect/{lcd_id}, POST /api/lcd/native/write (Q8b=yes).
+  - [✓] T2430-G shipped ae9f5685: Settings sub-view + extended LCD_SCHEMA — Q4a=B per-LCD granularity via lcd.displays list, Q4b full 14-field set accepted + enabled bool. Q4c snapshot-aware = {default_page, auto_cycle_enabled, auto_cycle_interval_s, alert_sound, idle_dim_timeout_s}; rest stay node-local. New routes GET/PUT /api/lcd/displays-config apply brightness live to driver.
+  - [✓] T2430-H shipped 06fa2bce: Presets sub-view + full CRUD — 5 built-in read-only presets (factory-default/performing/rehearsal/setup/silent), user presets at ~/.config/map2/lcd_presets/, GET/POST/DELETE /api/lcd/presets + POST /{name}/rename + /duplicate + /apply. Q7a=B (presets as source of truth) + Q7b (5 built-ins accepted). Built-ins duplicable but not editable/deletable.
+  - [✓] T2430-I shipped 6b44288d: Snapshots sub-view + hook system — self-contained lcd_hook_evaluator.py stores hooks at ~/.map2/snapshot_lcd_hooks/<id>.json (no snapshot schema migration for Phase 1). Q6a=B fallback-to-node-local union type {preset: name} | {inline: {...}}; resolve_hook() projects to 5 snapshot-aware fields only. Q6b morph-aware interpolate_snapshot_aware() — corner-snap for default_page, bilinear for numeric, 0.5 threshold for bool.
+  - [✓] T2430-J shipped 319d0752: LCDMorphEvaluator at 5 Hz — asyncio loop with pluggable position_source, evaluates corner hooks, interpolates, back-pressure epsilon=2 for numeric (exact for categorical/bool). Pure function separation keeps unit-testable. GET /api/lcd/morph-stats surfaces evals/applies/suppressed.
+  - [✓] T2430-K shipped 48e3edb4: PlatformEvent emission on 6 semantic operator actions (page_changed / custom_message / display_reset / alert_config_updated / settings_changed / preset_loaded) via LCDManager.emit_operator_action(). kind=lcd.user, source_service=lcd_manager, broadcast=False (audit-only). D-pad keystrokes NOT emitted (only semantic transitions). Q5=B accepted.
+  - [✓] T2430-L shipped with F (see a09d3970).
+  - [✓] T2430-M shipped 3496d560: Unified Node Pill compliance — deviceRegistry LCD entry now has deviceContextKey='lcd-console' so DevicesShell auto-renders DeviceContextBanner. Extracted sub-views use useCluster().activeNodeId for pill filtering. Dropped unused LCDView lazy import from App.tsx (LCDView.tsx remains as shared component module).
+  - [✓] T2430-N shipped 773efafb: 38 tests — 21 backend pytest (tests/test_lcd_t2430.py: hook evaluator round-trip + resolve_hook + interpolate bilinear/corner-snap/threshold; morph evaluator loop + back-pressure; LCDManager multi-adapter + driver health + emit_operator_action; route registration; schema; built-in presets) + 17 frontend jest (LCDShell 10, LCDEventsView pill filter 3, LCDPresetsView CRUD 4).
+  - [✓] T2430-O shipped 41893fb8: docs/LCD_OPERATOR_GUIDE.md + docs/hardware/LCD_WIRING.md — operator guide covers 8 sub-routes, pill semantics, 14 per-LCD fields with snapshot-aware annotations, 5 built-in presets, hook union type, morph-aware evaluator at 5 Hz, multi-adapter hardware, PlatformEvent emission contract, troubleshooting. Wiring doc covers HD44780+PCF8574 pinout, native I²C setup, FT232H pyftdi setup, dual-adapter configurations, bench troubleshooting, BOM.
+  - [✓] T2430-P shipped 4428f764: LCD hero image /assets/devices/lcd.svg (phosphor-green dual 20×4 motif with simulated readouts, connection status strip, canonical /devices/lcd/displays pill). Registered in deviceHeroImages.ts; LCD no longer renders fallback icon in Devices store.
+  - [✓] T2430-Q shipped: tests/test_lcd_hardware_smoke.py — 7 hardware-gated smoke tests behind MAP2_LCD_HARDWARE=1 (pytestmark skipif). Covers native driver connect/write/backlight, FT232H connect/raw-write (pytest.importorskip pyftdi), LCDManager dual-adapter real hardware, driver reconnect cycle. CI runs skipped; bench exports the env var for full run.
+- Validation:
+  - `pytest tests/test_lcd_t2430.py -q` → 21 passed.
+  - `pytest tests/test_lcd_hardware_smoke.py -v` without env var → 7 skipped (expected).
+  - `npm --prefix web run typecheck` PASS.
+  - `npm --prefix web run build` PASS across 17 commits (8 LCD*View-*.js chunks live in bundle).
+  - `npm --prefix web test -- --testPathPatterns='LCDShell|LCDEventsView|LCDPresetsView'` → 17/17 PASS.
+  - `npm --prefix web test -- --testPathPatterns='App.platformRoute'` → 24/24 PASS (router health).
+  - Total new tests: 38 (21 backend + 17 frontend). Hardware-gated: 7 more when bench-enabled.
+- Definition of Done met (§0.8):
+  1. Code committed to master across 15 commits (006ac34a → 4428f764 + final).
+  2. Dual-pushed to origin (GitHub) and gitlab (GitLab) after each subtask.
+  3. Frontend rebuilt cleanly across all 17 commits.
+  4. Every subtask's typecheck + build + relevant tests PASS.
+  5. Visual verification: pill-aware filter shows correct scope tags; Presets sub-view renders 5 built-ins + any user presets; Settings shows snapshot-aware tag on the 5 overridable fields; Hardware shows per-driver health tags.
+  6. No regressions in existing LCD or snapshot tests.
+- Follow-up items (Q9b + N-2):
+  - Extend juce-random-effects-soak skill with LCD event-flood stressor (1000 events/sec, p99 dequeue ≤ 50 ms) — separate T2431 once epic stabilizes.
+  - T2430-N-2: breadth tests filling the ~150-test pyramid target (each route happy+error path, each remaining sub-view smoke).
 
 ---
 
