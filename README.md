@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1259** Python | **1228** TypeScript | **136** C++/H | **145** Docs | **2709** total commits | **3** stars | **0** forks | **0** open issues
+**1259** Python | **1237** TypeScript | **136** C++/H | **145** Docs | **2712** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`47a788dc`](https://github.com/matthewmackes/map2-audio/commit/47a788dc1066bffdf148a3663434430baf833f26) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
+| [`a5cf3069`](https://github.com/matthewmackes/map2-audio/commit/a5cf30694656ac09e68a09839fd22a377f84c349) | feat(publish): "Going Live" performance shell for Publish... | Map2 Audio | 2026-04-23 |
+| [`72ed34bf`](https://github.com/matthewmackes/map2-audio/commit/72ed34bf54609a11f1fdea235ae86e18488fc54d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`369afc20`](https://github.com/matthewmackes/map2-audio/commit/369afc20c1465dc600b4b04dca58e6bfa876d895) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-23 |
 | [`87f42910`](https://github.com/matthewmackes/map2-audio/commit/87f42910641e57a96edc5546769cd34cc07b935e) | test(T2430-N-2): LCD breadth tests — 174 total, 150-test ... | Map2 Audio | 2026-04-23 |
 | [`1efb276a`](https://github.com/matthewmackes/map2-audio/commit/1efb276ac9594dc6c15e224209fb8f72f2d716ce) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`2dbcdffd`](https://github.com/matthewmackes/map2-audio/commit/2dbcdffdd68052e91a178a0ca43f948f000a35af) | docs(T2431-A): configuration and state authority audit | Map2 Audio | 2026-04-23 |
 | [`c36dc709`](https://github.com/matthewmackes/map2-audio/commit/c36dc70977a499474297e9a6459697b8c34ecf12) | feat(nav): add icons to Control Panel and MIDI Advanced s... | Map2 Audio | 2026-04-23 |
-| [`e0947456`](https://github.com/matthewmackes/map2-audio/commit/e0947456bb63ae0ee2ff721f87872ad6944098b5) | test(lcd): T2430-N-2 — 62 breadth tests (38 backend + 24 ... | Map2 Audio | 2026-04-23 |
-| [`5f2bdefe`](https://github.com/matthewmackes/map2-audio/commit/5f2bdefeb08bd7bda3b7b4ca5143e646bf5f9e25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
-| [`563173c7`](https://github.com/matthewmackes/map2-audio/commit/563173c71d511a7d978189825d82e38c196b6c3b) | test(lcd): T2430-Q — hardware-gated smoke tests + T2430 e... | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
