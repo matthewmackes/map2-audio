@@ -731,7 +731,7 @@ interface EventDetailsModalProps {
   isPinned: boolean
 }
 
-function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDetailsModalProps) {
+export function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDetailsModalProps) {
   return (
     <div className="event-modal-overlay" onClick={onClose}>
       <div className="event-modal" onClick={(e) => e.stopPropagation()}>
