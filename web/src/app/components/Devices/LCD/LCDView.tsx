@@ -791,7 +791,7 @@ export function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: 
 // Sub-components — Nodes Tab (from NodeLCDPage)
 // ════════════════════════════════════════════════════════════════════════════
 
-interface MockNodeStatus {
+export interface MockNodeStatus {
   nodeId: string
   status: 'online' | 'offline' | 'local'
   lastEvent?: string
@@ -800,7 +800,7 @@ interface MockNodeStatus {
   memory?: number
 }
 
-function NodeHealthBar({ label, value }: { label: string; value: number }) {
+export function NodeHealthBar({ label, value }: { label: string; value: number }) {
   const color = value > 80 ? '#ef4444' : value > 50 ? '#f59e0b' : '#22c55e'
   return (
     <div style={{ marginBottom: 12 }}>
@@ -815,7 +815,7 @@ function NodeHealthBar({ label, value }: { label: string; value: number }) {
   )
 }
 
-function NodeOverviewCard({ node }: { node: MockNodeStatus }) {
+export function NodeOverviewCard({ node }: { node: MockNodeStatus }) {
   const borderColor = node.status === 'online' ? '#22c55e' : node.status === 'local' ? '#3b82f6' : '#f59e0b'
   const statusLabel = node.status === 'online' ? '✓ Online' : node.status === 'offline' ? '⚠ Offline' : '◆ Local'
 
