@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1249** Python | **1207** TypeScript | **136** C++/H | **144** Docs | **2677** total commits | **3** stars | **0** forks | **0** open issues
+**1253** Python | **1209** TypeScript | **136** C++/H | **144** Docs | **2679** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a4f65202`](https://github.com/matthewmackes/map2-audio/commit/a4f6520289ade446b7fe6d9118ba1eb567c0c0d4) | feat(devices): T2426-C — hero-image upload/revert (backen... | Map2 Audio | 2026-04-22 |
+| [`9758c3c9`](https://github.com/matthewmackes/map2-audio/commit/9758c3c99054a5492ffceb513c3953d1e0217ad8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`fd5158ec`](https://github.com/matthewmackes/map2-audio/commit/fd5158ec4e012f3b4d6f691bfce17f015e5266e6) | feat(devices): T2426-B — store page + Pin-and-open dialog... | Map2 Audio | 2026-04-22 |
 | [`d900ab2a`](https://github.com/matthewmackes/map2-audio/commit/d900ab2ae4d1d68a7e1fc41a992c723d6666d1a9) | fix(devices): T2426-A — control-surface tiles open their ... | Map2 Audio | 2026-04-22 |
 | [`399afb09`](https://github.com/matthewmackes/map2-audio/commit/399afb09c2537463e9f3b3839db6424eee847b22) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`4d277f89`](https://github.com/matthewmackes/map2-audio/commit/4d277f8952da8cceff62016517e32c56ee5c891d) | feat(devices): T2426-A — pinned-only global nav + map2.ui... | Map2 Audio | 2026-04-22 |
 | [`f9abfe24`](https://github.com/matthewmackes/map2-audio/commit/f9abfe247ec80ef6d58bb3ce1e80d451d0a10393) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 | [`67c5663c`](https://github.com/matthewmackes/map2-audio/commit/67c5663c68a6b95de38f459b4ba9028c36f7dfe0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-22 |
-| [`c688954d`](https://github.com/matthewmackes/map2-audio/commit/c688954d66b4f1d463dfb40c5abcba8815041bd3) | docs(state-authority): T2425-POST — third closure addendu... | Map2 Audio | 2026-04-22 |
-| [`b18ebf73`](https://github.com/matthewmackes/map2-audio/commit/b18ebf731a50f983a9dc28b4c664e1b014f455da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -232,7 +232,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **36** more open-source packages from PyPI and npm.
+...and **37** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
