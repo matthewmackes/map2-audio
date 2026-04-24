@@ -20,9 +20,34 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Chain, ChainPlugin, EffectsLoopInsertion, Snapshot
+from app.services.audio.pipewire_quantum_enforcer import (
+    QuantumDriftError,
+    QuantumEnforcementResult,
+    QuantumPolicy,
+    enforce_expected_quantum,
+)
 from app.services.snapshot_system_blocks import extract_chain_system_blocks
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_quantum_policy(detail: Any) -> QuantumPolicy:
+    """Read ``document.meta.quantum_policy`` from the snapshot detail, default reforce."""
+    if not isinstance(detail, dict):
+        return "reforce"
+    document = detail.get("document") or {}
+    meta = document.get("meta") if isinstance(document, dict) else None
+    policy = (meta or {}).get("quantum_policy") if isinstance(meta, dict) else None
+    if policy in ("reforce", "fail"):
+        return policy
+    return "reforce"
+
+
+async def _enforce_quantum_for_activation(
+    *, policy: QuantumPolicy
+) -> QuantumEnforcementResult:
+    """Wrapper so call sites stay readable; re-raises QuantumDriftError unchanged."""
+    return await enforce_expected_quantum(policy=policy)
 
 
 class StateAuthorityActivationService:
@@ -803,6 +828,10 @@ class StateAuthorityActivationService:
             activation_topology_metrics["before"] = self._normalize_topology_mutation_stats(
                 await self.get_audio_engine().get_topology_mutation_stats()
             )
+            # T2448: observe live PipeWire settings; re-force or fail per
+            # snapshot policy. Default is "reforce" (silent correction).
+            quantum_policy = _extract_quantum_policy(detail)
+            quantum_result = await _enforce_quantum_for_activation(policy=quantum_policy)
             audio_device_binding_result = await self.owner._apply_snapshot_audio_device_bindings(detail)
             monitoring_output_result = await self.owner._apply_snapshot_monitoring_output_binding(detail)
             output_safety_result = await self.owner._apply_snapshot_output_safety_settings(detail)
@@ -851,6 +880,9 @@ class StateAuthorityActivationService:
                 extra={
                     "topology_reused": topology_reused,
                     "preload_hit": preload_hit,
+                    "quantum_action": quantum_result.action,
+                    "quantum_observed_rate": quantum_result.observed.rate,
+                    "quantum_observed_quantum": quantum_result.observed.quantum,
                 },
             )
 
@@ -1148,6 +1180,10 @@ class StateAuthorityActivationService:
             from app.services.websocket_manager import ws_manager
 
             timestamp = self._utcnow().isoformat()
+            # T2453: deep-copy to isolate this broadcast from subsequent
+            # mutations of refreshed_detail by a queued activation that
+            # acquires the per-node lock after ours releases.
+            broadcast_snapshot_data = copy.deepcopy(refreshed_detail)
             await ws_manager.broadcast_json(
                 {
                     "type": "snapshot_loaded",
@@ -1155,7 +1191,7 @@ class StateAuthorityActivationService:
                     "data": {
                         "snapshot_id": snapshot.id,
                         "snapshot_name": snapshot.name,
-                        "snapshot_data": refreshed_detail,
+                        "snapshot_data": broadcast_snapshot_data,
                         "triggered_by": triggered_by,
                         "program_number": snapshot.program_number,
                     },

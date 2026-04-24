@@ -319,8 +319,25 @@ def _translate_value_error(exc: ValueError) -> None:
 
 
 def _activation_error_detail(exc: ValueError) -> Any:
+    from app.services.audio.pipewire_quantum_enforcer import (
+        EXPECTED_QUANTUM,
+        EXPECTED_RATE_HZ,
+        QuantumDriftError,
+    )
+
     if isinstance(exc, SnapshotActivationPreflightError):
         return exc.detail_payload
+    # T2448: surface a structured envelope so the UI can render an
+    # actionable "Reset quantum" toast instead of a generic string.
+    if isinstance(exc, QuantumDriftError):
+        return {
+            "code": "audio_quantum_drift",
+            "message": str(exc),
+            "observed_rate": exc.observed_rate,
+            "observed_quantum": exc.observed_quantum,
+            "expected_rate": EXPECTED_RATE_HZ,
+            "expected_quantum": EXPECTED_QUANTUM,
+        }
     return str(exc)
 
 

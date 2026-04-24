@@ -4,6 +4,7 @@ import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
+import type { SnapshotLiveBadgeState } from '../../hooks/useSnapshotReconciliation'
 
 interface FlowSlotRef {
   id: string
@@ -27,6 +28,11 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   editorSnapshotDraft?: SnapshotDraftData | null
   runtimeLiveState?: SnapshotRuntimeLiveState | null
   authoritativeAudioState?: AuthoritativeAudioState | null
+  // T2450: engine-confirmed LIVE indicator derived from
+  // /api/runtime/reconciliation. When undefined, the panel falls back to
+  // the authority-only behaviour (backwards compatible).
+  liveBadgeState?: SnapshotLiveBadgeState
+  onRetryPublish?: () => void
   onRenameSnapshot?: () => void
   snapshotNameEditing?: boolean
   snapshotNameDraft?: string
@@ -103,8 +109,10 @@ interface SnapshotEditorSnapshotStatusPanelProps {
 }
 
 interface SnapshotLiveHeadline {
+  // T2450: tone widened to include 'publishing' and 'desync' so the panel
+  // reflects engine-confirmed state rather than backend-recorded only.
   text: string
-  tone: 'current' | 'other' | 'stopped'
+  tone: 'current' | 'other' | 'stopped' | 'publishing' | 'desync'
   blinking: boolean
 }
 
@@ -126,32 +134,49 @@ export type SnapshotEditorWorkspaceActionId =
 function resolveLiveHeadline(
   snapshot: SnapshotDetail | null,
   authoritativeAudioState?: AuthoritativeAudioState | null,
+  liveBadgeState?: SnapshotLiveBadgeState,
 ): SnapshotLiveHeadline {
-  if (authoritativeAudioState) {
-    const authorityIsLive = authoritativeAudioState.engine.display_state === 'live'
-      || authoritativeAudioState.engine.display_state === 'live_warning'
-    const authoritySnapshotId = authoritativeAudioState.source_snapshot?.snapshot_id ?? null
-    if (authorityIsLive && snapshot && authoritySnapshotId === snapshot.id) {
-      return {
-        text: 'LIVE',
-        tone: 'current',
-        blinking: true,
-      }
+  // T2450: when a reconciliation-derived badge state is provided, it gates
+  // the visible LIVE indicator. The authority check is still required to
+  // identify *which* snapshot is live.
+  const authorityIsLive = !!authoritativeAudioState && (
+    authoritativeAudioState.engine.display_state === 'live'
+    || authoritativeAudioState.engine.display_state === 'live_warning'
+  )
+  const authoritySnapshotId = authoritativeAudioState?.source_snapshot?.snapshot_id ?? null
+  const isCurrentSnapshot = !!snapshot && authoritySnapshotId === snapshot.id
+
+  if (liveBadgeState) {
+    if (liveBadgeState === 'publishing') {
+      return { text: 'Publishing…', tone: 'publishing', blinking: false }
     }
-    if (authorityIsLive && authoritativeAudioState.source_snapshot?.name) {
+    if (liveBadgeState === 'engine_desync') {
+      return { text: 'Engine desync', tone: 'desync', blinking: true }
+    }
+    if (liveBadgeState === 'live_confirmed' && authorityIsLive && isCurrentSnapshot) {
+      return { text: 'LIVE', tone: 'current', blinking: true }
+    }
+    if (liveBadgeState === 'live_confirmed' && authorityIsLive && authoritativeAudioState?.source_snapshot?.name) {
       return {
         text: `LIVE: ${authoritativeAudioState.source_snapshot.name}`,
         tone: 'other',
         blinking: true,
       }
     }
+    // live_confirmed but authority disagrees, or idle → fall through to stopped.
   }
 
-  return {
-    text: 'Stopped',
-    tone: 'stopped',
-    blinking: false,
+  if (authorityIsLive && isCurrentSnapshot) {
+    return { text: 'LIVE', tone: 'current', blinking: true }
   }
+  if (authorityIsLive && authoritativeAudioState?.source_snapshot?.name) {
+    return {
+      text: `LIVE: ${authoritativeAudioState.source_snapshot.name}`,
+      tone: 'other',
+      blinking: true,
+    }
+  }
+  return { text: 'Stopped', tone: 'stopped', blinking: false }
 }
 
 function formatAuthorityPathMessage(label: string, status: AuthoritativeAudioState['paths'][number]['status']): string {
@@ -235,10 +260,11 @@ export function SnapshotEditorSnapshotStatusPanel({
   snapshotProgramDisabled = false,
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
+  liveBadgeState,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
-    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
-    [authoritativeAudioState, liveSnapshot],
+    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
+    [authoritativeAudioState, liveSnapshot, liveBadgeState],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
   const snapshotProgramControlDisabled = snapshotProgramPending || snapshotProgramDisabled || !liveSnapshot
@@ -390,6 +416,7 @@ export function SnapshotEditorSnapshotInspectorControls({
   onOpenVersionHistory,
   versionHistoryDisabled = false,
   onOpenHelp,
+  liveBadgeState,
 }: Pick<
   SnapshotEditorSnapshotStatusPanelProps,
   | 'liveSnapshot'
@@ -411,10 +438,11 @@ export function SnapshotEditorSnapshotInspectorControls({
   | 'onOpenVersionHistory'
   | 'versionHistoryDisabled'
   | 'onOpenHelp'
+  | 'liveBadgeState'
 >) {
   const liveHeadline = useMemo(
-    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState),
-    [authoritativeAudioState, liveSnapshot],
+    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
+    [authoritativeAudioState, liveSnapshot, liveBadgeState],
   )
   const channelActivityBadge = useMemo(
     () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState),
@@ -471,7 +499,17 @@ export function SnapshotEditorSnapshotInspectorControls({
         <h3 className="juce-grid-page__selected-block-placeholder-heading">{snapshotTitle}</h3>
         <div className="juce-grid-page__snapshot-inspector-controls-tags">
           <Tag
-            type={liveHeadline.tone === 'current' ? 'green' : liveHeadline.tone === 'other' ? 'purple' : 'cool-gray'}
+            type={
+              liveHeadline.tone === 'current'
+                ? 'green'
+                : liveHeadline.tone === 'other'
+                  ? 'purple'
+                  : liveHeadline.tone === 'desync'
+                    ? 'red'
+                    : liveHeadline.tone === 'publishing'
+                      ? 'blue'
+                      : 'cool-gray'
+            }
             className={`juce-grid-page__snapshot-inspector-live-tag is-${liveHeadline.tone}`}
           >
             {liveHeadline.text}

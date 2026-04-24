@@ -121,6 +121,9 @@ import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
 import { useSnapshotActivationEvents, useSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
+import { computeLiveBadgeState, useSnapshotReconciliation } from '../hooks/useSnapshotReconciliation'
+import { useAudioDeviceHealth } from '../hooks/useAudioDeviceHealth'
+import { AudioDeviceDisconnectedBanner } from '../components/SnapshotEditor/AudioDeviceDisconnectedBanner'
 import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
@@ -1535,6 +1538,15 @@ export function SnapshotEditorPage() {
     limit: 20,
     refetchInterval: snapshotStandardCadence,
   })
+  // T2450: poll the reconciliation report so the LIVE badge reflects
+  // engine-observed agreement, not just backend-recorded state.
+  const reconciliationQuery = useSnapshotReconciliation({ refetchInterval: 1_000 })
+  // T2451: poll device health so the disconnected-interface banner can
+  // show up in < 1s and Go Live can be disabled when the device is gone.
+  const deviceHealthQuery = useAudioDeviceHealth({ refetchInterval: 1_000 })
+  const deviceDisconnected = deviceHealthQuery.data
+    ? deviceHealthQuery.data.device_connected === false
+    : false
   const snapshotsSummaryQuery = useQuery({
     queryKey: ['snapshots'],
     queryFn: () => snapshotsApi.list(),
@@ -1611,6 +1623,16 @@ export function SnapshotEditorPage() {
   const isAuthorityLiveSnapshot = useMemo(
     () => isSnapshotCurrentAuthorityLive(activeSnapshot, committedAudioState),
     [activeSnapshot, committedAudioState],
+  )
+  // T2450: compute the three-state LIVE badge from reconciliation + activation state.
+  const liveBadgeState = useMemo(
+    () => computeLiveBadgeState({
+      expectedSnapshotId: activeSnapshot?.id ?? null,
+      isActivating: pendingGoLiveSnapshotId != null,
+      activationFailed: failedGoLiveSnapshotId != null && activeSnapshot?.id === failedGoLiveSnapshotId,
+      report: reconciliationQuery.data ?? null,
+    }),
+    [activeSnapshot?.id, pendingGoLiveSnapshotId, failedGoLiveSnapshotId, reconciliationQuery.data],
   )
   const setControlPlaneSnapshotCaches = useCallback((snapshot: SnapshotDetail) => {
     setAuthorityAwareLiveSnapshot(queryClient, snapshot, authoritySnapshotId)
@@ -6472,6 +6494,12 @@ export function SnapshotEditorPage() {
     if (!activeSnapshot || snapshotGoLiveState.disabled || snapshotGoLiveState.phase === 'live') {
       return
     }
+    // T2451: refuse to publish while the audio interface is disconnected —
+    // otherwise the activation would succeed and the user would hear silence.
+    if (deviceDisconnected) {
+      pushToast('Audio interface disconnected — reconnect before going live.', 'error')
+      return
+    }
 
     try {
       let snapshotId = activeSnapshot.id
@@ -6487,6 +6515,7 @@ export function SnapshotEditorPage() {
   }, [
     activateCurrentSnapshotMutation,
     activeSnapshot,
+    deviceDisconnected,
     pushToast,
     snapshotGoLiveState.disabled,
     snapshotGoLiveState.phase,
@@ -8094,6 +8123,7 @@ export function SnapshotEditorPage() {
       onOpenVersionHistory={openVersionHistoryWorkspace}
       versionHistoryDisabled={!activeSnapshot}
       onOpenHelp={openKeyboardHelpWorkspace}
+      liveBadgeState={liveBadgeState}
     />
   )
   const pedalboardBuildWizard = (
@@ -8160,6 +8190,11 @@ export function SnapshotEditorPage() {
           </Button>
         </div>
       ) : null}
+      {/* T2451: first-class audio-disconnect banner for the snapshot editor. */}
+      <AudioDeviceDisconnectedBanner
+        health={deviceHealthQuery.data ?? null}
+        onRecovered={() => { void deviceHealthQuery.refetch() }}
+      />
       <section className="juce-grid-page__signal-flow-shell juce-grid-page__signal-flow-shell--hero" aria-label="Snapshot hero">
         <div className="juce-grid-page__unified-block">
           <SnapshotEditorSnapshotStatusPanel
@@ -8247,6 +8282,7 @@ export function SnapshotEditorPage() {
             monitoringStatusWarning={monitoringStatusWarning}
             outputLevelWarningMessage={outputLevelWarningMessage}
             onOpenProgressModal={openGuidedProgress}
+            liveBadgeState={liveBadgeState}
           />
         </div>
       </section>

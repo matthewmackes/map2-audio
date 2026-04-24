@@ -314,5 +314,118 @@ async def get_buffer_presets() -> Dict[str, Any]:
     }
 
 # =========================================================================
+# T2448: PipeWire quantum observation + reset
+# =========================================================================
+
+@router.get("/quantum")
+async def get_quantum_state():
+    """Return observed PipeWire rate/quantum vs expected Tier-A values."""
+    from app.services.audio.pipewire_quantum_enforcer import (
+        EXPECTED_QUANTUM,
+        EXPECTED_RATE_HZ,
+        PipeWireMetadataUnavailable,
+        observe_quantum,
+    )
+
+    try:
+        observed = await observe_quantum()
+    except PipeWireMetadataUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {
+        "observed_rate": observed.rate,
+        "observed_quantum": observed.quantum,
+        "expected_rate": EXPECTED_RATE_HZ,
+        "expected_quantum": EXPECTED_QUANTUM,
+        "matches_expected": observed.matches_expected,
+    }
+
+
+@router.post("/quantum/reset")
+async def reset_quantum():
+    """Force PipeWire rate+quantum back to the Tier-A locked values."""
+    from app.services.audio.pipewire_quantum_enforcer import (
+        EXPECTED_QUANTUM,
+        EXPECTED_RATE_HZ,
+        PipeWireMetadataUnavailable,
+        observe_quantum,
+        reforce_quantum,
+    )
+
+    try:
+        await reforce_quantum()
+        observed = await observe_quantum()
+    except PipeWireMetadataUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {
+        "observed_rate": observed.rate,
+        "observed_quantum": observed.quantum,
+        "expected_rate": EXPECTED_RATE_HZ,
+        "expected_quantum": EXPECTED_QUANTUM,
+        "matches_expected": observed.matches_expected,
+    }
+
+
+# =========================================================================
+# T2451: device health + recovery
+# =========================================================================
+
+def _device_health_payload() -> Dict[str, Any]:
+    """Compose a stable device-health envelope for the Snapshot Editor banner."""
+    service = get_engine_service()
+    if not service.is_available:
+        return {
+            "available": False,
+            "running": False,
+            "device_connected": False,
+            "device_name": None,
+            "sample_rate": None,
+            "buffer_size": None,
+            "last_error": "JUCE audio engine not available",
+            "recovery_attempts": 0,
+        }
+    info = service.get_system_info() or {}
+    running = bool(getattr(service, "is_audio_running", lambda: False)())
+    device_name = info.get("alsa_device") or info.get("device_name") or info.get("audio_device")
+    sample_rate = info.get("sample_rate")
+    buffer_size = info.get("buffer_size")
+    # ``get_system_info`` surfaces a device string iff JUCE has an open device.
+    device_connected = bool(device_name) and running
+    return {
+        "available": True,
+        "running": running,
+        "device_connected": device_connected,
+        "device_name": device_name,
+        "sample_rate": sample_rate,
+        "buffer_size": buffer_size,
+        "last_error": info.get("last_error"),
+        "recovery_attempts": int(info.get("recovery_attempts") or 0),
+    }
+
+
+@router.get("/device-health")
+async def get_device_health():
+    """Expose a compact device-connected/running envelope for UI banners."""
+    return _device_health_payload()
+
+
+@router.post("/device/recover")
+async def recover_audio_device():
+    """Force a JUCE engine reinit + audio start to reconnect the interface."""
+    service = get_engine_service()
+    if not service.is_available:
+        raise HTTPException(status_code=503, detail="JUCE audio engine not available")
+
+    init_success = await service.initialize()
+    if not init_success:
+        raise HTTPException(status_code=500, detail="Failed to initialize audio engine")
+
+    # start_audio is a no-op if already running.
+    start_success = await service.start_audio()
+    if not start_success:
+        raise HTTPException(status_code=500, detail="Failed to start audio after recovery")
+    return _device_health_payload()
+
+
+# =========================================================================
 # NEW: Plugin Health Endpoints
 # =========================================================================

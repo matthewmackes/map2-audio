@@ -2472,6 +2472,35 @@ export interface SnapshotRuntimeClusterLiveStateResponse {
   nodes: SnapshotRuntimeLiveState[];
 }
 
+// T2450: runtime reconciliation report — fed by
+// state_authority_reconciliation_service. Used to gate the UI LIVE badge
+// on engine-observed agreement with the backend-recorded snapshot.
+export interface SnapshotRuntimeReconciliationReport {
+  node_id?: string | null;
+  state?: string | null;
+  snapshot_id?: number | null;
+  snapshot_revision?: string | null;
+  snapshot_name?: string | null;
+  display_state?: SnapshotRuntimeDisplayState;
+  display_label?: string;
+  reconciliation: {
+    checked_at: string | null;
+    tolerance?: number;
+    status: string;
+    desired_plugin_count: number;
+    observed_plugin_count: number;
+    topology_drift: boolean;
+    parameter_drift_count: number;
+    bypass_drift_count: number;
+    missing_asset_count: number;
+    correction_count: number;
+    reactivation_required: boolean;
+    asset_redeploy_required: boolean;
+    applied_corrections: boolean;
+    drift_items: unknown[];
+  };
+}
+
 export type PublishBlockerCode =
   | 'unsaved_draft'
   | 'snapshot_invalid'

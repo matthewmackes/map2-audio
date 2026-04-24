@@ -19,6 +19,7 @@ import type {
   SnapshotPlugin,
   SnapshotRuntimeClusterLiveStateResponse,
   SnapshotRuntimeLiveState,
+  SnapshotRuntimeReconciliationReport,
   SnapshotRouting,
   SnapshotRevisionSummary,
   SnapshotSummary,
@@ -427,6 +428,16 @@ export const snapshotsApi = {
   getRuntimeLiveState: (nodeId?: string | null) => {
     const query = nodeId ? `?node_id=${encodeURIComponent(nodeId)}` : ''
     return fetchJson<SnapshotRuntimeLiveState>(`${API_BASE}/runtime/live-state${query}`, { cache: 'no-store' })
+  },
+
+  // T2450: runtime reconciliation report — used by the UI to gate the LIVE
+  // badge on engine-observed agreement with the backend-recorded snapshot.
+  getRuntimeReconciliation: (nodeId?: string | null) => {
+    const query = nodeId ? `?node_id=${encodeURIComponent(nodeId)}` : ''
+    return fetchJson<SnapshotRuntimeReconciliationReport>(
+      `${API_BASE}/runtime/reconciliation${query}`,
+      { cache: 'no-store' },
+    )
   },
 
   getClusterRuntimeLiveState: () =>
