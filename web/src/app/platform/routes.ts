@@ -11,6 +11,10 @@ const LEGACY_PLATFORM_LAYER_REDIRECTS: Record<string, PlatformLayerId> = {
   'api-observatory': 'network-discovery',
 }
 
+const LEGACY_PLATFORM_PANEL_REDIRECTS: Record<string, StandalonePanel> = {
+  'api-webhooks': 'midpoint',
+}
+
 export function isPlatformWorkspaceId(value: string | null | undefined): value is PlatformWorkspaceId {
   return isPlatformLayerId(value) || isStandalonePanel(value)
 }
@@ -65,7 +69,9 @@ export function resolvePlatformWorkspaceTarget(workspace: string | null | undefi
 } | null {
   const normalizedWorkspace = workspace && LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
     ? LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
-    : workspace
+    : workspace && LEGACY_PLATFORM_PANEL_REDIRECTS[workspace]
+      ? LEGACY_PLATFORM_PANEL_REDIRECTS[workspace]
+      : workspace
 
   if (isPlatformLayerId(normalizedWorkspace)) {
     return { layer: normalizedWorkspace }
@@ -94,6 +100,11 @@ export function buildLegacyPlatformWorkspaceRedirectPath(
     return buildHostMachinePath()
   }
 
+  const redirectedPanel = LEGACY_PLATFORM_PANEL_REDIRECTS[workspace]
+  if (redirectedPanel) {
+    return buildPath(redirectedPanel)
+  }
+
   const redirectedLayer = LEGACY_PLATFORM_LAYER_REDIRECTS[workspace]
   return redirectedLayer ? buildPath(redirectedLayer) : null
 }
@@ -105,8 +116,11 @@ export function buildLegacyPlatformRedirectPath(
   const layer = searchParams.get('layer')
   const panel = searchParams.get('panel')
   const redirectedLayer = layer ? LEGACY_PLATFORM_LAYER_REDIRECTS[layer] ?? layer : layer
+  const redirectedPanel = panel ? LEGACY_PLATFORM_PANEL_REDIRECTS[panel] ?? panel : panel
   const target = panel && isStandalonePanel(panel)
     ? buildPath(panel)
+    : redirectedPanel && isStandalonePanel(redirectedPanel)
+      ? buildPath(redirectedPanel)
     : redirectedLayer && isPlatformLayerId(redirectedLayer)
       ? buildPath(redirectedLayer)
       : null

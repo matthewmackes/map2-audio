@@ -114,7 +114,7 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'theme':         { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':         { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':      { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
-  'api-webhooks':  { label: 'API & Webhooks', eyebrow: 'Platform', icon: Flash },
+  'midpoint':      { label: 'Midpoint', eyebrow: 'Platform', icon: Flash },
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -461,7 +461,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
           {panel === 'theme'         && <ThemePage />}
           {panel === 'about'         && <AboutPage />}
           {panel === 'adoption'      && <PlatformAdoptionPage />}
-          {panel === 'api-webhooks'  && <ApiWebhooksPage />}
+          {panel === 'midpoint'      && <ApiWebhooksPage />}
         </Suspense>
       </div>
     </motion.section>

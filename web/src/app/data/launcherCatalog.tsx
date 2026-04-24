@@ -140,6 +140,7 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/workspace/platforms/avb-routing', label: 'AVB Routing' },
       { route: '/workspace/platforms/network-discovery', label: 'Network Discovery' },
       { route: '/workspace/platforms/cluster-dashboard', label: 'Cluster Dashboard' },
+      { route: '/workspace/platforms/midpoint', label: 'Midpoint' },
       { route: '/workspace/platforms/adoption', label: 'Adoption' },
       { route: '/workspace/platforms/theme', label: 'Theme' },
       { route: '/workspace/platforms/about', label: 'About' },

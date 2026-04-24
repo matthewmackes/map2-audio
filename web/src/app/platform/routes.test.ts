@@ -26,4 +26,10 @@ describe('platform routes', () => {
     const searchParams = new URLSearchParams('panel=host-machine')
     expect(buildLegacyPlatformRedirectPath(searchParams)).toBe(HOST_MACHINE_ROUTE)
   })
+
+  it('redirects the retired api-webhooks panel to the Midpoint workspace', () => {
+    expect(buildPlatformWorkspacePath('midpoint')).toBe('/platforms/midpoint')
+
+    expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=api-webhooks'))).toBe('/platforms/midpoint')
+  })
 })

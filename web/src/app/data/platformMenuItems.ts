@@ -22,7 +22,7 @@ export type StandalonePanel =
   | 'theme'
   | 'about'
   | 'adoption'
-  | 'api-webhooks'
+  | 'midpoint'
 export const PLATFORM_UTILITY_PANEL_IDS = ['theme', 'about'] as const
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
@@ -31,7 +31,7 @@ export function isStandalonePanel(value: string | null | undefined): value is St
     || value === 'theme'
     || value === 'about'
     || value === 'adoption'
-    || value === 'api-webhooks'
+    || value === 'midpoint'
 }
 
 export function isPlatformUtilityPanel(
@@ -80,10 +80,10 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
     icon: Terminal,
     pinnable: true,
   },
-  'api-webhooks': {
-    label: 'API & Webhooks',
-    shortLabel: 'Webhooks',
-    description: 'Open the platform event bus live feed, outbound webhook targets, and the web SSH console for discovered cluster nodes.',
+  'midpoint': {
+    label: 'Midpoint',
+    shortLabel: 'Midpoint',
+    description: 'Open the operator midpoint for the platform event bus live feed, outbound webhook targets, and the web SSH console for discovered cluster nodes.',
     color: 'var(--cds-link-primary)',
     icon: Flash,
     pinnable: true,
@@ -174,7 +174,7 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('avb-routing'),
   buildPlatformLayerNavItem('network-discovery'),
   buildPlatformLayerNavItem('cluster-dashboard'),
-  buildStandalonePanelNavItem('api-webhooks'),
+  buildStandalonePanelNavItem('midpoint'),
   buildStandalonePanelNavItem('adoption'),
   buildStandalonePanelNavItem('theme'),
   buildStandalonePanelNavItem('about'),

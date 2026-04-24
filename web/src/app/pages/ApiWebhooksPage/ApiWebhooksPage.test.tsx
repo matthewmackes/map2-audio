@@ -52,10 +52,20 @@ describe('ApiWebhooksPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: /web ssh/i }))
 
     expect(screen.getByRole('region', { name: /web ssh/i })).toBeInTheDocument()
-    expect(window.localStorage.getItem('map2_api_webhooks_active_tab')).toBe('web-ssh')
+    expect(window.localStorage.getItem('map2_midpoint_active_tab')).toBe('web-ssh')
 
     unmount()
     render(<ApiWebhooksPage />)
     expect(screen.getByRole('region', { name: /web ssh/i })).toBeInTheDocument()
+  })
+
+  it('reads the legacy storage key and migrates the selection to the midpoint key', () => {
+    window.localStorage.setItem('map2_api_webhooks_active_tab', 'web-ssh')
+
+    render(<ApiWebhooksPage />)
+
+    expect(screen.getByRole('region', { name: /web ssh/i })).toBeInTheDocument()
+    expect(window.localStorage.getItem('map2_midpoint_active_tab')).toBe('web-ssh')
+    expect(window.localStorage.getItem('map2_api_webhooks_active_tab')).toBeNull()
   })
 })

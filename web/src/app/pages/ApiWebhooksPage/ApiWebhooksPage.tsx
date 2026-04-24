@@ -5,7 +5,8 @@ import { EventFeedTab } from './EventFeedTab'
 import { WebSshTab } from './WebSshTab'
 import './ApiWebhooksPage.css'
 
-const STORAGE_KEY = 'map2_api_webhooks_active_tab'
+const STORAGE_KEY = 'map2_midpoint_active_tab'
+const LEGACY_STORAGE_KEY = 'map2_api_webhooks_active_tab'
 const TAB_IDS = ['event-feed', 'web-ssh'] as const
 type TabId = (typeof TAB_IDS)[number]
 
@@ -17,7 +18,7 @@ function readStoredTab(): TabId {
   if (typeof window === 'undefined') {
     return 'event-feed'
   }
-  const stored = window.localStorage.getItem(STORAGE_KEY)
+  const stored = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
   return isTabId(stored) ? stored : 'event-feed'
 }
 
@@ -27,6 +28,7 @@ export function ApiWebhooksPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.localStorage.setItem(STORAGE_KEY, activeTab)
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
   }, [activeTab])
 
   const handleChange = useCallback(({ selectedIndex }: { selectedIndex: number }) => {
@@ -38,7 +40,7 @@ export function ApiWebhooksPage() {
   return (
     <section className="api-webhooks-page" id="api-webhooks-page">
       <Tabs selectedIndex={selectedIndex >= 0 ? selectedIndex : 0} onChange={handleChange}>
-        <TabList aria-label="API and webhooks tabs" contained>
+        <TabList aria-label="Midpoint tabs" contained>
           <Tab>Event Feed</Tab>
           <Tab>Web SSH</Tab>
         </TabList>

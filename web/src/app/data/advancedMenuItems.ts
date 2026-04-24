@@ -552,9 +552,11 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/platforms/overview': '/workspace',
   '/about': '/platforms/about',
   '/theme': '/platforms/theme',
+  '/midpoint': '/platforms/midpoint',
   '/host-machine': HOST_MACHINE_ROUTE,
   '/platforms/host-machine': HOST_MACHINE_ROUTE,
   '/workspace/platforms/host-machine': HOST_MACHINE_ROUTE,
+  '/workspace/platforms/midpoint': '/platforms/midpoint',
   '/engine': '/platforms/audio-engine',
   '/avb-routing': '/platforms/avb-routing',
   '/midi-cluster': '/midi-hub/connections',
@@ -579,8 +581,12 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   'platform:layer:cluster-dashboard': '/platforms/cluster-dashboard',
   'platform:panel:host-machine': HOST_MACHINE_ROUTE,
   'platform:panel:audio-engine': '/platforms/audio-engine',
+  'platform:panel:api-webhooks': '/platforms/midpoint',
+  'platform:panel:midpoint': '/platforms/midpoint',
   'platform:panel:theme': '/platforms/theme',
   'platform:panel:about': '/platforms/about',
+  '/platforms/api-webhooks': '/platforms/midpoint',
+  '/workspace/platforms/api-webhooks': '/workspace/platforms/midpoint',
 }
 
 export const pinnableNavigationItemsByRoute = new Map(

@@ -218,6 +218,7 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getByText('Connections')).toBeInTheDocument()
     expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Overview').length).toBeGreaterThan(1)
+    expect(within(navTree).getByText('Midpoint')).toBeInTheDocument()
     expect(within(navTree).getByText('LV2 Plugins')).toBeInTheDocument()
     expect(within(navTree).getByText('NAM Models')).toBeInTheDocument()
     expect(within(navTree).getAllByText('Discover').length).toBeGreaterThan(0)
@@ -297,6 +298,21 @@ describe('AppShell global tree navigation', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent(HOST_MACHINE_ROUTE)
+    })
+  })
+
+  it('routes the Midpoint entry from Node Ops to the canonical platform workspace path', async () => {
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+      ['/'],
+    )
+
+    fireEvent.click(screen.getByText('Midpoint'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/midpoint')
     })
   })
 
