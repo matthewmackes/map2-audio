@@ -2373,19 +2373,19 @@ class ChainService:
         try:
             if not self.session:
                 return None
-            
-            from app.database import Chain, ChainPlugin, SystemConfig
+
+            from app.database import Chain, ChainPlugin, ChainPreset
 
             # Get chain
             result = await self.session.execute(
                 select(Chain).filter(Chain.id == chain_id)
             )
             chain = result.scalar_one_or_none()
-            
+
             if not chain:
                 return None
             chain_config = self._parse_chain_config(chain.config)
-            
+
             # Get plugins
             result = await self.session.execute(
                 select(ChainPlugin)
@@ -2393,7 +2393,7 @@ class ChainService:
                 .order_by(ChainPlugin.position)
             )
             chain_plugins = result.scalars().all()
-            
+
             # Serialize preset
             preset_data = {
                 "name": chain.name,
@@ -2413,23 +2413,19 @@ class ChainService:
                 ]
             }
 
-            preset_key = f"chain_preset_{preset_name}"
             preset_result = await self.session.execute(
-                select(SystemConfig).filter(SystemConfig.key == preset_key)
+                select(ChainPreset).filter(ChainPreset.name == preset_name)
             )
             preset = preset_result.scalar_one_or_none()
             if preset is None:
-                preset = SystemConfig(
-                    key=preset_key,
-                    value=json.dumps(preset_data)
-                )
+                preset = ChainPreset(name=preset_name, payload=preset_data)
                 self.session.add(preset)
             else:
-                preset.value = json.dumps(preset_data)
+                preset.payload = preset_data
 
             await self.session.flush()
             await self.session.refresh(preset)
-            
+
             logger.info(f"Saved preset '{preset_name}' from chain {chain_id}")
             return preset.id
         except Exception as e:
@@ -2448,25 +2444,26 @@ class ChainService:
         try:
             if not self.session:
                 return None
-            
-            from app.database import Chain, ChainPlugin, SystemConfig
+
+            from app.database import Chain, ChainPlugin, ChainPreset
             import json
-            
+
             # Get preset
             result = await self.session.execute(
-                select(SystemConfig).filter(SystemConfig.id == preset_id)
+                select(ChainPreset).filter(ChainPreset.id == preset_id)
             )
             preset = result.scalar_one_or_none()
-            
-            if not preset or not preset.key.startswith("chain_preset_"):
+
+            if not preset:
                 return None
-            
-            # Parse preset data
-            preset_data = json.loads(preset.value)
-            
+
+            preset_data = preset.payload or {}
+            if not isinstance(preset_data, dict):
+                return None
+
             # Create new chain
             chain = Chain(
-                name=preset_data["name"],
+                name=preset_data.get("name", "Untitled"),
                 is_active=False,
                 config=json.dumps({
                     "system_blocks": (
@@ -2479,9 +2476,9 @@ class ChainService:
             self.session.add(chain)
             await self.session.flush()
             await self.session.refresh(chain)
-            
+
             # Add plugins
-            for plugin_data in preset_data["plugins"]:
+            for plugin_data in preset_data.get("plugins", []):
                 loader_state = plugin_data.get("loader_state") if isinstance(plugin_data, dict) else None
                 cp = ChainPlugin(
                     chain_id=chain.id,
@@ -2491,9 +2488,9 @@ class ChainService:
                     **self._chain_plugin_loader_columns(plugin_data["uri"], loader_state),
                 )
                 self.session.add(cp)
-            
+
             await self.session.flush()
-            
+
             logger.info(f"Loaded preset {preset_id} as chain {chain.id}")
             return chain.id
         except Exception as e:
@@ -2509,29 +2506,28 @@ class ChainService:
         try:
             if not self.session:
                 return []
-            
-            from app.database import SystemConfig
-            import json
-            
-            result = await self.session.execute(
-                select(SystemConfig).filter(SystemConfig.key.like("chain_preset_%"))
-            )
+
+            from app.database import ChainPreset
+
+            result = await self.session.execute(select(ChainPreset))
             presets = result.scalars().all()
-            
+
             preset_list = []
             for preset in presets:
                 try:
-                    preset_data = json.loads(preset.value)
+                    preset_data = preset.payload or {}
+                    if not isinstance(preset_data, dict):
+                        preset_data = {}
                     preset_list.append({
                         "id": preset.id,
-                        "name": preset.key.replace("chain_preset_", ""),
+                        "name": preset.name,
                         "chain_name": preset_data.get("name", "Unknown"),
                         "plugin_count": len(preset_data.get("plugins", [])),
                         "created_at": preset.created_at.isoformat() if preset.created_at else None
                     })
                 except Exception as e:
                     logger.error(f"Error parsing preset {preset.id}: {e}")
-            
+
             return preset_list
         except Exception as e:
             logger.error(f"Error listing presets: {e}")
@@ -2550,17 +2546,17 @@ class ChainService:
             if not self.session:
                 return False
 
-            from app.database import SystemConfig
+            from app.database import ChainPreset
 
             result = await self.session.execute(
-                select(SystemConfig).filter(SystemConfig.id == preset_id)
+                select(ChainPreset).filter(ChainPreset.id == preset_id)
             )
             preset = result.scalar_one_or_none()
 
-            if not preset or not preset.key.startswith("chain_preset_"):
+            if not preset:
                 return False
 
-            self.session.delete(preset)
+            await self.session.delete(preset)
             await self.session.flush()
 
             logger.info(f"Deleted preset {preset_id}")

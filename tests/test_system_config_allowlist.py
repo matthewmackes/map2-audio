@@ -16,8 +16,8 @@ from app.database import (
 )
 
 
-ALLOWED_EXACT: set[str] = set()  # T2436-A emptied the exact allowlist.
-ALLOWED_PREFIXES = ("chain_preset_",)  # T2436-B removed touchscreen_.
+ALLOWED_EXACT: set[str] = set()  # Empty after T2436-A.
+ALLOWED_PREFIXES: tuple[str, ...] = ()  # Empty after T2436-C.
 
 
 def test_allowlist_constants_match_expected_domains() -> None:
@@ -26,24 +26,11 @@ def test_allowlist_constants_match_expected_domains() -> None:
     assert _SYSTEM_CONFIG_ALLOWLIST_PREFIXES == ALLOWED_PREFIXES
 
 
-def test_exact_allowlist_is_empty_after_T2436_A() -> None:
-    """The exact-match allowlist must shrink toward zero; T2436-A removed
-    `state_authority.activation_hooks`, the last exact entry."""
+def test_both_allowlists_empty_after_T2436_C() -> None:
+    """Every domain migrated out — `system_config` cannot accept writes
+    for any key. The ORM table retirement is T2436-D."""
     assert _SYSTEM_CONFIG_ALLOWLIST_EXACT == frozenset()
-
-
-def test_prefix_allowlist_shrunk_after_T2436_B() -> None:
-    """T2436-B removed `touchscreen_`; only `chain_preset_` remains pending T2436-C."""
-    assert "touchscreen_" not in _SYSTEM_CONFIG_ALLOWLIST_PREFIXES
-    assert "chain_preset_" in _SYSTEM_CONFIG_ALLOWLIST_PREFIXES
-
-
-@pytest.mark.parametrize("key", [
-    "chain_preset_Lead_Drive",
-    "chain_preset_bright-solo",
-])
-def test_allowed_prefix_keys_pass(key: str) -> None:
-    _assert_system_config_key_allowed(key)
+    assert _SYSTEM_CONFIG_ALLOWLIST_PREFIXES == ()
 
 
 @pytest.mark.parametrize("key", [
@@ -57,6 +44,9 @@ def test_allowed_prefix_keys_pass(key: str) -> None:
     # T2436-B: moved to typed table `chain_touchscreen_assignments`.
     "touchscreen_1",
     "chain_touchscreen_42",
+    # T2436-C: moved to typed table `chain_presets`.
+    "chain_preset_Lead_Drive",
+    "chain_preset_bright-solo",
 ])
 def test_disallowed_keys_raise_frozen_error(key: str) -> None:
     with pytest.raises(SystemConfigFrozenError) as excinfo:
@@ -81,3 +71,17 @@ def test_command_queue_update_config_handler_was_removed() -> None:
     from app.services.command_queue import CommandType
 
     assert not hasattr(CommandType, "UPDATE_CONFIG")
+
+
+def test_system_config_orm_class_was_removed() -> None:
+    """T2436-D deleted the SystemConfig ORM class and helper functions.
+
+    The `SystemConfigFrozenError` + `_assert_system_config_key_allowed`
+    guard stays as a permanent ratchet, but the generic key/value
+    ORM surface is permanently gone.
+    """
+    import app.database as db
+
+    assert not hasattr(db, "SystemConfig")
+    assert not hasattr(db, "get_or_create_system_config")
+    assert not hasattr(db, "set_system_config")

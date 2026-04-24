@@ -2176,15 +2176,42 @@ class ChainTouchscreenAssignment(Base):
     )
 
 
-class SystemConfig(Base):
-    """Key-value system configuration store."""
-    __tablename__ = "system_config"
+class ChainPreset(Base):
+    """Named chain preset snapshot (T2436-C).
+
+    Replaces the former ``system_config[key='chain_preset_{name}']`` JSON
+    blob with a typed table. Each row is one named preset carrying the
+    serialized chain configuration (name, optional system_blocks, ordered
+    plugin list with positions and loader state) as a JSON column.
+    """
+    __tablename__ = "chain_presets"
 
     id = Column(Integer, primary_key=True)
-    key = Column(String(255), unique=True, nullable=False)
-    value = Column(Text, nullable=False)
+    name = Column(String(255), unique=True, nullable=False)
+    payload = Column(JSON, nullable=False)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        Index("idx_chain_presets_name", "name"),
+    )
+
+
+# T2436-D: `SystemConfig` ORM class removed.
+#
+# The generic key/value `system_config` table had three domains on it.
+# All three are now typed:
+#   state_authority.activation_hooks → ConfigOption (plane=USER)
+#   touchscreen_* assignments        → ChainTouchscreenAssignment
+#   chain_preset_*                   → ChainPreset
+#
+# Any residual `system_config` SQLite table on a legacy install is an
+# orphan — no runtime code reads it. T2431 Q10 (hard-cut) locked this
+# removal path; T2431-G + T2436-A/B/C/D executed it.
+#
+# The `SystemConfigFrozenError` + `_assert_system_config_key_allowed`
+# guard above is retained permanently as a ratchet so future callers
+# that try to re-introduce the pattern fail at call time.
 
 
 class PluginPerformanceLog(Base):
@@ -2818,12 +2845,10 @@ class SrpAdmissionLog(Base):
 # prefix allowlist remains active until T2436-B/C finish migrating the
 # touchscreen / chain-preset domains.
 _SYSTEM_CONFIG_ALLOWLIST_EXACT: frozenset[str] = frozenset()
-_SYSTEM_CONFIG_ALLOWLIST_PREFIXES: tuple[str, ...] = (
-    # T2436-B removed the touchscreen_ entry — assignments now live in
-    # the typed `chain_touchscreen_assignments` table.
-    # chain_service.py — named chain presets (pending T2436-C).
-    "chain_preset_",
-)
+_SYSTEM_CONFIG_ALLOWLIST_PREFIXES: tuple[str, ...] = ()
+# Empty after T2436-C: touchscreen assignments → `chain_touchscreen_assignments`,
+# chain presets → `chain_presets`. With both allowlists at zero, T2436-D can
+# safely retire the ORM class, helper functions, and frozen-error guard.
 
 
 class SystemConfigFrozenError(RuntimeError):
@@ -2849,44 +2874,11 @@ def _assert_system_config_key_allowed(key: str) -> None:
     )
 
 
-async def get_or_create_system_config(session: AsyncSession, key: str, default_value: str = "") -> str:
-    """Get a system config value, creating it with default if not exists.
-
-    T2431-G: writes/creates are restricted to the allowlist; unknown keys
-    raise ``SystemConfigFrozenError`` so new generic-bucket usage is caught
-    at call time.
-    """
-    from sqlalchemy import select
-    _assert_system_config_key_allowed(key)
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == key)
-    )
-    config = result.scalar_one_or_none()
-    if config:
-        return config.value
-
-    # Create with default
-    new_config = SystemConfig(key=key, value=default_value)
-    session.add(new_config)
-    await session.flush()
-    return default_value
-
-
-async def set_system_config(session: AsyncSession, key: str, value: str) -> None:
-    """Set a system config value, creating or updating as needed.
-
-    T2431-G: restricted to allowlisted keys; unknown keys raise
-    ``SystemConfigFrozenError``.
-    """
-    from sqlalchemy import select
-    _assert_system_config_key_allowed(key)
-    result = await session.execute(
-        select(SystemConfig).where(SystemConfig.key == key)
-    )
-    config = result.scalar_one_or_none()
-    if config:
-        config.value = value
-        config.updated_at = _utcnow()
-    else:
-        session.add(SystemConfig(key=key, value=value))
-    await session.flush()
+# T2436-D: `get_or_create_system_config` / `set_system_config` helpers
+# removed. All three domains that used to route through them migrated to
+# typed stores (activation_hooks → ConfigOption; touchscreen assignments
+# → ChainTouchscreenAssignment; chain presets → ChainPreset). The
+# `_assert_system_config_key_allowed` guard stays above as a permanent
+# ratchet: any future caller that tries to re-introduce the generic
+# key/value escape hatch will hit the frozen-allowlist rejection at
+# call time. The `system_config` ORM class is also gone (see below).
