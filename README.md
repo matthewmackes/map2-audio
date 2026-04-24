@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1271** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2750** total commits | **3** stars | **0** forks | **0** open issues
+**1271** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2753** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e906e31e`](https://github.com/matthewmackes/map2-audio/commit/e906e31e0c90a5f54e44b926271619b72581e242) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
+| [`cdaeb445`](https://github.com/matthewmackes/map2-audio/commit/cdaeb445ca6496d2f2fff14c96a413432d26819b) | feat(T2437-A): resolve_deployment_mode resolver + migrate... | Map2 Audio | 2026-04-24 |
+| [`f8691080`](https://github.com/matthewmackes/map2-audio/commit/f869108002231d60a0b5f11dbbd35f8c12ff69e4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`cae3e3d4`](https://github.com/matthewmackes/map2-audio/commit/cae3e3d43f7b9e70de9b82279cf7a98c70732afb) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
 | [`a7e75172`](https://github.com/matthewmackes/map2-audio/commit/a7e75172f13a1b63398893c0ba71dda1baf57925) | feat(T2436-CD): typed chain_presets + retire SystemConfig... | Map2 Audio | 2026-04-24 |
 | [`c0303480`](https://github.com/matthewmackes/map2-audio/commit/c030348040560e7e4408295dfafd1728ffa5f2f6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`c50165fb`](https://github.com/matthewmackes/map2-audio/commit/c50165fb51414119e8da633bc9753573cc5a7d04) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
 | [`3d68b211`](https://github.com/matthewmackes/map2-audio/commit/3d68b211ee1c2e9e43d9d88641576843103013e9) | feat(T2436-B): typed chain_touchscreen_assignments table | Map2 Audio | 2026-04-24 |
-| [`4b5d70c3`](https://github.com/matthewmackes/map2-audio/commit/4b5d70c3547702c4c35e31c5511d47cb3533146b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`f608b093`](https://github.com/matthewmackes/map2-audio/commit/f608b09352fb82c6ce6148cf751061ec51abb43e) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
-| [`019fb364`](https://github.com/matthewmackes/map2-audio/commit/019fb364d1f1b41f0233acf07d2f7f63ef1e5de7) | feat(T2436-A): migrate activation_hooks off SystemConfig ... | Map2 Audio | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
