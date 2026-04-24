@@ -382,6 +382,16 @@ export function PerformanceBrainPage() {
     }
   }, [activeSection, handleSectionChange])
 
+  useSetShellWindow({
+    title: 'Performance Brain',
+    subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
+    kicker: 'Platform / Performance Brain',
+    actions: [
+      { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('overview'), active: activeSection === 'overview' },
+      { id: 'back-audio-grid', label: 'Back to Audio Grid', icon: ArrowLeft, onClick: () => navigate('/juce-grid') },
+    ],
+  }, [activeSection, handleSectionChange, navigate])
+
   if (
     stateQuery.isLoading
     || transportQuery.isLoading
@@ -446,16 +456,6 @@ export function PerformanceBrainPage() {
   const handleSlotSelect = (slotId: number) => {
     stateMutation.mutate({ active_slot: slotId })
   }
-
-  useSetShellWindow({
-    title: 'Performance Brain',
-    subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
-    kicker: 'Platform / Performance Brain',
-    actions: [
-      { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('overview'), active: activeSection === 'overview' },
-      { id: 'back-audio-grid', label: 'Back to Audio Grid', icon: ArrowLeft, onClick: () => navigate('/juce-grid') },
-    ],
-  }, [activeSection, handleSectionChange, navigate])
 
   return (
     <section className="brain-page">
