@@ -19,7 +19,6 @@ import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
 import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDesktopSession'
 import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
 import { GlobalTreeNav } from './GlobalTreeNav/GlobalTreeNav'
-import { ContextBar } from './chrome/ContextBar'
 import { WorkspaceBar } from './chrome/WorkspaceBar'
 import { ContentKicker } from './chrome/ContentKicker'
 import './chrome/chrome-tokens.css'
@@ -46,7 +45,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { status: websocketStatus } = useWebSocketConnection()
   const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readGlobalNavPinned())
-  const [contextBarHidden, setContextBarHidden] = useState<boolean>(false)
   const [shellPatch, setShellPatch] = useState<ShellWindowPatch>({})
   const closeShellMenus = useCallback(() => {}, [])
   const {
@@ -98,12 +96,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     closeShellMenus,
     websocketStatus,
   })
-
-  // Reset the context-bar dismiss state on route change (session-only dismiss,
-  // but per-route at least so users can dismiss once and move on).
-  useEffect(() => {
-    setContextBarHidden(false)
-  }, [location.pathname])
 
   // Reset page patch whenever route changes so stale per-page metadata
   // doesn't leak across navigations.
@@ -188,28 +180,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         '--window-shell-accent': shellAccentColor,
         '--global-tree-width': globalNavPinned ? '16rem' : '3.5rem',
         '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '3.5rem',
-        '--ctx-h': contextBarHidden || !showTopChrome ? '0px' : '32px',
+        '--ctx-h': '0px',
         '--ws-h': showTopChrome ? '40px' : '0px',
       } as CSSProperties}
     >
       {showTopChrome ? (
-        <>
-          <ContextBar
-            crumbs={mergedCrumbs}
-            routeHint={shellRouteHint}
-            hidden={contextBarHidden}
-            onDismiss={() => setContextBarHidden(true)}
-          />
-          <WorkspaceBar
-            workspaceLabel={mergedTitle || shellWorkspaceLabel}
-            actions={mergedActions}
-            navPinned={globalNavPinned}
-            onToggleNavPin={() => setGlobalNavPinned((prev) => !prev)}
-            contextBarHidden={contextBarHidden}
-            onClose={handleCloseCurrentApp}
-            closeLabel={`Close ${mergedTitle || shellWorkspaceLabel}`}
-          />
-        </>
+        <WorkspaceBar
+          workspaceLabel={mergedTitle || shellWorkspaceLabel}
+          actions={mergedActions}
+          navPinned={globalNavPinned}
+          onToggleNavPin={() => setGlobalNavPinned((prev) => !prev)}
+          onClose={handleCloseCurrentApp}
+          closeLabel={`Close ${mergedTitle || shellWorkspaceLabel}`}
+        />
       ) : null}
       <div className="app-shell__frame">
         {globalNavPinned ? (

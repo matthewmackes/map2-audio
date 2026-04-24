@@ -243,7 +243,8 @@ describe('AppShell global tree navigation', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
-    expect(container.querySelector('.shell-ctx__crumb')).toHaveTextContent('Workspace surface')
+    // Blue context bar was retired in T2447 — workspace name now owns the title surface.
+    expect(container.querySelector('.shell-ctx')).toBeNull()
     expect(container.querySelector('.shell-ws__main-name')).toHaveTextContent('IntelFX Rack')
     const navTree = screen.getByLabelText('Global navigation tree')
     expect(navTree).toBeInTheDocument()

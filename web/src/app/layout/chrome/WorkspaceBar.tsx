@@ -6,7 +6,6 @@ interface WorkspaceBarProps {
   actions: ShellActionSlot[]
   navPinned: boolean
   onToggleNavPin: () => void
-  contextBarHidden: boolean
   onClose?: () => void
   closeLabel?: string
 }
@@ -16,13 +15,12 @@ export function WorkspaceBar({
   actions,
   navPinned,
   onToggleNavPin,
-  contextBarHidden,
   onClose,
   closeLabel,
 }: WorkspaceBarProps) {
   return (
     <div
-      className={`shell-ws${contextBarHidden ? ' shell-ws--ctx-hidden' : ''}`}
+      className="shell-ws shell-ws--ctx-hidden"
       role="toolbar"
       aria-label="Workspace toolbar"
     >

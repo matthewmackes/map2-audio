@@ -11321,64 +11321,11 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
 exports[`Desktop experience visual snapshots matches the global navigation shell 1`] = `
 <div
   class="app-shell app-shell--themed-workspace app-shell--windowed"
-  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 32px; --ws-h: 40px;"
+  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 0px; --ws-h: 40px;"
 >
   <div
-    aria-hidden="false"
-    aria-label="Workspace context"
-    class="shell-ctx"
-    role="region"
-  >
-    <div
-      class="shell-ctx__trail"
-    >
-      <span
-        aria-hidden="true"
-        class="shell-ctx__glyph"
-      >
-        ~
-      </span>
-      <span
-        style="display: inline-flex; align-items: center; gap: 8px;"
-      >
-        <span
-          class="shell-ctx__crumb"
-        >
-          Workspace surface
-        </span>
-        <span
-          class="shell-ctx__sep"
-        >
-          /
-        </span>
-      </span>
-      <span
-        style="display: inline-flex; align-items: center; gap: 8px;"
-      >
-        <span
-          class="shell-ctx__node"
-        >
-          Artifacts
-        </span>
-      </span>
-      <span
-        class="shell-ctx__query"
-      >
-        workspace / artifacts
-      </span>
-    </div>
-    <button
-      aria-label="Dismiss context bar"
-      class="shell-ctx__close"
-      title="Dismiss"
-      type="button"
-    >
-      ×
-    </button>
-  </div>
-  <div
     aria-label="Workspace toolbar"
-    class="shell-ws"
+    class="shell-ws shell-ws--ctx-hidden"
     role="toolbar"
   >
     <div
