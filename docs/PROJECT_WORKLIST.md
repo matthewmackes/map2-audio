@@ -119,7 +119,7 @@ Last updated: 2026-04-23 EDT - Claude
 ---
 
 ID: T2431
-Status: [ ] Todo
+Status: [✓] Done (phase 1 complete — 10/10 subtasks shipped; two deliberately-scoped-out follow-up cleanups tracked in completion notes)
 Title: EPIC — Configuration and State Authority plane consolidation
 Description:
 - Goal / acceptance criteria: Consolidate MAP2 configuration and state authority around explicit planes instead of parallel implicit stores. Definition of Done: every config/state concept has exactly one declared authority plane; all projections are generated and header-stamped; host-critical config no longer depends on `~/.map2`; single-node operation works without etcd while clustered audio-state authority uses the control-plane backend; legacy `flow_snapshots` and generic `SystemConfig` authority paths are removed by hard cut; installers, RPM specs, systemd units, scripts, docs, and diagnostics all match the new platform layout.
