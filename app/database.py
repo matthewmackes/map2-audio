@@ -2152,6 +2152,30 @@ class ExpressionAssignment(Base):
     )
 
 
+class ChainTouchscreenAssignment(Base):
+    """Per-chain touchscreen stomp-slot assignment (T2436-B).
+
+    Replaces the former ``system_config[key='chain_touchscreen_{chain_id}']``
+    JSON blob with a typed table. Each row is one (chain_id, slot) pair
+    pointing at a specific plugin within the chain. Slot range is 1..8
+    enforced at the service layer; database keeps the values flexible.
+    """
+    __tablename__ = "chain_touchscreen_assignments"
+
+    id = Column(Integer, primary_key=True)
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=False)
+    slot = Column(Integer, nullable=False)
+    plugin_uri = Column(String(255), nullable=False)
+    plugin_position = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("chain_id", "slot", name="uq_chain_touchscreen_slot"),
+        Index("idx_chain_touchscreen_chain", "chain_id"),
+    )
+
+
 class SystemConfig(Base):
     """Key-value system configuration store."""
     __tablename__ = "system_config"
@@ -2795,9 +2819,9 @@ class SrpAdmissionLog(Base):
 # touchscreen / chain-preset domains.
 _SYSTEM_CONFIG_ALLOWLIST_EXACT: frozenset[str] = frozenset()
 _SYSTEM_CONFIG_ALLOWLIST_PREFIXES: tuple[str, ...] = (
-    # chain_service.py — per-chain touchscreen assignments.
-    "touchscreen_",
-    # chain_service.py — named chain presets.
+    # T2436-B removed the touchscreen_ entry — assignments now live in
+    # the typed `chain_touchscreen_assignments` table.
+    # chain_service.py — named chain presets (pending T2436-C).
     "chain_preset_",
 )
 

@@ -1158,6 +1158,10 @@ class ChainService:
 
     @staticmethod
     def _touchscreen_config_key(chain_id: int) -> str:
+        """DEPRECATED (T2436-B). Assignments now live in the typed
+        ``chain_touchscreen_assignments`` table; this helper is retained
+        only for backwards compatibility with callers/tests that compute
+        the old key shape."""
         return f"chain_touchscreen_{chain_id}"
 
     @staticmethod
@@ -1196,27 +1200,22 @@ class ChainService:
         if not self.session:
             return []
 
-        from app.database import SystemConfig
+        from app.database import ChainTouchscreenAssignment
 
         result = await self.session.execute(
-            select(SystemConfig).filter(SystemConfig.key == self._touchscreen_config_key(chain_id))
+            select(ChainTouchscreenAssignment)
+            .filter(ChainTouchscreenAssignment.chain_id == chain_id)
+            .order_by(ChainTouchscreenAssignment.slot)
         )
-        record = result.scalar_one_or_none()
-        if not record:
-            return []
-
-        try:
-            payload = json.loads(record.value)
-        except Exception:
-            return []
-
-        if isinstance(payload, dict):
-            assignments = payload.get("stomp_assignments", [])
-        elif isinstance(payload, list):
-            assignments = payload
-        else:
-            assignments = []
-
+        rows = result.scalars().all()
+        assignments = [
+            {
+                "slot": int(row.slot),
+                "plugin_uri": str(row.plugin_uri),
+                "plugin_position": int(row.plugin_position),
+            }
+            for row in rows
+        ]
         return self._normalize_touchscreen_stomp_assignments(assignments)
 
     async def get_touchscreen_state(self, chain_id: int) -> Optional[Dict[str, Any]]:
@@ -1244,7 +1243,8 @@ class ChainService:
         if not self.session:
             return None
 
-        from app.database import Chain, ChainPlugin, SystemConfig
+        from app.database import Chain, ChainPlugin, ChainTouchscreenAssignment
+        from sqlalchemy import delete
 
         chain_result = await self.session.execute(select(Chain).filter(Chain.id == chain_id))
         chain = chain_result.scalar_one_or_none()
@@ -1268,21 +1268,23 @@ class ChainService:
             if (assignment["plugin_uri"], assignment["plugin_position"]) in valid_plugins
         ]
 
-        payload = {
-            "version": 1,
-            "chain_id": chain_id,
-            "stomp_assignments": persisted,
-        }
-        config_key = self._touchscreen_config_key(chain_id)
-        config_result = await self.session.execute(
-            select(SystemConfig).filter(SystemConfig.key == config_key)
+        # T2436-B: replace-all semantics. Delete every prior row for this
+        # chain, then insert the new normalized set. The unique constraint
+        # on (chain_id, slot) guarantees we never double-book a slot.
+        await self.session.execute(
+            delete(ChainTouchscreenAssignment).where(
+                ChainTouchscreenAssignment.chain_id == chain_id
+            )
         )
-        record = config_result.scalar_one_or_none()
-        if record is None:
-            record = SystemConfig(key=config_key, value=json.dumps(payload))
-            self.session.add(record)
-        else:
-            record.value = json.dumps(payload)
+        for assignment in persisted:
+            self.session.add(
+                ChainTouchscreenAssignment(
+                    chain_id=chain_id,
+                    slot=int(assignment["slot"]),
+                    plugin_uri=str(assignment["plugin_uri"]),
+                    plugin_position=int(assignment["plugin_position"]),
+                )
+            )
 
         await self.session.flush()
         return {

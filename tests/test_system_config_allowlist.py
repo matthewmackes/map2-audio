@@ -17,7 +17,7 @@ from app.database import (
 
 
 ALLOWED_EXACT: set[str] = set()  # T2436-A emptied the exact allowlist.
-ALLOWED_PREFIXES = ("touchscreen_", "chain_preset_")
+ALLOWED_PREFIXES = ("chain_preset_",)  # T2436-B removed touchscreen_.
 
 
 def test_allowlist_constants_match_expected_domains() -> None:
@@ -32,9 +32,13 @@ def test_exact_allowlist_is_empty_after_T2436_A() -> None:
     assert _SYSTEM_CONFIG_ALLOWLIST_EXACT == frozenset()
 
 
+def test_prefix_allowlist_shrunk_after_T2436_B() -> None:
+    """T2436-B removed `touchscreen_`; only `chain_preset_` remains pending T2436-C."""
+    assert "touchscreen_" not in _SYSTEM_CONFIG_ALLOWLIST_PREFIXES
+    assert "chain_preset_" in _SYSTEM_CONFIG_ALLOWLIST_PREFIXES
+
+
 @pytest.mark.parametrize("key", [
-    "touchscreen_1",
-    "touchscreen_42",
     "chain_preset_Lead_Drive",
     "chain_preset_bright-solo",
 ])
@@ -50,6 +54,9 @@ def test_allowed_prefix_keys_pass(key: str) -> None:
     "legacy_key",
     # T2436-A: moved to schema; no longer permitted through the generic bucket.
     "state_authority.activation_hooks",
+    # T2436-B: moved to typed table `chain_touchscreen_assignments`.
+    "touchscreen_1",
+    "chain_touchscreen_42",
 ])
 def test_disallowed_keys_raise_frozen_error(key: str) -> None:
     with pytest.raises(SystemConfigFrozenError) as excinfo:
