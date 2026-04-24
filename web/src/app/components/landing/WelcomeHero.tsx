@@ -179,7 +179,7 @@ function WelcomeHeroImpl({
           <div className="wh-hero__eyebrow">WELCOME TO MAP2 · MACKES AUDIO PLATFORM</div>
 
           <h1 className="wh-hero__title">
-            <span>System nominal.</span>{' '}
+            <span>Open Source, Assembled</span>{' '}
             <span className="wh-accent">Welcome to MAP2.</span>
           </h1>
 

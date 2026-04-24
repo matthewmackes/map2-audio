@@ -1,4 +1,4 @@
-import { buildDevicesSubtree } from './GlobalTreeNav'
+import { buildDevicesSubtree, resolveSnapshotEditorTreeStatus } from './GlobalTreeNav'
 import { DEVICE_REGISTRY } from '../../data/deviceRegistry'
 
 describe('GlobalTreeNav devices subtree', () => {
@@ -113,5 +113,122 @@ describe('GlobalTreeNav devices subtree', () => {
     expect(node?.route).toBe(mk1.legacyRoute)
     // Control surfaces have no unified route yet, so the tree must not expand fake sub-views.
     expect(node?.children ?? []).toHaveLength(0)
+  })
+
+  it('defaults the Snapshot Editor tree status to Live when no cluster runtime state is available yet', () => {
+    expect(resolveSnapshotEditorTreeStatus(undefined)).toEqual({
+      label: 'Live',
+      tone: 'live',
+    })
+  })
+
+  it('prefers an active live runtime node when deriving Snapshot Editor status', () => {
+    expect(resolveSnapshotEditorTreeStatus({
+      local_node_id: 'node-local',
+      generated_at: '2026-04-23T18:13:00Z',
+      count: 2,
+      nodes: [
+        {
+          node_id: 'node-local',
+          seq: 1,
+          emitted_at: '2026-04-23T18:13:00Z',
+          state: 'stopped',
+          snapshot_id: null,
+          snapshot_revision: null,
+          snapshot_name: null,
+          triggered_by: null,
+          live_snapshot_payload: null,
+          last_successful_request_id: null,
+          failure_reason: null,
+          runtime_metrics: {},
+          warning_threshold_seconds: 10,
+          offline_threshold_seconds: 15,
+          age_seconds: 0.5,
+          is_warning: false,
+          is_offline: false,
+          display_state: 'stopped',
+          display_label: 'Stopped',
+        },
+        {
+          node_id: 'node-remote',
+          seq: 9,
+          emitted_at: '2026-04-23T18:13:01Z',
+          state: 'live',
+          snapshot_id: 42,
+          snapshot_revision: 'rev-42',
+          snapshot_name: 'Arena Intro',
+          triggered_by: 'ui',
+          live_snapshot_payload: null,
+          last_successful_request_id: 'request-42',
+          failure_reason: null,
+          runtime_metrics: {},
+          warning_threshold_seconds: 10,
+          offline_threshold_seconds: 15,
+          age_seconds: 0.1,
+          is_warning: false,
+          is_offline: false,
+          display_state: 'live',
+          display_label: 'Live',
+        },
+      ],
+    })).toEqual({
+      label: 'Live',
+      tone: 'live',
+    })
+  })
+
+  it('falls back to the preferred local runtime node when no active live node exists', () => {
+    expect(resolveSnapshotEditorTreeStatus({
+      local_node_id: 'node-local',
+      generated_at: '2026-04-23T18:13:00Z',
+      count: 2,
+      nodes: [
+        {
+          node_id: 'node-local',
+          seq: 2,
+          emitted_at: '2026-04-23T18:13:00Z',
+          state: 'stopped',
+          snapshot_id: null,
+          snapshot_revision: null,
+          snapshot_name: null,
+          triggered_by: null,
+          live_snapshot_payload: null,
+          last_successful_request_id: null,
+          failure_reason: null,
+          runtime_metrics: {},
+          warning_threshold_seconds: 10,
+          offline_threshold_seconds: 15,
+          age_seconds: 1,
+          is_warning: false,
+          is_offline: true,
+          display_state: 'offline',
+          display_label: 'Offline',
+        },
+        {
+          node_id: 'node-remote',
+          seq: 7,
+          emitted_at: '2026-04-23T18:13:01Z',
+          state: 'stopped',
+          snapshot_id: null,
+          snapshot_revision: null,
+          snapshot_name: null,
+          triggered_by: null,
+          live_snapshot_payload: null,
+          last_successful_request_id: null,
+          failure_reason: null,
+          runtime_metrics: {},
+          warning_threshold_seconds: 10,
+          offline_threshold_seconds: 15,
+          age_seconds: 0.2,
+          is_warning: true,
+          is_offline: false,
+          display_state: 'live_warning',
+          display_label: 'Live + Warning',
+        },
+      ],
+    })).toEqual({
+      label: 'Offline',
+      tone: 'offline',
+    })
   })
 })

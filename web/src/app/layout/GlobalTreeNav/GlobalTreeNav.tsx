@@ -73,6 +73,8 @@ import {
   getNodeStatusLabel,
   pageKeyFromPathname,
 } from '../../utils/nodeDisplay'
+import { useClusterSnapshotRuntimeLiveState } from '../../hooks/useSnapshotRuntimeState'
+import type { SnapshotRuntimeClusterLiveStateResponse, SnapshotRuntimeLiveState } from '../../../map2/types'
 import './GlobalTreeNav.css'
 
 type GlobalTreeNavProps = {
@@ -98,7 +100,18 @@ export type TreeItemDefinition = {
   icon?: TreeIconComponent
   children?: TreeItemDefinition[]
   actions?: TreeNodeAction[]
+  secondary?: string
+  secondaryTone?: TreeNodeSecondaryTone
+  badge?: string
+  featured?: boolean
   groupBoundary?: boolean
+}
+
+type TreeNodeSecondaryTone = 'neutral' | 'live' | 'warning' | 'offline'
+
+type SnapshotEditorTreeStatus = {
+  label: string
+  tone: TreeNodeSecondaryTone
 }
 
 const DEVICE_KIND_ORDER: DeviceRegistryEntry['kind'][] = [
@@ -173,7 +186,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
-  '/workspace': 'Control Panel',
+  '/workspace': 'Node Ops',
   '/snapshot-editor': 'Snapshot Editor',
   '/midi-hub': 'MIDI Advanced',
   '/workspace/artifacts': 'Audio Artifacts',
@@ -234,6 +247,62 @@ function findNavigationItem(route: string): PlatformPinnedNavItem | ShellNavigat
 
 function resolveTreeLabel(route: string, fallbackLabel: string | undefined): string {
   return TREE_LABEL_OVERRIDES[route] ?? fallbackLabel ?? route
+}
+
+function compareSnapshotRuntimeStates(
+  left: SnapshotRuntimeLiveState,
+  right: SnapshotRuntimeLiveState,
+  localNodeId: string | null,
+) {
+  if (left.node_id === localNodeId && right.node_id !== localNodeId) {
+    return -1
+  }
+  if (right.node_id === localNodeId && left.node_id !== localNodeId) {
+    return 1
+  }
+  return (right.seq ?? 0) - (left.seq ?? 0)
+}
+
+function resolveSnapshotRuntimeTone(state: SnapshotRuntimeLiveState): TreeNodeSecondaryTone {
+  if (state.is_offline || state.display_state === 'offline') {
+    return 'offline'
+  }
+  if (state.is_warning || state.display_state === 'live_warning') {
+    return 'warning'
+  }
+  if (state.state === 'live' || state.display_state === 'live') {
+    return 'live'
+  }
+  return 'neutral'
+}
+
+export function resolveSnapshotEditorTreeStatus(
+  clusterState: SnapshotRuntimeClusterLiveStateResponse | null | undefined,
+): SnapshotEditorTreeStatus {
+  const nodes = clusterState?.nodes ?? []
+  const localNodeId = clusterState?.local_node_id ?? null
+
+  const activeLiveState = nodes
+    .filter((state) => !state.is_offline && state.state === 'live')
+    .sort((left, right) => compareSnapshotRuntimeStates(left, right, localNodeId))[0] ?? null
+
+  const fallbackState = nodes
+    .slice()
+    .sort((left, right) => compareSnapshotRuntimeStates(left, right, localNodeId))[0] ?? null
+
+  const preferredState = activeLiveState ?? fallbackState
+
+  if (!preferredState) {
+    return {
+      label: 'Live',
+      tone: 'live',
+    }
+  }
+
+  return {
+    label: preferredState.display_label?.trim() || (preferredState.state === 'live' ? 'Live' : 'Stopped'),
+    tone: resolveSnapshotRuntimeTone(preferredState),
+  }
 }
 
 function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): TreeItemDefinition {
@@ -343,6 +412,7 @@ function buildTreeItems(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  snapshotEditorStatus: SnapshotEditorTreeStatus,
 ): TreeItemDefinition[] {
   return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
     if (route === HARDWARE_TREE_ID) {
@@ -366,6 +436,10 @@ function buildTreeItems(
       route: children.length > 0 ? children[0]?.route ?? route : normalizeTarget(route),
       icon: TREE_ICON_OVERRIDES[route] ?? launcherItem?.icon ?? navigationItem?.icon,
       children,
+      secondary: route === '/snapshot-editor' ? snapshotEditorStatus.label : undefined,
+      secondaryTone: route === '/snapshot-editor' ? snapshotEditorStatus.tone : undefined,
+      badge: route === '/snapshot-editor' ? 'Signal Editor' : undefined,
+      featured: route === '/snapshot-editor',
     }]
   })
 }
@@ -396,33 +470,57 @@ function TreeNodeLabel({
   secondary,
   isBold = false,
   actions,
+  secondaryTone = 'neutral',
+  badge,
+  featured = false,
 }: {
   label: string
   secondary?: ReactNode
   isBold?: boolean
   actions?: TreeNodeAction[]
+  secondaryTone?: TreeNodeSecondaryTone
+  badge?: string
+  featured?: boolean
 }) {
   return (
-    <span className={`global-tree-nav__node-copy${isBold ? ' global-tree-nav__node-copy--bold' : ''}`}>
-      <span className="global-tree-nav__node-label">{label}</span>
-      {secondary ? <span className="global-tree-nav__node-secondary">{secondary}</span> : null}
-      {actions && actions.length > 0 ? (
-        <span
-          className="global-tree-nav__node-actions"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <OverflowMenu size="sm" flipped aria-label={`Actions for ${label}`} menuOptionsClass="global-tree-nav__node-actions-menu">
-            {actions.map((action) => (
-              <OverflowMenuItem
-                key={action.label}
-                itemText={action.label}
-                onClick={() => action.onClick()}
-              />
-            ))}
-          </OverflowMenu>
+    <span
+      className={joinClasses(
+        'global-tree-nav__node-copy',
+        isBold && 'global-tree-nav__node-copy--bold',
+        featured && 'global-tree-nav__node-copy--featured',
+      )}
+    >
+      <span className="global-tree-nav__node-main">
+        <span className="global-tree-nav__node-main-copy">
+          <span className="global-tree-nav__node-label-row">
+            <span className="global-tree-nav__node-label">{label}</span>
+            {badge ? <span className="global-tree-nav__node-badge">{badge}</span> : null}
+          </span>
+          {secondary ? (
+            <span className={joinClasses('global-tree-nav__node-secondary', `is-${secondaryTone}`)} aria-live="polite">
+              <span className="global-tree-nav__node-secondary-dot" aria-hidden="true" />
+              <span>{secondary}</span>
+            </span>
+          ) : null}
         </span>
-      ) : null}
+        {actions && actions.length > 0 ? (
+          <span
+            className="global-tree-nav__node-actions"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <OverflowMenu size="sm" flipped aria-label={`Actions for ${label}`} menuOptionsClass="global-tree-nav__node-actions-menu">
+              {actions.map((action) => (
+                <OverflowMenuItem
+                  key={action.label}
+                  itemText={action.label}
+                  onClick={() => action.onClick()}
+                />
+              ))}
+            </OverflowMenu>
+          </span>
+        ) : null}
+      </span>
     </span>
   )
 }
@@ -463,6 +561,7 @@ function renderTreeItems(
     const nodeClass = joinClasses(
       'global-tree-nav__tree-node',
       selected && 'is-selected',
+      item.featured && 'is-featured',
       item.groupBoundary && 'is-group-boundary',
     )
 
@@ -473,7 +572,17 @@ function renderTreeItems(
           id={item.id}
           className={nodeClass}
           isExpanded={expandedIds.includes(item.id)}
-          label={<TreeNodeLabel label={item.label} isBold={isBold} actions={item.actions} />}
+          label={(
+            <TreeNodeLabel
+              label={item.label}
+              secondary={item.secondary}
+              secondaryTone={item.secondaryTone}
+              isBold={isBold}
+              badge={item.badge}
+              featured={item.featured}
+              actions={item.actions}
+            />
+          )}
           onSelect={(event) => {
             event.preventDefault()
             if (item.route) {
@@ -493,7 +602,17 @@ function renderTreeItems(
         key={item.id}
         id={item.id}
         className={nodeClass}
-        label={<TreeNodeLabel label={item.label} isBold={isBold} actions={item.actions} />}
+        label={(
+          <TreeNodeLabel
+            label={item.label}
+            secondary={item.secondary}
+            secondaryTone={item.secondaryTone}
+            isBold={isBold}
+            badge={item.badge}
+            featured={item.featured}
+            actions={item.actions}
+          />
+        )}
         onSelect={(event) => {
           event.preventDefault()
           if (item.route) {
@@ -528,6 +647,7 @@ export function GlobalTreeNav({
   const [expandedIds, setExpandedIds] = useState<string[]>(() => readExpandedIds())
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
   const pinnedDeviceIds = usePinnedDevices()
+  const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({ refetchInterval: false })
   const { pushToast } = useToasts()
 
   const handleRequestUnpin = useMemo(() => {
@@ -545,9 +665,14 @@ export function GlobalTreeNav({
     }
   }, [pushToast])
 
+  const snapshotEditorStatus = useMemo(
+    () => resolveSnapshotEditorTreeStatus(clusterRuntimeStateQuery.data),
+    [clusterRuntimeStateQuery.data],
+  )
+
   const treeItems = useMemo(
-    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin),
-    [pinnedDeviceIds, navigate, handleRequestUnpin],
+    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin, snapshotEditorStatus),
+    [pinnedDeviceIds, navigate, handleRequestUnpin, snapshotEditorStatus],
   )
   const activeNodePath = useMemo(
     () => findActiveNodePath(treeItems, location.pathname, location.search),

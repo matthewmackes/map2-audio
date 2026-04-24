@@ -433,9 +433,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Home
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Home
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -444,7 +456,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             </li>
             <li
               aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+              class="global-tree-nav__tree-node is-featured cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
               id="/snapshot-editor"
               role="treeitem"
               tabindex="-1"
@@ -485,12 +497,41 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     id="/snapshot-editor__label"
                   >
                     <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
+                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold global-tree-nav__node-copy--featured"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Snapshot Editor
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Snapshot Editor
+                            </span>
+                            <span
+                              class="global-tree-nav__node-badge"
+                            >
+                              Signal Editor
+                            </span>
+                          </span>
+                          <span
+                            aria-live="polite"
+                            class="global-tree-nav__node-secondary is-live"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="global-tree-nav__node-secondary-dot"
+                            />
+                            <span>
+                              Live
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -555,9 +596,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Brain
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Brain
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -606,9 +659,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -652,9 +717,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Drum-Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Drum-Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -698,9 +775,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SynthForge
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SynthForge
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -776,9 +865,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Control Panel
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Node Ops
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -836,9 +937,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -885,9 +998,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Device Manager
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Device Manager
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -940,9 +1065,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Audio Engine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Audio Engine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -987,9 +1124,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Chains
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Chains
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1033,9 +1182,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            AVB Routing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  AVB Routing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1097,9 +1258,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network Discovery
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network Discovery
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1152,9 +1325,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cluster Dashboard
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1201,9 +1386,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Adoption
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Adoption
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1272,9 +1469,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Theme
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Theme
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1324,9 +1533,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            About
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  About
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1393,9 +1614,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        MIDI Advanced
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              MIDI Advanced
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -1444,9 +1677,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Connections
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Connections
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1496,9 +1741,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Presets
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Presets
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1542,9 +1799,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Transport
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Transport
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1594,9 +1863,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Events
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Events
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1643,9 +1924,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Processing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Processing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1701,9 +1994,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1747,9 +2052,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Lab
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Lab
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1825,9 +2142,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Audio Artifacts
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Audio Artifacts
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -1906,9 +2235,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -1942,9 +2283,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2020,9 +2373,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            LV2 Plugins
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  LV2 Plugins
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2056,9 +2421,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2134,9 +2511,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            NAM Models
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  NAM Models
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2170,9 +2559,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2248,9 +2649,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cabinet IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cabinet IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2284,9 +2697,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2362,9 +2787,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Reverb IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Reverb IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2398,9 +2835,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2476,9 +2925,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SoundFonts
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SoundFonts
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2512,9 +2973,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2590,9 +3063,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Native JUCE
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Native JUCE
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2626,9 +3111,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2704,9 +3201,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Snapshots
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Snapshots
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2740,9 +3249,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -2773,9 +3294,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Discover
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Discover
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2845,9 +3378,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Hardware
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Hardware
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -2917,9 +3462,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Host Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Host Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -2987,9 +3544,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Devices
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Devices
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -3038,9 +3607,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                ➕ Browse devices…
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      ➕ Browse devices…
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -3094,9 +3675,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Platform Guide
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Platform Guide
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -3223,7 +3816,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         class="wh-hero__title"
                       >
                         <span>
-                          System nominal.
+                          Open Source, Assembled
                         </span>
                          
                         <span
@@ -5035,9 +5628,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Home
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Home
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -5046,7 +5651,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             </li>
             <li
               aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+              class="global-tree-nav__tree-node is-featured cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
               id="/snapshot-editor"
               role="treeitem"
               tabindex="-1"
@@ -5087,12 +5692,41 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     id="/snapshot-editor__label"
                   >
                     <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
+                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold global-tree-nav__node-copy--featured"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Snapshot Editor
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Snapshot Editor
+                            </span>
+                            <span
+                              class="global-tree-nav__node-badge"
+                            >
+                              Signal Editor
+                            </span>
+                          </span>
+                          <span
+                            aria-live="polite"
+                            class="global-tree-nav__node-secondary is-live"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="global-tree-nav__node-secondary-dot"
+                            />
+                            <span>
+                              Live
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -5157,9 +5791,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Brain
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Brain
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -5208,9 +5854,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5254,9 +5912,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Drum-Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Drum-Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5300,9 +5970,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SynthForge
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SynthForge
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5378,9 +6060,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Control Panel
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Node Ops
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -5438,9 +6132,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5487,9 +6193,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Device Manager
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Device Manager
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5542,9 +6260,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Audio Engine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Audio Engine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5589,9 +6319,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Chains
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Chains
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5635,9 +6377,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            AVB Routing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  AVB Routing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5699,9 +6453,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network Discovery
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network Discovery
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5754,9 +6520,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cluster Dashboard
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5803,9 +6581,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Adoption
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Adoption
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5874,9 +6664,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Theme
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Theme
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5926,9 +6728,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            About
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  About
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -5995,9 +6809,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        MIDI Advanced
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              MIDI Advanced
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -6046,9 +6872,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Connections
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Connections
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6098,9 +6936,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Presets
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Presets
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6144,9 +6994,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Transport
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Transport
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6196,9 +7058,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Events
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Events
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6245,9 +7119,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Processing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Processing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6303,9 +7189,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6349,9 +7247,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Lab
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Lab
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6427,9 +7337,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Audio Artifacts
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Audio Artifacts
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -6508,9 +7430,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6544,9 +7478,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -6622,9 +7568,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            LV2 Plugins
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  LV2 Plugins
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6658,9 +7616,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -6736,9 +7706,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            NAM Models
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  NAM Models
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6772,9 +7754,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -6850,9 +7844,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cabinet IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cabinet IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -6886,9 +7892,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -6964,9 +7982,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Reverb IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Reverb IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7000,9 +8030,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -7078,9 +8120,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SoundFonts
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SoundFonts
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7114,9 +8168,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -7192,9 +8258,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Native JUCE
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Native JUCE
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7228,9 +8306,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -7306,9 +8396,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Snapshots
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Snapshots
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7342,9 +8444,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -7375,9 +8489,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Discover
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Discover
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7447,9 +8573,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Hardware
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Hardware
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -7519,9 +8657,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Host Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Host Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7589,9 +8739,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Devices
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Devices
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -7640,9 +8802,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                ➕ Browse devices…
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      ➕ Browse devices…
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -7696,9 +8870,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Platform Guide
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Platform Guide
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -7825,7 +9011,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         class="wh-hero__title"
                       >
                         <span>
-                          System nominal.
+                          Open Source, Assembled
                         </span>
                          
                         <span
@@ -9636,9 +10822,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Home
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Home
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -9647,7 +10845,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             </li>
             <li
               aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+              class="global-tree-nav__tree-node is-featured cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
               id="/snapshot-editor"
               role="treeitem"
               tabindex="-1"
@@ -9688,12 +10886,41 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     id="/snapshot-editor__label"
                   >
                     <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
+                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold global-tree-nav__node-copy--featured"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Snapshot Editor
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Snapshot Editor
+                            </span>
+                            <span
+                              class="global-tree-nav__node-badge"
+                            >
+                              Signal Editor
+                            </span>
+                          </span>
+                          <span
+                            aria-live="polite"
+                            class="global-tree-nav__node-secondary is-live"
+                          >
+                            <span
+                              aria-hidden="true"
+                              class="global-tree-nav__node-secondary-dot"
+                            />
+                            <span>
+                              Live
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -9758,9 +10985,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Brain
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Brain
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -9809,9 +11048,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -9855,9 +11106,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Drum-Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Drum-Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -9901,9 +11164,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SynthForge
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SynthForge
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -9979,9 +11254,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Control Panel
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Node Ops
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -10039,9 +11326,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10088,9 +11387,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Device Manager
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Device Manager
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10143,9 +11454,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Audio Engine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Audio Engine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10190,9 +11513,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Chains
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Chains
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10236,9 +11571,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            AVB Routing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  AVB Routing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10300,9 +11647,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network Discovery
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network Discovery
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10355,9 +11714,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cluster Dashboard
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10404,9 +11775,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Adoption
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Adoption
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10475,9 +11858,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Theme
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Theme
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10527,9 +11922,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            About
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  About
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10596,9 +12003,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        MIDI Advanced
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              MIDI Advanced
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -10647,9 +12066,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Connections
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Connections
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10699,9 +12130,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Presets
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Presets
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10745,9 +12188,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Transport
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Transport
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10797,9 +12252,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Events
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Events
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10846,9 +12313,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Processing
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Processing
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10904,9 +12383,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Network
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Network
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -10950,9 +12441,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Lab
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Lab
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11028,9 +12531,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Audio Artifacts
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Audio Artifacts
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -11110,9 +12625,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Overview
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Overview
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11146,9 +12673,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11224,9 +12763,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            LV2 Plugins
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  LV2 Plugins
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11260,9 +12811,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11338,9 +12901,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            NAM Models
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  NAM Models
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11374,9 +12949,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11452,9 +13039,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Cabinet IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Cabinet IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11488,9 +13087,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11566,9 +13177,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Reverb IRs
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Reverb IRs
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11602,9 +13225,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11680,9 +13315,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            SoundFonts
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  SoundFonts
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11716,9 +13363,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11794,9 +13453,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Native JUCE
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Native JUCE
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11830,9 +13501,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11908,9 +13591,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Snapshots
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Snapshots
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -11944,9 +13639,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                Discover
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      Discover
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -11977,9 +13684,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Discover
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Discover
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -12049,9 +13768,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Hardware
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Hardware
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>
@@ -12121,9 +13852,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Host Machine
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Host Machine
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -12191,9 +13934,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           class="global-tree-nav__node-copy"
                         >
                           <span
-                            class="global-tree-nav__node-label"
+                            class="global-tree-nav__node-main"
                           >
-                            Devices
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Devices
+                                </span>
+                              </span>
+                            </span>
                           </span>
                         </span>
                       </span>
@@ -12242,9 +13997,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                               class="global-tree-nav__node-copy"
                             >
                               <span
-                                class="global-tree-nav__node-label"
+                                class="global-tree-nav__node-main"
                               >
-                                ➕ Browse devices…
+                                <span
+                                  class="global-tree-nav__node-main-copy"
+                                >
+                                  <span
+                                    class="global-tree-nav__node-label-row"
+                                  >
+                                    <span
+                                      class="global-tree-nav__node-label"
+                                    >
+                                      ➕ Browse devices…
+                                    </span>
+                                  </span>
+                                </span>
                               </span>
                             </span>
                           </span>
@@ -12298,9 +14065,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
                     >
                       <span
-                        class="global-tree-nav__node-label"
+                        class="global-tree-nav__node-main"
                       >
-                        Platform Guide
+                        <span
+                          class="global-tree-nav__node-main-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-label-row"
+                          >
+                            <span
+                              class="global-tree-nav__node-label"
+                            >
+                              Platform Guide
+                            </span>
+                          </span>
+                        </span>
                       </span>
                     </span>
                   </span>

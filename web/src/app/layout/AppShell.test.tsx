@@ -29,6 +29,7 @@ jest.mock('../pages/homeDesktopSession', () => ({
 
 jest.mock('../../map2/hooks/useWebSocket', () => ({
   useWebSocketConnection: () => mockUseWebSocketConnection(),
+  useWebSocketTopic: () => undefined,
 }))
 
 jest.mock('../hooks/useNodePageContext', () => ({
@@ -201,14 +202,16 @@ describe('AppShell global tree navigation', () => {
       'Home',
       'Snapshot Editor',
       'Brain',
-      'Control Panel',
+      'Node Ops',
       'MIDI Advanced',
       'Audio Artifacts',
       'Hardware',
       'Platform Guide',
     ])
-    expect(screen.getAllByText('Control Panel')).toHaveLength(1)
+    expect(screen.getAllByText('Node Ops')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
+    expect(within(navTree).getByText('Signal Editor')).toBeInTheDocument()
+    expect(within(navTree).getByText('Live')).toBeInTheDocument()
     expect(screen.getByText('Brain')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
