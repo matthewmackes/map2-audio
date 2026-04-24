@@ -2,10 +2,6 @@ import { ApiError, fetchJson } from '../http'
 import { API_BASE } from '../transport'
 import type {
   CommunitySnapshot,
-  FlowSnapshot,
-  FlowSnapshotDetail,
-  FlowSnapshotLoadedEvent,
-  FlowSlotSummary,
   RoutingConfigSnapshot,
   SnapshotChannel,
   SnapshotControls,
@@ -409,52 +405,8 @@ export function flowSnapshotDataToSnapshotPayload(
   }
 }
 
-export function snapshotSummaryToFlowSnapshot(summary: SnapshotSummary): FlowSnapshot {
-  return {
-    id: summary.id,
-    name: summary.name,
-    description: summary.description,
-    tags: [...summary.tags],
-    program_number: summary.program_number,
-    is_favorite: summary.is_favorite,
-    is_locked: summary.is_locked,
-    display_order: summary.display_order,
-    flow_slots: summary.channels.map(
-      (channel): FlowSlotSummary => ({
-        id: channel.channel_key,
-        label: channel.label,
-        color: channel.color,
-        chainId: channel.chain_id ?? null,
-      }),
-    ),
-    created_at: summary.created_at ?? '',
-    updated_at: summary.updated_at ?? '',
-  }
-}
-
-export function snapshotDetailToFlowSnapshotDetail(detail: SnapshotDetail): FlowSnapshotDetail {
-  return {
-    ...snapshotSummaryToFlowSnapshot(detail),
-    snapshot_data: snapshotDetailToDraftData(detail),
-  }
-}
-
-export function snapshotLoadedEventToFlowSnapshotEvent(
-  event: SnapshotLoadedEvent,
-): FlowSnapshotLoadedEvent {
-  return {
-    type: 'flow_snapshot_loaded',
-    topic: 'flow_snapshots',
-    data: {
-      snapshot_id: event.data.snapshot_id,
-      snapshot_name: event.data.snapshot_name,
-      snapshot_data: snapshotDetailToDraftData(event.data.snapshot_data),
-      triggered_by: event.data.triggered_by,
-      program_number: event.data.program_number ?? undefined,
-    },
-    timestamp: event.timestamp,
-  }
-}
+// T2431-H: snapshotSummaryToFlowSnapshot / snapshotDetailToFlowSnapshotDetail /
+// snapshotLoadedEventToFlowSnapshotEvent adapters removed — no active callers.
 
 export const snapshotsApi = {
   list: (options?: { tags?: string[] }) => {

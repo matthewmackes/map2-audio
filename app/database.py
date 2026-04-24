@@ -2527,41 +2527,18 @@ class SessionBackup(Base):
 
 
 # =============================================================================
-# FLOW SNAPSHOTS - Complete GridFlow State Capture
+# FLOW SNAPSHOTS — REMOVED (T2431-H)
+#
+# The legacy ``flow_snapshots`` table / ORM class was deleted as part of the
+# Configuration and State Authority consolidation. Authored rig state is now
+# owned exclusively by the ``snapshots`` table (``Snapshot.document`` +
+# ``Snapshot.live_state``) and State Authority services.
+#
+# Any residual ``flow_snapshots`` rows left on legacy SQLite databases are
+# harmless — no runtime code reads them, and the migration script
+# (``scripts/migrate_to_unified_snapshots.py``) has been removed per the
+# T2431 Q2 decision that no existing users need to be preserved.
 # =============================================================================
-
-class FlowSnapshot(Base):
-    """Flow Snapshot - complete GridFlowPage state capture.
-
-    Stores the entire flow configuration including slots, routing,
-    and per-slot chain state for instant recall via MIDI Program Change.
-    """
-    __tablename__ = "flow_snapshots"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text, default="")
-    tags = Column(JSON, default=list)
-
-    # MIDI Program Change mapping (0-127, unique)
-    program_number = Column(Integer, nullable=True, unique=True)
-    bank_msb = Column(Integer, default=0)  # For >128 snapshots
-    bank_lsb = Column(Integer, default=0)
-
-    # Complete snapshot data (JSON blob)
-    # Contains: flowSlots, routing, activeFlowIndex, chains
-    snapshot_data = Column(Text, nullable=False)
-
-    # State
-    is_active = Column(Boolean, default=False)  # Currently loaded snapshot
-    display_order = Column(Integer, default=0)  # UI ordering
-
-    # User metadata
-    is_favorite = Column(Boolean, default=False)
-
-    # Timestamps
-    created_at = Column(DateTime, default=_utcnow)
-    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 # =============================================================================

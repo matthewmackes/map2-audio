@@ -2944,48 +2944,10 @@ export interface SnapshotDraftData {
   chains: Record<string, ChainSnapshot>;  // chainId -> ChainSnapshot
 }
 
-/** Flow slot summary for list view */
-export interface FlowSlotSummary {
-  id: string;
-  label: string;
-  color: string;
-  chainId: number | null;
-}
-
-/** Flow snapshot metadata (list view) */
-export interface FlowSnapshot {
-  id: number;
-  name: string;
-  description: string;
-  tags: string[];
-  program_number: number | null;
-  is_active?: boolean;
-  is_favorite: boolean;
-  is_locked?: boolean;
-  display_order: number;
-  flow_slots: FlowSlotSummary[];
-  created_at: string;
-  updated_at: string;
-}
-
-/** Flow snapshot with full data (detail view) */
-export interface FlowSnapshotDetail extends FlowSnapshot {
-  snapshot_data: SnapshotDraftData;
-}
-
-/** WebSocket event for flow snapshot loaded */
-export interface FlowSnapshotLoadedEvent {
-  type: 'flow_snapshot_loaded';
-  topic: 'flow_snapshots';
-  data: {
-    snapshot_id: number;
-    snapshot_name: string;
-    snapshot_data: SnapshotDraftData;
-    triggered_by?: 'midi_pc' | 'ui';
-    program_number?: number;
-  };
-  timestamp: string;
-}
+// T2431-H: FlowSnapshot / FlowSlotSummary / FlowSnapshotLoadedEvent / FlowSnapshotDetail
+// interfaces removed. Rig state flows through the unified `Snapshot`/`SnapshotDetail`
+// shapes and the `SnapshotLoadedEvent` ("snapshots" topic) — there are no
+// active callers of the legacy adapters.
 
 // ==================== PipeWire Audio Server ====================
 

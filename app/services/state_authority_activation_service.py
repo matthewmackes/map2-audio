@@ -1163,21 +1163,8 @@ class StateAuthorityActivationService:
                 },
                 topic="snapshots",
             )
-            await ws_manager.broadcast_json(
-                {
-                    "type": "flow_snapshot_loaded",
-                    "topic": "flow_snapshots",
-                    "data": {
-                        "snapshot_id": snapshot.id,
-                        "snapshot_name": snapshot.name,
-                        "snapshot_data": refreshed_detail,
-                        "triggered_by": triggered_by,
-                        "program_number": snapshot.program_number,
-                    },
-                    "timestamp": timestamp,
-                },
-                topic="flow_snapshots",
-            )
+            # T2431-H: legacy flow_snapshots WS broadcast removed. The
+            # canonical activation event lives on the "snapshots" topic.
         except Exception as exc:
             logger.debug("Snapshot activation websocket broadcast failed: %s", exc)
 

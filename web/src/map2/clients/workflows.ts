@@ -2,8 +2,6 @@ import type * as Api from '../api'
 import type {
   CreateSnapshotRequest,
   EffectsLoop,
-  FlowSnapshot,
-  FlowSnapshotDetail,
   HistoryEntry,
   HistoryStatus,
   LoopInsertion,
@@ -12,15 +10,7 @@ import type {
   SessionsResponse,
   SnapshotCategory,
   SnapshotsResponse,
-  SnapshotDraftData,
 } from '../types'
-import {
-  flowSnapshotDataToSnapshotPayload,
-  snapshotDetailToDraftData,
-  snapshotDetailToFlowSnapshotDetail,
-  snapshotSummaryToFlowSnapshot,
-  snapshotsApi as unifiedSnapshotsApi,
-} from './snapshots'
 import { appendNodeQuery, fetchJson } from '../http'
 import { API_BASE } from '../transport'
 
@@ -239,110 +229,5 @@ export const sessionsApi = {
   },
 }
 
-export const flowSnapshotsApi = {
-  list: async (_nodeId?: string | null) => {
-    const response = await unifiedSnapshotsApi.list()
-    return {
-      snapshots: response.snapshots.map(snapshotSummaryToFlowSnapshot),
-      count: response.count,
-    }
-  },
-
-  get: async (snapshotId: number) =>
-    snapshotDetailToFlowSnapshotDetail(await unifiedSnapshotsApi.get(snapshotId)),
-
-  create: async (request: {
-    name: string
-    description?: string
-    tags?: string[]
-    program_number?: number | null
-    snapshot_data: SnapshotDraftData
-  }) => {
-    const response = await unifiedSnapshotsApi.create({
-      name: request.name,
-      description: request.description,
-      tags: request.tags,
-      program_number: request.program_number,
-      ...flowSnapshotDataToSnapshotPayload(request.snapshot_data),
-    })
-    return {
-      status: response.status,
-      snapshot_id: response.snapshot_id,
-      message: response.message,
-    }
-  },
-
-  update: async (
-    snapshotId: number,
-    updates: {
-      name?: string
-      description?: string
-      tags?: string[]
-      display_order?: number
-      is_favorite?: boolean
-      snapshot_data?: SnapshotDraftData
-    },
-    _nodeId?: string | null,
-  ) => {
-    const request = {
-      name: updates.name,
-      description: updates.description,
-      tags: updates.tags,
-      display_order: updates.display_order,
-      is_favorite: updates.is_favorite,
-      ...(updates.snapshot_data ? flowSnapshotDataToSnapshotPayload(updates.snapshot_data) : {}),
-    }
-    const response = await unifiedSnapshotsApi.update(snapshotId, request)
-    return {
-      status: response.status,
-      message: response.message,
-    }
-  },
-
-  delete: async (snapshotId: number, _nodeId?: string | null) =>
-    unifiedSnapshotsApi.delete(snapshotId),
-
-  load: async (snapshotId: number, _nodeId?: string | null) => {
-    const response = await unifiedSnapshotsApi.activate(snapshotId)
-    return {
-      status: response.status,
-      snapshot_id: response.snapshot_id,
-      name: response.name,
-      snapshot_data: snapshotDetailToDraftData(response.snapshot_data),
-    }
-  },
-
-  preview: async (request: { snapshot_data: SnapshotDraftData }) => {
-    const response = await unifiedSnapshotsApi.preview(request.snapshot_data)
-    return {
-      status: response.status,
-      snapshot_data: snapshotDetailToDraftData(response.snapshot_data),
-      chains_created: response.chains_created,
-      params_applied: response.params_applied,
-      bypass_applied: response.bypass_applied,
-    }
-  },
-
-  setProgram: (snapshotId: number, programNumber: number | null) =>
-    unifiedSnapshotsApi.setProgram(snapshotId, programNumber),
-
-  duplicate: async (snapshotId: number) => {
-    const response = await unifiedSnapshotsApi.duplicate(snapshotId)
-    return {
-      status: response.status,
-      snapshot_id: response.snapshot_id,
-      message: response.message,
-    }
-  },
-
-  reorder: (snapshotIds: number[]) => unifiedSnapshotsApi.reorder(snapshotIds),
-
-  getByProgram: async (programNumber: number) => {
-    const response = await unifiedSnapshotsApi.getByProgram(programNumber)
-    return {
-      id: response.id,
-      name: response.name,
-      program_number: response.program_number ?? programNumber,
-    }
-  },
-}
+// T2431-H: flowSnapshotsApi removed. Callers use snapshotsApi from
+// clients/snapshots.ts directly.
