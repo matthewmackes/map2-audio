@@ -237,13 +237,26 @@ class SystemInfoResponse(BaseModel):
 # ==================== Configuration Responses ====================
 
 class ConfigOptionInfo(BaseModel):
-    """Configuration option information."""
+    """Configuration option information.
+
+    Authority fields (``plane``, ``owner``, ``runtime_mutable``, ``startup``,
+    ``projection_of``) expose the T2431 Configuration Authority Model metadata
+    so UI and diagnostics can reason about where each key lives and whether
+    it may be mutated at runtime. See
+    ``docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md``.
+    """
     key: str
     value: Any
     default: Any
     description: str
     type: str
     choices: Optional[List[Any]] = None
+    plane: str = "legacy"
+    owner: Optional[str] = None
+    runtime_mutable: bool = True
+    startup: str = "optional"
+    projection_of: Optional[str] = None
+    authority_notes: Optional[str] = None
 
 
 class ConfigListResponse(BaseModel):

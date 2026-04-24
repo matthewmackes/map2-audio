@@ -45,7 +45,22 @@ def test_schema_surfaces_locked_and_element_type_metadata(manager: ConfigManager
         "current": [],
         "locked": False,
         "element_type": "str",
+        "plane": "legacy",
+        "owner": None,
+        "runtime_mutable": True,
+        "startup": "optional",
+        "projection_of": None,
+        "authority_notes": None,
     }
+
+    # T2431-B classified Tier A locks — spot-check authority metadata surfaces
+    assert schema["audio.sample_rate"]["plane"] == "host"
+    assert schema["audio.sample_rate"]["owner"] == "audio-engine"
+    assert schema["audio.sample_rate"]["runtime_mutable"] is False
+    assert schema["audio.sample_rate"]["startup"] == "critical"
+    assert schema["audio.buffer_size"]["plane"] == "host"
+    assert schema["audio.buffer_size"]["runtime_mutable"] is False
+    assert schema["audio.backend"]["plane"] == "host"
 
 
 def test_sensitive_option_info_masks_default_and_current(manager: ConfigManager) -> None:
@@ -63,6 +78,12 @@ def test_sensitive_option_info_masks_default_and_current(manager: ConfigManager)
         "current": "***",
         "locked": False,
         "element_type": None,
+        "plane": "legacy",
+        "owner": None,
+        "runtime_mutable": True,
+        "startup": "optional",
+        "projection_of": None,
+        "authority_notes": None,
     }
 
 

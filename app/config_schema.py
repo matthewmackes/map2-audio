@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
@@ -10,9 +10,37 @@ from typing import Any, Optional
 CANONICAL_CLOCK_SYNC_PROFILE = "pipewire_quantum_48k"
 
 
+class AuthorityPlane(str, Enum):
+    """Authority planes per docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md.
+
+    Each config option must declare exactly one authority plane so the layered
+    loader (T2431-D) can enforce precedence and reject forbidden overrides.
+    """
+
+    HOST = "host"          # /etc/map2 — host desired configuration
+    SERVICE = "service"    # /var/lib/map2 — durable service/cluster state
+    USER = "user"          # ~/.map2 — per-user / per-operator preferences
+    RUNTIME = "runtime"    # /proc, PipeWire, etcd — observed or control-plane state
+    LEGACY = "legacy"      # grandfathered entries pending reclassification
+
+
+class StartupRequirement(str, Enum):
+    """Whether the value must be known before service startup completes."""
+
+    CRITICAL = "critical"  # Blocks boot/service-start if unavailable
+    REQUIRED = "required"  # Must be present at service-ready, not at systemd exec
+    OPTIONAL = "optional"  # Service can run without it
+
+
 @dataclass
 class ConfigOption:
-    """Definition of a single configuration option."""
+    """Definition of a single configuration option.
+
+    Authority metadata (``plane``, ``owner``, ``runtime_mutable``, ``startup``,
+    ``projection_of``) is load-bearing for the Configuration Authority Model
+    (T2431). New entries MUST declare a non-LEGACY plane; existing entries may
+    remain LEGACY until reclassified by downstream subtasks.
+    """
 
     key: str
     default: Any
@@ -26,6 +54,18 @@ class ConfigOption:
     restart_required: bool = False
     locked: bool = False
     element_type: Optional[type] = None
+
+    # Authority metadata — T2431-B
+    plane: AuthorityPlane = AuthorityPlane.LEGACY
+    owner: Optional[str] = None
+    runtime_mutable: bool = True
+    startup: StartupRequirement = StartupRequirement.OPTIONAL
+    projection_of: Optional[str] = None
+    authority_notes: Optional[str] = None
+
+    def has_declared_authority(self) -> bool:
+        """True when the option has an explicit (non-LEGACY) authority plane."""
+        return self.plane is not AuthorityPlane.LEGACY
 
 
 class ConfigSection(Enum):
@@ -113,6 +153,11 @@ AUDIO_SCHEMA: dict[str, ConfigOption] = {
         choices=[44100, 48000, 88200, 96000, 192000],
         restart_required=True,
         locked=True,  # Tier A: prevent runtime changes, must restart service
+        plane=AuthorityPlane.HOST,
+        owner="audio-engine",
+        runtime_mutable=False,
+        startup=StartupRequirement.CRITICAL,
+        authority_notes="Tier A lock — changed only via systemd service file + restart.",
     ),
     "audio.buffer_size": ConfigOption(
         key="audio.buffer_size",
@@ -123,6 +168,11 @@ AUDIO_SCHEMA: dict[str, ConfigOption] = {
         choices=[64, 128, 256, 512, 1024, 2048],
         restart_required=True,
         locked=True,  # Tier A: 64 samples @ 48kHz = 1.33ms - prevent runtime changes
+        plane=AuthorityPlane.HOST,
+        owner="audio-engine",
+        runtime_mutable=False,
+        startup=StartupRequirement.CRITICAL,
+        authority_notes="Tier A lock — 64 samples @ 48 kHz = 1.33 ms. PipeWire force-quantum mirror.",
     ),
     "audio.channels": ConfigOption(
         key="audio.channels",
@@ -150,6 +200,11 @@ AUDIO_SCHEMA: dict[str, ConfigOption] = {
         choices=["pipewire", "jack", "alsa"],
         restart_required=True,
         locked=True,  # Tier A: prevent runtime backend switching
+        plane=AuthorityPlane.HOST,
+        owner="audio-engine",
+        runtime_mutable=False,
+        startup=StartupRequirement.CRITICAL,
+        authority_notes="Tier A lock — backend switching requires service restart.",
     ),
     "audio.pipewire_use_jack": ConfigOption(
         key="audio.pipewire_use_jack",

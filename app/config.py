@@ -534,6 +534,12 @@ class ConfigManager:
                 "restart_required": option.restart_required,
                 "locked": option.locked,
                 "element_type": option.element_type.__name__ if option.element_type else None,
+                "plane": option.plane.value,
+                "owner": option.owner,
+                "runtime_mutable": option.runtime_mutable,
+                "startup": option.startup.value,
+                "projection_of": option.projection_of,
+                "authority_notes": option.authority_notes,
             }
         return schema
 
@@ -550,6 +556,12 @@ class ConfigManager:
                 "current": self._mask_sensitive_value(current) if option.sensitive else current,
                 "locked": option.locked,
                 "element_type": option.element_type.__name__ if option.element_type else None,
+                "plane": option.plane.value,
+                "owner": option.owner,
+                "runtime_mutable": option.runtime_mutable,
+                "startup": option.startup.value,
+                "projection_of": option.projection_of,
+                "authority_notes": option.authority_notes,
             }
         return None
 
