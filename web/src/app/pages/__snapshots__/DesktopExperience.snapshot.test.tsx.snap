@@ -625,7 +625,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain"
+                  id="/brain::/brain?section=overview"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -653,7 +653,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain__label"
+                        id="/brain::/brain?section=overview__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -683,7 +683,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=drums"
+                  id="/brain::/brain?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -711,7 +711,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=drums__label"
+                        id="/brain::/brain?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -728,7 +728,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  Drum-Machine
+                                  Perform
                                 </span>
                               </span>
                             </span>
@@ -741,7 +741,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=synthforge"
+                  id="/brain::/brain?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -769,7 +769,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=synthforge__label"
+                        id="/brain::/brain?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -786,7 +786,413 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  SynthForge
+                                  Layers
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=sequence"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=sequence__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Sequence
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=routing"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=routing__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Routing
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=inputs"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=inputs__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Inputs
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=library"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=library__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Library
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=diagnostics"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=diagnostics__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Diagnostics
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=session_media"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=session_media__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Session Media
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=practice_coach"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=practice_coach__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Practice Coach
                                 </span>
                               </span>
                             </span>
@@ -1337,6 +1743,64 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                                   class="global-tree-nav__node-label"
                                 >
                                   Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/workspace::/platforms/midpoint"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M11.61,29.92a1,1,0,0,1-.6-1.07L12.83,17H8a1,1,0,0,1-1-1.23l3-13A1,1,0,0,1,11,2H21a1,1,0,0,1,.78.37,1,1,0,0,1,.2.85L20.25,11H25a1,1,0,0,1,.9.56,1,1,0,0,1-.11,1l-13,17A1,1,0,0,1,12,30,1.09,1.09,0,0,1,11.61,29.92ZM17.75,13l2-9H11.8L9.26,15h5.91L13.58,25.28,23,13Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/workspace::/platforms/midpoint__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Midpoint
                                 </span>
                               </span>
                             </span>
@@ -5820,7 +6284,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain"
+                  id="/brain::/brain?section=overview"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -5848,7 +6312,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain__label"
+                        id="/brain::/brain?section=overview__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -5878,7 +6342,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=drums"
+                  id="/brain::/brain?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -5906,7 +6370,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=drums__label"
+                        id="/brain::/brain?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -5923,7 +6387,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  Drum-Machine
+                                  Perform
                                 </span>
                               </span>
                             </span>
@@ -5936,7 +6400,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=synthforge"
+                  id="/brain::/brain?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -5964,7 +6428,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=synthforge__label"
+                        id="/brain::/brain?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -5981,7 +6445,413 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  SynthForge
+                                  Layers
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=sequence"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=sequence__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Sequence
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=routing"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=routing__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Routing
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=inputs"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=inputs__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Inputs
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=library"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=library__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Library
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=diagnostics"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=diagnostics__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Diagnostics
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=session_media"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=session_media__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Session Media
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=practice_coach"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=practice_coach__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Practice Coach
                                 </span>
                               </span>
                             </span>
@@ -6532,6 +7402,64 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                                   class="global-tree-nav__node-label"
                                 >
                                   Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/workspace::/platforms/midpoint"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M11.61,29.92a1,1,0,0,1-.6-1.07L12.83,17H8a1,1,0,0,1-1-1.23l3-13A1,1,0,0,1,11,2H21a1,1,0,0,1,.78.37,1,1,0,0,1,.2.85L20.25,11H25a1,1,0,0,1,.9.56,1,1,0,0,1-.11,1l-13,17A1,1,0,0,1,12,30,1.09,1.09,0,0,1,11.61,29.92ZM17.75,13l2-9H11.8L9.26,15h5.91L13.58,25.28,23,13Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/workspace::/platforms/midpoint__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Midpoint
                                 </span>
                               </span>
                             </span>
@@ -11134,7 +12062,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain"
+                  id="/brain::/brain?section=overview"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11162,7 +12090,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain__label"
+                        id="/brain::/brain?section=overview__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11192,7 +12120,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=drums"
+                  id="/brain::/brain?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11220,7 +12148,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=drums__label"
+                        id="/brain::/brain?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11237,7 +12165,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  Drum-Machine
+                                  Perform
                                 </span>
                               </span>
                             </span>
@@ -11250,7 +12178,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?import_source=synthforge"
+                  id="/brain::/brain?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11278,7 +12206,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?import_source=synthforge__label"
+                        id="/brain::/brain?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11295,7 +12223,413 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                                 <span
                                   class="global-tree-nav__node-label"
                                 >
-                                  SynthForge
+                                  Layers
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=sequence"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=sequence__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Sequence
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=routing"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=routing__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Routing
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=inputs"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=inputs__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Inputs
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=library"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=library__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Library
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=diagnostics"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=diagnostics__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Diagnostics
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=session_media"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=session_media__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Session Media
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/brain::/brain?section=practice_coach"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/brain::/brain?section=practice_coach__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Practice Coach
                                 </span>
                               </span>
                             </span>
@@ -11846,6 +13180,64 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                                   class="global-tree-nav__node-label"
                                 >
                                   Cluster Dashboard
+                                </span>
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li
+                  aria-selected="false"
+                  class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
+                  id="/workspace::/platforms/midpoint"
+                  role="treeitem"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cds--tree-node__label"
+                    style="margin-inline-start: -3.5rem; padding-inline-start: 3.5rem;"
+                  >
+                    <span
+                      class="cds--tree-node__label__details"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="cds--tree-node__icon"
+                        fill="currentColor"
+                        focusable="false"
+                        height="16"
+                        preserveAspectRatio="xMidYMid meet"
+                        viewBox="0 0 32 32"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M11.61,29.92a1,1,0,0,1-.6-1.07L12.83,17H8a1,1,0,0,1-1-1.23l3-13A1,1,0,0,1,11,2H21a1,1,0,0,1,.78.37,1,1,0,0,1,.2.85L20.25,11H25a1,1,0,0,1,.9.56,1,1,0,0,1-.11,1l-13,17A1,1,0,0,1,12,30,1.09,1.09,0,0,1,11.61,29.92ZM17.75,13l2-9H11.8L9.26,15h5.91L13.58,25.28,23,13Z"
+                        />
+                      </svg>
+                      <span
+                        class="cds--tree-node__label__text"
+                        id="/workspace::/platforms/midpoint__label"
+                      >
+                        <span
+                          class="global-tree-nav__node-copy"
+                        >
+                          <span
+                            class="global-tree-nav__node-main"
+                          >
+                            <span
+                              class="global-tree-nav__node-main-copy"
+                            >
+                              <span
+                                class="global-tree-nav__node-label-row"
+                              >
+                                <span
+                                  class="global-tree-nav__node-label"
+                                >
+                                  Midpoint
                                 </span>
                               </span>
                             </span>

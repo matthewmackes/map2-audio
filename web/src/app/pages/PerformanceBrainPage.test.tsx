@@ -414,20 +414,13 @@ describe('PerformanceBrainPage', () => {
     primeApi()
   })
 
-  it('preserves scoped route state when switching sections through the rail', async () => {
+  it('renders the routed diagnostics section without the legacy page rail', async () => {
     renderPage('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
-    await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Performance Brain' }).length).toBeGreaterThan(0))
+    await waitFor(() => expect(screen.getByText('Realtime metrics')).toBeInTheDocument())
     await waitFor(() => expect(mockGetState).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
-    expect(screen.getByText('Realtime metrics')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Diagnostics/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByLabelText('Performance Brain section navigation')).not.toBeInTheDocument()
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=diagnostics')
-
-    fireEvent.click(screen.getByRole('button', { name: /^Sequence/ }))
-
-    await waitFor(() => expect(mockUpdateState).toHaveBeenCalledWith({ active_section: 'sequence' }, { instanceId: 42, pluginPosition: 9 }))
-    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=sequence'))
-    expect(screen.getByRole('button', { name: /^Sequence/ })).toHaveAttribute('aria-current', 'page')
   })
 
   it('normalizes the section query param from backend state when the route is missing it', async () => {
@@ -437,7 +430,7 @@ describe('PerformanceBrainPage', () => {
 
     await waitFor(() => expect(screen.getByText('Layer map')).toBeInTheDocument())
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=7&plugin_position=2&section=layers'))
-    expect(screen.getByRole('button', { name: /^Layers/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByLabelText('Performance Brain section navigation')).not.toBeInTheDocument()
     expect(mockUpdateState).not.toHaveBeenCalled()
   })
 
@@ -457,7 +450,7 @@ describe('PerformanceBrainPage', () => {
     await waitFor(() => expect(screen.getByTestId('brain-overview-shell')).toBeInTheDocument())
   })
 
-  it('shows scoped qualification details on the inputs and diagnostics sections', async () => {
+  it('shows scoped qualification details on the inputs section', async () => {
     primeApi({
       diagnosticsOverride: makeDiagnostics({
         warnings: ['Legacy MIDI clock remains routed externally.'],
@@ -501,8 +494,46 @@ describe('PerformanceBrainPage', () => {
     expect(
       screen.getByText((_content, element) => element?.textContent === 'Scope key · instance-42__position-9'),
     ).toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: /^Diagnostics/ }))
+  it('shows controller warnings and qualification issues on the diagnostics section', async () => {
+    primeApi({
+      diagnosticsOverride: makeDiagnostics({
+        warnings: ['Legacy MIDI clock remains routed externally.'],
+        controller_qualification: makeControllerQualification({
+          scoped_instance_key: 'instance-42__position-9',
+          tier_a_runtime_locked: false,
+          controller_ready: false,
+          ready_surface_count: 2,
+          keyboard: {
+            ready: false,
+            zone_count: 0,
+            channel_count: 0,
+            chromatic_slot_count: 0,
+            polyphony_capacity: 0,
+            max_key_span: 0,
+            aftertouch_modes: [],
+            summary: '0 zones · 0 melodic slots · poly 0',
+            issues: ['No enabled keyboard zones configured.'],
+          },
+          triggers: {
+            ready: false,
+            profile_count: 0,
+            covered_pad_count: 0,
+            trigger_slot_count: 2,
+            unique_trigger_notes: 2,
+            fastest_scan_time_ms: 0,
+            widest_mask_time_ms: 0,
+            summary: '0 profiles · 0 pads · 2 trigger notes',
+            issues: ['No trigger profiles configured.'],
+          },
+          summary: '2/4 surfaces ready · Tier A drift',
+          issues: ['No enabled keyboard zones configured.', 'No trigger profiles configured.'],
+        }),
+      }),
+    })
+
+    renderPage('/brain?instance_id=42&plugin_position=9&section=diagnostics')
 
     await waitFor(() => expect(screen.getByText('Controller qualification')).toBeInTheDocument())
     expect(screen.getByText('No enabled keyboard zones configured.')).toBeInTheDocument()

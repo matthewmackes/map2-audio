@@ -1,26 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Activity,
   ArrowLeft,
-  Book,
-  Catalog,
-  Categories,
-  ConnectionSignal,
-  DataStructured,
-  Document,
-  Flow,
   Launch,
-  Music,
   PauseFilled,
-  Play,
   PlayFilled,
   Reset,
 } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '@/app/components/navigation/UnifiedWorkspaceSideNav'
 import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import {
@@ -51,26 +40,17 @@ type SectionId =
   | 'practice_coach'
   | 'diagnostics'
 
-interface BrainSectionDef {
-  id: SectionId
-  label: string
-  eyebrow: string
-  icon: ComponentType<any>
-  description: string
-  variant?: UnifiedWorkspaceSideNavItem['variant']
-}
-
-const SECTION_DEFS: readonly BrainSectionDef[] = [
-  { id: 'overview', label: 'Overview', eyebrow: 'System posture', icon: DataStructured, description: 'Scope summary, qualification posture, and migration framing.' },
-  { id: 'perform', label: 'Perform', eyebrow: 'Live control', icon: Play, description: 'Transport, slot focus, and immediate live control.' },
-  { id: 'layers', label: 'Layers', eyebrow: 'Scenes and splits', icon: Categories, description: 'Keyboard layers, slot assignments, and split posture.' },
-  { id: 'sequence', label: 'Sequence', eyebrow: 'Patterns and song', icon: Flow, description: 'Pattern, variation, and sequence authoring controls.' },
-  { id: 'routing', label: 'Routing', eyebrow: 'Buses and master', icon: ConnectionSignal, description: 'Bus, mix, and routed output control.' },
-  { id: 'inputs', label: 'Inputs', eyebrow: 'Zones and triggers', icon: Music, description: 'Trigger, keyboard, and controller input posture.' },
-  { id: 'library', label: 'Library', eyebrow: 'Assets and import', icon: Catalog, description: 'Brain assets, imports, and scoped library state.' },
-  { id: 'session_media', label: 'Session Media', eyebrow: 'Backing tracks adjunct', icon: Document, description: 'Backing tracks and adjunct session media workflows.', variant: 'utility' as const },
-  { id: 'practice_coach', label: 'Practice Coach', eyebrow: 'Packs and coaching adjunct', icon: Book, description: 'Practice packs, style coaching, and adjunct drill workflows.', variant: 'utility' as const },
-  { id: 'diagnostics', label: 'Diagnostics', eyebrow: 'Latency and health', icon: Activity, description: 'Latency, CPU, xrun, and controller qualification detail.' },
+const SECTION_IDS: readonly SectionId[] = [
+  'overview',
+  'perform',
+  'layers',
+  'sequence',
+  'routing',
+  'inputs',
+  'library',
+  'session_media',
+  'practice_coach',
+  'diagnostics',
 ] as const
 
 const PRACTICE_STYLES = [
@@ -85,7 +65,7 @@ const PRACTICE_STYLES = [
 ] as const
 
 function parseSectionSearchParam(value: string | null): SectionId | undefined {
-  return SECTION_DEFS.some((section) => section.id === value) ? (value as SectionId) : undefined
+  return SECTION_IDS.includes(value as SectionId) ? (value as SectionId) : undefined
 }
 
 function parseNumericSearchParam(value: string | null): number | undefined {
@@ -363,25 +343,6 @@ export function PerformanceBrainPage() {
     }
   }, [activeSection, searchParams, setSearchParams, stateMutation])
 
-  const { primaryNavItems, utilityNavItems } = useMemo(() => {
-    const baseItems: UnifiedWorkspaceSideNavItem[] = SECTION_DEFS.map((section) => ({
-      key: section.id,
-      label: section.label,
-      description: `${section.eyebrow} • ${section.description}`,
-      to: `/brain?section=${section.id}`,
-      icon: section.icon,
-      active: activeSection === section.id,
-      onOpen: () => handleSectionChange(section.id),
-      meta: activeSection === section.id ? 'Current' : undefined,
-      variant: section.variant ?? 'default',
-    }))
-
-    return {
-      primaryNavItems: baseItems.filter((item) => item.variant !== 'utility'),
-      utilityNavItems: baseItems.filter((item) => item.variant === 'utility'),
-    }
-  }, [activeSection, handleSectionChange])
-
   useSetShellWindow({
     title: 'Performance Brain',
     subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
@@ -459,75 +420,51 @@ export function PerformanceBrainPage() {
 
   return (
     <section className="brain-page">
-      <div className="brain-page__shell">
-        <UnifiedWorkspaceSideNav
-          ariaLabel="Performance Brain section navigation"
-          className="brain-page__rail"
-          eyebrow="Unified brain"
-          title="Performance Brain"
-          description="One routed tree for overview, live play, layers, sequence, routing, inputs, library, and adjunct operator workflows."
-          items={primaryNavItems}
-          footerTitle="Adjunct Workflows"
-          footerItems={utilityNavItems}
-          metaBlocks={[
-            { key: 'brain-scope', label: 'Scope', value: scope.instanceId != null ? `Instance ${scope.instanceId}` : 'Workspace' },
-            { key: 'brain-slot', label: 'Active slot', value: activeSlot ? `${activeSlot.slot_id + 1}: ${activeSlot.name}` : 'None' },
-            { key: 'brain-layer', label: 'Active layer', value: activeLayer?.name ?? state.active_layer_id },
-          ]}
-          callout={{
-            kind: qualification.controller_ready ? 'info' : 'warning',
-            text: qualification.controller_ready
-              ? 'Controller qualification is currently ready for the scoped Brain workflow.'
-              : 'Controller qualification needs attention before this scoped Brain workflow is considered operator-safe.',
-          }}
-          storageKey="performance-brain"
-        />
-
-        <div className="brain-page__main">
-          <section className="brain-page__toolbar">
-            <div className="brain-page__toolbar-block">
-              <span className="brain-page__toolbar-label">Set</span>
-              <input
-                className="brain-page__text-input"
-                aria-label="Performance Brain set name"
-                value={setNameDraft}
-                onChange={(event) => setSetNameDraft(event.target.value)}
-                onBlur={handleSetNameCommit}
-              />
-            </div>
-            <div className="brain-page__toolbar-block">
-              <span className="brain-page__toolbar-label">Active slot</span>
-              <Tag type="cool-gray">{activeSlot ? `${activeSlot.slot_id + 1}: ${activeSlot.name}` : 'None'}</Tag>
-            </div>
-            <div className="brain-page__toolbar-block">
-              <span className="brain-page__toolbar-label">Layer</span>
-              <Tag type="green">{activeLayer?.name ?? state.active_layer_id}</Tag>
-            </div>
-            <div className="brain-page__toolbar-block">
-              <span className="brain-page__toolbar-label">Latency</span>
-              <Tag type={diagnostics.xruns > 0 ? 'red' : 'green'}>
-                {diagnostics.trigger_latency_ms.toFixed(1)} ms trigger
-              </Tag>
-            </div>
-          </section>
-
-          <hr className="brain-page__divider" role="separator" aria-hidden="true" />
-
-          {activeSection === 'overview' ? (
-            <BrainOverviewShell
-              state={state}
-              transport={transport}
-              slots={slots}
-              layers={layers}
-              sequence={sequence}
-              mixer={mixer}
-              inputs={inputs}
-              diagnostics={diagnostics}
-              onTransportPatch={(patch) => transportMutation.mutate(patch)}
-              onSlotSelect={(slotId) => handleSlotSelect(slotId)}
-              onSlotUpdate={(slotId, patch) => slotMutation.mutate({ slotId, patch })}
+      <div className="brain-page__main">
+        <section className="brain-page__toolbar">
+          <div className="brain-page__toolbar-block">
+            <span className="brain-page__toolbar-label">Set</span>
+            <input
+              className="brain-page__text-input"
+              aria-label="Performance Brain set name"
+              value={setNameDraft}
+              onChange={(event) => setSetNameDraft(event.target.value)}
+              onBlur={handleSetNameCommit}
             />
-          ) : null}
+          </div>
+          <div className="brain-page__toolbar-block">
+            <span className="brain-page__toolbar-label">Active slot</span>
+            <Tag type="cool-gray">{activeSlot ? `${activeSlot.slot_id + 1}: ${activeSlot.name}` : 'None'}</Tag>
+          </div>
+          <div className="brain-page__toolbar-block">
+            <span className="brain-page__toolbar-label">Layer</span>
+            <Tag type="green">{activeLayer?.name ?? state.active_layer_id}</Tag>
+          </div>
+          <div className="brain-page__toolbar-block">
+            <span className="brain-page__toolbar-label">Latency</span>
+            <Tag type={diagnostics.xruns > 0 ? 'red' : 'green'}>
+              {diagnostics.trigger_latency_ms.toFixed(1)} ms trigger
+            </Tag>
+          </div>
+        </section>
+
+        <hr className="brain-page__divider" role="separator" aria-hidden="true" />
+
+        {activeSection === 'overview' ? (
+          <BrainOverviewShell
+            state={state}
+            transport={transport}
+            slots={slots}
+            layers={layers}
+            sequence={sequence}
+            mixer={mixer}
+            inputs={inputs}
+            diagnostics={diagnostics}
+            onTransportPatch={(patch) => transportMutation.mutate(patch)}
+            onSlotSelect={(slotId) => handleSlotSelect(slotId)}
+            onSlotUpdate={(slotId, patch) => slotMutation.mutate({ slotId, patch })}
+          />
+        ) : null}
 
           {activeSection === 'perform' ? (
             <div className="brain-page__section-grid">
@@ -1031,7 +968,6 @@ export function PerformanceBrainPage() {
               </Tile>
             </div>
           ) : null}
-        </div>
       </div>
     </section>
   )

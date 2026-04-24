@@ -217,8 +217,16 @@ function routeMatchesLocation(target: string, pathname: string, search: string):
     return true
   }
 
-  const currentSearch = search.startsWith('?') ? search.slice(1) : search
-  return currentSearch === targetSearch
+  const currentParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+  const targetParams = new URLSearchParams(targetSearch)
+
+  for (const [key, value] of targetParams.entries()) {
+    if (currentParams.get(key) !== value) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function readExpandedIds(): string[] {

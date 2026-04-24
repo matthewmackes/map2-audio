@@ -199,9 +199,16 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
   },
   '/brain': {
     treeChildren: [
-      { route: '/brain', label: 'Overview' },
-      { route: '/brain?import_source=drums', label: 'Drum-Machine' },
-      { route: '/brain?import_source=synthforge', label: 'SynthForge' },
+      { route: '/brain?section=overview', label: 'Overview' },
+      { route: '/brain?section=perform', label: 'Perform' },
+      { route: '/brain?section=layers', label: 'Layers' },
+      { route: '/brain?section=sequence', label: 'Sequence' },
+      { route: '/brain?section=routing', label: 'Routing' },
+      { route: '/brain?section=inputs', label: 'Inputs' },
+      { route: '/brain?section=library', label: 'Library' },
+      { route: '/brain?section=diagnostics', label: 'Diagnostics' },
+      { route: '/brain?section=session_media', label: 'Session Media' },
+      { route: '/brain?section=practice_coach', label: 'Practice Coach' },
     ],
   },
   '/midi-hub': {
