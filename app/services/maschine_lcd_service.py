@@ -389,8 +389,14 @@ class MaschineLCDRenderService(Singleton):
             sessions = get_midi_recorder().list_sessions()
         except Exception:
             sessions = []
+        # T2437-B: consult the authority resolver first; legacy fallback
+        # lives inside resolve_deployment_mode() itself. "UNKNOWN" is not
+        # a canonical mode, so we fall back manually if the resolver chain
+        # cannot find one.
         try:
-            deployment_mode = get_deployment_config().mode.value
+            from app.deployment.authority import resolve_deployment_mode
+
+            deployment_mode = resolve_deployment_mode(fallback="ALL-IN-ONE")
         except Exception:
             deployment_mode = "UNKNOWN"
         try:

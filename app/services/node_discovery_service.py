@@ -413,14 +413,18 @@ class NodeDiscoveryService(Singleton):
         if deployment_mode in {DeploymentMode.CONTROL_NODE.value, DeploymentMode.FRONTEND_ONLY.value}:
             return NodeRole.management_node
 
+        # T2437-B: prefer the canonical resolver. Legacy DeploymentConfig
+        # stays as fallback inside resolve_deployment_mode() itself.
         try:
-            mode = get_deployment_config().mode
-            if mode == DeploymentMode.ALL_IN_ONE:
+            from app.deployment.authority import resolve_deployment_mode
+
+            resolved = resolve_deployment_mode(fallback="AUDIO-NODE")
+            if resolved == DeploymentMode.ALL_IN_ONE.value:
                 return NodeRole.all_in_one
-            if mode in {DeploymentMode.CONTROL_NODE, DeploymentMode.FRONTEND_ONLY}:
+            if resolved in {DeploymentMode.CONTROL_NODE.value, DeploymentMode.FRONTEND_ONLY.value}:
                 return NodeRole.management_node
         except Exception as exc:
-            logger.debug("Deployment config lookup failed: %s", exc)
+            logger.debug("Deployment mode resolve failed: %s", exc)
 
         return NodeRole.audio_node
 

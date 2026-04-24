@@ -518,11 +518,11 @@ class AdoptionService:
 
     def _get_local_clone_source(self) -> Dict[str, Any]:
         from app.config import config_get
-        from app.deployment.deployment import get_deployment_config
+        from app.deployment.authority import resolve_deployment_mode  # T2437-B
 
         hostname = socket.gethostname() or "localhost"
         try:
-            deployment_mode = str(get_deployment_config().mode.value or "ALL-IN-ONE").upper()
+            deployment_mode = resolve_deployment_mode(fallback="ALL-IN-ONE")
         except Exception:
             deployment_mode = "ALL-IN-ONE"
         api_port = _coerce_int(config_get("backend.port", 8080), 8080)
