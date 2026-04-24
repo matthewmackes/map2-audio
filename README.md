@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1264** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2735** total commits | **3** stars | **0** forks | **0** open issues
+**1269** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2738** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-24 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-23 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
 | [MAP2 Installation Guide (Created by AI. Not Yet Tested - Matt)](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Installation_Guide_2026-02-14.md) | 2026-04-20 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4300878d`](https://github.com/matthewmackes/map2-audio/commit/4300878d1349fb534d91fe2a4901eb919af7df0d) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
+| [`6e5f2ab1`](https://github.com/matthewmackes/map2-audio/commit/6e5f2ab19a45e29aabb9a234f3028bb2750cd463) | feat(T2431-EFJ): deployment-mode authority + projection h... | Map2 Audio | 2026-04-24 |
+| [`5e5ddaf5`](https://github.com/matthewmackes/map2-audio/commit/5e5ddaf581fd7a2dd05ed3ecf20f8b93d4b4f507) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`cee52362`](https://github.com/matthewmackes/map2-audio/commit/cee523627c951e8d0dd985a386c1cc52d231934e) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`c52d1e88`](https://github.com/matthewmackes/map2-audio/commit/c52d1e8894e7798937f44dddf0fc11f23efe2800) | feat(T2431-G): freeze system_config writes with allowlist | Map2 Audio | 2026-04-23 |
 | [`1b201586`](https://github.com/matthewmackes/map2-audio/commit/1b2015868fb76099c5dae333d74def9addb32310) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`c57af293`](https://github.com/matthewmackes/map2-audio/commit/c57af293f4517f1c3a38037e712ff1da6961d2b5) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`64f86aae`](https://github.com/matthewmackes/map2-audio/commit/64f86aae8ca8c41a6d87144881492258fa259395) | feat(T2431-H): remove legacy flow_snapshots authority paths | Map2 Audio | 2026-04-23 |
-| [`64d7aae7`](https://github.com/matthewmackes/map2-audio/commit/64d7aae72f98c8dbd6daed8b98a6aa21eed2fc95) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`e73853e5`](https://github.com/matthewmackes/map2-audio/commit/e73853e51ec450caa23b28988d3e924651c2cdb6) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
-| [`2bb9fc4e`](https://github.com/matthewmackes/map2-audio/commit/2bb9fc4e22958804c549cb10ddabec22c28e9e32) | feat(T2431-I): single-node audio-state authority backend | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
