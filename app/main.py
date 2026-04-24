@@ -1048,7 +1048,16 @@ def create_app():
                 logger.info("Deployment routes registered")
         except Exception as e:
             logger.warning(f"Failed to load deployment routes: {e}")
-        
+
+        # Register Authority doctor routes (T2431-J)
+        try:
+            from app.routes import authority_doctor
+            if authority_doctor.router:
+                app.include_router(authority_doctor.router)
+                logger.info("Authority doctor routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load authority doctor routes: {e}")
+
         # Register SSH trust routes
         try:
             from app.routes import ssh_trust
