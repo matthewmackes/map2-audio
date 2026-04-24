@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1259** Python | **1240** TypeScript | **136** C++/H | **145** Docs | **2715** total commits | **3** stars | **0** forks | **0** open issues
+**1260** Python | **1240** TypeScript | **136** C++/H | **145** Docs | **2719** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0d208b06`](https://github.com/matthewmackes/map2-audio/commit/0d208b0603289a26a13ad71ba12325ea31fa6722) | feat(T2431-B): ConfigOption authority metadata + enforcem... | Map2 Audio | 2026-04-23 |
+| [`e04cce23`](https://github.com/matthewmackes/map2-audio/commit/e04cce23d392896f8b29bf649100d76fa40d925a) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
+| [`aef38e04`](https://github.com/matthewmackes/map2-audio/commit/aef38e04b4d30fd613d3db16afe60463e515b5e1) | feat(theme): MAIN-DEFAULT becomes the canonical default d... | Map2 Audio | 2026-04-23 |
+| [`f9bb279f`](https://github.com/matthewmackes/map2-audio/commit/f9bb279fda1ea413340fbf0feca0f5077a2be919) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`04ca43d0`](https://github.com/matthewmackes/map2-audio/commit/04ca43d0603e410915d0f62afb6d6cec38eec483) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`2c4c8722`](https://github.com/matthewmackes/map2-audio/commit/2c4c8722c2a9b860de340253f4a30efef9ee592d) | feat(T2429): Pedalboard Build wizard for Snapshot Editor ... | Map2 Audio | 2026-04-23 |
 | [`e90c3e45`](https://github.com/matthewmackes/map2-audio/commit/e90c3e45c6152afe3c9e3c2e4f6582fb58069a79) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 | [`47a788dc`](https://github.com/matthewmackes/map2-audio/commit/47a788dc1066bffdf148a3663434430baf833f26) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
-| [`a5cf3069`](https://github.com/matthewmackes/map2-audio/commit/a5cf30694656ac09e68a09839fd22a377f84c349) | feat(publish): "Going Live" performance shell for Publish... | Map2 Audio | 2026-04-23 |
-| [`72ed34bf`](https://github.com/matthewmackes/map2-audio/commit/72ed34bf54609a11f1fdea235ae86e18488fc54d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
-| [`369afc20`](https://github.com/matthewmackes/map2-audio/commit/369afc20c1465dc600b4b04dca58e6bfa876d895) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-23 |
-| [`87f42910`](https://github.com/matthewmackes/map2-audio/commit/87f42910641e57a96edc5546769cd34cc07b935e) | test(T2430-N-2): LCD breadth tests — 174 total, 150-test ... | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
