@@ -25,6 +25,7 @@ import threading
 from typing import Any, Callable, Dict, List, Optional
 
 from app.config_schema import CANONICAL_CLOCK_SYNC_PROFILE, CONFIG_SCHEMA, ConfigOption, ConfigSection
+from app.services.layered_config_loader import LayeredConfigLoader, LayeredLoadResult
 
 logger = logging.getLogger(__name__)
 
@@ -141,26 +142,58 @@ class ConfigManager:
         return value
 
     def _load(self) -> None:
-        """Load configuration from file, environment, and defaults."""
-        # Start with schema defaults
-        self._config = self._build_defaults()
+        """Load configuration using the T2431-D layered authority chain.
 
-        # Load from file
+        Precedence (low to high):
+          schema defaults → host /etc/map2/config.d/*.json → service
+          /var/lib/map2/config.d/*.json → user ~/.map2/config.json →
+          declared MAP2_* environment vars.
+
+        Host-critical keys (plane=HOST, runtime_mutable=False) cannot be
+        overridden by the user plane; such overrides are dropped with a
+        warning at load time. See docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md.
+        """
+        # First: migrate retired keys in-place in the user-plane file so the
+        # layered loader sees the canonical shape. This preserves the
+        # pre-T2431-D migration contract for existing installs.
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r", encoding="utf-8") as f:
                     file_config = json.load(f)
-                migrated = self._migrate_loaded_config(file_config)
-                if migrated:
+                if isinstance(file_config, dict) and self._migrate_loaded_config(file_config):
                     _atomic_write_json(self.config_path, file_config)
                     logger.info("Migrated retired configuration keys in %s", self.config_path)
-                self._merge_config(file_config)
-                logger.info(f"Loaded config from {self.config_path}")
-            except Exception as e:
-                logger.warning(f"Failed to load config file: {e}")
+            except Exception as exc:  # pragma: no cover — defensive
+                logger.warning("Failed to pre-migrate user config %s: %s", self.config_path, exc)
 
-        # Apply environment variable overrides
-        self._apply_env_overrides()
+        loader = LayeredConfigLoader(user_config_file=self.config_path)
+        result: LayeredLoadResult = loader.load()
+        self._config = result.config
+
+        # Coerce env-plane string values to their schema types. The loader
+        # stores raw env strings so plane contributions stay inspectable;
+        # ConfigManager's runtime-mutable setters expect typed values.
+        for contribution in result.contributions:
+            if contribution.plane != "env":
+                continue
+            for key in contribution.keys:
+                option = CONFIG_SCHEMA.get(key)
+                if option is None:
+                    continue
+                raw = self._get_nested(self._config, key)
+                if isinstance(raw, str):
+                    try:
+                        converted = self._coerce_value(
+                            option, self._convert_type(raw, option.value_type)
+                        )
+                        self._set_nested(self._config, key, converted)
+                    except Exception as exc:
+                        logger.warning("Failed to convert env var for %s: %s", key, exc)
+
+        logger.info(
+            "Layered config loaded: %s",
+            ", ".join(f"{c.plane}={len(c.keys)} keys" for c in result.contributions),
+        )
 
     def _build_defaults(self) -> Dict[str, Any]:
         """Build default configuration from schema."""
