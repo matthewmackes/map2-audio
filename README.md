@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1271** Python | **1248** TypeScript | **136** C++/H | **145** Docs | **2777** total commits | **3** stars | **0** forks | **0** open issues
+**1271** Python | **1248** TypeScript | **136** C++/H | **145** Docs | **2779** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`10eec3c8`](https://github.com/matthewmackes/map2-audio/commit/10eec3c8b8cd2b0657636677cc5e52f23a4afebf) | chore(worklist): lock Q1-Q5 answers on T2442-T2446 + open... | Map2 Audio | 2026-04-24 |
+| [`147aae31`](https://github.com/matthewmackes/map2-audio/commit/147aae3100193489d46fef914e81f19de0ccafc6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`871fdbc6`](https://github.com/matthewmackes/map2-audio/commit/871fdbc6af2ddb84af73a2d22e76e18a1f26373d) | chore(worklist): open T2442-T2446 follow-up epics | Map2 Audio | 2026-04-24 |
 | [`bc16c0c6`](https://github.com/matthewmackes/map2-audio/commit/bc16c0c6321c23a5259b0a31277638bf77820447) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`cb15336f`](https://github.com/matthewmackes/map2-audio/commit/cb15336f873e202c3a020f049805ddf817fd5936) | Move Brain subnav into global tree | Map2 Audio | 2026-04-24 |
 | [`0847355d`](https://github.com/matthewmackes/map2-audio/commit/0847355d377b88a97a23207c32036699b200c81b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`6ffd8a9a`](https://github.com/matthewmackes/map2-audio/commit/6ffd8a9a48c0a65efcbb0f77ed749731cd33fdf9) | feat(T2440): expose Midpoint in Node Ops | Map2 Audio | 2026-04-24 |
 | [`3f019953`](https://github.com/matthewmackes/map2-audio/commit/3f019953bc15f9e5c877d2db38babc36e5610e23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`822236a0`](https://github.com/matthewmackes/map2-audio/commit/822236a026180970e23892ff97f5654b747eba0f) | chore(T2439): mark worklist T2439 Done with completion note | Map2 Audio | 2026-04-24 |
-| [`0c3ed913`](https://github.com/matthewmackes/map2-audio/commit/0c3ed91303db4a8e5c3a64f64f6c975e5ab959dc) | feat(T2439): apply T2438 chrome pattern to MIDI Hub | Map2 Audio | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
