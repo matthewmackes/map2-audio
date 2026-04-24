@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1269** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2738** total commits | **3** stars | **0** forks | **0** open issues
+**1269** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2741** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d8520863`](https://github.com/matthewmackes/map2-audio/commit/d852086345f10b5715a39c60646da35863eb6c15) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
+| [`05d65846`](https://github.com/matthewmackes/map2-audio/commit/05d65846afab8dc6f424cec6e7be8c586626afe7) | chore(T2431): mark EPIC Done — all 10 subtasks shipped | Map2 Audio | 2026-04-24 |
+| [`f7025c5f`](https://github.com/matthewmackes/map2-audio/commit/f7025c5f6b23d57dc16c8e2dd24e59cca66b4e84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`4300878d`](https://github.com/matthewmackes/map2-audio/commit/4300878d1349fb534d91fe2a4901eb919af7df0d) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-24 |
 | [`6e5f2ab1`](https://github.com/matthewmackes/map2-audio/commit/6e5f2ab19a45e29aabb9a234f3028bb2750cd463) | feat(T2431-EFJ): deployment-mode authority + projection h... | Map2 Audio | 2026-04-24 |
 | [`5e5ddaf5`](https://github.com/matthewmackes/map2-audio/commit/5e5ddaf581fd7a2dd05ed3ecf20f8b93d4b4f507) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`cee52362`](https://github.com/matthewmackes/map2-audio/commit/cee523627c951e8d0dd985a386c1cc52d231934e) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`c52d1e88`](https://github.com/matthewmackes/map2-audio/commit/c52d1e8894e7798937f44dddf0fc11f23efe2800) | feat(T2431-G): freeze system_config writes with allowlist | Map2 Audio | 2026-04-23 |
-| [`1b201586`](https://github.com/matthewmackes/map2-audio/commit/1b2015868fb76099c5dae333d74def9addb32310) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`c57af293`](https://github.com/matthewmackes/map2-audio/commit/c57af293f4517f1c3a38037e712ff1da6961d2b5) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
-| [`64f86aae`](https://github.com/matthewmackes/map2-audio/commit/64f86aae8ca8c41a6d87144881492258fa259395) | feat(T2431-H): remove legacy flow_snapshots authority paths | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
